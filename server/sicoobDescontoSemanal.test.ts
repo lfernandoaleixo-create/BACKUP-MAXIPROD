@@ -54,7 +54,7 @@ describe("Sicoob Desconto Semanal - Valor previsto de liberação", () => {
   it("updateSicoobDescontoSemanal rejects non-Flavio operators", async () => {
     const result = await trpcMutation("settings.updateSicoobDescontoSemanal", {
       valor: 100000,
-      operatorName: "Thiago",
+      operatorName: "Thalita",
     });
     expect(result).toBeDefined();
     expect(result.message || result.data?.message || JSON.stringify(result)).toContain("Flávio");

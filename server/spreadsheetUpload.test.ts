@@ -24,7 +24,7 @@ describe("Spreadsheet Upload procedures", () => {
       fileBase64: base64Content,
       mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       fileSize: 1024,
-      uploadedBy: "Thiago",
+      uploadedBy: "Thalita",
     });
 
     expect(result).toHaveProperty("id");
@@ -38,7 +38,7 @@ describe("Spreadsheet Upload procedures", () => {
     const result = await caller.financial.listSpreadsheetUploads();
     const found = result.uploads.find((u: any) => u.fileName === "cobranca_abril.xlsx");
     expect(found).toBeTruthy();
-    expect(found!.uploadedBy).toBe("Thiago");
+    expect(found!.uploadedBy).toBe("Thalita");
   });
 
   it("deleteSpreadsheetUpload removes the file from history", async () => {

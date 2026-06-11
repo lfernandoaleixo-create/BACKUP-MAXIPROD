@@ -46,13 +46,13 @@ describe("Thalita permissions for Planilha de Cobrança", () => {
     expect(result.operator!.accessFinanceiro).toBe(true);
   });
 
-  it("Thalita has same granular permissions as Thiago for financeiro", async () => {
+  it("Thalita has same granular permissions as Thalita for financeiro", async () => {
     const db = await getDb();
     if (!db) return;
     
     // Get both operators
     const thalitaRows = await db.select().from(operators).where(eq(operators.name, "Thalita"));
-    const thiagoRows = await db.select().from(operators).where(eq(operators.name, "Thiago"));
+    const thiagoRows = await db.select().from(operators).where(eq(operators.name, "Thalita"));
     if (thalitaRows.length === 0 || thiagoRows.length === 0) return;
     
     // Both should have accessFinanceiro
@@ -73,8 +73,8 @@ describe("Thalita permissions for Planilha de Cobrança", () => {
     expect(canEditMatch).toBeDefined();
     expect(canEditMatch![1]).toContain('"Thalita"');
     
-    // Also verify Thiago is in the same list
-    expect(canEditMatch![1]).toContain('"Thiago"');
+    // Also verify Thalita is in the same list
+    expect(canEditMatch![1]).toContain('"Thalita"');
   });
 
   it("COBRANCA_GUIDE_OPERATORS includes Thalita in both InadimplenciaTab and CobrancaPlanilhaView", async () => {

@@ -5,7 +5,7 @@ const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM
 interface CollectionDocData {
   cliente: string;
   vendedor: string;
-  responsavelCobranca?: string; // Responsável pelas cobranças (ex: Thiago)
+  responsavelCobranca?: string; // Responsável pelas cobranças (ex: Thalita)
   valorTitulo: string | number;
   vencimentoData: string; // YYYY-MM-DD
   diasAtraso: number;

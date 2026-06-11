@@ -1,7 +1,7 @@
 /**
  * DiscountAlertContext - Sistema de alertas cascading para descontos Sicoob
  * 
- * Quando Fernando salva uma seleção de desconto, gera um alerta para Guilherme/Flávio/Thiago.
+ * Quando Fernando salva uma seleção de desconto, gera um alerta para Guilherme/Flávio/Thalita.
  * O alerta cascata funciona assim:
  * 1. Aba "Financeiro" no TopNav pisca (blink) → operador clica
  * 2. Sub-aba "Recebíveis" pisca → operador clica
@@ -9,7 +9,7 @@
  * 4. Mês correspondente pisca → operador clica para ver detalhes
  * 5. Ao visualizar, o alerta é marcado como lido
  * 
- * Operadores que veem alertas: Guilherme, Flávio, Thiago, Thalita
+ * Operadores que veem alertas: Guilherme, Flávio, Thalita
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
@@ -17,7 +17,7 @@ import { trpc } from "@/lib/trpc";
 import { useOperator } from "./OperatorContext";
 
 /** Operadores que devem receber alertas de desconto */
-const DISCOUNT_ALERT_OPERATORS = ["Guilherme", "Flávio", "Thiago", "Thalita"];
+const DISCOUNT_ALERT_OPERATORS = ["Guilherme", "Flávio", "Thalita"];
 
 interface DiscountAlert {
   id: number;

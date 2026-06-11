@@ -145,8 +145,8 @@ describe("E-commerce Router - Access Control", () => {
   });
 
   it("should define ECOMMERCE_ALLOWED_OPERATORS correctly", async () => {
-    // The allowed operators should be Pedro, Flavio, Guilherme, Thiago, Thalita
-    const allowedNames = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
+    // The allowed operators should be Pedro, Flavio, Guilherme, Thalita, Thalita
+    const allowedNames = ["Pedro", "Flavio", "Guilherme", "Thalita", "Thalita"];
     // Verify by testing that non-allowed operators are denied
     const deniedNames = ["Fernando", "Maria", "Bruno", "Erica"];
     
@@ -240,7 +240,7 @@ describe("E-commerce Router - Credit Card Procedures", () => {
   });
 
   it("credit card access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
-    const allowed = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
+    const allowed = ["Pedro", "Flavio", "Guilherme", "Thalita", "Thalita"];
     const denied = ["Fernando", "Bruno", "Maria"];
     for (const name of allowed) {
       expect(allowed.includes(name)).toBe(true);
@@ -290,7 +290,7 @@ describe("E-commerce Router - Attachment (Clips) Procedures", () => {
   });
 
   it("attachment access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
-    const allowed = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
+    const allowed = ["Pedro", "Flavio", "Guilherme", "Thalita", "Thalita"];
     const denied = ["Fernando", "Bruno", "Maria"];
     for (const name of allowed) {
       expect(allowed.includes(name)).toBe(true);
@@ -385,7 +385,7 @@ describe("E-commerce Router - Future Bill Attachment Procedures", () => {
   });
 
   it("future bill access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
-    const allowed = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
+    const allowed = ["Pedro", "Flavio", "Guilherme", "Thalita", "Thalita"];
     const denied = ["Fernando", "Bruno", "Maria"];
     for (const name of allowed) {
       expect(allowed.includes(name)).toBe(true);
@@ -421,7 +421,7 @@ describe("E-commerce Router - Mark Future Bill As Paid", () => {
 
   it("markFutureBillAsPaid access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
     // The mutation uses the same ECOMMERCE_ALLOWED_OPERATORS check
-    const allowed = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
+    const allowed = ["Pedro", "Flavio", "Guilherme", "Thalita", "Thalita"];
     const denied = ["Fernando", "Bruno", "Maria"];
     for (const name of allowed) {
       expect(allowed.includes(name)).toBe(true);

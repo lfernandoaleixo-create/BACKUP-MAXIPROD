@@ -54,7 +54,7 @@ describe("Sicoob Limite - Troca de Títulos", () => {
   it("updateSicoobLimite rejects non-Flavio operators", async () => {
     const result = await trpcMutation("settings.updateSicoobLimite", {
       valor: 50000,
-      operatorName: "Thiago",
+      operatorName: "Thalita",
     });
     expect(result).toBeDefined();
     expect(result.message || result.data?.message || JSON.stringify(result)).toContain("Flávio");

@@ -59,7 +59,7 @@ describe("Step Overrides (upsertStepOverride / getStepOverrides)", () => {
       step: 1,
       descricao: "Texto customizado para dia 1",
       motivo: "Motivo customizado",
-      operatorName: "Thiago",
+      operatorName: "Thalita",
     });
     expect(result.success).toBe(true);
   });
@@ -109,7 +109,7 @@ describe("Step Overrides (upsertStepOverride / getStepOverrides)", () => {
       receivableId: testReceivableId,
       step: 5,
       dataOverride: "2026-05-15",
-      operatorName: "Thiago",
+      operatorName: "Thalita",
     });
 
     const overrides = await caller.financial.getStepOverrides({ receivableId: testReceivableId });

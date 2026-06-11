@@ -71,7 +71,7 @@ describe("editDailyAction + getActionEditHistory", () => {
         actionDate: "2026-03-02",
         actionType: "ligacao",
         notes: "Ligou para o cliente, sem atender",
-        operatorName: "Thiago",
+        operatorName: "Thalita",
         isAutomatic: false,
       } as any).$returningId();
       testActionId = action.id;
@@ -108,7 +108,7 @@ describe("editDailyAction + getActionEditHistory", () => {
     const result = await caller.financial.editDailyAction({
       dailyActionId: testActionId,
       actionType: "whatsapp",
-      editedBy: "Thiago",
+      editedBy: "Thalita",
     });
 
     expect(result.success).toBe(true);
@@ -125,7 +125,7 @@ describe("editDailyAction + getActionEditHistory", () => {
     const result = await caller.financial.editDailyAction({
       dailyActionId: testActionId,
       notes: "Na verdade mandou WhatsApp, cliente respondeu",
-      editedBy: "Thiago",
+      editedBy: "Thalita",
     });
 
     expect(result.success).toBe(true);
@@ -154,7 +154,7 @@ describe("editDailyAction + getActionEditHistory", () => {
       dailyActionId: testActionId,
       actionType: "email", // same as current
       notes: "Enviou email formal de cobrança", // same as current
-      editedBy: "Thiago",
+      editedBy: "Thalita",
     });
 
     expect(result.success).toBe(true);
@@ -165,7 +165,7 @@ describe("editDailyAction + getActionEditHistory", () => {
     const result = await caller.financial.editDailyAction({
       dailyActionId: 999999,
       actionType: "whatsapp",
-      editedBy: "Thiago",
+      editedBy: "Thalita",
     });
 
     expect(result.success).toBe(false);
@@ -194,7 +194,7 @@ describe("editDailyAction + getActionEditHistory", () => {
     const result = await caller.financial.editDailyAction({
       dailyActionId: testActionId,
       operatorName: "Guilherme",
-      editedBy: "Thiago",
+      editedBy: "Thalita",
     });
 
     expect(result.success).toBe(true);
@@ -225,7 +225,7 @@ describe("editDailyAction + getActionEditHistory", () => {
     // Verify the ligacao -> whatsapp edit exists
     const firstEdit = typeEdits.find((e: any) => e.oldValue === "ligacao" && e.newValue === "whatsapp");
     expect(firstEdit).toBeDefined();
-    expect(firstEdit!.editedBy).toBe("Thiago");
+    expect(firstEdit!.editedBy).toBe("Thalita");
 
     // Verify the whatsapp -> email edit exists
     const secondEdit = typeEdits.find((e: any) => e.oldValue === "whatsapp" && e.newValue === "email");

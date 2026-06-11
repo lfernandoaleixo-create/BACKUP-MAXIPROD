@@ -91,7 +91,7 @@ describe("Manual Ticks - 100% Manual (sem restrições)", () => {
       receivableId: testRecId,
       step: 1,
       ticked: true,
-      operatorName: "Thiago",
+      operatorName: "Thalita",
     });
     expect(result.success).toBe(true);
 
@@ -99,7 +99,7 @@ describe("Manual Ticks - 100% Manual (sem restrições)", () => {
     expect(ticks.ticks.length).toBe(1);
     expect(ticks.ticks[0].step).toBe(1);
     expect(ticks.ticks[0].ticked).toBe(true);
-    expect(ticks.ticks[0].tickedBy).toBe("Thiago");
+    expect(ticks.ticks[0].tickedBy).toBe("Thalita");
     expect(ticks.ticks[0].tickStatus).toBe("green");
   });
 
@@ -128,7 +128,7 @@ describe("Manual Ticks - 100% Manual (sem restrições)", () => {
       receivableId: testRecId,
       step: 3,
       ticked: true,
-      operatorName: "Thiago",
+      operatorName: "Thalita",
       tickStatus: "red",
     });
     expect(result.success).toBe(true);

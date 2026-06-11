@@ -14,7 +14,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 /* Operadores que NÃO veem os 3 cards de divisão (Total para Divisão, Disponível, à Receber) */
 const HIDE_DIVISION_OPERATORS = ["Fernando", "Bruno", "Gilson"];
 /* Operadores que veem TODOS os cards */
-// const FULL_VIEW_OPERATORS = ["Flavio", "Thiago", "Guilherme"];
+// const FULL_VIEW_OPERATORS = ["Flavio", "Thalita", "Guilherme"];
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {

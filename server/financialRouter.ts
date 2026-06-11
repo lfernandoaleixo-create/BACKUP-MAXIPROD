@@ -2753,7 +2753,7 @@ export const financialRouter = router({
 
   /**
    * Set bank reconciliation for today.
-   * Requires password "Thiago" to mark as reconciled.
+   * Requires password "Thalita" to mark as reconciled.
    */
   setBankReconciliation: publicProcedure
     .input(z.object({
@@ -2761,9 +2761,9 @@ export const financialRouter = router({
       reconciled: z.boolean(),
     }))
     .mutation(async ({ input }) => {
-      // Validate password - allow Thiago or Thalita
+      // Validate password - allow Thalita
       const validPasswords: Record<string, string> = {
-        "Thiago": "Thiago",
+        
         "Thalita": "Thalita",
       };
       const reconciledBy = validPasswords[input.password];
@@ -2807,7 +2807,7 @@ export const financialRouter = router({
           const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
           await notifyOwner({
             title: `\u2705 Concilia\u00e7\u00e3o banc\u00e1ria pronta!`,
-            content: `Thiago marcou a concilia\u00e7\u00e3o banc\u00e1ria do dia ${today} como conclu\u00edda.`,
+            content: `Thalita marcou a concilia\u00e7\u00e3o banc\u00e1ria do dia ${today} como conclu\u00edda.`,
           });
           console.log(`[Reconciliation] Push notification sent: concilia\u00e7\u00e3o ${today} marcada como pronta`);
         } catch (e) {
@@ -4003,7 +4003,7 @@ export const financialRouter = router({
       actionTypes: z.array(z.enum(["ligacao", "whatsapp", "email", "visita", "outro"])).min(1),
       operatorName: z.string(),
       notes: z.string().optional(),
-      actionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD - permite registro retroativo (Guilherme/Thiago)
+      actionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD - permite registro retroativo (Guilherme/Thalita)
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -4323,7 +4323,7 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
   Sr(a). ${vendedor}
 
 ──────────────────────────────────────────────────────────
-            RESPONSÁVEL PELA COBRANÇA: Thiago
+            RESPONSÁVEL PELA COBRANÇA: Thalita
 ──────────────────────────────────────────────────────────
   Responsável pelas ações de cobrança nos dias 1, 3 e 5
 
@@ -4391,7 +4391,7 @@ ${acoesTexto}
         const pdfBuffer = await generateCollectionPdf({
           cliente: rec.cliente || "Não identificado",
           vendedor,
-          responsavelCobranca: "Thiago",
+          responsavelCobranca: "Thalita",
           valorTitulo: valorAReceber,
           vencimentoData: vencStr,
           diasAtraso,
@@ -4451,7 +4451,7 @@ ${acoesTexto}
           await createNotification({
             type: "cobranca_documento",
             title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
-            message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as ações de cobrança foram realizadas por Thiago. Solicitamos que defina o próximo passo.`,
+            message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as ações de cobrança foram realizadas por Thalita. Solicitamos que defina o próximo passo.`,
             severity: "warning",
             metadata: {
               receivableId: input.receivableId,
@@ -4474,7 +4474,7 @@ ${acoesTexto}
         actionDate: todayStr,
         actionType: "outro",
         operatorName: "Sistema",
-        notes: `Documento para tomada de decisão gerado para vendedor ${vendedor} - cobranças realizadas por Thiago`,
+        notes: `Documento para tomada de decisão gerado para vendedor ${vendedor} - cobranças realizadas por Thalita`,
         isAutomatic: true,
       });
 
@@ -4681,7 +4681,7 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
   Sr(a). ${vendedor}
 
 ──────────────────────────────────────────────────────────
-            RESPONSÁVEL PELA COBRANÇA: Thiago
+            RESPONSÁVEL PELA COBRANÇA: Thalita
 ──────────────────────────────────────────────────────────
   Responsável pelas ações de cobrança nos dias 1, 3 e 5
 
@@ -4749,7 +4749,7 @@ ${acoesTexto}
                 const pdfBuffer = await generateCollectionPdf({
                   cliente: rec.cliente || "Não identificado",
                   vendedor,
-                  responsavelCobranca: "Thiago",
+                  responsavelCobranca: "Thalita",
                   valorTitulo: valorAReceber,
                   vencimentoData: vencStr,
                   diasAtraso: diasAtrasoRaw,
@@ -4787,7 +4787,7 @@ ${acoesTexto}
                 await createNotification({
                   type: "cobranca_documento",
                   title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
-                  message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtrasoRaw} dias em atraso. Cobranças realizadas por Thiago. Solicitamos que defina o próximo passo.`,
+                  message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtrasoRaw} dias em atraso. Cobranças realizadas por Thalita. Solicitamos que defina o próximo passo.`,
                   severity: "warning",
                   metadata: {
                     receivableId: rec.id,
@@ -4807,7 +4807,7 @@ ${acoesTexto}
         }
       }
 
-      // === NOTIFICAÇÕES DE COBRANÇA para Thiago, Flavio, Guilherme e Thalita ===
+      // === NOTIFICAÇÕES DE COBRANÇA para Thalita, Flavio e Guilherme ===
       // Alertar sobre títulos que precisam de cobrança hoje (regra 1,3,5 dias)
       const COBRANCA_RULE_START = "2026-04-16";
       const alertTitles: Array<{ cliente: string; diasAtraso: number; valor: number; receivableId: number }> = [];
@@ -4876,14 +4876,14 @@ ${acoesTexto}
           await createNotification({
             type: "cobranca_alerta",
             title: `\ud83d\udea8 COBRAN\u00c7A: ${alertTitles.length} título(s) precisam de a\u00e7\u00e3o hoje!`,
-            message: `Thiago, Flavio, Guilherme e Thalita: ${alertTitles.length} título(s) estão no dia de cobrança hoje (total: ${valorFormatted2}).\n\n${clientesList}${moreText}\n\nAcesse a aba Inadimplência para registrar as ações de cobrança.`,
+            message: `Thalita, Flavio e Guilherme: ${alertTitles.length} título(s) estão no dia de cobrança hoje (total: ${valorFormatted2}).\n\n${clientesList}${moreText}\n\nAcesse a aba Inadimplência para registrar as ações de cobrança.`,
             severity: "warning",
             metadata: {
               alertDate: todayStr,
               totalTitles: alertTitles.length,
               totalValor,
               titles: alertTitles.slice(0, 20),
-              destinatarios: ["Thiago", "Flavio", "Guilherme", "Thalita"],
+              destinatarios: ["Thalita", "Flavio", "Guilherme"],
             },
           });
           console.log(`[DailyJob] Cobranca alert created for ${alertTitles.length} titles`);
@@ -5618,7 +5618,7 @@ ${acoesTexto}
         valorTotal: String(input.valorTotal),
         titulosJson: input.titulosJson,
       });
-      // Criar alerta para Guilherme/Flávio/Thiago/Thalita
+      // Criar alerta para Guilherme/Flávio/Thalita
       await db!.insert(discountAlerts).values({
         createdBy: input.operatorName,
         empresa: input.empresa,
@@ -5866,7 +5866,7 @@ ${acoesTexto}
 
   /**
    * Toggle ticagem manual (tick/untick) — 100% MANUAL.
-   * Qualquer operador (Thiago, Guilherme, Flavio, Thalita) pode:
+   * Qualquer operador (Guilherme, Flavio, Thalita) pode:
    * - Ticar/desticar qualquer step, em qualquer ordem
    * - Escolher qualquer cor (green, red, blue)
    * - Ticar múltiplos steps no mesmo dia
@@ -6066,7 +6066,7 @@ ${acoesTexto}
    * Importar dados de cobrança de uma planilha XLSX.
    * Recebe os dados parseados no frontend (array de registros).
    * Vincula ao receivable por nome do cliente + vencimento + valor.
-   * Só Thiago/Guilherme/Thalita podem usar.
+   * Só Guilherme/Thalita podem usar.
    */
   importCobrancaSpreadsheet: publicProcedure
     .input(z.object({
@@ -6082,8 +6082,8 @@ ${acoesTexto}
     }))
     .mutation(async ({ input }) => {
       const opLower = input.operatorName.toLowerCase().trim();
-      if (opLower !== 'thiago' && opLower !== 'guilherme' && opLower !== 'fernando' && opLower !== 'thalita') {
-        throw new Error('Apenas Thiago, Guilherme, Fernando ou Thalita podem importar planilhas.');
+      if (opLower !== 'guilherme' && opLower !== 'fernando' && opLower !== 'thalita') {
+        throw new Error('Apenas Guilherme, Fernando ou Thalita podem importar planilhas.');
       }
 
       const db = await getDb();

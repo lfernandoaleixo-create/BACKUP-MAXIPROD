@@ -635,7 +635,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                   title="Indicadores Chave (KPIs)"
                   subtitle="Visão geral do desempenho da cobrança"
                   color="from-indigo-500 to-blue-600"
-                  tooltip="Estes indicadores resumem o desempenho geral do processo de cobrança. Cada card mostra um número-chave com explicação detalhada ao passar o mouse. Os dados são filtrados pelo período selecionado acima (quando aplicável). Apenas ações do operador Thiago são contabilizadas — Guilherme (gestor) é excluído de todas as métricas."
+                  tooltip="Estes indicadores resumem o desempenho geral do processo de cobrança. Cada card mostra um número-chave com explicação detalhada ao passar o mouse. Os dados são filtrados pelo período selecionado acima (quando aplicável). Apenas ações do operador Thalita são contabilizadas — Guilherme (gestor) é excluído de todas as métricas."
                 />
                 {expandedSections.kpis ? <ChevronUp className="w-5 h-5 text-slate-400 ml-auto" /> : <ChevronDown className="w-5 h-5 text-slate-400 ml-auto" />}
               </button>
@@ -672,7 +672,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                     value={formatNumber(totalActions)}
                     subValue="WhatsApp, e-mail, ligações"
                     color="purple"
-                    tooltip={`Total de ações de cobrança registradas pelo operador Thiago.\n\nInclui: mensagens de WhatsApp, e-mails enviados, ligações telefônicas e outros tipos de contato.\n\nGuilherme (gestor/supervisor) é EXCLUÍDO desta contagem — apenas ações do operador de cobrança contam.\n\nCada ação representa uma tentativa de contato com um cliente inadimplente.\n\nAtualmente: ${formatNumber(totalActions)} ações.`}
+                    tooltip={`Total de ações de cobrança registradas pelo operador Thalita.\n\nInclui: mensagens de WhatsApp, e-mails enviados, ligações telefônicas e outros tipos de contato.\n\nGuilherme (gestor/supervisor) é EXCLUÍDO desta contagem — apenas ações do operador de cobrança contam.\n\nCada ação representa uma tentativa de contato com um cliente inadimplente.\n\nAtualmente: ${formatNumber(totalActions)} ações.`}
                   />
                   <KpiCard
                     icon={Shield}
@@ -694,9 +694,9 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                     icon={AlertTriangle}
                     label="Falhas do Operador"
                     value={formatNumber(totalFalhas)}
-                    subValue={totalFalhas === 0 ? "Nenhuma falha manual do Thiago!" : "Tentativas sem sucesso pelo operador"}
+                    subValue={totalFalhas === 0 ? "Nenhuma falha manual da Thalita!" : "Tentativas sem sucesso pelo operador"}
                     color={totalFalhas === 0 ? "green" : "red"}
-                    tooltip={`Falhas MANUAIS do operador Thiago — quando ele marcou explicitamente que não conseguiu realizar o contato.\n\nIMPORTANTE: Falhas automáticas do sistema (auto_red) NÃO são contadas aqui. O sistema marca automaticamente como "falha" quando o prazo de um step expira, mas isso não é responsabilidade do operador.\n\nAtualmente existem 6 marcações auto_red do sistema no Step 3 (Ação 2), mas essas são IGNORADAS nesta métrica.\n\nApenas falhas que o Thiago marcou manualmente contam.\n\nAtualmente: ${formatNumber(totalFalhas)} falhas manuais.`}
+                    tooltip={`Falhas MANUAIS do operador Thalita — quando ele marcou explicitamente que não conseguiu realizar o contato.\n\nIMPORTANTE: Falhas automáticas do sistema (auto_red) NÃO são contadas aqui. O sistema marca automaticamente como "falha" quando o prazo de um step expira, mas isso não é responsabilidade do operador.\n\nAtualmente existem 6 marcações auto_red do sistema no Step 3 (Ação 2), mas essas são IGNORADAS nesta métrica.\n\nApenas falhas que a Thalita marcou manualmente contam.\n\nAtualmente: ${formatNumber(totalFalhas)} falhas manuais.`}
                   />
                   <KpiCard
                     icon={Zap}
@@ -712,7 +712,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                     value={`${eficiencia}%`}
                     subValue={`${resolvedExcSpecial} recuperações regulares / ${totalActions} ações (excl. Especiais)`}
                     color="blue"
-                    tooltip={`Eficiência do operador: quantas recuperações foram obtidas por ação realizada.\n\nFórmula: Recuperações de clientes regulares ÷ Total de ações × 100\n= ${resolvedExcSpecial} ÷ ${totalActions} × 100\n= ${eficiencia}%\n\nEXCLUI clientes com status "Especial s/ Cobrança" do numerador, pois esses clientes têm tratamento diferenciado e não são cobrados ativamente pelo operador.\n\nO denominador conta TODAS as ações do Thiago (WhatsApp, e-mail, ligação, outro).\n\nEsta métrica mede o retorno real do esforço de cobrança.`}
+                    tooltip={`Eficiência do operador: quantas recuperações foram obtidas por ação realizada.\n\nFórmula: Recuperações de clientes regulares ÷ Total de ações × 100\n= ${resolvedExcSpecial} ÷ ${totalActions} × 100\n= ${eficiencia}%\n\nEXCLUI clientes com status "Especial s/ Cobrança" do numerador, pois esses clientes têm tratamento diferenciado e não são cobrados ativamente pelo operador.\n\nO denominador conta TODAS as ações da Thalita (WhatsApp, e-mail, ligação, outro).\n\nEsta métrica mede o retorno real do esforço de cobrança.`}
                   />
                 </div>
               )}

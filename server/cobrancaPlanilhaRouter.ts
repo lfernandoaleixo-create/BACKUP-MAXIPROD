@@ -10,7 +10,7 @@ import { gql, normalizeVendedorName } from "./maxiprodGraphQL";
  * Reproduz a planilha Excel INADIMPLÊNCIA.xlsx no dashboard.
  * 
  * REGRA: NUNCA apagar registros. Dados manuais que não podem ser re-sincronizados.
- * Editável pelo Thiago e operadores com acesso financeiro.
+ * Editável pela Thalita e operadores com acesso financeiro.
  */
 
 // Normalizar nome removendo acentos para match correto
@@ -558,7 +558,7 @@ export const cobrancaPlanilhaRouter = router({
    * PRESERVA (NUNCA sobrescreve): status, tipo, observacoes, promessaPgto, primeiraCobranca,
    *           semAcao1, segundaCobranca, semAcao2, terceiraCobranca, semAcao3, acaoFinal, centroCustos
    * 
-   * REGRA CRÍTICA: O status e tipo que o Thiago/Thalita marcarem ficam FIXOS
+   * REGRA CRÍTICA: O status e tipo que o Thalita marcarem ficam FIXOS
    *               até eles mudarem manualmente. A sincronização NUNCA sobrescreve esses campos.
    */
   syncFromInadimplencia: publicProcedure
@@ -941,7 +941,7 @@ export const cobrancaPlanilhaRouter = router({
         };
         
         // REGRA CRÍTICA: NUNCA sobrescrever campos editados manualmente.
-        // O status e tipo que o Thiago/Thalita marcarem ficam FIXOS até eles mudarem manualmente.
+        // O status e tipo que o Thalita marcarem ficam FIXOS até eles mudarem manualmente.
         // Apenas preencher se ainda estiver vazio/null.
         if (!match.status || match.status === '') {
           updateData.status = inad.status;

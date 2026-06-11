@@ -277,7 +277,7 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       let statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
 
       // PROTEÇÃO: Herdar status manual e etapas de cobrança de registros existentes (ativos ou inativos) da mesma empresa
-      // Priorizar registros com status NÃO-Pendente (marcações manuais da Larissa/Thiago/Thalita)
+      // Priorizar registros com status NÃO-Pendente (marcações manuais da Larissa/Thalita)
       const existingOfSameEmpresa = allPlanilhaRecords.find(
         p => p.empresa === title.empresa && p.status && p.status !== 'Pendente'
       );

@@ -706,7 +706,7 @@ export const settingsRouter = router({
     if (!db) throw new Error("DB not available");
     const existing = await db.select().from(operators).limit(1);
     if (existing.length > 0) return { success: true, message: "Operators already exist" };
-    const names = ["Maria", "Erica", "Danubia", "Fernando", "Gilson", "Bruno", "Guilherme", "Flavio", "Larissa", "Brenda", "Thiago", "Thalita", "Juvenal", "Pedro", "Jordao", "Paula"];
+    const names = ["Maria", "Erica", "Danubia", "Fernando", "Gilson", "Bruno", "Guilherme", "Flavio", "Larissa", "Brenda", "Thalita", "Juvenal", "Pedro", "Jordao", "Paula"];
     for (const name of names) {
       await db.insert(operators).values({ name, password: "", accessEstoque: false, accessVendas: false, accessFaturamento: false, accessFinanceiro: false, accessConfiguracoes: false });
     }

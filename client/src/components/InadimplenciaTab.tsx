@@ -18,9 +18,9 @@ import CobrancaPlanilhaView from "@/components/CobrancaPlanilhaView";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
+const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
 // TEMPORARIAMENTE DESATIVADO - reativar quando Fernando pedir
-// const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio", "Bruno", "Gilson", "Thalita"];
+// const MANUAL_TICK_OPERATORS = ["Guilherme", "Flavio", "Bruno", "Gilson", "Thalita"];
 const MANUAL_TICK_OPERATORS: string[] = [];
 const TICK_LABELS = ["Ação 1", "Intervalo", "Ação 2", "Intervalo", "Ação 3", "Intervalo", "Decisão"];
 
@@ -588,13 +588,13 @@ export default function InadimplenciaTab() {
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
 
-  const COLLECTION_PASSWORD = "Thiago";
+  const COLLECTION_PASSWORD = "Thalita";
 
   function handlePhoneClick(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
     const opLower = operator?.name?.toLowerCase().trim();
     const isAdminOp = opLower === 'guilherme' || opLower === 'thiago' || opLower === 'thalita';
     if (isAdminOp) {
-      // Guilherme/Thiago/Thalita: sempre mostrar menu com opções (qualquer estado do telefone)
+      // Guilherme/Thalita: sempre mostrar menu com opções (qualquer estado do telefone)
       setPhoneMenuTarget({ titleId, phoneState, hasDocument, needsPlan });
       setPhoneMenuSelected(null);
       return;
@@ -631,7 +631,7 @@ export default function InadimplenciaTab() {
       setCollectionUnlocked(true);
       setPasswordDialogOpen(false);
       setPasswordInput("");
-      toast.success("Acesso liberado! Bem-vindo, Thiago.");
+      toast.success("Acesso liberado! Bem-vinda, Thalita.");
       // Executar a ação pendente
       if (pendingPhoneAction) {
         const { titleId, action } = pendingPhoneAction;
@@ -698,7 +698,7 @@ export default function InadimplenciaTab() {
     { enabled: receivableIds.length > 0 }
   );
 
-  // Buscar estado de mute de vibração (silenciado por Guilherme/Thiago/Thalita)
+  // Buscar estado de mute de vibração (silenciado por Guilherme/Thalita)
   const { data: phoneMuteMap, refetch: refetchPhoneMute } = trpc.financial.getPhoneMuteStatus.useQuery(
     { receivableIds },
     { enabled: receivableIds.length > 0 }
@@ -953,7 +953,7 @@ export default function InadimplenciaTab() {
   function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" | "muted" {
     if (title.businessDaysOverdue < 1) return "idle";
 
-    // Se a vibração foi manualmente silenciada por Guilherme/Thiago/Thalita
+    // Se a vibração foi manualmente silenciada por Guilherme/Thalita
     if (phoneMuteMap?.[title.id]) return "muted";
 
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
@@ -1673,7 +1673,7 @@ export default function InadimplenciaTab() {
         />
       )}
 
-      {/* Menu de opções do telefone para Guilherme/Thiago/Thalita */}
+      {/* Menu de opções do telefone para Guilherme/Thalita */}
       {phoneMenuTarget && (
         <Dialog open onOpenChange={() => { setPhoneMenuTarget(null); setPhoneMenuSelected(null); }}>
           <DialogContent className="sm:max-w-sm">
@@ -4488,7 +4488,7 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Filtrar por mês, nome ou operador... (ex: abril, Thiago)"
+                      placeholder="Filtrar por mês, nome ou operador... (ex: abril, Thalita)"
                       value={historyFilter}
                       onChange={(e) => setHistoryFilter(e.target.value)}
                       className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400"

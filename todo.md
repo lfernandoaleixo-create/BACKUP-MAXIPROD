@@ -4299,3 +4299,4 @@
 - [x] Criar seletor de porcentagem editável para Despesas de Liberação - Valor Vilela (salva no banco)
 - [x] Reorganizar aba Custo da Mercadoria com 3 sub-abas: 1) Custo da Mercadoria em Tempo Real, 2) POs (existente), 3) Configurações
 - [x] Trocar operador Marcos por Danubia (nome, senha, mesmos acessos) no banco e código
+- [x] Desativar senha Thiago e transferir todos os acessos/responsabilidades dele para Thalita

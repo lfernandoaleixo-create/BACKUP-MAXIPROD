@@ -1,7 +1,7 @@
 /**
  * Tests for push notification triggers:
  * 1. New sales detection during sync
- * 2. Reconciliation completion by Thiago
+ * 2. Reconciliation completion by Thalita
  */
 import { describe, it, expect } from "vitest";
 
@@ -99,7 +99,7 @@ describe("Sales Notification Logic", () => {
 
 describe("Reconciliation Notification Logic", () => {
   it("should trigger notification when reconciled is true", () => {
-    const input = { password: "Thiago", reconciled: true };
+    const input = { password: "Thalita", reconciled: true };
     
     // The condition for sending notification
     const shouldNotify = input.reconciled === true;
@@ -107,7 +107,7 @@ describe("Reconciliation Notification Logic", () => {
   });
 
   it("should NOT trigger notification when reconciled is false (unmarking)", () => {
-    const input = { password: "Thiago", reconciled: false };
+    const input = { password: "Thalita", reconciled: false };
     
     const shouldNotify = input.reconciled === true;
     expect(shouldNotify).toBe(false);
