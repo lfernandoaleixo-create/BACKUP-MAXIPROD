@@ -4365,3 +4365,7 @@
 
 ## Barra de pesquisa no Estoque do Vendedor (Gestão Comercial)
 - [x] Adicionar barra de pesquisa na aba Estoque de cada vendedor para buscar por nome ou código do produto
+
+## Rastreio de navio na view do vendedor (Gestão Comercial)
+- [x] Quando produto tiver PO com rastreio ativo (tracking_uuid/bl_number), mostrar botão de rastreio na coluna PO
+- [x] Ao clicar, abrir mapa do navio em tempo real (mesmo que aba Importação) - responsivo para tablet/celular

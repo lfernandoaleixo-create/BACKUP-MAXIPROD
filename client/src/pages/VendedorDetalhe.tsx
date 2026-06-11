@@ -33,6 +33,7 @@ import {
   RefreshCw,
   Construction,
   Ship,
+  Navigation,
   ShoppingCart,
   Calendar,
   Bookmark,
@@ -54,6 +55,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import SellerVisitReportTab from "@/components/SellerVisitReportTab";
+import { TrackingModal } from "@/components/TrackingModal";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "relatorio_vendas" | "vendas" | "configuracoes";
 
@@ -298,6 +300,11 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
   const [reservationItem, setReservationItem] = useState<DashboardItem | null>(null);
   const [reservationPO, setReservationPO] = useState<{ referencia: string; dataEntrega: string; quantidade: number } | null>(null);
   const [stockSearch, setStockSearch] = useState("");
+  const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
+  const [trackingBl, setTrackingBl] = useState<string | null>(null);
+
+  // Fetch tracking links for POs
+  const trackingQuery = trpc.dashboard.getPoTrackingLinks.useQuery(undefined, { staleTime: 60_000 });
 
   // Produtos ticados para este vendedor
   const productsQuery = trpc.sales.getSellerProducts.useQuery({ sellerId });
@@ -407,6 +414,8 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           allowReserve={false}
           onReserve={() => {}}
           reservationSummary={reservationSummary.data || {}}
+          trackingMap={trackingQuery.data?.trackingByPO || {}}
+          onTrack={(uuid, bl) => { if (uuid) setTrackingUuid(uuid); else if (bl) setTrackingBl(bl); }}
         />
       )}
 
@@ -421,6 +430,8 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           allowReserve={true}
           onReserve={(item, po) => { setReservationItem(item); setReservationPO(po || null); }}
           reservationSummary={reservationSummary.data || {}}
+          trackingMap={trackingQuery.data?.trackingByPO || {}}
+          onTrack={(uuid, bl) => { if (uuid) setTrackingUuid(uuid); else if (bl) setTrackingBl(bl); }}
         />
       )}
 
@@ -430,6 +441,15 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           reservationsQuery.refetch();
           reservationSummary.refetch();
         }} />
+      )}
+
+      {/* Modal de Rastreio */}
+      {(trackingUuid || trackingBl) && (
+        <TrackingModal
+          trackingUuid={trackingUuid}
+          blNumber={trackingBl}
+          onClose={() => { setTrackingUuid(null); setTrackingBl(null); }}
+        />
       )}
 
       {/* Modal de Reserva */}
@@ -464,6 +484,8 @@ function StockCategorySection({
   allowReserve,
   onReserve,
   reservationSummary,
+  trackingMap,
+  onTrack,
 }: {
   title: string;
   items: DashboardItem[];
@@ -473,6 +495,8 @@ function StockCategorySection({
   allowReserve: boolean;
   onReserve: (item: DashboardItem, po?: { referencia: string; dataEntrega: string; quantidade: number }) => void;
   reservationSummary: Record<string, number>;
+  trackingMap: Record<string, { blNumber: string | null; trackingUuid: string | null; supplierName: string | null }>;
+  onTrack: (uuid: string | null, bl: string | null) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
@@ -652,6 +676,24 @@ function StockCategorySection({
                               {lote.tipoPO}
                             </span>
                           )}
+                          {/* Botão Rastrear - se PO tem tracking */}
+                          {(() => {
+                            const poKey = (lote.referenciaPO || lote.numeroPedido || "").toUpperCase();
+                            const poMatch = poKey.match(/^PO0*(\d+)$/);
+                            const normalizedKey = poMatch ? `PO${poMatch[1]}` : poKey;
+                            const tracking = trackingMap[normalizedKey] || trackingMap[poKey];
+                            if (!tracking) return null;
+                            return (
+                              <button
+                                onClick={() => onTrack(tracking.trackingUuid, tracking.blNumber)}
+                                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 sm:py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-700 rounded text-blue-700 dark:text-blue-400 text-[10px] font-medium transition-colors cursor-pointer"
+                                title="Rastrear navio em tempo real"
+                              >
+                                <Navigation className="w-3 h-3" />
+                                <span>Rastrear</span>
+                              </button>
+                            );
+                          })()}
                           {allowReserve && (
                             <button
                               onClick={() => onReserve(item, {
