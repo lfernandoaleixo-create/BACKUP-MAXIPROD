@@ -1161,11 +1161,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       )}
 
       {/* Cards Fundo Perdido e Especial s/ Cobrança */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
         {/* Card Fundo Perdido */}
         <div className="rounded-xl border-2 border-stone-400 bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden transition-all hover:shadow-lg">
           <button
-            onClick={() => setShowFundoPerdido(!showFundoPerdido)}
+            onClick={(e) => { e.stopPropagation(); setShowFundoPerdido(prev => !prev); }}
             className="w-full p-4 text-left"
           >
             <div className="flex items-center justify-between">
@@ -1238,7 +1238,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         {/* Card Especial s/ Cobrança */}
         <div className="rounded-xl border-2 border-cyan-300 bg-gradient-to-br from-cyan-50 via-sky-50 to-cyan-50 overflow-hidden transition-all hover:shadow-lg">
           <button
-            onClick={() => setShowEspecialSemCobranca(!showEspecialSemCobranca)}
+            onClick={(e) => { e.stopPropagation(); setShowEspecialSemCobranca(prev => !prev); }}
             className="w-full p-4 text-left"
           >
             <div className="flex items-center justify-between">
