@@ -83,7 +83,8 @@ export const SUBGRUPO_LABELS: Record<SubgrupoKey, string> = {
  * 
  * Regras:
  * - PALITO → importacao_revenda (palitos de bambu = produtos importados para revenda)
- * - ESPETO, VARETA → industrializacao (varetas/espetos de madeira = produtos industrializados)
+ * - ESPETO → importacao_revenda (espetos de bambu = produtos importados para revenda)
+ * - VARETA → industrializacao (varetas de madeira = produtos industrializados)
  * - Mix → usa o grupo predominante (mais itens)
  * - Sem grupoDescricao → outros
  */
@@ -97,11 +98,11 @@ export function inferGrupoFromItems(grupoDescricoes: (string | null)[]): GrupoKe
   for (const gd of grupoDescricoes) {
     if (!gd) continue;
     const g = gd.toUpperCase().trim();
-    if (g === "PALITO") {
-      // PALITO de bambu = produto importado para revenda
+    if (g === "PALITO" || g === "ESPETO") {
+      // PALITO e ESPETO de bambu = produto importado para revenda
       revendaCount++;
-    } else if (g === "ESPETO" || g === "VARETA") {
-      // ESPETO/VARETA de madeira = produto industrializado
+    } else if (g === "VARETA") {
+      // VARETA de madeira = produto industrializado
       industrializacaoCount++;
     }
     // Matéria-prima items would be rare in AMOSTRA/BONIFICAÇÃO but handle anyway

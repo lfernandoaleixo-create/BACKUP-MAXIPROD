@@ -87,23 +87,23 @@ describe("grupoClassification", () => {
   });
 
   describe("inferGrupoFromItems", () => {
-    it("infers importacao_revenda from ESPETO items", () => {
+    it("infers importacao_revenda from ESPETO items (espeto de bambu = revenda)", () => {
       expect(inferGrupoFromItems(["ESPETO", "ESPETO"])).toBe("importacao_revenda");
     });
-    it("infers importacao_revenda from VARETA items", () => {
-      expect(inferGrupoFromItems(["VARETA"])).toBe("importacao_revenda");
+    it("infers industrializacao from VARETA items (vareta de madeira = industrializado)", () => {
+      expect(inferGrupoFromItems(["VARETA"])).toBe("industrializacao");
     });
-    it("infers industrializacao from PALITO items", () => {
-      expect(inferGrupoFromItems(["PALITO", "PALITO"])).toBe("industrializacao");
+    it("infers importacao_revenda from PALITO items (palito de bambu = revenda)", () => {
+      expect(inferGrupoFromItems(["PALITO", "PALITO"])).toBe("importacao_revenda");
     });
-    it("infers importacao_revenda when ESPETO + VARETA mixed", () => {
-      expect(inferGrupoFromItems(["ESPETO", "VARETA"])).toBe("importacao_revenda");
+    it("infers importacao_revenda when ESPETO + VARETA mixed (2 revenda vs 1 industria)", () => {
+      expect(inferGrupoFromItems(["ESPETO", "ESPETO", "VARETA"])).toBe("importacao_revenda");
     });
-    it("infers importacao_revenda when ESPETO > PALITO", () => {
+    it("infers importacao_revenda when ESPETO + PALITO (both revenda)", () => {
       expect(inferGrupoFromItems(["ESPETO", "ESPETO", "PALITO"])).toBe("importacao_revenda");
     });
-    it("infers industrializacao when PALITO > ESPETO", () => {
-      expect(inferGrupoFromItems(["PALITO", "PALITO", "ESPETO"])).toBe("industrializacao");
+    it("infers industrializacao when VARETA > ESPETO", () => {
+      expect(inferGrupoFromItems(["VARETA", "VARETA", "ESPETO"])).toBe("industrializacao");
     });
     it("returns outros for empty array", () => {
       expect(inferGrupoFromItems([])).toBe("outros");

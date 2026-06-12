@@ -4390,3 +4390,6 @@
 - [x] Sincronizar dados no scheduler para manter card atualizado automaticamente (roda a cada 5 min junto com syncCobrancaPlanilhaAuto)
 - [x] Proteger itens Fundo Perdido de serem desativados pelo sync normal de inadimplência
 - [x] Desativar registros antigos marcados manualmente (apenas os da conta 571 ficam ativos)
+
+## Correção filtro bonificações em todos os cards do Faturamento
+- [x] Corrigir filtro "Bonif. Industrializados" nos cards Autorizado a Faturar, Pedidos em Aberto, Aceite de Produção, Aguardando Autorização (estava invertido - ESPETO é bambu/revenda, VARETA é industrializado)
