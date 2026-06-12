@@ -1121,4 +1121,42 @@ export const importRouter = router({
     results.sort((a, b) => a.codigoItem.localeCompare(b.codigoItem, undefined, { numeric: true }));
     return results;
   }),
+
+  // ===== UPLOAD DOCUMENTO DA PO (CI ou Ordem de Pagamento) =====
+  uploadPoDocument: publicProcedure
+    .input(z.object({
+      poId: z.number(),
+      type: z.enum(['ci', 'ordemPagamento']), // 'ci' -> pdfUrl, 'ordemPagamento' -> pdfNotaCheiaUrl
+      fileBase64: z.string(), // base64-encoded file content
+      fileName: z.string(),
+      mimeType: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { storagePut } = await import("./storage");
+      const buffer = Buffer.from(input.fileBase64, 'base64');
+      const ext = input.fileName.split('.').pop() || 'pdf';
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const key = `po-docs/${input.poId}/${input.type}/${Date.now()}-${safeName}`;
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      // Update the PO record
+      const field = input.type === 'ci' ? 'pdfUrl' : 'pdfNotaCheiaUrl';
+      await db.update(importPos).set({ [field]: url }).where(eq(importPos.id, input.poId));
+      return { url, field };
+    }),
+
+  // ===== REMOVER DOCUMENTO DA PO =====
+  removePoDocument: publicProcedure
+    .input(z.object({
+      poId: z.number(),
+      type: z.enum(['ci', 'ordemPagamento']),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const field = input.type === 'ci' ? 'pdfUrl' : 'pdfNotaCheiaUrl';
+      await db.update(importPos).set({ [field]: null }).where(eq(importPos.id, input.poId));
+      return { success: true };
+    }),
 });

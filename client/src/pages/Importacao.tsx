@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -2284,6 +2284,11 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
       toast.success('PO criada!');
     },
   });
+  const uploadDocMut = trpc.import.uploadPoDocument.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+    },
+  });
   const deletePoMut = trpc.import.deletePo.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId });
@@ -2431,22 +2436,83 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
               </div>
             </div>
           )}
+          {/* DOCUMENTOS: Upload CI e Ordem de Pagamento */}
+          <div className="border-t border-amber-200 pt-3">
+            <p className="text-[10px] font-semibold text-slate-600 mb-2">📎 DOCUMENTOS (opcional)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[9px] text-slate-500 font-medium block mb-1">CI (Commercial Invoice)</label>
+                <label className="flex items-center gap-1.5 px-2 py-1.5 border border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors">
+                  <Upload className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-[10px] text-blue-600 truncate">{newPoLogistics._ciFileName || 'Selecionar arquivo...'}</span>
+                  <input type="file" className="hidden" accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png,.webp" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 16 * 1024 * 1024) { toast.error('Arquivo muito grande (máx 16MB)'); return; }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const base64 = (reader.result as string).split(',')[1];
+                      setNewPoLogistics(prev => ({ ...prev, _ciFileName: file.name, _ciBase64: base64, _ciMime: file.type }));
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+                {newPoLogistics._ciFileName && (
+                  <button onClick={() => setNewPoLogistics(prev => { const n = { ...prev }; delete n._ciFileName; delete n._ciBase64; delete n._ciMime; return n; })} className="text-[9px] text-red-500 hover:text-red-700 mt-0.5">✕ Remover</button>
+                )}
+              </div>
+              <div>
+                <label className="text-[9px] text-slate-500 font-medium block mb-1">Ordem de Pagamento</label>
+                <label className="flex items-center gap-1.5 px-2 py-1.5 border border-dashed border-emerald-300 rounded-lg cursor-pointer hover:bg-emerald-50 transition-colors">
+                  <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-[10px] text-emerald-600 truncate">{newPoLogistics._opFileName || 'Selecionar arquivo...'}</span>
+                  <input type="file" className="hidden" accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png,.webp" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 16 * 1024 * 1024) { toast.error('Arquivo muito grande (máx 16MB)'); return; }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const base64 = (reader.result as string).split(',')[1];
+                      setNewPoLogistics(prev => ({ ...prev, _opFileName: file.name, _opBase64: base64, _opMime: file.type }));
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+                {newPoLogistics._opFileName && (
+                  <button onClick={() => setNewPoLogistics(prev => { const n = { ...prev }; delete n._opFileName; delete n._opBase64; delete n._opMime; return n; })} className="text-[9px] text-red-500 hover:text-red-700 mt-0.5">✕ Remover</button>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="flex gap-2 justify-end pt-2 border-t border-amber-200">
             <button onClick={() => { setShowNewPo(false); setShowLogisticsFields(false); setNewPoLogistics({}); setNewPoName(''); }} className="px-3 py-1 text-slate-500 hover:text-red-500 text-xs">Cancelar</button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!newPoName.trim()) return toast.error('Nome obrigatório');
                 const payload: any = { supplierId, poNumber: newPoName.trim() };
                 if (newPoLogistics.containerName) payload.containerName = newPoLogistics.containerName;
                 for (const [key, value] of Object.entries(newPoLogistics)) {
-                  if (key !== 'containerName' && value && value.trim()) payload[key] = value.trim();
+                  if (key.startsWith('_') || key === 'containerName') continue;
+                  if (value && value.trim()) payload[key] = value.trim();
                 }
-                createPoMut.mutate(payload);
+                const result = await createPoMut.mutateAsync(payload);
+                // Upload documents if provided
+                if (newPoLogistics._ciBase64 && result?.id) {
+                  try {
+                    await uploadDocMut.mutateAsync({ poId: result.id, type: 'ci', fileBase64: newPoLogistics._ciBase64, fileName: newPoLogistics._ciFileName!, mimeType: newPoLogistics._ciMime! });
+                  } catch { toast.error('Erro ao enviar CI'); }
+                }
+                if (newPoLogistics._opBase64 && result?.id) {
+                  try {
+                    await uploadDocMut.mutateAsync({ poId: result.id, type: 'ordemPagamento', fileBase64: newPoLogistics._opBase64, fileName: newPoLogistics._opFileName!, mimeType: newPoLogistics._opMime! });
+                  } catch { toast.error('Erro ao enviar Ordem de Pagamento'); }
+                }
                 setShowLogisticsFields(false);
                 setNewPoLogistics({});
               }}
-              className="px-3 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
-            >Criar PO</button>
+              disabled={createPoMut.isPending || uploadDocMut.isPending}
+              className="px-3 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 disabled:opacity-50"
+            >{createPoMut.isPending || uploadDocMut.isPending ? 'Criando...' : 'Criar PO'}</button>
           </div>
         </div>
       )}

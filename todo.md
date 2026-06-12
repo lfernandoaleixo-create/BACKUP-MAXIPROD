@@ -4393,3 +4393,11 @@
 
 ## Correção filtro bonificações em todos os cards do Faturamento
 - [x] Corrigir filtro "Bonif. Industrializados" nos cards Autorizado a Faturar, Pedidos em Aberto, Aceite de Produção, Aguardando Autorização (estava invertido - ESPETO é bambu/revenda, VARETA é industrializado)
+
+## Upload de documentos no cadastro de PO
+- [x] Adicionar campos de upload de Ordem de Pagamento e CI no formulário de criação de PO (aba Importação)
+- [x] Aceitar qualquer tipo de arquivo (PDF, Excel, foto, etc.)
+- [x] Salvar arquivos no S3 e vincular URLs ao registro da PO no banco
+- [x] Endpoint uploadPoDocument (base64 -> S3 -> atualiza PO)
+- [x] Endpoint removePoDocument (limpa URL da PO)
+- [x] 5 testes passando (upload CI, upload OP, remove CI, remove OP, cleanup)
