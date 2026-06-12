@@ -192,6 +192,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   let deactivated = 0;
   const arIdsToResolve: number[] = [];
   for (const item of activePlanilha) {
+    // PROTEÇÃO: Nunca desativar itens com status "Fundo Perdido" ou "Especial s/ cobrança"
+    // Fundo Perdido vem de contas a PAGAR (conta 571), não de contas a receber
+    if (item.status === "Fundo Perdido" || item.status === "Especial s/ cobrança") continue;
     if (item.arId && !validOverdueArIds.has(item.arId)) {
       // The underlying title is no longer EMITIDO or no longer overdue → deactivate
       await db.update(cobrancaPlanilha)
@@ -649,5 +652,188 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
 
   const finalCount = await db.select({ id: cobrancaPlanilha.id }).from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
 
-  return { added, deactivated, total: finalCount.length };
+  // 8. Sync Fundo Perdido from Contas a Pagar (conta destino 571 = FUNDO PERDIDO 4.02.21.06.01, estado PAGO)
+  try {
+    await syncFundoPerdidoFromPayables();
+  } catch (fpErr: any) {
+    console.error(`[Auto-sync] Fundo Perdido sync failed: ${fpErr.message}`);
+  }
+
+  const finalCountAfterFP = await db.select({ id: cobrancaPlanilha.id }).from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
+
+  return { added, deactivated, total: finalCountAfterFP.length };
+}
+
+/**
+ * Sync Fundo Perdido titles from Maxiprod Contas a Pagar.
+ * Filters: estado = PAGO, conta de destino with codigoEstruturado starting with "4.02.21.06"
+ * (which is the FUNDO PERDIDO account 571 in Maxiprod).
+ * 
+ * These are titles that the company has written off as uncollectable losses.
+ * They appear in the Planilha de Cobrança with status "Fundo Perdido".
+ */
+async function syncFundoPerdidoFromPayables(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  // Fetch PAGO contas a pagar where referenteA contains "FUNDO PERDIDO"
+  // Note: The conta field returns null for these records in the GraphQL API,
+  // but the referenteA field always contains "FUNDO PERDIDO" in the description.
+  // This matches the Maxiprod UI filter: conta destino 571, estado PAGO.
+  let allFundoPerdido: any[] = [];
+  let skip = 0;
+  const take = 500;
+
+  while (true) {
+    const data = await gql<any>(`{
+      contaAPagar(
+        skip: ${skip}, take: ${take},
+        where: {
+          estado: { eq: PAGO },
+          referenteA: { contains: "FUNDO PERDIDO" }
+        }
+      ) {
+        totalCount
+        items {
+          id
+          valorOriginal
+          valorLiquido
+          valorPagoLiquido
+          vencimentoData
+          vencimentoOriginalData
+          emissaoData
+          liquidacaoData
+          referenteA
+          documentoVinculadoNumero
+          fornecedor { apelido nomeFantasia razaoSocial }
+          minhaEmpresaId
+        }
+      }
+    }`);
+
+    if (!data?.contaAPagar) break;
+    allFundoPerdido.push(...data.contaAPagar.items);
+    if (allFundoPerdido.length >= data.contaAPagar.totalCount) break;
+    skip += take;
+  }
+
+  if (allFundoPerdido.length === 0) {
+    console.log(`[Fundo Perdido] Nenhum título encontrado na conta 571 (FUNDO PERDIDO)`);
+    return;
+  }
+
+  console.log(`[Fundo Perdido] ${allFundoPerdido.length} títulos encontrados na conta FUNDO PERDIDO`);
+
+  // Get existing Fundo Perdido records to avoid duplicates
+  const existingFP = await db.select({ id: cobrancaPlanilha.id, descricao: cobrancaPlanilha.descricao, empresa: cobrancaPlanilha.empresa, documento: cobrancaPlanilha.documento, updatedBy: cobrancaPlanilha.updatedBy, ativo: cobrancaPlanilha.ativo })
+    .from(cobrancaPlanilha)
+    .where(eq(cobrancaPlanilha.status, 'Fundo Perdido'));
+
+  // Deactivate old manually-marked Fundo Perdido records (not from conta 571)
+  // Only records from "Auto-sync (Fundo Perdido - Conta 571)" should remain active
+  for (const rec of existingFP) {
+    if (rec.ativo && rec.updatedBy !== 'Auto-sync (Fundo Perdido - Conta 571)') {
+      await db.update(cobrancaPlanilha)
+        .set({ ativo: false, updatedBy: 'Desativado: Fundo Perdido agora vem apenas da conta 571' })
+        .where(eq(cobrancaPlanilha.id, rec.id));
+    }
+  }
+
+  // Re-fetch after deactivation to get updated ativo status
+  const existingFPAfter = await db.select({ id: cobrancaPlanilha.id, descricao: cobrancaPlanilha.descricao, empresa: cobrancaPlanilha.empresa, documento: cobrancaPlanilha.documento, updatedBy: cobrancaPlanilha.updatedBy, ativo: cobrancaPlanilha.ativo })
+    .from(cobrancaPlanilha)
+    .where(eq(cobrancaPlanilha.status, 'Fundo Perdido'));
+
+  // Build a set of existing records for dedup (by referenteA or documento+empresa)
+  // Include ALL Fundo Perdido records (active and inactive from conta 571) to avoid duplicates
+  const existingKeys = new Set<string>();
+  const inactiveRecords: Map<string, number> = new Map(); // key -> id (for reactivation)
+  for (const rec of existingFPAfter) {
+    // Use descricao (which stores referenteA) as key
+    if (rec.descricao) {
+      existingKeys.add(normalizeName(rec.descricao));
+      if (!rec.ativo) {
+        inactiveRecords.set(normalizeName(rec.descricao), rec.id);
+      }
+    }
+    // Also use empresa+documento combo
+    if (rec.empresa && rec.documento) {
+      const key = normalizeName(`${rec.empresa}|${rec.documento}`);
+      existingKeys.add(key);
+      if (!rec.ativo) {
+        inactiveRecords.set(key, rec.id);
+      }
+    }
+  }
+
+  let addedFP = 0;
+  for (const item of allFundoPerdido) {
+    const referenteA = (item.referenteA || "").trim();
+    // Use apelido or nomeFantasia (what user sees in Maxiprod) as primary, fallback to razaoSocial
+    const fornecedorNome = item.fornecedor?.apelido || item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || "";
+    const docNum = item.documentoVinculadoNumero || "";
+    const valor = Math.abs(item.valorPagoLiquido || item.valorLiquido || item.valorOriginal || 0);
+    const vencimento = (item.vencimentoData || item.vencimentoOriginalData || "").split("T")[0];
+
+    // Build empresa name from referenteA or fornecedor
+    // referenteA typically has format: "FUNDO PERDIDO - NFE 169 VENCIMENTO 08/10/2025"
+    // The fornecedor is the actual client name
+    const empresa = fornecedorNome;
+
+    // Build documento from referenteA or documentoVinculadoNumero
+    let documento = "";
+    if (referenteA) {
+      // Extract NFE number from referenteA (e.g., "FUNDO PERDIDO - NFE 169 VENCIMENTO...")
+      const nfeMatch = referenteA.match(/NFE?\s*(\d+)/i);
+      if (nfeMatch) documento = `NFE ${nfeMatch[1]}`;
+    }
+    if (!documento && docNum) documento = docNum;
+
+    // Dedup check - also reactivate inactive conta 571 records
+    const keyByRef = normalizeName(referenteA);
+    const keyByEmpDoc = normalizeName(`${empresa}|${documento}`);
+    if ((keyByRef && existingKeys.has(keyByRef)) || (empresa && documento && existingKeys.has(keyByEmpDoc))) {
+      // Check if this is an inactive record from conta 571 that should be reactivated
+      const inactiveId = inactiveRecords.get(keyByRef) || (empresa && documento ? inactiveRecords.get(keyByEmpDoc) : undefined);
+      if (inactiveId) {
+        await db.update(cobrancaPlanilha)
+          .set({ ativo: true, updatedBy: 'Auto-sync (Fundo Perdido - Conta 571)' })
+          .where(eq(cobrancaPlanilha.id, inactiveId));
+        addedFP++;
+      }
+      continue; // Already exists (active or just reactivated)
+    }
+
+    // Determine centro de custos from minhaEmpresaId
+    const empresaId = item.minhaEmpresaId;
+    let centroCustos: string | null = null;
+    // Map company ID to centro de custos name (from screenshot: "17 GRUPO FOX (5.09)" and "11 BAMBU (5.02)")
+    if (empresaId === 409300001619248) centroCustos = "PALITOS";
+    else if (empresaId === 409300001624530) centroCustos = "VARETAS";
+    else if (empresaId === 409300001630645) centroCustos = "BAMBU";
+    else if (empresaId === 409300001704502) centroCustos = "GRUPO FOX";
+
+    if (!empresa) continue; // Skip if no empresa name
+
+    await db.insert(cobrancaPlanilha).values({
+      empresa,
+      descricao: referenteA || `FUNDO PERDIDO - ${documento}`,
+      documento: documento || null,
+      valor: String(valor),
+      vencimento: vencimento || null,
+      centroCustos,
+      status: "Fundo Perdido",
+      ativo: true,
+      updatedBy: "Auto-sync (Fundo Perdido - Conta 571)",
+    });
+    addedFP++;
+    existingKeys.add(keyByRef);
+    if (empresa && documento) existingKeys.add(keyByEmpDoc);
+  }
+
+  if (addedFP > 0) {
+    console.log(`[Fundo Perdido] ${addedFP} novos títulos adicionados à planilha de cobrança`);
+  } else {
+    console.log(`[Fundo Perdido] Nenhum título novo (${existingFP.length} já existentes)`);
+  }
 }

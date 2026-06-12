@@ -4384,3 +4384,9 @@
 
 ## Fundo Perdido - Popular com dados reais do Maxiprod
 - [x] Inserir os 4 clientes do Fundo Perdido (conta destino 571, Contas a Pagar Maxiprod) no card da Planilha de Cobrança
+
+## Fundo Perdido - Puxar automaticamente via API Maxiprod
+- [x] Implementar busca automática de títulos Fundo Perdido via GraphQL Maxiprod (Contas a Pagar, referenteA contém "FUNDO PERDIDO", estado PAGO)
+- [x] Sincronizar dados no scheduler para manter card atualizado automaticamente (roda a cada 5 min junto com syncCobrancaPlanilhaAuto)
+- [x] Proteger itens Fundo Perdido de serem desativados pelo sync normal de inadimplência
+- [x] Desativar registros antigos marcados manualmente (apenas os da conta 571 ficam ativos)
