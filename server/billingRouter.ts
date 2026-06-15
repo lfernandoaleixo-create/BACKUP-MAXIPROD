@@ -1582,6 +1582,23 @@ export const billingRouter = router({
         // If permission doesn't exist in DB, allow by default (matches frontend hasGranularAccess behavior)
       }
 
+      // Identify who is making the change (operator name from password)
+      let operatorName: string | null = null;
+      if (opRows.length > 0) {
+        operatorName = opRows[0].name;
+      } else {
+        // Check if it's the admin password
+        const adminRow = await db.select().from(appSettings).where(eq(appSettings.key, "admin_password")).limit(1);
+        if (adminRow.length > 0 && adminRow[0].value === input.password) {
+          operatorName = "Admin";
+        }
+        // Check billing password
+        const billingRow = await db.select().from(appSettings).where(eq(appSettings.key, "billing_password")).limit(1);
+        if (!operatorName && billingRow.length > 0 && billingRow[0].value === input.password) {
+          operatorName = "Faturamento";
+        }
+      }
+
       const updateData = input.field === "pedidoColeta"
         ? { pedidoColeta: input.value }
         : { coletado: input.value };
@@ -1591,12 +1608,13 @@ export const billingRouter = router({
           pedido: input.pedido,
           pedidoColeta: input.field === "pedidoColeta" ? input.value : false,
           coletado: input.field === "coletado" ? input.value : false,
+          updatedBy: operatorName,
         });
       } catch (err: any) {
         const isDuplicate = err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate") || err?.cause?.message?.includes("Duplicate");
         if (isDuplicate) {
           await db.update(collectionStatus)
-            .set({ ...updateData, updatedAt: new Date() })
+            .set({ ...updateData, updatedBy: operatorName, updatedAt: new Date() })
             .where(eq(collectionStatus.pedido, input.pedido));
         } else {
           throw err;

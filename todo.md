@@ -4401,3 +4401,6 @@
 - [x] Endpoint uploadPoDocument (base64 -> S3 -> atualiza PO)
 - [x] Endpoint removePoDocument (limpa URL da PO)
 - [x] 5 testes passando (upload CI, upload OP, remove CI, remove OP, cleanup)
+
+## Registrar usuário nas marcações de coleta
+- [x] Salvar o nome do usuário (baseado na senha digitada) no campo updatedBy ao marcar Ped. Coleta ou Coletado
