@@ -1588,13 +1588,13 @@ export const billingRouter = router({
         operatorName = opRows[0].name;
       } else {
         // Check if it's the admin password
-        const adminRow = await db.select().from(appSettings).where(eq(appSettings.key, "admin_password")).limit(1);
-        if (adminRow.length > 0 && adminRow[0].value === input.password) {
+        const adminRow = await db.select().from(appSettings).where(eq(appSettings.settingKey, "admin_password")).limit(1);
+        if (adminRow.length > 0 && adminRow[0].settingValue === input.password) {
           operatorName = "Admin";
         }
         // Check billing password
-        const billingRow = await db.select().from(appSettings).where(eq(appSettings.key, "billing_password")).limit(1);
-        if (!operatorName && billingRow.length > 0 && billingRow[0].value === input.password) {
+        const billingRow = await db.select().from(appSettings).where(eq(appSettings.settingKey, "billing_password")).limit(1);
+        if (!operatorName && billingRow.length > 0 && billingRow[0].settingValue === input.password) {
           operatorName = "Faturamento";
         }
       }
