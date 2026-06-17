@@ -4410,3 +4410,4 @@
 - [x] Bug: saveCosts sobrescrevia Comissão Silvério e Frete Terrestre com valores originais em POs legacy - agora salva exatamente o que o usuário digitou
 - [x] Layout: coluna Diferença e outras colunas monetárias com whitespace-nowrap para R$ e valor ficarem sempre na mesma linha
 - [x] Bug: saveCosts convertia valores para USD mas banco armazena em BRL - agora converte de volta para BRL antes de salvar (Comissão Silvério, Frete Terrestre, DIFAL)
+- [x] Permitir editar nome/número da PO e nome do contêiner após cadastro

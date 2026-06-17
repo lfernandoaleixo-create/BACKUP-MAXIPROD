@@ -2296,6 +2296,16 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
       toast.success('PO excluída!');
     },
   });
+  const renamePoMut = trpc.import.renamePo.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+      toast.success('PO atualizada!');
+      setEditingPoId(null);
+    },
+  });
+  const [editingPoId, setEditingPoId] = useState<number | null>(null);
+  const [editPoNumber, setEditPoNumber] = useState('');
+  const [editContainerName, setEditContainerName] = useState('');
 
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
@@ -2526,10 +2536,51 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
               <div className="w-7 h-7 rounded bg-amber-50 flex items-center justify-center">
                 <Layers className="w-3.5 h-3.5 text-amber-600" />
               </div>
-              <div className="text-left">
-                <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
-                <p className="text-[10px] text-slate-400">{po.containerName || ''}</p>
-              </div>
+              {editingPoId === po.id ? (
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <input
+                    className="border border-blue-300 rounded px-2 py-0.5 text-xs font-medium w-24 bg-white"
+                    value={editPoNumber}
+                    onChange={e => setEditPoNumber(e.target.value)}
+                    placeholder="Nº PO"
+                    autoFocus
+                  />
+                  <input
+                    className="border border-slate-300 rounded px-2 py-0.5 text-[10px] w-40 bg-white"
+                    value={editContainerName}
+                    onChange={e => setEditContainerName(e.target.value)}
+                    placeholder="Nome do contêiner"
+                  />
+                  <button
+                    onClick={() => renamePoMut.mutate({ id: po.id, poNumber: editPoNumber.trim(), containerName: editContainerName.trim() })}
+                    className="p-1 text-green-600 hover:bg-green-50 rounded"
+                    title="Salvar"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setEditingPoId(null)}
+                    className="p-1 text-red-400 hover:bg-red-50 rounded"
+                    title="Cancelar"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="text-left flex items-center gap-1.5">
+                  <div>
+                    <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
+                    <p className="text-[10px] text-slate-400">{po.containerName || ''}</p>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingPoId(po.id); setEditPoNumber(po.poNumber || ''); setEditContainerName(po.containerName || ''); }}
+                    className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                    title="Editar nome da PO"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
 

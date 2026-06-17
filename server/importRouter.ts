@@ -939,6 +939,26 @@ export const importRouter = router({
       return { success: true };
     }),
 
+  // ===== RENOMEAR PO =====
+  renamePo: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      poNumber: z.string().optional(),
+      containerName: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { id, ...data } = input;
+      const updateData: Record<string, any> = {};
+      if (data.poNumber !== undefined) updateData.poNumber = data.poNumber || null;
+      if (data.containerName !== undefined) updateData.containerName = data.containerName || null;
+      if (Object.keys(updateData).length > 0) {
+        await db.update(importPos).set(updateData).where(eq(importPos.id, id));
+      }
+      return { success: true };
+    }),
+
   // ===== CÁLCULO DE IMPOSTOS =====
   calculateTaxes: publicProcedure
     .input(z.object({
