@@ -3143,11 +3143,11 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       pagamento1Remessa: String(remessa1Calculada > 0 ? remessa1Calculada.toFixed(2) : pag1) || null,
       pagamento2Remessa: pag2 || null,
       pagamento3Remessa: pag3 || null,
-      // Para POs antigas (planilha), preservar os valores originais em BRL do banco
-      freteTermestreRemessa: isLegacyPo ? (po.freteTermestreRemessa || null) : (freteTerrestreSP || null),
-      difalValor: isLegacyPo ? (po.difalValor || null) : (difalVal || null),
-      comissaoSilverio: isLegacyPo ? (po.comissaoSilverio || null) : (comSilverio || null),
-      despesasLiberacaoRemessa: isLegacyPo ? (po.despesasLiberacaoRemessa || null) : (despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : null),
+      // Sempre salvar o que o usuário digitou nos campos (sem sobrescrever)
+      freteTermestreRemessa: freteTerrestreSP || null,
+      difalValor: difalVal || null,
+      comissaoSilverio: comSilverio || null,
+      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : (po.despesasLiberacaoRemessa || null),
     });
   };
 

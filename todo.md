@@ -4407,3 +4407,4 @@
 - [x] Restaurar painel "Custos Logísticos & Informações" (Comissão Silvério, Frete Terrestre, DIFAL, Despesas de Liberação) na expansão das POs
 - [x] Mostrar seção Remessas + Custos Adicionais + Card Roxo em TODAS as POs (novas e antigas), não apenas nas que já têm dados preenchidos
 - [x] PoLogisticsPanel (Custos Logísticos & Informações) só aparece nas POs legacy de Guangzhou (com valorFator), não nas POs novas
+- [x] Bug: saveCosts sobrescrevia Comissão Silvério e Frete Terrestre com valores originais em POs legacy - agora salva exatamente o que o usuário digitou
