@@ -3136,6 +3136,15 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const remessa3 = Number(pag3 || 0);
   const remessa1Calculada = totalOrdemPagamento - remessa2 - remessa3;
 
+  // Helper: convert internal USD value to BRL for database storage
+  const toBrl = (usdVal: string) => {
+    if (!usdVal) return null;
+    const n = Number(usdVal);
+    if (isNaN(n) || n === 0) return null;
+    const rate = isLegacyInit ? legacyRate : exchangeRate;
+    return String((n * rate).toFixed(2));
+  };
+
   const saveCosts = () => {
     updateLogistics.mutate({
       id: po.id,
@@ -3143,11 +3152,11 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       pagamento1Remessa: String(remessa1Calculada > 0 ? remessa1Calculada.toFixed(2) : pag1) || null,
       pagamento2Remessa: pag2 || null,
       pagamento3Remessa: pag3 || null,
-      // Sempre salvar o que o usuário digitou nos campos (sem sobrescrever)
-      freteTermestreRemessa: freteTerrestreSP || null,
-      difalValor: difalVal || null,
-      comissaoSilverio: comSilverio || null,
-      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : (po.despesasLiberacaoRemessa || null),
+      // Converter de USD interno para BRL antes de salvar (banco armazena em BRL)
+      freteTermestreRemessa: toBrl(freteTerrestreSP),
+      difalValor: toBrl(difalVal),
+      comissaoSilverio: toBrl(comSilverio),
+      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(2)) : (po.despesasLiberacaoRemessa || null),
     });
   };
 

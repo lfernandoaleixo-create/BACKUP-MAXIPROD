@@ -4409,3 +4409,4 @@
 - [x] PoLogisticsPanel (Custos Logísticos & Informações) só aparece nas POs legacy de Guangzhou (com valorFator), não nas POs novas
 - [x] Bug: saveCosts sobrescrevia Comissão Silvério e Frete Terrestre com valores originais em POs legacy - agora salva exatamente o que o usuário digitou
 - [x] Layout: coluna Diferença e outras colunas monetárias com whitespace-nowrap para R$ e valor ficarem sempre na mesma linha
+- [x] Bug: saveCosts convertia valores para USD mas banco armazena em BRL - agora converte de volta para BRL antes de salvar (Comissão Silvério, Frete Terrestre, DIFAL)
