@@ -3698,8 +3698,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             </div>
           </div>
 
-          {/* Remessas + Custos - só mostra para POs que já têm dados logísticos preenchidos */}
-          {!!(po.pagamento1Remessa || po.pagamento2Remessa || po.pagamento3Remessa || po.totalCiRemessa || po.freteTermestreRemessa || po.comissaoSilverio || po.difalValor || po.despesasLiberacaoRemessa) && (<>
+          {/* Remessas + Custos Adicionais + Card Roxo (sempre visível) */}
+          <>
           <div className="bg-white border border-slate-200 rounded-lg p-3">
             <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Receipt className="w-3 h-3" /> Remessas de Pagamento
@@ -3913,7 +3913,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               Salvar Custos
             </button>
           </div>
-          </>)}
+          </>
         </div>
       )}
     </div>
