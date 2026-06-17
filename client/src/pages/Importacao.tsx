@@ -3481,7 +3481,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     )}
                   </td>
                   {/* Col 1: Valor Pago ao Fornecedor (sempre editável) */}
-                  <td className="px-2 py-2 text-center">
+                  <td className="px-2 py-2 text-center whitespace-nowrap">
                     {editingId === prod.id ? (
                       <div className="relative inline-flex items-center">
                         <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
@@ -3514,7 +3514,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     )}
                   </td>
                   {/* Col 2: Valor Pago na Ordem de Pagamento (sempre editável) */}
-                  <td className="px-2 py-2 text-center bg-blue-50/30">
+                  <td className="px-2 py-2 text-center bg-blue-50/30 whitespace-nowrap">
                     {editingId === prod.id ? (
                       <div className="relative inline-flex items-center">
                         <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
@@ -3547,9 +3547,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     )}
                   </td>
                   {/* Col 3: Diferença (automático) */}
-                  <td className="px-2 py-2 text-center bg-orange-50/30">
+                  <td className="px-2 py-2 text-center bg-orange-50/30 whitespace-nowrap">
                     <span className={`font-mono font-medium ${diferenca > 0 ? 'text-orange-600' : diferenca < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(diferenca * (isLegacyPo ? poExchangeRate : exchangeRate) * 100) / 100).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$\u00A0${(Math.round(diferenca * (isLegacyPo ? poExchangeRate : exchangeRate) * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 4: Quantidade de Caixas (sempre editável) */}
@@ -3598,7 +3598,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     </span>
                   </td>
                   {/* Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento */}
-                  <td className="px-2 py-2 text-center bg-indigo-50/30">
+                  <td className="px-2 py-2 text-center bg-indigo-50/30 whitespace-nowrap">
                     <span className="font-mono text-indigo-700 font-semibold">
                       {percProdutoNoTotal > 0 ? `${(Math.round(percProdutoNoTotal * 100) / 100).toFixed(2)} %` : '—'}
                     </span>
