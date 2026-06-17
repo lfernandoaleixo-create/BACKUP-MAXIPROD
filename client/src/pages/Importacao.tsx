@@ -2591,7 +2591,8 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
           </button>
           {expandedPo === po.id && (
             <div>
-              <PoLogisticsPanel po={po} currency={currency} exchangeRate={exchangeRate} />
+              {/* PoLogisticsPanel só para POs legacy (Guangzhou - têm valorFator preenchido) */}
+              {po.valorFator && <PoLogisticsPanel po={po} currency={currency} exchangeRate={exchangeRate} />}
               <PoProductsTable poId={po.id} po={po} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} onCollapse={() => setExpandedPo(null)} />
             </div>
           )}

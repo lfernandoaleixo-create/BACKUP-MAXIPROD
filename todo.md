@@ -4406,3 +4406,4 @@
 - [x] Salvar o nome do usuário (baseado na senha digitada) no campo updatedBy ao marcar Ped. Coleta ou Coletado
 - [x] Restaurar painel "Custos Logísticos & Informações" (Comissão Silvério, Frete Terrestre, DIFAL, Despesas de Liberação) na expansão das POs
 - [x] Mostrar seção Remessas + Custos Adicionais + Card Roxo em TODAS as POs (novas e antigas), não apenas nas que já têm dados preenchidos
+- [x] PoLogisticsPanel (Custos Logísticos & Informações) só aparece nas POs legacy de Guangzhou (com valorFator), não nas POs novas
