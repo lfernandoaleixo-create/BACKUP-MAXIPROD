@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { RastreioEmConjunto } from "@/components/RastreioEmConjunto";
 import { trpc } from "@/lib/trpc";
@@ -2316,6 +2316,12 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
       setEditingPoId(null);
     },
   });
+  const navStatusMut = trpc.import.updatePoNavigationStatus.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+      utils.import.getActiveContainers.invalidate();
+    },
+  });
   const [editingPoId, setEditingPoId] = useState<number | null>(null);
   const [editPoNumber, setEditPoNumber] = useState('');
   const [editContainerName, setEditContainerName] = useState('');
@@ -2643,6 +2649,39 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                   </a>
                 </div>
               )}
+              {/* Navigation Status Checkboxes */}
+              <div className="flex items-center gap-1.5 mr-1" onClick={(e) => e.stopPropagation()}>
+                <label className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-medium cursor-pointer transition-all ${
+                  po.navigationStatus === 'navegando' || !po.navigationStatus
+                    ? 'bg-blue-50 border-blue-300 text-blue-700'
+                    : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name={`nav-${po.id}`}
+                    checked={po.navigationStatus === 'navegando' || !po.navigationStatus}
+                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'navegando' })}
+                    className="sr-only"
+                  />
+                  <Ship className="w-3 h-3" />
+                  Navegando
+                </label>
+                <label className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-medium cursor-pointer transition-all ${
+                  po.navigationStatus === 'recebida'
+                    ? 'bg-green-50 border-green-300 text-green-700'
+                    : 'bg-white border-slate-200 text-slate-400 hover:border-green-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name={`nav-${po.id}`}
+                    checked={po.navigationStatus === 'recebida'}
+                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'recebida' })}
+                    className="sr-only"
+                  />
+                  <Anchor className="w-3 h-3" />
+                  Recebida
+                </label>
+              </div>
               <button
                 onClick={(e) => { e.stopPropagation(); if (confirm(`Excluir PO "${po.poNumber}" e todos os seus produtos?`)) deletePoMut.mutate({ id: po.id }); }}
                 className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded border border-red-200 transition-colors"

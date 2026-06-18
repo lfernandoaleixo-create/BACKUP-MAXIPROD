@@ -959,6 +959,21 @@ export const importRouter = router({
       return { success: true };
     }),
 
+  // ===== NAVIGATION STATUS =====
+  updatePoNavigationStatus: publicProcedure
+    .input(z.object({
+      poId: z.number(),
+      navigationStatus: z.enum(['navegando', 'recebida']),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importPos)
+        .set({ navigationStatus: input.navigationStatus })
+        .where(eq(importPos.id, input.poId));
+      return { success: true };
+    }),
+
   // ===== CÁLCULO DE IMPOSTOS =====
   calculateTaxes: publicProcedure
     .input(z.object({
@@ -1259,6 +1274,9 @@ export const importRouter = router({
       // Find matching PO for this supplier
       const supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
       const matchingPo = supplierPos.length > 0 ? supplierPos[0] : null;
+
+      // Skip containers whose PO is marked as 'recebida' (manually confirmed arrival)
+      if (matchingPo?.navigationStatus === 'recebida') continue;
 
       // Get cached tracking data
       const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';

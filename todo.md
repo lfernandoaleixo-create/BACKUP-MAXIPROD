@@ -4432,3 +4432,7 @@
 - [x] Revertido: manter TODOS os containers no mapa até confirmação manual de chegada (não filtrar por status)
 - [x] Mostrar produtos de cada PO nos cards do Rastreio em Conjunto (puxar da tabela purchase_order_items vinculado pelo campo referencia)
 - [x] Containers com status 'Entregue' aparecem no mapa parado em Santos (porto destino) com visual diferenciado (verde, ícone check, label 'Em Santos'), até confirmação manual
+- [x] Adicionar campo navigation_status ('navegando' | 'recebida') na tabela import_pos
+- [x] Criar procedimento tRPC para atualizar navigation_status de uma PO
+- [x] Adicionar checkboxes 'PO Recebida' e 'PO Navegando' ao lado de cada PO na aba Importação
+- [x] Filtrar containers no mapa: POs com status 'recebida' saem do rastreio em conjunto
