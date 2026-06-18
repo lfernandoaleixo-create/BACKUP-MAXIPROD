@@ -2,7 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems } from "../drizzle/schema";
-import { eq, asc, and, desc, like, sql, or, inArray } from "drizzle-orm";
+import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
 
@@ -1179,4 +1179,113 @@ export const importRouter = router({
       await db.update(importPos).set({ [field]: null }).where(eq(importPos.id, input.poId));
       return { success: true };
     }),
+
+  // ===== RASTREIO EM CONJUNTO - Containers ativos com dados de rastreamento =====
+  getActiveContainers: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    // Get all payments that have tracking info (blNumber or trackingUuid)
+    const paymentsWithTracking = await db.select().from(importPayments)
+      .where(or(
+        and(isNotNull(importPayments.blNumber), ne(importPayments.blNumber, '')),
+        and(isNotNull(importPayments.trackingUuid), ne(importPayments.trackingUuid, ''))
+      ));
+
+    if (paymentsWithTracking.length === 0) return [];
+
+    // Get all suppliers
+    const suppliers = await db.select().from(importSuppliers);
+    const supplierMap = new Map(suppliers.map(s => [s.id, s]));
+
+    // Get POs that are navigating (not arrived)
+    const allPos = await db.select().from(importPos)
+      .where(ne(importPos.status, 'arrived'));
+    const poMap = new Map(allPos.map(p => [p.id, p]));
+
+    // Get products for all active POs
+    const poIds = allPos.map(p => p.id);
+    let products: any[] = [];
+    if (poIds.length > 0) {
+      products = await db.select().from(importPoProducts)
+        .where(inArray(importPoProducts.poId, poIds));
+    }
+    const productsByPo = new Map<number, any[]>();
+    for (const prod of products) {
+      if (!productsByPo.has(prod.poId)) productsByPo.set(prod.poId, []);
+      productsByPo.get(prod.poId)!.push(prod);
+    }
+
+    // Get cached tracking data
+    const cachedTracking = await db.select().from(trackingCache);
+    const cacheByBl = new Map(cachedTracking.map(c => [c.blNumber, c]));
+
+    // Build result: group by unique container (blNumber or trackingUuid)
+    const containers: Array<{
+      id: number;
+      supplierName: string;
+      containerName: string | null;
+      poNumber: string;
+      pedido: string;
+      blNumber: string | null;
+      trackingUuid: string | null;
+      rastreio: string | null;
+      status: string;
+      products: Array<{ description: string; quantidade: number | null; valorUsd: string | null }>;
+      // Tracking cache data
+      vesselName: string | null;
+      origin: string | null;
+      destination: string | null;
+      etd: string | null;
+      eta: string | null;
+      progress: number | null;
+      vesselLat: string | null;
+      vesselLng: string | null;
+      trackingStatus: string | null;
+    }> = [];
+
+    for (const payment of paymentsWithTracking) {
+      const supplier = supplierMap.get(payment.supplierId);
+      if (!supplier) continue;
+
+      // Find matching PO for this supplier (use the most recent navigating one)
+      const supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
+      const matchingPo = supplierPos.length > 0 ? supplierPos[0] : null;
+
+      // Get cached tracking data
+      const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
+      const cached = blClean ? cacheByBl.get(blClean) : null;
+
+      // Get products from the matching PO
+      const poProducts = matchingPo ? (productsByPo.get(matchingPo.id) || []) : [];
+
+      containers.push({
+        id: payment.id,
+        supplierName: supplier.name,
+        containerName: matchingPo?.containerName || null,
+        poNumber: matchingPo?.poNumber || '',
+        pedido: payment.pedido,
+        blNumber: payment.blNumber || null,
+        trackingUuid: payment.trackingUuid || null,
+        rastreio: payment.rastreio || null,
+        status: payment.status,
+        products: poProducts.map((p: any) => ({
+          description: p.description,
+          quantidade: p.quantidade,
+          valorUsd: p.valorUsd,
+        })),
+        vesselName: cached?.vesselName || null,
+        origin: cached?.origin || null,
+        destination: cached?.destination || null,
+        etd: cached?.etd || null,
+        eta: cached?.eta || null,
+        progress: cached?.progress || null,
+        vesselLat: cached?.vesselLat || null,
+        vesselLng: cached?.vesselLng || null,
+        trackingStatus: cached?.status || null,
+      });
+    }
+
+    return containers;
+  }),
 });

@@ -4412,3 +4412,16 @@
 - [x] Bug: saveCosts convertia valores para USD mas banco armazena em BRL - agora converte de volta para BRL antes de salvar (Comissão Silvério, Frete Terrestre, DIFAL)
 - [x] Permitir editar nome/número da PO e nome do contêiner após cadastro
 - [x] Regra Johnson: excluir frete do valor de vendas para clientes Johnson (Egito e Brasil) - usar valor total dos produtos, não valor total do pedido
+- [x] Faturamento: quando observações do pedido mencionam quantidade de caixas, usar esse valor em vez do cálculo kg÷fator
+- [ ] Criar aba "Rastreio em Conjunto" na Importação com mapa mostrando todos os navios em trânsito, posição, % viagem, e card hover com detalhes (fornecedor, produtos, peso, volume)
+
+## Rastreio em Conjunto (18/06/2026)
+- [x] Criar procedimento tRPC getActiveContainers no importRouter (busca payments com blNumber ou trackingUuid, cruza com suppliers, POs e tracking_cache)
+- [x] Criar componente RastreioEmConjunto com mapa Google Maps mostrando todos os navios em trânsito simultaneamente
+- [x] Adicionar aba "Rastreio em Conjunto" na página Importação (terceira sub-tab com ícone Navigation)
+- [x] Marcadores de navio no mapa com cores diferentes por container, animação pulse, e label com nome do fornecedor + % progresso
+- [x] Hover card overlay mostrando: fornecedor, container, progresso, navio, ETA, status, produtos
+- [x] Lista de containers abaixo do mapa com cards clicáveis que centralizam o mapa na posição do navio
+- [x] Busca de dados live via fetchTracking (Logcomex) e fetchOneTracking (ONE Line) para cada container
+- [x] Rotas desenhadas no mapa como polylines coloridas
+- [x] Testes vitest para o procedimento getActiveContainers (4 testes passando)

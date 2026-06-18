@@ -12,10 +12,11 @@ import { useState } from "react";
 import TopNav from "@/components/TopNav";
 import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
+import { RastreioEmConjunto } from "@/components/RastreioEmConjunto";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-type SubTab = "pagamentos" | "custo";
+type SubTab = "pagamentos" | "custo" | "rastreio";
 
 export default function Importacao() {
   const [activeTab, setActiveTab] = useState<SubTab>("pagamentos");
@@ -60,6 +61,17 @@ export default function Importacao() {
             <Calculator className="w-4 h-4 shrink-0" />
             <span className="text-left leading-tight">Custo da Mercadoria</span>
           </button>
+          <button
+            onClick={() => setActiveTab("rastreio")}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+              activeTab === "rastreio"
+                ? "bg-white text-blue-700 shadow-sm"
+                : "text-slate-600 hover:text-slate-800 hover:bg-white/50"
+            }`}
+          >
+            <Navigation className="w-4 h-4 shrink-0" />
+            <span className="text-left leading-tight">Rastreio em Conjunto</span>
+          </button>
         </div>
       </div>
 
@@ -67,6 +79,7 @@ export default function Importacao() {
       <div className="max-w-[1600px] mx-auto px-3 sm:px-4">
         {activeTab === "pagamentos" && <PagamentosFornecedores />}
         {activeTab === "custo" && <CustoMercadoria />}
+        {activeTab === "rastreio" && <RastreioEmConjunto />}
       </div>
     </div>
   );
