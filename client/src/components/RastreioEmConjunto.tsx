@@ -15,6 +15,8 @@ import {
   AlertCircle,
   Globe,
   RefreshCw,
+  Anchor,
+  CheckCircle2,
 } from "lucide-react";
 
 interface ContainerData {
@@ -249,8 +251,12 @@ export function RastreioEmConjunto() {
       }
 
       // Add vessel marker (with offset if overlapping)
-      if (vesselPosition) {
-        const posKey = `${vesselPosition.lat.toFixed(1)},${vesselPosition.lng.toFixed(1)}`;
+      // For delivered containers, show at destination (Santos) with anchor icon
+      const isDelivered = container.status === 'Entregue';
+      const markerPosition = isDelivered && destPosition ? destPosition : vesselPosition;
+
+      if (markerPosition) {
+        const posKey = `${markerPosition.lat.toFixed(1)},${markerPosition.lng.toFixed(1)}`;
         const overlapCount = positionMap.get(posKey) || 0;
         positionMap.set(posKey, overlapCount + 1);
 
@@ -258,24 +264,41 @@ export function RastreioEmConjunto() {
         const offsetLat = overlapCount * 1.5;
         const offsetLng = overlapCount * 1.5;
         const adjustedPosition = {
-          lat: vesselPosition.lat + offsetLat,
-          lng: vesselPosition.lng + offsetLng,
+          lat: markerPosition.lat + offsetLat,
+          lng: markerPosition.lng + offsetLng,
         };
 
         const markerEl = document.createElement("div");
         markerEl.className = "vessel-marker-container";
         markerEl.style.cursor = "pointer";
-        markerEl.innerHTML = `
-          <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-            <div style="position:absolute;width:36px;height:36px;background:${color}33;border-radius:50%;"></div>
-            <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px ${color}88;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/></svg>
+
+        if (isDelivered) {
+          // Delivered: anchor icon, green color, 'Em Santos' label
+          markerEl.innerHTML = `
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
+              <div style="position:absolute;width:36px;height:36px;background:#16a34a33;border-radius:50%;"></div>
+              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px #16a34a88;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zm-4 2V9H5c-1.1 0-2 .9-2 2v10l4-4h6c1.1 0 2-.9 2-2z" fill="none" stroke="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              </div>
+              <div style="margin-top:4px;background:#16a34a;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:160px;overflow:hidden;text-overflow:ellipsis;">
+                ${container.supplierName} • Em Santos
+              </div>
             </div>
-            <div style="margin-top:4px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
-              ${container.supplierName} • ${progress || 0}%
+          `;
+        } else {
+          // In transit: ship icon with color
+          markerEl.innerHTML = `
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
+              <div style="position:absolute;width:36px;height:36px;background:${color}33;border-radius:50%;"></div>
+              <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px ${color}88;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/></svg>
+              </div>
+              <div style="margin-top:4px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
+                ${container.supplierName} • ${progress || 0}%
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        }
 
         // Add hover/click events
         markerEl.addEventListener("mouseenter", () => {
@@ -303,8 +326,8 @@ export function RastreioEmConjunto() {
         hasAnyPosition = true;
       }
 
-      // Add destination marker
-      if (destPosition) {
+      // Add destination marker (skip for delivered containers since vessel marker is already at dest)
+      if (destPosition && !isDelivered) {
         const destEl = document.createElement("div");
         destEl.style.cursor = "default";
         destEl.innerHTML = `
@@ -549,8 +572,11 @@ export function RastreioEmConjunto() {
               onClick={() => {
                 setSelectedContainer(prev => prev === container.id ? null : container.id);
                 // Pan map to this container's position
-                if (live?.vesselPosition && mapRef.current) {
-                  mapRef.current.panTo(live.vesselPosition);
+                const panPos = container.status === 'Entregue' && live?.destPosition
+                  ? live.destPosition
+                  : live?.vesselPosition;
+                if (panPos && mapRef.current) {
+                  mapRef.current.panTo(panPos);
                   mapRef.current.setZoom(5);
                 }
               }}
@@ -562,9 +588,15 @@ export function RastreioEmConjunto() {
                     {container.containerName || container.poNumber} • {container.pedido}
                   </p>
                 </div>
-                <div className={`${bgColors[index % bgColors.length]} ${textColors[index % textColors.length]} text-[10px] font-bold px-2 py-0.5 rounded-full`}>
-                  {live?.progress || container.progress || 0}%
-                </div>
+                {container.status === 'Entregue' ? (
+                  <div className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    <CheckCircle2 className="w-3 h-3" /> Em Santos
+                  </div>
+                ) : (
+                  <div className={`${bgColors[index % bgColors.length]} ${textColors[index % textColors.length]} text-[10px] font-bold px-2 py-0.5 rounded-full`}>
+                    {live?.progress || container.progress || 0}%
+                  </div>
+                )}
               </div>
 
               {/* Origin → Destination */}
@@ -577,8 +609,8 @@ export function RastreioEmConjunto() {
               {/* Mini progress bar */}
               <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-700"
-                  style={{ width: `${live?.progress || container.progress || 0}%` }}
+                  className={`h-full rounded-full transition-all duration-700 ${container.status === 'Entregue' ? 'bg-green-500' : 'bg-gradient-to-r from-indigo-500 to-cyan-400'}`}
+                  style={{ width: `${container.status === 'Entregue' ? 100 : (live?.progress || container.progress || 0)}%` }}
                 />
               </div>
 
