@@ -4430,3 +4430,4 @@
 - [x] Adicionar marcadores de origem (porto de partida) para cada container no mapa
 - [x] Fix: Cor roxa/indigo trocada por laranja (#ff6b35) para não confundir com o mar
 - [x] Revertido: manter TODOS os containers no mapa até confirmação manual de chegada (não filtrar por status)
+- [x] Mostrar produtos de cada PO nos cards do Rastreio em Conjunto (puxar da tabela purchase_order_items vinculado pelo campo referencia)

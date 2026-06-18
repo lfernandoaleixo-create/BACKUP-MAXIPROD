@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems } from "../drizzle/schema";
+import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems, purchaseOrderItems } from "../drizzle/schema";
 import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
@@ -1199,22 +1199,29 @@ export const importRouter = router({
     const suppliers = await db.select().from(importSuppliers);
     const supplierMap = new Map(suppliers.map(s => [s.id, s]));
 
-    // Get POs that are navigating (not arrived)
-    const allPos = await db.select().from(importPos)
-      .where(ne(importPos.status, 'arrived'));
+    // Get POs for matching (include all, not just navigating)
+    const allPos = await db.select().from(importPos);
     const poMap = new Map(allPos.map(p => [p.id, p]));
 
-    // Get products for all active POs
-    const poIds = allPos.map(p => p.id);
-    let products: any[] = [];
-    if (poIds.length > 0) {
-      products = await db.select().from(importPoProducts)
-        .where(inArray(importPoProducts.poId, poIds));
+    // Get purchase order items from stock module (purchase_order_items)
+    // These are linked via referencia field containing the pedido number
+    const pedidos = paymentsWithTracking.map(p => p.pedido).filter(Boolean);
+    let purchaseProducts: any[] = [];
+    if (pedidos.length > 0) {
+      purchaseProducts = await db.select().from(purchaseOrderItems)
+        .where(or(...pedidos.map(pedido => like(purchaseOrderItems.referencia, `%${pedido}%`))));
     }
-    const productsByPo = new Map<number, any[]>();
-    for (const prod of products) {
-      if (!productsByPo.has(prod.poId)) productsByPo.set(prod.poId, []);
-      productsByPo.get(prod.poId)!.push(prod);
+    // Group purchase products by pedido
+    const productsByPedido = new Map<string, any[]>();
+    for (const prod of purchaseProducts) {
+      const ref = prod.referencia || '';
+      for (const pedido of pedidos) {
+        if (ref.includes(pedido)) {
+          if (!productsByPedido.has(pedido)) productsByPedido.set(pedido, []);
+          productsByPedido.get(pedido)!.push(prod);
+          break;
+        }
+      }
     }
 
     // Get cached tracking data
@@ -1249,7 +1256,7 @@ export const importRouter = router({
       const supplier = supplierMap.get(payment.supplierId);
       if (!supplier) continue;
 
-      // Find matching PO for this supplier (use the most recent navigating one)
+      // Find matching PO for this supplier
       const supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
       const matchingPo = supplierPos.length > 0 ? supplierPos[0] : null;
 
@@ -1257,8 +1264,8 @@ export const importRouter = router({
       const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
       const cached = blClean ? cacheByBl.get(blClean) : null;
 
-      // Get products from the matching PO
-      const poProducts = matchingPo ? (productsByPo.get(matchingPo.id) || []) : [];
+      // Get products from purchase_order_items (stock module)
+      const poProducts = productsByPedido.get(payment.pedido) || [];
 
       containers.push({
         id: payment.id,
@@ -1271,9 +1278,9 @@ export const importRouter = router({
         rastreio: payment.rastreio || null,
         status: payment.status,
         products: poProducts.map((p: any) => ({
-          description: p.description,
-          quantidade: p.quantidade,
-          valorUsd: p.valorUsd,
+          description: p.descricao || p.description || '',
+          quantidade: p.quantidade ? parseFloat(p.quantidade) : null,
+          valorUsd: p.valorTotal || p.valorUsd || null,
         })),
         vesselName: cached?.vesselName || null,
         origin: cached?.origin || null,

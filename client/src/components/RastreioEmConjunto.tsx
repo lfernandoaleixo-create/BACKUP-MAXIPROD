@@ -598,6 +598,32 @@ export function RastreioEmConjunto() {
                   {live.currentStatus}
                 </div>
               )}
+
+              {/* Products list */}
+              {container.products && container.products.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Package className="w-3 h-3 text-slate-400" />
+                    <span className="text-[9px] font-semibold text-slate-500 uppercase">
+                      {container.products.length} {container.products.length === 1 ? 'produto' : 'produtos'}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                    {container.products.map((prod, pIdx) => (
+                      <div key={pIdx} className="flex items-center justify-between text-[9px]">
+                        <span className="text-slate-600 truncate flex-1 mr-2" title={prod.description}>
+                          {prod.description}
+                        </span>
+                        {prod.quantidade && (
+                          <span className="text-slate-800 font-semibold whitespace-nowrap">
+                            {Number(prod.quantidade).toLocaleString('pt-BR')} cx
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
