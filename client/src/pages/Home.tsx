@@ -1971,22 +1971,19 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
 
       {/* Rastreio em Conjunto Modal */}
       {showRastreioModal && (
-        <Dialog open={showRastreioModal} onOpenChange={setShowRastreioModal}>
-          <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] max-h-[95vh] overflow-y-auto p-0">
-            <DialogHeader className="px-6 pt-5 pb-0">
-              <DialogTitle className="flex items-center gap-2 text-lg">
-                <Waves className="w-5 h-5 text-cyan-600" />
-                Rastreio em Conjunto
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-500">
-                Acompanhamento de todos os navios em trânsito com mapa e detalhes
-              </DialogDescription>
-            </DialogHeader>
-            <div className="px-2 pb-4">
-              <RastreioEmConjunto />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="fixed inset-0 z-[9999] bg-white dark:bg-slate-900 overflow-y-auto">
+          {/* Close button */}
+          <button
+            onClick={() => setShowRastreioModal(false)}
+            className="fixed top-4 right-4 z-[10000] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-full p-2 shadow-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+          >
+            <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+          </button>
+          {/* Full-screen RastreioEmConjunto */}
+          <div className="w-full h-full">
+            <RastreioEmConjunto />
+          </div>
+        </div>
       )}
 
       {/* Tracking Modal */}
