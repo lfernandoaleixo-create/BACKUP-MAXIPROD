@@ -1789,12 +1789,9 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
       {/* Header - Clickable to expand/collapse */}
-      <button
-        onClick={() => { setIsListOpen(!isListOpen); if (isListOpen) setExpandedPO(null); }}
-        className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-4 border-b border-slate-100 dark:border-slate-700 text-left hover:from-blue-100/60 hover:to-indigo-100/60 transition-colors cursor-pointer"
-      >
+      <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-4 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { setIsListOpen(!isListOpen); if (isListOpen) setExpandedPO(null); }}>
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <Ship className="w-5 h-5 text-blue-600" />
             </div>
@@ -1805,29 +1802,28 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="text-right">
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Rastreio em Conjunto button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowRastreioModal(true); }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-[10px] md:text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Waves className="w-3.5 h-3.5" />
+              Rastreio em Conjunto
+            </button>
+            <div className="text-right cursor-pointer" onClick={() => { setIsListOpen(!isListOpen); if (isListOpen) setExpandedPO(null); }}>
               <p className="text-lg md:text-2xl font-extrabold text-blue-600 whitespace-nowrap">{formatNumber(totalPOCx, true)} <span className="text-xs md:text-base">cx</span></p>
               <p className="text-[10px] md:text-xs text-slate-400">{poSummaries.length} embarques</p>
             </div>
-            {isListOpen ? (
-              <ChevronUp className="w-5 h-5 text-blue-400" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-blue-400" />
-            )}
+            <div className="cursor-pointer" onClick={() => { setIsListOpen(!isListOpen); if (isListOpen) setExpandedPO(null); }}>
+              {isListOpen ? (
+                <ChevronUp className="w-5 h-5 text-blue-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-blue-400" />
+              )}
+            </div>
           </div>
         </div>
-      </button>
-
-      {/* Rastreio em Conjunto button */}
-      <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-        <button
-          onClick={() => setShowRastreioModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
-        >
-          <Waves className="w-4 h-4" />
-          Rastreio em Conjunto
-        </button>
       </div>
 
       {/* PO List - Collapsible */}
@@ -1976,7 +1972,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
       {/* Rastreio em Conjunto Modal */}
       {showRastreioModal && (
         <Dialog open={showRastreioModal} onOpenChange={setShowRastreioModal}>
-          <DialogContent className="max-w-[95vw] w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+          <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] max-h-[95vh] overflow-y-auto p-0">
             <DialogHeader className="px-6 pt-5 pb-0">
               <DialogTitle className="flex items-center gap-2 text-lg">
                 <Waves className="w-5 h-5 text-cyan-600" />
