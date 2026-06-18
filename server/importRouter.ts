@@ -1249,6 +1249,15 @@ export const importRouter = router({
       }
     }
 
+    // Also get products from import_po_products (PO module) as fallback
+    // These are linked by PO ID which is matched via supplier
+    const allPoProducts = await db.select().from(importPoProducts);
+    const poProductsByPoId = new Map<number, any[]>();
+    for (const prod of allPoProducts) {
+      if (!poProductsByPoId.has(prod.poId)) poProductsByPoId.set(prod.poId, []);
+      poProductsByPoId.get(prod.poId)!.push(prod);
+    }
+
     // Get cached tracking data
     const cachedTracking = await db.select().from(trackingCache);
     const cacheByBl = new Map(cachedTracking.map(c => [c.blNumber, c]));
@@ -1281,8 +1290,13 @@ export const importRouter = router({
       const supplier = supplierMap.get(payment.supplierId);
       if (!supplier) continue;
 
-      // Find matching PO for this supplier
-      const supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
+      // Find matching PO for this supplier (also try by supplier name for duplicate supplier entries)
+      let supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
+      if (supplierPos.length === 0 && supplier) {
+        // Fallback: match by supplier name (handles duplicate supplier IDs like BETTY-JIDAXIANG)
+        const sameNameSupplierIds = suppliers.filter(s => s.name === supplier.name).map(s => s.id);
+        supplierPos = allPos.filter(p => sameNameSupplierIds.includes(p.supplierId));
+      }
       const matchingPo = supplierPos.length > 0 ? supplierPos[0] : null;
 
       // Skip containers whose PO is marked as 'recebida' (manually confirmed arrival)
@@ -1293,7 +1307,17 @@ export const importRouter = router({
       const cached = blClean ? cacheByBl.get(blClean) : null;
 
       // Get products from purchase_order_items (stock module)
-      const poProducts = productsByPedido.get(payment.pedido) || [];
+      let poProducts = productsByPedido.get(payment.pedido) || [];
+      
+      // Fallback: if no products from stock module, try import_po_products (PO module)
+      if (poProducts.length === 0 && matchingPo) {
+        const importProducts = poProductsByPoId.get(matchingPo.id) || [];
+        poProducts = importProducts.map((p: any) => ({
+          descricao: p.description,
+          quantidade: p.quantidade,
+          valorTotal: p.valorUsd,
+        }));
+      }
 
       containers.push({
         id: payment.id,

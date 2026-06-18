@@ -4438,3 +4438,5 @@
 - [x] Criar procedimento tRPC para atualizar navigation_status de uma PO
 - [x] Adicionar checkboxes 'PO Recebida' e 'PO Navegando' ao lado de cada PO na aba Importação
 - [x] Filtrar containers no mapa: POs com status 'recebida' saem do rastreio em conjunto
+- [x] Puxar produtos da tabela import_po_products (POs da aba Importação) para os cards do Rastreio em Conjunto quando não houver match no purchase_order_items
+- [x] Fix: Matching de PO por nome do fornecedor (fallback para IDs duplicados como BETTY-JIDAXIANG)
