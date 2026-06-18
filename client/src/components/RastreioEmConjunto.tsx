@@ -444,7 +444,7 @@ export function RastreioEmConjunto() {
       <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-lg">
         {/* Map */}
         <MapView
-          className="w-full h-[500px] sm:h-[600px]"
+          className="w-full h-[380px] sm:h-[450px]"
           initialCenter={{ lat: 0, lng: 60 }}
           initialZoom={3}
           onMapReady={handleMapReady}

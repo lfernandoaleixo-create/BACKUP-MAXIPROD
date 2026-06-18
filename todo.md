@@ -4431,6 +4431,8 @@
 - [x] Fix: Cor roxa/indigo trocada por laranja (#ff6b35) para não confundir com o mar
 - [x] Revertido: manter TODOS os containers no mapa até confirmação manual de chegada (não filtrar por status)
 - [x] Mostrar produtos de cada PO nos cards do Rastreio em Conjunto (puxar da tabela purchase_order_items vinculado pelo campo referencia)
+- [x] Fix: Matching de produtos WINNIE corrigido (pedido ZY2026-018 agora encontra ZYZ2026-018 via padrão numérico)
+- [x] Reduzir altura do mapa para facilitar scroll (380px mobile / 450px desktop)
 - [x] Containers com status 'Entregue' aparecem no mapa parado em Santos (porto destino) com visual diferenciado (verde, ícone check, label 'Em Santos'), até confirmação manual
 - [x] Adicionar campo navigation_status ('navegando' | 'recebida') na tabela import_pos
 - [x] Criar procedimento tRPC para atualizar navigation_status de uma PO

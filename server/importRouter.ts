@@ -1223,15 +1223,25 @@ export const importRouter = router({
     const pedidos = paymentsWithTracking.map(p => p.pedido).filter(Boolean);
     let purchaseProducts: any[] = [];
     if (pedidos.length > 0) {
+      // Build search patterns: include the pedido itself and its numeric portion (e.g. '2026-018' from 'ZY2026-018')
+      const searchPatterns: string[] = [];
+      for (const pedido of pedidos) {
+        searchPatterns.push(pedido);
+        // Extract numeric portion like '2026-018' from 'ZY2026-018' or 'ZYZ2026-018'
+        const numMatch = pedido.match(/(\d{4}-\d+)/);
+        if (numMatch) searchPatterns.push(numMatch[1]);
+      }
+      const uniquePatterns = Array.from(new Set(searchPatterns));
       purchaseProducts = await db.select().from(purchaseOrderItems)
-        .where(or(...pedidos.map(pedido => like(purchaseOrderItems.referencia, `%${pedido}%`))));
+        .where(or(...uniquePatterns.map(pattern => like(purchaseOrderItems.referencia, `%${pattern}%`))));
     }
-    // Group purchase products by pedido
+    // Group purchase products by pedido (try exact match first, then numeric portion)
     const productsByPedido = new Map<string, any[]>();
     for (const prod of purchaseProducts) {
       const ref = prod.referencia || '';
       for (const pedido of pedidos) {
-        if (ref.includes(pedido)) {
+        const numMatch = pedido.match(/(\d{4}-\d+)/);
+        if (ref.includes(pedido) || (numMatch && ref.includes(numMatch[1]))) {
           if (!productsByPedido.has(pedido)) productsByPedido.set(pedido, []);
           productsByPedido.get(pedido)!.push(prod);
           break;
