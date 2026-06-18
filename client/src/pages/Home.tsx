@@ -1980,7 +1980,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
             <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
           {/* Full-screen RastreioEmConjunto */}
-          <div className="w-full h-full">
+          <div className="w-full min-h-full p-4 pt-6">
             <RastreioEmConjunto />
           </div>
         </div>
