@@ -1186,10 +1186,14 @@ export const importRouter = router({
     if (!db) return [];
 
     // Get all payments that have tracking info (blNumber or trackingUuid)
+    // Exclude payments that are already delivered ("Entregue")
     const paymentsWithTracking = await db.select().from(importPayments)
-      .where(or(
-        and(isNotNull(importPayments.blNumber), ne(importPayments.blNumber, '')),
-        and(isNotNull(importPayments.trackingUuid), ne(importPayments.trackingUuid, ''))
+      .where(and(
+        ne(importPayments.status, 'Entregue'),
+        or(
+          and(isNotNull(importPayments.blNumber), ne(importPayments.blNumber, '')),
+          and(isNotNull(importPayments.trackingUuid), ne(importPayments.trackingUuid, ''))
+        )
       ));
 
     if (paymentsWithTracking.length === 0) return [];
