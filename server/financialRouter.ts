@@ -2416,13 +2416,24 @@ export const financialRouter = router({
     // Calcular totais usando valorTotalPedido (inclui descontos e frete)
     // Agrupa por pedido único e usa valorTotalPedido quando disponível
     const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
+    // REGRA JOHNSON: subtrair frete do valorTotalPedido para clientes Johnson
+    const isJohnsonClient = (cliente: string | null): boolean => {
+      if (!cliente) return false;
+      const c = cliente.toUpperCase();
+      return c.includes('JOHNSON') || c.includes('S C JOHNSON') || c.includes('SC JOHNSON') || c.includes('S. C. JOHNSON') || c.includes('CERAS JOHNSON');
+    };
     const pedidoValueMap = new Map<string, number>();
     for (const item of items) {
       const pedido = item.pedido || 'sem-pedido';
       if (!pedidoValueMap.has(pedido)) {
         // Primeiro item deste pedido: usar valorTotalPedido se disponível
         if (item.valorTotalPedido) {
-          pedidoValueMap.set(pedido, Number(item.valorTotalPedido));
+          let vtp = Number(item.valorTotalPedido);
+          // REGRA JOHNSON: subtrair frete do valorTotalPedido
+          if (isJohnsonClient(item.cliente) && item.freteValor && Number(item.freteValor) > 0) {
+            vtp = vtp - Number(item.freteValor);
+          }
+          pedidoValueMap.set(pedido, vtp);
         } else {
           pedidoValueMap.set(pedido, Number(item.valorTotal || 0));
         }
@@ -2563,6 +2574,12 @@ export const financialRouter = router({
 
     const items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 
+    // REGRA JOHNSON: subtrair frete do valorTotalPedido para clientes Johnson
+    const isJohnsonClient = (cliente: string | null): boolean => {
+      if (!cliente) return false;
+      const c = cliente.toUpperCase();
+      return c.includes('JOHNSON') || c.includes('S C JOHNSON') || c.includes('SC JOHNSON') || c.includes('S. C. JOHNSON') || c.includes('CERAS JOHNSON');
+    };
     // Agrupar por pedido - usar valorTotalPedido (com desconto/frete) quando disponível
     const pedidoMap = new Map<string, { pedido: string; cliente: string; total: number; data: string; itens: number; estado: string; grupo: string; observacoes: string; descricoes: string[]; hasVTP: boolean }>();
     for (const item of items) {
@@ -2572,7 +2589,15 @@ export const financialRouter = router({
         pedidoMap.set(key, {
           pedido: item.pedido || '-',
           cliente: item.cliente || '-',
-          total: hasVTP ? Number(item.valorTotalPedido) : Number(item.valorTotal || 0),
+          total: (() => {
+            if (!hasVTP) return Number(item.valorTotal || 0);
+            let vtp = Number(item.valorTotalPedido);
+            // REGRA JOHNSON: subtrair frete do valorTotalPedido
+            if (isJohnsonClient(item.cliente) && item.freteValor && Number(item.freteValor) > 0) {
+              vtp = vtp - Number(item.freteValor);
+            }
+            return vtp;
+          })(),
           data: item.dataEmissao?.slice(0, 10) || '-',
           itens: 0,
           estado: item.estadoNota || '-',

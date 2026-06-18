@@ -5,6 +5,14 @@ import { salesOrders, orderItems, accountsReceivable, orderCancellations, seller
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
+// REGRA JOHNSON: Para clientes Johnson (exportação + Brasil), excluir frete do valor total do pedido
+// O frete não conta como venda nem para comissão de vendedores
+const isJohnsonClient = (cliente: string | null): boolean => {
+  if (!cliente) return false;
+  const c = cliente.toUpperCase();
+  return c.includes('JOHNSON') || c.includes('S C JOHNSON') || c.includes('SC JOHNSON') || c.includes('S. C. JOHNSON') || c.includes('CERAS JOHNSON');
+};
+
 // Cache para representantes do Maxiprod (5 minutos)
 const REPRESENTANTES_CACHE_TTL = 5 * 60 * 1000;
 let representantesCache: any = null;
@@ -212,13 +220,19 @@ export const salesRouter = router({
       const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
       const uniqueClients = new Set(items.map((i) => i.cliente).filter(Boolean));
       // Total por pedido único usando valorTotalPedido quando disponível
+      // REGRA JOHNSON aplicada: subtrair frete do valorTotalPedido para clientes Johnson
       const pedidoMap = new Map<string, { valorTotalPedido: number; somaItensBruto: number; somaFaturadoBruto: number; somaAFaturarBruto: number }>();
       for (const item of items) {
         const pedido = item.pedido || 'sem-pedido';
         const itemVal = Number(item.valorTotal || 0);
         if (!pedidoMap.has(pedido)) {
+          let vtp = item.valorTotalPedido ? Number(item.valorTotalPedido) : 0;
+          // REGRA JOHNSON: subtrair frete do valorTotalPedido
+          if (isJohnsonClient(item.cliente) && item.freteValor && Number(item.freteValor) > 0) {
+            vtp = vtp - Number(item.freteValor);
+          }
           pedidoMap.set(pedido, {
-            valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : 0,
+            valorTotalPedido: vtp,
             somaItensBruto: itemVal,
             somaFaturadoBruto: (item.estadoItem === "Faturado") ? itemVal : 0,
             somaAFaturarBruto: (item.estadoItem === "A faturar") ? itemVal : 0,
@@ -226,7 +240,12 @@ export const salesRouter = router({
         } else {
           const p = pedidoMap.get(pedido)!;
           if (!p.valorTotalPedido && item.valorTotalPedido) {
-            p.valorTotalPedido = Number(item.valorTotalPedido);
+            let vtp = Number(item.valorTotalPedido);
+            // REGRA JOHNSON: subtrair frete do valorTotalPedido
+            if (isJohnsonClient(item.cliente) && item.freteValor && Number(item.freteValor) > 0) {
+              vtp = vtp - Number(item.freteValor);
+            }
+            p.valorTotalPedido = vtp;
           }
           p.somaItensBruto += itemVal;
           if (item.estadoItem === "Faturado") p.somaFaturadoBruto += itemVal;
@@ -1008,7 +1027,15 @@ export const salesRouter = router({
               cidade: item.enderecoCidade || "",
               uf: item.uf || "",
             } : null,
-            valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : null,
+            valorTotalPedido: (() => {
+              if (!item.valorTotalPedido) return null;
+              let vtp = Number(item.valorTotalPedido);
+              // REGRA JOHNSON: subtrair frete do valorTotalPedido
+              if (isJohnsonClient(item.cliente) && item.freteValor && Number(item.freteValor) > 0) {
+                vtp = vtp - Number(item.freteValor);
+              }
+              return vtp;
+            })(),
             representante: item.representante || null,
             empresa: item.empresa || null,
             itens: [],
