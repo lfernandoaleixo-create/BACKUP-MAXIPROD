@@ -4428,4 +4428,5 @@
 - [x] Fix: Remover animação pulse que fica piscando nos marcadores do mapa
 - [x] Fix: Marcadores sobrepostos quando containers compartilham mesmo BL (WINNIE e BETTY-JIDAXIANG na mesma posição) - offset aplicado
 - [x] Adicionar marcadores de origem (porto de partida) para cada container no mapa
-- [x] Fix: Filtrar containers com status 'Entregue' do mapa (BETTY-JIDAXIANG já chegou em Santos)
+- [x] Fix: Cor roxa/indigo trocada por laranja (#ff6b35) para não confundir com o mar
+- [x] Revertido: manter TODOS os containers no mapa até confirmação manual de chegada (não filtrar por status)

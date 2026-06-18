@@ -192,7 +192,7 @@ export function RastreioEmConjunto() {
     let hasAnyPosition = false;
 
     // Color palette for different containers
-    const colors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+    const colors = ['#ff6b35', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
     // Track positions to detect overlaps and offset them
     const positionMap = new Map<string, number>();
@@ -536,9 +536,9 @@ export function RastreioEmConjunto() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {containers.map((container, index) => {
           const live = liveTrackingData.get(container.id);
-          const colors = ['border-indigo-500', 'border-cyan-500', 'border-amber-500', 'border-emerald-500', 'border-red-500', 'border-violet-500', 'border-pink-500', 'border-teal-500'];
-          const bgColors = ['bg-indigo-50', 'bg-cyan-50', 'bg-amber-50', 'bg-emerald-50', 'bg-red-50', 'bg-violet-50', 'bg-pink-50', 'bg-teal-50'];
-          const textColors = ['text-indigo-700', 'text-cyan-700', 'text-amber-700', 'text-emerald-700', 'text-red-700', 'text-violet-700', 'text-pink-700', 'text-teal-700'];
+          const colors = ['border-orange-500', 'border-cyan-500', 'border-amber-500', 'border-emerald-500', 'border-red-500', 'border-violet-500', 'border-pink-500', 'border-teal-500'];
+          const bgColors = ['bg-orange-50', 'bg-cyan-50', 'bg-amber-50', 'bg-emerald-50', 'bg-red-50', 'bg-violet-50', 'bg-pink-50', 'bg-teal-50'];
+          const textColors = ['text-orange-700', 'text-cyan-700', 'text-amber-700', 'text-emerald-700', 'text-red-700', 'text-violet-700', 'text-pink-700', 'text-teal-700'];
 
           return (
             <div
