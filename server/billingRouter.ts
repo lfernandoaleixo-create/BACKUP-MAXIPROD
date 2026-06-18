@@ -347,9 +347,17 @@ export const billingRouter = router({
         let qtdOriginalExibicao = qtdOriginal;
         let unidadeExibicao = item.unidadeMedidaCodigo || "";
         if (KG_TO_CAIXA_CONVERSION[codigoItemVal] && unidadeVal === 'kg') {
-          const pesoCx = KG_TO_CAIXA_CONVERSION[codigoItemVal];
-          qtdExibicao = Math.round(qtdEfetiva / pesoCx);
-          qtdOriginalExibicao = Math.round(qtdOriginal / pesoCx);
+          // REGRA: Se observações do pedido mencionam quantidade de caixas, usar esse valor
+          const obs = (item.observacoes || "");
+          const caixasMatch = obs.match(/(\d+)\s*caixas?/i);
+          if (caixasMatch) {
+            qtdExibicao = parseInt(caixasMatch[1], 10);
+            qtdOriginalExibicao = parseInt(caixasMatch[1], 10);
+          } else {
+            const pesoCx = KG_TO_CAIXA_CONVERSION[codigoItemVal];
+            qtdExibicao = Math.round(qtdEfetiva / pesoCx);
+            qtdOriginalExibicao = Math.round(qtdOriginal / pesoCx);
+          }
           unidadeExibicao = "cx";
         }
         order.itens.push({
@@ -434,8 +442,15 @@ export const billingRouter = router({
         let billedQtd = parseFloat(String(item.quantidade || 0));
         let billedUnidadeExibicao = item.unidadeMedidaCodigo || "";
         if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedUnidade === 'kg') {
-          const pesoCx = KG_TO_CAIXA_CONVERSION[billedCodigoItem];
-          billedQtd = Math.round(billedQtd / pesoCx);
+          // REGRA: Se observações do pedido mencionam quantidade de caixas, usar esse valor
+          const billedObs = (item.observacoes || "");
+          const billedCaixasMatch = billedObs.match(/(\d+)\s*caixas?/i);
+          if (billedCaixasMatch) {
+            billedQtd = parseInt(billedCaixasMatch[1], 10);
+          } else {
+            const pesoCx = KG_TO_CAIXA_CONVERSION[billedCodigoItem];
+            billedQtd = Math.round(billedQtd / pesoCx);
+          }
           billedUnidadeExibicao = "cx";
         }
         order.itens.push({
