@@ -4425,3 +4425,6 @@
 - [x] Busca de dados live via fetchTracking (Logcomex) e fetchOneTracking (ONE Line) para cada container
 - [x] Rotas desenhadas no mapa como polylines coloridas
 - [x] Testes vitest para o procedimento getActiveContainers (4 testes passando)
+- [x] Fix: Remover animação pulse que fica piscando nos marcadores do mapa
+- [x] Fix: Marcadores sobrepostos quando containers compartilham mesmo BL (WINNIE e BETTY-JIDAXIANG na mesma posição) - offset aplicado
+- [x] Adicionar marcadores de origem (porto de partida) para cada container no mapa

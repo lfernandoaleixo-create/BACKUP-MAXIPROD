@@ -8,13 +8,11 @@ import { trpc } from "@/lib/trpc";
 import { MapView } from "@/components/Map";
 import {
   Ship,
-  MapPin,
   Package,
   Clock,
   Navigation,
   Loader2,
   AlertCircle,
-  Anchor,
   Globe,
   RefreshCw,
 } from "lucide-react";
@@ -41,8 +39,27 @@ interface ContainerData {
   trackingStatus: string | null;
 }
 
-// Fetch live tracking data for a single container
-function useLiveTracking(container: ContainerData) {
+interface LiveData {
+  vesselPosition: { lat: number; lng: number } | null;
+  progress: number;
+  routeCoordinates: Array<{ lat: number; lng: number }>;
+  originName: string;
+  originPosition: { lat: number; lng: number } | null;
+  destName: string;
+  destPosition: { lat: number; lng: number } | null;
+  vessel: string;
+  eta: string | null;
+  currentStatus: string;
+}
+
+/**
+ * Individual tracker component - fetches live data for ONE container
+ * and reports it back via a ref-based callback to avoid re-render loops.
+ */
+function ContainerTracker({ container, onDataReadyRef }: {
+  container: ContainerData;
+  onDataReadyRef: React.MutableRefObject<(id: number, data: LiveData) => void>;
+}) {
   const logcomexQuery = trpc.import.fetchTracking.useQuery(
     { trackingUuid: container.trackingUuid || "" },
     { enabled: !!container.trackingUuid && !container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
@@ -53,75 +70,86 @@ function useLiveTracking(container: ContainerData) {
     { enabled: !!container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
   );
 
-  const isLoading = container.blNumber ? oneQuery.isLoading : logcomexQuery.isLoading;
   const data = container.blNumber ? oneQuery.data : logcomexQuery.data;
   const isOneTracking = !!container.blNumber;
 
-  if (!data) return { isLoading, liveData: null };
+  // Use a ref to track the last reported data to avoid infinite loops
+  const lastReportedRef = useRef<string>("");
 
-  // Normalize to get vessel position and progress
-  const d = data as any;
-  const vesselPosition = d.vesselPosition || null;
+  useEffect(() => {
+    if (!data) return;
 
-  const progress = isOneTracking
-    ? d.progress || 0
-    : d.historic
-      ? Math.round((d.historic.filter((e: any) => e.hasOccurred).length / d.historic.length) * 100)
-      : 0;
+    const d = data as any;
+    const vesselPosition = d.vesselPosition || null;
 
-  const routeCoordinates = isOneTracking
-    ? d.routeCoordinates || []
-    : d.vesselRouteCoordinates || [];
+    const progress = isOneTracking
+      ? d.progress || 0
+      : d.historic
+        ? Math.round((d.historic.filter((e: any) => e.hasOccurred).length / d.historic.length) * 100)
+        : 0;
 
-  const originName = isOneTracking
-    ? d.origin?.name || d.placeOfReceipt || ''
-    : d.vesselRouteOrigin || d.origin || '';
+    const routeCoordinates = isOneTracking
+      ? d.routeCoordinates || []
+      : d.vesselRouteCoordinates || [];
 
-  const destName = isOneTracking
-    ? d.destination?.name || d.placeOfDelivery || ''
-    : d.vesselRouteDestination || d.destination || '';
+    const originName = isOneTracking
+      ? d.origin?.name || d.placeOfReceipt || ''
+      : d.vesselRouteOrigin || d.origin || '';
 
-  const vessel = isOneTracking
-    ? d.sailingLegs?.[d.sailingLegs?.length - 1]?.vessel || ''
-    : d.vessel || '';
+    const originPosition = isOneTracking
+      ? d.origin ? { lat: d.origin.lat, lng: d.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null)
+      : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
 
-  const eta = isOneTracking
-    ? d.podArrival || null
-    : d.eta || null;
+    const destName = isOneTracking
+      ? d.destination?.name || d.placeOfDelivery || ''
+      : d.vesselRouteDestination || d.destination || '';
 
-  const currentStatus = isOneTracking
-    ? d.currentStatus || ''
-    : d.currentStatus || d.translatedStatus || '';
+    const destPosition = isOneTracking
+      ? d.destination ? { lat: d.destination.lat, lng: d.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null)
+      : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
 
-  return {
-    isLoading,
-    liveData: {
+    const vessel = isOneTracking
+      ? d.sailingLegs?.[d.sailingLegs?.length - 1]?.vessel || ''
+      : d.vessel || '';
+
+    const eta = isOneTracking
+      ? d.podArrival || null
+      : d.eta || null;
+
+    const currentStatus = isOneTracking
+      ? d.currentStatus || ''
+      : d.currentStatus || d.translatedStatus || '';
+
+    const liveData: LiveData = {
       vesselPosition,
       progress,
       routeCoordinates,
       originName,
+      originPosition,
       destName,
+      destPosition,
       vessel,
       eta,
       currentStatus,
+    };
+
+    // Only report if data actually changed (compare a fingerprint)
+    const fingerprint = JSON.stringify({
+      pos: vesselPosition,
+      prog: progress,
+      route: routeCoordinates.length,
+      vessel,
+      eta,
+      status: currentStatus,
+    });
+
+    if (fingerprint !== lastReportedRef.current) {
+      lastReportedRef.current = fingerprint;
+      onDataReadyRef.current(container.id, liveData);
     }
-  };
-}
+  }, [data, container.id, isOneTracking, onDataReadyRef]);
 
-// Individual container tracking wrapper
-function ContainerTracker({ container, onDataReady }: {
-  container: ContainerData;
-  onDataReady: (id: number, data: any) => void;
-}) {
-  const { isLoading, liveData } = useLiveTracking(container);
-
-  useEffect(() => {
-    if (liveData) {
-      onDataReady(container.id, liveData);
-    }
-  }, [liveData, container.id, onDataReady]);
-
-  return null; // This is a data-only component
+  return null;
 }
 
 export function RastreioEmConjunto() {
@@ -130,25 +158,29 @@ export function RastreioEmConjunto() {
     { staleTime: 60 * 1000 }
   );
 
-  const [liveTrackingData, setLiveTrackingData] = useState<Map<number, any>>(new Map());
+  const [liveTrackingData, setLiveTrackingData] = useState<Map<number, LiveData>>(new Map());
   const [hoveredContainer, setHoveredContainer] = useState<number | null>(null);
   const [selectedContainer, setSelectedContainer] = useState<number | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<number, google.maps.marker.AdvancedMarkerElement>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
+  const mapReadyRef = useRef(false);
 
-  const handleDataReady = useCallback((id: number, data: any) => {
+  // Use a ref-based callback to avoid triggering re-renders in ContainerTracker's useEffect deps
+  const handleDataReadyRef = useRef<(id: number, data: LiveData) => void>((id, data) => {
     setLiveTrackingData(prev => {
       const next = new Map(prev);
       next.set(id, data);
       return next;
     });
-  }, []);
+  });
 
   // Render markers on map when live data changes
+  const liveDataSize = liveTrackingData.size;
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !containers) return;
+    if (!map || !containers || !mapReadyRef.current) return;
+    if (liveDataSize === 0) return;
 
     // Clear existing markers and polylines
     markersRef.current.forEach(marker => { marker.map = null; });
@@ -162,11 +194,14 @@ export function RastreioEmConjunto() {
     // Color palette for different containers
     const colors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
+    // Track positions to detect overlaps and offset them
+    const positionMap = new Map<string, number>();
+
     containers.forEach((container, index) => {
       const live = liveTrackingData.get(container.id);
       if (!live) return;
 
-      const { vesselPosition, progress, routeCoordinates, originName, destName } = live;
+      const { vesselPosition, progress, routeCoordinates, originName, originPosition, destName, destPosition } = live;
       const color = colors[index % colors.length];
 
       // Draw route polyline
@@ -175,40 +210,71 @@ export function RastreioEmConjunto() {
           path: routeCoordinates,
           geodesic: true,
           strokeColor: color,
-          strokeOpacity: 0.6,
-          strokeWeight: 2,
+          strokeOpacity: 0.7,
+          strokeWeight: 3,
           map,
         });
         polylinesRef.current.push(polyline);
 
         // Add route coordinates to bounds
-        routeCoordinates.forEach((coord: any) => {
+        routeCoordinates.forEach((coord) => {
           bounds.extend(coord);
           hasAnyPosition = true;
         });
       }
 
-      // Add vessel marker
+      // Add origin port marker
+      if (originPosition) {
+        const originEl = document.createElement("div");
+        originEl.style.cursor = "default";
+        originEl.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="background:${color};border:2px solid white;border-radius:4px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+            <div style="margin-top:2px;background:${color}dd;color:white;font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);">
+              ${originName.split(',')[0] || 'Origem'}
+            </div>
+          </div>
+        `;
+
+        const originMarker = new google.maps.marker.AdvancedMarkerElement({
+          map,
+          position: originPosition,
+          content: originEl,
+        });
+        markersRef.current.set(`origin-${container.id}`, originMarker);
+        bounds.extend(originPosition);
+        hasAnyPosition = true;
+      }
+
+      // Add vessel marker (with offset if overlapping)
       if (vesselPosition) {
+        const posKey = `${vesselPosition.lat.toFixed(1)},${vesselPosition.lng.toFixed(1)}`;
+        const overlapCount = positionMap.get(posKey) || 0;
+        positionMap.set(posKey, overlapCount + 1);
+
+        // Offset overlapping markers slightly
+        const offsetLat = overlapCount * 1.5;
+        const offsetLng = overlapCount * 1.5;
+        const adjustedPosition = {
+          lat: vesselPosition.lat + offsetLat,
+          lng: vesselPosition.lng + offsetLng,
+        };
+
         const markerEl = document.createElement("div");
         markerEl.className = "vessel-marker-container";
         markerEl.style.cursor = "pointer";
         markerEl.innerHTML = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-            <div style="position:absolute;width:36px;height:36px;background:${color}33;border-radius:50%;animation:vesselPulse${container.id} 2.5s ease-in-out infinite;"></div>
+            <div style="position:absolute;width:36px;height:36px;background:${color}33;border-radius:50%;"></div>
             <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px ${color}88;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/></svg>
             </div>
-            <div style="margin-top:4px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
-              ${container.supplierName.split(' ')[0]} • ${progress || 0}%
+            <div style="margin-top:4px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
+              ${container.supplierName} • ${progress || 0}%
             </div>
           </div>
-          <style>
-            @keyframes vesselPulse${container.id} {
-              0%, 100% { transform: scale(1); opacity: 0.6; }
-              50% { transform: scale(1.8); opacity: 0; }
-            }
-          </style>
         `;
 
         // Add hover/click events
@@ -228,12 +294,37 @@ export function RastreioEmConjunto() {
 
         const marker = new google.maps.marker.AdvancedMarkerElement({
           map,
-          position: vesselPosition,
+          position: adjustedPosition,
           content: markerEl,
         });
 
-        markersRef.current.set(container.id, marker);
-        bounds.extend(vesselPosition);
+        markersRef.current.set(`vessel-${container.id}`, marker);
+        bounds.extend(adjustedPosition);
+        hasAnyPosition = true;
+      }
+
+      // Add destination marker
+      if (destPosition) {
+        const destEl = document.createElement("div");
+        destEl.style.cursor = "default";
+        destEl.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="background:#ef4444;border:2px solid white;border-radius:4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+            </div>
+            <div style="margin-top:2px;background:#ef4444dd;color:white;font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);">
+              ${destName.split(',')[0] || 'Destino'}
+            </div>
+          </div>
+        `;
+
+        const destMarker = new google.maps.marker.AdvancedMarkerElement({
+          map,
+          position: destPosition,
+          content: destEl,
+        });
+        markersRef.current.set(`dest-${container.id}`, destMarker);
+        bounds.extend(destPosition);
         hasAnyPosition = true;
       }
     });
@@ -247,25 +338,14 @@ export function RastreioEmConjunto() {
         google.maps.event.removeListener(listener);
       });
     }
-  }, [containers, liveTrackingData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containers, liveDataSize]);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-    // Set dark ocean-focused style
+    mapReadyRef.current = true;
     map.setOptions({
       mapTypeId: "hybrid",
-      styles: [
-        { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#6b7280" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
-        { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
-        { featureType: "road", stylers: [{ visibility: "off" }] },
-        { featureType: "poi", stylers: [{ visibility: "off" }] },
-        { featureType: "transit", stylers: [{ visibility: "off" }] },
-        { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#334155" }] },
-        { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
-      ],
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
@@ -352,12 +432,12 @@ export function RastreioEmConjunto() {
           <ContainerTracker
             key={container.id}
             container={container}
-            onDataReady={handleDataReady}
+            onDataReadyRef={handleDataReadyRef}
           />
         ))}
 
         {/* Hover/Selected Card Overlay */}
-        {activeContainer && (
+        {activeContainer && activeLive && (
           <div className="absolute top-4 right-4 w-72 bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl p-4 z-50 pointer-events-auto">
             <div className="flex items-start gap-3 mb-3">
               <div className="w-9 h-9 bg-indigo-600/30 border border-indigo-500/50 rounded-lg flex items-center justify-center shrink-0">
@@ -372,39 +452,37 @@ export function RastreioEmConjunto() {
             </div>
 
             {/* Progress bar */}
-            {activeLive && (
-              <div className="mb-3">
-                <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                  <span>{activeLive.originName || activeContainer.origin || '—'}</span>
-                  <span>{activeLive.destName || activeContainer.destination || '—'}</span>
-                </div>
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-500"
-                    style={{ width: `${activeLive.progress || 0}%` }}
-                  />
-                </div>
-                <div className="text-center mt-1">
-                  <span className="text-xs font-bold text-indigo-300">{activeLive.progress || 0}%</span>
-                </div>
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span>{activeLive.originName || activeContainer.origin || '—'}</span>
+                <span>{activeLive.destName || activeContainer.destination || '—'}</span>
               </div>
-            )}
+              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-500"
+                  style={{ width: `${activeLive.progress || 0}%` }}
+                />
+              </div>
+              <div className="text-center mt-1">
+                <span className="text-xs font-bold text-indigo-300">{activeLive.progress || 0}%</span>
+              </div>
+            </div>
 
             {/* Info grid */}
             <div className="grid grid-cols-2 gap-2 text-[10px]">
-              {activeLive?.vessel && (
+              {activeLive.vessel && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">Navio</span>
                   <p className="text-white font-medium mt-0.5 truncate">{activeLive.vessel}</p>
                 </div>
               )}
-              {activeLive?.eta && (
+              {activeLive.eta && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">ETA</span>
                   <p className="text-white font-medium mt-0.5">{formatDate(activeLive.eta)}</p>
                 </div>
               )}
-              {activeLive?.currentStatus && (
+              {activeLive.currentStatus && (
                 <div className="col-span-2 bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">Status</span>
                   <p className="text-emerald-300 font-medium mt-0.5 truncate">{activeLive.currentStatus}</p>
@@ -487,6 +565,13 @@ export function RastreioEmConjunto() {
                 <div className={`${bgColors[index % bgColors.length]} ${textColors[index % textColors.length]} text-[10px] font-bold px-2 py-0.5 rounded-full`}>
                   {live?.progress || container.progress || 0}%
                 </div>
+              </div>
+
+              {/* Origin → Destination */}
+              <div className="flex items-center gap-1 text-[9px] text-slate-400 mb-1.5">
+                <span className="font-medium">{live?.originName?.split(',')[0] || container.origin || '—'}</span>
+                <span>→</span>
+                <span className="font-medium">{live?.destName?.split(',')[0] || container.destination || '—'}</span>
               </div>
 
               {/* Mini progress bar */}
