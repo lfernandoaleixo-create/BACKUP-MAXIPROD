@@ -76,6 +76,7 @@ import {
   Moon,
   ShoppingBag,
   Navigation,
+  Waves,
 } from "lucide-react";
 import {
   Dialog,
@@ -1708,6 +1709,136 @@ function POReservationsCard() {
   );
 }
 
+/* --- Inline Container Tracker (for POOverviewCard) --- */
+interface InlineContainerData {
+  id: number;
+  supplierName: string;
+  containerName: string | null;
+  poNumber: string;
+  pedido: string;
+  blNumber: string | null;
+  trackingUuid: string | null;
+  rastreio: string | null;
+  status: string;
+  products: Array<{ description: string; quantidade: number | null; valorUsd: string | null }>;
+  vesselName: string | null;
+  origin: string | null;
+  destination: string | null;
+  etd: string | null;
+  eta: string | null;
+  progress: number | null;
+  vesselLat: string | null;
+  vesselLng: string | null;
+  trackingStatus: string | null;
+}
+
+interface InlineLiveData {
+  vesselPosition: { lat: number; lng: number } | null;
+  progress: number;
+  routeCoordinates: Array<{ lat: number; lng: number }>;
+  originName: string;
+  originPosition: { lat: number; lng: number } | null;
+  destName: string;
+  destPosition: { lat: number; lng: number } | null;
+  vessel: string;
+  eta: string | null;
+  currentStatus: string;
+}
+
+function ContainerTrackerInline({ container, onDataReadyRef }: {
+  container: InlineContainerData;
+  onDataReadyRef: React.MutableRefObject<(id: number, data: InlineLiveData) => void>;
+}) {
+  const logcomexQuery = trpc.import.fetchTracking.useQuery(
+    { trackingUuid: container.trackingUuid || "" },
+    { enabled: !!container.trackingUuid && !container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
+  );
+
+  const oneQuery = trpc.import.fetchOneTracking.useQuery(
+    { blNumber: container.blNumber || "" },
+    { enabled: !!container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
+  );
+
+  const data = container.blNumber ? oneQuery.data : logcomexQuery.data;
+  const isOneTracking = !!container.blNumber;
+
+  const lastReportedRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!data) return;
+
+    const d = data as any;
+    const vesselPosition = d.vesselPosition || null;
+
+    const progress = isOneTracking
+      ? d.progress || 0
+      : d.historic
+        ? Math.round((d.historic.filter((e: any) => e.hasOccurred).length / d.historic.length) * 100)
+        : 0;
+
+    const routeCoordinates = isOneTracking
+      ? d.routeCoordinates || []
+      : d.vesselRouteCoordinates || [];
+
+    const originName = isOneTracking
+      ? d.origin?.name || d.placeOfReceipt || ''
+      : d.vesselRouteOrigin || d.origin || '';
+
+    const originPosition = isOneTracking
+      ? d.origin ? { lat: d.origin.lat, lng: d.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null)
+      : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
+
+    const destName = isOneTracking
+      ? d.destination?.name || d.placeOfDelivery || ''
+      : d.vesselRouteDestination || d.destination || '';
+
+    const destPosition = isOneTracking
+      ? d.destination ? { lat: d.destination.lat, lng: d.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null)
+      : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
+
+    const vessel = isOneTracking
+      ? d.sailingLegs?.[d.sailingLegs?.length - 1]?.vessel || ''
+      : d.vessel || '';
+
+    const eta = isOneTracking
+      ? d.podArrival || null
+      : d.eta || null;
+
+    const currentStatus = isOneTracking
+      ? d.currentStatus || ''
+      : d.currentStatus || d.translatedStatus || '';
+
+    const liveData: InlineLiveData = {
+      vesselPosition,
+      progress,
+      routeCoordinates,
+      originName,
+      originPosition,
+      destName,
+      destPosition,
+      vessel,
+      eta,
+      currentStatus,
+    };
+
+    const fingerprint = JSON.stringify({
+      pos: vesselPosition,
+      prog: progress,
+      route: routeCoordinates.length,
+      vessel,
+      eta,
+      status: currentStatus,
+    });
+
+    if (fingerprint !== lastReportedRef.current) {
+      lastReportedRef.current = fingerprint;
+      onDataReadyRef.current(container.id, liveData);
+    }
+  }, [data, container.id, isOneTracking, onDataReadyRef]);
+
+  return null;
+}
+
 /* --- PO Overview Card --- */
 interface POSummary {
   referenciaPO: string;
@@ -1724,9 +1855,17 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
   const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
   const [trackingBl, setTrackingBl] = useState<string | null>(null);
+  const [liveTrackingData, setLiveTrackingData] = useState<Map<number, InlineLiveData>>(new Map());
+
+  const handleDataReadyRef = useRef<(id: number, data: InlineLiveData) => void>((id, data) => {
+    setLiveTrackingData(prev => { const next = new Map(prev); next.set(id, data); return next; });
+  });
 
   // Fetch tracking links for POs (from Importação data)
   const trackingQuery = trpc.dashboard.getPoTrackingLinks.useQuery(undefined, { staleTime: 60_000 });
+
+  // Fetch active containers for inline tracking
+  const { data: activeContainers } = trpc.import.getActiveContainers.useQuery(undefined, { staleTime: 60_000 });
 
   // Aggregate all PO lotes across all items, grouped by referenciaPO
   const poSummaries = useMemo(() => {
@@ -1958,6 +2097,130 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
           );
         })}
       </div>}
+
+      {/* Inline Tracking: Navios em Trânsito */}
+      {activeContainers && activeContainers.length > 0 && (
+        <div className="border-t border-slate-100 dark:border-slate-700">
+          {/* Hidden trackers that fetch live data */}
+          {activeContainers.map((c: any) => (
+            <ContainerTrackerInline key={c.id} container={c} onDataReadyRef={handleDataReadyRef} />
+          ))}
+
+          {/* Section header */}
+          <div className="px-4 py-3 bg-gradient-to-r from-cyan-50/80 to-blue-50/80 border-b border-slate-100 dark:border-slate-700">
+            <div className="flex items-center gap-2">
+              <Waves className="w-4 h-4 text-cyan-600" />
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Navios em Trânsito</h4>
+              <span className="text-[10px] bg-cyan-100 text-cyan-700 font-semibold px-1.5 py-0.5 rounded-full">
+                {activeContainers.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Container cards */}
+          <div className="p-3 space-y-2">
+            {activeContainers.map((container: any, index: number) => {
+              const live = liveTrackingData.get(container.id);
+              const colors = ['border-l-orange-500', 'border-l-cyan-500', 'border-l-amber-500', 'border-l-emerald-500', 'border-l-red-500', 'border-l-violet-500'];
+              const bgColors = ['bg-orange-50', 'bg-cyan-50', 'bg-amber-50', 'bg-emerald-50', 'bg-red-50', 'bg-violet-50'];
+              const textColors = ['text-orange-700', 'text-cyan-700', 'text-amber-700', 'text-emerald-700', 'text-red-700', 'text-violet-700'];
+
+              const formatDateInline = (dateStr: string | null) => {
+                if (!dateStr) return "—";
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return dateStr;
+                return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+              };
+
+              return (
+                <div
+                  key={container.id}
+                  className={`bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 border-l-4 ${colors[index % colors.length]} p-3 hover:shadow-sm transition`}
+                >
+                  {/* Top row: supplier + status */}
+                  <div className="flex items-start justify-between mb-1.5">
+                    <div className="min-w-0">
+                      <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{container.supplierName}</h5>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                        {container.containerName || container.poNumber} • {container.pedido}
+                      </p>
+                    </div>
+                    {container.status === 'Entregue' ? (
+                      <div className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 shrink-0">
+                        <CheckCircle2 className="w-3 h-3" /> Em Santos
+                      </div>
+                    ) : (
+                      <div className={`${bgColors[index % bgColors.length]} ${textColors[index % textColors.length]} text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0`}>
+                        {live?.progress || container.progress || 0}%
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Route: Origin → Destination */}
+                  <div className="flex items-center gap-1 text-[9px] text-slate-400 mb-1.5">
+                    <span className="font-medium">{live?.originName?.split(',')[0] || container.origin || '—'}</span>
+                    <span>→</span>
+                    <span className="font-medium">{live?.destName?.split(',')[0] || container.destination || '—'}</span>
+                  </div>
+
+                  {/* Mini progress bar */}
+                  <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-2">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${container.status === 'Entregue' ? 'bg-green-500' : 'bg-gradient-to-r from-indigo-500 to-cyan-400'}`}
+                      style={{ width: `${container.status === 'Entregue' ? 100 : (live?.progress || container.progress || 0)}%` }}
+                    />
+                  </div>
+
+                  {/* Vessel + ETA */}
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <Ship className="w-3 h-3" />
+                      {live?.vessel || container.vesselName || '—'}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      ETA: {formatDateInline(live?.eta || container.eta)}
+                    </span>
+                  </div>
+
+                  {/* Current status */}
+                  {live?.currentStatus && (
+                    <div className="mt-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
+                      {live.currentStatus}
+                    </div>
+                  )}
+
+                  {/* Products list */}
+                  {container.products && container.products.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Package className="w-3 h-3 text-slate-400" />
+                        <span className="text-[9px] font-semibold text-slate-500 uppercase">
+                          {container.products.length} {container.products.length === 1 ? 'produto' : 'produtos'}
+                        </span>
+                      </div>
+                      <div className="space-y-0.5 max-h-20 overflow-y-auto">
+                        {container.products.map((prod: any, pIdx: number) => (
+                          <div key={pIdx} className="flex items-center justify-between text-[9px]">
+                            <span className="text-slate-600 dark:text-slate-300 truncate flex-1 mr-2" title={prod.description}>
+                              {prod.description}
+                            </span>
+                            {prod.quantidade && (
+                              <span className="text-slate-800 dark:text-slate-200 font-semibold whitespace-nowrap">
+                                {Number(prod.quantidade).toLocaleString('pt-BR')} cx
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tracking Modal */}
       {(trackingUuid || trackingBl) && (
