@@ -1064,10 +1064,13 @@ export const importRouter = router({
 
     // 2. Get all PO products with valor_caixa_brl and product_code from ARRIVED POs
     // Ordered by previsaoEntrega ASC (oldest first) for FIFO abatement
+    // Products that use preco_mil_unid (e.g. 00058) need that field too
+    const PRECO_MIL_UNID_PRODUCTS = ['00058']; // Products that use preco_mil_unid instead of valor_caixa_brl
     const arrivedPoProducts = await db.select({
       productCode: importPoProducts.productCode,
       quantidade: importPoProducts.quantidade,
       valorCaixaBrl: importPoProducts.valorCaixaBrl,
+      precoMilUnid: importPoProducts.precoMilUnid,
       poNumber: importPos.poNumber,
       poId: importPos.id,
       previsaoEntrega: importPos.previsaoEntrega,
@@ -1077,7 +1080,10 @@ export const importRouter = router({
         and(
           sql`${importPoProducts.productCode} IS NOT NULL`,
           sql`${importPoProducts.productCode} != ''`,
-          sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
+          or(
+            sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
+            sql`${importPoProducts.precoMilUnid} IS NOT NULL`
+          ),
           eq(importPos.navigationStatus, 'recebida')
         )
       );
@@ -1087,6 +1093,7 @@ export const importRouter = router({
       productCode: importPoProducts.productCode,
       quantidade: importPoProducts.quantidade,
       valorCaixaBrl: importPoProducts.valorCaixaBrl,
+      precoMilUnid: importPoProducts.precoMilUnid,
       poNumber: importPos.poNumber,
       poId: importPos.id,
       previsaoEntrega: importPos.previsaoEntrega,
@@ -1096,7 +1103,10 @@ export const importRouter = router({
         and(
           sql`${importPoProducts.productCode} IS NOT NULL`,
           sql`${importPoProducts.productCode} != ''`,
-          sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
+          or(
+            sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
+            sql`${importPoProducts.precoMilUnid} IS NOT NULL`
+          ),
           eq(importPos.navigationStatus, 'navegando')
         )
       );
@@ -1108,15 +1118,26 @@ export const importRouter = router({
       return da - db2; // oldest first
     };
 
+    // Helper: get the effective cost for a product (preco_mil_unid for 00058, valor_caixa_brl for others)
+    const getEffectiveCost = (code: string, valorCaixaBrl: any, precoMilUnid: any): number => {
+      if (PRECO_MIL_UNID_PRODUCTS.includes(code)) {
+        const milCost = Number(precoMilUnid || 0);
+        return milCost > 0 ? milCost : Number(valorCaixaBrl || 0);
+      }
+      return Number(valorCaixaBrl || 0);
+    };
+
     // 4. Group arrived PO products by product_code, sorted oldest first (FIFO)
     const arrivedByProduct: Record<string, Array<{ poNumber: string; quantidade: number; valorCaixaBrl: number; previsaoEntrega: string | null }>> = {};
     for (const pp of arrivedPoProducts) {
       const code = pp.productCode!;
+      const effectiveCost = getEffectiveCost(code, pp.valorCaixaBrl, pp.precoMilUnid);
+      if (effectiveCost <= 0) continue; // Skip entries without valid cost
       if (!arrivedByProduct[code]) arrivedByProduct[code] = [];
       arrivedByProduct[code].push({
         poNumber: pp.poNumber,
         quantidade: Number(pp.quantidade || 0),
-        valorCaixaBrl: Number(pp.valorCaixaBrl || 0),
+        valorCaixaBrl: effectiveCost, // For 00058 this is actually preco_mil_unid
         previsaoEntrega: pp.previsaoEntrega,
       });
     }
@@ -1129,11 +1150,13 @@ export const importRouter = router({
     const navegandoByProduct: Record<string, Array<{ poNumber: string; quantidade: number; valorCaixaBrl: number; previsaoEntrega: string | null }>> = {};
     for (const pp of navegandoPoProducts) {
       const code = pp.productCode!;
+      const effectiveCost = getEffectiveCost(code, pp.valorCaixaBrl, pp.precoMilUnid);
+      if (effectiveCost <= 0) continue;
       if (!navegandoByProduct[code]) navegandoByProduct[code] = [];
       navegandoByProduct[code].push({
         poNumber: pp.poNumber,
         quantidade: Number(pp.quantidade || 0),
-        valorCaixaBrl: Number(pp.valorCaixaBrl || 0),
+        valorCaixaBrl: effectiveCost,
         previsaoEntrega: pp.previsaoEntrega,
       });
     }
@@ -1387,17 +1410,22 @@ export const importRouter = router({
       const supplier = supplierMap.get(payment.supplierId);
       if (!supplier) continue;
 
-      // Find matching PO for this supplier (also try by supplier name for duplicate supplier entries)
-      let supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
-      if (supplierPos.length === 0 && supplier) {
-        // Fallback: match by supplier name (handles duplicate supplier IDs like BETTY-JIDAXIANG)
-        const sameNameSupplierIds = suppliers.filter(s => s.name === supplier.name).map(s => s.id);
-        supplierPos = allPos.filter(p => sameNameSupplierIds.includes(p.supplierId));
+      // PRIORITY 1: Match PO directly by pedido/poNumber (exact match)
+      let matchingPo = allPos.find(p => p.poNumber === payment.pedido) || null;
+
+      // PRIORITY 2: If no direct match, find by supplier (also try by supplier name for duplicates)
+      if (!matchingPo) {
+        let supplierPos = allPos.filter(p => p.supplierId === payment.supplierId);
+        if (supplierPos.length === 0 && supplier) {
+          // Fallback: match by supplier name (handles duplicate supplier IDs like BETTY-JIDAXIANG)
+          const sameNameSupplierIds = suppliers.filter(s => s.name === supplier.name).map(s => s.id);
+          supplierPos = allPos.filter(p => sameNameSupplierIds.includes(p.supplierId));
+        }
+        
+        // Match PO: prefer one with 'navegando' status, fallback to first PO
+        const navegandoPos = supplierPos.filter(p => p.navigationStatus !== 'recebida');
+        matchingPo = navegandoPos.length > 0 ? navegandoPos[0] : (supplierPos.length > 0 ? supplierPos[0] : null);
       }
-      
-      // Match PO: prefer one with 'navegando' status, fallback to first PO
-      const navegandoPos = supplierPos.filter(p => p.navigationStatus !== 'recebida');
-      const matchingPo = navegandoPos.length > 0 ? navegandoPos[0] : (supplierPos.length > 0 ? supplierPos[0] : null);
 
       // Skip only if the PO is explicitly marked as 'recebida' AND the payment status
       // also indicates arrival (contains 'recebida' or 'chegou'). If payment status still
