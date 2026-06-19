@@ -660,10 +660,19 @@ export const appRouter = router({
         const raw = (p.pedido || "").trim().toUpperCase();
         const poMatch = raw.match(/^PO0*(\d+)$/);
         const normalizedKey = poMatch ? `PO${poMatch[1]}` : raw;
-        // Also store with the original key for non-PO pedidos (e.g. ZYZ2026-018)
-        trackingByPO[normalizedKey] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid, supplierName: p.supplierName };
+        const entry = { blNumber: p.blNumber, trackingUuid: p.trackingUuid, supplierName: p.supplierName };
+        // Store with normalized key
+        trackingByPO[normalizedKey] = entry;
         if (normalizedKey !== raw) {
-          trackingByPO[raw] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid, supplierName: p.supplierName };
+          trackingByPO[raw] = entry;
+        }
+        // Also store numeric portion for ZY/ZYZ matching (e.g. "ZYZ2026-018" -> also store "2026-018")
+        const numericMatch = raw.match(/(\d{4}-\d+)/);
+        if (numericMatch) {
+          // Store with common prefixes to handle ZY vs ZYZ variations
+          const numPart = numericMatch[1];
+          trackingByPO[`ZY${numPart}`] = entry;
+          trackingByPO[`ZYZ${numPart}`] = entry;
         }
       }
 
