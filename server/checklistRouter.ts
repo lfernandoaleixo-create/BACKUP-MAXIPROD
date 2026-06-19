@@ -8,9 +8,37 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { checklistRounds, checklistItems, checklistResponses } from "../drizzle/schema";
+import { checklistRounds, checklistItems, checklistResponses, operators, appSettings } from "../drizzle/schema";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { storagePut } from "./storage";
+
+// Default admin password fallback
+const DEFAULT_ADMIN_PASSWORD = "admin123";
+
+// Validate operator password and return operator name
+async function validateOperatorPassword(password: string): Promise<{ valid: boolean; operatorName: string | null }> {
+  const db = await getDb();
+  if (!db) return { valid: false, operatorName: null };
+  
+  // Check against active operator passwords
+  const opRows = await db.select().from(operators)
+    .where(and(eq(operators.password, password), eq(operators.active, true)))
+    .limit(1);
+  if (opRows.length > 0) {
+    return { valid: true, operatorName: opRows[0].name };
+  }
+  
+  // Fallback: check admin password
+  const adminRows = await db.select().from(appSettings)
+    .where(eq(appSettings.settingKey, "admin_password"))
+    .limit(1);
+  const adminPwd = adminRows.length > 0 ? (adminRows[0].settingValue as string) : DEFAULT_ADMIN_PASSWORD;
+  if (password === adminPwd) {
+    return { valid: true, operatorName: "Administrador" };
+  }
+  
+  return { valid: false, operatorName: null };
+}
 
 // Helper: get today's date in YYYY-MM-DD format (São Paulo timezone)
 function getTodayBR(): string {
@@ -189,16 +217,22 @@ export const checklistRouter = router({
     }),
 
   /**
-   * Complete a round - only if all active items have been answered
+   * Complete a round - validates operator password, then marks round as completed
    */
   completeRound: publicProcedure
     .input(z.object({
       roundId: z.number(),
-      operatorName: z.string(),
+      password: z.string(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      
+      // Validate password and get operator name
+      const { valid, operatorName } = await validateOperatorPassword(input.password);
+      if (!valid || !operatorName) {
+        throw new Error("Senha incorreta. Verifique e tente novamente.");
+      }
       
       // Verify round exists and is open
       const rounds = await db.select().from(checklistRounds)
@@ -228,16 +262,40 @@ export const checklistRouter = router({
         throw new Error(`Faltam ${totalItems - totalResponses} itens para responder. Todos os itens devem ser preenchidos antes de concluir.`);
       }
       
-      // Mark as completed
+      // Mark as completed with the validated operator name
       await db.update(checklistRounds)
         .set({
           status: "completed",
-          completedBy: input.operatorName,
+          completedBy: operatorName,
           completedAt: new Date(),
         })
         .where(eq(checklistRounds.id, input.roundId));
       
-      return { success: true };
+      return { success: true, operatorName };
+    }),
+
+  /**
+   * Get completion history - who completed each round (clock icon history)
+   */
+  getCompletionHistory: publicProcedure
+    .input(z.object({ limit: z.number().default(30) }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const limit = input?.limit || 30;
+      
+      const completedRounds = await db.select({
+        id: checklistRounds.id,
+        date: checklistRounds.date,
+        completedBy: checklistRounds.completedBy,
+        completedAt: checklistRounds.completedAt,
+        status: checklistRounds.status,
+      }).from(checklistRounds)
+        .where(eq(checklistRounds.status, "completed"))
+        .orderBy(desc(checklistRounds.date))
+        .limit(limit);
+      
+      return completedRounds;
     }),
 
   /**

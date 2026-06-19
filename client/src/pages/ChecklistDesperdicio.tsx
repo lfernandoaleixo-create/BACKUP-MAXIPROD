@@ -6,13 +6,14 @@
  * observation + photo upload for non-conformities,
  * and a "Concluir Ronda" button.
  */
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import {
   CheckCircle2, XCircle, Camera, MessageSquare, Send,
   Loader2, Lock, ClipboardCheck, AlertTriangle, Clock,
-  ChevronDown, ChevronUp, Trash2, History, BarChart3, TrendingDown
+  ChevronDown, ChevronUp, Trash2, History, BarChart3, TrendingDown,
+  Eye, EyeOff, User
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,10 @@ export function ChecklistDesperdicio() {
   const [observations, setObservations] = useState<Record<string, string>>({});
   const [photos, setPhotos] = useState<Record<string, { data: string; name: string; type: string } | null>>({});
   const [submitting, setSubmitting] = useState<Set<string>>(new Set());
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showCompletionHistory, setShowCompletionHistory] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -134,12 +139,31 @@ export function ChecklistDesperdicio() {
     reader.readAsDataURL(file);
   };
 
-  // Handle complete round
-  const handleComplete = async () => {
-    if (!round || !operator) return;
+  // Completion history query
+  const { data: completionHistory } = trpc.checklist.getCompletionHistory.useQuery(
+    { limit: 30 },
+    { enabled: showCompletionHistory }
+  );
+
+  // Handle complete round - opens password modal
+  const handleCompleteClick = () => {
+    if (!round) return;
+    setPassword("");
+    setShowPassword(false);
+    setShowPasswordModal(true);
+  };
+
+  // Handle password submit
+  const handlePasswordSubmit = async () => {
+    if (!round || !password.trim()) return;
     completeRound.mutate({
       roundId: round.id,
-      operatorName: operator.name,
+      password: password.trim(),
+    }, {
+      onSuccess: () => {
+        setShowPasswordModal(false);
+        setPassword("");
+      },
     });
   };
 
@@ -487,7 +511,7 @@ export function ChecklistDesperdicio() {
           {!isLocked && (
             <div className="sticky bottom-4 flex justify-center pt-4">
               <button
-                onClick={handleComplete}
+                onClick={handleCompleteClick}
                 disabled={!allAnswered || completeRound.isPending}
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold shadow-lg transition-all ${
                   allAnswered
@@ -508,6 +532,103 @@ export function ChecklistDesperdicio() {
               )}
             </div>
           )}
+
+          {/* ─── Password Modal ─── */}
+          {showPasswordModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPasswordModal(false)}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">Confirmar Conclusão</h3>
+                    <p className="text-xs text-slate-500">Digite sua senha para concluir a ronda</p>
+                  </div>
+                </div>
+                
+                <div className="relative mb-4">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handlePasswordSubmit()}
+                    placeholder="Senha do operador"
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowPasswordModal(false)}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handlePasswordSubmit}
+                    disabled={!password.trim() || completeRound.isPending}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {completeRound.isPending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Validando...</>
+                    ) : (
+                      <>Confirmar</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Completion History (Clock Icon) ─── */}
+          <div className="mt-6">
+            <button
+              onClick={() => setShowCompletionHistory(!showCompletionHistory)}
+              className="flex items-center gap-2 text-sm text-slate-500 hover:text-teal-600 transition-colors mx-auto"
+            >
+              <Clock className="w-4 h-4" />
+              <span className="font-medium">Histórico de Conclusões</span>
+              {showCompletionHistory ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+            
+            {showCompletionHistory && (
+              <div className="mt-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                {!completionHistory || completionHistory.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Clock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400">Nenhuma ronda concluída ainda</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                    {completionHistory.map((entry) => (
+                      <div key={entry.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                        <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                          <User className="w-3.5 h-3.5 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-700 truncate">{entry.completedBy}</p>
+                          <p className="text-[10px] text-slate-400">
+                            {new Date(entry.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}
+                            {entry.completedAt && ` às ${new Date(entry.completedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                          </p>
+                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
 

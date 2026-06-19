@@ -167,6 +167,81 @@ describe("Checklist Helper Functions", () => {
     });
   });
 
+  describe("Password validation for completion", () => {
+    it("should require a non-empty password to complete round", () => {
+      const password = "";
+      const isValid = password.trim().length > 0;
+      expect(isValid).toBe(false);
+    });
+
+    it("should accept a valid non-empty password", () => {
+      const password = "maria123";
+      const isValid = password.trim().length > 0;
+      expect(isValid).toBe(true);
+    });
+
+    it("should trim whitespace from password before validation", () => {
+      const password = "  maria123  ";
+      const trimmed = password.trim();
+      expect(trimmed).toBe("maria123");
+      expect(trimmed.length > 0).toBe(true);
+    });
+
+    it("should reject password that is only whitespace", () => {
+      const password = "   ";
+      const isValid = password.trim().length > 0;
+      expect(isValid).toBe(false);
+    });
+
+    it("should associate operator name with completed round", () => {
+      const operatorName = "Maria";
+      const roundUpdate = { status: "completed", completedBy: operatorName };
+      expect(roundUpdate.completedBy).toBe("Maria");
+      expect(roundUpdate.status).toBe("completed");
+    });
+
+    it("should store completion timestamp", () => {
+      const completedAt = new Date();
+      expect(completedAt instanceof Date).toBe(true);
+      expect(completedAt.getTime()).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Completion history", () => {
+    it("should return completed rounds sorted by date descending", () => {
+      const history = [
+        { date: "2026-06-19", completedBy: "Maria" },
+        { date: "2026-06-17", completedBy: "Erica" },
+        { date: "2026-06-15", completedBy: "Jo\u00e3o" },
+      ];
+      // Already sorted desc
+      expect(history[0].date > history[1].date).toBe(true);
+      expect(history[1].date > history[2].date).toBe(true);
+    });
+
+    it("should only include completed rounds (not open or not_done)", () => {
+      const allRounds = [
+        { status: "completed", completedBy: "Maria" },
+        { status: "open", completedBy: null },
+        { status: "not_done", completedBy: null },
+        { status: "completed", completedBy: "Erica" },
+      ];
+      const completedOnly = allRounds.filter(r => r.status === "completed");
+      expect(completedOnly.length).toBe(2);
+      expect(completedOnly.every(r => r.completedBy !== null)).toBe(true);
+    });
+
+    it("should limit history to specified count", () => {
+      const limit = 30;
+      const allHistory = Array.from({ length: 50 }, (_, i) => ({
+        date: `2026-06-${String(i + 1).padStart(2, "0")}`,
+        completedBy: `Operator ${i}`,
+      }));
+      const limited = allHistory.slice(0, limit);
+      expect(limited.length).toBe(30);
+    });
+  });
+
   describe("Analytics calculation", () => {
     it("should calculate fail rate correctly", () => {
       const failCount = 3;

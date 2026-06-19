@@ -4478,3 +4478,6 @@
 - [x] Checklist de Desperdício: Scheduler - Gerar ronda Seg/Qua/Sex às 07h
 - [x] Checklist de Desperdício: Scheduler - Travar ronda às 17h
 - [x] Checklist de Desperdício: Testes vitest
+- [x] Checklist: Modal de senha ao clicar "Concluir Ronda" para identificar quem concluiu
+- [x] Checklist: Salvar nome do operador (completedBy) na ronda ao concluir
+- [x] Checklist: Histórico com ícone de relógio mostrando quem concluiu cada ronda (data + nome)
