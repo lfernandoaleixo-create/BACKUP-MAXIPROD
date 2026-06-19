@@ -5,6 +5,7 @@ import { importSuppliers, importPayments, trackingCache, importPos, importPoProd
 import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
+import { gql } from "./maxiprodGraphQL";
 
 // Cache de cotação USD/BRL em memória (TTL: 30 minutos)
 let exchangeRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
@@ -1355,4 +1356,73 @@ export const importRouter = router({
 
     return containers;
   }),
+
+  // ===== PREVISÃO DE ENTREGA (from Maxiprod) =====
+  syncPrevisaoEntrega: publicProcedure.mutation(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Fetch ALL purchase orders from Maxiprod (all states)
+    const data = await gql<{ pedidosDeCompra: { totalCount: number; items: any[] } }>(`{
+      pedidosDeCompra(take: 200) {
+        totalCount
+        items {
+          numero
+          referencia
+          entregaPrevistaData
+          estado
+        }
+      }
+    }`);
+
+    const maxiprodPOs = data.pedidosDeCompra?.items || [];
+    if (maxiprodPOs.length === 0) return { updated: 0 };
+
+    // Get all import_pos from DB
+    const allPos = await db.select().from(importPos);
+
+    let updated = 0;
+    for (const mpo of maxiprodPOs) {
+      const ref = (mpo.referencia || '').toUpperCase();
+      const previsao = mpo.entregaPrevistaData || null;
+      if (!previsao) continue;
+
+      // Match by extracting PO number from referencia
+      // Patterns: "PO55 - COMERCIAL" -> "PO55", "ZYZ2026-018 - COMERCIAL" -> skip (handled by import_payments)
+      // Also: "01PH202603 - COMERCIAL" -> "01PH202603"
+      const refParts = ref.split(' - ');
+      const refCode = refParts[0].trim();
+
+      for (const po of allPos) {
+        const poNum = (po.poNumber || '').toUpperCase();
+        if (!poNum) continue;
+
+        // Direct match: referencia starts with the PO number
+        if (refCode === poNum || refCode === poNum.replace('PO0', 'PO')) {
+          if (po.previsaoEntrega !== previsao) {
+            await db.update(importPos)
+              .set({ previsaoEntrega: previsao })
+              .where(eq(importPos.id, po.id));
+            updated++;
+          }
+          break;
+        }
+      }
+    }
+
+    return { updated, totalMaxiprod: maxiprodPOs.length };
+  }),
+
+  getPrevisaoEntrega: publicProcedure
+    .input(z.object({ supplierId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({
+        id: importPos.id,
+        poNumber: importPos.poNumber,
+        previsaoEntrega: importPos.previsaoEntrega,
+      }).from(importPos)
+        .where(eq(importPos.supplierId, input.supplierId));
+    }),
 });

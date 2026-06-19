@@ -4441,3 +4441,11 @@
 - [x] Puxar produtos da tabela import_po_products (POs da aba Importação) para os cards do Rastreio em Conjunto quando não houver match no purchase_order_items
 - [x] Fix: Matching de PO por nome do fornecedor (fallback para IDs duplicados como BETTY-JIDAXIANG)
 - [x] Adicionar seção de Rastreio em Conjunto dentro do card de Pedidos de Compra (POs) na aba Estoque
+
+## Previsão de Entrega nas POs (19/06/2026)
+- [x] Adicionar coluna previsao_entrega na tabela import_pos
+- [x] Criar endpoint para buscar entregaPrevistaData de TODOS os pedidos de compra do Maxiprod
+- [x] Mapear referencia do Maxiprod para po_number da import_pos
+- [x] Exibir data de previsão de entrega nos cards das POs na aba Importação
+- [x] Ordenar POs por data de chegada (mais próxima primeiro)
+- [x] Incluir POs antigas (já recebidas) no mapeamento de datas

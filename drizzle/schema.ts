@@ -2519,6 +2519,7 @@ export const importPos = mysqlTable("import_pos", {
   totalCiRemessa: decimal("total_ci_remessa", { precision: 12, scale: 2 }), // Total CI da remessa
   valorTotalProdutosUsdRemessa: decimal("valor_total_produtos_usd_remessa", { precision: 12, scale: 2 }), // Valor total dos produtos USD
   navigationStatus: varchar("navigation_status", { length: 20 }).default("navegando"), // 'navegando' | 'recebida'
+  previsaoEntrega: varchar("previsao_entrega", { length: 50 }), // Data de previsão de entrega do Maxiprod (ISO string)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type ImportPo = typeof importPos.$inferSelect;

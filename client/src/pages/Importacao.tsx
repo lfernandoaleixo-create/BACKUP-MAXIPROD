@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { RastreioEmConjunto } from "@/components/RastreioEmConjunto";
 import { trpc } from "@/lib/trpc";
@@ -2286,7 +2286,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
   const [newPoName, setNewPoName] = useState('');
   const [showLogisticsFields, setShowLogisticsFields] = useState(false);
   const [newPoLogistics, setNewPoLogistics] = useState<Record<string, string>>({});
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "arrival">("arrival");
   const utils = trpc.useUtils();
   const createPoMut = trpc.import.createPo.useMutation({
     onSuccess: () => {
@@ -2336,12 +2336,12 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-400">{(pos || []).length} POs</span>
           <button
-            onClick={() => setSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
+            onClick={() => setSortOrder(prev => prev === "arrival" ? "newest" : prev === "newest" ? "oldest" : "arrival")}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200"
-            title={sortOrder === "newest" ? "Mais recentes primeiro" : "Mais antigas primeiro"}
+            title={sortOrder === "arrival" ? "Por data de chegada" : sortOrder === "newest" ? "Mais recentes primeiro" : "Mais antigas primeiro"}
           >
             <ArrowUpDown className="w-3 h-3" />
-            {sortOrder === "newest" ? "Recentes" : "Antigas"}
+            {sortOrder === "arrival" ? "Chegada" : sortOrder === "newest" ? "Recentes" : "Antigas"}
           </button>
         </div>
         <button
@@ -2545,7 +2545,18 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
           </div>
         </div>
       )}
-      {[...(pos || [])].sort((a, b) => sortOrder === "newest" ? b.id - a.id : a.id - b.id).map(po => (
+      {[...(pos || [])].sort((a, b) => {
+        if (sortOrder === "arrival") {
+          const dateA = a.previsaoEntrega ? new Date(a.previsaoEntrega).getTime() : 0;
+          const dateB = b.previsaoEntrega ? new Date(b.previsaoEntrega).getTime() : 0;
+          // POs with dates come first, sorted by nearest date
+          if (dateA && dateB) return dateA - dateB;
+          if (dateA && !dateB) return -1;
+          if (!dateA && dateB) return 1;
+          return b.id - a.id;
+        }
+        return sortOrder === "newest" ? b.id - a.id : a.id - b.id;
+      }).map(po => (
         <div key={po.id} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
           <button
             onClick={() => setExpandedPo(expandedPo === po.id ? null : po.id)}
@@ -2591,6 +2602,14 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                     <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
                     <p className="text-[10px] text-slate-400">{po.containerName || ''}</p>
                   </div>
+                  {po.previsaoEntrega && (
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200" title="Previsão de Entrega">
+                      <CalendarDays className="w-3 h-3 text-indigo-500" />
+                      <span className="text-[10px] font-medium text-indigo-700">
+                        {new Date(po.previsaoEntrega).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </span>
+                    </div>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingPoId(po.id); setEditPoNumber(po.poNumber || ''); setEditContainerName(po.containerName || ''); }}
                     className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"

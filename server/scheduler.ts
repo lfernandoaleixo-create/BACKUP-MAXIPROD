@@ -13,6 +13,7 @@ import { saveFinancialSnapshot, detectFinancialChanges, getSnapshotDates } from 
 import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./paymentAuthReset";
 import { syncCobrancaPlanilhaAuto } from "./cobrancaPlanilhaSync";
 import { syncPriceTables } from "./priceTableSync";
+import { syncPrevisaoEntregaFromMaxiprod } from "./previsaoEntregaSync";
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
@@ -87,6 +88,15 @@ export function startScheduler(): void {
           console.log(`[Scheduler] Price tables synced: ${priceResult.tables} tabelas, ${priceResult.items} itens`);
         } catch (priceErr: any) {
           console.error(`[Scheduler] Price table sync failed: ${priceErr.message}`);
+        }
+        // Sync previsão de entrega from Maxiprod (once per hour)
+        if (now.getMinutes() < 5) {
+          try {
+            const previsaoResult = await syncPrevisaoEntregaFromMaxiprod();
+            console.log(`[Scheduler] Previsão de entrega synced: ${previsaoResult.updated} POs atualizadas`);
+          } catch (prevErr: any) {
+            console.error(`[Scheduler] Previsão de entrega sync failed: ${prevErr.message}`);
+          }
         }
       } else {
         console.error(`[Scheduler] Sync failed: ${result.error}`);
