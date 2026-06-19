@@ -4450,3 +4450,10 @@
 - [x] Ordenar POs por data de chegada (mais próxima primeiro)
 - [x] Incluir POs antigas (já recebidas) no mapeamento de datas
 - [x] Permitir preenchimento manual da previsão de entrega para POs sem data do Maxiprod
+
+## Custo em Tempo Real - FIFO (19/06/2026)
+- [x] Refazer lógica de média ponderada usando FIFO (abater vendas dos contêineres mais antigos)
+- [x] Coluna verde: custo real calculado com POs já recebidas que ainda estão no estoque
+- [x] Coluna laranja: custo projetado incluindo POs navegando/chegando
+- [x] Usar data de chegada (previsaoEntrega) para ordenar contêineres cronologicamente
+- [x] Usar quantidade atual do estoque (stock_items) vs quantidade por PO para determinar quais lotes ainda existem
