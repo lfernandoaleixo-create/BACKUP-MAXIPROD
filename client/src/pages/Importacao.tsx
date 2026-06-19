@@ -3426,7 +3426,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       key={item.codigoItem}
                       onClick={() => {
                         setNewProductCode(item.codigoItem);
-                        setNewProductDesc(item.descricaoItem);
+                        setNewProductDesc(item.descricaoItem || "");
                         setAddCodeSearch(item.codigoItem);
                         setShowAddCodeDropdown(false);
                       }}
@@ -3618,7 +3618,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                             {searchResults.map(item => (
                               <button
                                 key={item.codigoItem}
-                                onClick={() => selectProduct(item.codigoItem, item.descricaoItem)}
+                                onClick={() => selectProduct(item.codigoItem, item.descricaoItem || "")}
                                 className="w-full text-left px-2 py-1.5 hover:bg-blue-50 text-[10px] border-b border-slate-50 last:border-0"
                               >
                                 <span className="font-mono font-bold text-blue-600">{item.codigoItem}</span>

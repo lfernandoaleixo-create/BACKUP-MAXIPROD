@@ -652,22 +652,46 @@ export const importRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      const results = await db.select({
+      const q = input.query.toUpperCase();
+      // Search in stock_items (case-insensitive)
+      const stockResults = await db.select({
         codigoItem: stockItems.codigoItem,
         descricaoItem: stockItems.descricaoItem,
       })
         .from(stockItems)
         .where(
-          sql`(${stockItems.codigoItem} LIKE ${`%${input.query}%`} OR ${stockItems.descricaoItem} LIKE ${`%${input.query}%`})`
+          sql`(${stockItems.codigoItem} LIKE ${`%${q}%`} OR UPPER(${stockItems.descricaoItem}) LIKE ${`%${q}%`})`
         )
         .limit(30);
-      // Deduplicate by codigoItem
+      
+      // Also search in purchase_order_items for products not yet in stock (case-insensitive)
+      const poResults = await db.select({
+        codigoItem: purchaseOrderItems.codigoItem,
+        descricaoItem: purchaseOrderItems.descricaoItem,
+      })
+        .from(purchaseOrderItems)
+        .where(
+          and(
+            sql`${purchaseOrderItems.codigoItem} IS NOT NULL`,
+            sql`(${purchaseOrderItems.codigoItem} LIKE ${`%${q}%`} OR UPPER(${purchaseOrderItems.descricaoItem}) LIKE ${`%${q}%`})`
+          )
+        )
+        .limit(30);
+      
+      // Merge and deduplicate by codigoItem (stock takes priority)
       const seen = new Set<string>();
-      return results.filter(r => {
-        if (seen.has(r.codigoItem)) return false;
+      const combined: Array<{ codigoItem: string; descricaoItem: string | null }> = [];
+      for (const r of stockResults) {
+        if (!r.codigoItem || seen.has(r.codigoItem)) continue;
         seen.add(r.codigoItem);
-        return true;
-      });
+        combined.push(r);
+      }
+      for (const r of poResults) {
+        if (!r.codigoItem || seen.has(r.codigoItem)) continue;
+        seen.add(r.codigoItem);
+        combined.push({ codigoItem: r.codigoItem, descricaoItem: r.descricaoItem });
+      }
+      return combined;
     }),
 
   // ===== CRIAR PO =====

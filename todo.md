@@ -4481,3 +4481,5 @@
 - [x] Checklist: Modal de senha ao clicar "Concluir Ronda" para identificar quem concluiu
 - [x] Checklist: Salvar nome do operador (completedBy) na ronda ao concluir
 - [x] Checklist: Histórico com ícone de relógio mostrando quem concluiu cada ronda (data + nome)
+- [x] Fix: Autocomplete de Código do Produto na PO agora busca também em pedidos de compra (produtos novos que ainda não têm estoque)
+- [x] Fix: Busca case-insensitive no autocomplete de produtos
