@@ -4449,3 +4449,4 @@
 - [x] Exibir data de previsão de entrega nos cards das POs na aba Importação
 - [x] Ordenar POs por data de chegada (mais próxima primeiro)
 - [x] Incluir POs antigas (já recebidas) no mapeamento de datas
+- [x] Permitir preenchimento manual da previsão de entrega para POs sem data do Maxiprod

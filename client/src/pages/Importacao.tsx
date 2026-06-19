@@ -2325,6 +2325,16 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
   const [editingPoId, setEditingPoId] = useState<number | null>(null);
   const [editPoNumber, setEditPoNumber] = useState('');
   const [editContainerName, setEditContainerName] = useState('');
+  const [editingPrevisaoPoId, setEditingPrevisaoPoId] = useState<number | null>(null);
+  const [editPrevisaoDate, setEditPrevisaoDate] = useState('');
+  const updatePrevisaoMut = trpc.import.updatePrevisaoEntrega.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+      setEditingPrevisaoPoId(null);
+      setEditPrevisaoDate('');
+      toast.success('Data de previsão atualizada!');
+    },
+  });
 
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
@@ -2602,13 +2612,63 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                     <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
                     <p className="text-[10px] text-slate-400">{po.containerName || ''}</p>
                   </div>
-                  {po.previsaoEntrega && (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200" title="Previsão de Entrega">
+                  {editingPrevisaoPoId === po.id ? (
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="date"
+                        className="border border-indigo-300 rounded px-1.5 py-0.5 text-[10px] w-28 bg-white"
+                        value={editPrevisaoDate}
+                        onChange={e => setEditPrevisaoDate(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => {
+                          if (editPrevisaoDate) {
+                            updatePrevisaoMut.mutate({ poId: po.id, previsaoEntrega: editPrevisaoDate + 'T00:00:00.000-03:00' });
+                          }
+                        }}
+                        className="p-0.5 text-green-600 hover:bg-green-50 rounded"
+                        title="Salvar"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => { setEditingPrevisaoPoId(null); setEditPrevisaoDate(''); }}
+                        className="p-0.5 text-red-400 hover:bg-red-50 rounded"
+                        title="Cancelar"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : po.previsaoEntrega ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingPrevisaoPoId(po.id);
+                        const d = new Date(po.previsaoEntrega!);
+                        setEditPrevisaoDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                      title="Clique para editar a Previsão de Entrega"
+                    >
                       <CalendarDays className="w-3 h-3 text-indigo-500" />
                       <span className="text-[10px] font-medium text-indigo-700">
                         {new Date(po.previsaoEntrega).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                       </span>
-                    </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingPrevisaoPoId(po.id);
+                        setEditPrevisaoDate('');
+                      }}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-dashed border-slate-300 hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+                      title="Definir Previsão de Entrega"
+                    >
+                      <CalendarDays className="w-3 h-3 text-slate-400" />
+                      <span className="text-[10px] text-slate-400">Definir data</span>
+                    </button>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingPoId(po.id); setEditPoNumber(po.poNumber || ''); setEditContainerName(po.containerName || ''); }}

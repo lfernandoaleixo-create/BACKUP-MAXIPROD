@@ -1425,4 +1425,18 @@ export const importRouter = router({
       }).from(importPos)
         .where(eq(importPos.supplierId, input.supplierId));
     }),
+
+  updatePrevisaoEntrega: publicProcedure
+    .input(z.object({
+      poId: z.number(),
+      previsaoEntrega: z.string().nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importPos)
+        .set({ previsaoEntrega: input.previsaoEntrega })
+        .where(eq(importPos.id, input.poId));
+      return { success: true };
+    }),
 });
