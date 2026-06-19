@@ -4483,3 +4483,6 @@
 - [x] Checklist: Histórico com ícone de relógio mostrando quem concluiu cada ronda (data + nome)
 - [x] Fix: Autocomplete de Código do Produto na PO agora busca também em pedidos de compra (produtos novos que ainda não têm estoque)
 - [x] Fix: Busca case-insensitive no autocomplete de produtos
+- [x] Criar tabela product_catalog persistente que acumula todos os produtos (nunca deleta)
+- [x] Atualizar sync para inserir/atualizar no product_catalog (INSERT ON DUPLICATE KEY UPDATE)
+- [x] Atualizar searchStockProducts para buscar no product_catalog em vez de stock_items + purchase_order_items

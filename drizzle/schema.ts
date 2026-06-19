@@ -55,6 +55,25 @@ export type StockItem = typeof stockItems.$inferSelect;
 export type InsertStockItem = typeof stockItems.$inferInsert;
 
 /**
+ * Catálogo persistente de produtos - NUNCA deleta, apenas insere/atualiza.
+ * Acumula todos os produtos que já passaram pelo sistema (estoque, PO, vendas).
+ * Garante que nenhum produto desaparece do autocomplete.
+ */
+export const productCatalog = mysqlTable("product_catalog", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull().unique(),
+  descricaoItem: text("descricaoItem").notNull(),
+  grupoCodigo: varchar("grupoCodigo", { length: 20 }),
+  unidadeMedida: varchar("unidadeMedida", { length: 10 }),
+  source: varchar("source", { length: 20 }).notNull().default("stock"), // stock, po, sales
+  firstSeenAt: timestamp("firstSeenAt").defaultNow().notNull(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+});
+
+export type ProductCatalog = typeof productCatalog.$inferSelect;
+export type InsertProductCatalog = typeof productCatalog.$inferInsert;
+
+/**
  * Pedidos de venda items from Maxiprod - raw data collected via scraping
  */
 export const orderItems = mysqlTable("order_items", {

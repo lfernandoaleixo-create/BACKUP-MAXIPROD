@@ -29,6 +29,7 @@ import {
   cobrancaPlanilha,
   orderCancellations,
   chequeSyncChanges,
+  productCatalog,
 } from "../drizzle/schema";
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
@@ -919,6 +920,51 @@ async function saveAllData(
     if (poData.length > 0) {
       for (let i = 0; i < poData.length; i += 200) {
         await tx.insert(purchaseOrderItems).values(poData.slice(i, i + 200));
+      }
+    }
+
+    // ═══ CATÁLOGO PERSISTENTE: Acumula todos os produtos (NUNCA deleta) ═══
+    // Insere novos produtos e atualiza lastSeenAt dos existentes
+    const catalogEntries: Array<{ codigoItem: string; descricaoItem: string; grupoCodigo: string | null; unidadeMedida: string | null; source: string }> = [];
+    
+    // From stock
+    for (const item of stockData) {
+      if (item.codigoItem) {
+        catalogEntries.push({
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem || item.codigoItem,
+          grupoCodigo: item.grupoCodigo || null,
+          unidadeMedida: item.unidadeMedida || null,
+          source: "stock",
+        });
+      }
+    }
+    // From POs
+    for (const item of poData) {
+      if (item.codigoItem && !catalogEntries.find(e => e.codigoItem === item.codigoItem)) {
+        catalogEntries.push({
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem || item.descricao || item.codigoItem,
+          grupoCodigo: item.codigoGrupo || null,
+          unidadeMedida: item.unidadeMedida || null,
+          source: "po",
+        });
+      }
+    }
+    
+    // Batch upsert into product_catalog
+    for (let i = 0; i < catalogEntries.length; i += 100) {
+      const batch = catalogEntries.slice(i, i + 100);
+      for (const entry of batch) {
+        await tx.execute(sql`
+          INSERT INTO product_catalog (codigoItem, descricaoItem, grupoCodigo, unidadeMedida, source, firstSeenAt, lastSeenAt)
+          VALUES (${entry.codigoItem}, ${entry.descricaoItem}, ${entry.grupoCodigo}, ${entry.unidadeMedida}, ${entry.source}, NOW(), NOW())
+          ON DUPLICATE KEY UPDATE
+            descricaoItem = VALUES(descricaoItem),
+            grupoCodigo = COALESCE(VALUES(grupoCodigo), grupoCodigo),
+            unidadeMedida = COALESCE(VALUES(unidadeMedida), unidadeMedida),
+            lastSeenAt = NOW()
+        `);
       }
     }
 

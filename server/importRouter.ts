@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems, purchaseOrderItems } from "../drizzle/schema";
+import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems, purchaseOrderItems, productCatalog } from "../drizzle/schema";
 import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
@@ -647,51 +647,23 @@ export const importRouter = router({
     }),
 
   // ===== BUSCA DE PRODUTOS DO ESTOQUE (para seletor) =====
+  // Usa product_catalog (tabela persistente que NUNCA deleta produtos)
   searchStockProducts: publicProcedure
     .input(z.object({ query: z.string().min(1) }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
       const q = input.query.toUpperCase();
-      // Search in stock_items (case-insensitive)
-      const stockResults = await db.select({
-        codigoItem: stockItems.codigoItem,
-        descricaoItem: stockItems.descricaoItem,
+      const results = await db.select({
+        codigoItem: productCatalog.codigoItem,
+        descricaoItem: productCatalog.descricaoItem,
       })
-        .from(stockItems)
+        .from(productCatalog)
         .where(
-          sql`(${stockItems.codigoItem} LIKE ${`%${q}%`} OR UPPER(${stockItems.descricaoItem}) LIKE ${`%${q}%`})`
+          sql`(${productCatalog.codigoItem} LIKE ${`%${q}%`} OR UPPER(${productCatalog.descricaoItem}) LIKE ${`%${q}%`})`
         )
         .limit(30);
-      
-      // Also search in purchase_order_items for products not yet in stock (case-insensitive)
-      const poResults = await db.select({
-        codigoItem: purchaseOrderItems.codigoItem,
-        descricaoItem: purchaseOrderItems.descricaoItem,
-      })
-        .from(purchaseOrderItems)
-        .where(
-          and(
-            sql`${purchaseOrderItems.codigoItem} IS NOT NULL`,
-            sql`(${purchaseOrderItems.codigoItem} LIKE ${`%${q}%`} OR UPPER(${purchaseOrderItems.descricaoItem}) LIKE ${`%${q}%`})`
-          )
-        )
-        .limit(30);
-      
-      // Merge and deduplicate by codigoItem (stock takes priority)
-      const seen = new Set<string>();
-      const combined: Array<{ codigoItem: string; descricaoItem: string | null }> = [];
-      for (const r of stockResults) {
-        if (!r.codigoItem || seen.has(r.codigoItem)) continue;
-        seen.add(r.codigoItem);
-        combined.push(r);
-      }
-      for (const r of poResults) {
-        if (!r.codigoItem || seen.has(r.codigoItem)) continue;
-        seen.add(r.codigoItem);
-        combined.push({ codigoItem: r.codigoItem, descricaoItem: r.descricaoItem });
-      }
-      return combined;
+      return results;
     }),
 
   // ===== CRIAR PO =====
