@@ -30,6 +30,7 @@ import { salesOrderRouter } from "./salesOrderRouter";
 import { creditCardRouter } from "./creditCardRouter";
 import { importRouter } from "./importRouter";
 import { salesVisitRouter } from "./salesVisitRouter";
+import { checklistRouter } from "./checklistRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -50,6 +51,7 @@ export const appRouter = router({
   creditCard: creditCardRouter,
   import: importRouter,
   salesVisit: salesVisitRouter,
+  checklist: checklistRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

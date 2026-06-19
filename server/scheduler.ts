@@ -18,6 +18,8 @@ import { syncPrevisaoEntregaFromMaxiprod } from "./previsaoEntregaSync";
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
 let dailyCollectionTask: ScheduledTask | null = null;
+let checklistGenerateTask: ScheduledTask | null = null;
+let checklistLockTask: ScheduledTask | null = null;
 
 // Start the business-hours sync scheduler
 // Runs every 5 minutes, Monday-Friday, 7:00-17:55 (Brasilia time)
@@ -120,6 +122,53 @@ export function startScheduler(): void {
   // Daily collection job removido conforme solicitação do Fernando (28/04/2026)
   console.log("[Scheduler] Daily collection job: DESABILITADO (cobrança 100% manual)");
 
+  // ─── Checklist de Desperdício: Gerar ronda Seg/Qua/Sex às 07:00 ───
+  if (!checklistGenerateTask) {
+    checklistGenerateTask = schedule("0 7 * * 1,3,5", async () => {
+      console.log(`[Scheduler] Checklist: Gerando ronda do dia...`);
+      try {
+        const { getDb } = await import("./db");
+        const db = await getDb();
+        if (!db) return;
+        const { checklistRounds } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+        const existing = await db.select().from(checklistRounds).where(eq(checklistRounds.date, today)).limit(1);
+        if (existing.length === 0) {
+          await db.insert(checklistRounds).values({ date: today, status: "open" });
+          console.log(`[Scheduler] Checklist: Ronda criada para ${today}`);
+        } else {
+          console.log(`[Scheduler] Checklist: Ronda já existe para ${today}`);
+        }
+      } catch (error: any) {
+        console.error(`[Scheduler] Checklist generate failed: ${error.message}`);
+      }
+    }, { timezone: "America/Sao_Paulo" });
+    console.log("[Scheduler] Checklist generate: Seg/Qua/Sex às 07:00 (America/Sao_Paulo)");
+  }
+
+  // ─── Checklist de Desperdício: Travar rondas abertas às 17:00 ───
+  if (!checklistLockTask) {
+    checklistLockTask = schedule("0 17 * * 1,3,5", async () => {
+      console.log(`[Scheduler] Checklist: Travando rondas abertas...`);
+      try {
+        const { getDb } = await import("./db");
+        const db = await getDb();
+        if (!db) return;
+        const { checklistRounds } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+        await db.update(checklistRounds)
+          .set({ status: "not_done", lockedAt: new Date() })
+          .where(and(eq(checklistRounds.date, today), eq(checklistRounds.status, "open")));
+        console.log(`[Scheduler] Checklist: Rondas abertas de ${today} travadas como 'não realizado'`);
+      } catch (error: any) {
+        console.error(`[Scheduler] Checklist lock failed: ${error.message}`);
+      }
+    }, { timezone: "America/Sao_Paulo" });
+    console.log("[Scheduler] Checklist lock: Seg/Qua/Sex às 17:00 (America/Sao_Paulo)");
+  }
+
   // Daily reset of payment authorizations at midnight (00:00) Brasilia time, every day
   if (!dailyResetTask) {
     dailyResetTask = schedule("0 0 * * *", async () => {
@@ -155,6 +204,16 @@ export function stopScheduler(): void {
     dailyCollectionTask.stop();
     dailyCollectionTask = null;
     console.log("[Scheduler] Daily collection task stopped");
+  }
+  if (checklistGenerateTask) {
+    checklistGenerateTask.stop();
+    checklistGenerateTask = null;
+    console.log("[Scheduler] Checklist generate task stopped");
+  }
+  if (checklistLockTask) {
+    checklistLockTask.stop();
+    checklistLockTask = null;
+    console.log("[Scheduler] Checklist lock task stopped");
   }
 }
 

@@ -2600,3 +2600,57 @@ export const importConfig = mysqlTable("import_config", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 export type ImportConfig = typeof importConfig.$inferSelect;
+
+
+/**
+ * Checklist de Desperdício - Rondas
+ * Uma ronda é gerada automaticamente Seg/Qua/Sex às 07:00 (America/Sao_Paulo)
+ * Trava automaticamente às 17:00 se não concluída
+ */
+export const checklistRounds = mysqlTable("checklist_rounds", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  status: mysqlEnum("status", ["open", "completed", "not_done"]).default("open").notNull(),
+  completedBy: varchar("completed_by", { length: 100 }), // nome do operador que concluiu
+  completedAt: timestamp("completed_at"),
+  lockedAt: timestamp("locked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ChecklistRound = typeof checklistRounds.$inferSelect;
+export type InsertChecklistRound = typeof checklistRounds.$inferInsert;
+
+/**
+ * Checklist de Desperdício - Itens de verificação
+ * 3 setores, 6 itens cada (18 total)
+ * isActive permite desativar itens sem perder histórico
+ */
+export const checklistItems = mysqlTable("checklist_items", {
+  id: int("id").autoincrement().primaryKey(),
+  sector: int("sector").notNull(), // 1, 2, or 3
+  sectorName: varchar("sector_name", { length: 100 }).notNull(),
+  orderIndex: int("order_index").notNull(), // 1-6 within sector
+  text: text("text").notNull(), // pergunta do checklist
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ChecklistItem = typeof checklistItems.$inferSelect;
+export type InsertChecklistItem = typeof checklistItems.$inferInsert;
+
+/**
+ * Checklist de Desperdício - Respostas
+ * Cada resposta é Verde (conforme) ou Vermelho (nao_conforme)
+ * Quando nao_conforme: observação obrigatória, foto opcional
+ */
+export const checklistResponses = mysqlTable("checklist_responses", {
+  id: int("id").autoincrement().primaryKey(),
+  roundId: int("round_id").notNull(), // FK to checklist_rounds.id
+  itemId: int("item_id").notNull(), // FK to checklist_items.id
+  status: mysqlEnum("response_status", ["conforme", "nao_conforme"]).notNull(),
+  observation: text("observation"), // obrigatório quando nao_conforme
+  photoUrl: text("photo_url"), // URL da foto no S3
+  photoKey: varchar("photo_key", { length: 255 }), // key no S3
+  respondedBy: varchar("responded_by", { length: 100 }).notNull(), // nome do operador
+  respondedAt: timestamp("responded_at").defaultNow().notNull(),
+});
+export type ChecklistResponse = typeof checklistResponses.$inferSelect;
+export type InsertChecklistResponse = typeof checklistResponses.$inferInsert;

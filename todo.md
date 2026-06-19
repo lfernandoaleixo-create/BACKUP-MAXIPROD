@@ -4457,3 +4457,24 @@
 - [x] Coluna laranja: custo projetado incluindo POs navegando/chegando
 - [x] Usar data de chegada (previsaoEntrega) para ordenar contêineres cronologicamente
 - [x] Usar quantidade atual do estoque (stock_items) vs quantidade por PO para determinar quais lotes ainda existem
+
+- [x] Checklist de Desperdício: Criar tabelas no banco (checklist_rounds, checklist_items, checklist_responses)
+- [x] Checklist de Desperdício: Seed dos 18 itens (3 setores x 6 itens)
+- [x] Checklist de Desperdício: Backend - getRound (buscar/criar ronda do dia)
+- [x] Checklist de Desperdício: Backend - getItems (listar itens ativos por setor)
+- [x] Checklist de Desperdício: Backend - submitResponse (salvar resposta Verde/Vermelho + obs + foto)
+- [x] Checklist de Desperdício: Backend - completeRound (concluir ronda)
+- [x] Checklist de Desperdício: Backend - lockExpiredRounds (travar às 17h)
+- [x] Checklist de Desperdício: Backend - getHistory (histórico paginado)
+- [x] Checklist de Desperdício: Backend - getAnalytics (itens que mais reprovam)
+- [x] Checklist de Desperdício: Frontend - Nova aba dentro de Produção
+- [x] Checklist de Desperdício: Frontend - 3 cards de setor com 6 itens cada
+- [x] Checklist de Desperdício: Frontend - Botões Verde/Vermelho por item
+- [x] Checklist de Desperdício: Frontend - Modal observação + foto quando Vermelho
+- [x] Checklist de Desperdício: Frontend - Botão "Concluir Ronda" (só habilita quando todos respondidos)
+- [x] Checklist de Desperdício: Frontend - Indicador visual Verde/Vermelho na aba
+- [x] Checklist de Desperdício: Frontend - Histórico com log (Data | Setor | Líder | Status)
+- [x] Checklist de Desperdício: Frontend - Analytics (itens que mais reprovam no mês)
+- [x] Checklist de Desperdício: Scheduler - Gerar ronda Seg/Qua/Sex às 07h
+- [x] Checklist de Desperdício: Scheduler - Travar ronda às 17h
+- [x] Checklist de Desperdício: Testes vitest

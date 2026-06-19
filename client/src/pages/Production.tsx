@@ -23,6 +23,7 @@ import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/p
 import { generateDailyPdf as generatePiroDailyPdf, generateWeeklyPdf as generatePiroWeeklyPdf, generateMonthlyPdf as generatePiroMonthlyPdf } from "@/lib/pirografiaPdfExport";
 import { generateAnnotationPdf } from "@/lib/annotationPdfExport";
 import ProductionCharts from "@/components/ProductionCharts";
+import { ChecklistDesperdicio } from "@/pages/ChecklistDesperdicio";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, Legend as RechartsLegend,
@@ -277,7 +278,7 @@ export default function Production() {
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos">("lancamento");
+  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos" | "checklist">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [showConversionModal, setShowConversionModal] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
@@ -903,6 +904,9 @@ export default function Production() {
             <button onClick={() => setViewMode("graficos")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "graficos" ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <BarChart3 className="w-4 h-4" /> Gráficos
             </button>
+            <button onClick={() => setViewMode("checklist")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "checklist" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <CheckCircle2 className="w-4 h-4" /> Checklist
+            </button>
 
             {/* ─── PDF Export Menu ─── */}
             <div className="relative">
@@ -1237,6 +1241,8 @@ export default function Production() {
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
         ) : viewMode === "graficos" ? (
           <ProductionCharts key={`charts-${viewMode}`} selectedDate={selectedDate} sectors={(sectors || []) as any} />
+        ) : viewMode === "checklist" ? (
+          <ChecklistDesperdicio />
         ) : (
           <PirografiaHistoryView />
         )}
