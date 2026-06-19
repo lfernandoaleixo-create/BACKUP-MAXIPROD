@@ -35,6 +35,9 @@ async function ingestStock(filePath) {
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   console.log(`[Ingest] Loading ${data.length} stock items from ${filePath}`);
 
+  // Only delete items that have a maxiprodId (from Maxiprod sync) to preserve manually added products
+  // Note: ingestBrowserData doesn't set maxiprodId, so we delete all and re-insert
+  // Manual products (00522-00527 etc) will need to be re-inserted if this script is run
   await db.execute(sql`DELETE FROM stock_items`);
 
   for (let i = 0; i < data.length; i += 20) {
