@@ -163,8 +163,9 @@ export function RastreioEmConjunto() {
   const [liveTrackingData, setLiveTrackingData] = useState<Map<number, LiveData>>(new Map());
   const [hoveredContainer, setHoveredContainer] = useState<number | null>(null);
   const [selectedContainer, setSelectedContainer] = useState<number | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
+  const markersRef = useRef<Map<string, any>>(new Map());
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
   const mapReadyRef = useRef(false);
 
@@ -181,11 +182,19 @@ export function RastreioEmConjunto() {
   const liveDataSize = liveTrackingData.size;
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !containers || !mapReadyRef.current) return;
-    if (liveDataSize === 0) return;
+    if (!map || !containers || !mapReady) return;
+    // Don't require live data - we can use cached vesselLat/vesselLng from getActiveContainers
+    const hasAnyCachedPosition = containers.some(c => c.vesselLat && c.vesselLng);
+    if (liveDataSize === 0 && !hasAnyCachedPosition) return;
 
     // Clear existing markers and polylines
-    markersRef.current.forEach(marker => { marker.map = null; });
+    markersRef.current.forEach(marker => {
+      if (marker.setMap) {
+        marker.setMap(null);
+      } else {
+        marker.map = null;
+      }
+    });
     markersRef.current.clear();
     polylinesRef.current.forEach(pl => pl.setMap(null));
     polylinesRef.current = [];
@@ -201,9 +210,22 @@ export function RastreioEmConjunto() {
 
     containers.forEach((container, index) => {
       const live = liveTrackingData.get(container.id);
-      if (!live) return;
+      
+      // Use live data if available, otherwise fallback to cached data from getActiveContainers
+      const vesselPosition = live?.vesselPosition || 
+        (container.vesselLat && container.vesselLng ? { lat: parseFloat(container.vesselLat), lng: parseFloat(container.vesselLng) } : null);
+      const progress = live?.progress || container.progress || 0;
+      const routeCoordinates = live?.routeCoordinates || [];
+      const originName = live?.originName || container.origin || '';
+      const originPosition = live?.originPosition || null;
+      const destName = live?.destName || container.destination || '';
+      const destPosition = live?.destPosition || null;
+      
+      // Skip only if we have absolutely no position data
+      if (!vesselPosition && !originPosition && !destPosition && routeCoordinates.length === 0) {
+        return;
+      }
 
-      const { vesselPosition, progress, routeCoordinates, originName, originPosition, destName, destPosition } = live;
       const color = colors[index % colors.length];
 
       // Draw route polyline
@@ -240,12 +262,23 @@ export function RastreioEmConjunto() {
           </div>
         `;
 
-        const originMarker = new google.maps.marker.AdvancedMarkerElement({
-          map,
-          position: originPosition,
-          content: originEl,
-        });
-        markersRef.current.set(`origin-${container.id}`, originMarker);
+        try {
+          const originMarker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position: originPosition,
+            content: originEl,
+          });
+          markersRef.current.set(`origin-${container.id}`, originMarker);
+        } catch (e) {
+          console.warn('[RastreioMap] AdvancedMarker failed for origin, using fallback:', e);
+          const fallback = new google.maps.Marker({
+            map,
+            position: originPosition,
+            title: originName.split(',')[0] || 'Origem',
+            icon: { url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' },
+          });
+          markersRef.current.set(`origin-${container.id}`, fallback);
+        }
         bounds.extend(originPosition);
         hasAnyPosition = true;
       }
@@ -315,13 +348,23 @@ export function RastreioEmConjunto() {
           setSelectedContainer(prev => prev === container.id ? null : container.id);
         });
 
-        const marker = new google.maps.marker.AdvancedMarkerElement({
-          map,
-          position: adjustedPosition,
-          content: markerEl,
-        });
-
-        markersRef.current.set(`vessel-${container.id}`, marker);
+        try {
+          const marker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position: adjustedPosition,
+            content: markerEl,
+          });
+          markersRef.current.set(`vessel-${container.id}`, marker);
+        } catch (e) {
+          console.warn('[RastreioMap] AdvancedMarker failed for vessel, using fallback:', e);
+          const fallback = new google.maps.Marker({
+            map,
+            position: adjustedPosition,
+            title: `${container.supplierName} • ${progress || 0}%`,
+            icon: { url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' },
+          });
+          markersRef.current.set(`vessel-${container.id}`, fallback);
+        }
         bounds.extend(adjustedPosition);
         hasAnyPosition = true;
       }
@@ -341,12 +384,23 @@ export function RastreioEmConjunto() {
           </div>
         `;
 
-        const destMarker = new google.maps.marker.AdvancedMarkerElement({
-          map,
-          position: destPosition,
-          content: destEl,
-        });
-        markersRef.current.set(`dest-${container.id}`, destMarker);
+        try {
+          const destMarker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position: destPosition,
+            content: destEl,
+          });
+          markersRef.current.set(`dest-${container.id}`, destMarker);
+        } catch (e) {
+          console.warn('[RastreioMap] AdvancedMarker failed for dest, using fallback:', e);
+          const fallback = new google.maps.Marker({
+            map,
+            position: destPosition,
+            title: destName.split(',')[0] || 'Destino',
+            icon: { url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' },
+          });
+          markersRef.current.set(`dest-${container.id}`, fallback);
+        }
         bounds.extend(destPosition);
         hasAnyPosition = true;
       }
@@ -362,11 +416,12 @@ export function RastreioEmConjunto() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containers, liveDataSize]);
+  }, [containers, liveDataSize, mapReady]);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     mapReadyRef.current = true;
+    setMapReady(true);
     map.setOptions({
       mapTypeId: "hybrid",
       disableDefaultUI: true,
@@ -547,7 +602,7 @@ export function RastreioEmConjunto() {
         )}
 
         {/* Loading overlay for live tracking */}
-        {containers.length > 0 && liveTrackingData.size === 0 && (
+        {containers.length > 0 && liveTrackingData.size === 0 && !containers.some(c => c.vesselLat && c.vesselLng) && (
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-40">
             <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
             <p className="mt-3 text-sm text-slate-300">Buscando posições dos navios...</p>
