@@ -1065,6 +1065,13 @@
       "when": 1782136363909,
       "tag": "0151_sticky_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "5",
+      "when": 1782152069873,
+      "tag": "0152_brief_orphan",
+      "breakpoints": true
     }
   ]
 }

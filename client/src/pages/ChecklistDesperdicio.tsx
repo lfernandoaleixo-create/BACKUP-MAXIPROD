@@ -27,7 +27,7 @@ export function ChecklistDesperdicio() {
   const [expandedSectors, setExpandedSectors] = useState<Set<number>>(new Set([1, 2, 3]));
   const [observationOpen, setObservationOpen] = useState<string | null>(null);
   const [observations, setObservations] = useState<Record<string, string>>({});
-  const [photos, setPhotos] = useState<Record<string, { data: string; name: string; type: string } | null>>({});
+  const [photos, setPhotos] = useState<Record<string, { data: string; name: string; type: string }[]>>({});
   const [submitting, setSubmitting] = useState<Set<string>>(new Set());
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [password, setPassword] = useState("");
@@ -119,15 +119,13 @@ export function ChecklistDesperdicio() {
 
     setSubmitting(prev => new Set(prev).add(key));
     try {
-      const photoData = photos[key];
+      const photoList = photos[key] || [];
       await submitResponse.mutateAsync({
         roundId: round.id,
         itemId,
         status,
         observation: observations[key] || undefined,
-        photoData: photoData?.data || undefined,
-        photoFileName: photoData?.name || undefined,
-        photoMimeType: photoData?.type || undefined,
+        photos: photoList.length > 0 ? photoList : undefined,
         operatorName: operator?.name || "Desconhecido",
       });
       // Clear local state for this item
@@ -144,23 +142,31 @@ export function ChecklistDesperdicio() {
     }
   };
 
-  // Handle photo selection
+  // Handle photo selection (multiple)
   const handlePhotoSelect = (itemId: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !round) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !round) return;
     
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Foto deve ter no máximo 5MB");
-      return;
-    }
+    const key = `${round.id}-${itemId}`;
     
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = (reader.result as string).split(",")[1];
-      const key = `${round.id}-${itemId}`;
-      setPhotos(prev => ({ ...prev, [key]: { data: base64, name: file.name, type: file.type } }));
-    };
-    reader.readAsDataURL(file);
+    Array.from(files).forEach(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`Foto "${file.name}" excede 5MB e foi ignorada`);
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        setPhotos(prev => ({
+          ...prev,
+          [key]: [...(prev[key] || []), { data: base64, name: file.name, type: file.type }]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset input so same file can be selected again
+    e.target.value = "";
   };
 
   // Completion history query
@@ -391,7 +397,8 @@ export function ChecklistDesperdicio() {
                       const key = `${round.id}-${item.id}`;
                       const isSubmitting = submitting.has(key);
                       const obsKey = key;
-                      const hasPhoto = !!photos[key];
+                      const photoList = photos[key] || [];
+                      const hasPhoto = photoList.length > 0;
 
                       return (
                         <div key={item.id} className={`px-4 py-3 ${response ? (response.status === "conforme" ? "bg-green-50/50" : "bg-red-50/50") : ""}`}>
@@ -469,18 +476,20 @@ export function ChecklistDesperdicio() {
                                   <div className="flex items-center gap-2">
                                     <label className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors">
                                       <Camera className="w-3.5 h-3.5" />
-                                      {hasPhoto ? "Foto anexada ✓" : "Anexar foto"}
+                                      {hasPhoto ? `${photoList.length} foto${photoList.length > 1 ? 's' : ''} ✓` : "Anexar foto"}
                                       <input
                                         type="file"
                                         accept="image/*"
+                                        multiple
                                         className="hidden"
                                         onChange={(e) => handlePhotoSelect(item.id, e)}
                                       />
                                     </label>
                                     {hasPhoto && (
                                       <button
-                                        onClick={() => setPhotos(prev => ({ ...prev, [key]: null }))}
+                                        onClick={() => setPhotos(prev => ({ ...prev, [key]: [] }))}
                                         className="text-xs text-red-500 hover:text-red-700"
+                                        title="Remover todas as fotos"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -500,12 +509,23 @@ export function ChecklistDesperdicio() {
                           )}
 
                           {/* Show existing observation (read-only when locked) */}
-                          {response?.status === "nao_conforme" && isLocked && (response.observation || response.photoUrl) && (
+                          {response?.status === "nao_conforme" && isLocked && (response.observation || response.photoUrl || (response.photoUrls && response.photoUrls.length > 0)) && (
                             <div className="mt-2 ml-8 bg-red-50 rounded-lg border border-red-100 p-3">
                               {response.observation && (
                                 <p className="text-xs text-red-700"><span className="font-semibold">Obs:</span> {response.observation}</p>
                               )}
-                              {response.photoUrl && (
+                              {/* Multiple photos (new format) */}
+                              {response.photoUrls && response.photoUrls.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {response.photoUrls.map((url: string, i: number) => (
+                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                      <Camera className="w-3 h-3" /> Foto {i + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Legacy single photo */}
+                              {!response.photoUrls?.length && response.photoUrl && (
                                 <a href={response.photoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1">
                                   <Camera className="w-3 h-3" /> Ver foto
                                 </a>

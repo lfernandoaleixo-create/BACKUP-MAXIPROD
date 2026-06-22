@@ -1,0 +1,1 @@
+ALTER TABLE `checklist_responses` ADD `photo_urls` json;

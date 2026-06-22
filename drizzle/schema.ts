@@ -2666,8 +2666,9 @@ export const checklistResponses = mysqlTable("checklist_responses", {
   itemId: int("item_id").notNull(), // FK to checklist_items.id
   status: mysqlEnum("response_status", ["conforme", "nao_conforme"]).notNull(),
   observation: text("observation"), // obrigatório quando nao_conforme
-  photoUrl: text("photo_url"), // URL da foto no S3
-  photoKey: varchar("photo_key", { length: 255 }), // key no S3
+  photoUrl: text("photo_url"), // URL da foto no S3 (legacy single photo)
+  photoKey: varchar("photo_key", { length: 255 }), // key no S3 (legacy)
+  photoUrls: json("photo_urls").$type<string[]>(), // Array de URLs de fotos
   respondedBy: varchar("responded_by", { length: 100 }).notNull(), // nome do operador
   respondedAt: timestamp("responded_at").defaultNow().notNull(),
 });

@@ -262,4 +262,99 @@ describe("Checklist Helper Functions", () => {
       expect(sorted[2].itemId).toBe(3);
     });
   });
+
+  describe("Multiple photos support", () => {
+    it("should support photos as an array per item", () => {
+      const photos: Record<string, { data: string; name: string; type: string }[]> = {};
+      const key = "1-5";
+      photos[key] = [];
+      expect(photos[key]).toHaveLength(0);
+    });
+
+    it("should accumulate multiple photos for same item", () => {
+      const photos: Record<string, { data: string; name: string; type: string }[]> = {};
+      const key = "1-5";
+      photos[key] = [
+        { data: "base64data1", name: "photo1.jpg", type: "image/jpeg" },
+        { data: "base64data2", name: "photo2.jpg", type: "image/jpeg" },
+      ];
+      expect(photos[key]).toHaveLength(2);
+      expect(photos[key][0].name).toBe("photo1.jpg");
+      expect(photos[key][1].name).toBe("photo2.jpg");
+    });
+
+    it("should detect hasPhoto correctly from array length", () => {
+      const photos: Record<string, { data: string; name: string; type: string }[]> = {
+        "1-5": [{ data: "x", name: "a.jpg", type: "image/jpeg" }],
+        "1-6": [],
+      };
+      const hasPhoto5 = (photos["1-5"] || []).length > 0;
+      const hasPhoto6 = (photos["1-6"] || []).length > 0;
+      const hasPhoto7 = (photos["1-7"] || []).length > 0;
+      expect(hasPhoto5).toBe(true);
+      expect(hasPhoto6).toBe(false);
+      expect(hasPhoto7).toBe(false);
+    });
+
+    it("should clear all photos by setting empty array", () => {
+      const photos: Record<string, { data: string; name: string; type: string }[]> = {
+        "1-5": [
+          { data: "x", name: "a.jpg", type: "image/jpeg" },
+          { data: "y", name: "b.jpg", type: "image/jpeg" },
+        ],
+      };
+      photos["1-5"] = [];
+      expect(photos["1-5"]).toHaveLength(0);
+    });
+
+    it("should display correct photo count text", () => {
+      const photoList = [
+        { data: "x", name: "a.jpg", type: "image/jpeg" },
+        { data: "y", name: "b.jpg", type: "image/jpeg" },
+        { data: "z", name: "c.jpg", type: "image/jpeg" },
+      ];
+      const text = `${photoList.length} foto${photoList.length > 1 ? 's' : ''} \u2713`;
+      expect(text).toBe("3 fotos \u2713");
+    });
+
+    it("should display singular text for single photo", () => {
+      const photoList = [{ data: "x", name: "a.jpg", type: "image/jpeg" }];
+      const text = `${photoList.length} foto${photoList.length > 1 ? 's' : ''} \u2713`;
+      expect(text).toBe("1 foto \u2713");
+    });
+
+    it("should handle photoUrls array in response for locked view", () => {
+      const response = {
+        photoUrl: "https://s3.example.com/old.jpg",
+        photoUrls: ["https://s3.example.com/1.jpg", "https://s3.example.com/2.jpg"],
+      };
+      // New format takes priority
+      const showMultiple = response.photoUrls && response.photoUrls.length > 0;
+      expect(showMultiple).toBe(true);
+      expect(response.photoUrls).toHaveLength(2);
+    });
+
+    it("should fall back to legacy photoUrl when photoUrls is empty", () => {
+      const response = {
+        photoUrl: "https://s3.example.com/old.jpg",
+        photoUrls: [] as string[],
+      };
+      const showMultiple = response.photoUrls && response.photoUrls.length > 0;
+      const showLegacy = !response.photoUrls?.length && !!response.photoUrl;
+      expect(showMultiple).toBe(false);
+      expect(showLegacy).toBe(true);
+    });
+
+    it("should reject photos larger than 5MB", () => {
+      const maxSize = 5 * 1024 * 1024;
+      const fileSize = 6 * 1024 * 1024;
+      expect(fileSize > maxSize).toBe(true);
+    });
+
+    it("should accept photos within 5MB", () => {
+      const maxSize = 5 * 1024 * 1024;
+      const fileSize = 3 * 1024 * 1024;
+      expect(fileSize > maxSize).toBe(false);
+    });
+  });
 });

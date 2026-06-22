@@ -139,7 +139,13 @@ export const checklistRouter = router({
       itemId: z.number(),
       status: z.enum(["conforme", "nao_conforme"]),
       observation: z.string().optional(),
-      photoData: z.string().optional(), // base64 encoded
+      photos: z.array(z.object({
+        data: z.string(), // base64
+        name: z.string(),
+        type: z.string(),
+      })).optional(),
+      // Legacy single photo support
+      photoData: z.string().optional(),
       photoFileName: z.string().optional(),
       photoMimeType: z.string().optional(),
       operatorName: z.string(),
@@ -167,16 +173,26 @@ export const checklistRouter = router({
         throw new Error("Horário de preenchimento encerrado (após 17:00).");
       }
       
-      // Upload photo if provided
+      // Upload photos (multiple)
+      const uploadedUrls: string[] = [];
+      if (input.photos && input.photos.length > 0) {
+        for (const photo of input.photos) {
+          const buffer = Buffer.from(photo.data, "base64");
+          const randomSuffix = Math.random().toString(36).substring(2, 10);
+          const key = `checklist-photos/${roundDate}/${input.itemId}-${randomSuffix}-${photo.name}`;
+          const result = await storagePut(key, buffer, photo.type || "image/jpeg");
+          uploadedUrls.push(result.url);
+        }
+      }
+      // Legacy single photo fallback
       let photoUrl: string | null = null;
-      let photoKey: string | null = null;
-      if (input.photoData && input.photoFileName) {
+      if (!input.photos?.length && input.photoData && input.photoFileName) {
         const buffer = Buffer.from(input.photoData, "base64");
         const randomSuffix = Math.random().toString(36).substring(2, 10);
         const key = `checklist-photos/${roundDate}/${input.itemId}-${randomSuffix}-${input.photoFileName}`;
         const result = await storagePut(key, buffer, input.photoMimeType || "image/jpeg");
         photoUrl = result.url;
-        photoKey = result.key;
+        uploadedUrls.push(result.url);
       }
       
       // Check if response already exists for this round+item
@@ -188,13 +204,20 @@ export const checklistRouter = router({
         .limit(1);
       
       if (existing.length > 0) {
-        // Update existing response
+        // Merge new photos with existing ones
+        const existingPhotos: string[] = (existing[0].photoUrls as string[] || []);
+        // Also include legacy photoUrl if present
+        if (existing[0].photoUrl && !existingPhotos.includes(existing[0].photoUrl)) {
+          existingPhotos.unshift(existing[0].photoUrl);
+        }
+        const allPhotos = [...existingPhotos, ...uploadedUrls];
+        
         await db.update(checklistResponses)
           .set({
             status: input.status,
             observation: input.observation || null,
-            photoUrl: photoUrl || existing[0].photoUrl,
-            photoKey: photoKey || existing[0].photoKey,
+            photoUrl: allPhotos[0] || existing[0].photoUrl,
+            photoUrls: allPhotos.length > 0 ? allPhotos : null,
             respondedBy: input.operatorName,
             respondedAt: new Date(),
           })
@@ -208,8 +231,8 @@ export const checklistRouter = router({
         itemId: input.itemId,
         status: input.status,
         observation: input.observation || null,
-        photoUrl,
-        photoKey,
+        photoUrl: uploadedUrls[0] || photoUrl,
+        photoUrls: uploadedUrls.length > 0 ? uploadedUrls : null,
         respondedBy: input.operatorName,
       });
       

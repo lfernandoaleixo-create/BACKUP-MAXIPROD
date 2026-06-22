@@ -4488,3 +4488,4 @@
 - [x] Atualizar searchStockProducts para buscar no product_catalog em vez de stock_items + purchase_order_items
 - [x] PO: Permitir casas decimais ilimitadas nos campos de valor da ordem de pagamento
 - [x] PO: Frete editável manualmente (mantém cálculo automático mas permite override)
+- [x] Checklist: Permitir múltiplas fotos por item (quantas quiser, não apenas uma)
