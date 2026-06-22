@@ -48,6 +48,11 @@ export function ChecklistDesperdicio() {
       utils.checklist.getRound.invalidate();
     },
   });
+  const clearResponse = trpc.checklist.clearResponse.useMutation({
+    onSuccess: () => {
+      utils.checklist.getRound.invalidate();
+    },
+  });
   const completeRound = trpc.checklist.completeRound.useMutation({
     onSuccess: () => {
       utils.checklist.getRound.invalidate();
@@ -85,6 +90,25 @@ export function ChecklistDesperdicio() {
   const handleSubmit = async (itemId: number, status: "conforme" | "nao_conforme") => {
     if (!round || isLocked) return;
     const key = `${round.id}-${itemId}`;
+    
+    // Toggle off: if clicking the same status that's already selected, clear it
+    const currentResponse = responses.find(r => r.itemId === itemId);
+    if (currentResponse?.status === status) {
+      setSubmitting(prev => new Set(prev).add(key));
+      try {
+        await clearResponse.mutateAsync({ roundId: round.id, itemId });
+        toast.success("Resposta removida");
+      } catch (err: any) {
+        toast.error(err.message || "Erro ao remover resposta");
+      } finally {
+        setSubmitting(prev => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+      return;
+    }
     
     if (status === "nao_conforme" && !observations[key]?.trim()) {
       // Open observation field if marking as non-conforme without observation

@@ -217,6 +217,40 @@ export const checklistRouter = router({
     }),
 
   /**
+   * Clear a response (toggle back to neutral)
+   */
+  clearResponse: publicProcedure
+    .input(z.object({
+      roundId: z.number(),
+      itemId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      // Verify round exists and is open
+      const rounds = await db.select().from(checklistRounds)
+        .where(eq(checklistRounds.id, input.roundId))
+        .limit(1);
+      
+      if (!rounds.length) {
+        throw new Error("Ronda não encontrada");
+      }
+      if (rounds[0].status !== "open") {
+        throw new Error("Esta ronda já foi concluída ou travada. Não é possível alterar.");
+      }
+      
+      // Delete the response
+      await db.delete(checklistResponses)
+        .where(and(
+          eq(checklistResponses.roundId, input.roundId),
+          eq(checklistResponses.itemId, input.itemId)
+        ));
+      
+      return { success: true };
+    }),
+
+  /**
    * Complete a round - validates operator password, then marks round as completed
    */
   completeRound: publicProcedure
