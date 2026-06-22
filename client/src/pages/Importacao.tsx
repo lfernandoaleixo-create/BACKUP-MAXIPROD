@@ -2084,7 +2084,7 @@ function NcmTaxesSection() {
             <div className="flex items-end gap-1">
               <button
                 onClick={() => {
-                  if (!form.ncm.trim() || !form.iiRate || !form.ipiRate) return toast.error('NCM, II e IPI obrigatórios');
+                  if (!form.ncm.trim() || form.iiRate === '' || form.ipiRate === '') return toast.error('NCM, II e IPI obrigatórios');
                   createNcm.mutate({ ncm: form.ncm.trim(), description: form.description.trim() || undefined, grupo: form.grupo.trim() || undefined, iiRate: form.iiRate, ipiRate: form.ipiRate, pisRate: form.pisRate, cofinsRate: form.cofinsRate });
                 }}
                 className="px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
