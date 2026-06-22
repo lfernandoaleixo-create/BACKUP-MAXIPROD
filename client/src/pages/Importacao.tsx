@@ -1120,33 +1120,33 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
       </td>
       {/* BLUE: Total a pagar */}
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalBrasilUsd} onChange={e => setForm({ ...form, totalBrasilUsd: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalParaguaiUsd} onChange={e => setForm({ ...form, totalParaguaiUsd: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      {/* GREEN: O que pagou */}
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.paraguaiUsd} onChange={e => setForm({ ...form, paraguaiUsd: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      {/* RED: O que falta pagar */}
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.saldoDevedorParaguai} onChange={e => setForm({ ...form, saldoDevedorParaguai: e.target.value })} className={`${inputClass} text-right`} />
-      </td>
-      <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} />
+<input type="number" step="any" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.totalBrasilUsd} onChange={e => setForm({ ...form, totalBrasilUsd: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.totalParaguaiUsd} onChange={e => setForm({ ...form, totalParaguaiUsd: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       {/* GREEN: O que pagou */}
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.paraguaiUsd} onChange={e => setForm({ ...form, paraguaiUsd: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       {/* RED: O que falta pagar */}
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.saldoDevedorParaguai} onChange={e => setForm({ ...form, saldoDevedorParaguai: e.target.value })} className={`${inputClass} text-right`} />
+       </td>
+       <td className="px-1 py-1.5">
+         <input type="number" step="any" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} />
       </td>
       <td className="px-1 py-1.5">
         <div className="flex flex-col gap-1">
@@ -1229,33 +1229,33 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
       </td>
       {/* BLUE: Total a pagar */}
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0.00" />
+        <input type="number" step="any" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0.00" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalBrasilUsd} onChange={e => setForm({ ...form, totalBrasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.totalBrasilUsd} onChange={e => setForm({ ...form, totalBrasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalParaguaiUsd} onChange={e => setForm({ ...form, totalParaguaiUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.totalParaguaiUsd} onChange={e => setForm({ ...form, totalParaguaiUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       {/* GREEN: O que pagou */}
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.paraguaiUsd} onChange={e => setForm({ ...form, paraguaiUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.paraguaiUsd} onChange={e => setForm({ ...form, paraguaiUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       {/* RED: O que falta pagar */}
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.saldoDevedorParaguai} onChange={e => setForm({ ...form, saldoDevedorParaguai: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.saldoDevedorParaguai} onChange={e => setForm({ ...form, saldoDevedorParaguai: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+        <input type="number" step="any" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
         <div className="flex flex-col gap-1">
@@ -3250,6 +3250,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const [comSilverioUsd, setComSilverioUsd] = useState(
     isLegacyInit && po.comissaoSilverio ? String((Number(po.comissaoSilverio) / legacyRate).toFixed(4)) : (po.comissaoSilverio || '')
   );
+  // Frete override: null = usa cálculo automático, string = valor manual em USD
+  const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(null);
+  const [freteEditing, setFreteEditing] = useState(false);
   
   // Helper: display value in current currency (uses legacyRate for legacy POs)
   const displayVal = (usdVal: string) => {
@@ -3333,13 +3336,16 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const isLegacyPo = filteredProducts.some((p: any) => p.valorCaixaBrl && Number(p.valorCaixaBrl) > 0);
 
   // Total Frete Calculado pelo Fornecedor (soma de todos os fretes col5)
-  const totalFreteCalculado = filteredProducts.reduce((sum, prod) => {
+  const totalFreteAutoCalc = filteredProducts.reduce((sum, prod) => {
     const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
     const valorOrdem = Number(String(prod.valorPoCheia || 0).replace(',', '.'));
     const qty = Number(prod.quantidade || 0);
     const diff = valorOrdem - valorForn;
     return sum + (diff > 0 ? diff * qty : 0);
   }, 0);
+  
+  // Frete override: usa valor manual se definido, senão usa o automático
+  const totalFreteCalculado = freteOverrideUsd !== null ? Number(freteOverrideUsd) : totalFreteAutoCalc;
 
   // Total Valor de Referência (soma col7 = valorFornecedor × qtd)
   const totalValorReferencia = filteredProducts.reduce((sum, prod) => {
@@ -3740,12 +3746,12 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         <input
                           key={`val-${prod.id}-${prod.valorUsd}-${currency}`}
                           className="w-20 text-center border border-slate-200 rounded pl-5 pr-1 py-1 text-[10px] font-mono text-blue-700 font-semibold bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
-                          defaultValue={prod.valorUsd ? (currency === 'BRL' ? (Number(prod.valorUsd) * (isLegacyPo ? poExchangeRate : exchangeRate)).toFixed(2) : Number(prod.valorUsd).toFixed(2)) : ''}
+                          defaultValue={prod.valorUsd ? (currency === 'BRL' ? String(Number(prod.valorUsd) * (isLegacyPo ? poExchangeRate : exchangeRate)) : String(Number(prod.valorUsd))) : ''}
                           placeholder="0,00"
                           onBlur={e => {
                             const normalized = e.target.value.replace(',', '.');
                             const rate = isLegacyPo ? poExchangeRate : exchangeRate;
-                            const valueInUsd = currency === 'BRL' ? String((Number(normalized) / rate).toFixed(4)) : normalized;
+                            const valueInUsd = currency === 'BRL' ? String(Number(normalized) / rate) : normalized;
                             if (valueInUsd !== String(prod.valorUsd || '')) {
                               updateProduct.mutate({ id: prod.id, valorUsd: valueInUsd });
                             }
@@ -3773,12 +3779,12 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         <input
                           key={`ordem-${prod.id}-${prod.valorPoCheia}-${currency}`}
                           className="w-20 text-center border border-slate-200 rounded pl-5 pr-1 py-1 text-[10px] font-mono text-blue-700 bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
-                          defaultValue={prod.valorPoCheia ? (currency === 'BRL' ? (Number(prod.valorPoCheia) * (isLegacyPo ? poExchangeRate : exchangeRate)).toFixed(2) : Number(prod.valorPoCheia).toFixed(2)) : ''}
+                          defaultValue={prod.valorPoCheia ? (currency === 'BRL' ? String(Number(prod.valorPoCheia) * (isLegacyPo ? poExchangeRate : exchangeRate)) : String(Number(prod.valorPoCheia))) : ''}
                           placeholder="0,00"
                           onBlur={e => {
                             const normalized = e.target.value.replace(',', '.');
                             const rate = isLegacyPo ? poExchangeRate : exchangeRate;
-                            const valueInUsd = currency === 'BRL' ? String((Number(normalized) / rate).toFixed(4)) : normalized;
+                            const valueInUsd = currency === 'BRL' ? String(Number(normalized) / rate) : normalized;
                             if (valueInUsd !== String(prod.valorPoCheia || '')) {
                               updateProduct.mutate({ id: prod.id, valorPoCheia: valueInUsd });
                             }
@@ -3928,10 +3934,50 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             </div>
             <div className="bg-white border border-orange-200 rounded-lg p-3">
               <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Valor Total do Frete</p>
-              <p className="text-lg font-bold font-mono text-orange-800">
-                {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * (isLegacyPo ? poExchangeRate : exchangeRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-              </p>
-              <p className="text-[9px] text-slate-500">Soma Frete Calculado pelo Fornecedor</p>
+              {freteEditing ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-sm font-mono text-orange-800">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    autoFocus
+                    type="number"
+                    step="any"
+                    className="w-32 text-lg font-bold font-mono text-orange-800 border border-orange-300 rounded px-2 py-0.5 focus:ring-1 focus:ring-orange-300 outline-none"
+                    defaultValue={freteOverrideUsd !== null
+                      ? (currency === 'BRL' ? (Number(freteOverrideUsd) * (isLegacyPo ? poExchangeRate : exchangeRate)).toString() : freteOverrideUsd)
+                      : (currency === 'BRL' ? (totalFreteAutoCalc * (isLegacyPo ? poExchangeRate : exchangeRate)).toString() : totalFreteAutoCalc.toString())
+                    }
+                    onBlur={e => {
+                      const normalized = e.target.value.replace(',', '.');
+                      const rate = isLegacyPo ? poExchangeRate : exchangeRate;
+                      const valUsd = currency === 'BRL' ? String(Number(normalized) / rate) : normalized;
+                      if (Math.abs(Number(valUsd) - totalFreteAutoCalc) < 0.001) {
+                        setFreteOverrideUsd(null); // volta ao automático se igual
+                      } else {
+                        setFreteOverrideUsd(valUsd);
+                      }
+                      setFreteEditing(false);
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setFreteEditing(false); } }}
+                  />
+                </div>
+              ) : (
+                <p className="text-lg font-bold font-mono text-orange-800 cursor-pointer hover:text-orange-600" onClick={() => setFreteEditing(true)}>
+                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * (isLegacyPo ? poExchangeRate : exchangeRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </p>
+              )}
+              <div className="flex items-center gap-1 mt-0.5">
+                <p className="text-[9px] text-slate-500">{freteOverrideUsd !== null ? 'Valor editado manualmente' : 'Soma Frete Calculado pelo Fornecedor'}</p>
+                {freteOverrideUsd !== null && (
+                  <button onClick={() => setFreteOverrideUsd(null)} className="text-[8px] text-orange-500 hover:text-orange-700 underline">
+                    Resetar
+                  </button>
+                )}
+                {!freteEditing && freteOverrideUsd === null && (
+                  <button onClick={() => setFreteEditing(true)} className="text-[8px] text-slate-400 hover:text-orange-600">
+                    ✏️
+                  </button>
+                )}
+              </div>
             </div>
             <div className="bg-white border border-indigo-200 rounded-lg p-3">
               <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Total Geral (Ordem + Frete)</p>
@@ -3965,7 +4011,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     defaultValue={displayVal(pag2Usd)}
                     onBlur={e => setPag2Usd(toUsd(e.target.value))}
                     type="number"
-                    step="0.01"
+                    step="any"
                   />
                 </div>
               </div>
@@ -3980,7 +4026,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     defaultValue={displayVal(pag3Usd)}
                     onBlur={e => setPag3Usd(toUsd(e.target.value))}
                     type="number"
-                    step="0.01"
+                    step="any"
                   />
                 </div>
               </div>
@@ -4004,7 +4050,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     defaultValue={displayVal(valorCiUsd)}
                     onBlur={e => setValorCiUsd(toUsd(e.target.value))}
                     type="number"
-                    step="0.01"
+                    step="any"
                   />
                 </div>
               </div>
@@ -4054,7 +4100,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     defaultValue={displayVal(freteTerrestreSPUsd)}
                     onBlur={e => setFreteTerrestreSPUsd(toUsd(e.target.value))}
                     type="number"
-                    step="0.01"
+                    step="any"
                   />
                 </div>
               </div>
@@ -4069,7 +4115,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     defaultValue={displayVal(difalValUsd)}
                     onBlur={e => setDifalValUsd(toUsd(e.target.value))}
                     type="number"
-                    step="0.01"
+                    step="any"
                   />
                 </div>
               </div>
@@ -4084,7 +4130,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     defaultValue={displayVal(comSilverioUsd)}
                     onBlur={e => setComSilverioUsd(toUsd(e.target.value))}
                     type="number"
-                    step="0.01"
+                    step="any"
                   />
                 </div>
               </div>

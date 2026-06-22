@@ -4486,3 +4486,5 @@
 - [x] Criar tabela product_catalog persistente que acumula todos os produtos (nunca deleta)
 - [x] Atualizar sync para inserir/atualizar no product_catalog (INSERT ON DUPLICATE KEY UPDATE)
 - [x] Atualizar searchStockProducts para buscar no product_catalog em vez de stock_items + purchase_order_items
+- [x] PO: Permitir casas decimais ilimitadas nos campos de valor da ordem de pagamento
+- [x] PO: Frete editável manualmente (mantém cálculo automático mas permite override)

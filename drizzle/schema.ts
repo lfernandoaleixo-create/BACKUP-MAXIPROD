@@ -2553,10 +2553,10 @@ export const importPoProducts = mysqlTable("import_po_products", {
   productCode: varchar("product_code", { length: 20 }), // Código no estoque (preenchido manualmente)
   ncm: varchar("ncm", { length: 15 }), // NCM (preenchido manualmente)
   unidCaixa: decimal("unid_caixa", { precision: 8, scale: 2 }), // Mil unidades por caixa
-  valorUsd: decimal("valor_usd", { precision: 10, scale: 4 }), // Preço USD fornecedor (tabelado)
-  valorCiUsd: decimal("valor_ci_usd", { precision: 10, scale: 4 }), // Valor na CI
-  valorPoCheia: decimal("valor_po_cheia", { precision: 10, scale: 4 }), // Valor PO cheia (USD)
-  valorPoMenor: decimal("valor_po_menor", { precision: 10, scale: 4 }), // Valor PO menor (USD)
+  valorUsd: decimal("valor_usd", { precision: 14, scale: 8 }), // Preço USD fornecedor (tabelado)
+  valorCiUsd: decimal("valor_ci_usd", { precision: 14, scale: 8 }), // Valor na CI
+  valorPoCheia: decimal("valor_po_cheia", { precision: 14, scale: 8 }), // Valor PO cheia (USD)
+  valorPoMenor: decimal("valor_po_menor", { precision: 14, scale: 8 }), // Valor PO menor (USD)
   quantidade: int("quantidade"), // Quantidade de caixas
   valorReferencia: decimal("valor_referencia", { precision: 14, scale: 2 }), // Valor total referência
   percRepresentatividade: decimal("perc_representatividade", { precision: 8, scale: 6 }),
