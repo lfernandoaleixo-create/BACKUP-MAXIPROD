@@ -2529,6 +2529,7 @@ export const importPos = mysqlTable("import_pos", {
   difalValor: decimal("difal_valor", { precision: 12, scale: 2 }),
   comissaoSilverio: decimal("comissao_silverio", { precision: 12, scale: 2 }),
   despesasLiberacaoRemessa: decimal("despesas_liberacao_remessa", { precision: 12, scale: 2 }),
+  vilelaValorReal: decimal("vilela_valor_real", { precision: 12, scale: 2 }), // Valor real pago ao Vilela (quando preenchido, substitui a estimativa %)
   // === LOGÍSTICA: Câmbio por Remessa ===
   valorDolar1Remessa: decimal("valor_dolar_1_remessa", { precision: 8, scale: 4 }),
   valorDolar2Remessa: decimal("valor_dolar_2_remessa", { precision: 8, scale: 4 }),

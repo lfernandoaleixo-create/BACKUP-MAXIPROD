@@ -1,0 +1,1 @@
+ALTER TABLE `import_pos` ADD `vilela_valor_real` decimal(12,2);

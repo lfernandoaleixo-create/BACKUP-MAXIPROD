@@ -3253,6 +3253,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   // Frete override: null = usa cálculo automático, string = valor manual em USD
   const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(null);
   const [freteEditing, setFreteEditing] = useState(false);
+  // Vilela valor real: valor exato pago (quando preenchido, substitui a estimativa %)
+  const [vilelaReal, setVilelaReal] = useState(po.vilelaValorReal || '');
   
   // Helper: display value in current currency (uses legacyRate for legacy POs)
   const displayVal = (usdVal: string) => {
@@ -3355,11 +3357,11 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   }, 0);
 
   // Despesas de Liberação - Valor Vilela
-  // Para POs antigas (planilha): usa o valor fixo já salvo no banco
-  // Para POs novas: calcula dinamicamente com % da CI
+  // Prioridade: 1) Valor Real (verde) se preenchido, 2) Estimativa % da CI (alaranjado), 3) Legacy fixo
+  const vilelaEstimativa = Number(valorCi || 0) * (vilelaPercent / 100);
   const despesasLiberacao = isLegacyPo
     ? Number(po.despesasLiberacaoRemessa || 0)
-    : Number(valorCi || 0) * (vilelaPercent / 100);
+    : (vilelaReal ? Number(vilelaReal) : vilelaEstimativa);
 
   // Custos Totais da Importação
   // Para POs antigas: usa o valor fixo salvo no banco (total_custos_importacao) direto da planilha
@@ -3396,6 +3398,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       difalValor: toBrl(difalVal),
       comissaoSilverio: toBrl(comSilverio),
       despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(2)) : (po.despesasLiberacaoRemessa || null),
+      vilelaValorReal: vilelaReal || null,
     });
   };
 
@@ -4054,7 +4057,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   />
                 </div>
               </div>
-              <div>
+              <div className="col-span-2">
                 {isLegacyPo ? (
                   <>
                     <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação (valor fixo da planilha)</label>
@@ -4063,30 +4066,55 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     </div>
                   </>
                 ) : (
-                  <>
-                    <label className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
-                      Despesas de Liberação - Valor Vilela (
-                      <input
-                        className="w-10 border border-amber-300 rounded px-1 py-0 text-[10px] font-mono text-center bg-amber-50 focus:outline-none focus:ring-1 focus:ring-amber-400"
-                        defaultValue={vilelaPercent}
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="1"
-                        onBlur={e => {
-                          const val = Number(e.target.value);
-                          if (val !== vilelaPercent && val >= 0 && val <= 100) {
-                            setVilelaPercent.mutate({ percent: val });
-                          }
-                        }}
-                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                      />
-                      % da CI)
-                    </label>
-                    <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
-                      {currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Campo Alaranjado - Estimativa (% da CI) */}
+                    <div>
+                      <label className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
+                        Desp. Liberação – Estimativa (
+                        <input
+                          className="w-10 border border-amber-300 rounded px-1 py-0 text-[10px] font-mono text-center bg-amber-50 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                          defaultValue={vilelaPercent}
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          onBlur={e => {
+                            const val = Number(e.target.value);
+                            if (val !== vilelaPercent && val >= 0 && val <= 100) {
+                              setVilelaPercent.mutate({ percent: val });
+                            }
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        />
+                        % da CI)
+                      </label>
+                      <div className={`w-full border rounded px-3 py-2 text-sm font-mono font-bold ${vilelaReal ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+                        {currency === "USD" ? `$ ${vilelaEstimativa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(vilelaEstimativa * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      </div>
                     </div>
-                  </>  
+                    {/* Campo Verde - Valor Real Vilela */}
+                    <div>
+                      <label className="text-[10px] text-green-700 font-medium">
+                        Valor Real Vilela (USD)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-green-500 font-mono pointer-events-none">$</span>
+                        <input
+                          className="w-full border-2 border-green-300 bg-green-50 rounded px-3 py-2 pl-7 text-sm font-mono font-bold text-green-800 focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-green-300"
+                          placeholder="0.00"
+                          type="number"
+                          step="any"
+                          value={vilelaReal}
+                          onChange={e => setVilelaReal(e.target.value)}
+                        />
+                      </div>
+                      {vilelaReal && (
+                        <p className="text-[9px] text-green-600 mt-0.5 font-medium">
+                          ✓ Usando valor real no cálculo
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
               <div>
