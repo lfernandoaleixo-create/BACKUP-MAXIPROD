@@ -1603,14 +1603,18 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
         </div>
       </div>
       <p className="text-xs text-slate-500 mb-3">Média ponderada FIFO: vendas abatidas dos contêineres mais antigos primeiro.</p>
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-          <span className="text-[10px] text-slate-600">Custo Real (POs recebidas)</span>
+          <span className="text-[10px] text-slate-600">Custo Real (POs 100% Concluído)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-          <span className="text-[10px] text-slate-600">Custo Projetado (inclui POs navegando)</span>
+          <span className="text-[10px] text-slate-600">Custo Projetado (POs Chegou no Pátio)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+          <span className="text-[10px] text-slate-600">Estimativa (POs Navegando)</span>
         </div>
       </div>
 
@@ -1635,7 +1639,8 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
               <th className="pb-2 pr-4 font-medium text-slate-600">Descrição</th>
               <th className="pb-2 pr-4 font-medium text-slate-600 text-right">Estoque</th>
               <th className="pb-2 pr-4 font-medium text-emerald-700 text-right">Custo Real</th>
-              <th className="pb-2 pr-4 font-medium text-amber-700 text-right">Custo Projetado</th>
+              <th className="pb-2 pr-4 font-medium text-amber-700 text-right">Projetado</th>
+              <th className="pb-2 pr-4 font-medium text-blue-700 text-right">Estimativa</th>
               <th className="pb-2 font-medium text-slate-600 text-center">Detalhes</th>
             </tr>
           </thead>
@@ -1664,9 +1669,18 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                     </span>
                   </td>
                   <td className="py-2.5 pr-4 text-right">
-                    {item.temNavegando ? (
+                    {item.temPatio ? (
                       <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded whitespace-nowrap">
                         {displayVal(item.custoProjetado)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-300">-</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-4 text-right">
+                    {item.temNavegando ? (
+                      <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded whitespace-nowrap">
+                        {displayVal(item.custoEstimativa)}
                       </span>
                     ) : (
                       <span className="text-xs text-slate-300">-</span>
@@ -1684,17 +1698,17 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                 </tr>
                 {expandedProduct === item.codigoItem && (
                   <tr key={`${item.codigoItem}-detail`}>
-                    <td colSpan={6} className="p-0">
+                    <td colSpan={7} className="p-0">
                       <div className="mx-2 my-2 space-y-3">
-                        {/* Green breakdown - arrived POs */}
+                        {/* Green breakdown - POs 100% Concluído */}
                         <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <Layers className="w-4 h-4 text-emerald-600" />
-                            <h4 className="text-sm font-semibold text-emerald-800">Custo Real (FIFO - POs Recebidas)</h4>
+                            <h4 className="text-sm font-semibold text-emerald-800">Custo Real (FIFO - POs 100% Concluído)</h4>
                           </div>
                           {item.semEstoque && (
                             <p className="text-xs text-orange-600 mb-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
-                              Sem estoque atual. Custo baseado na última PO recebida.
+                              Sem estoque atual. Custo baseado na última PO concluída.
                             </p>
                           )}
                           {item.breakdownReal.length > 0 ? (
@@ -1712,7 +1726,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-slate-400">Nenhuma PO recebida com custo cadastrado para este produto.</p>
+                            <p className="text-xs text-slate-400">Nenhuma PO 100% concluída com custo cadastrado para este produto.</p>
                           )}
                           {!item.semEstoque && item.breakdownReal.length > 1 && (
                             <div className="mt-3 pt-3 border-t border-emerald-200/50 flex items-center justify-between">
@@ -1722,12 +1736,12 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                           )}
                         </div>
 
-                        {/* Orange breakdown - navegando POs */}
-                        {item.temNavegando && (
+                        {/* Orange breakdown - POs Chegou no Pátio */}
+                        {item.temPatio && (
                           <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <Ship className="w-4 h-4 text-amber-600" />
-                              <h4 className="text-sm font-semibold text-amber-800">Custo Projetado (POs Navegando)</h4>
+                              <Anchor className="w-4 h-4 text-amber-600" />
+                              <h4 className="text-sm font-semibold text-amber-800">Custo Projetado (POs Chegou no Pátio)</h4>
                             </div>
                             <div className="space-y-1.5">
                               {item.breakdownProjetado.map((b, idx) => (
@@ -1743,8 +1757,35 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                               ))}
                             </div>
                             <div className="mt-3 pt-3 border-t border-amber-200/50 flex items-center justify-between">
-                              <span className="text-xs text-amber-700 font-medium">Média Projetada (estoque + navegando):</span>
+                              <span className="text-xs text-amber-700 font-medium">Média Projetada (estoque + pátio):</span>
                               <span className="text-sm font-bold text-amber-700">{displayVal(item.custoProjetado)}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Blue breakdown - POs Navegando (Estimativa) */}
+                        {item.temNavegando && (
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Ship className="w-4 h-4 text-blue-600" />
+                              <h4 className="text-sm font-semibold text-blue-800">Estimativa (POs Navegando)</h4>
+                            </div>
+                            <div className="space-y-1.5">
+                              {item.breakdownEstimativa.map((b, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-blue-100/50">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{b.poNumber}</span>
+                                    <span className="text-xs text-slate-600">
+                                      {b.caixasUsadas > 0 ? `${b.caixasUsadas.toLocaleString("pt-BR")} caixas` : "Referência"}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs font-semibold text-blue-800 whitespace-nowrap">{displayVal(b.valorCaixa)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-blue-200/50 flex items-center justify-between">
+                              <span className="text-xs text-blue-700 font-medium">Média Estimada (tudo incluso):</span>
+                              <span className="text-sm font-bold text-blue-700">{displayVal(item.custoEstimativa)}</span>
                             </div>
                           </div>
                         )}

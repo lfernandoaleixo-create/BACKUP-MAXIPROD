@@ -4491,3 +4491,4 @@
 - [x] Checklist: Permitir múltiplas fotos por item (quantas quiser, não apenas uma)
 - [x] Importação PO: Adicionar campo verde "Valor Real Vilela" ao lado do campo alaranjado de estimativa; quando preenchido, substitui a estimativa no cálculo do custo da mercadoria
 - [x] Importação PO: Renomear status de navegação para: "Navegando", "Chegou no Pátio", "Processo 100% concluído" (substituir "recebida" por duas novas opções)
+- [x] Custo Mercadoria Tempo Real: Reestruturar - Custo Real = POs "100% Concluído", Custo Projetado = POs "Chegou no Pátio", nova coluna Estimativa = POs "Navegando"

@@ -1059,11 +1059,13 @@ export const importRouter = router({
       )
     );
 
-    // 2. Get all PO products with valor_caixa_brl and product_code from ARRIVED POs
-    // Ordered by previsaoEntrega ASC (oldest first) for FIFO abatement
-    // Products that use preco_mil_unid (e.g. 00058) need that field too
+    // 2. Get PO products separated by navigation status:
+    //    - concluida/recebida = Custo Real (green)
+    //    - chegou_patio = Custo Projetado (orange)
+    //    - navegando = Estimativa (blue - new)
     const PRECO_MIL_UNID_PRODUCTS = ['00058']; // Products that use preco_mil_unid instead of valor_caixa_brl
-    const arrivedPoProducts = await db.select({
+    
+    const poProductFields = {
       productCode: importPoProducts.productCode,
       quantidade: importPoProducts.quantidade,
       valorCaixaBrl: importPoProducts.valorCaixaBrl,
@@ -1071,42 +1073,33 @@ export const importRouter = router({
       poNumber: importPos.poNumber,
       poId: importPos.id,
       previsaoEntrega: importPos.previsaoEntrega,
-    }).from(importPoProducts)
-      .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
-      .where(
-        and(
-          sql`${importPoProducts.productCode} IS NOT NULL`,
-          sql`${importPoProducts.productCode} != ''`,
-          or(
-            sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
-            sql`${importPoProducts.precoMilUnid} IS NOT NULL`
-          ),
-          sql`${importPos.navigationStatus} IN ('chegou_patio', 'concluida', 'recebida')`
-        )
-      );
+    };
+    const baseWhere = and(
+      sql`${importPoProducts.productCode} IS NOT NULL`,
+      sql`${importPoProducts.productCode} != ''`,
+      or(
+        sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
+        sql`${importPoProducts.precoMilUnid} IS NOT NULL`
+      ),
+    );
 
-    // 3. Get PO products from NAVEGANDO POs (for projected/orange column)
-    const navegandoPoProducts = await db.select({
-      productCode: importPoProducts.productCode,
-      quantidade: importPoProducts.quantidade,
-      valorCaixaBrl: importPoProducts.valorCaixaBrl,
-      precoMilUnid: importPoProducts.precoMilUnid,
-      poNumber: importPos.poNumber,
-      poId: importPos.id,
-      previsaoEntrega: importPos.previsaoEntrega,
-    }).from(importPoProducts)
+    // GREEN: POs 100% Concluído (custo real)
+    const arrivedPoProducts = await db.select(poProductFields)
+      .from(importPoProducts)
       .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
-      .where(
-        and(
-          sql`${importPoProducts.productCode} IS NOT NULL`,
-          sql`${importPoProducts.productCode} != ''`,
-          or(
-            sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
-            sql`${importPoProducts.precoMilUnid} IS NOT NULL`
-          ),
-          sql`${importPos.navigationStatus} = 'navegando'`
-        )
-      );
+      .where(and(baseWhere, sql`${importPos.navigationStatus} IN ('concluida', 'recebida')`));
+
+    // ORANGE: POs Chegou no Pátio (custo projetado)
+    const patioPoProducts = await db.select(poProductFields)
+      .from(importPoProducts)
+      .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
+      .where(and(baseWhere, sql`${importPos.navigationStatus} = 'chegou_patio'`));
+
+    // BLUE: POs Navegando (estimativa)
+    const navegandoPoProducts = await db.select(poProductFields)
+      .from(importPoProducts)
+      .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
+      .where(and(baseWhere, sql`${importPos.navigationStatus} = 'navegando'`));
 
     // Helper: sort PO entries by arrival date (oldest first for FIFO)
     const sortByArrival = (a: { previsaoEntrega: string | null }, b: { previsaoEntrega: string | null }) => {
@@ -1143,7 +1136,25 @@ export const importRouter = router({
       arrivedByProduct[code].sort(sortByArrival);
     }
 
-    // 5. Group navegando PO products by product_code
+    // 5. Group PATIO PO products by product_code (for projected/orange)
+    const patioByProduct: Record<string, Array<{ poNumber: string; quantidade: number; valorCaixaBrl: number; previsaoEntrega: string | null }>> = {};
+    for (const pp of patioPoProducts) {
+      const code = pp.productCode!;
+      const effectiveCost = getEffectiveCost(code, pp.valorCaixaBrl, pp.precoMilUnid);
+      if (effectiveCost <= 0) continue;
+      if (!patioByProduct[code]) patioByProduct[code] = [];
+      patioByProduct[code].push({
+        poNumber: pp.poNumber,
+        quantidade: Number(pp.quantidade || 0),
+        valorCaixaBrl: effectiveCost,
+        previsaoEntrega: pp.previsaoEntrega,
+      });
+    }
+    for (const code of Object.keys(patioByProduct)) {
+      patioByProduct[code].sort(sortByArrival);
+    }
+
+    // 6. Group NAVEGANDO PO products by product_code (for estimativa/blue)
     const navegandoByProduct: Record<string, Array<{ poNumber: string; quantidade: number; valorCaixaBrl: number; previsaoEntrega: string | null }>> = {};
     for (const pp of navegandoPoProducts) {
       const code = pp.productCode!;
@@ -1161,58 +1172,45 @@ export const importRouter = router({
       navegandoByProduct[code].sort(sortByArrival);
     }
 
-    // 6. Calculate FIFO-based cost for each stock item
+    // 7. Calculate FIFO-based cost for each stock item
     const results = [];
     for (const item of stockRows) {
       const code = item.codigoItem;
       const arrivedHistory = arrivedByProduct[code];
+      const patioHistory = patioByProduct[code];
       const navegandoHistory = navegandoByProduct[code];
-      if ((!arrivedHistory || arrivedHistory.length === 0) && (!navegandoHistory || navegandoHistory.length === 0)) continue;
+      if ((!arrivedHistory || arrivedHistory.length === 0) && (!patioHistory || patioHistory.length === 0) && (!navegandoHistory || navegandoHistory.length === 0)) continue;
 
       const fator = Number(item.unidadeDeVendaFator || 1);
       const stockUnits = Number(item.quantidade || 0);
       const boxesInStock = fator > 0 ? stockUnits / fator : 0;
 
-      // --- GREEN COLUMN: Cost from arrived POs using FIFO ---
+      // --- GREEN COLUMN: Custo Real - POs 100% Concluído (FIFO) ---
       let custoReal = 0;
       let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
       let semEstoque = false;
 
       if (!arrivedHistory || arrivedHistory.length === 0) {
-        // No arrived POs with cost data
         custoReal = 0;
         semEstoque = boxesInStock <= 0;
       } else if (boxesInStock <= 0) {
-        // No stock: use the most recent arrived PO cost as reference
-        const lastPo = arrivedHistory[arrivedHistory.length - 1]; // most recent
+        const lastPo = arrivedHistory[arrivedHistory.length - 1];
         custoReal = lastPo.valorCaixaBrl;
         breakdownReal = [{ poNumber: lastPo.poNumber, caixasUsadas: 0, valorCaixa: lastPo.valorCaixaBrl }];
         semEstoque = true;
       } else {
-        // FIFO: abate sold units from oldest POs first
         const totalArrived = arrivedHistory.reduce((sum, po) => sum + po.quantidade, 0);
         const sold = Math.max(0, totalArrived - boxesInStock);
-
-        // Abate sold from oldest first
         let toAbate = sold;
         const remainingPOs: Array<{ poNumber: string; quantidade: number; valorCaixaBrl: number }> = [];
-
         for (const po of arrivedHistory) {
           if (toAbate >= po.quantidade) {
-            // This entire PO was sold
             toAbate -= po.quantidade;
           } else {
-            // Partially sold or not sold at all
-            remainingPOs.push({
-              poNumber: po.poNumber,
-              quantidade: po.quantidade - toAbate,
-              valorCaixaBrl: po.valorCaixaBrl,
-            });
+            remainingPOs.push({ poNumber: po.poNumber, quantidade: po.quantidade - toAbate, valorCaixaBrl: po.valorCaixaBrl });
             toAbate = 0;
           }
         }
-
-        // Calculate weighted average from remaining POs
         let totalCost = 0;
         let totalBoxes = 0;
         for (const po of remainingPOs) {
@@ -1220,40 +1218,48 @@ export const importRouter = router({
           if (used <= 0) break;
           totalCost += used * po.valorCaixaBrl;
           totalBoxes += used;
-          breakdownReal.push({
-            poNumber: po.poNumber,
-            caixasUsadas: Math.round(used * 100) / 100,
-            valorCaixa: po.valorCaixaBrl,
-          });
+          breakdownReal.push({ poNumber: po.poNumber, caixasUsadas: Math.round(used * 100) / 100, valorCaixa: po.valorCaixaBrl });
         }
-
         custoReal = totalBoxes > 0 ? totalCost / totalBoxes : 0;
       }
 
-      // --- ORANGE COLUMN: Projected cost including navegando POs ---
+      // --- ORANGE COLUMN: Custo Projetado - POs "Chegou no Pátio" ---
       let custoProjetado = 0;
       let breakdownProjetado: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
-      if (navegandoHistory && navegandoHistory.length > 0) {
-        // Projected = current stock cost + navegando POs
+      if (patioHistory && patioHistory.length > 0) {
         const currentStockCost = custoReal * boxesInStock;
+        let totalPatioQty = 0;
+        let totalPatioCost = 0;
+        for (const po of patioHistory) {
+          totalPatioQty += po.quantidade;
+          totalPatioCost += po.quantidade * po.valorCaixaBrl;
+          breakdownProjetado.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
+        }
+        const totalProjectedBoxes = boxesInStock + totalPatioQty;
+        custoProjetado = totalProjectedBoxes > 0 ? (currentStockCost + totalPatioCost) / totalProjectedBoxes : 0;
+      }
+
+      // --- BLUE COLUMN: Estimativa - POs "Navegando" ---
+      let custoEstimativa = 0;
+      let breakdownEstimativa: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
+
+      if (navegandoHistory && navegandoHistory.length > 0) {
+        // Estimativa = custo projetado (ou real se não tem patio) + navegando
+        const baseCost = custoProjetado > 0 ? custoProjetado : custoReal;
+        const baseBoxes = custoProjetado > 0
+          ? boxesInStock + (patioHistory?.reduce((s, p) => s + p.quantidade, 0) || 0)
+          : boxesInStock;
+        const baseTotal = baseCost * baseBoxes;
         let totalNavQty = 0;
         let totalNavCost = 0;
-
         for (const po of navegandoHistory) {
           totalNavQty += po.quantidade;
           totalNavCost += po.quantidade * po.valorCaixaBrl;
-          breakdownProjetado.push({
-            poNumber: po.poNumber,
-            caixasUsadas: Math.round(po.quantidade * 100) / 100,
-            valorCaixa: po.valorCaixaBrl,
-          });
+          breakdownEstimativa.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
         }
-
-        const totalProjectedBoxes = boxesInStock + totalNavQty;
-        custoProjetado = totalProjectedBoxes > 0
-          ? (currentStockCost + totalNavCost) / totalProjectedBoxes
-          : 0;
+        const totalEstimativaBoxes = baseBoxes + totalNavQty;
+        custoEstimativa = totalEstimativaBoxes > 0 ? (baseTotal + totalNavCost) / totalEstimativaBoxes : 0;
       }
 
       results.push({
@@ -1262,9 +1268,12 @@ export const importRouter = router({
         caixasEstoque: Math.round(boxesInStock * 100) / 100,
         custoReal: Math.round(custoReal * 100) / 100,
         custoProjetado: Math.round(custoProjetado * 100) / 100,
+        custoEstimativa: Math.round(custoEstimativa * 100) / 100,
         breakdownReal,
         breakdownProjetado,
+        breakdownEstimativa,
         semEstoque,
+        temPatio: !!(patioHistory && patioHistory.length > 0),
         temNavegando: !!(navegandoHistory && navegandoHistory.length > 0),
       });
     }
