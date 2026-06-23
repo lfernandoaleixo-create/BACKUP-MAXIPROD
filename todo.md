@@ -4494,3 +4494,4 @@
 - [x] Custo Mercadoria Tempo Real: Reestruturar - Custo Real = POs "100% Concluído", Custo Projetado = POs "Chegou no Pátio", nova coluna Estimativa = POs "Navegando"
 - [x] PO 100% Concluída: Travar câmbio (não variar com dólar em tempo real) quando processo está fechado e pagamentos quitados
 - [x] Custo Mercadoria: Corrigir diferença de centavos entre valor na aba POs e valor na aba Custo da Mercadoria em Tempo Real
+- [x] Custo Mercadoria Tempo Real: Adicionar spread de R$ 0,20 na conversão USD→BRL do custo (Real, Projetado e Estimativa) e mostrar visualmente que o spread está sendo aplicado

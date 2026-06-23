@@ -1590,8 +1590,18 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
     ? allCosts.filter(c => c.codigoItem.toLowerCase().includes(searchTerm.toLowerCase()) || c.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
     : allCosts;
 
+  const SPREAD = 0.20; // R$ 0,20 de spread na conversão USD→BRL
   const formatBrl = (val: number) => val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const displayVal = (brl: number) => currency === "BRL" ? `R$ ${formatBrl(brl)}` : `$ ${formatBrl(brl / exchangeRate)}`;
+  const displayVal = (brl: number) => {
+    // Aplica spread: converte BRL para USD usando (exchangeRate + spread)
+    const rateComSpread = exchangeRate + SPREAD;
+    if (currency === "BRL") {
+      // BRL: valor original * (rate + spread) / rate = ajusta proporcionalmente
+      const ajustado = brl * (rateComSpread / exchangeRate);
+      return `R$ ${formatBrl(ajustado)}`;
+    }
+    return `$ ${formatBrl(brl / exchangeRate)}`;
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
@@ -1603,6 +1613,10 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
         </div>
       </div>
       <p className="text-xs text-slate-500 mb-3">Média ponderada FIFO: vendas abatidas dos contêineres mais antigos primeiro.</p>
+      <div className="flex items-center gap-2 mb-3 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1.5">
+        <span className="text-[10px] font-semibold text-purple-700">SPREAD: + R$ 0,20</span>
+        <span className="text-[10px] text-purple-500">aplicado na conversão USD→BRL de todos os custos</span>
+      </div>
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
