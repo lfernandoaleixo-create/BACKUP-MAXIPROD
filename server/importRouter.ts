@@ -1224,7 +1224,9 @@ export const importRouter = router({
       }
 
       // --- ORANGE COLUMN: Custo Projetado - POs "Chegou no Pátio" ---
-      let custoProjetado = 0;
+      // Se não tem nada no pátio, projetado = custo real
+      // Se tem coisa no pátio, faz média ponderada (estoque + pátio)
+      let custoProjetado = custoReal; // default = custo real
       let breakdownProjetado: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
       if (patioHistory && patioHistory.length > 0) {
@@ -1237,7 +1239,7 @@ export const importRouter = router({
           breakdownProjetado.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
         }
         const totalProjectedBoxes = boxesInStock + totalPatioQty;
-        custoProjetado = totalProjectedBoxes > 0 ? (currentStockCost + totalPatioCost) / totalProjectedBoxes : 0;
+        custoProjetado = totalProjectedBoxes > 0 ? (currentStockCost + totalPatioCost) / totalProjectedBoxes : custoReal;
       }
 
       // --- BLUE COLUMN: Estimativa - POs "Navegando" ---

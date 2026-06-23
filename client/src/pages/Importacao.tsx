@@ -1669,13 +1669,11 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                     </span>
                   </td>
                   <td className="py-2.5 pr-4 text-right">
-                    {item.temPatio ? (
-                      <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded whitespace-nowrap">
-                        {displayVal(item.custoProjetado)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-300">-</span>
-                    )}
+                    <span className={`font-semibold px-2 py-0.5 rounded whitespace-nowrap ${
+                      item.temPatio ? 'text-amber-700 bg-amber-50' : 'text-slate-500 bg-slate-50'
+                    }`}>
+                      {item.custoProjetado > 0 ? displayVal(item.custoProjetado) : '-'}
+                    </span>
                   </td>
                   <td className="py-2.5 pr-4 text-right">
                     {item.temNavegando ? (
