@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { RastreioEmConjunto } from "@/components/RastreioEmConjunto";
 import { trpc } from "@/lib/trpc";
@@ -2797,19 +2797,34 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                   Navegando
                 </label>
                 <label className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-medium cursor-pointer transition-all ${
-                  po.navigationStatus === 'recebida'
+                  po.navigationStatus === 'chegou_patio'
+                    ? 'bg-amber-50 border-amber-300 text-amber-700'
+                    : 'bg-white border-slate-200 text-slate-400 hover:border-amber-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name={`nav-${po.id}`}
+                    checked={po.navigationStatus === 'chegou_patio'}
+                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'chegou_patio' })}
+                    className="sr-only"
+                  />
+                  <Anchor className="w-3 h-3" />
+                  Chegou no Pátio
+                </label>
+                <label className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-medium cursor-pointer transition-all ${
+                  po.navigationStatus === 'concluida'
                     ? 'bg-green-50 border-green-300 text-green-700'
                     : 'bg-white border-slate-200 text-slate-400 hover:border-green-200'
                 }`}>
                   <input
                     type="radio"
                     name={`nav-${po.id}`}
-                    checked={po.navigationStatus === 'recebida'}
-                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'recebida' })}
+                    checked={po.navigationStatus === 'concluida'}
+                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'concluida' })}
                     className="sr-only"
                   />
-                  <Anchor className="w-3 h-3" />
-                  Recebida
+                  <CheckCircle className="w-3 h-3" />
+                  100% Concluído
                 </label>
               </div>
               <button

@@ -961,7 +961,7 @@ export const importRouter = router({
   updatePoNavigationStatus: publicProcedure
     .input(z.object({
       poId: z.number(),
-      navigationStatus: z.enum(['navegando', 'recebida']),
+      navigationStatus: z.enum(['navegando', 'chegou_patio', 'concluida']),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1081,7 +1081,7 @@ export const importRouter = router({
             sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
             sql`${importPoProducts.precoMilUnid} IS NOT NULL`
           ),
-          eq(importPos.navigationStatus, 'recebida')
+          sql`${importPos.navigationStatus} IN ('chegou_patio', 'concluida', 'recebida')`
         )
       );
 
@@ -1104,7 +1104,7 @@ export const importRouter = router({
             sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
             sql`${importPoProducts.precoMilUnid} IS NOT NULL`
           ),
-          eq(importPos.navigationStatus, 'navegando')
+          sql`${importPos.navigationStatus} = 'navegando'`
         )
       );
 
@@ -1420,16 +1420,17 @@ export const importRouter = router({
         }
         
         // Match PO: prefer one with 'navegando' status, fallback to first PO
-        const navegandoPos = supplierPos.filter(p => p.navigationStatus !== 'recebida');
+        const navegandoPos = supplierPos.filter(p => p.navigationStatus === 'navegando' || !p.navigationStatus);
         matchingPo = navegandoPos.length > 0 ? navegandoPos[0] : (supplierPos.length > 0 ? supplierPos[0] : null);
       }
 
-      // Skip only if the PO is explicitly marked as 'recebida' AND the payment status
-      // also indicates arrival (contains 'recebida' or 'chegou'). If payment status still
+      // Skip if the PO is marked as arrived (chegou_patio, concluida, or legacy recebida)
+      // AND the payment status also indicates arrival. If payment status still
       // says 'navegando', keep showing on the map regardless of PO status.
       const paymentStatusLower = payment.status.toLowerCase();
       const isPaymentNavigating = paymentStatusLower.includes('navegando');
-      if (matchingPo?.navigationStatus === 'recebida' && !isPaymentNavigating) continue;
+      const isPoArrived = matchingPo?.navigationStatus === 'chegou_patio' || matchingPo?.navigationStatus === 'concluida' || matchingPo?.navigationStatus === 'recebida';
+      if (isPoArrived && !isPaymentNavigating) continue;
 
       // Get cached tracking data
       const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
