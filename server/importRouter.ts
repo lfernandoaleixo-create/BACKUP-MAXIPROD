@@ -962,13 +962,90 @@ export const importRouter = router({
     .input(z.object({
       poId: z.number(),
       navigationStatus: z.enum(['navegando', 'chegou_patio', 'concluida']),
+      exchangeRate: z.number().optional(), // Câmbio atual para travar quando concluída
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      
       await db.update(importPos)
         .set({ navigationStatus: input.navigationStatus })
         .where(eq(importPos.id, input.poId));
+
+      // Quando PO é marcada como "100% Concluído", travar o câmbio:
+      // Calcular e salvar valorCaixaBrl para cada produto da PO (se ainda não tem valor fixo)
+      if (input.navigationStatus === 'concluida' && input.exchangeRate) {
+        const rate = input.exchangeRate;
+        
+        // Get the PO data
+        const [po] = await db.select().from(importPos).where(eq(importPos.id, input.poId));
+        if (!po) return { success: true };
+        
+        // Get products for this PO
+        const products = await db.select().from(importPoProducts).where(eq(importPoProducts.poId, input.poId));
+        
+        // Check if this is a legacy PO (already has valorCaixaBrl from spreadsheet)
+        const isLegacy = products.some(p => p.valorCaixaBrl && Number(p.valorCaixaBrl) > 0);
+        if (isLegacy) return { success: true }; // Legacy POs already have fixed values
+        
+        // For new POs: calculate custosTotais and save valorCaixaBrl per product
+        // Get vilela config
+        const vilelaConfig = await db.select().from(importConfig).where(eq(importConfig.configKey, 'vilela_percent'));
+        const vilelaPercent = vilelaConfig.length > 0 ? Number(vilelaConfig[0].configValue) : 37;
+        
+        // Calculate total costs (same formula as frontend)
+        const totalValorReferencia = products.reduce((sum, p) => {
+          const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+          const qty = Number(p.quantidade || 0);
+          return sum + (valorForn * qty);
+        }, 0);
+        
+        const totalFreteCalculado = products.reduce((sum, p) => {
+          const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+          const valorOrdem = Number(String(p.valorPoCheia || 0).replace(',', '.'));
+          const qty = Number(p.quantidade || 0);
+          const diff = valorOrdem - valorForn;
+          return sum + (diff > 0 ? diff * qty : 0);
+        }, 0);
+        
+        // Despesas Liberação: use vilelaValorReal if set, otherwise estimate
+        const totalCi = Number(po.totalCiRemessa || 0);
+        const despesasLiberacao = po.vilelaValorReal 
+          ? Number(po.vilelaValorReal) 
+          : (totalCi * (vilelaPercent / 100));
+        
+        const freteTerrestreSP = Number(po.freteTermestreRemessa || 0) / rate; // stored in BRL, convert to USD
+        const difalVal = Number(po.difalValor || 0) / rate;
+        const comSilverio = Number(po.comissaoSilverio || 0) / rate;
+        
+        const custosTotais = totalValorReferencia + totalFreteCalculado + despesasLiberacao + freteTerrestreSP + difalVal + comSilverio;
+        
+        // Save valorCaixaBrl for each product
+        for (const prod of products) {
+          const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+          const qty = Number(prod.quantidade || 0);
+          const valorRef = valorForn * qty;
+          const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
+          const valorDaCaixaUsd = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
+          const valorCaixaBrl = valorDaCaixaUsd * rate;
+          
+          if (valorCaixaBrl > 0) {
+            await db.update(importPoProducts)
+              .set({ valorCaixaBrl: String(valorCaixaBrl.toFixed(6)) })
+              .where(eq(importPoProducts.id, prod.id));
+            
+            // Also save precoMilUnid if unidCaixa is set
+            const unid = Number(prod.unidCaixa || 0);
+            if (unid > 0) {
+              const precoMilUnid = valorCaixaBrl / unid;
+              await db.update(importPoProducts)
+                .set({ precoMilUnid: String(precoMilUnid.toFixed(6)) })
+                .where(eq(importPoProducts.id, prod.id));
+            }
+          }
+        }
+      }
+      
       return { success: true };
     }),
 

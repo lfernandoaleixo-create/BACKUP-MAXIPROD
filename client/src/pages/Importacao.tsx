@@ -2859,7 +2859,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                     type="radio"
                     name={`nav-${po.id}`}
                     checked={po.navigationStatus === 'concluida'}
-                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'concluida' })}
+                    onChange={() => navStatusMut.mutate({ poId: po.id, navigationStatus: 'concluida', exchangeRate })}
                     className="sr-only"
                   />
                   <CheckCircle className="w-3 h-3" />
@@ -3913,9 +3913,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     <span className="font-mono text-emerald-800 font-bold text-[11px]">
                       {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0
                         ? (currency === "USD"
-                            ? `$ ${(Number(prod.valorCaixaBrl) / 5.5).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            ? `$ ${(Number(prod.valorCaixaBrl) / (isLegacyPo ? poExchangeRate : exchangeRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             : `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${(Math.round(valorDaCaixa * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Math.round(valorDaCaixa * exchangeRate * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
+                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(valorDaCaixa * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
                     {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0 && (
                       <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha)</span>
