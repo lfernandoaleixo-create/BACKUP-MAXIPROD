@@ -4495,3 +4495,6 @@
 - [x] PO 100% Concluída: Travar câmbio (não variar com dólar em tempo real) quando processo está fechado e pagamentos quitados
 - [x] Custo Mercadoria: Corrigir diferença de centavos entre valor na aba POs e valor na aba Custo da Mercadoria em Tempo Real
 - [x] Custo Mercadoria Tempo Real: Adicionar spread de R$ 0,20 na conversão USD→BRL do custo (Real, Projetado e Estimativa) e mostrar visualmente que o spread está sendo aplicado
+- [x] POs Legacy (42 antigas): Corrigir bug do frete que zera ao salvar - permitir preenchimento manual do frete que persista
+- [x] POs Legacy (42 antigas): Adicionar opção de upload de CI e Ordem de Pagamento (como nas POs novas)
+- [x] Inadimplência: Criar card retangular para PROTESTADOS (como Fundo Perdido e Especial s/ Cobrança) e retirar da lista de cobrança

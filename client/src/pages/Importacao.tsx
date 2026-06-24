@@ -2786,6 +2786,26 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
 
+              {/* Upload CI button (when no CI exists) */}
+              {!po.pdfUrl && (
+                <label className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors text-[10px] font-medium" onClick={(e) => e.stopPropagation()} title="Upload CI">
+                  <Upload className="w-3 h-3" />
+                  <span>CI</span>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const base64 = (reader.result as string).split(',')[1];
+                      try {
+                        await uploadDocMut.mutateAsync({ poId: po.id, type: 'ci', fileBase64: base64, fileName: file.name, mimeType: file.type });
+                        toast.success('CI enviada com sucesso!');
+                      } catch { toast.error('Erro ao enviar CI'); }
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+              )}
               {po.pdfUrl && (
                 <div className="flex items-center gap-0.5 rounded border border-blue-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
                   <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600">
@@ -2808,6 +2828,26 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                     <Download className="w-3.5 h-3.5" />
                   </a>
                 </div>
+              )}
+              {/* Upload Ordem de Pagamento button (when no OP exists) */}
+              {!po.pdfNotaCheiaUrl && (
+                <label className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-emerald-300 text-emerald-500 hover:bg-emerald-50 cursor-pointer transition-colors text-[10px] font-medium" onClick={(e) => e.stopPropagation()} title="Upload Ordem de Pagamento">
+                  <Upload className="w-3 h-3" />
+                  <span>Ordem de Pagamento</span>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const base64 = (reader.result as string).split(',')[1];
+                      try {
+                        await uploadDocMut.mutateAsync({ poId: po.id, type: 'ordemPagamento', fileBase64: base64, fileName: file.name, mimeType: file.type });
+                        toast.success('Ordem de Pagamento enviada com sucesso!');
+                      } catch { toast.error('Erro ao enviar Ordem de Pagamento'); }
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
               )}
               {po.pdfNotaCheiaUrl && (
                 <div className="flex items-center gap-0.5 rounded border border-emerald-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -3319,7 +3359,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     isLegacyInit && po.comissaoSilverio ? String((Number(po.comissaoSilverio) / legacyRate).toFixed(4)) : (po.comissaoSilverio || '')
   );
   // Frete override: null = usa cálculo automático, string = valor manual em USD
-  const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(null);
+  const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(po.freteOverrideUsd ? String(po.freteOverrideUsd) : null);
   const [freteEditing, setFreteEditing] = useState(false);
   // Vilela valor real: valor exato pago (quando preenchido, substitui a estimativa %)
   const [vilelaReal, setVilelaReal] = useState(po.vilelaValorReal || '');
@@ -3467,6 +3507,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       comissaoSilverio: toBrl(comSilverio),
       despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(2)) : (po.despesasLiberacaoRemessa || null),
       vilelaValorReal: vilelaReal || null,
+      freteOverrideUsd: freteOverrideUsd || null,
     });
   };
 

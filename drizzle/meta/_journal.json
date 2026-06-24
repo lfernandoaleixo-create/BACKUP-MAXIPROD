@@ -1079,6 +1079,13 @@
       "when": 1782153170352,
       "tag": "0153_polite_firestar",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "5",
+      "when": 1782298254921,
+      "tag": "0154_dusty_dragon_man",
+      "breakpoints": true
     }
   ]
 }

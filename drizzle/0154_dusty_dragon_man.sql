@@ -1,0 +1,1 @@
+ALTER TABLE `import_pos` ADD `frete_override_usd` decimal(12,4);

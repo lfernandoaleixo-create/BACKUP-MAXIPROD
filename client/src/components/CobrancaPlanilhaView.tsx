@@ -271,6 +271,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [segmentDetailOpen, setSegmentDetailOpen] = useState<string | null>(null);
   const [showFundoPerdido, setShowFundoPerdido] = useState(false);
   const [showEspecialSemCobranca, setShowEspecialSemCobranca] = useState(false);
+  const [showProtestados, setShowProtestados] = useState(false);
   const [editingVendedorId, setEditingVendedorId] = useState<number | null>(null);
   const [editingVendedorValue, setEditingVendedorValue] = useState("");
 
@@ -300,10 +301,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
-    // Exclude Fundo Perdido and Especial s/ cobrança from main list (unless specifically filtered)
-    let result = statusFilter === "Fundo Perdido" || statusFilter === "Especial s/ cobrança"
+    // Exclude Fundo Perdido, Especial s/ cobrança, and Protestado from main list (unless specifically filtered)
+    let result = statusFilter === "Fundo Perdido" || statusFilter === "Especial s/ cobrança" || statusFilter === "Protestado"
       ? [...items]
-      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança");
+      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança" && item.status !== "Protestado");
 
     // Search
     if (search.trim()) {
@@ -359,6 +360,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const uniqueClients = useMemo(() => new Set(filteredItems.map(i => getClientKey(i.empresa))), [filteredItems]);
 
   // Dados agrupados por segmento (centro de custos) - REMOVED segment cards per user request
+
+  // Items de Protestado
+  const protestadoItems = useMemo(() => {
+    if (!items) return [];
+    return items.filter(item => item.status === "Protestado");
+  }, [items]);
+  const protestadoTotal = protestadoItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
+  const protestadoClients = useMemo(() => new Set(protestadoItems.map(i => getClientKey(i.empresa))), [protestadoItems]);
 
   // Items de Fundo Perdido
   const fundoPerdidoItems = useMemo(() => {
@@ -1160,8 +1169,80 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
-      {/* Cards Fundo Perdido e Especial s/ Cobrança */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+      {/* Cards Protestados, Fundo Perdido e Especial s/ Cobrança */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+        {/* Card Protestados */}
+        <div className="rounded-xl border-2 border-red-400 bg-gradient-to-br from-red-50 via-rose-50 to-red-50 overflow-hidden transition-all hover:shadow-lg">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowProtestados(prev => !prev); }}
+            className="w-full p-4 text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center shadow-md">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-red-900">Protestados</h3>
+                  <p className="text-xs text-red-600">{protestadoClients.size} cliente{protestadoClients.size !== 1 ? "s" : ""} • {protestadoItems.length} título{protestadoItems.length !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-red-800">{formatCurrency(protestadoTotal)}</span>
+                {showProtestados ? <ChevronUp className="w-5 h-5 text-red-500" /> : <ChevronDown className="w-5 h-5 text-red-500" />}
+              </div>
+            </div>
+          </button>
+          {showProtestados && protestadoItems.length > 0 && (
+            <div className="border-t border-red-300 divide-y divide-red-200 max-h-[400px] overflow-y-auto">
+              {protestadoItems.map((item) => {
+                return (
+                  <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-1.5 h-10 rounded-full bg-red-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
+                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          {item.descricao && <span className="truncate max-w-[200px]">{item.descricao}</span>}
+                          {item.vendedor && <span>• {item.vendedor}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-red-800">{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
+                        <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                          (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                          "bg-blue-100 text-blue-700"
+                        }`}>
+                          {item.diasVencidos || 0}d
+                        </span>
+                      </div>
+                      {canEdit && (
+                        <select
+                          value={item.status}
+                          onChange={e => handleStatusChange(item.id, e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-red-50 text-red-700 border-red-400 cursor-pointer focus:ring-2 focus:ring-blue-400"
+                        >
+                          {ALL_STATUSES.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Card Fundo Perdido */}
         <div className="rounded-xl border-2 border-stone-400 bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden transition-all hover:shadow-lg">
           <button

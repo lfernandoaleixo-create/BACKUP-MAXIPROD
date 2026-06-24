@@ -2538,6 +2538,7 @@ export const importPos = mysqlTable("import_pos", {
   valorFreteMaritimoCnBr: decimal("valor_frete_maritimo_usd", { precision: 12, scale: 2 }), // Frete marítimo CN/BR em USD
   totalCiRemessa: decimal("total_ci_remessa", { precision: 12, scale: 2 }), // Total CI da remessa
   valorTotalProdutosUsdRemessa: decimal("valor_total_produtos_usd_remessa", { precision: 12, scale: 2 }), // Valor total dos produtos USD
+  freteOverrideUsd: decimal("frete_override_usd", { precision: 12, scale: 4 }), // Frete manual override em USD (quando preenchido, substitui o cálculo automático)
   navigationStatus: varchar("navigation_status", { length: 20 }).default("navegando"), // 'navegando' | 'chegou_patio' | 'concluida'
   previsaoEntrega: varchar("previsao_entrega", { length: 50 }), // Data de previsão de entrega do Maxiprod (ISO string)
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -920,6 +920,7 @@ export const importRouter = router({
       totalCiRemessa: z.string().nullable().optional(),
       valorTotalProdutosUsdRemessa: z.string().nullable().optional(),
       vilelaValorReal: z.string().nullable().optional(),
+      freteOverrideUsd: z.string().nullable().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
