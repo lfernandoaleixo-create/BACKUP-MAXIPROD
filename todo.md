@@ -4498,3 +4498,5 @@
 - [x] POs Legacy (42 antigas): Corrigir bug do frete que zera ao salvar - permitir preenchimento manual do frete que persista
 - [x] POs Legacy (42 antigas): Adicionar opção de upload de CI e Ordem de Pagamento (como nas POs novas)
 - [x] Inadimplência: Criar card retangular para PROTESTADOS (como Fundo Perdido e Especial s/ Cobrança) e retirar da lista de cobrança
+- [x] Custo Mercadoria: Mover badge SPREAD para ao lado da cotação/conversão (mais acima, ao lado esquerdo)
+- [x] Financeiro Descontos: Autorizar senha "Flavio" para fazer descontos de títulos (quando operador é autorizador, PDF sai como autorizado automaticamente)

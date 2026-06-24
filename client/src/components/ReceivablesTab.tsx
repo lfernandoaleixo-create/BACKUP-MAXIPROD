@@ -631,17 +631,18 @@ function ContaFiltersAndTable({
         <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:center">${i.isOverdue ? "Vencido" : "A Vencer"}</td>
       </tr>
     `).join("");
-    const authBanner = discountsAuthorized
+    const isAuthorizedExport = discountsAuthorized || isAuthorizer;
+    const authBanner = isAuthorizedExport
       ? `<div style="background:#ecfdf5;border:3px solid #10b981;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center">
           <div style="font-size:36px;margin-bottom:8px">&#9989;</div>
-          <div style="font-size:24px;font-weight:900;color:#059669;text-transform:uppercase;letter-spacing:2px">AUTORIZADO POR FERNANDO</div>
+          <div style="font-size:24px;font-weight:900;color:#059669;text-transform:uppercase;letter-spacing:2px">AUTORIZADO POR ${operator?.name || "FERNANDO"}</div>
           <div style="font-size:13px;color:#047857;margin-top:6px">Desconto aprovado e autorizado antes da exportação</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">Data da autorização: ${new Date().toLocaleString("pt-BR")}</div>
         </div>`
       : `<div style="background:#fef2f2;border:3px solid #ef4444;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center">
           <div style="font-size:36px;margin-bottom:8px">&#10060;</div>
           <div style="font-size:24px;font-weight:900;color:#dc2626;text-transform:uppercase;letter-spacing:2px">NÃO AUTORIZADO</div>
-          <div style="font-size:13px;color:#b91c1c;margin-top:6px">Este desconto NÃO foi autorizado por Fernando antes da exportação</div>
+          <div style="font-size:13px;color:#b91c1c;margin-top:6px">Este desconto NÃO foi autorizado por Fernando/Bruno/Flavio antes da exportação</div>
           <div style="font-size:11px;color:#6b7280;margin-top:4px">Exportado em: ${new Date().toLocaleString("pt-BR")}</div>
         </div>`;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Selecionados para Desconto - ${contaLabel}</title></head><body style="font-family:system-ui;padding:30px">

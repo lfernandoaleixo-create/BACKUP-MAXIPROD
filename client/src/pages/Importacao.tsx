@@ -1505,6 +1505,10 @@ function CustoMercadoria() {
                   Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </span>
               )}
+              <span className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 rounded-full px-2.5 py-1">
+                <span className="text-[10px] font-semibold text-purple-700">SPREAD: + R$ 0,20</span>
+                <span className="text-[10px] text-purple-500">na conversão</span>
+              </span>
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
                 currency === "USD"
                   ? "bg-blue-100 border-blue-400 text-blue-800"
@@ -1613,10 +1617,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
         </div>
       </div>
       <p className="text-xs text-slate-500 mb-3">Média ponderada FIFO: vendas abatidas dos contêineres mais antigos primeiro.</p>
-      <div className="flex items-center gap-2 mb-3 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1.5">
-        <span className="text-[10px] font-semibold text-purple-700">SPREAD: + R$ 0,20</span>
-        <span className="text-[10px] text-purple-500">aplicado na conversão USD→BRL de todos os custos</span>
-      </div>
+
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
