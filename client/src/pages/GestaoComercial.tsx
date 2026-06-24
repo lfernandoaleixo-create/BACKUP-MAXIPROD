@@ -7,7 +7,8 @@ import TopNav from "@/components/TopNav";
 import CadastroVendedoresTab from "@/components/CadastroVendedoresTab";
 import GestaoMetricasVendedores from "@/components/GestaoMetricasVendedores";
 import { trpc } from "@/lib/trpc";
-import { Users, BarChart3 } from "lucide-react";
+import { Users, BarChart3, ClipboardCheck, ShieldCheck } from "lucide-react";
+import { Link } from "wouter";
 
 type GestaoView = "vendedores" | "metricas";
 
@@ -37,7 +38,7 @@ export default function GestaoComercial() {
 
       <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
         {/* Sub-navigation tabs */}
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
           <button
             onClick={() => setView("vendedores")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
@@ -60,6 +61,20 @@ export default function GestaoComercial() {
             <BarChart3 className="w-4 h-4" />
             Métricas de Vendas
           </button>
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/gestao-comercial/aprovacoes">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Aprovações
+              </button>
+            </Link>
+            <Link href="/gestao-comercial/pedidos-operador">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all cursor-pointer">
+                <ClipboardCheck className="w-3.5 h-3.5" />
+                Pedidos (Vitória)
+              </button>
+            </Link>
+          </div>
         </div>
 
         {/* Content */}

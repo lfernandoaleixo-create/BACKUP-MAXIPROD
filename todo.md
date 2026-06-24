@@ -4502,3 +4502,11 @@
 - [x] Financeiro Descontos: Autorizar senha "Flavio" para fazer descontos de títulos (quando operador é autorizador, PDF sai como autorizado automaticamente)
 - [x] Bug Inadimplência: Observações mostrando nome "Thiago" em clientes recentes - corrigido: obs agora são por planilhaId específico, não por empresa
 - [x] Bug Inadimplência: Clientes novos entrando como "Contatado" ao invés de "Pendente" - removida herança de status
+- [x] Pedidos de Venda: Modal de confirmação quando vendedor tenta enviar pedido com preço abaixo do mínimo ("Editar Pedido" / "Sim, enviar mesmo assim")
+- [x] Pedidos de Venda: Gestor recebe TODOS os pedidos — verdes (preço OK) e vermelhos (abaixo do mínimo) — com detalhes de % e R$ abaixo
+- [x] Pedidos de Venda: Pedido sem problema de preço vai direto para Vitória + aparece verde no painel do gestor
+- [x] Pedidos de Venda: Gestor pode recusar pedido vermelho → volta pro vendedor com aviso de rejeição
+- [x] Pedidos de Venda: Gestor autoriza pedido → segue para Vitória processar
+- [x] Pedidos de Venda: Painel bonito e intuitivo da Vitória — pedidos aprovados prontos para digitar no Maxiprod
+- [x] Pedidos de Venda: Notificação pro vendedor quando gestor recusa (pedido volta com motivo)
+- [x] Pedidos de Venda: Adicionar campo gestorName na tabela sales_order_requests para vincular ao gestor correto

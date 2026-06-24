@@ -1,0 +1,1 @@
+ALTER TABLE `sales_order_requests` ADD `gestor_name` varchar(200);

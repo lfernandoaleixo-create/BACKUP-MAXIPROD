@@ -2737,30 +2737,74 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
             </div>
           </div>
           <div className="divide-y divide-slate-100 dark:divide-slate-700">
-            {pedidosManuais.slice(0, 10).map((pm: any) => (
-              <div key={pm.id} className="px-4 py-3 flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
-                      {pm.razaoSocial || pm.nomeFantasia || "Cliente"}
+            {pedidosManuais.slice(0, 20).map((pm: any) => (
+              <div key={pm.id} className={`px-4 py-3 ${
+                pm.status === "rejeitado" ? "bg-red-50/50 dark:bg-red-900/10 border-l-4 border-l-red-400" :
+                pm.status === "pendente" && pm.temPrecoAbaixoMinimo ? "bg-amber-50/50 dark:bg-amber-900/10 border-l-4 border-l-amber-400" :
+                ""
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                        {pm.razaoSocial || pm.nomeFantasia || "Cliente"}
+                      </p>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                        pm.status === "aprovado" ? "bg-green-50 text-green-600" :
+                        pm.status === "pendente" ? "bg-amber-50 text-amber-600" :
+                        pm.status === "rejeitado" ? "bg-red-50 text-red-600" :
+                        pm.status === "processado" ? "bg-blue-50 text-blue-600" :
+                        "bg-slate-100 text-slate-600"
+                      }`}>
+                        {pm.status === "pendente" ? "⏳ AGUARDANDO GESTOR" :
+                         pm.status === "aprovado" ? "✅ APROVADO" :
+                         pm.status === "rejeitado" ? "❌ RECUSADO" :
+                         pm.status === "processado" ? "✅ PROCESSADO" :
+                         pm.status?.toUpperCase()}
+                      </span>
+                      {pm.temPrecoAbaixoMinimo && pm.status === "pendente" && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-700">
+                          Preço abaixo do mínimo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      {pm.createdAt ? new Date(pm.createdAt).toLocaleDateString("pt-BR") : ""}
+                      {pm.condicaoPagamento && ` · Pgto: ${pm.condicaoPagamento}`}
+                      {pm.items?.length > 0 && ` · ${pm.items.length} ite${pm.items.length !== 1 ? "ns" : "m"}`}
                     </p>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                      pm.status === "aprovado" ? "bg-green-50 text-green-600" :
-                      pm.status === "pendente" ? "bg-amber-50 text-amber-600" :
-                      pm.status === "rejeitado" ? "bg-red-50 text-red-600" :
-                      "bg-blue-50 text-blue-600"
-                    }`}>
-                      {pm.status?.toUpperCase()}
-                    </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    {pm.createdAt ? new Date(pm.createdAt).toLocaleDateString("pt-BR") : ""}
-                    {pm.condicaoPagamento && ` · Pgto: ${pm.condicaoPagamento}`}
+                  <p className="text-xs font-bold text-green-700 dark:text-green-400 ml-3">
+                    {formatCurrencySales(Number(pm.totalPedido || pm.totalProdutos || 0))}
                   </p>
                 </div>
-                <p className="text-xs font-bold text-green-700 dark:text-green-400 ml-3">
-                  {formatCurrencySales(Number(pm.totalProdutos || 0))}
-                </p>
+                {/* Rejection notification */}
+                {pm.status === "rejeitado" && pm.motivoRejeicao && (
+                  <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-[11px] font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
+                      <span>⚠️</span> Gestor não autorizou este pedido
+                    </p>
+                    <p className="text-[10px] text-red-600 dark:text-red-300 mt-0.5">
+                      Motivo: {pm.motivoRejeicao}
+                    </p>
+                    <p className="text-[10px] text-red-500 dark:text-red-400 mt-1 font-medium">
+                      Por favor, reedite o pedido com os preços corretos.
+                    </p>
+                  </div>
+                )}
+                {/* Show items for pending/rejected orders */}
+                {(pm.status === "pendente" || pm.status === "rejeitado") && pm.items?.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {pm.items.filter((it: any) => it.abaixoDoMinimo).map((it: any, idx: number) => (
+                      <div key={idx} className="text-[10px] bg-amber-50 dark:bg-amber-900/20 rounded px-2 py-1 flex items-center justify-between">
+                        <span className="text-amber-800 dark:text-amber-300 truncate">{it.descricaoItem}</span>
+                        <span className="text-amber-600 font-medium ml-2 whitespace-nowrap">
+                          R$ {Number(it.precoUnitario).toFixed(2)} (mín: R$ {Number(it.precoMinimo).toFixed(2)})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -3016,8 +3060,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const totalProdutos = items.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0);
   const totalPedido = totalProdutos + (Number(valorFrete) || 0);
   const hasPrecoAbaixo = items.some(item => item.precoMinimo !== null && item.precoUnitario < item.precoMinimo);
+  const [showBelowMinConfirm, setShowBelowMinConfirm] = useState(false);
 
-  const handleSubmit = () => {
+  // Items below minimum for the confirmation modal
+  const itemsBelowMin = items.filter(item => item.precoMinimo !== null && item.precoUnitario < item.precoMinimo);
+
+  const doSubmitOrder = (forceSubmitBelowMin?: boolean) => {
     createOrderMutation.mutate({
       sellerId,
       cnpjCpf,
@@ -3042,6 +3090,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
       valorFrete: Number(valorFrete) || undefined,
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
+      forceSubmitBelowMin: forceSubmitBelowMin || false,
       items: items.map(item => ({
         codigoItem: item.codigoItem,
         descricaoItem: item.descricaoItem,
@@ -3053,10 +3102,20 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
       onSuccess: (result) => {
         if (result.success) {
           utils.salesOrders.getSellerOrders.invalidate();
+          setShowBelowMinConfirm(false);
           onClose();
         }
       },
     });
+  };
+
+  const handleSubmit = () => {
+    if (hasPrecoAbaixo) {
+      // Show confirmation modal instead of submitting directly
+      setShowBelowMinConfirm(true);
+    } else {
+      doSubmitOrder(false);
+    }
   };
 
   const canProceedCliente = cnpjCpf.length >= 11 && razaoSocial.length >= 2;
@@ -3545,6 +3604,80 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
           </div>
         )}
       </div>
+      {/* Below Minimum Price Confirmation Modal */}
+      {showBelowMinConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="bg-red-50 dark:bg-red-900/30 px-5 py-4 border-b border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                  <span className="text-xl">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-red-800 dark:text-red-200">Preço Abaixo do Mínimo</h3>
+                  <p className="text-[11px] text-red-600 dark:text-red-400">Atenção: produtos com preço inferior ao permitido</p>
+                </div>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                Você está vendendo os seguintes produtos a um preço <strong>menor que o mínimo</strong>:
+              </p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {itemsBelowMin.map((item, idx) => {
+                  const diff = item.precoMinimo! - item.precoUnitario;
+                  const pct = ((diff / item.precoMinimo!) * 100).toFixed(1);
+                  return (
+                    <div key={idx} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                      <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">{item.descricaoItem}</p>
+                      <div className="grid grid-cols-3 gap-2 mt-1.5">
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase">Seu preço</p>
+                          <p className="text-[11px] font-bold text-red-600">R$ {item.precoUnitario.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase">Mínimo</p>
+                          <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200">R$ {item.precoMinimo!.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase">Diferença</p>
+                          <p className="text-[11px] font-bold text-red-600">-{pct}% (R$ {diff.toFixed(2)})</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5">
+                <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                  <strong>Se confirmar:</strong> o pedido será enviado para aprovação do gestor antes de ser processado.
+                </p>
+              </div>
+            </div>
+            {/* Actions */}
+            <div className="px-5 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex gap-3">
+              <button
+                onClick={() => { setShowBelowMinConfirm(false); setStep("produtos"); }}
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+              >
+                Editar Pedido
+              </button>
+              <button
+                onClick={() => doSubmitOrder(true)}
+                disabled={createOrderMutation.isPending}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                {createOrderMutation.isPending ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : null}
+                Sim, Enviar Mesmo Assim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* PO Reservation Modal */}
       {reservePO && (
         <ReservationModal

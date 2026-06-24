@@ -345,6 +345,8 @@ export const salesOrderRouter = router({
         unidadeMedida: z.string().optional(),
         precoUnitario: z.number().positive(),
       })).min(1),
+      // Flag: vendedor confirmou que quer enviar mesmo com preço abaixo do mínimo
+      forceSubmitBelowMin: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -372,7 +374,9 @@ export const salesOrderRouter = router({
         const abaixo = minPrice !== undefined && item.precoUnitario < minPrice;
         if (abaixo) {
           temPrecoAbaixoMinimo = true;
-          alertMotivos.push(`${item.descricaoItem}: R$ ${item.precoUnitario.toFixed(2)} < mín R$ ${minPrice!.toFixed(2)}`);
+          const diffReais = (minPrice! - item.precoUnitario).toFixed(2);
+          const diffPercent = (((minPrice! - item.precoUnitario) / minPrice!) * 100).toFixed(1);
+          alertMotivos.push(`${item.descricaoItem} (${item.codigoItem}): vendendo a R$ ${item.precoUnitario.toFixed(2)}, mínimo R$ ${minPrice!.toFixed(2)} — R$ ${diffReais} a menos (${diffPercent}% abaixo)`);
         }
         return {
           ...item,
@@ -393,6 +397,7 @@ export const salesOrderRouter = router({
       const [result] = await db.insert(salesOrderRequests).values({
         sellerId: input.sellerId,
         sellerName: seller.sellerName,
+        gestorName: seller.gestorName || null,
         status,
         cnpjCpf: input.cnpjCpf,
         razaoSocial: input.razaoSocial,
@@ -451,6 +456,52 @@ export const salesOrderRouter = router({
       };
     }),
 
+  // ===== VALIDATE ORDER (pre-check before submit) =====
+
+  /** Pre-validate order items against min prices - returns warnings without creating order */
+  validateOrder: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      items: z.array(z.object({
+        codigoItem: z.string(),
+        descricaoItem: z.string(),
+        quantidade: z.number().positive(),
+        precoUnitario: z.number().positive(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      const prices = await db.select().from(productMinPrices);
+      const priceMap = new Map(prices.map(p => [p.codigoItem, Number(p.precoMinimo)]));
+
+      const warnings: Array<{
+        codigoItem: string;
+        descricaoItem: string;
+        precoVendido: number;
+        precoMinimo: number;
+        diferencaReais: number;
+        diferencaPercent: number;
+      }> = [];
+
+      for (const item of input.items) {
+        const minPrice = priceMap.get(item.codigoItem);
+        if (minPrice !== undefined && item.precoUnitario < minPrice) {
+          warnings.push({
+            codigoItem: item.codigoItem,
+            descricaoItem: item.descricaoItem,
+            precoVendido: item.precoUnitario,
+            precoMinimo: minPrice,
+            diferencaReais: Number((minPrice - item.precoUnitario).toFixed(2)),
+            diferencaPercent: Number((((minPrice - item.precoUnitario) / minPrice) * 100).toFixed(1)),
+          });
+        }
+      }
+
+      return { hasWarnings: warnings.length > 0, warnings };
+    }),
+
   // ===== LIST ORDERS =====
 
   /** List orders with filters (for gestor/Vitória) */
@@ -496,6 +547,82 @@ export const salesOrderRouter = router({
       return { order, items };
     }),
 
+  /** Get all orders for a specific gestor (approval dashboard) */
+  getOrdersForGestor: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const orders = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.gestorName, input.gestorName))
+        .orderBy(desc(salesOrderRequests.createdAt))
+        .limit(100);
+
+      // Get items for all orders
+      const orderIds = orders.map(o => o.id);
+      let allItems: any[] = [];
+      if (orderIds.length > 0) {
+        allItems = await db.select().from(salesOrderRequestItems)
+          .where(inArray(salesOrderRequestItems.orderId, orderIds));
+      }
+
+      // Group items by orderId
+      const itemsByOrder = new Map<number, typeof allItems>();
+      for (const item of allItems) {
+        if (!itemsByOrder.has(item.orderId)) itemsByOrder.set(item.orderId, []);
+        itemsByOrder.get(item.orderId)!.push(item);
+      }
+
+      return orders.map(order => ({
+        ...order,
+        items: itemsByOrder.get(order.id) || [],
+      }));
+    }),
+
+  /** Get approved orders for Vitória (ready to process in Maxiprod) */
+  getOrdersForOperator: publicProcedure
+    .input(z.object({ status: z.enum(["aprovado", "processado", "todos"]).optional() }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const statusFilter = input?.status || "aprovado";
+      const conditions: any[] = [];
+      if (statusFilter !== "todos") {
+        conditions.push(eq(salesOrderRequests.status, statusFilter));
+      } else {
+        conditions.push(or(
+          eq(salesOrderRequests.status, "aprovado"),
+          eq(salesOrderRequests.status, "processado")
+        ));
+      }
+
+      const orders = await db.select().from(salesOrderRequests)
+        .where(and(...conditions))
+        .orderBy(desc(salesOrderRequests.createdAt))
+        .limit(100);
+
+      // Get items for all orders
+      const orderIds = orders.map(o => o.id);
+      let allItems: any[] = [];
+      if (orderIds.length > 0) {
+        allItems = await db.select().from(salesOrderRequestItems)
+          .where(inArray(salesOrderRequestItems.orderId, orderIds));
+      }
+
+      const itemsByOrder = new Map<number, typeof allItems>();
+      for (const item of allItems) {
+        if (!itemsByOrder.has(item.orderId)) itemsByOrder.set(item.orderId, []);
+        itemsByOrder.get(item.orderId)!.push(item);
+      }
+
+      return orders.map(order => ({
+        ...order,
+        items: itemsByOrder.get(order.id) || [],
+      }));
+    }),
+
   /** Get orders for a specific seller (seller app) */
   getSellerOrders: publicProcedure
     .input(z.object({ sellerId: z.number() }))
@@ -503,10 +630,29 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      return db.select().from(salesOrderRequests)
+      const orders = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.sellerId, input.sellerId))
         .orderBy(desc(salesOrderRequests.createdAt))
         .limit(50);
+
+      // Get items for all orders
+      const orderIds = orders.map(o => o.id);
+      let allItems: any[] = [];
+      if (orderIds.length > 0) {
+        allItems = await db.select().from(salesOrderRequestItems)
+          .where(inArray(salesOrderRequestItems.orderId, orderIds));
+      }
+
+      const itemsByOrder = new Map<number, typeof allItems>();
+      for (const item of allItems) {
+        if (!itemsByOrder.has(item.orderId)) itemsByOrder.set(item.orderId, []);
+        itemsByOrder.get(item.orderId)!.push(item);
+      }
+
+      return orders.map(order => ({
+        ...order,
+        items: itemsByOrder.get(order.id) || [],
+      }));
     }),
 
   // ===== APPROVAL FLOW =====
