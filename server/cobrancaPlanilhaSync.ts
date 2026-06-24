@@ -279,34 +279,11 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       const statusInad = action?.status || "pendente";
       let statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
 
-      // PROTEÇÃO: Herdar status manual e etapas de cobrança de registros existentes (ativos ou inativos) da mesma empresa
-      // Priorizar registros com status NÃO-Pendente (marcações manuais da Larissa/Thalita)
-      const existingOfSameEmpresa = allPlanilhaRecords.find(
-        p => p.empresa === title.empresa && p.status && p.status !== 'Pendente'
-      );
-      if (existingOfSameEmpresa?.status) {
-        statusPlanilha = existingOfSameEmpresa.status;
-      }
+      // Cada título novo entra como "Pendente" — sem herdar status de registros anteriores
+      // O status será atualizado manualmente pela equipe de cobrança
+      statusPlanilha = "Pendente";
 
-      // PROTEÇÃO: Herdar etapas de cobrança da mesma empresa (priorizar registro com mais etapas preenchidas)
-      // REGRA: Só herdar se a primeira_cobranca for >= vencimento do título novo
-      // (não faz sentido cobrar antes do título vencer)
-      const empresaRecords = allPlanilhaRecords.filter(p => p.empresa === title.empresa);
-      const etapaSource = empresaRecords
-        .filter(p => {
-          if (!p.primeiraCobranca && !p.segundaCobranca && !p.terceiraCobranca && !p.acaoFinal) return false;
-          // Validar: primeira cobrança deve ser >= vencimento do título novo
-          if (p.primeiraCobranca && vencDate) {
-            const primeiraDate = new Date(p.primeiraCobranca);
-            const vencDateObj = new Date(vencDate);
-            if (primeiraDate < vencDateObj) return false; // Etapas de outro título mais antigo
-          }
-          return true;
-        })
-        .sort((a, b) => {
-          const countEtapas = (r: any) => [r.primeiraCobranca, r.semAcao1, r.segundaCobranca, r.semAcao2, r.terceiraCobranca, r.semAcao3, r.acaoFinal].filter(Boolean).length;
-          return countEtapas(b) - countEtapas(a);
-        })[0] || null;
+
 
       // Determine tipo (protesto)
       const decisao = (title.row.decisaoCobranca || "").toUpperCase();
@@ -344,17 +321,16 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         formaCobranca: title.row.formaCobranca || null,
         documento,
         centroCustos,
-        // Herdar etapas de cobrança da mesma empresa (para não perder histórico)
-        primeiraCobranca: etapaSource?.primeiraCobranca || null,
-        semAcao1: etapaSource?.semAcao1 || null,
-        segundaCobranca: etapaSource?.segundaCobranca || null,
-        semAcao2: etapaSource?.semAcao2 || null,
-        terceiraCobranca: etapaSource?.terceiraCobranca || null,
-        semAcao3: etapaSource?.semAcao3 || null,
-        acaoFinal: etapaSource?.acaoFinal || null,
-        // Rastreabilidade: de qual registro as etapas foram herdadas
-        etapasHerdadasDeId: etapaSource?.id || null,
-        etapasHerdadasDeDoc: etapaSource?.documento || null,
+        // Cada título novo começa do zero — sem herdar etapas de cobrança
+        primeiraCobranca: null,
+        semAcao1: null,
+        segundaCobranca: null,
+        semAcao2: null,
+        terceiraCobranca: null,
+        semAcao3: null,
+        acaoFinal: null,
+        etapasHerdadasDeId: null,
+        etapasHerdadasDeDoc: null,
         updatedBy: "Auto-sync (novo título vencido)",
       });
       added++;

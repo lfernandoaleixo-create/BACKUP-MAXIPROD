@@ -1437,33 +1437,15 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      // Buscar a empresa do item clicado para pegar obs de todos os IDs da mesma empresa
-      const [item] = await db.select({ empresa: cobrancaPlanilha.empresa })
-        .from(cobrancaPlanilha)
-        .where(eq(cobrancaPlanilha.id, input.planilhaId))
-        .limit(1);
-      if (!item) return [];
-      const allIds = await db.select({ id: cobrancaPlanilha.id })
-        .from(cobrancaPlanilha)
-        .where(eq(cobrancaPlanilha.empresa, item.empresa));
-      const idList = allIds.map(r => r.id);
-      if (idList.length === 0) return [];
-      const conditions: any[] = [inArray(cobrancaEtapaObs.planilhaId, idList)];
+      // Buscar observações apenas do planilhaId específico (cada entrada é uma cobrança independente)
+      const conditions: any[] = [eq(cobrancaEtapaObs.planilhaId, input.planilhaId)];
       if (input.etapa) {
         conditions.push(eq(cobrancaEtapaObs.etapa, input.etapa));
       }
       const rows = await db.select().from(cobrancaEtapaObs)
         .where(and(...conditions))
         .orderBy(desc(cobrancaEtapaObs.createdAt));
-      // Deduplicar por conteúdo
-      const seen = new Set<string>();
-      const deduped = rows.filter(r => {
-        const key = `${r.etapa}|${r.observacao}|${r.createdAt}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      return deduped;
+      return rows;
     }),
 
   /** Listar TODAS as observações de um título (para o balãozinho de histórico) */
@@ -1472,31 +1454,11 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      // Buscar a empresa do item clicado
-      const [item] = await db.select({ empresa: cobrancaPlanilha.empresa })
-        .from(cobrancaPlanilha)
-        .where(eq(cobrancaPlanilha.id, input.planilhaId))
-        .limit(1);
-      if (!item) return [];
-      // Buscar TODOS os IDs da mesma empresa (ativos e inativos) para mostrar histórico completo
-      const allIds = await db.select({ id: cobrancaPlanilha.id })
-        .from(cobrancaPlanilha)
-        .where(eq(cobrancaPlanilha.empresa, item.empresa));
-      const idList = allIds.map(r => r.id);
-      if (idList.length === 0) return [];
-      // Buscar todas as observações de todos os IDs dessa empresa (sem duplicatas)
+      // Buscar observações apenas do planilhaId específico (cada entrada na inadimplência é uma cobrança nova)
       const rows = await db.select().from(cobrancaEtapaObs)
-        .where(inArray(cobrancaEtapaObs.planilhaId, idList))
+        .where(eq(cobrancaEtapaObs.planilhaId, input.planilhaId))
         .orderBy(desc(cobrancaEtapaObs.createdAt));
-      // Deduplicar por conteúdo (mesma etapa + mesma observação + mesmo timestamp)
-      const seen = new Set<string>();
-      const deduped = rows.filter(r => {
-        const key = `${r.etapa}|${r.observacao}|${r.createdAt}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      return deduped;
+      return rows;
     }),
 
   /** Editar uma observação existente */

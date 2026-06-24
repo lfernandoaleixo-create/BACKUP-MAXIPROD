@@ -4500,3 +4500,5 @@
 - [x] Inadimplência: Criar card retangular para PROTESTADOS (como Fundo Perdido e Especial s/ Cobrança) e retirar da lista de cobrança
 - [x] Custo Mercadoria: Mover badge SPREAD para ao lado da cotação/conversão (mais acima, ao lado esquerdo)
 - [x] Financeiro Descontos: Autorizar senha "Flavio" para fazer descontos de títulos (quando operador é autorizador, PDF sai como autorizado automaticamente)
+- [x] Bug Inadimplência: Observações mostrando nome "Thiago" em clientes recentes - corrigido: obs agora são por planilhaId específico, não por empresa
+- [x] Bug Inadimplência: Clientes novos entrando como "Contatado" ao invés de "Pendente" - removida herança de status
