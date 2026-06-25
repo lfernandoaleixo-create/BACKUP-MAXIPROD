@@ -4510,3 +4510,9 @@
 - [x] Pedidos de Venda: Painel bonito e intuitivo da Vitória — pedidos aprovados prontos para digitar no Maxiprod
 - [x] Pedidos de Venda: Notificação pro vendedor quando gestor recusa (pedido volta com motivo)
 - [x] Pedidos de Venda: Adicionar campo gestorName na tabela sales_order_requests para vincular ao gestor correto
+- [x] Métrica de Vendas: Schema DB para metas mensais (valor R$ ou qtd pedidos) por vendedor
+- [x] Métrica de Vendas: Gestor define meta mensal individual por vendedor (toggle valor/quantidade)
+- [x] Métrica de Vendas: Cálculo de comissão proporcional ao atingimento da meta (% configurável)
+- [x] Métrica de Vendas: Avaliação mensal — mostra % atingido, valor vendido vs meta, comissão calculada
+- [x] Métrica de Vendas: Avaliação semestral — média dos últimos 6 meses corridos
+- [x] Métrica de Vendas: Visualização com gráficos mês a mês e semestral

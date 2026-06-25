@@ -2677,3 +2677,34 @@ export const checklistResponses = mysqlTable("checklist_responses", {
 });
 export type ChecklistResponse = typeof checklistResponses.$inferSelect;
 export type InsertChecklistResponse = typeof checklistResponses.$inferInsert;
+
+
+// ═══════════════════════════════════════════════════════════════
+// METAS DE VENDAS - Metas mensais e comissões dos vendedores
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Metas mensais por vendedor - definidas pelo gestor
+ * Tipo pode ser "valor" (R$) ou "quantidade" (nº de pedidos)
+ * Comissão é uma % sobre o vendido, proporcional ao atingimento
+ */
+export const sellerMonthlyTargets = mysqlTable("seller_monthly_targets", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK para seller_permissions.id
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  gestorName: varchar("gestor_name", { length: 200 }).notNull(),
+  // Período
+  year: int("year").notNull(), // ex: 2026
+  month: int("month").notNull(), // 1-12
+  // Meta
+  targetType: mysqlEnum("target_type", ["valor", "quantidade"]).notNull(), // R$ ou nº pedidos
+  targetValue: decimal("target_value", { precision: 14, scale: 2 }).notNull(), // valor da meta (R$ ou nº)
+  // Comissão
+  commissionPercent: decimal("commission_percent", { precision: 5, scale: 2 }).notNull(), // % de comissão base
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SellerMonthlyTarget = typeof sellerMonthlyTargets.$inferSelect;
+export type InsertSellerMonthlyTarget = typeof sellerMonthlyTargets.$inferInsert;

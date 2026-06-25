@@ -12,7 +12,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, accountsReceivable } from "../drizzle/schema";
+import { salesOrders, accountsReceivable, sellerMonthlyTargets, sellerPermissions } from "../drizzle/schema";
 import { sql, and, gte, lte, ne, eq, desc, asc, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { normalizeVendedorName } from "./maxiprodGraphQL";
@@ -897,6 +897,282 @@ export const salesMetricsRouter = router({
           endereco: [stats.logradouro, stats.numero, stats.bairro, stats.cidade, stats.uf, stats.cep].filter(Boolean).join(', '),
         }))
         .sort((a, b) => b.totalVendas - a.totalVendas);
+    }),
+
+  // ═══════════════════════════════════════════════════════════════
+  // METAS MENSAIS E COMISSÕES
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Listar metas de um vendedor (todas ou por ano)
+   */
+  getSellerTargets: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      year: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const conditions = [eq(sellerMonthlyTargets.sellerId, input.sellerId)];
+      if (input.year) {
+        conditions.push(eq(sellerMonthlyTargets.year, input.year));
+      }
+
+      const targets = await db.select().from(sellerMonthlyTargets)
+        .where(and(...conditions))
+        .orderBy(desc(sellerMonthlyTargets.year), desc(sellerMonthlyTargets.month));
+
+      return targets;
+    }),
+
+  /**
+   * Criar ou atualizar meta mensal de um vendedor
+   */
+  upsertSellerTarget: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      sellerName: z.string(),
+      gestorName: z.string(),
+      year: z.number(),
+      month: z.number().min(1).max(12),
+      targetType: z.enum(["valor", "quantidade"]),
+      targetValue: z.number().min(0),
+      commissionPercent: z.number().min(0).max(100),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Check if target already exists for this seller/month/year
+      const existing = await db.select().from(sellerMonthlyTargets)
+        .where(and(
+          eq(sellerMonthlyTargets.sellerId, input.sellerId),
+          eq(sellerMonthlyTargets.year, input.year),
+          eq(sellerMonthlyTargets.month, input.month),
+        ))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update
+        await db.update(sellerMonthlyTargets)
+          .set({
+            targetType: input.targetType,
+            targetValue: String(input.targetValue),
+            commissionPercent: String(input.commissionPercent),
+            sellerName: input.sellerName,
+            gestorName: input.gestorName,
+          })
+          .where(eq(sellerMonthlyTargets.id, existing[0].id));
+        return { id: existing[0].id, action: "updated" };
+      } else {
+        // Insert
+        const result = await db.insert(sellerMonthlyTargets).values({
+          sellerId: input.sellerId,
+          sellerName: input.sellerName,
+          gestorName: input.gestorName,
+          year: input.year,
+          month: input.month,
+          targetType: input.targetType,
+          targetValue: String(input.targetValue),
+          commissionPercent: String(input.commissionPercent),
+        });
+        return { id: result[0].insertId, action: "created" };
+      }
+    }),
+
+  /**
+   * Deletar meta mensal
+   */
+  deleteSellerTarget: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.delete(sellerMonthlyTargets).where(eq(sellerMonthlyTargets.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Avaliação mensal e semestral de um vendedor
+   * Calcula o atingimento da meta e a comissão proporcional
+   * Retorna dados dos últimos 6 meses corridos
+   */
+  getSellerEvaluation: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      sellerName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { months: [], semesterAvg: null };
+
+      // Get current month in BR timezone
+      const now = new Date();
+      const brNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const currentYear = brNow.getFullYear();
+      const currentMonth = brNow.getMonth() + 1;
+
+      // Calculate last 6 months
+      const monthsToEval: { year: number; month: number }[] = [];
+      for (let i = 0; i < 6; i++) {
+        let m = currentMonth - i;
+        let y = currentYear;
+        if (m <= 0) { m += 12; y -= 1; }
+        monthsToEval.push({ year: y, month: m });
+      }
+      monthsToEval.reverse(); // oldest first
+
+      // Get targets for these months
+      const targets = await db.select().from(sellerMonthlyTargets)
+        .where(eq(sellerMonthlyTargets.sellerId, input.sellerId));
+
+      const targetMap = new Map<string, typeof targets[0]>();
+      for (const t of targets) {
+        targetMap.set(`${t.year}-${t.month}`, t);
+      }
+
+      // Get vendedor map for sales attribution
+      const vendedorMap = await fetchVendedorMap();
+
+      // For each month, calculate actual sales
+      const monthResults: Array<{
+        year: number;
+        month: number;
+        monthLabel: string;
+        target: { type: string; value: number; commissionPercent: number } | null;
+        actual: { totalVendas: number; qtdPedidos: number };
+        atingimento: number | null; // % atingido
+        comissaoCalculada: number | null; // R$ de comissão
+      }> = [];
+
+      for (const { year, month } of monthsToEval) {
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        // Query sales for this month and this seller
+        const allItems = await db.select({
+          pedido: salesOrders.pedido,
+          cliente: salesOrders.cliente,
+          clienteApelido: salesOrders.clienteApelido,
+          razaoSocial: salesOrders.razaoSocial,
+          representante: salesOrders.representante,
+          vendedorReal: salesOrders.vendedorReal,
+          valorTotalPedido: salesOrders.valorTotalPedido,
+          valorTotal: salesOrders.valorTotal,
+          estadoNota: salesOrders.estadoNota,
+          estadoConfiguravel: salesOrders.estadoConfiguravel,
+          dataEmissao: salesOrders.dataEmissao,
+        }).from(salesOrders)
+          .where(and(
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDate}`,
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDate}`,
+          ));
+
+        // Filter: exclude Digitação and Outros
+        const isDigitacao = (nota: string | null) => {
+          if (!nota) return false;
+          const n = nota.toUpperCase();
+          return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+        };
+        const isOutros = (estado: string | null) => {
+          if (!estado) return true;
+          const e = estado.toUpperCase();
+          if (e === 'BAMBU' || e === 'FIBRA') return false;
+          if (e === 'MADEIRA' || e === 'MADEIRA CONTABILIZADO') return false;
+          if (e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return false;
+          return true;
+        };
+
+        const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+
+        // Group by pedido
+        const pedidoMap = new Map<string, { vendedor: string; valor: number }>();
+        for (const o of filtered) {
+          const pedido = o.pedido || `item-${Math.random()}`;
+          if (!pedidoMap.has(pedido)) {
+            const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
+            let vendedor = normalizeVendedorName(o.representante || "");
+            if (!vendedor || isEditorNaoVendedor(vendedor)) {
+              vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
+            }
+            if (isClienteGrupoFox(clienteName)) vendedor = "Grupo Fox";
+            if (!vendedor) vendedor = "Não identificado";
+
+            pedidoMap.set(pedido, {
+              vendedor,
+              valor: o.valorTotalPedido ? Number(o.valorTotalPedido) : Number(o.valorTotal || 0),
+            });
+          } else {
+            const p = pedidoMap.get(pedido)!;
+            if (!p.valor && o.valorTotalPedido) {
+              p.valor = Number(o.valorTotalPedido);
+            } else if (!o.valorTotalPedido) {
+              p.valor += Number(o.valorTotal || 0);
+            }
+          }
+        }
+
+        // Filter for this seller
+        let totalVendas = 0;
+        let qtdPedidos = 0;
+        const sellerNameUpper = input.sellerName.toUpperCase();
+        for (const [_, data] of Array.from(pedidoMap.entries())) {
+          if (data.vendedor.toUpperCase() === sellerNameUpper) {
+            totalVendas += data.valor;
+            qtdPedidos += 1;
+          }
+        }
+
+        // Get target for this month
+        const target = targetMap.get(`${year}-${month}`);
+        let atingimento: number | null = null;
+        let comissaoCalculada: number | null = null;
+
+        if (target) {
+          const targetVal = Number(target.targetValue);
+          const commPct = Number(target.commissionPercent);
+
+          if (target.targetType === "valor" && targetVal > 0) {
+            atingimento = (totalVendas / targetVal) * 100;
+            // Comissão proporcional: (% atingido) * (comissão base % sobre total vendido)
+            comissaoCalculada = (totalVendas * commPct) / 100;
+          } else if (target.targetType === "quantidade" && targetVal > 0) {
+            atingimento = (qtdPedidos / targetVal) * 100;
+            // Para meta por quantidade, comissão é sobre o valor vendido proporcional ao atingimento
+            comissaoCalculada = (totalVendas * commPct) / 100;
+          }
+        }
+
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        monthResults.push({
+          year,
+          month,
+          monthLabel: `${monthNames[month - 1]}/${year}`,
+          target: target ? {
+            type: target.targetType,
+            value: Number(target.targetValue),
+            commissionPercent: Number(target.commissionPercent),
+          } : null,
+          actual: {
+            totalVendas: Math.round(totalVendas * 100) / 100,
+            qtdPedidos,
+          },
+          atingimento: atingimento !== null ? Math.round(atingimento * 100) / 100 : null,
+          comissaoCalculada: comissaoCalculada !== null ? Math.round(comissaoCalculada * 100) / 100 : null,
+        });
+      }
+
+      // Semester average
+      const monthsWithTarget = monthResults.filter(m => m.atingimento !== null);
+      const semesterAvg = monthsWithTarget.length > 0
+        ? Math.round((monthsWithTarget.reduce((sum, m) => sum + (m.atingimento || 0), 0) / monthsWithTarget.length) * 100) / 100
+        : null;
+
+      return { months: monthResults, semesterAvg };
     }),
 
   /**

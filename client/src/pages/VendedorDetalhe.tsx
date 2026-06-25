@@ -52,6 +52,7 @@ import {
   FileCheck,
   ChevronLeft,
   Tag,
+  Target,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import SellerVisitReportTab from "@/components/SellerVisitReportTab";
@@ -262,7 +263,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
         )}
 
         {activeTab === "vendas" && (
-          <SellerSalesView sellerName={seller.sellerName} />
+          <SellerSalesView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
         )}
 
         {activeTab === "configuracoes" && (
@@ -3710,11 +3711,19 @@ function OrderFormInput({ label, value, onChange, placeholder, type = "text" }: 
   );
 }
 
-function SellerSalesView({ sellerName }: { sellerName: string }) {
+function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: number; sellerName: string; gestorName: string }) {
   const [period, setPeriod] = useState<SalesPeriod>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [showCustom, setShowCustom] = useState(false);
+  const [showTargetForm, setShowTargetForm] = useState(false);
+  const [targetMonth, setTargetMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [targetType, setTargetType] = useState<"valor" | "quantidade">("valor");
+  const [targetValue, setTargetValue] = useState("");
+  const [commissionPercent, setCommissionPercent] = useState("");
 
   const { startDate, endDate } = useMemo(
     () => getSalesDateRange(period, customStart, customEnd),
@@ -3751,6 +3760,51 @@ function SellerSalesView({ sellerName }: { sellerName: string }) {
   const isLoading = loadingRanking || loadingDetail;
 
   const periodLabel = SALES_PERIODS.find((p) => p.value === period)?.label || "";
+
+  // === METAS E AVALIAÇÃO ===
+  const utils = trpc.useUtils();
+  const { data: evaluation, isLoading: loadingEval } = trpc.salesMetrics.getSellerEvaluation.useQuery(
+    { sellerId, sellerName },
+    { staleTime: 60 * 1000 }
+  );
+  const { data: targets } = trpc.salesMetrics.getSellerTargets.useQuery(
+    { sellerId },
+    { staleTime: 60 * 1000 }
+  );
+  const upsertTarget = trpc.salesMetrics.upsertSellerTarget.useMutation({
+    onSuccess: () => {
+      utils.salesMetrics.getSellerTargets.invalidate();
+      utils.salesMetrics.getSellerEvaluation.invalidate();
+      setShowTargetForm(false);
+      setTargetValue("");
+      setCommissionPercent("");
+    },
+  });
+  const deleteTarget = trpc.salesMetrics.deleteSellerTarget.useMutation({
+    onSuccess: () => {
+      utils.salesMetrics.getSellerTargets.invalidate();
+      utils.salesMetrics.getSellerEvaluation.invalidate();
+    },
+  });
+
+  const handleSaveTarget = () => {
+    const [yearStr, monthStr] = targetMonth.split('-');
+    const year = parseInt(yearStr);
+    const month = parseInt(monthStr);
+    const value = parseFloat(targetValue);
+    const commission = parseFloat(commissionPercent);
+    if (!year || !month || isNaN(value) || isNaN(commission)) return;
+    upsertTarget.mutate({
+      sellerId,
+      sellerName,
+      gestorName,
+      year,
+      month,
+      targetType,
+      targetValue: value,
+      commissionPercent: commission,
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -3816,6 +3870,216 @@ function SellerSalesView({ sellerName }: { sellerName: string }) {
 
       {!isLoading && (
         <>
+          {/* ═══ METAS E AVALIAÇÃO ═══ */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-orange-500" />
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Meta Mensal & Comissão</h3>
+              </div>
+              <button
+                onClick={() => setShowTargetForm(!showTargetForm)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors font-medium"
+              >
+                {showTargetForm ? 'Cancelar' : '+ Definir Meta'}
+              </button>
+            </div>
+
+            {/* Form para definir meta */}
+            {showTargetForm && (
+              <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-medium block mb-1">Mês/Ano</label>
+                    <input
+                      type="month"
+                      value={targetMonth}
+                      onChange={(e) => setTargetMonth(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-medium block mb-1">Tipo da Meta</label>
+                    <div className="flex rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden">
+                      <button
+                        onClick={() => setTargetType('valor')}
+                        className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          targetType === 'valor'
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        R$ Valor
+                      </button>
+                      <button
+                        onClick={() => setTargetType('quantidade')}
+                        className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          targetType === 'quantidade'
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        Qtd Pedidos
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-medium block mb-1">
+                      {targetType === 'valor' ? 'Meta (R$)' : 'Meta (Nº Pedidos)'}
+                    </label>
+                    <input
+                      type="number"
+                      value={targetValue}
+                      onChange={(e) => setTargetValue(e.target.value)}
+                      placeholder={targetType === 'valor' ? 'Ex: 50000' : 'Ex: 30'}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-medium block mb-1">Comissão (%)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={commissionPercent}
+                      onChange={(e) => setCommissionPercent(e.target.value)}
+                      placeholder="Ex: 5"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={handleSaveTarget}
+                    disabled={upsertTarget.isPending || !targetValue || !commissionPercent}
+                    className="px-4 py-1.5 text-xs font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {upsertTarget.isPending ? 'Salvando...' : 'Salvar Meta'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Avaliação Semestral */}
+            {loadingEval ? (
+              <div className="p-6 flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-teal-500 animate-spin" />
+              </div>
+            ) : evaluation && evaluation.months.length > 0 ? (
+              <div className="p-4">
+                {/* Média Semestral */}
+                {evaluation.semesterAvg !== null && (
+                  <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Média Semestral (últimos 6 meses)</span>
+                      </div>
+                      <span className={`text-lg font-bold ${
+                        evaluation.semesterAvg >= 100 ? 'text-green-600' :
+                        evaluation.semesterAvg >= 80 ? 'text-amber-600' : 'text-red-600'
+                      }`}>
+                        {evaluation.semesterAvg.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tabela mensal */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="text-left py-2 px-2 text-slate-500 font-medium">Mês</th>
+                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Meta</th>
+                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Realizado</th>
+                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Atingimento</th>
+                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Comissão</th>
+                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evaluation.months.map((m) => (
+                        <tr key={`${m.year}-${m.month}`} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                          <td className="py-2.5 px-2 font-medium text-slate-700 dark:text-slate-200">{m.monthLabel}</td>
+                          <td className="py-2.5 px-2 text-center">
+                            {m.target ? (
+                              <span className="text-slate-600 dark:text-slate-300">
+                                {m.target.type === 'valor'
+                                  ? `R$ ${m.target.value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
+                                  : `${m.target.value} pedidos`
+                                }
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">Sem meta</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className="font-medium text-slate-700 dark:text-slate-200">
+                              {m.target?.type === 'quantidade'
+                                ? `${m.actual.qtdPedidos} pedidos`
+                                : `R$ ${m.actual.totalVendas.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
+                              }
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            {m.atingimento !== null ? (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <div className="w-16 h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      m.atingimento >= 100 ? 'bg-green-500' :
+                                      m.atingimento >= 80 ? 'bg-amber-500' : 'bg-red-500'
+                                    }`}
+                                    style={{ width: `${Math.min(m.atingimento, 150)}%` }}
+                                  />
+                                </div>
+                                <span className={`font-bold text-[11px] ${
+                                  m.atingimento >= 100 ? 'text-green-600' :
+                                  m.atingimento >= 80 ? 'text-amber-600' : 'text-red-600'
+                                }`}>
+                                  {m.atingimento.toFixed(0)}%
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            {m.comissaoCalculada !== null ? (
+                              <span className="font-medium text-green-700 dark:text-green-400">
+                                R$ {m.comissaoCalculada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            {m.target && targets?.find((t: any) => t.year === m.year && t.month === m.month) && (
+                              <button
+                                onClick={() => {
+                                  const t = targets?.find((t: any) => t.year === m.year && t.month === m.month);
+                                  if (t) deleteTarget.mutate({ id: t.id });
+                                }}
+                                className="text-red-400 hover:text-red-600 transition-colors"
+                                title="Remover meta"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-center">
+                <p className="text-sm text-slate-400">Nenhuma meta definida ainda. Clique em "+ Definir Meta" para começar.</p>
+              </div>
+            )}
+          </div>
+
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
