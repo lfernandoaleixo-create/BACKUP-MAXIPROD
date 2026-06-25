@@ -497,6 +497,12 @@ async function fetchPurchaseOrderItems(): Promise<any[]> {
  * Multiple entries per item (different lotes/ordens) are aggregated
  * here by codigoItem before inserting into the database.
  */
+// Mapeamento de substituição de código de produto (caso isolado)
+// 00020S deve usar o estoque do 00020
+const STOCK_CODE_REPLACEMENTS: Record<string, string> = {
+  "00020S": "00020",
+};
+
 function transformStockData(graphqlItems: any[]): any[] {
   // First, aggregate by codigoItem since 'estoques' can return
   // multiple rows per item (different lotes, even if tipo=NORMAL)
@@ -504,8 +510,13 @@ function transformStockData(graphqlItems: any[]): any[] {
   
   for (const item of graphqlItems) {
     const i = item.item || {};
-    const code = i.codigo || "";
+    let code = i.codigo || "";
     if (!code) continue;
+    
+    // Aplicar substituição de código se existir mapeamento
+    if (STOCK_CODE_REPLACEMENTS[code]) {
+      code = STOCK_CODE_REPLACEMENTS[code];
+    }
     
     const qty = item.quantidade || 0;
     const val = item.valorTotal || 0;
@@ -521,6 +532,7 @@ function transformStockData(graphqlItems: any[]): any[] {
         item: i,
         minhaEmpresaId: item.minhaEmpresaId,
         itemId: item.itemId,
+        replacedCode: code !== (i.codigo || "") ? code : null, // se houve substituição, guardar código correto
       });
     }
   }
@@ -534,8 +546,11 @@ function transformStockData(graphqlItems: any[]): any[] {
     const grupoCodigo = grupo.codigo || "";
     const superGrupoCodigo = grupo.dentroDoGrupo?.codigo || "";
     
+    // Se houve substituição de código (ex: 00020S -> 00020), usar o código correto
+    const finalCode = agg.replacedCode || i.codigo || "";
+    
     return {
-      codigoItem: i.codigo || "",
+      codigoItem: finalCode,
       descricaoItem: i.descricao || "",
       quantidade: String(agg.quantidade),
       unidadeMedida: i.unidade?.codigo || "",

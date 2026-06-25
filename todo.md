@@ -4516,3 +4516,4 @@
 - [x] Métrica de Vendas: Avaliação mensal — mostra % atingido, valor vendido vs meta, comissão calculada
 - [x] Métrica de Vendas: Avaliação semestral — média dos últimos 6 meses corridos
 - [x] Métrica de Vendas: Visualização com gráficos mês a mês e semestral
+- [x] Bug Estoque: Produto 00020S deve puxar estoque do 00020 (caso isolado, substituição direta)
