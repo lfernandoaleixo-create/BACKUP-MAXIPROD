@@ -6707,7 +6707,8 @@ ${acoesTexto}
         "CHEQUE LINHA 11": "LINHA_11",
         "CHEQUE LINHA 12": "LINHA_12",
         "CHEQUE VOLTOU OUTROS MOTIVOS": "VOLTOU_OUTROS",
-        "CHEQUE EM FACTORING": "FACTORING",
+        "CHEQUE EM FACTORING FINANZA": "FACTORING_FINANZA",
+        "CHEQUE EM FACTORING": "FACTORING_SAMONEY",
       };
 
       function parseChequeState(formaCobranca: string | null): string {
@@ -6726,7 +6727,8 @@ ${acoesTexto}
         if (afterCheque.includes("LINHA 11")) return "LINHA_11";
         if (afterCheque.includes("LINHA 12")) return "LINHA_12";
         if (afterCheque.includes("VOLTOU")) return "VOLTOU_OUTROS";
-        if (afterCheque.includes("FACTORING")) return "FACTORING";
+        if (afterCheque.includes("FACTORING") && afterCheque.includes("FINANZA")) return "FACTORING_FINANZA";
+        if (afterCheque.includes("FACTORING")) return "FACTORING_SAMONEY";
         return "OUTROS";
       }
 
@@ -6867,7 +6869,8 @@ ${acoesTexto}
         "CHEQUE LINHA 11": "LINHA_11",
         "CHEQUE LINHA 12": "LINHA_12",
         "CHEQUE VOLTOU OUTROS MOTIVOS": "VOLTOU_OUTROS",
-        "CHEQUE EM FACTORING": "FACTORING",
+        "CHEQUE EM FACTORING FINANZA": "FACTORING_FINANZA",
+        "CHEQUE EM FACTORING": "FACTORING_SAMONEY",
       };
 
       function parseChequeState(formaCobranca: string | null): string {
@@ -6876,7 +6879,7 @@ ${acoesTexto}
         for (const [key, value] of Object.entries(stateMap)) {
           if (afterCheque.startsWith(key)) return value;
         }
-        if (afterCheque.includes("DISPONIVEL") || afterCheque.includes("DISPON\u00cdVEL")) return "DISPONIVEL";
+        if (afterCheque.includes("DISPONIVEL") || afterCheque.includes("DISPONÍVEL")) return "DISPONIVEL";
         if (afterCheque.includes("RECEBER")) return "A_RECEBER";
         if (afterCheque.includes("COMPENSAC")) return "COMPENSACAO";
         if (afterCheque.includes("SICOOB")) return "CUSTODIA_SICOOB";
@@ -6884,7 +6887,8 @@ ${acoesTexto}
         if (afterCheque.includes("LINHA 11")) return "LINHA_11";
         if (afterCheque.includes("LINHA 12")) return "LINHA_12";
         if (afterCheque.includes("VOLTOU")) return "VOLTOU_OUTROS";
-        if (afterCheque.includes("FACTORING")) return "FACTORING";
+        if (afterCheque.includes("FACTORING") && afterCheque.includes("FINANZA")) return "FACTORING_FINANZA";
+        if (afterCheque.includes("FACTORING")) return "FACTORING_SAMONEY";
         return "OUTROS";
       }
 

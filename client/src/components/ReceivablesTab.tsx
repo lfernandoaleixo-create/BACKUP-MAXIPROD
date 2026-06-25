@@ -2529,7 +2529,8 @@ export default function ReceivablesTab() {
                         { id: "LINHA_11", num: 6, label: "Cheque Linha 11", desc: "Voltaram porque não tinha valor na conta do cliente", icon: RotateCcw, color: "red" },
                         { id: "LINHA_12", num: 7, label: "Cheque Linha 12", desc: "Já foi 2 vezes na conta do cliente e não tinha saldo", icon: Ban, color: "rose" },
                         { id: "VOLTOU_OUTROS", num: 8, label: "Cheque Voltou Outros Motivos", desc: "Voltaram por vários motivos (rasuras, assinaturas, etc.)", icon: AlertTriangle, color: "orange" },
-                        { id: "FACTORING", num: 9, label: "Cheque em Factoring", desc: "Estão em factoring aguardando desconto", icon: Scissors, color: "amber" },
+                        { id: "FACTORING_SAMONEY", num: 9, label: "Cheque Factoring Samoney", desc: "Cheques descontados na Samoney", icon: Scissors, color: "amber" },
+                        { id: "FACTORING_FINANZA", num: 10, label: "Cheque Factoring Finanza", desc: "Cheques descontados na Finanza", icon: Scissors, color: "violet" },
                       ].map((state) => {
                         const isActive = chequeSelectedFilter === state.id;
                         const colorMap: Record<string, { bg: string; activeBg: string; border: string; activeBorder: string; iconBg: string; activeIconBg: string; text: string; activeText: string; num: string; activeNum: string }> = {
