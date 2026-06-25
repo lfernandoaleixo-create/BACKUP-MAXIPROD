@@ -2076,12 +2076,15 @@ function NcmTaxesSection() {
   const utils = trpc.useUtils();
   const createNcm = trpc.import.createNcmTax.useMutation({
     onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM adicionado!'); setShowAdd(false); resetForm(); },
+    onError: (err) => toast.error(err.message?.includes('Duplicate') ? 'NCM já cadastrado!' : 'Erro ao cadastrar NCM'),
   });
   const updateNcm = trpc.import.updateNcmTax.useMutation({
     onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM atualizado!'); setEditingId(null); },
+    onError: () => toast.error('Erro ao atualizar NCM'),
   });
   const deleteNcm = trpc.import.deleteNcmTax.useMutation({
     onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM removido!'); },
+    onError: () => toast.error('Erro ao remover NCM'),
   });
 
   const [showAdd, setShowAdd] = useState(false);
