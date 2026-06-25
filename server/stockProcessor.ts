@@ -482,15 +482,22 @@ export async function processStockData(): Promise<void> {
             po.estadoItem !== "RECEBIDO" && po.estadoItem !== "CANCELADO"
   );
   
+  // Mapeamento de substituição de código de produto (caso isolado)
+  // 00020S deve usar o estoque do 00020
+  const STOCK_CODE_REPLACEMENTS: Record<string, string> = {
+    "00020S": "00020",
+  };
+  
   // ─── Merge stock items by codigoItem (same code from different lotes) ───
   const stockByCode = new Map<string, typeof rawStock[0]>();
   for (const item of rawStock) {
-    const code = item.codigoItem;
+    // Aplicar substituição de código se existir mapeamento
+    const code = STOCK_CODE_REPLACEMENTS[item.codigoItem] || item.codigoItem;
     const existing = stockByCode.get(code);
     if (existing) {
       (existing as any).quantidade = String(parseFloat(existing.quantidade) + parseFloat(item.quantidade));
     } else {
-      stockByCode.set(code, { ...item });
+      stockByCode.set(code, { ...item, codigoItem: code });
     }
   }
   
