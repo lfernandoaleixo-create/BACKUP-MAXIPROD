@@ -1619,17 +1619,20 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
       <p className="text-xs text-slate-500 mb-3">Média ponderada FIFO: vendas abatidas dos contêineres mais antigos primeiro.</p>
 
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 group relative cursor-help">
           <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
           <span className="text-[10px] text-slate-600">Custo Real (POs 100% Concluído)</span>
+          <span className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Quando todo o processo daquele contêiner onde estava a mercadoria foi concluído e todos os custos foram quitados.</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 group relative cursor-help">
           <div className="w-3 h-3 rounded-full bg-amber-500"></div>
           <span className="text-[10px] text-slate-600">Custo Projetado (POs Chegou no Pátio)</span>
+          <span className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Quando a mercadoria chegou no pátio. É o preço que deve ser considerado para vender.</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 group relative cursor-help">
           <div className="w-3 h-3 rounded-full bg-blue-500"></div>
           <span className="text-[10px] text-slate-600">Estimativa (POs Navegando)</span>
+          <span className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Quando tem uma nova CI preenchida na China e o contêiner com essa carga está navegando. Esse valor vai afetar o preço projetado quando chegar no pátio.</span>
         </div>
       </div>
 
@@ -1653,9 +1656,27 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
               <th className="pb-2 pr-4 font-medium text-slate-600">Código</th>
               <th className="pb-2 pr-4 font-medium text-slate-600">Descrição</th>
               <th className="pb-2 pr-4 font-medium text-slate-600 text-right">Estoque</th>
-              <th className="pb-2 pr-4 font-medium text-emerald-700 text-right">Custo Real</th>
-              <th className="pb-2 pr-4 font-medium text-amber-700 text-right">Projetado</th>
-              <th className="pb-2 pr-4 font-medium text-blue-700 text-right">Estimativa</th>
+              <th className="pb-2 pr-4 font-medium text-emerald-700 text-right">
+                <span className="cursor-help group relative inline-flex items-center gap-1">
+                  Custo Real
+                  <svg className="w-3.5 h-3.5 text-emerald-500 opacity-60" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  <span className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Quando todo o processo daquele contêiner onde estava a mercadoria foi concluído e todos os custos foram quitados (POs 100% Concluído).</span>
+                </span>
+              </th>
+              <th className="pb-2 pr-4 font-medium text-amber-700 text-right">
+                <span className="cursor-help group relative inline-flex items-center gap-1">
+                  Projetado
+                  <svg className="w-3.5 h-3.5 text-amber-500 opacity-60" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  <span className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Quando a mercadoria chegou no pátio. É o preço que deve ser considerado para vender (POs Chegou no Pátio).</span>
+                </span>
+              </th>
+              <th className="pb-2 pr-4 font-medium text-blue-700 text-right">
+                <span className="cursor-help group relative inline-flex items-center gap-1">
+                  Estimativa
+                  <svg className="w-3.5 h-3.5 text-blue-500 opacity-60" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  <span className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Quando tem uma nova CI preenchida na China e o contêiner com essa carga está navegando. Esse valor vai afetar o preço projetado quando chegar no pátio (POs Navegando).</span>
+                </span>
+              </th>
               <th className="pb-2 font-medium text-slate-600 text-center">Detalhes</th>
             </tr>
           </thead>
