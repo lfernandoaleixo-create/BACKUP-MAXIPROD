@@ -4541,3 +4541,4 @@
 - [x] Movimentação de Estoque: pedir senha do operador ao enviar solicitação (registrar quem fez)
 - [x] Movimentação de Estoque: botão de apagar solicitação (pendentes)
 - [x] Importação: contêineres com status "Entregue" devem sumir do mapa
+- [x] Movimentação de Estoque: visível apenas para Bruno, Fernando e Guilherme (restringir botão)
