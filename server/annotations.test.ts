@@ -103,11 +103,13 @@ describe("Pirografia Status Options", () => {
     "producao_nao_necessaria",
     "manutencao",
     "manutencao_pontual",
+    "producao_encerrada",
   ];
 
-  it("should have 5 status options including producao_nao_necessaria", () => {
-    expect(MACHINE_STATUS_OPTIONS).toHaveLength(5);
+  it("should have 6 status options including producao_encerrada", () => {
+    expect(MACHINE_STATUS_OPTIONS).toHaveLength(6);
     expect(MACHINE_STATUS_OPTIONS).toContain("producao_nao_necessaria");
+    expect(MACHINE_STATUS_OPTIONS).toContain("producao_encerrada");
   });
 
   it("should have producao_normal as the default status", () => {

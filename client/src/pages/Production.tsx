@@ -17,7 +17,7 @@ import {
   ArrowLeft, ArrowRight, Loader2, Cog, Eye, Package, Box, Zap, Scissors,
   Layers, Printer, History, AlertTriangle, Wrench, Ban, CheckCircle2, Clock,
   MessageSquare, TreePine, Ruler, Search, X, Plus, Pencil, Trash2, Flame, Type,
-  FileDown, TrendingUp,
+  FileDown, TrendingUp, XCircle,
 } from "lucide-react";
 import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/productionPdfExport";
 import { generateDailyPdf as generatePiroDailyPdf, generateWeeklyPdf as generatePiroWeeklyPdf, generateMonthlyPdf as generatePiroMonthlyPdf } from "@/lib/pirografiaPdfExport";
@@ -36,6 +36,7 @@ const MACHINE_STATUS_OPTIONS = [
   { value: "producao_nao_necessaria", label: "Produção Não Necessária", color: "#f59e0b", icon: Ban, bgClass: "bg-amber-50", textClass: "text-amber-700", borderClass: "border-amber-200" },
   { value: "manutencao", label: "Manutenção", color: "#6366f1", icon: Wrench, bgClass: "bg-indigo-50", textClass: "text-indigo-700", borderClass: "border-indigo-200" },
   { value: "manutencao_pontual", label: "Manutenção Pontual", color: "#8b5cf6", icon: Clock, bgClass: "bg-violet-50", textClass: "text-violet-700", borderClass: "border-violet-200" },
+  { value: "producao_encerrada", label: "Produção Encerrada", color: "#64748b", icon: XCircle, bgClass: "bg-slate-50", textClass: "text-slate-700", borderClass: "border-slate-200" },
 ];
 
 // ─── Wood type options (Multilamina) - always shown ───

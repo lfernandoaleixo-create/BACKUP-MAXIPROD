@@ -11,6 +11,7 @@ export const MACHINE_STATUS_OPTIONS = [
   { value: "producao_nao_necessaria", label: "Produção Não Necessária", color: "#f59e0b" },
   { value: "manutencao", label: "Manutenção", color: "#6366f1" },
   { value: "manutencao_pontual", label: "Manutenção Pontual", color: "#8b5cf6" },
+  { value: "producao_encerrada", label: "Produção Encerrada", color: "#64748b" },
 ] as const;
 
 /** Tipos de madeira para Multilamina (setor 1) */

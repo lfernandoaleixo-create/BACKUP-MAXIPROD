@@ -4519,3 +4519,4 @@
 - [x] Bug Estoque: Produto 00020S deve puxar estoque do 00020 (caso isolado, substituição direta)
 - [x] Cheques: Separar card "Cheque em Factoring" em dois: "Cheque Factoring Samoney" e "Cheque Factoring Finanza"
 - [x] Bug Fix: Cadastro de NCM na aba Importação → Custo da Mercadoria → Configurações não está funcionando
+- [x] Adicionar status "Produção Encerrada" em todas as máquinas da aba Produção (frontend + backend + testes)
