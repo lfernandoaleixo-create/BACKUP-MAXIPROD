@@ -910,7 +910,7 @@ export default function Production() {
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>
             <button onClick={() => setViewMode("movimentacao")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "movimentacao" ? "bg-violet-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
-              <Package className="w-4 h-4" /> Mov. Estoque
+              <Package className="w-4 h-4" /> Movimentação de Estoque
             </button>
 
             {/* ─── PDF Export Menu ─── */}
