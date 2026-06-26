@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { stockWithdrawalRequests, productCatalog } from "../drizzle/schema";
+import { stockWithdrawalRequests, productCatalog, operators } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte, count } from "drizzle-orm";
 
 /**
@@ -31,7 +31,7 @@ export const stockWithdrawalRouter = router({
     }),
 
   /**
-   * Criar nova solicitação de baixa (Líder)
+   * Criar nova solicitação de baixa (Líder) - exige senha do operador
    */
   create: publicProcedure
     .input(z.object({
@@ -43,12 +43,16 @@ export const stockWithdrawalRouter = router({
       produtoDestinoCode: z.string().optional(),
       produtoDestinoName: z.string().optional(),
       quantidadeDestino: z.string().optional(),
-      solicitanteId: z.number(),
-      solicitanteName: z.string().min(1),
+      senha: z.string().min(1),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // Validar senha e identificar operador
+      const [op] = await db.select().from(operators)
+        .where(and(eq(operators.password, input.senha), eq(operators.active, true)));
+      if (!op) throw new Error("Senha inválida. Verifique e tente novamente.");
 
       // Validações de negócio
       if (input.motivo === "outro" && (!input.motivoDescricao || input.motivoDescricao.trim() === "")) {
@@ -69,12 +73,12 @@ export const stockWithdrawalRouter = router({
         produtoDestinoCode: input.produtoDestinoCode || null,
         produtoDestinoName: input.produtoDestinoName || null,
         quantidadeDestino: input.quantidadeDestino || null,
-        solicitanteId: input.solicitanteId,
-        solicitanteName: input.solicitanteName,
+        solicitanteId: op.id,
+        solicitanteName: op.name,
         status: "pendente",
       });
 
-      return { success: true };
+      return { success: true, solicitanteName: op.name };
     }),
 
   /**
@@ -225,6 +229,26 @@ export const stockWithdrawalRouter = router({
           eq(stockWithdrawalRequests.status, "aprovada")
         ));
 
+      return { success: true };
+    }),
+
+  /**
+   * Apagar solicitação (apenas pendentes)
+   */
+  delete: publicProcedure
+    .input(z.object({
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Só permite apagar solicitações pendentes
+      const [existing] = await db.select().from(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
+      if (!existing) throw new Error("Solicitação não encontrada");
+      if (existing.status !== "pendente") throw new Error("Só é possível apagar solicitações pendentes");
+
+      await db.delete(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
       return { success: true };
     }),
 
