@@ -4520,3 +4520,21 @@
 - [x] Cheques: Separar card "Cheque em Factoring" em dois: "Cheque Factoring Samoney" e "Cheque Factoring Finanza"
 - [x] Bug Fix: Cadastro de NCM na aba Importação → Custo da Mercadoria → Configurações não está funcionando
 - [x] Adicionar status "Produção Encerrada" em todas as máquinas da aba Produção (frontend + backend + testes)
+
+## Módulo: Solicitação de Baixa Manual no Estoque
+- [x] Criar sub-aba "Movimentação de Estoque" dentro da aba Produção
+- [x] Schema DB: tabela stock_withdrawal_requests (id, produto, quantidade, motivo, motivo_descricao, produto_destino, quantidade_destino, solicitante, status, fiscal_aprovador, data_solicitacao, data_aprovacao, data_conclusao, justificativa_recusa)
+- [x] Formulário de solicitação: Produto (lista estoque), Quantidade, Motivo (Amostra/Reembalagem/Complemento de Pedido/Outro)
+- [x] Campo condicional Reembalagem: produto destino + quantidade que entra
+- [x] Campo condicional Outro: campo texto justificativa
+- [x] Campo automático: nome do líder (login) + data/hora
+- [x] Tela Fiscal: fila de solicitações pendentes (Quem pediu | Produto | Quantidade | Motivo | Data/Hora)
+- [x] Botão Aprovar → status "Aprovada — Aguardando baixa no sistema"
+- [x] Botão Recusar → status "Recusada" + campo justificativa opcional
+- [x] Botão Baixa Realizada → status "Concluída"
+- [x] Ciclo de vida: Pendente → Aprovada → Concluída (ou Pendente → Recusada)
+- [x] Histórico/log completo: Data | Líder | Produto | Quantidade | Motivo | Status | Fiscal | Hora aprovação | Hora conclusão
+- [x] Indicador gestor: total movimentações do mês + motivos mais frequentes
+- [x] Notificação visual para Fiscal: contador de pendências
+- [x] Alerta visual: solicitação "Aprovada" há mais de 24h sem conclusão
+- [x] Controle de acesso: só líder cria solicitação, só fiscal aprova/confirma (permissões granulares prod.mov_solicitar e prod.mov_aprovar)

@@ -2708,3 +2708,38 @@ export const sellerMonthlyTargets = mysqlTable("seller_monthly_targets", {
 
 export type SellerMonthlyTarget = typeof sellerMonthlyTargets.$inferSelect;
 export type InsertSellerMonthlyTarget = typeof sellerMonthlyTargets.$inferInsert;
+
+/**
+ * Solicitações de Baixa Manual no Estoque
+ * Fluxo: Líder solicita → Fiscal aprova → Fiscal faz baixa no sistema → Fiscal confirma no dashboard
+ * Status: pendente → aprovada → concluida (ou pendente → recusada)
+ */
+export const stockWithdrawalRequests = mysqlTable("stock_withdrawal_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  // Produto sendo retirado
+  productCode: varchar("product_code", { length: 50 }).notNull(),
+  productName: varchar("product_name", { length: 300 }).notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  // Motivo
+  motivo: mysqlEnum("motivo", ["amostra", "reembalagem", "complemento_pedido", "outro"]).notNull(),
+  motivoDescricao: text("motivo_descricao"), // obrigatório se motivo = "outro"
+  // Campos para Reembalagem
+  produtoDestinoCode: varchar("produto_destino_code", { length: 50 }),
+  produtoDestinoName: varchar("produto_destino_name", { length: 300 }),
+  quantidadeDestino: decimal("quantidade_destino", { precision: 10, scale: 2 }),
+  // Solicitante (líder)
+  solicitanteId: int("solicitante_id").notNull(),
+  solicitanteName: varchar("solicitante_name", { length: 100 }).notNull(),
+  // Status
+  status: mysqlEnum("status", ["pendente", "aprovada", "concluida", "recusada"]).notNull().default("pendente"),
+  // Fiscal
+  fiscalId: int("fiscal_id"),
+  fiscalName: varchar("fiscal_name", { length: 100 }),
+  justificativaRecusa: text("justificativa_recusa"),
+  // Timestamps
+  dataSolicitacao: timestamp("data_solicitacao").defaultNow().notNull(),
+  dataAprovacao: timestamp("data_aprovacao"),
+  dataConclusao: timestamp("data_conclusao"),
+});
+export type StockWithdrawalRequest = typeof stockWithdrawalRequests.$inferSelect;
+export type InsertStockWithdrawalRequest = typeof stockWithdrawalRequests.$inferInsert;

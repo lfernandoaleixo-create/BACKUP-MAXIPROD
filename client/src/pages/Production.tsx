@@ -24,6 +24,7 @@ import { generateDailyPdf as generatePiroDailyPdf, generateWeeklyPdf as generate
 import { generateAnnotationPdf } from "@/lib/annotationPdfExport";
 import ProductionCharts from "@/components/ProductionCharts";
 import { ChecklistDesperdicio } from "@/pages/ChecklistDesperdicio";
+import StockWithdrawal from "@/pages/StockWithdrawal";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, Legend as RechartsLegend,
@@ -279,7 +280,7 @@ export default function Production() {
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos" | "checklist">("lancamento");
+  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos" | "checklist" | "movimentacao">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [showConversionModal, setShowConversionModal] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
@@ -908,6 +909,9 @@ export default function Production() {
             <button onClick={() => setViewMode("checklist")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "checklist" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>
+            <button onClick={() => setViewMode("movimentacao")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "movimentacao" ? "bg-violet-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <Package className="w-4 h-4" /> Mov. Estoque
+            </button>
 
             {/* ─── PDF Export Menu ─── */}
             <div className="relative">
@@ -1244,6 +1248,8 @@ export default function Production() {
           <ProductionCharts key={`charts-${viewMode}`} selectedDate={selectedDate} sectors={(sectors || []) as any} />
         ) : viewMode === "checklist" ? (
           <ChecklistDesperdicio />
+        ) : viewMode === "movimentacao" ? (
+          <StockWithdrawal />
         ) : (
           <PirografiaHistoryView />
         )}

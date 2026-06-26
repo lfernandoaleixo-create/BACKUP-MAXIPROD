@@ -571,6 +571,11 @@ const GRANULAR_FINANCEIRO: GranularPermDef[] = [
   { key: "fin.cobranca", label: "Ações de Cobrança", parentTab: "financeiro" },
 ];
 
+const GRANULAR_PRODUCAO: GranularPermDef[] = [
+  { key: "prod.mov_solicitar", label: "Solicitar Baixa Estoque", parentTab: "producao" },
+  { key: "prod.mov_aprovar", label: "Aprovar/Recusar Baixa Estoque", parentTab: "producao" },
+];
+
 const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.senhas", label: "Senhas", parentTab: "configuracoes" },
   { key: "cfg.produtos", label: "Produto Importado", parentTab: "configuracoes" },
@@ -580,12 +585,13 @@ const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.dados", label: "Dados", parentTab: "configuracoes" },
 ];
 
-const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_CONFIGURACOES];
+const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
 
 const GRANULAR_GROUPS = [
   { parentTab: "estoque", label: "Estoque", color: "bg-teal-500", perms: GRANULAR_ESTOQUE },
   { parentTab: "faturamento", label: "Faturamento", color: "bg-violet-500", perms: GRANULAR_FATURAMENTO },
   { parentTab: "financeiro", label: "Financeiro", color: "bg-emerald-500", perms: GRANULAR_FINANCEIRO },
+  { parentTab: "producao", label: "Produção", color: "bg-orange-500", perms: GRANULAR_PRODUCAO },
   { parentTab: "configuracoes", label: "Configurações", color: "bg-red-500", perms: GRANULAR_CONFIGURACOES },
 ];
 

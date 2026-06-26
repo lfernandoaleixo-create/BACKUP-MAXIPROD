@@ -1,0 +1,21 @@
+CREATE TABLE `stock_withdrawal_requests` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`product_code` varchar(50) NOT NULL,
+	`product_name` varchar(300) NOT NULL,
+	`quantity` decimal(10,2) NOT NULL,
+	`motivo` enum('amostra','reembalagem','complemento_pedido','outro') NOT NULL,
+	`motivo_descricao` text,
+	`produto_destino_code` varchar(50),
+	`produto_destino_name` varchar(300),
+	`quantidade_destino` decimal(10,2),
+	`solicitante_id` int NOT NULL,
+	`solicitante_name` varchar(100) NOT NULL,
+	`status` enum('pendente','aprovada','concluida','recusada') NOT NULL DEFAULT 'pendente',
+	`fiscal_id` int,
+	`fiscal_name` varchar(100),
+	`justificativa_recusa` text,
+	`data_solicitacao` timestamp NOT NULL DEFAULT (now()),
+	`data_aprovacao` timestamp,
+	`data_conclusao` timestamp,
+	CONSTRAINT `stock_withdrawal_requests_id` PRIMARY KEY(`id`)
+);
