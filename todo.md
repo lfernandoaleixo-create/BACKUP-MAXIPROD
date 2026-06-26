@@ -4540,3 +4540,4 @@
 - [x] Controle de acesso: só líder cria solicitação, só fiscal aprova/confirma (permissões granulares prod.mov_solicitar e prod.mov_aprovar)
 - [x] Movimentação de Estoque: pedir senha do operador ao enviar solicitação (registrar quem fez)
 - [x] Movimentação de Estoque: botão de apagar solicitação (pendentes)
+- [x] Importação: contêineres com status "Entregue" devem sumir do mapa

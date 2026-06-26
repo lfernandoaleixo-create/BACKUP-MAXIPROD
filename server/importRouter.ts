@@ -1513,10 +1513,13 @@ export const importRouter = router({
         matchingPo = navegandoPos.length > 0 ? navegandoPos[0] : (supplierPos.length > 0 ? supplierPos[0] : null);
       }
 
+      // Skip containers with status "Entregue" - they should not appear on the map
+      const paymentStatusLower = payment.status.toLowerCase();
+      if (paymentStatusLower.includes('entregue')) continue;
+
       // Skip if the PO is marked as arrived (chegou_patio, concluida, or legacy recebida)
       // AND the payment status also indicates arrival. If payment status still
       // says 'navegando', keep showing on the map regardless of PO status.
-      const paymentStatusLower = payment.status.toLowerCase();
       const isPaymentNavigating = paymentStatusLower.includes('navegando');
       const isPoArrived = matchingPo?.navigationStatus === 'chegou_patio' || matchingPo?.navigationStatus === 'concluida' || matchingPo?.navigationStatus === 'recebida';
       if (isPoArrived && !isPaymentNavigating) continue;
