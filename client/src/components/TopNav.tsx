@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { useDiscountAlerts } from "@/contexts/DiscountAlertContext";
 import { useIsMobile } from "@/hooks/useMobile";
+import { trpc } from "@/lib/trpc";
 
 const navItems = [
   { href: "/", label: "Estoque", icon: Package, section: "estoque" },
@@ -51,6 +52,14 @@ export default function TopNav({ rightContent }: TopNavProps) {
   const isMobile = useIsMobile();
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
+
+  // Blink produção tab for Larissa when there are pending stock withdrawal requests
+  const isLarissa = operator?.name === "Larissa";
+  const { data: pendingStockData } = trpc.stockWithdrawal.countPending.useQuery(undefined, {
+    enabled: isLarissa,
+    refetchInterval: 15000,
+  });
+  const hasPendingStock = isLarissa && (pendingStockData?.pending ?? 0) > 0;
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
@@ -163,16 +172,20 @@ export default function TopNav({ rightContent }: TopNavProps) {
               const Icon = item.icon;
               const allowed = hasAccess(item.section);
 
-              const shouldBlink = item.section === "financeiro" 
+              const shouldBlinkFinanceiro = item.section === "financeiro" 
                 && discountAlerts?.isAlertOperator 
                 && discountAlerts.blinkLevel === "financeiro-tab" 
                 && discountAlerts.unreadCount > 0;
+
+              const shouldBlinkProducao = item.section === "producao" && hasPendingStock;
+
+              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao;
 
               return (
                 <button
                   key={item.href}
                   onClick={(e) => {
-                    if (shouldBlink && discountAlerts) {
+                    if (shouldBlinkFinanceiro && discountAlerts) {
                       discountAlerts.advanceBlink("financeiro-tab");
                     }
                     handleNavClick(e, item.href, item.section, item.label);
@@ -190,7 +203,10 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 >
                   <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? "text-teal-600" : !allowed ? "text-slate-200" : ""}`} />
                   <span className={`text-[8px] font-medium leading-none whitespace-nowrap ${active ? "text-teal-700 font-semibold" : ""}`}>{item.label}</span>
-                  {shouldBlink && (
+                  {shouldBlinkProducao && (
+                    <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                  )}
+                  {shouldBlinkFinanceiro && (
                     <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   )}
                   {!allowed && (
@@ -222,18 +238,22 @@ export default function TopNav({ rightContent }: TopNavProps) {
               const Icon = item.icon;
               const allowed = hasAccess(item.section);
 
-              // Check if this tab should blink for discount alerts
-              const shouldBlink = item.section === "financeiro" 
+              // Check if this tab should blink for discount alerts or stock withdrawal
+              const shouldBlinkFinanceiro = item.section === "financeiro" 
                 && discountAlerts?.isAlertOperator 
                 && discountAlerts.blinkLevel === "financeiro-tab" 
                 && discountAlerts.unreadCount > 0;
+
+              const shouldBlinkProducao = item.section === "producao" && hasPendingStock;
+
+              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao;
 
               return (
                 <button
                   key={item.href}
                   onClick={(e) => {
                     // Advance blink cascading when clicking the blinking Financeiro tab
-                    if (shouldBlink && discountAlerts) {
+                    if (shouldBlinkFinanceiro && discountAlerts) {
                       discountAlerts.advanceBlink("financeiro-tab");
                     }
                     handleNavClick(e, item.href, item.section, item.label);
@@ -251,8 +271,12 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 >
                   <Icon className={`w-4 h-4 shrink-0 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
                   <span className="hidden sm:inline">{'desktopLabel' in item && item.desktopLabel ? item.desktopLabel : item.label}</span>
+                  {/* Stock withdrawal pending indicator dot (violet for Larissa) */}
+                  {shouldBlinkProducao && (
+                    <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-violet-500 animate-pulse shadow-[0_0_6px_rgba(139,92,246,0.6)]" />
+                  )}
                   {/* Discount alert indicator dot */}
-                  {shouldBlink && (
+                  {shouldBlinkFinanceiro && (
                     <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
                   )}
                   {/* Lock indicator for no-access tabs */}

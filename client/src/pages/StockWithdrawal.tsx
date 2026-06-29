@@ -577,40 +577,51 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
               <RequestCard
                 key={req.id}
                 request={req}
-                actions={canApprove ? (
-                  <div className="mt-3">
-                    {completeId === req.id ? (
-                      <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <Lock className="w-4 h-4 text-blue-600 shrink-0" />
-                        <input
-                          type="password"
-                          value={completeSenha}
-                          onChange={(e) => setCompleteSenha(e.target.value)}
-                          placeholder="Senha da Larissa"
-                          className="flex-1 px-3 py-1.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleComplete(req.id)}
-                          disabled={completeMutation.isPending}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {completeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
-                        </button>
-                        <button onClick={() => { setCompleteId(null); setCompleteSenha(""); }} className="px-2 py-1.5 text-slate-500 hover:text-slate-700">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setCompleteId(req.id)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        <CheckCircle2 className="w-4 h-4" /> Baixa Realizada no Maxiprod
-                      </button>
+                actions={
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    {canApprove && (
+                      <>
+                        {completeId === req.id ? (
+                          <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg w-full">
+                            <Lock className="w-4 h-4 text-blue-600 shrink-0" />
+                            <input
+                              type="password"
+                              value={completeSenha}
+                              onChange={(e) => setCompleteSenha(e.target.value)}
+                              placeholder="Senha da Larissa"
+                              className="flex-1 px-3 py-1.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleComplete(req.id)}
+                              disabled={completeMutation.isPending}
+                              className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {completeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
+                            </button>
+                            <button onClick={() => { setCompleteId(null); setCompleteSenha(""); }} className="px-2 py-1.5 text-slate-500 hover:text-slate-700">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setCompleteId(req.id)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Baixa Realizada no Maxiprod
+                          </button>
+                        )}
+                      </>
                     )}
+                    <button
+                      onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
+                      disabled={deleteMutation.isPending}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors ml-auto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Apagar
+                    </button>
                   </div>
-                ) : undefined}
+                }
               />
             ))}
           </div>
@@ -676,6 +687,16 @@ function RequestCard({ request, actions }: { request: any; actions?: React.React
 function HistoricoList() {
   const [statusFilter, setStatusFilter] = useState<"todas" | "pendente" | "aprovada" | "concluida" | "recusada">("todas");
   const { data: requests, isLoading } = trpc.stockWithdrawal.list.useQuery({ status: statusFilter, limit: 200 });
+  const utils = trpc.useUtils();
+  const deleteMutation = trpc.stockWithdrawal.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Solicitação apagada!");
+      utils.stockWithdrawal.list.invalidate();
+      utils.stockWithdrawal.countPending.invalidate();
+      utils.stockWithdrawal.monthlyStats.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Erro ao apagar"),
+  });
 
   if (isLoading) return <div className="flex items-center gap-2 text-slate-500 py-8 justify-center"><Loader2 className="w-5 h-5 animate-spin" /> Carregando...</div>;
 
@@ -701,7 +722,17 @@ function HistoricoList() {
       ) : (
         <div className="space-y-3">
           {requests.map((req) => (
-            <RequestCard key={req.id} request={req} />
+            <RequestCard key={req.id} request={req} actions={
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicita\u00e7\u00e3o?")) deleteMutation.mutate({ id: req.id }); }}
+                  disabled={deleteMutation.isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Apagar
+                </button>
+              </div>
+            } />
           ))}
         </div>
       )}
