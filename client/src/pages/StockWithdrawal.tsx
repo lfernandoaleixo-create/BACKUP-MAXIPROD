@@ -595,7 +595,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                             <button
                               onClick={() => handleComplete(req.id)}
                               disabled={completeMutation.isPending}
-                              className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                              className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                             >
                               {completeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
                             </button>
@@ -606,9 +606,11 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                         ) : (
                           <button
                             onClick={() => setCompleteId(req.id)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition-colors group cursor-pointer"
                           >
-                            <CheckCircle2 className="w-4 h-4" /> Baixa dada no Maxiprod
+                            <span className="w-5 h-5 rounded border-2 border-slate-300 group-hover:border-emerald-500 flex items-center justify-center transition-colors">
+                            </span>
+                            Baixa dada no Maxiprod
                           </button>
                         )}
                       </>
