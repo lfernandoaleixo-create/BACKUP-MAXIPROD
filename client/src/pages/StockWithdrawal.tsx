@@ -606,9 +606,9 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                         ) : (
                           <button
                             onClick={() => setCompleteId(req.id)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition-colors group cursor-pointer"
+                            className="flex items-center gap-2.5 px-5 py-3 bg-amber-50 border-2 border-amber-400 text-amber-800 text-sm font-bold rounded-lg hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 transition-colors group cursor-pointer shadow-sm"
                           >
-                            <span className="w-5 h-5 rounded border-2 border-slate-300 group-hover:border-emerald-500 flex items-center justify-center transition-colors">
+                            <span className="w-5 h-5 rounded border-2 border-amber-400 group-hover:border-emerald-500 flex items-center justify-center transition-colors shrink-0">
                             </span>
                             Baixa dada no Maxiprod
                           </button>
