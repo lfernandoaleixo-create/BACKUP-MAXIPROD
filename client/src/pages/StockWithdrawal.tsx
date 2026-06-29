@@ -27,9 +27,9 @@ const MOTIVO_LABELS: Record<string, string> = {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pendente: { label: "Pendente", color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: Clock },
-  aprovada: { label: "Aprovada — Aguardando Baixa no Maxiprod", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: CheckCircle2 },
-  concluida: { label: "Concluída — Baixa Realizada no Maxiprod", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
-  recusada: { label: "Recusada", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: XCircle },
+  aprovada: { label: "Solicitação autorizada para dar baixa no Maxiprod", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: CheckCircle2 },
+  concluida: { label: "Baixa dada no Maxiprod", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
+  recusada: { label: "Solicitação recusada para dar baixa no Maxiprod", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: XCircle },
 };
 
 export default function StockWithdrawal() {
