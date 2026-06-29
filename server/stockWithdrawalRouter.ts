@@ -266,10 +266,9 @@ export const stockWithdrawalRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Só permite apagar solicitações pendentes
+      // Permite apagar qualquer solicitação independente do status
       const [existing] = await db.select().from(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
       if (!existing) throw new Error("Solicitação não encontrada");
-      if (existing.status !== "pendente") throw new Error("Só é possível apagar solicitações pendentes");
 
       await db.delete(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
       return { success: true };
