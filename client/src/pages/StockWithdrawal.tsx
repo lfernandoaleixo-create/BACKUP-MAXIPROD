@@ -2,8 +2,12 @@
  * Módulo: Solicitação de Baixa Manual no Estoque
  * Sub-aba "Movimentação de Estoque" dentro da aba Produção
  * 
- * Fluxo: Líder solicita → Fiscal aprova → Fiscal faz baixa no sistema → Fiscal confirma
- * Status: Pendente → Aprovada → Concluída (ou Pendente → Recusada)
+ * REGRAS:
+ * 1. Apenas LARISSA pode aprovar/recusar (validação por senha)
+ * 2. A Manus NÃO faz baixa automática no estoque - é só controle visual
+ * 3. A baixa real é feita manualmente no Maxiprod pela Larissa
+ * 4. Fluxo: Líder solicita → Larissa aprova/recusa → Larissa faz baixa no Maxiprod → Larissa confirma
+ * 5. Status: Pendente → Aprovada → Concluída (ou Pendente → Recusada)
  */
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
@@ -11,7 +15,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import { toast } from "sonner";
 import {
   Plus, Search, Check, X, Clock, CheckCircle2, XCircle, AlertTriangle,
-  Package, ArrowRight, Loader2, Filter, History, ChevronDown, ChevronUp, Trash2,
+  Package, ArrowRight, Loader2, Filter, History, ChevronDown, ChevronUp, Trash2, Lock,
 } from "lucide-react";
 
 const MOTIVO_LABELS: Record<string, string> = {
@@ -23,8 +27,8 @@ const MOTIVO_LABELS: Record<string, string> = {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pendente: { label: "Pendente", color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: Clock },
-  aprovada: { label: "Aprovada — Aguardando Baixa", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: CheckCircle2 },
-  concluida: { label: "Concluída", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
+  aprovada: { label: "Aprovada — Aguardando Baixa no Maxiprod", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: CheckCircle2 },
+  concluida: { label: "Concluída — Baixa Realizada no Maxiprod", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
   recusada: { label: "Recusada", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: XCircle },
 };
 
@@ -38,6 +42,14 @@ export default function StockWithdrawal() {
 
   return (
     <div className="space-y-4">
+      {/* Info banner */}
+      <div className="flex items-center gap-2 p-3 bg-violet-50 border border-violet-200 rounded-lg">
+        <Lock className="w-4 h-4 text-violet-600 shrink-0" />
+        <span className="text-xs text-violet-800">
+          Apenas a <strong>Larissa</strong> pode aprovar/recusar solicitações (validação por senha). A baixa é feita manualmente no Maxiprod — a Manus apenas registra o controle.
+        </span>
+      </div>
+
       {/* Sub-navigation */}
       <div className="flex items-center gap-2 flex-wrap">
         {canCreate && (
@@ -100,8 +112,8 @@ function AlertOver24h({ canApprove }: { canApprove: boolean }) {
     <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
       <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
       <span className="text-sm text-orange-800 font-medium">
-        {data.approvedOver24h} solicitação(ões) aprovada(s) há mais de 24h sem confirmação de baixa.
-        {canApprove && " Verifique se a baixa foi realizada no sistema."}
+        {data.approvedOver24h} solicitação(ões) aprovada(s) há mais de 24h sem confirmação de baixa no Maxiprod.
+        {canApprove && " Larissa: verifique se a baixa já foi realizada no Maxiprod e confirme aqui."}
       </span>
     </div>
   );
@@ -318,35 +330,34 @@ function SolicitarForm() {
       {/* Campo condicional: Outro */}
       {motivo === "outro" && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Descreva o motivo *</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Descrição do motivo *</label>
           <textarea
             value={motivoDescricao}
             onChange={(e) => setMotivoDescricao(e.target.value)}
             placeholder="Descreva o motivo da retirada..."
-            rows={3}
+            rows={2}
             className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
           />
         </div>
       )}
 
-      {/* Senha do solicitante */}
+      {/* Senha do operador */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Sua Senha (para identificação) *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Sua Senha (para confirmar) *</label>
         <input
           type="password"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          placeholder="Digite sua senha para confirmar"
+          placeholder="Digite sua senha"
           className="w-full max-w-xs px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
         />
-        <p className="text-xs text-slate-400 mt-1">A solicitação será registrada no nome do dono desta senha.</p>
       </div>
 
-      {/* Botão enviar */}
+      {/* Submit */}
       <button
         onClick={handleSubmit}
         disabled={createMutation.isPending}
-        className="w-full sm:w-auto px-6 py-3 bg-violet-600 text-white font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 justify-center"
+        className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
       >
         {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
         Enviar Solicitação
@@ -355,9 +366,8 @@ function SolicitarForm() {
   );
 }
 
-/* ─── Lista de Pendentes (Fiscal) ─── */
+/* ─── Lista de Pendentes + Aprovadas ─── */
 function PendingList({ canApprove }: { canApprove: boolean }) {
-  const { operator } = useOperator();
   const utils = trpc.useUtils();
   const { data: requests, isLoading } = trpc.stockWithdrawal.list.useQuery(
     { status: "pendente" },
@@ -368,9 +378,20 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
     { refetchInterval: 15000 }
   );
 
+  // State for password prompts
+  const [approveId, setApproveId] = useState<number | null>(null);
+  const [approveSenha, setApproveSenha] = useState("");
+  const [rejectId, setRejectId] = useState<number | null>(null);
+  const [rejectSenha, setRejectSenha] = useState("");
+  const [rejectJustificativa, setRejectJustificativa] = useState("");
+  const [completeId, setCompleteId] = useState<number | null>(null);
+  const [completeSenha, setCompleteSenha] = useState("");
+
   const approveMutation = trpc.stockWithdrawal.approve.useMutation({
     onSuccess: () => {
-      toast.success("Solicitação aprovada!");
+      toast.success("Solicitação aprovada pela Larissa!");
+      setApproveId(null);
+      setApproveSenha("");
       utils.stockWithdrawal.list.invalidate();
       utils.stockWithdrawal.countPending.invalidate();
     },
@@ -379,7 +400,10 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
 
   const rejectMutation = trpc.stockWithdrawal.reject.useMutation({
     onSuccess: () => {
-      toast.success("Solicitação recusada");
+      toast.success("Solicitação recusada pela Larissa");
+      setRejectId(null);
+      setRejectSenha("");
+      setRejectJustificativa("");
       utils.stockWithdrawal.list.invalidate();
       utils.stockWithdrawal.countPending.invalidate();
     },
@@ -388,7 +412,9 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
 
   const completeMutation = trpc.stockWithdrawal.complete.useMutation({
     onSuccess: () => {
-      toast.success("Baixa confirmada com sucesso!");
+      toast.success("Baixa confirmada! O sync da Manus já vai ler o estoque atualizado do Maxiprod.");
+      setCompleteId(null);
+      setCompleteSenha("");
       utils.stockWithdrawal.list.invalidate();
       utils.stockWithdrawal.countPending.invalidate();
     },
@@ -405,24 +431,19 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
     onError: (err) => toast.error(err.message || "Erro ao apagar"),
   });
 
-  const [rejectId, setRejectId] = useState<number | null>(null);
-  const [rejectJustificativa, setRejectJustificativa] = useState("");
-
   function handleApprove(id: number) {
-    if (!operator) return;
-    approveMutation.mutate({ id, fiscalId: operator.id, fiscalName: operator.name });
+    if (!approveSenha.trim()) return toast.error("Digite a senha da Larissa para aprovar");
+    approveMutation.mutate({ id, senha: approveSenha.trim() });
   }
 
   function handleReject(id: number) {
-    if (!operator) return;
-    rejectMutation.mutate({ id, fiscalId: operator.id, fiscalName: operator.name, justificativa: rejectJustificativa || undefined });
-    setRejectId(null);
-    setRejectJustificativa("");
+    if (!rejectSenha.trim()) return toast.error("Digite a senha da Larissa para recusar");
+    rejectMutation.mutate({ id, senha: rejectSenha.trim(), justificativa: rejectJustificativa || undefined });
   }
 
   function handleComplete(id: number) {
-    if (!operator) return;
-    completeMutation.mutate({ id, fiscalId: operator.id, fiscalName: operator.name });
+    if (!completeSenha.trim()) return toast.error("Digite a senha da Larissa para confirmar a baixa");
+    completeMutation.mutate({ id, senha: completeSenha.trim() });
   }
 
   if (isLoading) return <div className="flex items-center gap-2 text-slate-500 py-8 justify-center"><Loader2 className="w-5 h-5 animate-spin" /> Carregando...</div>;
@@ -436,7 +457,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
       <div>
         <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
           <Clock className="w-5 h-5 text-amber-600" />
-          Aguardando Aprovação ({pendingList.length})
+          Aguardando Aprovação da Larissa ({pendingList.length})
         </h3>
         {pendingList.length === 0 ? (
           <div className="text-center py-8 text-slate-400 bg-white rounded-xl border border-slate-200">
@@ -449,49 +470,90 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                 key={req.id}
                 request={req}
                 actions={
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
-                    {canApprove && (
-                      <>
+                  <div className="mt-3 space-y-2">
+                    {/* Approve flow */}
+                    {approveId === req.id ? (
+                      <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <Lock className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <input
+                          type="password"
+                          value={approveSenha}
+                          onChange={(e) => setApproveSenha(e.target.value)}
+                          placeholder="Senha da Larissa"
+                          className="flex-1 px-3 py-1.5 border border-emerald-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          autoFocus
+                        />
                         <button
                           onClick={() => handleApprove(req.id)}
                           disabled={approveMutation.isPending}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                          className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                         >
-                          <Check className="w-3.5 h-3.5" /> Aprovar
+                          {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
                         </button>
-                        {rejectId === req.id ? (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="text"
-                              value={rejectJustificativa}
-                              onChange={(e) => setRejectJustificativa(e.target.value)}
-                              placeholder="Justificativa (opcional)"
-                              className="flex-1 px-3 py-1.5 border border-red-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                            />
-                            <button onClick={() => handleReject(req.id)} className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
-                              Confirmar
-                            </button>
-                            <button onClick={() => setRejectId(null)} className="px-2 py-1.5 text-slate-500 hover:text-slate-700">
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
+                        <button onClick={() => { setApproveId(null); setApproveSenha(""); }} className="px-2 py-1.5 text-slate-500 hover:text-slate-700">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : rejectId === req.id ? (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-4 h-4 text-red-600 shrink-0" />
+                          <input
+                            type="password"
+                            value={rejectSenha}
+                            onChange={(e) => setRejectSenha(e.target.value)}
+                            placeholder="Senha da Larissa"
+                            className="flex-1 px-3 py-1.5 border border-red-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                            autoFocus
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={rejectJustificativa}
+                          onChange={(e) => setRejectJustificativa(e.target.value)}
+                          placeholder="Justificativa (opcional)"
+                          className="w-full px-3 py-1.5 border border-red-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setRejectId(req.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 text-sm font-medium rounded-lg border border-red-200 hover:bg-red-100 transition-colors"
+                            onClick={() => handleReject(req.id)}
+                            disabled={rejectMutation.isPending}
+                            className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
                           >
-                            <X className="w-3.5 h-3.5" /> Recusar
+                            {rejectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar Recusa"}
                           </button>
+                          <button onClick={() => { setRejectId(null); setRejectSenha(""); setRejectJustificativa(""); }} className="px-2 py-1.5 text-slate-500 hover:text-slate-700">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {canApprove && (
+                          <>
+                            <button
+                              onClick={() => { setApproveId(req.id); setRejectId(null); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Aprovar
+                            </button>
+                            <button
+                              onClick={() => { setRejectId(req.id); setApproveId(null); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 text-sm font-medium rounded-lg border border-red-200 hover:bg-red-100 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" /> Recusar
+                            </button>
+                          </>
                         )}
-                      </>
+                        <button
+                          onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
+                          disabled={deleteMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors ml-auto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Apagar
+                        </button>
+                      </div>
                     )}
-                    <button
-                      onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
-                      disabled={deleteMutation.isPending}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors ml-auto"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Apagar
-                    </button>
                   </div>
                 }
               />
@@ -500,13 +562,16 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
         )}
       </div>
 
-      {/* Aprovadas aguardando baixa */}
+      {/* Aprovadas aguardando baixa no Maxiprod */}
       {approvedList.length > 0 && (
         <div>
           <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-blue-600" />
-            Aprovadas — Aguardando Baixa no Sistema ({approvedList.length})
+            Aprovadas — Aguardando Baixa no Maxiprod ({approvedList.length})
           </h3>
+          <p className="text-xs text-slate-500 mb-3">
+            Larissa: faça a baixa manualmente no Maxiprod e depois clique em "Baixa Realizada" para confirmar.
+          </p>
           <div className="space-y-3">
             {approvedList.map((req) => (
               <RequestCard
@@ -514,13 +579,36 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                 request={req}
                 actions={canApprove ? (
                   <div className="mt-3">
-                    <button
-                      onClick={() => handleComplete(req.id)}
-                      disabled={completeMutation.isPending}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      <CheckCircle2 className="w-4 h-4" /> Baixa Realizada
-                    </button>
+                    {completeId === req.id ? (
+                      <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <Lock className="w-4 h-4 text-blue-600 shrink-0" />
+                        <input
+                          type="password"
+                          value={completeSenha}
+                          onChange={(e) => setCompleteSenha(e.target.value)}
+                          placeholder="Senha da Larissa"
+                          className="flex-1 px-3 py-1.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleComplete(req.id)}
+                          disabled={completeMutation.isPending}
+                          className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {completeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
+                        </button>
+                        <button onClick={() => { setCompleteId(null); setCompleteSenha(""); }} className="px-2 py-1.5 text-slate-500 hover:text-slate-700">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setCompleteId(req.id)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Baixa Realizada no Maxiprod
+                      </button>
+                    )}
                   </div>
                 ) : undefined}
               />
@@ -575,7 +663,7 @@ function RequestCard({ request, actions }: { request: any; actions?: React.React
           <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
             <span>Solicitante: <span className="font-medium text-slate-600">{request.solicitanteName}</span></span>
             <span>{new Date(request.dataSolicitacao).toLocaleString("pt-BR")}</span>
-            {request.fiscalName && <span>Fiscal: <span className="font-medium text-slate-600">{request.fiscalName}</span></span>}
+            {request.fiscalName && <span>Aprovado por: <span className="font-medium text-slate-600">{request.fiscalName}</span></span>}
           </div>
         </div>
       </div>

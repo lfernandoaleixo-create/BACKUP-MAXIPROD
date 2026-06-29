@@ -6,7 +6,13 @@ import { eq, and, sql, desc, gte, lte, count } from "drizzle-orm";
 
 /**
  * Router para Solicitações de Baixa Manual no Estoque
- * Fluxo: Líder solicita → Fiscal aprova → Fiscal faz baixa no sistema → Fiscal confirma
+ * 
+ * REGRAS:
+ * 1. Apenas LARISSA pode aprovar/recusar (validação por senha)
+ * 2. A Manus NÃO faz baixa automática no estoque - é só controle visual
+ * 3. A baixa real é feita manualmente no Maxiprod pela Larissa
+ * 4. Fluxo: Líder solicita → Larissa aprova/recusa → Larissa faz baixa no Maxiprod → Larissa confirma conclusão
+ * 5. Status: Pendente → Aprovada → Concluída (ou Pendente → Recusada)
  */
 export const stockWithdrawalRouter = router({
   /**
@@ -120,7 +126,7 @@ export const stockWithdrawalRouter = router({
     }),
 
   /**
-   * Contar pendências (para badge/notificação da Fiscal)
+   * Contar pendências (para badge/notificação)
    */
   countPending: publicProcedure.query(async () => {
     const db = await getDb();
@@ -146,23 +152,30 @@ export const stockWithdrawalRouter = router({
   }),
 
   /**
-   * Aprovar solicitação (Fiscal)
+   * Aprovar solicitação — APENAS LARISSA pode aprovar (validação por senha)
+   * NÃO faz nenhuma baixa automática no estoque.
+   * A baixa real é feita manualmente no Maxiprod pela Larissa.
    */
   approve: publicProcedure
     .input(z.object({
       id: z.number(),
-      fiscalId: z.number(),
-      fiscalName: z.string().min(1),
+      senha: z.string().min(1),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
+      // Validar senha e verificar que é a Larissa
+      const [op] = await db.select().from(operators)
+        .where(and(eq(operators.password, input.senha), eq(operators.active, true)));
+      if (!op) throw new Error("Senha inválida.");
+      if (op.name !== "Larissa") throw new Error("Apenas a Larissa pode aprovar/recusar solicitações de movimentação.");
+
       await db.update(stockWithdrawalRequests)
         .set({
           status: "aprovada",
-          fiscalId: input.fiscalId,
-          fiscalName: input.fiscalName,
+          fiscalId: op.id,
+          fiscalName: op.name,
           dataAprovacao: new Date(),
         })
         .where(and(
@@ -174,24 +187,29 @@ export const stockWithdrawalRouter = router({
     }),
 
   /**
-   * Recusar solicitação (Fiscal)
+   * Recusar solicitação — APENAS LARISSA pode recusar (validação por senha)
    */
   reject: publicProcedure
     .input(z.object({
       id: z.number(),
-      fiscalId: z.number(),
-      fiscalName: z.string().min(1),
+      senha: z.string().min(1),
       justificativa: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
+      // Validar senha e verificar que é a Larissa
+      const [op] = await db.select().from(operators)
+        .where(and(eq(operators.password, input.senha), eq(operators.active, true)));
+      if (!op) throw new Error("Senha inválida.");
+      if (op.name !== "Larissa") throw new Error("Apenas a Larissa pode aprovar/recusar solicitações de movimentação.");
+
       await db.update(stockWithdrawalRequests)
         .set({
           status: "recusada",
-          fiscalId: input.fiscalId,
-          fiscalName: input.fiscalName,
+          fiscalId: op.id,
+          fiscalName: op.name,
           justificativaRecusa: input.justificativa || null,
           dataAprovacao: new Date(),
         })
@@ -204,25 +222,30 @@ export const stockWithdrawalRouter = router({
     }),
 
   /**
-   * Confirmar baixa realizada (Fiscal)
+   * Confirmar baixa realizada no Maxiprod — APENAS LARISSA
+   * Isso marca que ela já fez a baixa manual no Maxiprod e o sync da Manus já vai ler atualizado.
    */
   complete: publicProcedure
     .input(z.object({
       id: z.number(),
-      fiscalId: z.number(),
-      fiscalName: z.string().min(1),
+      senha: z.string().min(1),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
+      // Validar senha e verificar que é a Larissa
+      const [op] = await db.select().from(operators)
+        .where(and(eq(operators.password, input.senha), eq(operators.active, true)));
+      if (!op) throw new Error("Senha inválida.");
+      if (op.name !== "Larissa") throw new Error("Apenas a Larissa pode confirmar a conclusão.");
+
       await db.update(stockWithdrawalRequests)
         .set({
           status: "concluida",
           dataConclusao: new Date(),
-          // Atualizar fiscal caso seja diferente de quem aprovou
-          fiscalId: input.fiscalId,
-          fiscalName: input.fiscalName,
+          fiscalId: op.id,
+          fiscalName: op.name,
         })
         .where(and(
           eq(stockWithdrawalRequests.id, input.id),

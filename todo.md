@@ -4548,3 +4548,6 @@
 - [x] Importação Custo da Mercadoria: travar valor fixo para POs importadas da planilha Excel (não recalcular em tempo real)
 - [x] Importação: corrigir valores divergentes de valorCaixaBrl - re-extrair VALOR CAIXA correto da planilha Excel para todas as POs
 - [x] Bug: Tooltip/explicação não aparece ao passar mouse nos ícones ℹ️ de Custo Real, Projetado e Estimativa na aba Custo em Tempo Real
+- [ ] Movimentação de Estoque: apenas Larissa pode aprovar/recusar solicitações (validar pela senha dela)
+- [ ] Movimentação de Estoque: Manus NÃO faz baixa automática - é só controle visual, baixa é manual no Maxiprod
+- [ ] Movimentação de Estoque: status Concluída = Larissa confirma que fez baixa no Maxiprod e sync já leu atualização
