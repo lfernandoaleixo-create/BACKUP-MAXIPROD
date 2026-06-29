@@ -570,7 +570,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
             Aprovadas — Aguardando Baixa no Maxiprod ({approvedList.length})
           </h3>
           <p className="text-xs text-slate-500 mb-3">
-            Larissa: faça a baixa manualmente no Maxiprod e depois clique em "Baixa Realizada" para confirmar.
+            Larissa: faça a baixa manualmente no Maxiprod e depois clique em "Baixa dada no Maxiprod" para confirmar.
           </p>
           <div className="space-y-3">
             {approvedList.map((req) => (
@@ -608,7 +608,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                             onClick={() => setCompleteId(req.id)}
                             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            <CheckCircle2 className="w-4 h-4" /> Baixa Realizada no Maxiprod
+                            <CheckCircle2 className="w-4 h-4" /> Baixa dada no Maxiprod
                           </button>
                         )}
                       </>
