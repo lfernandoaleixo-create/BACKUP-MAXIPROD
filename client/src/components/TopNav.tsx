@@ -54,12 +54,14 @@ export default function TopNav({ rightContent }: TopNavProps) {
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
 
   // Blink produção tab for Larissa when there are pending stock withdrawal requests
+  // Blink logic ready for Larissa - temporarily disabled until she's trained on the workflow
+  // To re-enable: change `false &&` to just the condition
   const isLarissa = operator?.name === "Larissa";
   const { data: pendingStockData } = trpc.stockWithdrawal.countPending.useQuery(undefined, {
-    enabled: isLarissa,
+    enabled: false && isLarissa, // disabled temporarily
     refetchInterval: 15000,
   });
-  const hasPendingStock = isLarissa && (pendingStockData?.pending ?? 0) > 0;
+  const hasPendingStock = false && isLarissa && (pendingStockData?.pending ?? 0) > 0;
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
