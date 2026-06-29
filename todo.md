@@ -4545,3 +4545,4 @@
 - [x] Importação Custo da Mercadoria: adicionar tooltip/explicação ao clicar nos cabeçalhos Custo Real, Projetado e Estimativa
 - [x] Rastreio em Conjunto: card do navio no mapa tampa toda a visão no mobile - reduzir tamanho/posição
 - [x] Resumo Financeiro: mudar modal de "Origem da Divergência" para "Diferença Explicada" - valor Manus é o correto, diferença é por regra de negócio (bonificação, excluídos, outros, e-commerce)
+- [x] Importação Custo da Mercadoria: travar valor fixo para POs importadas da planilha Excel (não recalcular em tempo real)

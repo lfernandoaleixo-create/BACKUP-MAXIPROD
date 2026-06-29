@@ -2738,7 +2738,12 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
               ) : (
                 <div className="text-left flex items-center gap-1.5">
                   <div>
-                    <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
+                      {po.isFromSpreadsheet && (
+                        <span className="text-[8px] bg-emerald-100 text-emerald-700 px-1 py-0.5 rounded font-medium" title="Preço da caixa travado (importado da planilha)">travado</span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-slate-400">{po.containerName || ''}</p>
                   </div>
                   {editingPrevisaoPoId === po.id ? (
@@ -3467,8 +3472,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   // === CALCULATIONS ===
   const filteredProducts = products || [];
   
-  // Detect if this is a legacy PO (from spreadsheet) - has valorCaixaBrl filled in products
-  const isLegacyPo = filteredProducts.some((p: any) => p.valorCaixaBrl && Number(p.valorCaixaBrl) > 0);
+  // Detect if this is a PO from the spreadsheet (frozen prices - never recalculate)
+  const isLegacyPo = !!po.isFromSpreadsheet;
 
   // Total Frete Calculado pelo Fornecedor (soma de todos os fretes col5)
   const totalFreteAutoCalc = filteredProducts.reduce((sum, prod) => {
@@ -3997,8 +4002,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                             : `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                         : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(valorDaCaixa * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
-                    {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0 && (
-                      <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha)</span>
+                    {isLegacyPo && prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0 && (
+                      <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha - travado)</span>
                     )}
                   </td>
                   {/* Preço Mil/Unid. - do banco para legacy, calculado para novas */}

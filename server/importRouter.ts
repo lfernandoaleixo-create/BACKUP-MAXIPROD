@@ -985,9 +985,8 @@ export const importRouter = router({
         // Get products for this PO
         const products = await db.select().from(importPoProducts).where(eq(importPoProducts.poId, input.poId));
         
-        // Check if this is a legacy PO (already has valorCaixaBrl from spreadsheet)
-        const isLegacy = products.some(p => p.valorCaixaBrl && Number(p.valorCaixaBrl) > 0);
-        if (isLegacy) return { success: true }; // Legacy POs already have fixed values
+        // Check if this is a PO from the spreadsheet (frozen prices - never recalculate)
+        if (po.isFromSpreadsheet) return { success: true }; // Spreadsheet POs have locked prices
         
         // For new POs: calculate custosTotais and save valorCaixaBrl per product
         // Get vilela config

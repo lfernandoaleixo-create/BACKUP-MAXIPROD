@@ -1,0 +1,1 @@
+ALTER TABLE `import_pos` ADD `is_from_spreadsheet` boolean DEFAULT false NOT NULL;

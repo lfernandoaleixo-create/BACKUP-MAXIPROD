@@ -2542,6 +2542,7 @@ export const importPos = mysqlTable("import_pos", {
   freteOverrideUsd: decimal("frete_override_usd", { precision: 12, scale: 4 }), // Frete manual override em USD (quando preenchido, substitui o cálculo automático)
   navigationStatus: varchar("navigation_status", { length: 20 }).default("navegando"), // 'navegando' | 'chegou_patio' | 'concluida'
   previsaoEntrega: varchar("previsao_entrega", { length: 50 }), // Data de previsão de entrega do Maxiprod (ISO string)
+  isFromSpreadsheet: boolean("is_from_spreadsheet").default(false).notNull(), // true = PO veio da planilha Excel (preço travado), false = PO criada na Manus (cálculo automático)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type ImportPo = typeof importPos.$inferSelect;
