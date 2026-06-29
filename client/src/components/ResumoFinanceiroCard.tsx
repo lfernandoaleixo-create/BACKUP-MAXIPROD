@@ -184,15 +184,15 @@ function DivergenceDetailModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-900 via-red-800 to-orange-900 px-6 py-5">
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-800 to-blue-900 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/30">
-                <AlertTriangle className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Info className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">Origem da Divergência</h3>
-                <p className="text-red-200 text-xs">{sectionLabels[section]}</p>
+                <h3 className="text-white font-bold text-base">Diferença Explicada</h3>
+                <p className="text-blue-200 text-xs">{sectionLabels[section]} — Regras de negócio aplicadas</p>
               </div>
             </div>
             <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
@@ -201,21 +201,21 @@ function DivergenceDetailModal({
           </div>
           {/* Valores comparativos */}
           <div className="mt-3 grid grid-cols-3 gap-2">
-            <div className="px-3 py-2 bg-white/10 rounded-lg border border-white/20">
-              <span className="text-red-200 text-[10px] block">Manus</span>
-              <span className="text-white font-bold text-sm" style={{ textShadow: "0 0 10px rgba(34,211,238,0.4)" }}>
+            <div className="px-3 py-2 bg-blue-500/20 rounded-lg border border-blue-400/40">
+              <span className="text-blue-200 text-[10px] block">Manus (correto)</span>
+              <span className="text-cyan-200 font-bold text-sm" style={{ textShadow: "0 0 10px rgba(34,211,238,0.4)" }}>
                 {formatCurrency(valorManus)}
               </span>
             </div>
             <div className="px-3 py-2 bg-white/10 rounded-lg border border-white/20">
-              <span className="text-red-200 text-[10px] block">Maxiprod</span>
+              <span className="text-blue-200 text-[10px] block">Maxiprod (bruto)</span>
               <span className="text-white font-bold text-sm" style={{ textShadow: "0 0 10px rgba(34,211,238,0.4)" }}>
                 {formatCurrency(valorMaxiprod)}
               </span>
             </div>
-            <div className="px-3 py-2 bg-red-500/30 rounded-lg border border-red-400/40">
-              <span className="text-red-200 text-[10px] block">Diferença</span>
-              <span className="text-red-100 font-bold text-sm" style={{ textShadow: "0 0 10px rgba(239,68,68,0.5)" }}>
+            <div className="px-3 py-2 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-blue-200 text-[10px] block">Itens excluídos</span>
+              <span className="text-blue-100 font-bold text-sm">
                 {formatCurrency(diff)}
               </span>
             </div>
@@ -231,17 +231,18 @@ function DivergenceDetailModal({
             </div>
           ) : data ? (
             <>
-              {/* Possíveis causas */}
+              {/* Motivos da diferença */}
               <div className="mb-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Info className="w-4 h-4" />
-                  Possíveis Causas ({data.diffPercent}% de divergência)
+                  Itens excluídos por regra de negócio ({data.diffPercent}% do total Maxiprod)
                 </h4>
+                <p className="text-[11px] text-slate-500 mb-2">O valor Manus (azul) é o correto. A diferença se deve a pedidos que não são considerados: bonificação, excluídos, outros, e-commerce, etc.</p>
                 <div className="space-y-2">
                   {data.possibleCauses.map((cause: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-800">{cause}</p>
+                    <div key={i} className="flex items-start gap-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-800">{cause}</p>
                     </div>
                   ))}
                 </div>
@@ -252,7 +253,7 @@ function DivergenceDetailModal({
                 <div>
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <List className="w-4 h-4" />
-                    Itens que contribuem para a diferença
+                    Detalhamento dos itens excluídos
                   </h4>
                   <div className="border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-xs">
@@ -267,7 +268,7 @@ function DivergenceDetailModal({
                         {data.details.map((d: { item: string; valor: number; motivo: string }, i: number) => (
                           <tr key={i} className={`border-t border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                             <td className="px-3 py-2 text-slate-700 max-w-[200px] truncate">{d.item}</td>
-                            <td className="px-3 py-2 text-right font-semibold text-red-600">{formatCurrency(d.valor)}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-slate-700">{formatCurrency(d.valor)}</td>
                             <td className="px-3 py-2 text-slate-500 max-w-[200px] truncate">{d.motivo}</td>
                           </tr>
                         ))}
