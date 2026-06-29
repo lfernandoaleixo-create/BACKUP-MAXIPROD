@@ -4543,3 +4543,4 @@
 - [x] Importação: contêineres com status "Entregue" devem sumir do mapa
 - [x] Movimentação de Estoque: visível apenas para Bruno, Fernando e Guilherme (restringir botão)
 - [x] Importação Custo da Mercadoria: adicionar tooltip/explicação ao clicar nos cabeçalhos Custo Real, Projetado e Estimativa
+- [x] Rastreio em Conjunto: card do navio no mapa tampa toda a visão no mobile - reduzir tamanho/posição

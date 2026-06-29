@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Anchor,
   CheckCircle2,
+  X,
 } from "lucide-react";
 
 interface ContainerData {
@@ -516,22 +517,29 @@ export function RastreioEmConjunto() {
 
         {/* Hover/Selected Card Overlay */}
         {activeContainer && activeLive && (
-          <div className="absolute top-4 right-4 w-72 bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl p-4 z-50 pointer-events-auto">
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-9 h-9 bg-indigo-600/30 border border-indigo-500/50 rounded-lg flex items-center justify-center shrink-0">
-                <Ship className="w-4 h-4 text-indigo-300" />
+          <div className="absolute top-2 right-2 w-52 sm:top-4 sm:right-4 sm:w-72 max-h-[55%] overflow-y-auto bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl p-2.5 sm:p-4 z-50 pointer-events-auto">
+            {/* Close button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setSelectedContainer(null); setHoveredContainer(null); }}
+              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white transition z-10"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3 pr-6">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 bg-indigo-600/30 border border-indigo-500/50 rounded-lg flex items-center justify-center shrink-0">
+                <Ship className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-300" />
               </div>
               <div className="min-w-0">
-                <h4 className="text-sm font-bold text-white truncate">{activeContainer.supplierName}</h4>
-                <p className="text-[10px] text-slate-400">
+                <h4 className="text-xs sm:text-sm font-bold text-white truncate">{activeContainer.supplierName}</h4>
+                <p className="text-[9px] sm:text-[10px] text-slate-400">
                   {activeContainer.containerName || activeContainer.poNumber} • {activeContainer.pedido}
                 </p>
               </div>
             </div>
 
             {/* Progress bar */}
-            <div className="mb-3">
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+            <div className="mb-2 sm:mb-3">
+              <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400 mb-1">
                 <span>{activeLive.originName || activeContainer.origin || '—'}</span>
                 <span>{activeLive.destName || activeContainer.destination || '—'}</span>
               </div>
@@ -547,7 +555,7 @@ export function RastreioEmConjunto() {
             </div>
 
             {/* Info grid */}
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[9px] sm:text-[10px]">
               {activeLive.vessel && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">Navio</span>
