@@ -4546,3 +4546,4 @@
 - [x] Rastreio em Conjunto: card do navio no mapa tampa toda a visão no mobile - reduzir tamanho/posição
 - [x] Resumo Financeiro: mudar modal de "Origem da Divergência" para "Diferença Explicada" - valor Manus é o correto, diferença é por regra de negócio (bonificação, excluídos, outros, e-commerce)
 - [x] Importação Custo da Mercadoria: travar valor fixo para POs importadas da planilha Excel (não recalcular em tempo real)
+- [x] Importação: corrigir valores divergentes de valorCaixaBrl - re-extrair VALOR CAIXA correto da planilha Excel para todas as POs
