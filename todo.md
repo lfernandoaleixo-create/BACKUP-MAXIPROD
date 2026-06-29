@@ -4547,3 +4547,4 @@
 - [x] Resumo Financeiro: mudar modal de "Origem da Divergência" para "Diferença Explicada" - valor Manus é o correto, diferença é por regra de negócio (bonificação, excluídos, outros, e-commerce)
 - [x] Importação Custo da Mercadoria: travar valor fixo para POs importadas da planilha Excel (não recalcular em tempo real)
 - [x] Importação: corrigir valores divergentes de valorCaixaBrl - re-extrair VALOR CAIXA correto da planilha Excel para todas as POs
+- [x] Bug: Tooltip/explicação não aparece ao passar mouse nos ícones ℹ️ de Custo Real, Projetado e Estimativa na aba Custo em Tempo Real
