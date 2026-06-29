@@ -569,6 +569,83 @@ export const checklistRouter = router({
     }),
 
   /**
+   * Get full detail of a specific round (all items + responses)
+   * Used when clicking a row in the history table
+   */
+  getRoundDetail: publicProcedure
+    .input(z.object({ roundId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Get the round
+      const rounds = await db.select().from(checklistRounds)
+        .where(eq(checklistRounds.id, input.roundId))
+        .limit(1);
+      if (rounds.length === 0) throw new Error("Ronda não encontrada");
+      const round = rounds[0];
+
+      // Get ALL items (including inactive, since they may have been active at the time)
+      const items = await db.select().from(checklistItems)
+        .orderBy(checklistItems.sector, checklistItems.orderIndex);
+
+      // Get responses for this round
+      const responses = await db.select().from(checklistResponses)
+        .where(eq(checklistResponses.roundId, input.roundId));
+
+      // Group items by sector with their responses
+      const sectors: Record<number, {
+        sectorName: string;
+        items: Array<{
+          id: number;
+          text: string;
+          orderIndex: number;
+          response: {
+            status: string;
+            observation: string | null;
+            photoUrl: string | null;
+            photoUrls: string[] | null;
+            respondedBy: string;
+            respondedAt: Date;
+          } | null;
+        }>;
+      }> = {};
+
+      // Only include items that have responses for this round (historical accuracy)
+      const respondedItemIds = new Set(responses.map(r => r.itemId));
+
+      for (const item of items) {
+        // Include item if it has a response OR if it was active
+        if (!respondedItemIds.has(item.id) && !item.isActive) continue;
+        if (!sectors[item.sector]) {
+          sectors[item.sector] = { sectorName: item.sectorName, items: [] };
+        }
+        const resp = responses.find(r => r.itemId === item.id);
+        sectors[item.sector].items.push({
+          id: item.id,
+          text: item.text,
+          orderIndex: item.orderIndex,
+          response: resp ? {
+            status: resp.status,
+            observation: resp.observation,
+            photoUrl: resp.photoUrl,
+            photoUrls: resp.photoUrls,
+            respondedBy: resp.respondedBy,
+            respondedAt: resp.respondedAt,
+          } : null,
+        });
+      }
+
+      return {
+        round,
+        sectors,
+        totalItems: Object.values(sectors).reduce((acc, s) => acc + s.items.length, 0),
+        totalResponses: responses.length,
+        nonConformeCount: responses.filter(r => r.status === "nao_conforme").length,
+      };
+    }),
+
+  /**
    * Deactivate a checklist item (preserves history)
    */
   deactivateItem: publicProcedure

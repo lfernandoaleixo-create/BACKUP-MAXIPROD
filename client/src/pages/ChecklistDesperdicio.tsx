@@ -685,7 +685,14 @@ export function ChecklistDesperdicio() {
 // ─── History Sub-Component ───
 function ChecklistHistory() {
   const [page, setPage] = useState(1);
+  const [selectedRoundId, setSelectedRoundId] = useState<number | null>(null);
   const { data, isLoading } = trpc.checklist.getHistory.useQuery({ page, pageSize: 10 });
+
+  // Query detail when a round is selected
+  const { data: roundDetail, isLoading: loadingDetail } = trpc.checklist.getRoundDetail.useQuery(
+    { roundId: selectedRoundId! },
+    { enabled: selectedRoundId !== null }
+  );
 
   if (isLoading) {
     return (
@@ -704,12 +711,39 @@ function ChecklistHistory() {
     );
   }
 
+  // If a round is selected, show its full checklist
+  if (selectedRoundId !== null) {
+    return (
+      <div className="space-y-4">
+        {/* Back button */}
+        <button
+          onClick={() => setSelectedRoundId(null)}
+          className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-800 transition-colors"
+        >
+          <ChevronUp className="w-4 h-4 rotate-[-90deg]" /> Voltar ao Histórico
+        </button>
+
+        {loadingDetail ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            <span className="ml-2 text-sm text-slate-500">Carregando checklist...</span>
+          </div>
+        ) : roundDetail ? (
+          <RoundDetailView detail={roundDetail} />
+        ) : (
+          <div className="text-center py-8 text-sm text-slate-500">Erro ao carregar detalhes</div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
         <History className="w-4 h-4 text-teal-600" />
         Histórico de Rondas
       </h3>
+      <p className="text-xs text-slate-400">Clique em uma ronda para ver o checklist completo</p>
       
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
@@ -724,7 +758,11 @@ function ChecklistHistory() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {data.history.map((entry) => (
-              <tr key={entry.id} className="hover:bg-slate-50">
+              <tr
+                key={entry.id}
+                onClick={() => setSelectedRoundId(entry.id)}
+                className="hover:bg-teal-50 cursor-pointer transition-colors"
+              >
                 <td className="px-4 py-2.5 font-medium text-slate-700">
                   {new Date(entry.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}
                 </td>
@@ -784,6 +822,135 @@ function ChecklistHistory() {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Round Detail View (full checklist for a specific day) ───
+function RoundDetailView({ detail }: { detail: any }) {
+  const round = detail.round;
+  const sectors = detail.sectors;
+  const dateLabel = new Date(round.date + "T12:00:00").toLocaleDateString("pt-BR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric"
+  });
+
+  const sectorColors: Record<number, { bg: string; border: string; text: string; accent: string }> = {
+    1: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800", accent: "bg-blue-600" },
+    2: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-800", accent: "bg-amber-600" },
+    3: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-800", accent: "bg-purple-600" },
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-slate-800 capitalize">{dateLabel}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {detail.totalResponses} itens respondidos | {detail.nonConformeCount} não conforme
+            </p>
+          </div>
+          <div>
+            {round.status === "completed" ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Concluído
+              </span>
+            ) : round.status === "not_done" ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                <XCircle className="w-3.5 h-3.5" /> Não Realizado
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                <Clock className="w-3.5 h-3.5" /> Em Aberto
+              </span>
+            )}
+          </div>
+        </div>
+        {round.completedBy && (
+          <p className="text-xs text-slate-500 mt-2">
+            Concluída por <span className="font-semibold text-slate-700">{round.completedBy}</span>
+            {round.completedAt && ` às ${new Date(round.completedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+          </p>
+        )}
+      </div>
+
+      {/* Sectors with items */}
+      {Object.entries(sectors).sort(([a], [b]) => Number(a) - Number(b)).map(([sectorNum, sectorData]: [string, any]) => {
+        const colors = sectorColors[Number(sectorNum)] || sectorColors[1];
+        const sectorItems = sectorData.items || [];
+        const conformeCount = sectorItems.filter((i: any) => i.response?.status === "conforme").length;
+        const nonConformeCount = sectorItems.filter((i: any) => i.response?.status === "nao_conforme").length;
+        const notAnswered = sectorItems.filter((i: any) => !i.response).length;
+
+        return (
+          <div key={sectorNum} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* Sector Header */}
+            <div className={`flex items-center gap-3 px-4 py-3 ${colors.bg} ${colors.border} border-b`}>
+              <div className={`w-8 h-8 rounded-lg ${colors.accent} flex items-center justify-center`}>
+                <span className="text-white font-bold text-sm">{sectorNum}</span>
+              </div>
+              <div className="flex-1">
+                <span className={`text-sm font-bold ${colors.text}`}>{sectorData.sectorName}</span>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="text-[10px] text-green-600 font-medium">{conformeCount} conforme</span>
+                  {nonConformeCount > 0 && <span className="text-[10px] text-red-600 font-medium">{nonConformeCount} não conforme</span>}
+                  {notAnswered > 0 && <span className="text-[10px] text-slate-400">{notAnswered} sem resposta</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="divide-y divide-slate-100">
+              {sectorItems.sort((a: any, b: any) => a.orderIndex - b.orderIndex).map((item: any, idx: number) => (
+                <div key={item.id} className="flex items-start gap-3 px-4 py-3">
+                  {/* Number */}
+                  <span className="text-xs font-bold text-slate-400 mt-0.5 w-5 shrink-0">{idx + 1}.</span>
+                  
+                  {/* Status icon */}
+                  <div className="shrink-0 mt-0.5">
+                    {item.response?.status === "conforme" ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : item.response?.status === "nao_conforme" ? (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-slate-200" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm ${item.response?.status === "nao_conforme" ? "text-red-700 font-medium" : item.response?.status === "conforme" ? "text-slate-700" : "text-slate-400"}`}>
+                      {item.text}
+                    </p>
+                    {item.response?.observation && (
+                      <div className="mt-1.5 flex items-start gap-1.5 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                        <MessageSquare className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-red-700">{item.response.observation}</p>
+                      </div>
+                    )}
+                    {(item.response?.photoUrls?.length > 0 || item.response?.photoUrl) && (
+                      <div className="mt-1.5 flex gap-2 flex-wrap">
+                        {(item.response.photoUrls || (item.response.photoUrl ? [item.response.photoUrl] : [])).map((url: string, pIdx: number) => (
+                          <a key={pIdx} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                            <img src={url} alt={`Foto ${pIdx + 1}`} className="w-16 h-16 rounded-lg object-cover border border-slate-200 hover:opacity-80 transition-opacity" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    {item.response && (
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        por {item.response.respondedBy}
+                        {item.response.respondedAt && ` às ${new Date(item.response.respondedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
