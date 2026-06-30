@@ -1610,16 +1610,13 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
   const effectiveRate = exchangeRate + SPREAD; // Cotação efetiva para conversão
   const formatBrl = (val: number) => val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const displayVal = (brl: number) => {
-    // Valores no banco estão em BRL (convertidos com a cotação pura)
-    // Para exibir: se BRL, mostra usando cotação + spread
+    // Valores no banco já estão em BRL (salvos com a taxa do momento do save)
+    // Exibir diretamente sem reconverter - o valor é FIXO após salvo
     if (currency === "BRL") {
-      // Reconverte para USD com cotação pura, depois converte para BRL com spread
-      const usdVal = brl / exchangeRate;
-      const brlComSpread = usdVal * effectiveRate;
-      return `R$ ${formatBrl(brlComSpread)}`;
+      return `R$ ${formatBrl(brl)}`;
     }
-    // USD: mostra o valor em USD (sem spread, spread só afeta BRL)
-    return `$ ${formatBrl(brl / exchangeRate)}`;
+    // USD: divide pela taxa efetiva atual para dar uma referência em USD
+    return `$ ${formatBrl(brl / effectiveRate)}`;
   };
 
   return (
