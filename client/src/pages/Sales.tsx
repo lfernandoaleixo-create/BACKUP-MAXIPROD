@@ -3428,6 +3428,7 @@ export default function Sales() {
   const [chartMode, setChartMode] = useState<"value" | "orders">("value");
   const [chartExpanded, setChartExpanded] = useState(false);
   const [aFaturarExpanded, setAFaturarExpanded] = useState(false);
+  const [aFaturarSection, setAFaturarSection] = useState<"none" | "atual" | "anterior">("none");
   const [showCustomDates, setShowCustomDates] = useState(false);
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -4296,11 +4297,17 @@ export default function Sales() {
                   {aFaturarExpanded && (
                     <>
                       <div className="border-t border-orange-100 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-orange-100">
-                        {/* Mês Atual */}
-                        <div className="p-4">
+                        {/* Mês Atual - clicável */}
+                        <button
+                          onClick={() => setAFaturarSection(aFaturarSection === 'atual' ? 'none' : 'atual')}
+                          className="p-4 text-left hover:bg-orange-50/60 transition-colors cursor-pointer"
+                        >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Mês Atual</span>
-                            <span className="text-xs text-slate-400">{currentUnbilled.length} {currentUnbilled.length === 1 ? 'pedido' : 'pedidos'}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">{currentUnbilled.length} {currentUnbilled.length === 1 ? 'pedido' : 'pedidos'}</span>
+                              {aFaturarSection === 'atual' ? <ChevronDown className="w-3.5 h-3.5 text-orange-400" /> : <ChevronRight className="w-3.5 h-3.5 text-orange-400" />}
+                            </div>
                           </div>
                           <p className="text-lg font-bold text-orange-700">{formatCurrencyFull(currentValue)}</p>
                           {totalAFaturar > 0 && (
@@ -4308,12 +4315,18 @@ export default function Sales() {
                               <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(currentValue / totalAFaturar * 100).toFixed(0)}%` }} />
                             </div>
                           )}
-                        </div>
-                        {/* Anterior */}
-                        <div className="p-4">
+                        </button>
+                        {/* Anterior - clicável */}
+                        <button
+                          onClick={() => setAFaturarSection(aFaturarSection === 'anterior' ? 'none' : 'anterior')}
+                          className="p-4 text-left hover:bg-amber-50/60 transition-colors cursor-pointer"
+                        >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Anterior</span>
-                            <span className="text-xs text-slate-400">{anteriorOrders.length} {anteriorOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">{anteriorOrders.length} {anteriorOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
+                              {aFaturarSection === 'anterior' ? <ChevronDown className="w-3.5 h-3.5 text-amber-400" /> : <ChevronRight className="w-3.5 h-3.5 text-amber-400" />}
+                            </div>
                           </div>
                           <p className="text-lg font-bold text-amber-700">{formatCurrencyFull(anteriorValue)}</p>
                           {totalAFaturar > 0 && (
@@ -4321,14 +4334,41 @@ export default function Sales() {
                               <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${(anteriorValue / totalAFaturar * 100).toFixed(0)}%` }} />
                             </div>
                           )}
-                        </div>
+                        </button>
                       </div>
-                      {/* Listas de pedidos */}
-                      {currentUnbilled.length > 0 && (
-                        <OrdersCard orders={currentUnbilled} title='Detalhes: Mês Atual' variant="a_faturar" />
+                      {/* Lista de pedidos inline - Mês Atual */}
+                      {aFaturarSection === 'atual' && currentUnbilled.length > 0 && (
+                        <div className="border-t border-orange-100 max-h-[400px] overflow-y-auto">
+                          {currentUnbilled.map((o, idx) => (
+                            <div key={idx} className="px-5 py-3 border-b border-orange-50 last:border-b-0 flex items-center justify-between hover:bg-orange-50/40">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-slate-700">#{o.pedido}</span>
+                                  <span className="text-xs text-slate-400">{o.data ? new Date(o.data).toLocaleDateString('pt-BR') : ''}</span>
+                                </div>
+                                <p className="text-sm text-slate-600 truncate">{o.clienteApelido || o.cliente}</p>
+                              </div>
+                              <span className="text-sm font-bold text-orange-700 whitespace-nowrap ml-3">{formatCurrencyFull(o.valorTotal)}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      {anteriorOrders.length > 0 && (
-                        <PreviousUnbilledCard months={previousUnbilled!.months} orders={anteriorOrders} />
+                      {/* Lista de pedidos inline - Anterior */}
+                      {aFaturarSection === 'anterior' && anteriorOrders.length > 0 && (
+                        <div className="border-t border-amber-100 max-h-[400px] overflow-y-auto">
+                          {anteriorOrders.map((o: any, idx: number) => (
+                            <div key={idx} className="px-5 py-3 border-b border-amber-50 last:border-b-0 flex items-center justify-between hover:bg-amber-50/40">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-slate-700">#{o.pedido}</span>
+                                  <span className="text-xs text-slate-400">{o.month || ''}</span>
+                                </div>
+                                <p className="text-sm text-slate-600 truncate">{o.clienteApelido || o.cliente}</p>
+                              </div>
+                              <span className="text-sm font-bold text-amber-700 whitespace-nowrap ml-3">{formatCurrencyFull(o.valorTotal)}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </>
                   )}
