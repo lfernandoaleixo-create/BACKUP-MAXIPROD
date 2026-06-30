@@ -8,7 +8,7 @@
  * Larissa pode atualizar qualquer campo a qualquer momento e salvar.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import TopNav from "@/components/TopNav";
 import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -3401,12 +3401,19 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     onSettled: () => {
       utils.import.getPoProducts.invalidate({ poId });
       utils.import.getRealTimeCosts.invalidate(); // Refresh Estimativa
+      // Mark that we need to save productCosts after products refetch
+      needsSaveAfterEditRef.current = true;
     },
   });
   // Silent auto-save mutation for product costs (no toast, no invalidation loop)
-  const autoSaveProductCosts = trpc.import.updatePoLogistics.useMutation();
+  const autoSaveProductCosts = trpc.import.updatePoLogistics.useMutation({
+    onSuccess: () => {
+      utils.import.getRealTimeCosts.invalidate(); // Refresh Estimativa column after save
+    },
+  });
   const shouldCollapseRef = useRef(false);
-  const lastSavedCostsRef = useRef<string>('');
+  // Flag: save productCosts on next products change (after edit/add/delete)
+  const needsSaveAfterEditRef = useRef(false);
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });
@@ -3419,10 +3426,10 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     },
   });
   const addProduct = trpc.import.addPoProduct.useMutation({
-    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); utils.import.getRealTimeCosts.invalidate(); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); utils.import.getRealTimeCosts.invalidate(); needsSaveAfterEditRef.current = true; setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
   });
   const deleteProduct = trpc.import.deletePoProduct.useMutation({
-    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); utils.import.getRealTimeCosts.invalidate(); toast.success('Produto removido!'); },
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); utils.import.getRealTimeCosts.invalidate(); needsSaveAfterEditRef.current = true; toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; valorUsd?: string; quantidade?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string; unidCaixa?: string }>({});
@@ -3500,14 +3507,18 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     { enabled: codeSearch.length >= 2 }
   );
 
-  // Auto-save productCosts whenever products data or cost inputs change
-  // This ensures the Estimativa column always shows the exact same value as the PO
-  useEffect(() => {
-    if (!products || products.length === 0 || isLoading) return;
+  // NOTE: Auto-save useEffect was REMOVED to prevent valorCaixaBrl from varying with exchange rate.
+  // The valorCaixaBrl is now saved ONLY when:
+  // 1. User clicks "Salvar Custos" button (saveCosts function)
+  // 2. User edits a product (updateProduct.onSettled triggers saveProductCostsNow)
+  // This ensures the value stays FIXED after being saved, regardless of exchange rate fluctuations.
+  
+  // Helper function to calculate and save productCosts to the database
+  const saveProductCostsNow = useCallback(() => {
+    if (!products || products.length === 0) return;
     const filteredProds = products.filter((p: any) => p.productCode && p.productCode.trim() !== '');
     if (filteredProds.length === 0) return;
 
-    // Recalculate custosTotais (same formula as the main render)
     const totalValRef = filteredProds.reduce((sum: number, p: any) => {
       const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
       const qty = Number(p.quantidade || 0);
@@ -3544,10 +3555,6 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       return { id: p.id, valorCaixaBrl: valorCaixaBrl.toFixed(6), precoMilUnid: precoMilUnid.toFixed(6) };
     });
 
-    const costsKey = JSON.stringify(productCosts);
-    if (costsKey === lastSavedCostsRef.current) return;
-    lastSavedCostsRef.current = costsKey;
-
     autoSaveProductCosts.mutate({
       id: poId,
       totalCiRemessa: valorCiUsd,
@@ -3561,7 +3568,15 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       vilelaValorReal: vilelaReal,
       productCosts,
     });
-  }, [products, freteOverrideUsd, valorCiUsd, vilelaReal, freteTerrestreSPUsd, difalValUsd, comSilverioUsd, effectiveRate, vilelaPercent, pag1, pag2Usd, pag3Usd]);
+  }, [products, freteOverrideUsd, valorCiUsd, vilelaReal, freteTerrestreSPUsd, difalValUsd, comSilverioUsd, effectiveRate, vilelaPercent, pag1, pag2Usd, pag3Usd, poId]);
+
+  // Effect: save productCosts ONLY after a user-triggered product edit (not on rate changes)
+  useEffect(() => {
+    if (needsSaveAfterEditRef.current && products && products.length > 0) {
+      needsSaveAfterEditRef.current = false;
+      saveProductCostsNow();
+    }
+  }, [products, saveProductCostsNow]);
 
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>;
@@ -3690,6 +3705,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(2)) : (po.despesasLiberacaoRemessa || null),
       vilelaValorReal: vilelaReal || null,
       freteOverrideUsd: freteOverrideUsd || null,
+      // Save the exchange rate used so that on reload, values don't vary with live rate
+      valorDolar1Remessa: String(exchangeRate),
       productCosts,
     });
   };
@@ -4146,12 +4163,12 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       {percProdutoNoTotal > 0 ? `${(Math.round(percProdutoNoTotal * 100) / 100).toFixed(2)} %` : '—'}
                     </span>
                   </td>
-                  {/* Valor da Caixa - usa valor exato do banco (planilha) se disponível, senão calcula */}
+                  {/* Valor da Caixa - para legacy usa valor do banco, para novas POs mostra cálculo LIVE */}
                   <td className="px-2 py-2 text-center bg-emerald-50/30 whitespace-nowrap">
                     <span className="font-mono text-emerald-800 font-bold text-[11px]">
-                      {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0
+                      {isLegacyPo && prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0
                         ? (currency === "USD"
-                            ? `$ ${(Number(prod.valorCaixaBrl) / (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            ? `$ ${(Number(prod.valorCaixaBrl) / (poExchangeRate + 0.20)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             : `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                         : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(valorDaCaixa * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
@@ -4258,6 +4275,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         id: po.id,
                         freteOverrideUsd: newOverride || null,
                       });
+                      // Mark to recalculate and save productCosts since frete affects Valor da Caixa
+                      needsSaveAfterEditRef.current = true;
                     }}
                     onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setFreteEditing(false); } }}
                   />

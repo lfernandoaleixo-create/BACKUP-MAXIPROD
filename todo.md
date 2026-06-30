@@ -4565,3 +4565,5 @@
 - [x] Usar taxa efetiva (cotação + R$0,20 spread) em TODAS as conversões USD→BRL na página de Importação
 - [x] Coluna Estimativa no dashboard: mostrar Valor da Caixa calculado na PO para produtos em POs com status "Navegando" (atualização em tempo real)
 - [x] Fix: Estimativa deve puxar exatamente o valorCaixaBrl salvo na PO (não recalcular no backend) para evitar divergências
+- [x] Bug: Estimativa fica variando - valor deve ser FIXO após salvo na PO (R$ 73,30 não pode virar R$ 76)
+- [x] Bug: Frete terrestre não deve variar após salvo manualmente pelo usuário
