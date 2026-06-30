@@ -4600,3 +4600,4 @@
 - [x] Fix quarter bars spacing: show all months of the year so quarters appear side by side
 - [x] Fix card closed value: show current quarter/semester value, not sum of all periods
 - [x] Fix comparison lines rendering to work with all-months display
+- [x] Remover linhas de comparação (atual/anterior/melhor) dos gráficos Trimestral, Semestral e Anual - manter apenas no Diário

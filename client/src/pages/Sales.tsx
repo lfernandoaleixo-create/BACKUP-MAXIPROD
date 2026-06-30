@@ -4924,7 +4924,7 @@ export default function Sales() {
                       monthlyData={quarterEvolution.monthlyData}
                       type="quarter"
                       comparison={quarterEvolution.quarterComparison}
-                      lines={quarterEvolution.quarterLines}
+                      
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
@@ -5002,7 +5002,7 @@ export default function Sales() {
                       monthlyData={semesterEvolution.monthlyData}
                       type="semester"
                       comparison={semesterEvolution.semesterComparison}
-                      lines={semesterEvolution.semesterLines}
+                      
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
@@ -5080,7 +5080,7 @@ export default function Sales() {
                       monthlyData={annualEvolution.monthlyData}
                       type="annual"
                       comparison={annualEvolution.annualComparison}
-                      lines={annualEvolution.annualLines}
+                      
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
