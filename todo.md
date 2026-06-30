@@ -4553,3 +4553,7 @@
 - [x] Movimentação de Estoque: status Concluída = Larissa confirma que fez baixa no Maxiprod e sync já leu atualização
 - [x] Movimentação de Estoque: piscar aba Produção para Larissa quando houver solicitações pendentes de aprovação
 - [x] Movimentação de Estoque: botão Apagar em todos os cards para limpar testes
+- [x] Gráfico Evolução Mensal profissional com Recharts (barras agrupadas + linha de tendência total)
+- [x] Gráficos separados por segmento (Industrializado e Revenda) com área gradiente e linha de média
+- [x] Unificar cards A Faturar (Mês Atual + Anterior) em card único combinado
+- [x] Endpoint getMonthlyBySegmento no backend (dados por segmento alto-nível com trimestral/semestral)

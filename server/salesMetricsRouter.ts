@@ -1269,4 +1269,147 @@ export const salesMetricsRouter = router({
       return Array.from(pedidoMap.values())
         .sort((a, b) => (b.dataEmissao || "").localeCompare(a.dataEmissao || ""));
     }),
+
+  /**
+   * Get monthly evolution grouped by high-level segment (Industrializado, Revenda, Import. MP)
+   * Used for the new professional "Evolução Mensal" chart with trimestral/semestral closings
+   */
+  getMonthlyBySegmento: publicProcedure
+    .input(z.object({
+      months: z.number().min(3).max(24).default(6),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { months: [], segmentos: [], data: [], trimestrais: [], semestrais: [] };
+
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth() - input.months + 1, 1);
+      const startStr = startDate.toISOString().slice(0, 10);
+      const endStr = now.toISOString().slice(0, 10);
+
+      const allItems = await db.select({
+        valorTotal: salesOrders.valorTotal,
+        estadoConfiguravel: salesOrders.estadoConfiguravel,
+        estadoNota: salesOrders.estadoNota,
+        estadoItem: salesOrders.estadoItem,
+        dataEmissao: salesOrders.dataEmissao,
+      }).from(salesOrders)
+        .where(and(
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startStr}`,
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endStr}`,
+        ));
+
+      // Filter out Digitação
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+
+      // Map to high-level segment
+      const estadoToSegmento = (estado: string | null): string | null => {
+        if (!estado) return null;
+        const e = estado.toUpperCase();
+        if (e === 'BAMBU' || e === 'FIBRA') return 'Revenda (Bambu/Fibra)';
+        if (e === 'MADEIRA' || e === 'MADEIRA CONTABILIZADO') return 'Industrializado';
+        if (e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return 'Import. Matéria-Prima';
+        return null; // exclude "outros"
+      };
+
+      const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && estadoToSegmento(item.estadoConfiguravel) !== null);
+
+      // Build month list
+      const months: string[] = [];
+      for (let i = 0; i < input.months; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - input.months + 1 + i, 1);
+        months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      }
+
+      // Aggregate: month -> segmento -> { total, faturado, aFaturar }
+      const monthSegMap = new Map<string, Map<string, { total: number; faturado: number; aFaturar: number }>>();
+      const allSegmentos = new Set<string>();
+
+      for (const item of filtered) {
+        const date = (item.dataEmissao || '').substring(0, 7);
+        if (!date || date.length < 7) continue;
+        const segmento = estadoToSegmento(item.estadoConfiguravel)!;
+        allSegmentos.add(segmento);
+        const val = Number(item.valorTotal) || 0;
+
+        if (!monthSegMap.has(date)) monthSegMap.set(date, new Map());
+        const segMap = monthSegMap.get(date)!;
+        if (!segMap.has(segmento)) segMap.set(segmento, { total: 0, faturado: 0, aFaturar: 0 });
+        const entry = segMap.get(segmento)!;
+        entry.total += val;
+        if (item.estadoItem === 'Faturado') entry.faturado += val;
+        if (item.estadoItem === 'A faturar') entry.aFaturar += val;
+      }
+
+      const segmentos = Array.from(allSegmentos).sort();
+
+      // Build data array
+      const data: Array<{ month: string; segmento: string; total: number; faturado: number; aFaturar: number }> = [];
+      for (const segmento of segmentos) {
+        for (const month of months) {
+          const entry = monthSegMap.get(month)?.get(segmento);
+          data.push({
+            month,
+            segmento,
+            total: Math.round((entry?.total || 0) * 100) / 100,
+            faturado: Math.round((entry?.faturado || 0) * 100) / 100,
+            aFaturar: Math.round((entry?.aFaturar || 0) * 100) / 100,
+          });
+        }
+      }
+
+      // Compute trimestral closings (Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec)
+      const trimestrais: Array<{ quarter: string; label: string; segmento: string; total: number }> = [];
+      const quarterMonths: Record<string, string[]> = {};
+      for (const m of months) {
+        const [y, mo] = m.split('-').map(Number);
+        const q = Math.ceil(mo / 3);
+        const qKey = `${y}-Q${q}`;
+        if (!quarterMonths[qKey]) quarterMonths[qKey] = [];
+        quarterMonths[qKey].push(m);
+      }
+      for (const [qKey, qMonths] of Object.entries(quarterMonths)) {
+        // Only include if all 3 months of the quarter are present
+        if (qMonths.length === 3) {
+          for (const segmento of segmentos) {
+            const total = qMonths.reduce((sum, m) => {
+              const entry = monthSegMap.get(m)?.get(segmento);
+              return sum + (entry?.total || 0);
+            }, 0);
+            const [y, qNum] = qKey.split('-Q');
+            trimestrais.push({ quarter: qKey, label: `${qNum}º Tri/${y.slice(2)}`, segmento, total: Math.round(total * 100) / 100 });
+          }
+        }
+      }
+
+      // Compute semestral closings (S1=Jan-Jun, S2=Jul-Dec)
+      const semestrais: Array<{ semester: string; label: string; segmento: string; total: number }> = [];
+      const semesterMonths: Record<string, string[]> = {};
+      for (const m of months) {
+        const [y, mo] = m.split('-').map(Number);
+        const s = mo <= 6 ? 1 : 2;
+        const sKey = `${y}-S${s}`;
+        if (!semesterMonths[sKey]) semesterMonths[sKey] = [];
+        semesterMonths[sKey].push(m);
+      }
+      for (const [sKey, sMonths] of Object.entries(semesterMonths)) {
+        // Only include if all 6 months of the semester are present
+        if (sMonths.length === 6) {
+          for (const segmento of segmentos) {
+            const total = sMonths.reduce((sum, m) => {
+              const entry = monthSegMap.get(m)?.get(segmento);
+              return sum + (entry?.total || 0);
+            }, 0);
+            const [y, sNum] = sKey.split('-S');
+            semestrais.push({ semester: sKey, label: `${sNum}º Sem/${y.slice(2)}`, segmento, total: Math.round(total * 100) / 100 });
+          }
+        }
+      }
+
+      return { months, segmentos, data, trimestrais, semestrais };
+    }),
 });

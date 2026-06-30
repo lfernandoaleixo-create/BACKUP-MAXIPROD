@@ -69,6 +69,10 @@ import {
   Info,
   UserPlus,
 } from "lucide-react";
+import {
+  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Legend as RechartsLegend, Area, ComposedChart, Line, ReferenceLine,
+} from "recharts";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
@@ -3041,67 +3045,99 @@ function AnaliseProdutosView() {
         })}
       </div>
 
-      {/* Chart - Grouped Bars */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Evolução Mensal</h3>
-          {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {filteredEstados.map((e, idx) => (
-              <div key={e.estado} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: getEstadoColor(e.estado, idx) }} />
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{e.estado}</span>
-              </div>
-            ))}
+      {/* Chart - Professional Recharts Grouped Bars */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Evolução Mensal</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Vendas por segmento — últimos {months} meses</p>
           </div>
         </div>
 
-        {/* Bar Chart - Grouped */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[400px]">
-            {/* Y-axis labels + bars */}
-            <div className="flex items-end gap-1 sm:gap-2" style={{ height: "280px" }}>
-              {data.months.map((month) => {
-                const monthItems = filteredData.filter(d => d.month === month);
-                const monthTotal = monthItems.reduce((sum, d) => sum + d.value, 0);
-                return (
-                  <div key={month} className="flex-1 flex flex-col items-center h-full">
-                    {/* Total value on top */}
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
-                      {fmtK(monthTotal)}
-                    </span>
-                    {/* Grouped bars container */}
-                    <div className="flex-1 w-full flex items-end justify-center gap-[2px]">
-                      {filteredEstados.map((e, idx) => {
-                        const val = monthItems.find(d => d.estado === e.estado)?.value || 0;
-                        const barH = maxMonthTotal > 0 ? Math.max((val / maxMonthTotal) * 100, val > 0 ? 3 : 0) : 0;
-                        return (
-                          <div
-                            key={e.estado}
-                            className="rounded-t-md transition-all hover:brightness-110 relative group"
-                            style={{
-                              height: `${barH}%`,
-                              backgroundColor: getEstadoColor(e.estado, idx),
-                              width: `${Math.floor(80 / filteredEstados.length)}%`,
-                              minWidth: "8px",
-                            }}
-                            title={`${e.estado}: ${formatCurrencyFull(val)}`}
-                          >
-                            {/* Tooltip on hover */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-medium px-2 py-1 rounded whitespace-nowrap z-10">
-                              {fmtK(val)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Month label */}
-                    <span className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-3">{fmtMonth(month)}</span>
-                  </div>
-                );
+        <div className="h-[360px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={data.months.map(month => {
+                const row: any = { month: fmtMonth(month) };
+                let total = 0;
+                filteredEstados.forEach((e, idx) => {
+                  const val = filteredData.find(d => d.month === month && d.estado === e.estado)?.value || 0;
+                  row[e.estado] = val;
+                  total += val;
+                });
+                row._total = total;
+                return row;
               })}
-            </div>
-          </div>
+              margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
+              barCategoryGap="20%"
+              barGap={2}
+            >
+              <defs>
+                {filteredEstados.map((e, idx) => {
+                  const color = getEstadoColor(e.estado, idx);
+                  return (
+                    <linearGradient key={e.estado} id={`grad_sales_${e.estado.replace(/[^a-zA-Z]/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={color} stopOpacity={0.95} />
+                      <stop offset="100%" stopColor={color} stopOpacity={0.6} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 12, fill: '#64748b', fontWeight: 600 }}
+                axisLine={{ stroke: '#e2e8f0' }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tickFormatter={(v: number) => fmtK(v)}
+                axisLine={false}
+                tickLine={false}
+              />
+              <RechartsTooltip
+                cursor={{ fill: 'rgba(16,185,129,0.04)' }}
+                contentStyle={{
+                  backgroundColor: 'rgba(255,255,255,0.97)',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                  padding: '12px 16px',
+                }}
+                labelStyle={{ fontWeight: 700, color: '#1e293b', marginBottom: 8 }}
+                formatter={(value: number, name: string) => [formatCurrencyFull(value), name]}
+              />
+              <RechartsLegend
+                wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }}
+                formatter={(value: string) => <span style={{ color: '#475569', fontWeight: 500 }}>{value}</span>}
+              />
+              {filteredEstados.map((e, idx) => (
+                <Bar
+                  key={e.estado}
+                  dataKey={e.estado}
+                  name={e.estado}
+                  fill={`url(#grad_sales_${e.estado.replace(/[^a-zA-Z]/g, '')})`}
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                  animationBegin={idx * 100}
+                />
+              ))}
+              {/* Total trend line */}
+              <Line
+                dataKey="_total"
+                name="Total"
+                type="monotone"
+                stroke="#0f172a"
+                strokeWidth={2.5}
+                strokeDasharray="5 3"
+                dot={{ r: 4, fill: '#0f172a', strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 6, fill: '#0f172a', stroke: '#fff', strokeWidth: 3 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -3180,6 +3216,123 @@ function AnaliseProdutosView() {
           </table>
         </div>
       </div>
+
+      {/* Gráficos Separados por Segmento - Evolução Individual */}
+      {(() => {
+        // Build individual segment area charts
+        const segmentChartData = data.months.map(month => {
+          const row: any = { month: fmtMonth(month) };
+          filteredEstados.forEach((e) => {
+            row[e.estado] = filteredData.find(d => d.month === month && d.estado === e.estado)?.value || 0;
+          });
+          return row;
+        });
+
+        // Group segments into "Industrializado" and "Revenda" categories
+        const industrialSegments = filteredEstados.filter(e => e.estado === 'MADEIRA');
+        const revendaSegments = filteredEstados.filter(e => e.estado === 'BAMBU' || e.estado === 'FIBRA');
+
+        const renderSegmentChart = (title: string, subtitle: string, segments: typeof filteredEstados, gradientId: string, primaryColor: string, secondaryColor: string) => {
+          if (segments.length === 0) return null;
+          const chartData = data.months.map(month => {
+            const row: any = { month: fmtMonth(month) };
+            let total = 0;
+            segments.forEach((e) => {
+              const val = filteredData.find(d => d.month === month && d.estado === e.estado)?.value || 0;
+              row[e.estado] = val;
+              total += val;
+            });
+            row._total = total;
+            return row;
+          });
+          const maxTotal = Math.max(...chartData.map(d => d._total), 1);
+          const avgTotal = chartData.reduce((s, d) => s + d._total, 0) / chartData.length;
+
+          return (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">{title}</h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{subtitle}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold" style={{ color: primaryColor }}>
+                    {formatCurrencyFull(chartData.reduce((s, d) => s + d._total, 0))}
+                  </div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">Total no período</div>
+                </div>
+              </div>
+              <div className="h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id={`${gradientId}_area`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={primaryColor} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={primaryColor} stopOpacity={0.02} />
+                      </linearGradient>
+                      {segments.map((e, idx) => {
+                        const color = getEstadoColor(e.estado, idx);
+                        return (
+                          <linearGradient key={e.estado} id={`${gradientId}_bar_${idx}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity={0.9} />
+                            <stop offset="100%" stopColor={color} stopOpacity={0.5} />
+                          </linearGradient>
+                        );
+                      })}
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v: number) => fmtK(v)} axisLine={false} tickLine={false} />
+                    <RechartsTooltip
+                      cursor={{ fill: 'rgba(16,185,129,0.04)' }}
+                      contentStyle={{ backgroundColor: 'rgba(255,255,255,0.97)', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.08)', padding: '10px 14px' }}
+                      labelStyle={{ fontWeight: 700, color: '#1e293b', marginBottom: 6 }}
+                      formatter={(value: number, name: string) => [formatCurrencyFull(value), name === '_total' ? 'Total' : name]}
+                    />
+                    <ReferenceLine y={avgTotal} stroke={primaryColor} strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: `Média: ${fmtK(avgTotal)}`, position: 'insideTopRight', fontSize: 10, fill: primaryColor, fontWeight: 600 }} />
+                    <Area dataKey="_total" fill={`url(#${gradientId}_area)`} stroke="none" />
+                    {segments.map((e, idx) => (
+                      <Bar
+                        key={e.estado}
+                        dataKey={e.estado}
+                        name={e.estado}
+                        fill={`url(#${gradientId}_bar_${idx})`}
+                        radius={[4, 4, 0, 0]}
+                        isAnimationActive={true}
+                        animationDuration={700}
+                        animationEasing="ease-out"
+                        animationBegin={idx * 120}
+                      />
+                    ))}
+                    <Line dataKey="_total" name="Total" type="monotone" stroke={primaryColor} strokeWidth={2.5} dot={{ r: 3.5, fill: primaryColor, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: primaryColor, stroke: '#fff', strokeWidth: 2 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {renderSegmentChart(
+              'Industrializado',
+              'Madeira — Evolução mensal',
+              industrialSegments,
+              'seg_industrial',
+              '#d97706',
+              '#f59e0b'
+            )}
+            {renderSegmentChart(
+              'Revenda (Bambu/Fibra)',
+              'Importação revenda — Evolução mensal',
+              revendaSegments,
+              'seg_revenda',
+              '#0d9488',
+              '#14b8a6'
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -4112,15 +4265,69 @@ export default function Sales() {
               <OrdersCard orders={orders.filter(o => o.estadoItem === "Faturado")} title="Pedidos Faturados" variant="faturado" />
             )}
 
-            {/* Card A Faturar Mês Atual */}
-            {orders && orders.filter(o => o.estadoItem !== "Faturado").length > 0 && (
-              <OrdersCard orders={orders.filter(o => o.estadoItem !== "Faturado")} title='A Faturar "Mês Atual"' variant="a_faturar" />
-            )}
-
-            {/* Card A Faturar (Anterior) */}
-            {previousUnbilled && previousUnbilled.orders.length > 0 && (
-              <PreviousUnbilledCard months={previousUnbilled.months} orders={previousUnbilled.orders} />
-            )}
+            {/* Card Unificado: A Faturar (Mês Atual + Anterior) */}
+            {(() => {
+              const currentUnbilled = orders ? orders.filter(o => o.estadoItem !== "Faturado") : [];
+              const currentValue = currentUnbilled.reduce((s, o) => s + o.valorTotal, 0);
+              const anteriorOrders = previousUnbilled?.orders || [];
+              const anteriorValue = anteriorOrders.reduce((s: number, o: any) => s + (o.valorTotal || 0), 0);
+              const totalAFaturar = currentValue + anteriorValue;
+              if (currentUnbilled.length === 0 && anteriorOrders.length === 0) return null;
+              return (
+                <div className="bg-orange-50/40 rounded-lg border border-orange-200 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-orange-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">A Faturar</h3>
+                        <p className="text-xs text-slate-500">Mês atual + meses anteriores</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-extrabold text-orange-700">{formatCurrencyFull(totalAFaturar)}</p>
+                        <p className="text-[10px] text-slate-400 uppercase">Total combinado</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-orange-100">
+                    {/* Mês Atual */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Mês Atual</span>
+                        <span className="text-xs text-slate-400">{currentUnbilled.length} {currentUnbilled.length === 1 ? 'pedido' : 'pedidos'}</span>
+                      </div>
+                      <p className="text-lg font-bold text-orange-700">{formatCurrencyFull(currentValue)}</p>
+                      {totalAFaturar > 0 && (
+                        <div className="mt-2 h-1.5 bg-orange-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(currentValue / totalAFaturar * 100).toFixed(0)}%` }} />
+                        </div>
+                      )}
+                    </div>
+                    {/* Anterior */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Anterior</span>
+                        <span className="text-xs text-slate-400">{anteriorOrders.length} {anteriorOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
+                      </div>
+                      <p className="text-lg font-bold text-amber-700">{formatCurrencyFull(anteriorValue)}</p>
+                      {totalAFaturar > 0 && (
+                        <div className="mt-2 h-1.5 bg-amber-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${(anteriorValue / totalAFaturar * 100).toFixed(0)}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Expandable lists */}
+                  {currentUnbilled.length > 0 && (
+                    <OrdersCard orders={currentUnbilled} title='Detalhes: Mês Atual' variant="a_faturar" />
+                  )}
+                  {anteriorOrders.length > 0 && (
+                    <PreviousUnbilledCard months={previousUnbilled!.months} orders={anteriorOrders} />
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Card EXTRA: A Faturar (Completo) - Pesquisa rápida últimos 90 dias */}
             {showAFaturarCompleto && allUnbilled && allUnbilled.orders.length > 0 && (
