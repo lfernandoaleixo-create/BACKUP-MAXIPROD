@@ -4564,3 +4564,4 @@
 - [x] Implementar Custo Médio Ponderado Móvel: preço fixo entre POs, recalcula só quando chega nova PO (estoque restante × preço médio antigo + caixas novas × preço novo) / total
 - [x] Usar taxa efetiva (cotação + R$0,20 spread) em TODAS as conversões USD→BRL na página de Importação
 - [x] Coluna Estimativa no dashboard: mostrar Valor da Caixa calculado na PO para produtos em POs com status "Navegando" (atualização em tempo real)
+- [x] Fix: Estimativa deve puxar exatamente o valorCaixaBrl salvo na PO (não recalcular no backend) para evitar divergências

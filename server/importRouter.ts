@@ -921,11 +921,17 @@ export const importRouter = router({
       valorTotalProdutosUsdRemessa: z.string().nullable().optional(),
       vilelaValorReal: z.string().nullable().optional(),
       freteOverrideUsd: z.string().nullable().optional(),
+      // Per-product computed costs (saved from frontend calculation)
+      productCosts: z.array(z.object({
+        id: z.number(),
+        valorCaixaBrl: z.string(),
+        precoMilUnid: z.string().nullable(),
+      })).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const { id, ...data } = input;
+      const { id, productCosts, ...data } = input;
       const updateData: Record<string, any> = {};
       for (const [key, value] of Object.entries(data)) {
         if (value !== undefined) {
@@ -934,6 +940,15 @@ export const importRouter = router({
       }
       if (Object.keys(updateData).length > 0) {
         await db.update(importPos).set(updateData).where(eq(importPos.id, id));
+      }
+      // Save per-product computed valorCaixaBrl and precoMilUnid
+      if (productCosts && productCosts.length > 0) {
+        for (const pc of productCosts) {
+          await db.update(importPoProducts).set({
+            valorCaixaBrl: pc.valorCaixaBrl,
+            precoMilUnid: pc.precoMilUnid,
+          }).where(eq(importPoProducts.id, pc.id));
+        }
       }
       return { success: true };
     }),
@@ -1208,12 +1223,13 @@ export const importRouter = router({
       .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
       .where(and(navegandoBaseWhere, sql`${importPos.navigationStatus} = 'navegando'`));
 
-    // Get vilela percent config for dynamic calculation
+    // For navegando POs: use the stored valorCaixaBrl directly (saved by frontend on each saveCosts)
+    // This ensures the Estimativa column shows EXACTLY the same value as the PO view
+    // For legacy POs or POs that haven't been saved yet, fall back to dynamic calculation
     const vilelaConfigRows = await db.select().from(importConfig).where(eq(importConfig.configKey, 'vilela_percent'));
     const vilelaPercent = vilelaConfigRows.length > 0 ? Number(vilelaConfigRows[0].configValue) : 37;
 
-    // Get current exchange rate for dynamic calculation
-    let currentRate = 5.50; // fallback
+    let currentRate = 5.50;
     try {
       if (exchangeRateCache) {
         currentRate = exchangeRateCache.data.rate;
@@ -1222,21 +1238,23 @@ export const importRouter = router({
     const SPREAD = 0.20;
     const effectiveRate = currentRate + SPREAD;
 
-    // Group navegando products by PO to calculate custosTotais per PO
+    // Group navegando products by PO
     const navegandoByPo: Record<number, typeof navegandoPoProductsRaw> = {};
     for (const pp of navegandoPoProductsRaw) {
       if (!navegandoByPo[pp.poId]) navegandoByPo[pp.poId] = [];
       navegandoByPo[pp.poId].push(pp);
     }
 
-    // Calculate dynamic valorCaixaBrl for each product in navegando POs
     const navegandoPoProducts: Array<{ productCode: string | null; quantidade: any; valorCaixaBrl: any; precoMilUnid: any; poNumber: string; poId: number; previsaoEntrega: string | null }> = [];
     for (const [poIdStr, poProducts] of Object.entries(navegandoByPo)) {
       const firstProd = poProducts[0];
       const isLegacy = !!firstProd.isFromSpreadsheet;
 
-      if (isLegacy) {
-        // Legacy POs: use stored valorCaixaBrl (frozen from spreadsheet)
+      // Check if products have saved valorCaixaBrl (from frontend saveCosts)
+      const hasSavedCosts = poProducts.some(p => Number(p.valorCaixaBrl || 0) > 0);
+
+      if (isLegacy || hasSavedCosts) {
+        // Use stored values directly (exact match with frontend display)
         for (const pp of poProducts) {
           if (Number(pp.valorCaixaBrl || 0) > 0 || Number(pp.precoMilUnid || 0) > 0) {
             navegandoPoProducts.push({
@@ -1253,15 +1271,13 @@ export const importRouter = router({
         continue;
       }
 
-      // New POs: calculate dynamically (same formula as frontend PoProductsTable)
-      // 1. Total Valor de Referência (sum of valorUsd × quantidade for all products)
+      // Fallback: dynamic calculation for POs that haven't been saved yet
       const totalValorReferencia = poProducts.reduce((sum, p) => {
         const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
         const qty = Number(p.quantidade || 0);
         return sum + (valorForn * qty);
       }, 0);
 
-      // 2. Total Frete Calculado (freteOverrideUsd or sum of (valorPoCheia - valorUsd) × qty)
       let totalFreteCalculado = 0;
       if (firstProd.freteOverrideUsd && Number(firstProd.freteOverrideUsd) > 0) {
         totalFreteCalculado = Number(firstProd.freteOverrideUsd);
@@ -1275,22 +1291,18 @@ export const importRouter = router({
         }, 0);
       }
 
-      // 3. Despesas Liberação (vilelaValorReal if set, otherwise totalCi × vilelaPercent%)
       const totalCi = Number(firstProd.totalCiRemessa || 0);
       const despesasLiberacao = firstProd.vilelaValorReal && Number(firstProd.vilelaValorReal) > 0
         ? Number(firstProd.vilelaValorReal)
         : (totalCi * (vilelaPercent / 100));
 
-      // 4. Other costs (stored in BRL in DB, convert to USD)
       const poRate = Number(firstProd.valorDolar1 || firstProd.valorDolar1Remessa || currentRate);
       const freteTerrestreSP = Number(firstProd.freteTermestreRemessa || 0) / poRate;
       const difalVal = Number(firstProd.difalValor || 0) / poRate;
       const comSilverio = Number(firstProd.comissaoSilverio || 0) / poRate;
 
-      // 5. Custos Totais (all in USD)
       const custosTotais = totalValorReferencia + totalFreteCalculado + despesasLiberacao + freteTerrestreSP + difalVal + comSilverio;
 
-      // 6. Calculate valorCaixaBrl for each product
       for (const pp of poProducts) {
         if (!pp.productCode) continue;
         const valorForn = Number(String(pp.valorUsd || 0).replace(',', '.'));
@@ -1302,7 +1314,6 @@ export const importRouter = router({
         const valorCaixaBrl = valorDaCaixaUsd * effectiveRate;
 
         if (valorCaixaBrl > 0) {
-          // Also calculate precoMilUnid
           const unid = Number(pp.unidCaixa || 0);
           const precoMilUnid = unid > 0 ? valorCaixaBrl / unid : 0;
 

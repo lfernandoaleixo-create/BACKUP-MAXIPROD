@@ -8,7 +8,7 @@
  * Larissa pode atualizar qualquer campo a qualquer momento e salvar.
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import TopNav from "@/components/TopNav";
 import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -3403,6 +3403,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       utils.import.getRealTimeCosts.invalidate(); // Refresh Estimativa
     },
   });
+  // Silent auto-save mutation for product costs (no toast, no invalidation loop)
+  const autoSaveProductCosts = trpc.import.updatePoLogistics.useMutation();
   const shouldCollapseRef = useRef(false);
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => {
@@ -3579,6 +3581,30 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const remessa3 = Number(pag3 || 0);
   const remessa1Calculada = totalOrdemPagamento - remessa2 - remessa3;
 
+  // Auto-save per-product valorCaixaBrl whenever products or costs change
+  // This ensures the Estimativa column always shows the exact same value as the PO
+  const lastSavedCostsRef = useRef<string>('');
+  useEffect(() => {
+    if (isLegacyPo || !filteredProducts.length || custosTotais <= 0) return;
+    const costs = filteredProducts.map(prod => {
+      const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+      const qty = Number(prod.quantidade || 0);
+      const valorRef = valorForn * qty;
+      const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
+      const valorDaCaixaUsd = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
+      const valorCaixaBrlCalc = valorDaCaixaUsd * effectiveRate;
+      const unid = Number(prod.unidCaixa || 0);
+      const precoMilUnidCalc = unid > 0 ? valorCaixaBrlCalc / unid : 0;
+      return { id: prod.id, valorCaixaBrl: valorCaixaBrlCalc.toFixed(6), precoMilUnid: precoMilUnidCalc > 0 ? precoMilUnidCalc.toFixed(6) : null };
+    }).filter(p => Number(p.valorCaixaBrl) > 0);
+    // Only save if values actually changed (avoid infinite loops)
+    const costsKey = JSON.stringify(costs);
+    if (costs.length > 0 && costsKey !== lastSavedCostsRef.current) {
+      lastSavedCostsRef.current = costsKey;
+      autoSaveProductCosts.mutate({ id: po.id, productCosts: costs });
+    }
+  }, [filteredProducts, custosTotais, effectiveRate, totalValorReferencia]);
+
   // Helper: convert internal USD value to BRL for database storage
   const toBrl = (usdVal: string) => {
     if (!usdVal) return null;
@@ -3590,6 +3616,23 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
 
   const saveCosts = () => {
     shouldCollapseRef.current = true;
+    // Calculate per-product valorCaixaBrl to save alongside logistics
+    const productCosts = !isLegacyPo ? filteredProducts.map(prod => {
+      const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+      const qty = Number(prod.quantidade || 0);
+      const valorRef = valorForn * qty;
+      const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
+      const valorDaCaixaUsd = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
+      const valorCaixaBrlCalc = valorDaCaixaUsd * effectiveRate;
+      const unid = Number(prod.unidCaixa || 0);
+      const precoMilUnidCalc = unid > 0 ? valorCaixaBrlCalc / unid : 0;
+      return {
+        id: prod.id,
+        valorCaixaBrl: valorCaixaBrlCalc.toFixed(6),
+        precoMilUnid: precoMilUnidCalc > 0 ? precoMilUnidCalc.toFixed(6) : null,
+      };
+    }).filter(p => Number(p.valorCaixaBrl) > 0) : undefined;
+
     updateLogistics.mutate({
       id: po.id,
       totalCiRemessa: valorCi || null,
@@ -3603,6 +3646,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(2)) : (po.despesasLiberacaoRemessa || null),
       vilelaValorReal: vilelaReal || null,
       freteOverrideUsd: freteOverrideUsd || null,
+      productCosts,
     });
   };
 
