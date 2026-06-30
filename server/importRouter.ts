@@ -1560,6 +1560,112 @@ export const importRouter = router({
       });
     }
 
+    // 8. Add PO-only products (not in stock_items) - e.g. incubadora, prateleira, etc.
+    // These products exist in POs but have never been sold, so they don't appear in stock_items.
+    const stockCodes = new Set(stockRows.map(s => s.codigoItem));
+    const allPoCodes = new Set([
+      ...Object.keys(arrivedByProduct),
+      ...Object.keys(patioByProduct),
+      ...Object.keys(navegandoByProduct),
+    ]);
+    const poOnlyCodes = Array.from(allPoCodes).filter(code => !stockCodes.has(code));
+
+    if (poOnlyCodes.length > 0) {
+      // Get product names from product_catalog
+      const catalogRows = await db.select({
+        codigoItem: productCatalog.codigoItem,
+        descricaoItem: productCatalog.descricaoItem,
+      }).from(productCatalog).where(
+        sql`${productCatalog.codigoItem} IN (${sql.join(poOnlyCodes.map(c => sql`${c}`), sql`, `)})`
+      );
+      const catalogMap: Record<string, string> = {};
+      for (const row of catalogRows) {
+        catalogMap[row.codigoItem] = row.descricaoItem;
+      }
+
+      // Fallback: get descriptions from import_po_products for codes not in catalog
+      const missingCodes = poOnlyCodes.filter(c => !catalogMap[c]);
+      if (missingCodes.length > 0) {
+        const poDescRows = await db.select({
+          productCode: importPoProducts.productCode,
+          description: importPoProducts.description,
+        }).from(importPoProducts).where(
+          sql`${importPoProducts.productCode} IN (${sql.join(missingCodes.map(c => sql`${c}`), sql`, `)})`
+        );
+        for (const row of poDescRows) {
+          if (row.productCode && !catalogMap[row.productCode]) {
+            catalogMap[row.productCode] = row.description;
+          }
+        }
+      }
+
+      for (const code of poOnlyCodes) {
+        const arrivedHistory = arrivedByProduct[code];
+        const patioHistory = patioByProduct[code];
+        const navegandoHistory = navegandoByProduct[code];
+
+        // Calculate costs same as stock items but with 0 boxes in stock
+        let custoReal = 0;
+        let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
+
+        if (arrivedHistory && arrivedHistory.length > 0) {
+          // Use the last arrived PO price as reference (no stock to average with)
+          const lastPo = arrivedHistory[arrivedHistory.length - 1];
+          custoReal = lastPo.valorCaixaBrl;
+          breakdownReal = arrivedHistory.map(po => ({
+            poNumber: po.poNumber,
+            caixasUsadas: Math.round(po.quantidade * 100) / 100,
+            valorCaixa: po.valorCaixaBrl,
+          }));
+        }
+
+        let custoProjetado = custoReal;
+        let breakdownProjetado: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
+        if (patioHistory && patioHistory.length > 0) {
+          // No existing stock, so projetado = average of patio POs
+          let totalPatioQty = 0;
+          let totalPatioCost = 0;
+          for (const po of patioHistory) {
+            totalPatioQty += po.quantidade;
+            totalPatioCost += po.quantidade * po.valorCaixaBrl;
+            breakdownProjetado.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
+          }
+          custoProjetado = totalPatioQty > 0 ? totalPatioCost / totalPatioQty : custoReal;
+        }
+
+        let custoEstimativa = 0;
+        let breakdownEstimativa: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
+        if (navegandoHistory && navegandoHistory.length > 0) {
+          let totalNavQty = 0;
+          let totalNavCost = 0;
+          for (const po of navegandoHistory) {
+            totalNavQty += po.quantidade;
+            totalNavCost += po.quantidade * po.valorCaixaBrl;
+            breakdownEstimativa.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
+          }
+          custoEstimativa = totalNavQty > 0 ? totalNavCost / totalNavQty : 0;
+        }
+
+        // Get description from catalog or from PO product description
+        const descricao = catalogMap[code] || code;
+
+        results.push({
+          codigoItem: code,
+          descricao,
+          caixasEstoque: 0,
+          custoReal: Math.round(custoReal * 100) / 100,
+          custoProjetado: Math.round(custoProjetado * 100) / 100,
+          custoEstimativa: Math.round(custoEstimativa * 100) / 100,
+          breakdownReal,
+          breakdownProjetado,
+          breakdownEstimativa,
+          semEstoque: true,
+          temPatio: !!(patioHistory && patioHistory.length > 0),
+          temNavegando: !!(navegandoHistory && navegandoHistory.length > 0),
+        });
+      }
+    }
+
     // Sort by product code
     results.sort((a, b) => a.codigoItem.localeCompare(b.codigoItem, undefined, { numeric: true }));
     return results;

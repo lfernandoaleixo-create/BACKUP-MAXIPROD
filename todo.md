@@ -4570,3 +4570,5 @@
 - [ ] Custo Tempo Real: mostrar TODOS os produtos das POs (incubadora, prateleira, etc.) mesmo que não estejam no estoque - puxar nome do Maxiprod e custo da PO
 - [x] Bug: Cheques descontados Factoring Finanza divergem do Maxiprod (dashboard mostra 3 cheques R$ 22.091,19 mas Maxiprod tem 4 cheques diferentes)
 - [x] Cheques: Criar seção separada "Cheques Descontados" (situacaoTitulo LIKE '%CHEQUE DESCONTADO FACTORING%' + estado RECEBIDO) com cards por factoring e lista ao clicar
+- [x] Custo Tempo Real: mostrar TODOS os produtos de POs (incubadora, prateleira, etc.) mesmo sem estoque
+- [x] Custo Tempo Real: buscar nome dos produtos no product_catalog e fallback para import_po_products.description
