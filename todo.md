@@ -4567,3 +4567,5 @@
 - [x] Fix: Estimativa deve puxar exatamente o valorCaixaBrl salvo na PO (não recalcular no backend) para evitar divergências
 - [x] Bug: Estimativa fica variando - valor deve ser FIXO após salvo na PO (R$ 73,30 não pode virar R$ 76)
 - [x] Bug: Frete terrestre não deve variar após salvo manualmente pelo usuário
+- [ ] Custo Tempo Real: mostrar TODOS os produtos das POs (incubadora, prateleira, etc.) mesmo que não estejam no estoque - puxar nome do Maxiprod e custo da PO
+- [x] Bug: Cheques descontados Factoring Finanza divergem do Maxiprod (dashboard mostra 3 cheques R$ 22.091,19 mas Maxiprod tem 4 cheques diferentes)

@@ -6949,15 +6949,21 @@ ${acoesTexto}
       const db = await getDb();
       if (!db) throw new Error("DB indisponível");
 
+      // Cheques descontados = cheques PENDENTES (EMITIDO) enviados ao factoring
+      // Identificados por formaCobranca contendo o nome do factoring
+      // (situacaoTitulo pode ser NULL para pendentes, só preenchido quando RECEBIDO)
       const conditions = [
         sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`,
-        sql`${accountsReceivable.situacaoTitulo} LIKE '%FACTORING%'`,
-        // Somente os 3 factorings válidos: CIFRAS, FINANZA, SAMONEY (exclui genéricos)
+        // Factoring identificado via formaCobranca (ex: "Cheque CHEQUE EM FACTORING FINANZA")
         or(
-          sql`${accountsReceivable.situacaoTitulo} LIKE '%CIFRAS%'`,
-          sql`${accountsReceivable.situacaoTitulo} LIKE '%FINANZA%'`,
-          sql`${accountsReceivable.situacaoTitulo} LIKE '%SAMONEY%'`,
+          sql`${accountsReceivable.formaCobranca} LIKE '%FACTORING%'`,
+          sql`${accountsReceivable.situacaoTitulo} LIKE '%FACTORING%'`,
         )!,
+        // Inclui qualquer cheque com FACTORING (genérico = SAMONEY, ou com sufixo específico)
+        // A condição anterior já garante que formaCobranca ou situacaoTitulo contém FACTORING
+        // então não precisamos filtrar por nome específico aqui (parseFactoringCompany cuida disso)
+        // Apenas cheques pendentes (A receber / EMITIDO)
+        sql`${accountsReceivable.estado} != 'RECEBIDO'`,
         inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
       ];
 
@@ -6990,17 +6996,23 @@ ${acoesTexto}
         .where(and(...conditions))
         .orderBy(desc(accountsReceivable.vencimentoData));
 
-      // Parse factoring company from situacaoTitulo
+      // Parse factoring company from formaCobranca or situacaoTitulo
+      // e.g. "Cheque CHEQUE EM FACTORING FINANZA" -> "FINANZA"
       // e.g. "CHEQUE DESCONTADO FACTORING FINANZA" -> "FINANZA"
-      function parseFactoringCompany(situacao: string | null): string {
-        if (!situacao) return "OUTROS";
-        const upper = situacao.toUpperCase();
-        if (upper.includes("CIFRAS")) return "CIFRAS";
-        if (upper.includes("FINANZA")) return "FINANZA";
-        if (upper.includes("SAMONEY")) return "SAMONEY";
-        // Generic fallback - extract last word after FACTORING
-        const match = upper.match(/FACTORING\s+(\w+)/);
-        return match ? match[1] : "OUTROS";
+      function parseFactoringCompany(formaCobranca: string | null, situacao: string | null): string {
+        // First check formaCobranca (more reliable for pending cheques)
+        const fc = (formaCobranca || "").toUpperCase();
+        if (fc.includes("CIFRAS")) return "CIFRAS";
+        if (fc.includes("FINANZA")) return "FINANZA";
+        if (fc.includes("SAMONEY")) return "SAMONEY";
+        // Fallback to situacaoTitulo
+        const st = (situacao || "").toUpperCase();
+        if (st.includes("CIFRAS")) return "CIFRAS";
+        if (st.includes("FINANZA")) return "FINANZA";
+        if (st.includes("SAMONEY")) return "SAMONEY";
+        // Generic "CHEQUE EM FACTORING" (sem sufixo) = SAMONEY (padrão histórico)
+        if (fc.includes("FACTORING") || st.includes("FACTORING")) return "SAMONEY";
+        return "OUTROS";
       }
 
       /** Build full description like Maxiprod: "APELIDO ref. referenteA parc. x/y" or "APELIDO ref. NF nº doc parc. x/y" */
@@ -7019,7 +7031,7 @@ ${acoesTexto}
 
       const cheques = rows.map(row => {
         const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
-        const factoringCompany = parseFactoringCompany(row.situacaoTitulo);
+        const factoringCompany = parseFactoringCompany(row.formaCobranca, row.situacaoTitulo);
         return {
           id: row.id,
           maxiprodId: row.maxiprodId,
