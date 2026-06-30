@@ -844,10 +844,11 @@ function DailyChart({ data, mode, period, comparison }: {
 }
 
 /* ---- Period Evolution Chart (Annual / Semester / Quarter) ---- */
-function PeriodEvolutionChart({ data, type, onExportPdf }: {
+function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
   data: Array<{ label: string; value: number; orders: number; faturado?: number; aFaturar?: number }>;
   type: "annual" | "semester" | "quarter";
   onExportPdf?: () => void;
+  monthlyData?: Array<{ month: string; value: number; faturado: number; aFaturar: number; orders: number }>;
 }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -855,8 +856,10 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
 
   if (data.length === 0) return <p className="text-sm text-slate-400 text-center py-8">Sem dados para o periodo</p>;
 
+  // Use monthly data for the chart (shows months)
+  const chartData = monthlyData && monthlyData.length > 0 ? monthlyData : [];
   const key = mode === "value" ? "value" : "orders";
-  const maxVal = Math.max(...data.map(d => d[key]), 1);
+  const maxVal = chartData.length > 0 ? Math.max(...chartData.map(d => d[key]), 1) : 1;
 
   // SVG dimensions - same as DailyChart
   const svgWidth = 1000;
@@ -869,22 +872,18 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
   const plotH = svgHeight - paddingTop - paddingBottom;
 
   // Thin bars like DailyChart
-  const barWidth = Math.min(20, plotW / data.length * 0.65);
-  const barGap = (plotW - barWidth * data.length) / Math.max(data.length - 1, 1);
+  const barWidth = chartData.length > 0 ? Math.min(20, plotW / chartData.length * 0.65) : 20;
+  const barGap = chartData.length > 1 ? (plotW - barWidth * chartData.length) / Math.max(chartData.length - 1, 1) : 0;
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({
     value: maxVal * pct,
     y: paddingTop + plotH - pct * plotH,
   }));
 
-  const formatLabel = (label: string) => {
-    if (type === "annual") return label; // just year
-    if (type === "semester") {
-      const [y, s] = label.split("-S");
-      return `${s}\u00b0 Sem ${y.slice(2)}`;
-    }
-    const [y, q] = label.split("-Q");
-    return `${q}\u00b0 Tri ${y.slice(2)}`;
+  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const formatMonthLabel = (month: string) => {
+    const m = parseInt(month.substring(5, 7));
+    return monthNames[m - 1] || month;
   };
 
   const colors = {
@@ -895,7 +894,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
 
   const barColor = colors[type].bar;
 
-  // Totals
+  // Totals from period data
   const totalValue = data.reduce((s, d) => s + d.value, 0);
   const totalFaturado = data.reduce((s, d) => s + (d.faturado || 0), 0);
   const totalAFaturar = data.reduce((s, d) => s + (d.aFaturar || 0), 0);
@@ -943,70 +942,72 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
           </button>
         )}
       </div>
-      <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full" style={{ minWidth: "500px" }}>
-          <defs>
-            <style>{`
-              @keyframes barGrowPeriod {
-                from { transform: scaleY(0); }
-                to { transform: scaleY(1); }
-              }
-              .bar-period-animated {
-                animation: barGrowPeriod 0.5s ease-out forwards;
-                transform-origin: bottom;
-              }
-            `}</style>
-          </defs>
-          {/* Grid lines + left axis */}
-          {yTicks.map((tick, i) => (
-            <g key={`grid-${i}`}>
-              <line x1={paddingLeft} y1={tick.y} x2={svgWidth - paddingRight} y2={tick.y} className="stroke-slate-100 dark:stroke-slate-700" strokeWidth="1" />
-              <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" className="fill-slate-400 dark:fill-slate-300" fontSize="11">
-                {mode === "value" ? (tick.value >= 1000000 ? `${(tick.value / 1000000).toFixed(1)}M` : tick.value >= 1000 ? `${(tick.value / 1000).toFixed(0)}k` : tick.value.toFixed(0)) : tick.value.toFixed(0)}
-              </text>
-            </g>
-          ))}
-
-          {/* Bars - thin like DailyChart */}
-          {data.map((item, idx) => {
-            const val = item[key];
-            const barH = val > 0 ? Math.max((val / maxVal) * plotH, 2) : 1;
-            const x = paddingLeft + idx * (barWidth + barGap);
-            const y = paddingTop + plotH - barH;
-
-            return (
-              <g key={`bar-${idx}`}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={barWidth}
-                  height={barH}
-                  rx="3"
-                  fill={barColor}
-                  opacity={0.85}
-                  className="bar-period-animated"
-                  style={{ animationDelay: `${idx * 80}ms`, transformBox: "fill-box" as any }}
-                />
-                {val > 0 && (
-                  <text
-                    x={x + barWidth / 2}
-                    y={y - 8}
-                    textAnchor="middle"
-                    className="fill-black dark:fill-slate-200"
-                    fontSize="11"
-                    fontWeight="700"
-                  >
-                    {mode === "value" ? (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
-                  </text>
-                )}
-                <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" className="fill-slate-600 dark:fill-slate-300" fontSize="11" fontWeight="600">
-                  {formatLabel(item.label)}
+      {chartData.length > 0 && (
+        <div className="overflow-x-auto">
+          <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full" style={{ minWidth: "500px" }}>
+            <defs>
+              <style>{`
+                @keyframes barGrowPeriod {
+                  from { transform: scaleY(0); }
+                  to { transform: scaleY(1); }
+                }
+                .bar-period-animated {
+                  animation: barGrowPeriod 0.5s ease-out forwards;
+                  transform-origin: bottom;
+                }
+              `}</style>
+            </defs>
+            {/* Grid lines + left axis */}
+            {yTicks.map((tick, i) => (
+              <g key={`grid-${i}`}>
+                <line x1={paddingLeft} y1={tick.y} x2={svgWidth - paddingRight} y2={tick.y} className="stroke-slate-100 dark:stroke-slate-700" strokeWidth="1" />
+                <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" className="fill-slate-400 dark:fill-slate-300" fontSize="11">
+                  {mode === "value" ? (tick.value >= 1000000 ? `${(tick.value / 1000000).toFixed(1)}M` : tick.value >= 1000 ? `${(tick.value / 1000).toFixed(0)}k` : tick.value.toFixed(0)) : tick.value.toFixed(0)}
                 </text>
               </g>
-            );
-          })}
-        </svg>
-      </div>
+            ))}
+
+            {/* Bars - thin like DailyChart - one per month */}
+            {chartData.map((item, idx) => {
+              const val = item[key];
+              const barH = val > 0 ? Math.max((val / maxVal) * plotH, 2) : 1;
+              const x = paddingLeft + idx * (barWidth + barGap);
+              const y = paddingTop + plotH - barH;
+
+              return (
+                <g key={`bar-${idx}`}>
+                  <rect
+                    x={x}
+                    y={y}
+                    width={barWidth}
+                    height={barH}
+                    rx="3"
+                    fill={barColor}
+                    opacity={0.85}
+                    className="bar-period-animated"
+                    style={{ animationDelay: `${idx * 80}ms`, transformBox: "fill-box" as any }}
+                  />
+                  {val > 0 && (
+                    <text
+                      x={x + barWidth / 2}
+                      y={y - 8}
+                      textAnchor="middle"
+                      className="fill-black dark:fill-slate-200"
+                      fontSize="11"
+                      fontWeight="700"
+                    >
+                      {mode === "value" ? (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
+                    </text>
+                  )}
+                  <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" className="fill-slate-600 dark:fill-slate-300" fontSize="11" fontWeight="600">
+                    {formatMonthLabel(item.month)}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      )}
     </div>
   );
 }
@@ -4501,6 +4502,7 @@ export default function Sales() {
                     </div>
                     <PeriodEvolutionChart
                       data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders, faturado: y.faturado, aFaturar: y.aFaturar }))}
+                      monthlyData={annualEvolution.monthlyData}
                       type="annual"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4573,6 +4575,7 @@ export default function Sales() {
                     </div>
                     <PeriodEvolutionChart
                       data={semesterEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders, faturado: s.faturado, aFaturar: s.aFaturar }))}
+                      monthlyData={semesterEvolution.monthlyData}
                       type="semester"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4648,6 +4651,7 @@ export default function Sales() {
                     </div>
                     <PeriodEvolutionChart
                       data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders, faturado: q.faturado, aFaturar: q.aFaturar }))}
+                      monthlyData={quarterEvolution.monthlyData}
                       type="quarter"
                       onExportPdf={() => {
                         import('jspdf').then(j => {

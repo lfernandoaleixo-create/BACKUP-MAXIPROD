@@ -4584,3 +4584,4 @@
 - [x] Graficos evolucao: mostrar apenas ano vigente (2026)
 - [x] Graficos evolucao: mostrar total vendas, faturado e a faturar em cada card
 - [x] Card A FATURAR: reduzir espessura para ficar igual aos outros
+- [x] Graficos evolucao: mostrar meses envolvidos no grafico (barras por mes)
