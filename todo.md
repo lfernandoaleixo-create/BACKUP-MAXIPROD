@@ -4580,3 +4580,7 @@
 - [ ] Vendas: card de evolucao trimestral (mesmo layout do diario + exportar PDF)
 - [ ] Vendas: card de evolucao semestral (mesmo layout do diario + exportar PDF)
 - [x] Filtro por produto (Revenda, Industrializados, Materia Prima) dentro dos cards de evolucao anual/semestral/trimestral
+- [x] Graficos evolucao: barras finas como evolucao diaria
+- [x] Graficos evolucao: mostrar apenas ano vigente (2026)
+- [x] Graficos evolucao: mostrar total vendas, faturado e a faturar em cada card
+- [x] Card A FATURAR: reduzir espessura para ficar igual aos outros

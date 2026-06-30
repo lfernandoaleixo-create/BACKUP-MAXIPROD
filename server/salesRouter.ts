@@ -3968,67 +3968,88 @@ export const salesRouter = router({
         items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
       }
 
-      // Group by month
-      const monthMap = new Map<string, { value: number; orders: Set<string> }>();
+      // Filter to current year only
+      const currentYear = new Date().getFullYear();
+      items = items.filter(item => {
+        if (!item.dataEmissao) return false;
+        const year = parseInt(item.dataEmissao.substring(0, 4));
+        return year === currentYear;
+      });
+
+      // Group by month with faturado/a_faturar breakdown
+      const monthMap = new Map<string, { value: number; faturado: number; aFaturar: number; orders: Set<string> }>();
       for (const item of items) {
         if (!item.dataEmissao) continue;
         const month = item.dataEmissao.substring(0, 7); // YYYY-MM
-        if (!monthMap.has(month)) monthMap.set(month, { value: 0, orders: new Set() });
+        if (!monthMap.has(month)) monthMap.set(month, { value: 0, faturado: 0, aFaturar: 0, orders: new Set() });
         const m = monthMap.get(month)!;
-        m.value += Number(item.valorTotal || 0);
+        const val = Number(item.valorTotal || 0);
+        m.value += val;
+        const estado = (item.estadoItem || "").toLowerCase();
+        if (estado === "faturado") {
+          m.faturado += val;
+        } else {
+          m.aFaturar += val;
+        }
         if (item.pedido) m.orders.add(item.pedido);
       }
 
-      // Build annual data: { year, value, orders }
-      const yearMap = new Map<number, { value: number; orders: number }>();
+      // Build annual data: { year, value, faturado, aFaturar, orders }
+      const yearMap = new Map<number, { value: number; faturado: number; aFaturar: number; orders: number }>();
       for (const [month, data] of Array.from(monthMap)) {
         const year = parseInt(month.substring(0, 4));
-        if (!yearMap.has(year)) yearMap.set(year, { value: 0, orders: 0 });
+        if (!yearMap.has(year)) yearMap.set(year, { value: 0, faturado: 0, aFaturar: 0, orders: 0 });
         const y = yearMap.get(year)!;
         y.value += data.value;
+        y.faturado += data.faturado;
+        y.aFaturar += data.aFaturar;
         y.orders += data.orders.size;
       }
       const byYear = Array.from(yearMap.entries())
-        .map(([year, data]) => ({ year, value: Math.round(data.value * 100) / 100, orders: data.orders }))
+        .map(([year, data]) => ({ year, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100, orders: data.orders }))
         .sort((a, b) => a.year - b.year);
 
-      // Build semester data: { label, year, semester, value, orders }
+      // Build semester data: { label, year, semester, value, faturado, aFaturar, orders }
       // 1st semester = Jan-Jun, 2nd semester = Jul-Dec
-      const semMap = new Map<string, { year: number; semester: number; value: number; orders: number }>();
+      const semMap = new Map<string, { year: number; semester: number; value: number; faturado: number; aFaturar: number; orders: number }>();
       for (const [month, data] of Array.from(monthMap)) {
         const year = parseInt(month.substring(0, 4));
         const m = parseInt(month.substring(5, 7));
         const semester = m <= 6 ? 1 : 2;
         const key = `${year}-S${semester}`;
-        if (!semMap.has(key)) semMap.set(key, { year, semester, value: 0, orders: 0 });
+        if (!semMap.has(key)) semMap.set(key, { year, semester, value: 0, faturado: 0, aFaturar: 0, orders: 0 });
         const s = semMap.get(key)!;
         s.value += data.value;
+        s.faturado += data.faturado;
+        s.aFaturar += data.aFaturar;
         s.orders += data.orders.size;
       }
       const bySemester = Array.from(semMap.entries())
-        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100 }))
+        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100 }))
         .sort((a, b) => a.label.localeCompare(b.label));
 
-      // Build quarter data: { label, year, quarter, value, orders }
+      // Build quarter data: { label, year, quarter, value, faturado, aFaturar, orders }
       // Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec
-      const qtrMap = new Map<string, { year: number; quarter: number; value: number; orders: number }>();
+      const qtrMap = new Map<string, { year: number; quarter: number; value: number; faturado: number; aFaturar: number; orders: number }>();
       for (const [month, data] of Array.from(monthMap)) {
         const year = parseInt(month.substring(0, 4));
         const m = parseInt(month.substring(5, 7));
         const quarter = Math.ceil(m / 3);
         const key = `${year}-Q${quarter}`;
-        if (!qtrMap.has(key)) qtrMap.set(key, { year, quarter, value: 0, orders: 0 });
+        if (!qtrMap.has(key)) qtrMap.set(key, { year, quarter, value: 0, faturado: 0, aFaturar: 0, orders: 0 });
         const q = qtrMap.get(key)!;
         q.value += data.value;
+        q.faturado += data.faturado;
+        q.aFaturar += data.aFaturar;
         q.orders += data.orders.size;
       }
       const byQuarter = Array.from(qtrMap.entries())
-        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100 }))
+        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100 }))
         .sort((a, b) => a.label.localeCompare(b.label));
 
       // Monthly breakdown for each period (for detail expansion)
       const monthlyData = Array.from(monthMap.entries())
-        .map(([month, data]) => ({ month, value: Math.round(data.value * 100) / 100, orders: data.orders.size }))
+        .map(([month, data]) => ({ month, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100, orders: data.orders.size }))
         .sort((a, b) => a.month.localeCompare(b.month));
 
       return { byYear, bySemester, byQuarter, monthlyData };

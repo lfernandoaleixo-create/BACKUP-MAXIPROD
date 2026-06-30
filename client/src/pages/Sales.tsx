@@ -845,7 +845,7 @@ function DailyChart({ data, mode, period, comparison }: {
 
 /* ---- Period Evolution Chart (Annual / Semester / Quarter) ---- */
 function PeriodEvolutionChart({ data, type, onExportPdf }: {
-  data: Array<{ label: string; value: number; orders: number }>;
+  data: Array<{ label: string; value: number; orders: number; faturado?: number; aFaturar?: number }>;
   type: "annual" | "semester" | "quarter";
   onExportPdf?: () => void;
 }) {
@@ -858,8 +858,8 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
   const key = mode === "value" ? "value" : "orders";
   const maxVal = Math.max(...data.map(d => d[key]), 1);
 
-  // SVG dimensions
-  const svgWidth = 900;
+  // SVG dimensions - same as DailyChart
+  const svgWidth = 1000;
   const svgHeight = 360;
   const paddingLeft = 75;
   const paddingRight = 30;
@@ -868,7 +868,8 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
   const plotW = svgWidth - paddingLeft - paddingRight;
   const plotH = svgHeight - paddingTop - paddingBottom;
 
-  const barWidth = Math.min(60, plotW / data.length * 0.6);
+  // Thin bars like DailyChart
+  const barWidth = Math.min(20, plotW / data.length * 0.65);
   const barGap = (plotW - barWidth * data.length) / Math.max(data.length - 1, 1);
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({
@@ -879,13 +880,11 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
   const formatLabel = (label: string) => {
     if (type === "annual") return label; // just year
     if (type === "semester") {
-      // "2026-S1" -> "1° Sem 2026"
       const [y, s] = label.split("-S");
-      return `${s}° Sem ${y.slice(2)}`;
+      return `${s}\u00b0 Sem ${y.slice(2)}`;
     }
-    // "2026-Q1" -> "1° Tri 2026"
     const [y, q] = label.split("-Q");
-    return `${q}° Tri ${y.slice(2)}`;
+    return `${q}\u00b0 Tri ${y.slice(2)}`;
   };
 
   const colors = {
@@ -896,8 +895,29 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
 
   const barColor = colors[type].bar;
 
+  // Totals
+  const totalValue = data.reduce((s, d) => s + d.value, 0);
+  const totalFaturado = data.reduce((s, d) => s + (d.faturado || 0), 0);
+  const totalAFaturar = data.reduce((s, d) => s + (d.aFaturar || 0), 0);
+
   return (
     <div>
+      {/* Summary row: Total, Faturado, A Faturar */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+          <div className="text-[10px] font-semibold text-slate-400 uppercase">Total Vendas</div>
+          <div className="text-sm font-bold text-slate-800 mt-0.5">{formatCurrencyFull(totalValue)}</div>
+        </div>
+        <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+          <div className="text-[10px] font-semibold text-emerald-500 uppercase">Faturado</div>
+          <div className="text-sm font-bold text-emerald-700 mt-0.5">{formatCurrencyFull(totalFaturado)}</div>
+        </div>
+        <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+          <div className="text-[10px] font-semibold text-orange-500 uppercase">A Faturar</div>
+          <div className="text-sm font-bold text-orange-700 mt-0.5">{formatCurrencyFull(totalAFaturar)}</div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-1 bg-slate-100 rounded-md p-0.5">
           <button
@@ -947,7 +967,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
             </g>
           ))}
 
-          {/* Bars */}
+          {/* Bars - thin like DailyChart */}
           {data.map((item, idx) => {
             const val = item[key];
             const barH = val > 0 ? Math.max((val / maxVal) * plotH, 2) : 1;
@@ -961,11 +981,11 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
                   y={y}
                   width={barWidth}
                   height={barH}
-                  rx="4"
+                  rx="3"
                   fill={barColor}
                   opacity={0.85}
                   className="bar-period-animated"
-                  style={{ animationDelay: `${idx * 100}ms`, transformBox: "fill-box" as any }}
+                  style={{ animationDelay: `${idx * 80}ms`, transformBox: "fill-box" as any }}
                 />
                 {val > 0 && (
                   <text
@@ -973,31 +993,19 @@ function PeriodEvolutionChart({ data, type, onExportPdf }: {
                     y={y - 8}
                     textAnchor="middle"
                     className="fill-black dark:fill-slate-200"
-                    fontSize="12"
+                    fontSize="11"
                     fontWeight="700"
                   >
                     {mode === "value" ? (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
                   </text>
                 )}
-                <text x={x + barWidth / 2} y={paddingTop + plotH + 20} textAnchor="middle" className="fill-slate-600 dark:fill-slate-300" fontSize="11" fontWeight="600">
+                <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" className="fill-slate-600 dark:fill-slate-300" fontSize="11" fontWeight="600">
                   {formatLabel(item.label)}
                 </text>
               </g>
             );
           })}
         </svg>
-      </div>
-      {/* Summary cards below chart */}
-      <div className="grid gap-2.5 mt-4 overflow-x-auto pb-2" style={{ gridTemplateColumns: `repeat(${Math.min(data.length, 6)}, minmax(120px, 1fr))` }}>
-        {data.slice(-6).map((item, idx) => (
-          <div key={idx} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-            <div className="text-xs font-semibold text-slate-500 uppercase">{formatLabel(item.label)}</div>
-            <div className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
-              {formatCurrencyFull(item.value)}
-            </div>
-            <div className="text-xs text-slate-400 mt-0.5">{item.orders} pedidos</div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -4492,7 +4500,7 @@ export default function Sales() {
                       ))}
                     </div>
                     <PeriodEvolutionChart
-                      data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders }))}
+                      data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders, faturado: y.faturado, aFaturar: y.aFaturar }))}
                       type="annual"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4564,7 +4572,7 @@ export default function Sales() {
                       ))}
                     </div>
                     <PeriodEvolutionChart
-                      data={semesterEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders }))}
+                      data={semesterEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders, faturado: s.faturado, aFaturar: s.aFaturar }))}
                       type="semester"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4639,7 +4647,7 @@ export default function Sales() {
                       ))}
                     </div>
                     <PeriodEvolutionChart
-                      data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders }))}
+                      data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders, faturado: q.faturado, aFaturar: q.aFaturar }))}
                       type="quarter"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4697,18 +4705,16 @@ export default function Sales() {
                   {/* Header clicável */}
                   <button
                     onClick={() => setAFaturarExpanded(!aFaturarExpanded)}
-                    className="w-full px-5 py-4 flex items-center gap-3 hover:bg-orange-50/60 transition-colors"
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-orange-50/60 transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-orange-600" />
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 flex-shrink-0" />
+                      <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">A Faturar</h3>
                     </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">A Faturar</h3>
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      <span className="text-sm sm:text-base font-bold text-orange-700">{formatCurrencyFull(totalAFaturar)}</span>
+                      {aFaturarExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                     </div>
-                    <div className="text-right mr-3">
-                      <p className="text-xl font-extrabold text-orange-700">{formatCurrencyFull(totalAFaturar)}</p>
-                    </div>
-                    {aFaturarExpanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
                   </button>
                   {/* Conteúdo expandível */}
                   {aFaturarExpanded && (
