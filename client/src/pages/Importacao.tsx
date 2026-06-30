@@ -1617,7 +1617,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
           <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{allCosts.length} produtos</span>
         </div>
       </div>
-      <p className="text-xs text-slate-500 mb-3">Média ponderada FIFO: vendas abatidas dos contêineres mais antigos primeiro.</p>
+      <p className="text-xs text-slate-500 mb-3">Custo Médio Ponderado Móvel: preço fixo entre POs, recalcula apenas quando chega nova PO.</p>
 
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <Tooltip>
@@ -1775,7 +1775,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                         <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <Layers className="w-4 h-4 text-emerald-600" />
-                            <h4 className="text-sm font-semibold text-emerald-800">Custo Real (FIFO - POs 100% Concluído)</h4>
+                            <h4 className="text-sm font-semibold text-emerald-800">Custo Real (Média Ponderada - POs 100% Concluído)</h4>
                           </div>
                           {item.semEstoque && (
                             <p className="text-xs text-orange-600 mb-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
@@ -1801,7 +1801,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                           )}
                           {!item.semEstoque && item.breakdownReal.length > 1 && (
                             <div className="mt-3 pt-3 border-t border-emerald-200/50 flex items-center justify-between">
-                              <span className="text-xs text-emerald-700 font-medium">Média Ponderada Real:</span>
+                              <span className="text-xs text-emerald-700 font-medium">Custo Médio Atual:</span>
                               <span className="text-sm font-bold text-emerald-700">{displayVal(item.custoReal)}</span>
                             </div>
                           )}
@@ -4129,12 +4129,19 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       const normalized = e.target.value.replace(',', '.');
                       const rate = isLegacyPo ? poExchangeRate : exchangeRate;
                       const valUsd = currency === 'BRL' ? String(Number(normalized) / rate) : normalized;
+                      let newOverride: string | null;
                       if (Math.abs(Number(valUsd) - totalFreteAutoCalc) < 0.001) {
-                        setFreteOverrideUsd(null); // volta ao automático se igual
+                        newOverride = null; // volta ao automático se igual
                       } else {
-                        setFreteOverrideUsd(valUsd);
+                        newOverride = valUsd;
                       }
+                      setFreteOverrideUsd(newOverride);
                       setFreteEditing(false);
+                      // Auto-save imediatamente ao sair do campo
+                      updateLogistics.mutate({
+                        id: po.id,
+                        freteOverrideUsd: newOverride || null,
+                      });
                     }}
                     onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setFreteEditing(false); } }}
                   />

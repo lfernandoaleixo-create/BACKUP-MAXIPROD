@@ -4560,3 +4560,5 @@
 - [x] Sistema de alertas: aba Gestão Comercial pisca quando novo pedido criado (para gestores) ou aprovado (para Vitória)
 - [x] Fluxo de status Pedidos Vitória: Pendente → Recebido → Lançado no Maxiprod
 - [x] Vitória com senha própria acessa apenas a parte de Pedidos para Processamento
+- [x] Bug fix: Valor Total do Frete não salva ao editar manualmente (deve salvar automaticamente ao sair do campo)
+- [x] Implementar Custo Médio Ponderado Móvel: preço fixo entre POs, recalcula só quando chega nova PO (estoque restante × preço médio antigo + caixas novas × preço novo) / total
