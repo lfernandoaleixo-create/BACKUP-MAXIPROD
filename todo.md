@@ -4593,3 +4593,6 @@
 - [x] Graficos evolucao: cards na base com trimestres (1-4) e semestres (1-2) igual semanas na diaria
 - [ ] Graficos evolucao: substituir cards resumo por cards de media (atual, anterior, melhor) igual evolucao diaria
 - [ ] Graficos evolucao: adicionar linhas de comparacao (atual, anterior, melhor) igual evolucao diaria
+- [x] Abreviar valores nas barras com tooltip no hover mostrando valor completo
+- [ ] Corrigir linhas de comparacao (anterior/melhor) que estao no zero
+- [x] Reordenar cards: Diaria > Trimestral > Semestral > Anual

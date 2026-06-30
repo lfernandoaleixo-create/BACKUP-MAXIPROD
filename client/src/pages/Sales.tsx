@@ -864,6 +864,8 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
   const isDark = theme === "dark";
   const [mode, setMode] = useState<"value" | "orders">("value");
   const [showFaturamento, setShowFaturamento] = useState(false);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   if (data.length === 0) return <p className="text-sm text-slate-400 text-center py-8">Sem dados para o periodo</p>;
 
@@ -943,11 +945,12 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
   ].filter(v => v > 0) : [];
   const maxCumulative = allCumulatives.length > 0 ? Math.ceil(Math.max(...allCumulatives) / 500000) * 500000 || 500000 : 1;
 
+  // Map line data to bar center positions
   const buildLinePath = (lineData: Array<{ month: number; cumulative: number }>) => {
     if (!lineData || lineData.length === 0) return "";
-    const totalMonths = chartData.length;
-    return lineData.map((d, i) => {
-      const x = chartStartX + ((d.month - 1) / Math.max(totalMonths - 1, 1)) * chartContentWidth;
+    return lineData.filter(d => d.month - 1 < chartData.length).map((d, i) => {
+      const idx = d.month - 1;
+      const x = chartStartX + idx * (barWidth + barGap) + barWidth / 2;
       const y = paddingTop + plotH - (d.cumulative / maxCumulative) * plotH;
       return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
     }).join(" ");
@@ -1123,7 +1126,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
         )}
       </div>
       {chartData.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full" style={{ minWidth: "500px" }}>
             <defs>
               <style>{`
@@ -1163,7 +1166,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                     height={barH}
                     rx="3"
                     fill={barColor}
-                    opacity={0.85}
+                    opacity={hoveredIdx === idx ? 1 : 0.85}
                     className="bar-period-animated"
                     style={{ animationDelay: `${idx * 80}ms`, transformBox: "fill-box" as any }}
                   />
@@ -1176,12 +1179,35 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                       fontSize="10"
                       fontWeight="700"
                     >
-                      {mode === "value" ? formatCurrencyFull(val) : val}
+                      {mode === "value" ? (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
                     </text>
                   )}
                   <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" className="fill-slate-600 dark:fill-slate-300" fontSize="11" fontWeight="600">
                     {formatMonthLabel(item.month)}
                   </text>
+                  {/* Invisible hover rect */}
+                  <rect
+                    x={x - barGap / 2}
+                    y={paddingTop}
+                    width={barWidth + barGap}
+                    height={plotH}
+                    fill="transparent"
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => {
+                      setHoveredIdx(idx);
+                      const containerRect = (e.target as SVGElement).closest('.relative')?.getBoundingClientRect();
+                      if (containerRect) {
+                        setTooltipPos({ x: e.clientX - containerRect.left, y: e.clientY - containerRect.top });
+                      }
+                    }}
+                    onMouseMove={(e) => {
+                      const containerRect = (e.target as SVGElement).closest('.relative')?.getBoundingClientRect();
+                      if (containerRect) {
+                        setTooltipPos({ x: e.clientX - containerRect.left, y: e.clientY - containerRect.top });
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                  />
                 </g>
               );
             })}
@@ -1210,13 +1236,38 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                 {(() => {
                   const last = lines!.current[lines!.current.length - 1];
                   if (!last || last.cumulative === 0) return null;
-                  const x = chartStartX + ((last.month - 1) / Math.max(chartData.length - 1, 1)) * chartContentWidth;
+                  const idx = Math.min(last.month - 1, chartData.length - 1);
+                  const x = chartStartX + idx * (barWidth + barGap) + barWidth / 2;
                   const y = paddingTop + plotH - (last.cumulative / maxCumulative) * plotH;
                   return <circle cx={x} cy={y} r="4" fill="#0d9488" stroke="white" strokeWidth="2" />;
                 })()}
               </>
             )}
           </svg>
+          {/* Tooltip on hover */}
+          {hoveredIdx !== null && chartData[hoveredIdx] && (() => {
+            const item = chartData[hoveredIdx];
+            const val = item[key];
+            const tooltipLeft = tooltipPos.x > 400 ? tooltipPos.x - 200 : tooltipPos.x + 10;
+            const tooltipTop = Math.max(0, tooltipPos.y - 60);
+            return (
+              <div
+                className="absolute bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50 pointer-events-none"
+                style={{ left: `${tooltipLeft}px`, top: `${tooltipTop}px`, minWidth: "180px" }}
+              >
+                <div className="flex items-center justify-between mb-1 border-b border-slate-100 pb-1">
+                  <span className="text-xs font-bold text-slate-700">{formatMonthLabel(item.month)}</span>
+                  <span className="text-xs font-bold text-teal-600">{mode === "value" ? formatCurrencyFull(val) : `${val} pedidos`}</span>
+                </div>
+                {mode === "value" && (
+                  <div className="space-y-0.5 text-[10px]">
+                    <div className="flex justify-between"><span className="text-emerald-600">Faturado</span><span className="font-semibold">{formatCurrencyFull(item.faturado)}</span></div>
+                    <div className="flex justify-between"><span className="text-orange-600">A Faturar</span><span className="font-semibold">{formatCurrencyFull(item.aFaturar)}</span></div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -4819,34 +4870,34 @@ export default function Sales() {
               )}
             </div>
 
-            {/* Card Evolução Anual - colapsável */}
-            {annualEvolution && annualEvolution.byYear.length > 0 && (
-              <div className="bg-emerald-50/40 rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
+            {/* Card Evolução Trimestral - colapsável */}
+            {quarterEvolution && quarterEvolution.byQuarter.length > 0 && (
+              <div className="bg-blue-50/40 rounded-lg border border-blue-200 shadow-sm overflow-hidden">
                 <button
-                  onClick={() => setAnnualExpanded(!annualExpanded)}
-                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-emerald-50/50 transition-colors"
+                  onClick={() => setQuarterExpanded(!quarterExpanded)}
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-blue-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 flex-shrink-0" />
-                    <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Anual</h3>
+                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Trimestral</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(annualEvolution.byYear.reduce((s, y) => s + y.value, 0))}</span>
-                    {annualExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(quarterEvolution.byQuarter.reduce((s, d) => s + d.value, 0))}</span>
+                    {quarterExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
-                {annualExpanded && (
-                  <div id="sales-annual-chart" className="border-t border-emerald-200 p-5">
+                {quarterExpanded && (
+                  <div id="sales-quarter-chart" className="border-t border-blue-200 p-5">
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                       <span className="text-xs font-semibold text-slate-500 uppercase">Filtro:</span>
                       {[{ value: "all", label: "Todos" }, { value: "importacao_revenda", label: "Revenda" }, { value: "industrializacao", label: "Industrializados" }, { value: "importacao_mp", label: "Materia Prima" }].map(opt => (
                         <button
                           key={opt.value}
-                          onClick={() => setAnnualGrupo(opt.value)}
+                          onClick={() => setQuarterGrupo(opt.value)}
                           className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
-                            annualGrupo === opt.value
-                              ? "bg-emerald-600 text-white border-emerald-600"
-                              : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700"
+                            quarterGrupo === opt.value
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700"
                           }`}
                         >
                           {opt.label}
@@ -4854,37 +4905,40 @@ export default function Sales() {
                       ))}
                     </div>
                     <PeriodEvolutionChart
-                      data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders, faturado: y.faturado, aFaturar: y.aFaturar }))}
-                      monthlyData={annualEvolution.monthlyData}
-                      type="annual"
-                      comparison={annualEvolution.annualComparison}
-                      lines={annualEvolution.annualLines}
+                      data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders, faturado: q.faturado, aFaturar: q.aFaturar }))}
+                      monthlyData={quarterEvolution.monthlyData}
+                      type="quarter"
+                      comparison={quarterEvolution.quarterComparison}
+                      lines={quarterEvolution.quarterLines}
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
                             const doc = new j.default({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                             const pageW = doc.internal.pageSize.getWidth();
-                            doc.setFillColor(13, 148, 136);
+                            doc.setFillColor(37, 99, 235);
                             doc.rect(0, 0, pageW, 1.2, 'F');
                             doc.setFontSize(16);
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0);
-                            const grupoLabel = annualGrupo === "all" ? "Todos" : annualGrupo === "importacao_revenda" ? "Revenda" : annualGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
-                            doc.text(`Evolucao Anual de Vendas - ${grupoLabel}`, 10, 12);
+                            const grupoLabel = quarterGrupo === "all" ? "Todos" : quarterGrupo === "importacao_revenda" ? "Revenda" : quarterGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
+                            doc.text(`Evolucao Trimestral de Vendas - ${grupoLabel}`, 10, 12);
                             doc.setFontSize(9);
                             doc.setFont('helvetica', 'normal');
                             doc.setTextColor(100);
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = annualEvolution.byYear.map(y => [String(y.year), formatCurrencyFull(y.value), String(y.orders)]);
+                            const tableData = quarterEvolution.byQuarter.map(q => {
+                              const [y, qtr] = q.label.split('-Q');
+                              return [`${qtr}\u00b0 Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
+                            });
                             (doc as any).autoTable({
                               startY: 24,
-                              head: [['Ano', 'Valor Total', 'Pedidos']],
+                              head: [['Periodo', 'Valor Total', 'Pedidos']],
                               body: tableData,
                               theme: 'grid',
-                              headStyles: { fillColor: [13, 148, 136], fontSize: 10 },
+                              headStyles: { fillColor: [37, 99, 235], fontSize: 10 },
                               styles: { fontSize: 10 },
                             });
-                            doc.save(`Evolucao_Anual_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                            doc.save(`Evolucao_Trimestral_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
                           });
                         });
                       }}
@@ -4972,34 +5026,34 @@ export default function Sales() {
               </div>
             )}
 
-            {/* Card Evolução Trimestral - colapsável */}
-            {quarterEvolution && quarterEvolution.byQuarter.length > 0 && (
-              <div className="bg-blue-50/40 rounded-lg border border-blue-200 shadow-sm overflow-hidden">
+            {/* Card Evolução Anual - colapsável */}
+            {annualEvolution && annualEvolution.byYear.length > 0 && (
+              <div className="bg-emerald-50/40 rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
                 <button
-                  onClick={() => setQuarterExpanded(!quarterExpanded)}
-                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-blue-50/50 transition-colors"
+                  onClick={() => setAnnualExpanded(!annualExpanded)}
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-emerald-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
-                    <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Trimestral</h3>
+                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 flex-shrink-0" />
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Anual</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(quarterEvolution.byQuarter.reduce((s, d) => s + d.value, 0))}</span>
-                    {quarterExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(annualEvolution.byYear.reduce((s, y) => s + y.value, 0))}</span>
+                    {annualExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
-                {quarterExpanded && (
-                  <div id="sales-quarter-chart" className="border-t border-blue-200 p-5">
+                {annualExpanded && (
+                  <div id="sales-annual-chart" className="border-t border-emerald-200 p-5">
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                       <span className="text-xs font-semibold text-slate-500 uppercase">Filtro:</span>
                       {[{ value: "all", label: "Todos" }, { value: "importacao_revenda", label: "Revenda" }, { value: "industrializacao", label: "Industrializados" }, { value: "importacao_mp", label: "Materia Prima" }].map(opt => (
                         <button
                           key={opt.value}
-                          onClick={() => setQuarterGrupo(opt.value)}
+                          onClick={() => setAnnualGrupo(opt.value)}
                           className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
-                            quarterGrupo === opt.value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700"
+                            annualGrupo === opt.value
+                              ? "bg-emerald-600 text-white border-emerald-600"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700"
                           }`}
                         >
                           {opt.label}
@@ -5007,47 +5061,44 @@ export default function Sales() {
                       ))}
                     </div>
                     <PeriodEvolutionChart
-                      data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders, faturado: q.faturado, aFaturar: q.aFaturar }))}
-                      monthlyData={quarterEvolution.monthlyData}
-                      type="quarter"
-                      comparison={quarterEvolution.quarterComparison}
-                      lines={quarterEvolution.quarterLines}
+                      data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders, faturado: y.faturado, aFaturar: y.aFaturar }))}
+                      monthlyData={annualEvolution.monthlyData}
+                      type="annual"
+                      comparison={annualEvolution.annualComparison}
+                      lines={annualEvolution.annualLines}
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
                             const doc = new j.default({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                             const pageW = doc.internal.pageSize.getWidth();
-                            doc.setFillColor(37, 99, 235);
+                            doc.setFillColor(13, 148, 136);
                             doc.rect(0, 0, pageW, 1.2, 'F');
                             doc.setFontSize(16);
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0);
-                            const grupoLabel = quarterGrupo === "all" ? "Todos" : quarterGrupo === "importacao_revenda" ? "Revenda" : quarterGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
-                            doc.text(`Evolucao Trimestral de Vendas - ${grupoLabel}`, 10, 12);
+                            const grupoLabel = annualGrupo === "all" ? "Todos" : annualGrupo === "importacao_revenda" ? "Revenda" : annualGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
+                            doc.text(`Evolucao Anual de Vendas - ${grupoLabel}`, 10, 12);
                             doc.setFontSize(9);
                             doc.setFont('helvetica', 'normal');
                             doc.setTextColor(100);
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = quarterEvolution.byQuarter.map(q => {
-                              const [y, qtr] = q.label.split('-Q');
-                              return [`${qtr}\u00b0 Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
-                            });
+                            const tableData = annualEvolution.byYear.map(y => [String(y.year), formatCurrencyFull(y.value), String(y.orders)]);
                             (doc as any).autoTable({
                               startY: 24,
-                              head: [['Periodo', 'Valor Total', 'Pedidos']],
+                              head: [['Ano', 'Valor Total', 'Pedidos']],
                               body: tableData,
                               theme: 'grid',
-                              headStyles: { fillColor: [37, 99, 235], fontSize: 10 },
+                              headStyles: { fillColor: [13, 148, 136], fontSize: 10 },
                               styles: { fontSize: 10 },
                             });
-                            doc.save(`Evolucao_Trimestral_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                            doc.save(`Evolucao_Anual_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
                           });
                         });
                       }}
                     />
                   </div>
                 )}
-              </div>
+                            </div>
             )}
 
             {/* Card Pedidos Faturados */}
