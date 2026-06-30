@@ -8,7 +8,7 @@
  * Larissa pode atualizar qualquer campo a qualquer momento e salvar.
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import TopNav from "@/components/TopNav";
 import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -3386,8 +3386,16 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       utils.import.getPoProducts.invalidate({ poId });
     },
   });
+  const shouldCollapseRef = useRef(false);
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
-    onSuccess: () => { utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId }); toast.success('Custos salvos!'); onCollapse?.(); },
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });
+      if (shouldCollapseRef.current) {
+        toast.success('Custos salvos!');
+        onCollapse?.();
+        shouldCollapseRef.current = false;
+      }
+    },
   });
   const addProduct = trpc.import.addPoProduct.useMutation({
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
@@ -3562,6 +3570,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   };
 
   const saveCosts = () => {
+    shouldCollapseRef.current = true;
     updateLogistics.mutate({
       id: po.id,
       totalCiRemessa: valorCi || null,
