@@ -1516,16 +1516,12 @@ export const importRouter = router({
       }
 
       // --- BLUE COLUMN: Estimativa - POs "Navegando" ---
-      // Same logic: (projetado stock × projetado price + navegando qty × navegando price) / total
+      // Shows the direct Valor da Caixa from the navegando PO (NOT weighted average)
+      // If multiple navegando POs, shows weighted average of just the navegando POs
       let custoEstimativa = 0;
       let breakdownEstimativa: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
       if (navegandoHistory && navegandoHistory.length > 0) {
-        const baseCost = custoProjetado > 0 ? custoProjetado : custoReal;
-        const baseBoxes = custoProjetado > 0
-          ? boxesInStock + (patioHistory?.reduce((s, p) => s + p.quantidade, 0) || 0)
-          : boxesInStock;
-        const baseTotal = baseCost * baseBoxes;
         let totalNavQty = 0;
         let totalNavCost = 0;
         for (const po of navegandoHistory) {
@@ -1533,8 +1529,8 @@ export const importRouter = router({
           totalNavCost += po.quantidade * po.valorCaixaBrl;
           breakdownEstimativa.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
         }
-        const totalEstimativaBoxes = baseBoxes + totalNavQty;
-        custoEstimativa = totalEstimativaBoxes > 0 ? (baseTotal + totalNavCost) / totalEstimativaBoxes : 0;
+        // Direct valor da caixa from navegando POs (no mixing with existing stock)
+        custoEstimativa = totalNavQty > 0 ? totalNavCost / totalNavQty : 0;
       }
 
       results.push({
