@@ -7071,6 +7071,119 @@ ${acoesTexto}
     }),
 
   /**
+   * getChequeFactoringDescontados - Retorna cheques que já foram descontados/compensados pelo factoring
+   * Filtro: situacaoTitulo LIKE '%CHEQUE DESCONTADO FACTORING%' + estado RECEBIDO
+   */
+  getChequeFactoringDescontados: publicProcedure
+    .input(z.object({
+      empresaNome: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const conditions = [
+        sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`,
+        sql`${accountsReceivable.situacaoTitulo} LIKE '%CHEQUE DESCONTADO FACTORING%'`,
+        eq(accountsReceivable.estado, "RECEBIDO"),
+        inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+      ];
+
+      if (input?.empresaNome) {
+        conditions.push(eq(accountsReceivable.empresaNome, input.empresaNome));
+      }
+
+      const rows = await db.select({
+        id: accountsReceivable.id,
+        maxiprodId: accountsReceivable.maxiprodId,
+        vencimentoData: accountsReceivable.vencimentoData,
+        emissaoData: accountsReceivable.emissaoData,
+        liquidacaoData: accountsReceivable.liquidacaoData,
+        referenteA: accountsReceivable.referenteA,
+        cliente: accountsReceivable.cliente,
+        clienteApelido: accountsReceivable.clienteApelido,
+        valorOriginal: accountsReceivable.valorOriginal,
+        valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+        formaCobranca: accountsReceivable.formaCobranca,
+        situacaoTitulo: accountsReceivable.situacaoTitulo,
+        empresaNome: accountsReceivable.empresaNome,
+        parcela: accountsReceivable.parcela,
+        parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+        documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+        dadosCheque: accountsReceivable.dadosCheque,
+        estado: accountsReceivable.estado,
+      })
+        .from(accountsReceivable)
+        .where(and(...conditions))
+        .orderBy(desc(accountsReceivable.liquidacaoData));
+
+      function parseFactoringCompanyDescontados(situacao: string | null): string {
+        const st = (situacao || "").toUpperCase();
+        if (st.includes("CIFRAS")) return "CIFRAS";
+        if (st.includes("FINANZA")) return "FINANZA";
+        if (st.includes("SAMONEY")) return "SAMONEY";
+        if (st.includes("FACTORING")) return "SAMONEY"; // genérico = SAMONEY
+        return "OUTROS";
+      }
+
+      function buildDescDescontados(row: any): string {
+        const apelido = row.clienteApelido || "";
+        let desc = row.referenteA || "";
+        if (!desc && row.documentoVinculadoNumero) {
+          desc = `NF n\u00ba ${row.documentoVinculadoNumero}`;
+        }
+        const parcelaStr = row.parcela && row.parcelasQuantidadeTotal
+          ? `parc. ${row.parcela}/${row.parcelasQuantidadeTotal}`
+          : "";
+        const parts = [apelido, desc ? `ref. ${desc}` : "", parcelaStr].filter(Boolean);
+        return parts.join(" ") || row.cliente || "";
+      }
+
+      const cheques = rows.map(row => {
+        const valor = parseFloat(row.valorRecebidoLiquido || row.valorLiquido || row.valorOriginal || "0");
+        const factoringCompany = parseFactoringCompanyDescontados(row.situacaoTitulo);
+        return {
+          id: row.id,
+          maxiprodId: row.maxiprodId,
+          vencimentoData: row.vencimentoData,
+          emissaoData: row.emissaoData,
+          liquidacaoData: row.liquidacaoData,
+          descricao: buildDescDescontados(row),
+          cliente: row.cliente || "",
+          valor,
+          valorOriginal: parseFloat(row.valorOriginal || "0"),
+          valorRecebido: parseFloat(row.valorRecebidoLiquido || "0"),
+          formaPagamento: row.formaCobranca || "",
+          factoringCompany,
+          situacaoTitulo: row.situacaoTitulo || "",
+          estado: row.estado || "",
+          empresaNome: row.empresaNome || "",
+          parcela: row.parcela,
+          parcelasTotal: row.parcelasQuantidadeTotal,
+          dadosCheque: row.dadosCheque || "",
+        };
+      });
+
+      // Group by factoring company
+      const porFactoring: Record<string, { count: number; valor: number; cheques: typeof cheques }> = {};
+      for (const c of cheques) {
+        if (!porFactoring[c.factoringCompany]) {
+          porFactoring[c.factoringCompany] = { count: 0, valor: 0, cheques: [] };
+        }
+        porFactoring[c.factoringCompany].count++;
+        porFactoring[c.factoringCompany].valor += c.valor;
+        porFactoring[c.factoringCompany].cheques.push(c);
+      }
+
+      return {
+        porFactoring,
+        totalGeral: cheques.reduce((sum, c) => sum + c.valor, 0),
+        totalCount: cheques.length,
+      };
+    }),
+
+  /**
    * getCustodians - Retorna todos os responsáveis registrados para cheques
    */
   getCustodians: publicProcedure

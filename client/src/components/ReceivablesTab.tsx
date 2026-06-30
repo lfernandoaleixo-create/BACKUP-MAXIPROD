@@ -1912,10 +1912,16 @@ export default function ReceivablesTab() {
     factoringInput,
     { enabled: !!chequesOpenEmpresa }
   );
+  const factoringDescontadosQuery = trpc.financial.getChequeFactoringDescontados.useQuery(
+    factoringInput,
+    { enabled: !!chequesOpenEmpresa }
+  );
 
   // Factoring detail state
   const [selectedFactoring, setSelectedFactoring] = useState<string | null>(null);
   const [factoringCheckedIds, setFactoringCheckedIds] = useState<Set<number>>(new Set());
+  const [selectedFactoringDescontados, setSelectedFactoringDescontados] = useState<string | null>(null);
+  const [factoringDescontadosCheckedIds, setFactoringDescontadosCheckedIds] = useState<Set<number>>(new Set());
 
   // Cheque Exchange (Troca) state
   const [exchangeMode, setExchangeMode] = useState(false);
@@ -2529,8 +2535,8 @@ export default function ReceivablesTab() {
                         { id: "LINHA_11", num: 6, label: "Cheque Linha 11", desc: "Voltaram porque não tinha valor na conta do cliente", icon: RotateCcw, color: "red" },
                         { id: "LINHA_12", num: 7, label: "Cheque Linha 12", desc: "Já foi 2 vezes na conta do cliente e não tinha saldo", icon: Ban, color: "rose" },
                         { id: "VOLTOU_OUTROS", num: 8, label: "Cheque Voltou Outros Motivos", desc: "Voltaram por vários motivos (rasuras, assinaturas, etc.)", icon: AlertTriangle, color: "orange" },
-                        { id: "FACTORING_SAMONEY", num: 9, label: "Cheque Factoring Samoney", desc: "Cheques descontados na Samoney", icon: Scissors, color: "amber" },
-                        { id: "FACTORING_FINANZA", num: 10, label: "Cheque Factoring Finanza", desc: "Cheques descontados na Finanza", icon: Scissors, color: "violet" },
+                        { id: "FACTORING_SAMONEY", num: 9, label: "Cheque Factoring Samoney", desc: "Cheques disponíveis na Samoney", icon: Scissors, color: "amber" },
+                        { id: "FACTORING_FINANZA", num: 10, label: "Cheque Factoring Finanza", desc: "Cheques disponíveis na Finanza", icon: Scissors, color: "violet" },
                       ].map((state) => {
                         const isActive = chequeSelectedFilter === state.id;
                         const colorMap: Record<string, { bg: string; activeBg: string; border: string; activeBorder: string; iconBg: string; activeIconBg: string; text: string; activeText: string; num: string; activeNum: string }> = {
@@ -2589,7 +2595,7 @@ export default function ReceivablesTab() {
                           <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
                             <Landmark className="w-4 h-4 text-indigo-600" />
                           </div>
-                          <h5 className="text-sm font-bold text-indigo-800 tracking-wide">CHEQUES DESCONTADOS</h5>
+                          <h5 className="text-sm font-bold text-indigo-800 tracking-wide">CHEQUES DISPONÍVEIS</h5>
                           <span className="ml-auto text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
                             {factoringQuery.data.totalCount} cheques — R$ {factoringQuery.data.totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                           </span>
@@ -2611,7 +2617,7 @@ export default function ReceivablesTab() {
                                   </div>
                                   <div>
                                     <h6 className={`text-xs font-extrabold uppercase tracking-wider ${colors.text}`}>Factoring {company}</h6>
-                                    <p className="text-[10px] text-slate-500">Cheques descontados</p>
+                                    <p className="text-[10px] text-slate-500">Cheques disponíveis</p>
                                   </div>
                                 </div>
                                 <div className="flex items-baseline justify-between mt-3">
@@ -2703,6 +2709,147 @@ export default function ReceivablesTab() {
                                       <td colSpan={3} className={`px-3 py-2 font-bold ${dc.footText}`}>Total</td>
                                       <td className={`px-3 py-2 text-right font-bold ${dc.footText}`}>R$ {factData.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                       <td colSpan={2}></td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                              {selectedCount > 0 && (
+                                <div className={`${dc.headerBg} px-4 py-2.5 border-t ${dc.border} flex items-center justify-between`}>
+                                  <span className={`text-xs ${dc.headerText} flex items-center gap-1.5`}>
+                                    <Calculator className="w-4 h-4" />
+                                    {selectedCount} cheque{selectedCount !== 1 ? 's' : ''} selecionado{selectedCount !== 1 ? 's' : ''}
+                                  </span>
+                                  <span className={`text-sm font-black ${dc.headerText}`}>Soma: R$ {selectedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Factoring Descontados Section */}
+                    {factoringDescontadosQuery.data && factoringDescontadosQuery.data.totalCount > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-yellow-50/60 border border-amber-200/60">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <Landmark className="w-4 h-4 text-amber-600" />
+                          </div>
+                          <h5 className="text-sm font-bold text-amber-800 tracking-wide">CHEQUES DESCONTADOS</h5>
+                          <span className="ml-auto text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                            {factoringDescontadosQuery.data.totalCount} cheques — R$ {factoringDescontadosQuery.data.totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {Object.entries(factoringDescontadosQuery.data.porFactoring).map(([company, data]) => {
+                            const colorMap: Record<string, { bg: string; border: string; icon: string; text: string; badge: string }> = {
+                              CIFRAS: { bg: "bg-gradient-to-br from-teal-50 to-emerald-50", border: "border-teal-300", icon: "bg-teal-500 text-white", text: "text-teal-800", badge: "bg-teal-100 text-teal-700" },
+                              FINANZA: { bg: "bg-gradient-to-br from-blue-50 to-sky-50", border: "border-blue-300", icon: "bg-blue-500 text-white", text: "text-blue-800", badge: "bg-blue-100 text-blue-700" },
+                              SAMONEY: { bg: "bg-gradient-to-br from-violet-50 to-purple-50", border: "border-violet-300", icon: "bg-violet-500 text-white", text: "text-violet-800", badge: "bg-violet-100 text-violet-700" },
+                              OUTROS: { bg: "bg-gradient-to-br from-slate-50 to-gray-50", border: "border-slate-300", icon: "bg-slate-500 text-white", text: "text-slate-800", badge: "bg-slate-100 text-slate-700" },
+                            };
+                            const colors = colorMap[company] || colorMap.OUTROS;
+                            return (
+                              <div key={company} onClick={() => setSelectedFactoringDescontados(selectedFactoringDescontados === company ? null : company)} className={`relative p-4 rounded-xl border-2 ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-shadow cursor-pointer ${selectedFactoringDescontados === company ? 'ring-2 ring-offset-1 ring-amber-400' : ''}`}>
+                                <div className="flex items-center gap-2.5 mb-2">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colors.icon} shadow-sm`}>
+                                    <Landmark className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <h6 className={`text-xs font-extrabold uppercase tracking-wider ${colors.text}`}>Factoring {company}</h6>
+                                    <p className="text-[10px] text-slate-500">Cheques descontados</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-baseline justify-between mt-3">
+                                  <span className={`text-lg font-black ${colors.text}`}>
+                                    R$ {(data as any).valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                  </span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colors.badge}`}>
+                                    {(data as any).count} cheque{(data as any).count !== 1 ? "s" : ""}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Descontados Detail Table */}
+                        {selectedFactoringDescontados && factoringDescontadosQuery.data?.porFactoring[selectedFactoringDescontados] && (() => {
+                          const factData = factoringDescontadosQuery.data.porFactoring[selectedFactoringDescontados] as any;
+                          const cheques = factData.cheques || [];
+                          const detailColorMap: Record<string, { border: string; headerBg: string; headerText: string; headBg: string; headText: string; hoverBg: string; divider: string; footBg: string; footBorder: string; footText: string; closeText: string; closeHover: string }> = {
+                            CIFRAS: { border: "border-teal-300", headerBg: "bg-teal-100/80", headerText: "text-teal-800", headBg: "bg-teal-50", headText: "text-teal-700", hoverBg: "hover:bg-teal-50/50", divider: "divide-teal-100", footBg: "bg-teal-50", footBorder: "border-t border-teal-200", footText: "text-teal-800", closeText: "text-teal-600", closeHover: "hover:text-teal-800" },
+                            FINANZA: { border: "border-blue-300", headerBg: "bg-blue-100/80", headerText: "text-blue-800", headBg: "bg-blue-50", headText: "text-blue-700", hoverBg: "hover:bg-blue-50/50", divider: "divide-blue-100", footBg: "bg-blue-50", footBorder: "border-t border-blue-200", footText: "text-blue-800", closeText: "text-blue-600", closeHover: "hover:text-blue-800" },
+                            SAMONEY: { border: "border-violet-300", headerBg: "bg-violet-100/80", headerText: "text-violet-800", headBg: "bg-violet-50", headText: "text-violet-700", hoverBg: "hover:bg-violet-50/50", divider: "divide-violet-100", footBg: "bg-violet-50", footBorder: "border-t border-violet-200", footText: "text-violet-800", closeText: "text-violet-600", closeHover: "hover:text-violet-800" },
+                          };
+                          const dc = detailColorMap[selectedFactoringDescontados] || detailColorMap.FINANZA;
+                          const selectedSum = cheques.filter((c: any) => factoringDescontadosCheckedIds.has(c.id)).reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
+                          const selectedCount = cheques.filter((c: any) => factoringDescontadosCheckedIds.has(c.id)).length;
+                          const allChecked = cheques.length > 0 && cheques.every((c: any) => factoringDescontadosCheckedIds.has(c.id));
+                          return (
+                            <div className={`mt-4 border ${dc.border} rounded-lg overflow-hidden`}>
+                              <div className={`${dc.headerBg} px-4 py-2 flex items-center justify-between`}>
+                                <h6 className={`text-xs font-bold ${dc.headerText}`}>FACTORING {selectedFactoringDescontados} — {cheques.length} cheque{cheques.length !== 1 ? 's' : ''} descontados</h6>
+                                <div className="flex items-center gap-3">
+                                  {selectedCount > 0 && (
+                                    <span className={`text-xs font-bold ${dc.headerText} bg-white/60 px-2 py-0.5 rounded flex items-center gap-1.5`}>
+                                      <Calculator className="w-3.5 h-3.5" />
+                                      {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''} = R$ {selectedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  )}
+                                  <button onClick={(e) => { e.stopPropagation(); setSelectedFactoringDescontados(null); setFactoringDescontadosCheckedIds(new Set()); }} className={`text-xs ${dc.closeText} ${dc.closeHover} font-medium`}>Fechar</button>
+                                </div>
+                              </div>
+                              <div className="max-h-[400px] overflow-y-auto">
+                                <table className="w-full text-xs">
+                                  <thead className={`${dc.headBg} sticky top-0`}>
+                                    <tr>
+                                      <th className={`px-2 py-2 text-center ${dc.headText}`}>
+                                        <input type="checkbox" checked={allChecked} onChange={() => {
+                                          if (allChecked) { setFactoringDescontadosCheckedIds(new Set()); }
+                                          else { setFactoringDescontadosCheckedIds(new Set(cheques.map((c: any) => c.id))); }
+                                        }} className="w-3.5 h-3.5 rounded cursor-pointer accent-amber-600" />
+                                      </th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Cliente</th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Descrição</th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Dados do Cheque</th>
+                                      <th className={`px-3 py-2 text-right font-semibold ${dc.headText}`}>Valor Original</th>
+                                      <th className={`px-3 py-2 text-right font-semibold ${dc.headText}`}>Valor Recebido</th>
+                                      <th className={`px-3 py-2 text-center font-semibold ${dc.headText}`}>Vencimento</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className={`${dc.divider}`}>
+                                    {cheques.map((c: any) => {
+                                      const isChecked = factoringDescontadosCheckedIds.has(c.id);
+                                      return (
+                                        <tr key={c.id} className={`${dc.hoverBg} ${isChecked ? 'bg-amber-50/50' : ''}`}>
+                                          <td className="px-2 py-2 text-center">
+                                            <input type="checkbox" checked={isChecked} onChange={() => {
+                                              setFactoringDescontadosCheckedIds(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(c.id)) next.delete(c.id);
+                                                else next.add(c.id);
+                                                return next;
+                                              });
+                                            }} className="w-3.5 h-3.5 rounded cursor-pointer accent-amber-600" />
+                                          </td>
+                                          <td className="px-3 py-2 font-medium text-slate-800 whitespace-normal">{c.cliente}</td>
+                                          <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.descricao || '-'}</td>
+                                          <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.dadosCheque || '-'}</td>
+                                          <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">R$ {(c.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                          <td className="px-3 py-2 text-right font-semibold text-green-700 whitespace-nowrap">R$ {(c.valorRecebido || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                          <td className="px-3 py-2 text-center text-slate-600 whitespace-nowrap">{c.vencimentoData ? (() => { const parts = c.vencimentoData.split('T')[0].split('-'); return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : c.vencimentoData; })() : '-'}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                  <tfoot className={`${dc.footBg} ${dc.footBorder}`}>
+                                    <tr>
+                                      <td></td>
+                                      <td colSpan={3} className={`px-3 py-2 font-bold ${dc.footText}`}>Total</td>
+                                      <td className={`px-3 py-2 text-right font-bold ${dc.footText}`}>R$ {cheques.reduce((s: number, c: any) => s + (c.valorOriginal || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                      <td className={`px-3 py-2 text-right font-bold text-green-700`}>R$ {factData.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                      <td></td>
                                     </tr>
                                   </tfoot>
                                 </table>
