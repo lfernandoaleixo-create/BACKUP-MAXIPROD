@@ -4573,3 +4573,9 @@
 - [x] Custo Tempo Real: mostrar TODOS os produtos de POs (incubadora, prateleira, etc.) mesmo sem estoque
 - [x] Custo Tempo Real: buscar nome dos produtos no product_catalog e fallback para import_po_products.description
 - [x] Custo Tempo Real: remover produto 00808 (VARETA GLADE REEDS) da tabela
+- [ ] Vendas: card de evolução anual (gráfico comparando anos)
+- [ ] Vendas: card de evolução trimestral (gráfico comparando trimestres)
+- [ ] Vendas: card de evolução semestral (gráfico comparando semestres)
+- [ ] Vendas: card de evolucao anual (mesmo layout do diario + exportar PDF)
+- [ ] Vendas: card de evolucao trimestral (mesmo layout do diario + exportar PDF)
+- [ ] Vendas: card de evolucao semestral (mesmo layout do diario + exportar PDF)

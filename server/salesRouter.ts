@@ -3917,4 +3917,120 @@ export const salesRouter = router({
     const result = await syncPriceTables();
     return { success: true, ...result };
   }),
+
+  /**
+   * Get period evolution data (annual, semester, quarter)
+   * Returns monthly totals for all time, grouped by fixed periods
+   */
+  getPeriodEvolution: publicProcedure
+    .input(z.object({
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
+
+      const rawItems = await db.select().from(salesOrders);
+      let items = rawItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (input.grupo !== "all") {
+        items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === input.grupo);
+      }
+      if (input.subgrupo !== "all") {
+        items = items.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
+      }
+
+      // Group by month
+      const monthMap = new Map<string, { value: number; orders: Set<string> }>();
+      for (const item of items) {
+        if (!item.dataEmissao) continue;
+        const month = item.dataEmissao.substring(0, 7); // YYYY-MM
+        if (!monthMap.has(month)) monthMap.set(month, { value: 0, orders: new Set() });
+        const m = monthMap.get(month)!;
+        m.value += Number(item.valorTotal || 0);
+        if (item.pedido) m.orders.add(item.pedido);
+      }
+
+      // Build annual data: { year, value, orders }
+      const yearMap = new Map<number, { value: number; orders: number }>();
+      for (const [month, data] of Array.from(monthMap)) {
+        const year = parseInt(month.substring(0, 4));
+        if (!yearMap.has(year)) yearMap.set(year, { value: 0, orders: 0 });
+        const y = yearMap.get(year)!;
+        y.value += data.value;
+        y.orders += data.orders.size;
+      }
+      const byYear = Array.from(yearMap.entries())
+        .map(([year, data]) => ({ year, value: Math.round(data.value * 100) / 100, orders: data.orders }))
+        .sort((a, b) => a.year - b.year);
+
+      // Build semester data: { label, year, semester, value, orders }
+      // 1st semester = Jan-Jun, 2nd semester = Jul-Dec
+      const semMap = new Map<string, { year: number; semester: number; value: number; orders: number }>();
+      for (const [month, data] of Array.from(monthMap)) {
+        const year = parseInt(month.substring(0, 4));
+        const m = parseInt(month.substring(5, 7));
+        const semester = m <= 6 ? 1 : 2;
+        const key = `${year}-S${semester}`;
+        if (!semMap.has(key)) semMap.set(key, { year, semester, value: 0, orders: 0 });
+        const s = semMap.get(key)!;
+        s.value += data.value;
+        s.orders += data.orders.size;
+      }
+      const bySemester = Array.from(semMap.entries())
+        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100 }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      // Build quarter data: { label, year, quarter, value, orders }
+      // Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec
+      const qtrMap = new Map<string, { year: number; quarter: number; value: number; orders: number }>();
+      for (const [month, data] of Array.from(monthMap)) {
+        const year = parseInt(month.substring(0, 4));
+        const m = parseInt(month.substring(5, 7));
+        const quarter = Math.ceil(m / 3);
+        const key = `${year}-Q${quarter}`;
+        if (!qtrMap.has(key)) qtrMap.set(key, { year, quarter, value: 0, orders: 0 });
+        const q = qtrMap.get(key)!;
+        q.value += data.value;
+        q.orders += data.orders.size;
+      }
+      const byQuarter = Array.from(qtrMap.entries())
+        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100 }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      // Monthly breakdown for each period (for detail expansion)
+      const monthlyData = Array.from(monthMap.entries())
+        .map(([month, data]) => ({ month, value: Math.round(data.value * 100) / 100, orders: data.orders.size }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      return { byYear, bySemester, byQuarter, monthlyData };
+    }),
 });
