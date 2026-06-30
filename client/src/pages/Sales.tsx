@@ -1974,8 +1974,8 @@ function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: Pr
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-orange-50/70 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-orange-600" />
-          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">A Faturar (Anterior)</h3>
+          <AlertTriangle className="w-5 h-5 text-amber-600" />
+          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Detalhes: Anterior</h3>
           <Badge variant="outline" className="text-xs">{orders.length} pedidos</Badge>
         </div>
         <div className="flex items-center gap-4">
