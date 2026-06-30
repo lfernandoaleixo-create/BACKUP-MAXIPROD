@@ -3427,6 +3427,7 @@ export default function Sales() {
   const [crmSegmento, setCrmSegmento] = useState("all");
   const [chartMode, setChartMode] = useState<"value" | "orders">("value");
   const [chartExpanded, setChartExpanded] = useState(false);
+  const [aFaturarExpanded, setAFaturarExpanded] = useState(false);
   const [showCustomDates, setShowCustomDates] = useState(false);
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -4265,7 +4266,7 @@ export default function Sales() {
               <OrdersCard orders={orders.filter(o => o.estadoItem === "Faturado")} title="Pedidos Faturados" variant="faturado" />
             )}
 
-            {/* Card Unificado: A Faturar (Mês Atual + Anterior) */}
+            {/* Card Unificado: A Faturar - Recolhível */}
             {(() => {
               const currentUnbilled = orders ? orders.filter(o => o.estadoItem !== "Faturado") : [];
               const currentValue = currentUnbilled.reduce((s, o) => s + o.valorTotal, 0);
@@ -4275,55 +4276,61 @@ export default function Sales() {
               if (currentUnbilled.length === 0 && anteriorOrders.length === 0) return null;
               return (
                 <div className="bg-orange-50/40 rounded-lg border border-orange-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-orange-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                        <Clock className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">A Faturar</h3>
-                        <p className="text-xs text-slate-500">Mês atual + meses anteriores</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-extrabold text-orange-700">{formatCurrencyFull(totalAFaturar)}</p>
-                        <p className="text-[10px] text-slate-400 uppercase">Total combinado</p>
-                      </div>
+                  {/* Header clicável */}
+                  <button
+                    onClick={() => setAFaturarExpanded(!aFaturarExpanded)}
+                    className="w-full px-5 py-4 flex items-center gap-3 hover:bg-orange-50/60 transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-orange-600" />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-orange-100">
-                    {/* Mês Atual */}
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Mês Atual</span>
-                        <span className="text-xs text-slate-400">{currentUnbilled.length} {currentUnbilled.length === 1 ? 'pedido' : 'pedidos'}</span>
-                      </div>
-                      <p className="text-lg font-bold text-orange-700">{formatCurrencyFull(currentValue)}</p>
-                      {totalAFaturar > 0 && (
-                        <div className="mt-2 h-1.5 bg-orange-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(currentValue / totalAFaturar * 100).toFixed(0)}%` }} />
+                    <div className="flex-1 text-left">
+                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">A Faturar</h3>
+                    </div>
+                    <div className="text-right mr-3">
+                      <p className="text-xl font-extrabold text-orange-700">{formatCurrencyFull(totalAFaturar)}</p>
+                    </div>
+                    {aFaturarExpanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
+                  </button>
+                  {/* Conteúdo expandível */}
+                  {aFaturarExpanded && (
+                    <>
+                      <div className="border-t border-orange-100 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-orange-100">
+                        {/* Mês Atual */}
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Mês Atual</span>
+                            <span className="text-xs text-slate-400">{currentUnbilled.length} {currentUnbilled.length === 1 ? 'pedido' : 'pedidos'}</span>
+                          </div>
+                          <p className="text-lg font-bold text-orange-700">{formatCurrencyFull(currentValue)}</p>
+                          {totalAFaturar > 0 && (
+                            <div className="mt-2 h-1.5 bg-orange-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(currentValue / totalAFaturar * 100).toFixed(0)}%` }} />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    {/* Anterior */}
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Anterior</span>
-                        <span className="text-xs text-slate-400">{anteriorOrders.length} {anteriorOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
-                      </div>
-                      <p className="text-lg font-bold text-amber-700">{formatCurrencyFull(anteriorValue)}</p>
-                      {totalAFaturar > 0 && (
-                        <div className="mt-2 h-1.5 bg-amber-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${(anteriorValue / totalAFaturar * 100).toFixed(0)}%` }} />
+                        {/* Anterior */}
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Anterior</span>
+                            <span className="text-xs text-slate-400">{anteriorOrders.length} {anteriorOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
+                          </div>
+                          <p className="text-lg font-bold text-amber-700">{formatCurrencyFull(anteriorValue)}</p>
+                          {totalAFaturar > 0 && (
+                            <div className="mt-2 h-1.5 bg-amber-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${(anteriorValue / totalAFaturar * 100).toFixed(0)}%` }} />
+                            </div>
+                          )}
                         </div>
+                      </div>
+                      {/* Listas de pedidos */}
+                      {currentUnbilled.length > 0 && (
+                        <OrdersCard orders={currentUnbilled} title='Detalhes: Mês Atual' variant="a_faturar" />
                       )}
-                    </div>
-                  </div>
-                  {/* Expandable lists */}
-                  {currentUnbilled.length > 0 && (
-                    <OrdersCard orders={currentUnbilled} title='Detalhes: Mês Atual' variant="a_faturar" />
-                  )}
-                  {anteriorOrders.length > 0 && (
-                    <PreviousUnbilledCard months={previousUnbilled!.months} orders={anteriorOrders} />
+                      {anteriorOrders.length > 0 && (
+                        <PreviousUnbilledCard months={previousUnbilled!.months} orders={anteriorOrders} />
+                      )}
+                    </>
                   )}
                 </div>
               );
