@@ -724,6 +724,59 @@ export const salesOrderRouter = router({
       return { success: true };
     }),
 
+  // ===== VITÓRIA STATUS FLOW =====
+
+  /** Mark order as received by Vitória */
+  markRecebido: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(salesOrderRequests)
+        .set({ vitoriaRecebido: true, vitoriaRecebidoAt: new Date() })
+        .where(eq(salesOrderRequests.id, input.orderId));
+      return { success: true };
+    }),
+
+  /** Mark order as entered in Maxiprod by Vitória */
+  markLancado: publicProcedure
+    .input(z.object({ orderId: z.number(), numeroPedidoMaxiprod: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(salesOrderRequests)
+        .set({
+          vitoriaLancado: true,
+          vitoriaLancadoAt: new Date(),
+          status: "processado",
+          processadoPor: "Vit\u00f3ria",
+          dataProcessamento: new Date(),
+          numeroPedidoMaxiprod: input.numeroPedidoMaxiprod || null,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+      return { success: true };
+    }),
+
+  /** Count pending orders for Vitória (approved but not yet lançado) */
+  countPendingVitoria: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { pending: 0, naoRecebido: 0, recebidoNaoLancado: 0 };
+    const approved = await db.select().from(salesOrderRequests)
+      .where(eq(salesOrderRequests.status, "aprovado"));
+    const naoRecebido = approved.filter(o => !o.vitoriaRecebido).length;
+    const recebidoNaoLancado = approved.filter(o => o.vitoriaRecebido && !o.vitoriaLancado).length;
+    return { pending: approved.length, naoRecebido, recebidoNaoLancado };
+  }),
+
+  /** Count pending orders for gestores (pendente = needs approval) */
+  countPendingGestor: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { pending: 0 };
+    const pendente = await db.select().from(salesOrderRequests)
+      .where(eq(salesOrderRequests.status, "pendente"));
+    return { pending: pendente.length };
+  }),
+
   // ===== MIN PRICE MANAGEMENT =====
 
   /** List all min prices (gestor) */

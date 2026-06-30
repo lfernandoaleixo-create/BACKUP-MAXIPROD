@@ -4557,3 +4557,6 @@
 - [x] Gráficos separados por segmento (Industrializado e Revenda) com área gradiente e linha de média
 - [x] Unificar cards A Faturar (Mês Atual + Anterior) em card único combinado
 - [x] Endpoint getMonthlyBySegmento no backend (dados por segmento alto-nível com trimestral/semestral)
+- [x] Sistema de alertas: aba Gestão Comercial pisca quando novo pedido criado (para gestores) ou aprovado (para Vitória)
+- [x] Fluxo de status Pedidos Vitória: Pendente → Recebido → Lançado no Maxiprod
+- [x] Vitória com senha própria acessa apenas a parte de Pedidos para Processamento

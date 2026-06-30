@@ -4344,7 +4344,7 @@ export default function Sales() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-bold text-slate-700">#{o.pedido}</span>
-                                  <span className="text-xs text-slate-400">{o.data ? new Date(o.data).toLocaleDateString('pt-BR') : ''}</span>
+                                  <span className="text-xs text-slate-400">{o.dataEmissao ? new Date(o.dataEmissao).toLocaleDateString('pt-BR') : ''}</span>
                                 </div>
                                 <p className="text-sm text-slate-600 truncate">{o.clienteApelido || o.cliente}</p>
                               </div>

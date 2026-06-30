@@ -63,6 +63,19 @@ export default function TopNav({ rightContent }: TopNavProps) {
   });
   const hasPendingStock = false && isLarissa && (pendingStockData?.pending ?? 0) > 0;
 
+  // Blink Gestão Comercial tab for gestores (pending approval) and Vitória (pending processing)
+  const isGestor = operator?.name === "Juvenal" || operator?.name === "Fernando" || operator?.name === "Guilherme";
+  const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vit\u00f3ria";
+  const { data: pendingGestorData } = trpc.salesOrders.countPendingGestor.useQuery(undefined, {
+    enabled: isGestor,
+    refetchInterval: 20000,
+  });
+  const { data: pendingVitoriaData } = trpc.salesOrders.countPendingVitoria.useQuery(undefined, {
+    enabled: isVitoria,
+    refetchInterval: 20000,
+  });
+  const hasGestaoAlert = (isGestor && (pendingGestorData?.pending ?? 0) > 0) || (isVitoria && (pendingVitoriaData?.pending ?? 0) > 0);
+
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
     return location.startsWith(href);
@@ -180,8 +193,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 && discountAlerts.unreadCount > 0;
 
               const shouldBlinkProducao = item.section === "producao" && hasPendingStock;
+              const shouldBlinkGestao = item.section === "gestao-comercial" && hasGestaoAlert;
 
-              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao;
+              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao;
 
               return (
                 <button
@@ -207,6 +221,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
                   <span className={`text-[8px] font-medium leading-none whitespace-nowrap ${active ? "text-teal-700 font-semibold" : ""}`}>{item.label}</span>
                   {shouldBlinkProducao && (
                     <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                  )}
+                  {shouldBlinkGestao && (
+                    <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
                   )}
                   {shouldBlinkFinanceiro && (
                     <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
@@ -247,8 +264,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 && discountAlerts.unreadCount > 0;
 
               const shouldBlinkProducao = item.section === "producao" && hasPendingStock;
+              const shouldBlinkGestao = item.section === "gestao-comercial" && hasGestaoAlert;
 
-              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao;
+              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao;
 
               return (
                 <button
@@ -276,6 +294,10 @@ export default function TopNav({ rightContent }: TopNavProps) {
                   {/* Stock withdrawal pending indicator dot (violet for Larissa) */}
                   {shouldBlinkProducao && (
                     <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-violet-500 animate-pulse shadow-[0_0_6px_rgba(139,92,246,0.6)]" />
+                  )}
+                  {/* Gestão Comercial alert indicator dot (teal for gestores/Vitória) */}
+                  {shouldBlinkGestao && (
+                    <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_6px_rgba(20,184,166,0.6)]" />
                   )}
                   {/* Discount alert indicator dot */}
                   {shouldBlinkFinanceiro && (

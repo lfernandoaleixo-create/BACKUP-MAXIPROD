@@ -1,28 +1,32 @@
 /**
  * Vitória Orders - Painel da operadora para processar pedidos aprovados
- * Recebe pedidos aprovados e marca como processados após digitar no Maxiprod
+ * Fluxo de status: Pendente → Recebido → Lançado no Maxiprod
  */
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
-  CheckCircle2, Package, User, MapPin, DollarSign, ArrowLeft,
-  RefreshCw, ClipboardCheck, Clock, Eye, ChevronDown, ChevronUp, FileText
+  CheckCircle2, Package, User, MapPin, ArrowLeft,
+  RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
+  Inbox, CheckCheck, AlertCircle
 } from "lucide-react";
 import { Link } from "wouter";
+import { toast } from "sonner";
 
 function formatCurrency(value: number | string) {
   const num = typeof value === "string" ? Number(value) : value;
   return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+type VitoriaFilter = "pendente" | "recebido" | "lancado" | "todos";
+
 export default function VitoriaOrders() {
-  const [statusFilter, setStatusFilter] = useState<"aprovado" | "processado" | "todos">("aprovado");
+  const [statusFilter, setStatusFilter] = useState<VitoriaFilter>("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
   const { data: orders, isLoading, refetch } = trpc.salesOrders.getOrdersForOperator.useQuery(
-    { status: statusFilter },
-    { staleTime: 30 * 1000 }
+    { status: "todos" },
+    { staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   );
 
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
@@ -30,22 +34,48 @@ export default function VitoriaOrders() {
     { enabled: expandedOrder !== null }
   );
 
-  const markProcessedMutation = trpc.salesOrders.markAsProcessed.useMutation();
+  const markRecebidoMutation = trpc.salesOrders.markRecebido.useMutation();
+  const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
   const utils = trpc.useUtils();
 
-  const handleMarkProcessed = (orderId: number) => {
-    markProcessedMutation.mutate(
-      { orderId, processadoPor: "Vitória" },
+  const handleMarkRecebido = (orderId: number) => {
+    markRecebidoMutation.mutate(
+      { orderId },
       {
         onSuccess: () => {
+          toast.success("Pedido marcado como recebido!");
           utils.salesOrders.getOrdersForOperator.invalidate();
+          utils.salesOrders.countPendingVitoria.invalidate();
         },
       }
     );
   };
 
-  const pendingCount = orders?.filter((o: any) => o.status === "aprovado").length || 0;
-  const processedCount = orders?.filter((o: any) => o.status === "processado").length || 0;
+  const handleMarkLancado = (orderId: number) => {
+    markLancadoMutation.mutate(
+      { orderId },
+      {
+        onSuccess: () => {
+          toast.success("Pedido marcado como lançado no Maxiprod!");
+          utils.salesOrders.getOrdersForOperator.invalidate();
+          utils.salesOrders.countPendingVitoria.invalidate();
+        },
+      }
+    );
+  };
+
+  // Filter orders based on Vitória's status flow
+  const filteredOrders = (orders || []).filter((o: any) => {
+    if (statusFilter === "todos") return true;
+    if (statusFilter === "pendente") return o.status === "aprovado" && !o.vitoriaRecebido;
+    if (statusFilter === "recebido") return o.vitoriaRecebido && !o.vitoriaLancado;
+    if (statusFilter === "lancado") return o.vitoriaLancado;
+    return true;
+  });
+
+  const pendingCount = (orders || []).filter((o: any) => o.status === "aprovado" && !o.vitoriaRecebido).length;
+  const recebidoCount = (orders || []).filter((o: any) => o.vitoriaRecebido && !o.vitoriaLancado).length;
+  const lancadoCount = (orders || []).filter((o: any) => o.vitoriaLancado).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -74,37 +104,56 @@ export default function VitoriaOrders() {
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-green-200 dark:border-green-800 shadow-sm p-4">
+        {/* Stats - 3 cards showing the flow */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+            statusFilter === "pendente" ? "border-amber-400 ring-2 ring-amber-200" : "border-amber-200 dark:border-amber-800"
+          }`} onClick={() => setStatusFilter("pendente")}>
             <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-green-500" />
-              <span className="text-[10px] text-green-600 uppercase font-bold">A Processar</span>
+              <AlertCircle className="w-4 h-4 text-amber-500" />
+              <span className="text-[9px] text-amber-600 uppercase font-bold">Novos</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">{pendingCount}</p>
+            <p className={`text-2xl font-bold ${pendingCount > 0 ? "text-amber-600" : "text-slate-300"}`}>{pendingCount}</p>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm p-4">
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+            statusFilter === "recebido" ? "border-blue-400 ring-2 ring-blue-200" : "border-blue-200 dark:border-blue-800"
+          }`} onClick={() => setStatusFilter("recebido")}>
             <div className="flex items-center gap-2 mb-1">
-              <ClipboardCheck className="w-4 h-4 text-blue-500" />
-              <span className="text-[10px] text-blue-600 uppercase font-bold">Processados</span>
+              <Inbox className="w-4 h-4 text-blue-500" />
+              <span className="text-[9px] text-blue-600 uppercase font-bold">Recebidos</span>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{processedCount}</p>
+            <p className={`text-2xl font-bold ${recebidoCount > 0 ? "text-blue-600" : "text-slate-300"}`}>{recebidoCount}</p>
+          </div>
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+            statusFilter === "lancado" ? "border-green-400 ring-2 ring-green-200" : "border-green-200 dark:border-green-800"
+          }`} onClick={() => setStatusFilter("lancado")}>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCheck className="w-4 h-4 text-green-500" />
+              <span className="text-[9px] text-green-600 uppercase font-bold">Lançados</span>
+            </div>
+            <p className={`text-2xl font-bold ${lancadoCount > 0 ? "text-green-600" : "text-slate-300"}`}>{lancadoCount}</p>
           </div>
         </div>
 
-        {/* Filter */}
+        {/* Filter tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
-          {(["aprovado", "processado", "todos"] as const).map((f) => (
+          {([
+            { key: "pendente", label: "Novos", icon: AlertCircle, color: "amber" },
+            { key: "recebido", label: "Recebidos", icon: Inbox, color: "blue" },
+            { key: "lancado", label: "Lançados", icon: CheckCheck, color: "green" },
+            { key: "todos", label: "Todos", icon: Package, color: "slate" },
+          ] as const).map((f) => (
             <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                statusFilter === f
+              key={f.key}
+              onClick={() => setStatusFilter(f.key as VitoriaFilter)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                statusFilter === f.key
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              {f === "aprovado" ? "A Processar" : f === "processado" ? "Processados" : "Todos"}
+              <f.icon className="w-3.5 h-3.5" />
+              {f.label}
             </button>
           ))}
         </div>
@@ -115,27 +164,35 @@ export default function VitoriaOrders() {
             <RefreshCw className="w-5 h-5 text-teal-500 animate-spin mx-auto mb-2" />
             <p className="text-sm text-slate-500">Carregando pedidos...</p>
           </div>
-        ) : !orders || orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
             <ClipboardCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
             <p className="text-sm text-slate-500">
-              {statusFilter === "aprovado" ? "Nenhum pedido pendente de processamento" : "Nenhum pedido encontrado"}
+              {statusFilter === "pendente" ? "Nenhum pedido novo aguardando" :
+               statusFilter === "recebido" ? "Nenhum pedido recebido pendente de lançamento" :
+               statusFilter === "lancado" ? "Nenhum pedido lançado ainda" :
+               "Nenhum pedido encontrado"}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {(orders as any[]).map((order) => {
+            {(filteredOrders as any[]).map((order) => {
               const isExpanded = expandedOrder === order.id;
-              const isProcessed = order.status === "processado";
+              const isLancado = order.vitoriaLancado;
+              const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
+              const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
+
+              // Determine border color based on status
+              const borderClass = isLancado
+                ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
+                : isRecebido
+                  ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
+                  : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
 
               return (
                 <div
                   key={order.id}
-                  className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden ${
-                    isProcessed
-                      ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
-                      : "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
-                  }`}
+                  className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden ${borderClass}`}
                 >
                   {/* Order Header */}
                   <button
@@ -143,12 +200,16 @@ export default function VitoriaOrders() {
                     className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
                   >
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isProcessed ? "bg-blue-100 dark:bg-blue-900/30" : "bg-green-100 dark:bg-green-900/30"
+                      isLancado ? "bg-green-100 dark:bg-green-900/30" :
+                      isRecebido ? "bg-blue-100 dark:bg-blue-900/30" :
+                      "bg-amber-100 dark:bg-amber-900/30"
                     }`}>
-                      {isProcessed ? (
-                        <ClipboardCheck className="w-4.5 h-4.5 text-blue-600" />
+                      {isLancado ? (
+                        <CheckCheck className="w-4.5 h-4.5 text-green-600" />
+                      ) : isRecebido ? (
+                        <Inbox className="w-4.5 h-4.5 text-blue-600" />
                       ) : (
-                        <FileText className="w-4.5 h-4.5 text-green-600" />
+                        <AlertCircle className="w-4.5 h-4.5 text-amber-600" />
                       )}
                     </div>
 
@@ -159,13 +220,15 @@ export default function VitoriaOrders() {
                           {order.razaoSocial || order.nomeFantasia}
                         </p>
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                          isProcessed ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
+                          isLancado ? "bg-green-50 text-green-600" :
+                          isRecebido ? "bg-blue-50 text-blue-600" :
+                          "bg-amber-50 text-amber-700"
                         }`}>
-                          {isProcessed ? "PROCESSADO" : "PRONTO"}
+                          {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : "NOVO"}
                         </span>
                         {order.temPrecoAbaixoMinimo && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-100 text-amber-700">
-                            Gestor autorizou abaixo do mín.
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-700">
+                            Preço abaixo do mín.
                           </span>
                         )}
                       </div>
@@ -198,6 +261,20 @@ export default function VitoriaOrders() {
                   {/* Expanded Details */}
                   {isExpanded && (
                     <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-700">
+                      {/* Status Progress Bar */}
+                      <div className="mt-3 mb-4">
+                        <div className="flex items-center gap-1">
+                          <div className={`flex-1 h-2 rounded-full ${isNovo || isRecebido || isLancado ? "bg-amber-400" : "bg-slate-200"}`} />
+                          <div className={`flex-1 h-2 rounded-full ${isRecebido || isLancado ? "bg-blue-400" : "bg-slate-200"}`} />
+                          <div className={`flex-1 h-2 rounded-full ${isLancado ? "bg-green-400" : "bg-slate-200"}`} />
+                        </div>
+                        <div className="flex justify-between mt-1 text-[9px] text-slate-400 font-medium">
+                          <span className={isNovo || isRecebido || isLancado ? "text-amber-600" : ""}>Aprovado</span>
+                          <span className={isRecebido || isLancado ? "text-blue-600" : ""}>Recebido</span>
+                          <span className={isLancado ? "text-green-600" : ""}>Lançado</span>
+                        </div>
+                      </div>
+
                       {/* Order Items */}
                       {orderDetails && orderDetails.order.id === order.id && (
                         <div className="mt-3 space-y-1.5">
@@ -250,27 +327,50 @@ export default function VitoriaOrders() {
                         )}
                       </div>
 
-                      {/* Mark as processed button */}
-                      {order.status === "aprovado" && (
+                      {/* ACTION BUTTONS - Status flow */}
+                      {isNovo && (
                         <div className="mt-4">
                           <button
-                            onClick={() => handleMarkProcessed(order.id)}
-                            disabled={markProcessedMutation.isPending}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
+                            onClick={() => handleMarkRecebido(order.id)}
+                            disabled={markRecebidoMutation.isPending}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
                           >
-                            <ClipboardCheck className="w-4 h-4" />
-                            {markProcessedMutation.isPending ? "Processando..." : "Marcar como Digitado no Maxiprod"}
+                            <Inbox className="w-4 h-4" />
+                            {markRecebidoMutation.isPending ? "Marcando..." : "✓ OK — Recebi este pedido"}
                           </button>
                         </div>
                       )}
 
-                      {/* Processed info */}
-                      {order.status === "processado" && (
-                        <div className="mt-3 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                          <p className="text-[10px] text-blue-700 dark:text-blue-400">
-                            Processado por: <strong>{order.processadoPor || "Operador"}</strong>
-                            {order.dataProcessamento && ` em ${new Date(order.dataProcessamento).toLocaleDateString("pt-BR")}`}
+                      {isRecebido && (
+                        <div className="mt-4">
+                          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-3">
+                            <p className="text-[10px] text-blue-700 dark:text-blue-400">
+                              <CheckCircle2 className="w-3 h-3 inline mr-1" />
+                              Recebido em {order.vitoriaRecebidoAt ? new Date(order.vitoriaRecebidoAt).toLocaleString("pt-BR") : "—"}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleMarkLancado(order.id)}
+                            disabled={markLancadoMutation.isPending}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                          >
+                            <CheckCheck className="w-4 h-4" />
+                            {markLancadoMutation.isPending ? "Marcando..." : "✓ OK — Já lancei no Maxiprod"}
+                          </button>
+                        </div>
+                      )}
+
+                      {isLancado && (
+                        <div className="mt-3 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="text-[10px] text-green-700 dark:text-green-400 flex items-center gap-1">
+                            <CheckCheck className="w-3 h-3" />
+                            Lançado no Maxiprod em {order.vitoriaLancadoAt ? new Date(order.vitoriaLancadoAt).toLocaleString("pt-BR") : "—"}
                           </p>
+                          {order.vitoriaRecebidoAt && (
+                            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+                              Recebido em {new Date(order.vitoriaRecebidoAt).toLocaleString("pt-BR")}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

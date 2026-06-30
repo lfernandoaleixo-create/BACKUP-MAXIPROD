@@ -2162,6 +2162,12 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   dataProcessamento: timestamp("data_processamento"),
   numeroPedidoMaxiprod: varchar("numero_pedido_maxiprod", { length: 30 }),
   
+  // Status Vitória (fluxo: recebido → lançado no Maxiprod)
+  vitoriaRecebido: boolean("vitoria_recebido").default(false).notNull(),
+  vitoriaRecebidoAt: timestamp("vitoria_recebido_at"),
+  vitoriaLancado: boolean("vitoria_lancado").default(false).notNull(),
+  vitoriaLancadoAt: timestamp("vitoria_lancado_at"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
