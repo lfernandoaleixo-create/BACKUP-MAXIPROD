@@ -4579,3 +4579,4 @@
 - [ ] Vendas: card de evolucao anual (mesmo layout do diario + exportar PDF)
 - [ ] Vendas: card de evolucao trimestral (mesmo layout do diario + exportar PDF)
 - [ ] Vendas: card de evolucao semestral (mesmo layout do diario + exportar PDF)
+- [x] Filtro por produto (Revenda, Industrializados, Materia Prima) dentro dos cards de evolucao anual/semestral/trimestral

@@ -3598,6 +3598,9 @@ export default function Sales() {
   const [annualExpanded, setAnnualExpanded] = useState(false);
   const [semesterExpanded, setSemesterExpanded] = useState(false);
   const [quarterExpanded, setQuarterExpanded] = useState(false);
+  const [annualGrupo, setAnnualGrupo] = useState<string>("all");
+  const [semesterGrupo, setSemesterGrupo] = useState<string>("all");
+  const [quarterGrupo, setQuarterGrupo] = useState<string>("all");
 
   // Available filter options from DB
   const { data: availableFilters } = trpc.sales.getAvailableFilters.useQuery();
@@ -3685,9 +3688,32 @@ export default function Sales() {
     { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
   );
 
-  // Period evolution data (annual, semester, quarter)
-  const { data: periodEvolution } = trpc.sales.getPeriodEvolution.useQuery(
-    { ...filterParams },
+  // Period evolution data - separate queries per card with local grupo filter
+  const annualFilterParams = useMemo(() => ({
+    grupo: annualGrupo as any,
+    subgrupo: "all",
+    crmSegmento: "all",
+  }), [annualGrupo]);
+  const semesterFilterParams = useMemo(() => ({
+    grupo: semesterGrupo as any,
+    subgrupo: "all",
+    crmSegmento: "all",
+  }), [semesterGrupo]);
+  const quarterFilterParams = useMemo(() => ({
+    grupo: quarterGrupo as any,
+    subgrupo: "all",
+    crmSegmento: "all",
+  }), [quarterGrupo]);
+  const { data: annualEvolution } = trpc.sales.getPeriodEvolution.useQuery(
+    annualFilterParams,
+    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
+  );
+  const { data: semesterEvolution } = trpc.sales.getPeriodEvolution.useQuery(
+    semesterFilterParams,
+    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
+  );
+  const { data: quarterEvolution } = trpc.sales.getPeriodEvolution.useQuery(
+    quarterFilterParams,
     { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
   );
 
@@ -4432,7 +4458,7 @@ export default function Sales() {
             </div>
 
             {/* Card Evolução Anual - colapsável */}
-            {periodEvolution && periodEvolution.byYear.length > 0 && (
+            {annualEvolution && annualEvolution.byYear.length > 0 && (
               <div className="bg-emerald-50/40 rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setAnnualExpanded(!annualExpanded)}
@@ -4443,37 +4469,48 @@ export default function Sales() {
                     <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Anual</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(periodEvolution.byYear.reduce((s, y) => s + y.value, 0))}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(annualEvolution.byYear.reduce((s, y) => s + y.value, 0))}</span>
                     {annualExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
                 {annualExpanded && (
                   <div id="sales-annual-chart" className="border-t border-emerald-200 p-5">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="text-xs font-semibold text-slate-500 uppercase">Filtro:</span>
+                      {[{ value: "all", label: "Todos" }, { value: "importacao_revenda", label: "Revenda" }, { value: "industrializacao", label: "Industrializados" }, { value: "importacao_mp", label: "Materia Prima" }].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setAnnualGrupo(opt.value)}
+                          className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                            annualGrupo === opt.value
+                              ? "bg-emerald-600 text-white border-emerald-600"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                     <PeriodEvolutionChart
-                      data={periodEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders }))}
+                      data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders }))}
                       type="annual"
                       onExportPdf={() => {
-                        const el = document.getElementById('sales-annual-chart');
-                        if (!el) return;
-                        const svgEl = el.querySelector('svg');
-                        if (!svgEl) return;
-                        import('@/lib/salesPdfExport').then(mod => {
-                          // Use a simplified export - just capture the chart SVG
-                          const jsPDF = import('jspdf').then(j => {
+                        import('jspdf').then(j => {
+                          import('jspdf-autotable').then(() => {
                             const doc = new j.default({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                             const pageW = doc.internal.pageSize.getWidth();
-                            const pageH = doc.internal.pageSize.getHeight();
                             doc.setFillColor(13, 148, 136);
                             doc.rect(0, 0, pageW, 1.2, 'F');
                             doc.setFontSize(16);
                             doc.setFont('helvetica', 'bold');
-                            doc.text('Evolucao Anual de Vendas', 10, 12);
+                            doc.setTextColor(0);
+                            const grupoLabel = annualGrupo === "all" ? "Todos" : annualGrupo === "importacao_revenda" ? "Revenda" : annualGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
+                            doc.text(`Evolucao Anual de Vendas - ${grupoLabel}`, 10, 12);
                             doc.setFontSize(9);
                             doc.setFont('helvetica', 'normal');
                             doc.setTextColor(100);
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            // Table with annual data
-                            const tableData = periodEvolution.byYear.map(y => [String(y.year), formatCurrencyFull(y.value), String(y.orders)]);
+                            const tableData = annualEvolution.byYear.map(y => [String(y.year), formatCurrencyFull(y.value), String(y.orders)]);
                             (doc as any).autoTable({
                               startY: 24,
                               head: [['Ano', 'Valor Total', 'Pedidos']],
@@ -4482,7 +4519,7 @@ export default function Sales() {
                               headStyles: { fillColor: [13, 148, 136], fontSize: 10 },
                               styles: { fontSize: 10 },
                             });
-                            doc.save(`Evolucao_Anual_Vendas_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                            doc.save(`Evolucao_Anual_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
                           });
                         });
                       }}
@@ -4493,7 +4530,7 @@ export default function Sales() {
             )}
 
             {/* Card Evolução Semestral - colapsável */}
-            {periodEvolution && periodEvolution.bySemester.length > 0 && (
+            {semesterEvolution && semesterEvolution.bySemester.length > 0 && (
               <div className="bg-violet-50/40 rounded-lg border border-violet-200 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setSemesterExpanded(!semesterExpanded)}
@@ -4504,14 +4541,30 @@ export default function Sales() {
                     <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Semestral</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(periodEvolution.bySemester.reduce((s, d) => s + d.value, 0))}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(semesterEvolution.bySemester.reduce((s, d) => s + d.value, 0))}</span>
                     {semesterExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
                 {semesterExpanded && (
                   <div id="sales-semester-chart" className="border-t border-violet-200 p-5">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="text-xs font-semibold text-slate-500 uppercase">Filtro:</span>
+                      {[{ value: "all", label: "Todos" }, { value: "importacao_revenda", label: "Revenda" }, { value: "industrializacao", label: "Industrializados" }, { value: "importacao_mp", label: "Materia Prima" }].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setSemesterGrupo(opt.value)}
+                          className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                            semesterGrupo === opt.value
+                              ? "bg-violet-600 text-white border-violet-600"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-violet-300 hover:text-violet-700"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                     <PeriodEvolutionChart
-                      data={periodEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders }))}
+                      data={semesterEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders }))}
                       type="semester"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4523,14 +4576,15 @@ export default function Sales() {
                             doc.setFontSize(16);
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0);
-                            doc.text('Evolucao Semestral de Vendas', 10, 12);
+                            const grupoLabel = semesterGrupo === "all" ? "Todos" : semesterGrupo === "importacao_revenda" ? "Revenda" : semesterGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
+                            doc.text(`Evolucao Semestral de Vendas - ${grupoLabel}`, 10, 12);
                             doc.setFontSize(9);
                             doc.setFont('helvetica', 'normal');
                             doc.setTextColor(100);
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = periodEvolution.bySemester.map(s => {
+                            const tableData = semesterEvolution.bySemester.map(s => {
                               const [y, sem] = s.label.split('-S');
-                              return [`${sem}° Semestre ${y}`, formatCurrencyFull(s.value), String(s.orders)];
+                              return [`${sem}\u00b0 Semestre ${y}`, formatCurrencyFull(s.value), String(s.orders)];
                             });
                             (doc as any).autoTable({
                               startY: 24,
@@ -4540,7 +4594,7 @@ export default function Sales() {
                               headStyles: { fillColor: [124, 58, 237], fontSize: 10 },
                               styles: { fontSize: 10 },
                             });
-                            doc.save(`Evolucao_Semestral_Vendas_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                            doc.save(`Evolucao_Semestral_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
                           });
                         });
                       }}
@@ -4551,7 +4605,7 @@ export default function Sales() {
             )}
 
             {/* Card Evolução Trimestral - colapsável */}
-            {periodEvolution && periodEvolution.byQuarter.length > 0 && (
+            {quarterEvolution && quarterEvolution.byQuarter.length > 0 && (
               <div className="bg-blue-50/40 rounded-lg border border-blue-200 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setQuarterExpanded(!quarterExpanded)}
@@ -4562,14 +4616,30 @@ export default function Sales() {
                     <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Trimestral</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(periodEvolution.byQuarter.reduce((s, d) => s + d.value, 0))}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(quarterEvolution.byQuarter.reduce((s, d) => s + d.value, 0))}</span>
                     {quarterExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
                 {quarterExpanded && (
                   <div id="sales-quarter-chart" className="border-t border-blue-200 p-5">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="text-xs font-semibold text-slate-500 uppercase">Filtro:</span>
+                      {[{ value: "all", label: "Todos" }, { value: "importacao_revenda", label: "Revenda" }, { value: "industrializacao", label: "Industrializados" }, { value: "importacao_mp", label: "Materia Prima" }].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setQuarterGrupo(opt.value)}
+                          className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                            quarterGrupo === opt.value
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                     <PeriodEvolutionChart
-                      data={periodEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders }))}
+                      data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders }))}
                       type="quarter"
                       onExportPdf={() => {
                         import('jspdf').then(j => {
@@ -4581,14 +4651,15 @@ export default function Sales() {
                             doc.setFontSize(16);
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0);
-                            doc.text('Evolucao Trimestral de Vendas', 10, 12);
+                            const grupoLabel = quarterGrupo === "all" ? "Todos" : quarterGrupo === "importacao_revenda" ? "Revenda" : quarterGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
+                            doc.text(`Evolucao Trimestral de Vendas - ${grupoLabel}`, 10, 12);
                             doc.setFontSize(9);
                             doc.setFont('helvetica', 'normal');
                             doc.setTextColor(100);
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = periodEvolution.byQuarter.map(q => {
+                            const tableData = quarterEvolution.byQuarter.map(q => {
                               const [y, qtr] = q.label.split('-Q');
-                              return [`${qtr}° Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
+                              return [`${qtr}\u00b0 Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
                             });
                             (doc as any).autoTable({
                               startY: 24,
@@ -4598,7 +4669,7 @@ export default function Sales() {
                               headStyles: { fillColor: [37, 99, 235], fontSize: 10 },
                               styles: { fontSize: 10 },
                             });
-                            doc.save(`Evolucao_Trimestral_Vendas_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+                            doc.save(`Evolucao_Trimestral_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
                           });
                         });
                       }}
