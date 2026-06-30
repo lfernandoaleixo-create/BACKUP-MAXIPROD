@@ -889,13 +889,10 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
   const plotW = svgWidth - paddingLeft - paddingRight;
   const plotH = svgHeight - paddingTop - paddingBottom;
 
-  // Bars closer together - use fixed spacing that keeps bars grouped
-  const barWidth = Math.min(28, plotW / Math.max(chartData.length, 1) * 0.5);
-  const totalBarsWidth = barWidth * chartData.length;
-  const totalGapsWidth = Math.min(barWidth * 1.2, 40) * Math.max(chartData.length - 1, 0);
-  const chartContentWidth = totalBarsWidth + totalGapsWidth;
-  const chartStartX = paddingLeft + (plotW - chartContentWidth) / 2;
-  const barGap = chartData.length > 1 ? Math.min(barWidth * 1.2, 40) : 0;
+  // Use same thin bar style as DailyChart
+  const barWidth = Math.min(20, plotW / Math.max(chartData.length, 1) * 0.65);
+  const barGap = (plotW - barWidth * chartData.length) / Math.max(chartData.length - 1, 1);
+  const chartStartX = paddingLeft;
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({
     value: maxVal * pct,
