@@ -844,15 +844,26 @@ function DailyChart({ data, mode, period, comparison }: {
 }
 
 /* ---- Period Evolution Chart (Annual / Semester / Quarter) ---- */
-function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
+function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison, lines }: {
   data: Array<{ label: string; value: number; orders: number; faturado?: number; aFaturar?: number }>;
   type: "annual" | "semester" | "quarter";
   onExportPdf?: () => void;
   monthlyData?: Array<{ month: string; value: number; faturado: number; aFaturar: number; orders: number }>;
+  comparison?: {
+    current: { label?: string; value: number; months: number; avg: number; year?: number; quarter?: number; semester?: number } | null;
+    previous: { label?: string; value: number; months: number; avg: number; year?: number; quarter?: number; semester?: number } | null;
+    best: { label?: string; value: number; months: number; avg: number; year?: number; quarter?: number; semester?: number } | null;
+  } | null;
+  lines?: {
+    current: Array<{ month: number; cumulative: number }>;
+    previous: Array<{ month: number; cumulative: number }>;
+    best: Array<{ month: number; cumulative: number }>;
+  } | null;
 }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [mode, setMode] = useState<"value" | "orders">("value");
+  const [showFaturamento, setShowFaturamento] = useState(false);
 
   if (data.length === 0) return <p className="text-sm text-slate-400 text-center py-8">Sem dados para o periodo</p>;
 
@@ -889,7 +900,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
   const svgWidth = 1000;
   const svgHeight = 360;
   const paddingLeft = 75;
-  const paddingRight = 30;
+  const paddingRight = 60;
   const paddingTop = 25;
   const paddingBottom = 50;
   const plotW = svgWidth - paddingLeft - paddingRight;
@@ -923,75 +934,167 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
   const totalAFaturar = data.reduce((s, d) => s + (d.aFaturar || 0), 0);
   const totalOrders = data.reduce((s, d) => s + d.orders, 0);
 
+  // Cumulative lines
+  const showLines = mode === "value" && lines && (lines.current.length > 0 || lines.previous.length > 0 || lines.best.length > 0);
+  const allCumulatives = showLines ? [
+    ...lines!.current.map(d => d.cumulative),
+    ...lines!.previous.map(d => d.cumulative),
+    ...lines!.best.map(d => d.cumulative),
+  ].filter(v => v > 0) : [];
+  const maxCumulative = allCumulatives.length > 0 ? Math.ceil(Math.max(...allCumulatives) / 500000) * 500000 || 500000 : 1;
+
+  const buildLinePath = (lineData: Array<{ month: number; cumulative: number }>) => {
+    if (!lineData || lineData.length === 0) return "";
+    const totalMonths = chartData.length;
+    return lineData.map((d, i) => {
+      const x = chartStartX + ((d.month - 1) / Math.max(totalMonths - 1, 1)) * chartContentWidth;
+      const y = paddingTop + plotH - (d.cumulative / maxCumulative) * plotH;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(" ");
+  };
+
+  // Comparison labels
+  const getPeriodLabel = (item: { label?: string; year?: number; quarter?: number; semester?: number } | null) => {
+    if (!item) return "";
+    if (type === "quarter" && item.label) {
+      const parts = item.label.split("-Q");
+      return `Q${parts[1]}/${parts[0].substring(2)}`;
+    }
+    if (type === "semester" && item.label) {
+      const parts = item.label.split("-S");
+      return `S${parts[1]}/${parts[0].substring(2)}`;
+    }
+    if (type === "annual" && item.year) return String(item.year);
+    return item.label || "";
+  };
+
   return (
     <div>
-      {/* Summary cards - same layout as Média Diária cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        {/* Total Vendas */}
-        <div className="relative bg-gradient-to-br from-teal-50 via-white to-teal-50/30 border border-teal-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600" />
-          <div className="absolute -top-6 -right-6 w-24 h-24 bg-teal-100/30 rounded-full blur-2xl" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">Total Vendas</span>
-              <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">{totalOrders} pedidos</span>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-teal-800 tracking-tight leading-none">{formatCurrencyFull(totalValue)}</div>
-            <div className="mt-3 pt-3 border-t border-teal-100/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-[2px] bg-teal-500 rounded" />
-                  <span className="text-xs font-medium text-teal-600 uppercase tracking-wide">{type === "annual" ? "Anual 2026" : type === "semester" ? (currentMonth <= 6 ? "1\u00b0 Sem" : "2\u00b0 Sem") : `${Math.ceil(currentMonth / 3)}\u00b0 Tri`}</span>
+      {/* Average cards - same layout as Média Diária in DailyChart */}
+      {comparison && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          {/* Current period */}
+          <div className="relative bg-gradient-to-br from-teal-50 via-white to-teal-50/30 border border-teal-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600" />
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-teal-100/30 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">
+                  Média mensal {type === "quarter" ? "do trimestre atual" : type === "semester" ? "do semestre atual" : "do ano atual"}
+                </span>
+                <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">
+                  {comparison.current?.months || 0} meses
+                </span>
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-teal-800 tracking-tight leading-none">
+                {formatCurrencyFull(comparison.current?.avg || 0)}
+              </div>
+              <div className="mt-3 pt-3 border-t border-teal-100/80">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-[2px] bg-teal-500 rounded" />
+                    <span className="text-xs font-medium text-teal-600 uppercase tracking-wide">Acum. Atual ({getPeriodLabel(comparison.current)})</span>
+                  </div>
+                  <span className="text-sm font-bold text-teal-700">{formatCurrencyFull(comparison.current?.value || 0)}</span>
                 </div>
-                <span className="text-sm font-bold text-teal-700">{formatCurrencyFull(totalValue)}</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Faturado */}
-        <div className="relative bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 border border-emerald-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600" />
-          <div className="absolute -top-6 -right-6 w-24 h-24 bg-emerald-100/30 rounded-full blur-2xl" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600/70">Faturado</span>
-              <span className="text-[9px] text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full font-semibold">{totalFaturado > 0 ? ((totalFaturado / totalValue) * 100).toFixed(1) : 0}%</span>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-emerald-800 tracking-tight leading-none">{formatCurrencyFull(totalFaturado)}</div>
-            <div className="mt-3 pt-3 border-t border-emerald-100/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-[2px] bg-emerald-500 rounded" />
-                  <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Faturado</span>
+          {/* Previous period */}
+          <div className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50/30 border border-blue-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600" />
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-100/30 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600/70">
+                  Média mensal {type === "quarter" ? "do trimestre anterior" : type === "semester" ? "do semestre anterior" : "do ano anterior"}
+                </span>
+                <span className="text-[9px] text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full font-semibold">
+                  {comparison.previous?.months || 0} meses
+                </span>
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-blue-800 tracking-tight leading-none">
+                {formatCurrencyFull(comparison.previous?.avg || 0)}
+              </div>
+              <div className="mt-3 pt-3 border-t border-blue-100/80">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-[2px] bg-blue-600 rounded" />
+                    <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Anterior ({getPeriodLabel(comparison.previous)})</span>
+                  </div>
+                  <span className="text-sm font-bold text-blue-700">{formatCurrencyFull(comparison.previous?.value || 0)}</span>
                 </div>
-                <span className="text-sm font-bold text-emerald-700">{formatCurrencyFull(totalFaturado)}</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* A Faturar */}
-        <div className="relative bg-gradient-to-br from-orange-50 via-white to-orange-50/30 border border-orange-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600" />
-          <div className="absolute -top-6 -right-6 w-24 h-24 bg-orange-100/30 rounded-full blur-2xl" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-orange-600/70">A Faturar</span>
-              <span className="text-[9px] text-orange-600 bg-orange-100/80 px-2 py-0.5 rounded-full font-semibold">{totalValue > 0 ? ((totalAFaturar / totalValue) * 100).toFixed(1) : 0}%</span>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-orange-800 tracking-tight leading-none">{formatCurrencyFull(totalAFaturar)}</div>
-            <div className="mt-3 pt-3 border-t border-orange-100/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-[2px] bg-orange-500 rounded" />
-                  <span className="text-xs font-medium text-orange-600 uppercase tracking-wide">Pendente</span>
+          {/* Best period */}
+          {comparison.best && comparison.best.value > 0 && (
+            <div className="relative bg-gradient-to-br from-amber-50 via-white to-amber-50/30 border border-amber-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-100/30 rounded-full blur-2xl" />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/70">
+                    Média mensal {type === "quarter" ? "do melhor trimestre" : type === "semester" ? "do melhor semestre" : "do melhor ano"}
+                  </span>
+                  <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold">
+                    {comparison.best.months} meses
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-orange-700">{formatCurrencyFull(totalAFaturar)}</span>
+                <div className="text-lg sm:text-2xl font-black text-amber-800 tracking-tight leading-none">
+                  {formatCurrencyFull(comparison.best.avg)}
+                </div>
+                <div className="mt-3 pt-3 border-t border-amber-100/80">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-4 h-[2px] bg-amber-600 rounded" />
+                      <span className="text-xs font-medium text-amber-600 uppercase tracking-wide">Melhor ({getPeriodLabel(comparison.best)})</span>
+                    </div>
+                    <span className="text-sm font-bold text-amber-700">{formatCurrencyFull(comparison.best.value)}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
+      )}
+
+      {/* Collapsible faturamento cards */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowFaturamento(!showFaturamento)}
+          className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-700 uppercase tracking-wide transition-colors"
+        >
+          {showFaturamento ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          Faturamento ({formatCurrencyFull(totalValue)})
+        </button>
+        {showFaturamento && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-teal-500" />
+                <span className="text-xs font-medium text-slate-600">Total Vendas</span>
+              </div>
+              <span className="text-sm font-bold text-slate-800">{formatCurrencyFull(totalValue)}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-medium text-emerald-600">Faturado</span>
+              </div>
+              <span className="text-sm font-bold text-emerald-700">{formatCurrencyFull(totalFaturado)}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                <span className="text-xs font-medium text-orange-600">A Faturar</span>
+              </div>
+              <span className="text-sm font-bold text-orange-700">{formatCurrencyFull(totalAFaturar)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-4">
@@ -1082,7 +1185,56 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
                 </g>
               );
             })}
+
+            {/* Right axis ticks (cumulative) */}
+            {showLines && [0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+              const val = maxCumulative * pct;
+              const yPos = paddingTop + plotH - pct * plotH;
+              return (
+                <text key={`rtick-${i}`} x={svgWidth - paddingRight + 8} y={yPos + 4} className="fill-slate-400 dark:fill-slate-300" fontSize="9" fontWeight="500">
+                  {val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)}
+                </text>
+              );
+            })}
+
+            {/* Overlay: cumulative lines */}
+            {showLines && lines!.best.length > 0 && (
+              <path d={buildLinePath(lines!.best)} fill="none" stroke="#d97706" strokeWidth="1.2" strokeDasharray="5 3" opacity="0.85" />
+            )}
+            {showLines && lines!.previous.length > 0 && (
+              <path d={buildLinePath(lines!.previous)} fill="none" stroke="#2563eb" strokeWidth="1.2" opacity="0.85" />
+            )}
+            {showLines && lines!.current.length > 0 && (
+              <>
+                <path d={buildLinePath(lines!.current)} fill="none" stroke="#0d9488" strokeWidth="1.5" opacity="0.9" />
+                {(() => {
+                  const last = lines!.current[lines!.current.length - 1];
+                  if (!last || last.cumulative === 0) return null;
+                  const x = chartStartX + ((last.month - 1) / Math.max(chartData.length - 1, 1)) * chartContentWidth;
+                  const y = paddingTop + plotH - (last.cumulative / maxCumulative) * plotH;
+                  return <circle cx={x} cy={y} r="4" fill="#0d9488" stroke="white" strokeWidth="2" />;
+                })()}
+              </>
+            )}
           </svg>
+        </div>
+      )}
+
+      {/* Legend for lines */}
+      {showLines && (
+        <div className="flex flex-wrap items-center gap-4 mt-2 mb-3 px-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-[2px] bg-teal-600 rounded" />
+            <span className="text-[10px] text-teal-700 font-medium">Atual ({getPeriodLabel(comparison?.current || null)})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-[2px] bg-blue-600 rounded" />
+            <span className="text-[10px] text-blue-700 font-medium">Anterior ({getPeriodLabel(comparison?.previous || null)})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-[2px] bg-amber-600 rounded" style={{ borderTop: '1px dashed #d97706' }} />
+            <span className="text-[10px] text-amber-700 font-medium">Melhor ({getPeriodLabel(comparison?.best || null)})</span>
+          </div>
         </div>
       )}
 
@@ -4705,6 +4857,8 @@ export default function Sales() {
                       data={annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders, faturado: y.faturado, aFaturar: y.aFaturar }))}
                       monthlyData={annualEvolution.monthlyData}
                       type="annual"
+                      comparison={annualEvolution.annualComparison}
+                      lines={annualEvolution.annualLines}
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
@@ -4778,6 +4932,8 @@ export default function Sales() {
                       data={semesterEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders, faturado: s.faturado, aFaturar: s.aFaturar }))}
                       monthlyData={semesterEvolution.monthlyData}
                       type="semester"
+                      comparison={semesterEvolution.semesterComparison}
+                      lines={semesterEvolution.semesterLines}
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {
@@ -4854,6 +5010,8 @@ export default function Sales() {
                       data={quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders, faturado: q.faturado, aFaturar: q.aFaturar }))}
                       monthlyData={quarterEvolution.monthlyData}
                       type="quarter"
+                      comparison={quarterEvolution.quarterComparison}
+                      lines={quarterEvolution.quarterLines}
                       onExportPdf={() => {
                         import('jspdf').then(j => {
                           import('jspdf-autotable').then(() => {

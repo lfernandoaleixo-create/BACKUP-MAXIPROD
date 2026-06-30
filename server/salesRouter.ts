@@ -3968,15 +3968,13 @@ export const salesRouter = router({
         items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
       }
 
-      // Filter to current year only
+      // Keep ALL items (not just current year) for comparison purposes
       const currentYear = new Date().getFullYear();
-      items = items.filter(item => {
-        if (!item.dataEmissao) return false;
-        const year = parseInt(item.dataEmissao.substring(0, 4));
-        return year === currentYear;
-      });
+      const currentMonth = new Date().getMonth() + 1; // 1-12
+      const currentQuarter = Math.ceil(currentMonth / 3);
+      const currentSemester = currentMonth <= 6 ? 1 : 2;
 
-      // Group by month with faturado/a_faturar breakdown
+      // Group by month with faturado/a_faturar breakdown (ALL years)
       const monthMap = new Map<string, { value: number; faturado: number; aFaturar: number; orders: Set<string> }>();
       for (const item of items) {
         if (!item.dataEmissao) continue;
@@ -4052,6 +4050,176 @@ export const salesRouter = router({
         .map(([month, data]) => ({ month, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100, orders: data.orders.size }))
         .sort((a, b) => a.month.localeCompare(b.month));
 
-      return { byYear, bySemester, byQuarter, monthlyData };
+      // --- Comparison data for averages and lines ---
+      // Quarter comparison: current quarter, previous quarter, best quarter
+      const allQuarters = Array.from(qtrMap.entries())
+        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100 }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      const currentQtrKey = `${currentYear}-Q${currentQuarter}`;
+      const prevQuarter = currentQuarter > 1 ? currentQuarter - 1 : 4;
+      const prevQtrYear = currentQuarter > 1 ? currentYear : currentYear - 1;
+      const prevQtrKey = `${prevQtrYear}-Q${prevQuarter}`;
+      const currentQtrData = allQuarters.find(q => q.label === currentQtrKey);
+      const prevQtrData = allQuarters.find(q => q.label === prevQtrKey);
+      const bestQtrData = allQuarters.length > 0 ? allQuarters.reduce((best, q) => q.value > best.value ? q : best, allQuarters[0]) : null;
+
+      // Get months count for each quarter (for average calculation)
+      const getMonthsInQuarter = (qtrLabel: string) => {
+        const y = parseInt(qtrLabel.substring(0, 4));
+        const q = parseInt(qtrLabel.substring(6, 7));
+        const qStart = (q - 1) * 3 + 1;
+        const qEnd = q * 3;
+        let count = 0;
+        for (const [month] of Array.from(monthMap)) {
+          const my = parseInt(month.substring(0, 4));
+          const mm = parseInt(month.substring(5, 7));
+          if (my === y && mm >= qStart && mm <= qEnd) count++;
+        }
+        return count || 1;
+      };
+
+      const quarterComparison = {
+        current: currentQtrData ? { ...currentQtrData, months: getMonthsInQuarter(currentQtrKey), avg: currentQtrData.value / getMonthsInQuarter(currentQtrKey) } : null,
+        previous: prevQtrData ? { ...prevQtrData, months: getMonthsInQuarter(prevQtrKey), avg: prevQtrData.value / getMonthsInQuarter(prevQtrKey) } : null,
+        best: bestQtrData ? { ...bestQtrData, months: getMonthsInQuarter(bestQtrData.label), avg: bestQtrData.value / getMonthsInQuarter(bestQtrData.label) } : null,
+      };
+
+      // Semester comparison: current semester, previous semester, best semester
+      const allSemesters = Array.from(semMap.entries())
+        .map(([key, data]) => ({ label: key, ...data, value: Math.round(data.value * 100) / 100, faturado: Math.round(data.faturado * 100) / 100, aFaturar: Math.round(data.aFaturar * 100) / 100 }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      const currentSemKey = `${currentYear}-S${currentSemester}`;
+      const prevSemester = currentSemester > 1 ? currentSemester - 1 : 2;
+      const prevSemYear = currentSemester > 1 ? currentYear : currentYear - 1;
+      const prevSemKey = `${prevSemYear}-S${prevSemester}`;
+      const currentSemData = allSemesters.find(s => s.label === currentSemKey);
+      const prevSemData = allSemesters.find(s => s.label === prevSemKey);
+      const bestSemData = allSemesters.length > 0 ? allSemesters.reduce((best, s) => s.value > best.value ? s : best, allSemesters[0]) : null;
+
+      const getMonthsInSemester = (semLabel: string) => {
+        const y = parseInt(semLabel.substring(0, 4));
+        const s = parseInt(semLabel.substring(6, 7));
+        const sStart = s === 1 ? 1 : 7;
+        const sEnd = s === 1 ? 6 : 12;
+        let count = 0;
+        for (const [month] of Array.from(monthMap)) {
+          const my = parseInt(month.substring(0, 4));
+          const mm = parseInt(month.substring(5, 7));
+          if (my === y && mm >= sStart && mm <= sEnd) count++;
+        }
+        return count || 1;
+      };
+
+      const semesterComparison = {
+        current: currentSemData ? { ...currentSemData, months: getMonthsInSemester(currentSemKey), avg: currentSemData.value / getMonthsInSemester(currentSemKey) } : null,
+        previous: prevSemData ? { ...prevSemData, months: getMonthsInSemester(prevSemKey), avg: prevSemData.value / getMonthsInSemester(prevSemKey) } : null,
+        best: bestSemData ? { ...bestSemData, months: getMonthsInSemester(bestSemData.label), avg: bestSemData.value / getMonthsInSemester(bestSemData.label) } : null,
+      };
+
+      // Annual comparison: current year, previous year, best year
+      const currentYearData = byYear.find(y => y.year === currentYear);
+      const prevYearData = byYear.find(y => y.year === currentYear - 1);
+      const bestYearData = byYear.length > 0 ? byYear.reduce((best, y) => y.value > best.value ? y : best, byYear[0]) : null;
+
+      const getMonthsInYear = (year: number) => {
+        let count = 0;
+        for (const [month] of Array.from(monthMap)) {
+          const my = parseInt(month.substring(0, 4));
+          if (my === year) count++;
+        }
+        return count || 1;
+      };
+
+      const annualComparison = {
+        current: currentYearData ? { ...currentYearData, months: getMonthsInYear(currentYear), avg: currentYearData.value / getMonthsInYear(currentYear) } : null,
+        previous: prevYearData ? { ...prevYearData, months: getMonthsInYear(currentYear - 1), avg: prevYearData.value / getMonthsInYear(currentYear - 1) } : null,
+        best: bestYearData ? { ...bestYearData, months: getMonthsInYear(bestYearData.year), avg: bestYearData.value / getMonthsInYear(bestYearData.year) } : null,
+      };
+
+      // Monthly cumulative lines for comparison (for the chart)
+      // For quarter: cumulative by month within the quarter
+      const buildCumulativeForQuarter = (qtrLabel: string | undefined) => {
+        if (!qtrLabel) return [];
+        const y = parseInt(qtrLabel.substring(0, 4));
+        const q = parseInt(qtrLabel.substring(6, 7));
+        const qStart = (q - 1) * 3 + 1;
+        const qEnd = q * 3;
+        const result: Array<{ month: number; cumulative: number }> = [];
+        let cum = 0;
+        for (let m = qStart; m <= qEnd; m++) {
+          const key = `${y}-${String(m).padStart(2, '0')}`;
+          const md = monthMap.get(key);
+          cum += md ? md.value : 0;
+          result.push({ month: m - qStart + 1, cumulative: Math.round(cum * 100) / 100 });
+        }
+        return result;
+      };
+
+      const buildCumulativeForSemester = (semLabel: string | undefined) => {
+        if (!semLabel) return [];
+        const y = parseInt(semLabel.substring(0, 4));
+        const s = parseInt(semLabel.substring(6, 7));
+        const sStart = s === 1 ? 1 : 7;
+        const sEnd = s === 1 ? 6 : 12;
+        const result: Array<{ month: number; cumulative: number }> = [];
+        let cum = 0;
+        for (let m = sStart; m <= sEnd; m++) {
+          const key = `${y}-${String(m).padStart(2, '0')}`;
+          const md = monthMap.get(key);
+          cum += md ? md.value : 0;
+          result.push({ month: m - sStart + 1, cumulative: Math.round(cum * 100) / 100 });
+        }
+        return result;
+      };
+
+      const buildCumulativeForYear = (year: number | undefined) => {
+        if (!year) return [];
+        const result: Array<{ month: number; cumulative: number }> = [];
+        let cum = 0;
+        for (let m = 1; m <= 12; m++) {
+          const key = `${year}-${String(m).padStart(2, '0')}`;
+          const md = monthMap.get(key);
+          cum += md ? md.value : 0;
+          result.push({ month: m, cumulative: Math.round(cum * 100) / 100 });
+        }
+        return result;
+      };
+
+      const quarterLines = {
+        current: buildCumulativeForQuarter(currentQtrKey),
+        previous: buildCumulativeForQuarter(prevQtrKey),
+        best: bestQtrData ? buildCumulativeForQuarter(bestQtrData.label) : [],
+      };
+
+      const semesterLines = {
+        current: buildCumulativeForSemester(currentSemKey),
+        previous: buildCumulativeForSemester(prevSemKey),
+        best: bestSemData ? buildCumulativeForSemester(bestSemData.label) : [],
+      };
+
+      const annualLines = {
+        current: buildCumulativeForYear(currentYear),
+        previous: buildCumulativeForYear(currentYear - 1),
+        best: bestYearData ? buildCumulativeForYear(bestYearData.year) : [],
+      };
+
+      // Filter byYear/monthlyData to current year only for the chart display
+      const byYearCurrent = byYear.filter(y => y.year === currentYear);
+      const monthlyDataCurrent = monthlyData.filter(m => parseInt(m.month.substring(0, 4)) === currentYear);
+
+      return {
+        byYear: byYearCurrent,
+        bySemester: bySemester.filter(s => s.year === currentYear),
+        byQuarter: byQuarter.filter(q => q.year === currentYear),
+        monthlyData: monthlyDataCurrent,
+        quarterComparison,
+        semesterComparison,
+        annualComparison,
+        quarterLines,
+        semesterLines,
+        annualLines,
+      };
     }),
 });

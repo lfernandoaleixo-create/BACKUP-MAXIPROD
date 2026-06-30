@@ -4591,3 +4591,5 @@
 - [x] Graficos evolucao: cor das barras sempre igual a evolucao diaria (teal)
 - [x] Graficos evolucao: mostrar valores exatos nas barras (nao aproximado)
 - [x] Graficos evolucao: cards na base com trimestres (1-4) e semestres (1-2) igual semanas na diaria
+- [ ] Graficos evolucao: substituir cards resumo por cards de media (atual, anterior, melhor) igual evolucao diaria
+- [ ] Graficos evolucao: adicionar linhas de comparacao (atual, anterior, melhor) igual evolucao diaria
