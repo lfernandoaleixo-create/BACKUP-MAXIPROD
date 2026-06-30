@@ -1568,7 +1568,9 @@ export const importRouter = router({
       ...Object.keys(patioByProduct),
       ...Object.keys(navegandoByProduct),
     ]);
-    const poOnlyCodes = Array.from(allPoCodes).filter(code => !stockCodes.has(code));
+    // Exclude specific products that should not appear in Custo Tempo Real
+    const excludeFromCosts = new Set(['00808']);
+    const poOnlyCodes = Array.from(allPoCodes).filter(code => !stockCodes.has(code) && !excludeFromCosts.has(code));
 
     if (poOnlyCodes.length > 0) {
       // Get product names from product_catalog

@@ -4572,3 +4572,4 @@
 - [x] Cheques: Criar seção separada "Cheques Descontados" (situacaoTitulo LIKE '%CHEQUE DESCONTADO FACTORING%' + estado RECEBIDO) com cards por factoring e lista ao clicar
 - [x] Custo Tempo Real: mostrar TODOS os produtos de POs (incubadora, prateleira, etc.) mesmo sem estoque
 - [x] Custo Tempo Real: buscar nome dos produtos no product_catalog e fallback para import_po_products.description
+- [x] Custo Tempo Real: remover produto 00808 (VARETA GLADE REEDS) da tabela
