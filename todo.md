@@ -4562,3 +4562,4 @@
 - [x] Vitória com senha própria acessa apenas a parte de Pedidos para Processamento
 - [x] Bug fix: Valor Total do Frete não salva ao editar manualmente (deve salvar automaticamente ao sair do campo)
 - [x] Implementar Custo Médio Ponderado Móvel: preço fixo entre POs, recalcula só quando chega nova PO (estoque restante × preço médio antigo + caixas novas × preço novo) / total
+- [x] Usar taxa efetiva (cotação + R$0,20 spread) em TODAS as conversões USD→BRL na página de Importação
