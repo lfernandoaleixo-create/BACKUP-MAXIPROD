@@ -4589,3 +4589,5 @@
 - [x] Graficos evolucao: barras mais proximas no trimestre
 - [x] Graficos evolucao: cards resumo com layout igual ao terceiro print (borda lateral colorida, titulo, valor grande, linha inferior)
 - [x] Graficos evolucao: cor das barras sempre igual a evolucao diaria (teal)
+- [x] Graficos evolucao: mostrar valores exatos nas barras (nao aproximado)
+- [x] Graficos evolucao: cards na base com trimestres (1-4) e semestres (1-2) igual semanas na diaria

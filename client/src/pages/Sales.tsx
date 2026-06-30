@@ -1070,10 +1070,10 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
                       y={y - 8}
                       textAnchor="middle"
                       className="fill-black dark:fill-slate-200"
-                      fontSize="11"
+                      fontSize="10"
                       fontWeight="700"
                     >
-                      {mode === "value" ? (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
+                      {mode === "value" ? formatCurrencyFull(val) : val}
                     </text>
                   )}
                   <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" className="fill-slate-600 dark:fill-slate-300" fontSize="11" fontWeight="600">
@@ -1085,6 +1085,130 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
           </svg>
         </div>
       )}
+
+      {/* Bottom period cards - like weekly cards in DailyChart */}
+      {type === "quarter" && (() => {
+        const quarterColors = [
+          { from: "from-teal-500", to: "to-emerald-600", bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", accent: "text-teal-500" },
+          { from: "from-blue-500", to: "to-indigo-600", bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", accent: "text-blue-500" },
+          { from: "from-violet-500", to: "to-purple-600", bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", accent: "text-violet-500" },
+          { from: "from-amber-500", to: "to-orange-600", bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", accent: "text-amber-500" },
+        ];
+        const quarters = [1, 2, 3, 4].map(q => {
+          const qtrStart = (q - 1) * 3 + 1;
+          const qtrEnd = q * 3;
+          const qtrMonths = (monthlyData || []).filter(m => {
+            const mo = parseInt(m.month.substring(5, 7));
+            return mo >= qtrStart && mo <= qtrEnd;
+          });
+          const total = qtrMonths.reduce((s, m) => s + m.value, 0);
+          const orders = qtrMonths.reduce((s, m) => s + m.orders, 0);
+          const faturado = qtrMonths.reduce((s, m) => s + m.faturado, 0);
+          const aFaturar = qtrMonths.reduce((s, m) => s + m.aFaturar, 0);
+          return { q, total, orders, faturado, aFaturar, monthNames: [monthNames[qtrStart - 1], monthNames[qtrStart], monthNames[qtrEnd - 1]] };
+        });
+        return (
+          <div className="grid gap-2.5 mt-4 overflow-x-auto pb-2" style={{ gridTemplateColumns: `repeat(4, minmax(140px, 1fr))` }}>
+            {quarters.map((qtr, idx) => {
+              const colors = quarterColors[idx];
+              const hasValue = qtr.total > 0;
+              return (
+                <div key={idx} className={`relative overflow-hidden rounded-xl border ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-all duration-200`}>
+                  <div className={`h-1.5 bg-gradient-to-r ${colors.from} ${colors.to}`} />
+                  <div className="px-3 pt-3 pb-3 flex flex-col gap-2">
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>{qtr.q}\u00b0 Trimestre</span>
+                      <span className="text-[10px] text-slate-400 font-semibold whitespace-nowrap">{qtr.monthNames.join(", ")}</span>
+                    </div>
+                    <div style={{ whiteSpace: 'nowrap' }}>
+                      {hasValue ? (
+                        <span className={`text-lg font-black ${colors.text} tracking-tight leading-none`}>
+                          {mode === "value" ? formatCurrencyFull(qtr.total) : `${qtr.orders} pedidos`}
+                        </span>
+                      ) : (
+                        <span className="text-lg text-slate-300 font-semibold">\u2014</span>
+                      )}
+                    </div>
+                    {hasValue && mode === "value" && (
+                      <div className="pt-1.5 mt-auto border-t border-slate-200/50 space-y-0.5">
+                        <div className="flex justify-between" style={{ whiteSpace: 'nowrap' }}>
+                          <span className="text-[10px] text-emerald-600 font-medium">Faturado</span>
+                          <span className="text-[10px] font-bold text-emerald-700">{formatCurrencyFull(qtr.faturado)}</span>
+                        </div>
+                        <div className="flex justify-between" style={{ whiteSpace: 'nowrap' }}>
+                          <span className="text-[10px] text-orange-600 font-medium">A Faturar</span>
+                          <span className="text-[10px] font-bold text-orange-700">{formatCurrencyFull(qtr.aFaturar)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {type === "semester" && (() => {
+        const semColors = [
+          { from: "from-violet-500", to: "to-purple-600", bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", accent: "text-violet-500" },
+          { from: "from-indigo-500", to: "to-blue-600", bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", accent: "text-indigo-500" },
+        ];
+        const semesters = [1, 2].map(s => {
+          const semStart = s === 1 ? 1 : 7;
+          const semEnd = s === 1 ? 6 : 12;
+          const semMonths = (monthlyData || []).filter(m => {
+            const mo = parseInt(m.month.substring(5, 7));
+            return mo >= semStart && mo <= semEnd;
+          });
+          const total = semMonths.reduce((sum, m) => sum + m.value, 0);
+          const orders = semMonths.reduce((sum, m) => sum + m.orders, 0);
+          const faturado = semMonths.reduce((sum, m) => sum + m.faturado, 0);
+          const aFaturar = semMonths.reduce((sum, m) => sum + m.aFaturar, 0);
+          const mNames = s === 1 ? "Jan - Jun" : "Jul - Dez";
+          return { s, total, orders, faturado, aFaturar, mNames };
+        });
+        return (
+          <div className="grid gap-2.5 mt-4 overflow-x-auto pb-2" style={{ gridTemplateColumns: `repeat(2, minmax(180px, 1fr))` }}>
+            {semesters.map((sem, idx) => {
+              const colors = semColors[idx];
+              const hasValue = sem.total > 0;
+              return (
+                <div key={idx} className={`relative overflow-hidden rounded-xl border ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-all duration-200`}>
+                  <div className={`h-1.5 bg-gradient-to-r ${colors.from} ${colors.to}`} />
+                  <div className="px-3 pt-3 pb-3 flex flex-col gap-2">
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>{sem.s}\u00b0 Semestre</span>
+                      <span className="text-[10px] text-slate-400 font-semibold whitespace-nowrap">{sem.mNames}</span>
+                    </div>
+                    <div style={{ whiteSpace: 'nowrap' }}>
+                      {hasValue ? (
+                        <span className={`text-lg font-black ${colors.text} tracking-tight leading-none`}>
+                          {mode === "value" ? formatCurrencyFull(sem.total) : `${sem.orders} pedidos`}
+                        </span>
+                      ) : (
+                        <span className="text-lg text-slate-300 font-semibold">\u2014</span>
+                      )}
+                    </div>
+                    {hasValue && mode === "value" && (
+                      <div className="pt-1.5 mt-auto border-t border-slate-200/50 space-y-0.5">
+                        <div className="flex justify-between" style={{ whiteSpace: 'nowrap' }}>
+                          <span className="text-[10px] text-emerald-600 font-medium">Faturado</span>
+                          <span className="text-[10px] font-bold text-emerald-700">{formatCurrencyFull(sem.faturado)}</span>
+                        </div>
+                        <div className="flex justify-between" style={{ whiteSpace: 'nowrap' }}>
+                          <span className="text-[10px] text-orange-600 font-medium">A Faturar</span>
+                          <span className="text-[10px] font-bold text-orange-700">{formatCurrencyFull(sem.aFaturar)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
