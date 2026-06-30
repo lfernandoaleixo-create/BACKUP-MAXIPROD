@@ -1510,6 +1510,11 @@ function CustoMercadoria() {
                 <span className="text-[10px] font-semibold text-purple-700">SPREAD: + R$ 0,20</span>
                 <span className="text-[10px] text-purple-500">na conversão</span>
               </span>
+              {exchangeData && (
+                <span className="text-[10px] sm:text-xs bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 text-emerald-700 font-semibold">
+                  Taxa efetiva: 1 USD = R$ {(exchangeRate + 0.20).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
                 currency === "USD"
                   ? "bg-blue-100 border-blue-400 text-blue-800"
@@ -1596,15 +1601,18 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
     : allCosts;
 
   const SPREAD = 0.20; // R$ 0,20 de spread na conversão USD→BRL
+  const rateComSpread = exchangeRate + SPREAD; // Cotação efetiva para conversão
   const formatBrl = (val: number) => val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const displayVal = (brl: number) => {
-    // Aplica spread: converte BRL para USD usando (exchangeRate + spread)
-    const rateComSpread = exchangeRate + SPREAD;
+    // Valores no banco estão em BRL (convertidos com a cotação pura)
+    // Para exibir: se BRL, mostra usando cotação + spread
     if (currency === "BRL") {
-      // BRL: valor original * (rate + spread) / rate = ajusta proporcionalmente
-      const ajustado = brl * (rateComSpread / exchangeRate);
-      return `R$ ${formatBrl(ajustado)}`;
+      // Reconverte para USD com cotação pura, depois converte para BRL com spread
+      const usdVal = brl / exchangeRate;
+      const brlComSpread = usdVal * rateComSpread;
+      return `R$ ${formatBrl(brlComSpread)}`;
     }
+    // USD: mostra o valor em USD (sem spread, spread só afeta BRL)
     return `$ ${formatBrl(brl / exchangeRate)}`;
   };
 
