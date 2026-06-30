@@ -3406,6 +3406,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   // Silent auto-save mutation for product costs (no toast, no invalidation loop)
   const autoSaveProductCosts = trpc.import.updatePoLogistics.useMutation();
   const shouldCollapseRef = useRef(false);
+  const lastSavedCostsRef = useRef<string>('');
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });
@@ -3499,6 +3500,69 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     { enabled: codeSearch.length >= 2 }
   );
 
+  // Auto-save productCosts whenever products data or cost inputs change
+  // This ensures the Estimativa column always shows the exact same value as the PO
+  useEffect(() => {
+    if (!products || products.length === 0 || isLoading) return;
+    const filteredProds = products.filter((p: any) => p.productCode && p.productCode.trim() !== '');
+    if (filteredProds.length === 0) return;
+
+    // Recalculate custosTotais (same formula as the main render)
+    const totalValRef = filteredProds.reduce((sum: number, p: any) => {
+      const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+      const qty = Number(p.quantidade || 0);
+      return sum + (valorForn * qty);
+    }, 0);
+    let totalFrete = 0;
+    if (freteOverrideUsd !== null && Number(freteOverrideUsd) > 0) {
+      totalFrete = Number(freteOverrideUsd);
+    } else {
+      totalFrete = filteredProds.reduce((sum: number, p: any) => {
+        const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+        const valorOrdem = Number(String(p.valorPoCheia || 0).replace(',', '.'));
+        const qty = Number(p.quantidade || 0);
+        const diff = valorOrdem - valorForn;
+        return sum + (diff > 0 ? diff * qty : 0);
+      }, 0);
+    }
+    const totalCi = Number(valorCiUsd || 0);
+    const despLib = Number(vilelaReal || 0) > 0 ? Number(vilelaReal) : (totalCi * (vilelaPercent / 100));
+    const freteSP = Number(freteTerrestreSPUsd || 0);
+    const difal = Number(difalValUsd || 0);
+    const comissao = Number(comSilverioUsd || 0);
+    const custosTotaisCalc = totalValRef + totalFrete + despLib + freteSP + difal + comissao;
+
+    const productCosts = filteredProds.map((p: any) => {
+      const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+      const qty = Number(p.quantidade || 0);
+      const valorRef = valorForn * qty;
+      const percProduto = totalValRef > 0 ? (valorRef / totalValRef) * 100 : 0;
+      const valorDaCaixaUsd = qty > 0 ? (custosTotaisCalc * (percProduto / 100)) / qty : 0;
+      const valorCaixaBrl = valorDaCaixaUsd * effectiveRate;
+      const unid = Number(p.unidCaixa || 0);
+      const precoMilUnid = unid > 0 ? valorCaixaBrl / unid : 0;
+      return { id: p.id, valorCaixaBrl: valorCaixaBrl.toFixed(6), precoMilUnid: precoMilUnid.toFixed(6) };
+    });
+
+    const costsKey = JSON.stringify(productCosts);
+    if (costsKey === lastSavedCostsRef.current) return;
+    lastSavedCostsRef.current = costsKey;
+
+    autoSaveProductCosts.mutate({
+      id: poId,
+      totalCiRemessa: valorCiUsd,
+      pagamento1Remessa: pag1,
+      pagamento2Remessa: pag2Usd,
+      pagamento3Remessa: pag3Usd,
+      freteTermestreRemessa: freteTerrestreSPUsd,
+      difalValor: difalValUsd,
+      comissaoSilverio: comSilverioUsd,
+      freteOverrideUsd: freteOverrideUsd,
+      vilelaValorReal: vilelaReal,
+      productCosts,
+    });
+  }, [products, freteOverrideUsd, valorCiUsd, vilelaReal, freteTerrestreSPUsd, difalValUsd, comSilverioUsd, effectiveRate, vilelaPercent, pag1, pag2Usd, pag3Usd]);
+
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>;
   }
@@ -3581,29 +3645,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const remessa3 = Number(pag3 || 0);
   const remessa1Calculada = totalOrdemPagamento - remessa2 - remessa3;
 
-  // Auto-save per-product valorCaixaBrl whenever products or costs change
+  // Auto-save per-product valorCaixaBrl after each product update settles
   // This ensures the Estimativa column always shows the exact same value as the PO
-  const lastSavedCostsRef = useRef<string>('');
-  useEffect(() => {
-    if (isLegacyPo || !filteredProducts.length || custosTotais <= 0) return;
-    const costs = filteredProducts.map(prod => {
-      const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
-      const qty = Number(prod.quantidade || 0);
-      const valorRef = valorForn * qty;
-      const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
-      const valorDaCaixaUsd = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
-      const valorCaixaBrlCalc = valorDaCaixaUsd * effectiveRate;
-      const unid = Number(prod.unidCaixa || 0);
-      const precoMilUnidCalc = unid > 0 ? valorCaixaBrlCalc / unid : 0;
-      return { id: prod.id, valorCaixaBrl: valorCaixaBrlCalc.toFixed(6), precoMilUnid: precoMilUnidCalc > 0 ? precoMilUnidCalc.toFixed(6) : null };
-    }).filter(p => Number(p.valorCaixaBrl) > 0);
-    // Only save if values actually changed (avoid infinite loops)
-    const costsKey = JSON.stringify(costs);
-    if (costs.length > 0 && costsKey !== lastSavedCostsRef.current) {
-      lastSavedCostsRef.current = costsKey;
-      autoSaveProductCosts.mutate({ id: po.id, productCosts: costs });
-    }
-  }, [filteredProducts, custosTotais, effectiveRate, totalValorReferencia]);
+  // The save happens via updateProduct.onSettled and saveCosts function
 
   // Helper: convert internal USD value to BRL for database storage
   const toBrl = (usdVal: string) => {
