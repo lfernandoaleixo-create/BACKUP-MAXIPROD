@@ -2500,6 +2500,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId });
       utils.import.getActiveContainers.invalidate();
+      utils.import.getRealTimeCosts.invalidate(); // Refresh Estimativa
     },
   });
   const [editingPoId, setEditingPoId] = useState<number | null>(null);
@@ -3399,12 +3400,14 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     },
     onSettled: () => {
       utils.import.getPoProducts.invalidate({ poId });
+      utils.import.getRealTimeCosts.invalidate(); // Refresh Estimativa
     },
   });
   const shouldCollapseRef = useRef(false);
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });
+      utils.import.getRealTimeCosts.invalidate(); // Refresh Estimativa
       if (shouldCollapseRef.current) {
         toast.success('Custos salvos!');
         onCollapse?.();
@@ -3413,10 +3416,10 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     },
   });
   const addProduct = trpc.import.addPoProduct.useMutation({
-    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); utils.import.getRealTimeCosts.invalidate(); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
   });
   const deleteProduct = trpc.import.deletePoProduct.useMutation({
-    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); toast.success('Produto removido!'); },
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); utils.import.getRealTimeCosts.invalidate(); toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; valorUsd?: string; quantidade?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string; unidCaixa?: string }>({});

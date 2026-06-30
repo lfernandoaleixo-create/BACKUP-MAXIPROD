@@ -1172,11 +1172,152 @@ export const importRouter = router({
       .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
       .where(and(baseWhere, sql`${importPos.navigationStatus} = 'chegou_patio'`));
 
-    // BLUE: POs Navegando (estimativa)
-    const navegandoPoProducts = await db.select(poProductFields)
+    // BLUE: POs Navegando (estimativa) - DYNAMIC CALCULATION
+    // For navegando POs, we need to calculate valorCaixaBrl dynamically
+    // because it's only persisted when PO becomes 'concluida'.
+    // We fetch ALL products (even without valorCaixaBrl) and ALL PO data to compute live.
+    const navegandoBaseWhere = and(
+      sql`${importPoProducts.productCode} IS NOT NULL`,
+      sql`${importPoProducts.productCode} != ''`,
+    );
+    const navegandoPoProductsRaw = await db.select({
+      id: importPoProducts.id,
+      productCode: importPoProducts.productCode,
+      quantidade: importPoProducts.quantidade,
+      valorUsd: importPoProducts.valorUsd,
+      valorPoCheia: importPoProducts.valorPoCheia,
+      valorCaixaBrl: importPoProducts.valorCaixaBrl,
+      precoMilUnid: importPoProducts.precoMilUnid,
+      unidCaixa: importPoProducts.unidCaixa,
+      poNumber: importPos.poNumber,
+      poId: importPos.id,
+      previsaoEntrega: importPos.previsaoEntrega,
+      isFromSpreadsheet: importPos.isFromSpreadsheet,
+      totalCiRemessa: importPos.totalCiRemessa,
+      freteTermestreRemessa: importPos.freteTermestreRemessa,
+      difalValor: importPos.difalValor,
+      comissaoSilverio: importPos.comissaoSilverio,
+      vilelaValorReal: importPos.vilelaValorReal,
+      freteOverrideUsd: importPos.freteOverrideUsd,
+      despesasLiberacaoRemessa: importPos.despesasLiberacaoRemessa,
+      totalCustosImportacao: importPos.totalCustosImportacao,
+      valorDolar1: importPos.valorDolar1,
+      valorDolar1Remessa: importPos.valorDolar1Remessa,
+    })
       .from(importPoProducts)
       .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
-      .where(and(baseWhere, sql`${importPos.navigationStatus} = 'navegando'`));
+      .where(and(navegandoBaseWhere, sql`${importPos.navigationStatus} = 'navegando'`));
+
+    // Get vilela percent config for dynamic calculation
+    const vilelaConfigRows = await db.select().from(importConfig).where(eq(importConfig.configKey, 'vilela_percent'));
+    const vilelaPercent = vilelaConfigRows.length > 0 ? Number(vilelaConfigRows[0].configValue) : 37;
+
+    // Get current exchange rate for dynamic calculation
+    let currentRate = 5.50; // fallback
+    try {
+      if (exchangeRateCache) {
+        currentRate = exchangeRateCache.data.rate;
+      }
+    } catch (e) { /* use fallback */ }
+    const SPREAD = 0.20;
+    const effectiveRate = currentRate + SPREAD;
+
+    // Group navegando products by PO to calculate custosTotais per PO
+    const navegandoByPo: Record<number, typeof navegandoPoProductsRaw> = {};
+    for (const pp of navegandoPoProductsRaw) {
+      if (!navegandoByPo[pp.poId]) navegandoByPo[pp.poId] = [];
+      navegandoByPo[pp.poId].push(pp);
+    }
+
+    // Calculate dynamic valorCaixaBrl for each product in navegando POs
+    const navegandoPoProducts: Array<{ productCode: string | null; quantidade: any; valorCaixaBrl: any; precoMilUnid: any; poNumber: string; poId: number; previsaoEntrega: string | null }> = [];
+    for (const [poIdStr, poProducts] of Object.entries(navegandoByPo)) {
+      const firstProd = poProducts[0];
+      const isLegacy = !!firstProd.isFromSpreadsheet;
+
+      if (isLegacy) {
+        // Legacy POs: use stored valorCaixaBrl (frozen from spreadsheet)
+        for (const pp of poProducts) {
+          if (Number(pp.valorCaixaBrl || 0) > 0 || Number(pp.precoMilUnid || 0) > 0) {
+            navegandoPoProducts.push({
+              productCode: pp.productCode,
+              quantidade: pp.quantidade,
+              valorCaixaBrl: pp.valorCaixaBrl,
+              precoMilUnid: pp.precoMilUnid,
+              poNumber: pp.poNumber,
+              poId: pp.poId,
+              previsaoEntrega: pp.previsaoEntrega,
+            });
+          }
+        }
+        continue;
+      }
+
+      // New POs: calculate dynamically (same formula as frontend PoProductsTable)
+      // 1. Total Valor de Referência (sum of valorUsd × quantidade for all products)
+      const totalValorReferencia = poProducts.reduce((sum, p) => {
+        const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+        const qty = Number(p.quantidade || 0);
+        return sum + (valorForn * qty);
+      }, 0);
+
+      // 2. Total Frete Calculado (freteOverrideUsd or sum of (valorPoCheia - valorUsd) × qty)
+      let totalFreteCalculado = 0;
+      if (firstProd.freteOverrideUsd && Number(firstProd.freteOverrideUsd) > 0) {
+        totalFreteCalculado = Number(firstProd.freteOverrideUsd);
+      } else {
+        totalFreteCalculado = poProducts.reduce((sum, p) => {
+          const valorForn = Number(String(p.valorUsd || 0).replace(',', '.'));
+          const valorOrdem = Number(String(p.valorPoCheia || 0).replace(',', '.'));
+          const qty = Number(p.quantidade || 0);
+          const diff = valorOrdem - valorForn;
+          return sum + (diff > 0 ? diff * qty : 0);
+        }, 0);
+      }
+
+      // 3. Despesas Liberação (vilelaValorReal if set, otherwise totalCi × vilelaPercent%)
+      const totalCi = Number(firstProd.totalCiRemessa || 0);
+      const despesasLiberacao = firstProd.vilelaValorReal && Number(firstProd.vilelaValorReal) > 0
+        ? Number(firstProd.vilelaValorReal)
+        : (totalCi * (vilelaPercent / 100));
+
+      // 4. Other costs (stored in BRL in DB, convert to USD)
+      const poRate = Number(firstProd.valorDolar1 || firstProd.valorDolar1Remessa || currentRate);
+      const freteTerrestreSP = Number(firstProd.freteTermestreRemessa || 0) / poRate;
+      const difalVal = Number(firstProd.difalValor || 0) / poRate;
+      const comSilverio = Number(firstProd.comissaoSilverio || 0) / poRate;
+
+      // 5. Custos Totais (all in USD)
+      const custosTotais = totalValorReferencia + totalFreteCalculado + despesasLiberacao + freteTerrestreSP + difalVal + comSilverio;
+
+      // 6. Calculate valorCaixaBrl for each product
+      for (const pp of poProducts) {
+        if (!pp.productCode) continue;
+        const valorForn = Number(String(pp.valorUsd || 0).replace(',', '.'));
+        const qty = Number(pp.quantidade || 0);
+        if (qty <= 0) continue;
+        const valorRef = valorForn * qty;
+        const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
+        const valorDaCaixaUsd = (custosTotais * (percProdutoNoTotal / 100)) / qty;
+        const valorCaixaBrl = valorDaCaixaUsd * effectiveRate;
+
+        if (valorCaixaBrl > 0) {
+          // Also calculate precoMilUnid
+          const unid = Number(pp.unidCaixa || 0);
+          const precoMilUnid = unid > 0 ? valorCaixaBrl / unid : 0;
+
+          navegandoPoProducts.push({
+            productCode: pp.productCode,
+            quantidade: pp.quantidade,
+            valorCaixaBrl: String(valorCaixaBrl.toFixed(6)),
+            precoMilUnid: precoMilUnid > 0 ? String(precoMilUnid.toFixed(6)) : pp.precoMilUnid,
+            poNumber: pp.poNumber,
+            poId: pp.poId,
+            previsaoEntrega: pp.previsaoEntrega,
+          });
+        }
+      }
+    }
 
     // Helper: sort PO entries by arrival date (oldest first for FIFO)
     const sortByArrival = (a: { previsaoEntrega: string | null }, b: { previsaoEntrega: string | null }) => {
