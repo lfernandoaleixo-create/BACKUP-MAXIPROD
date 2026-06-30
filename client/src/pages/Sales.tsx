@@ -856,12 +856,36 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
 
   if (data.length === 0) return <p className="text-sm text-slate-400 text-center py-8">Sem dados para o periodo</p>;
 
-  // Use monthly data for the chart (shows months)
-  const chartData = monthlyData && monthlyData.length > 0 ? monthlyData : [];
+  // Filter monthly data based on type:
+  // - annual: all months
+  // - semester: current semester months (Jan-Jun or Jul-Dec)
+  // - quarter: current quarter months (3 months)
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  let filteredMonthly = monthlyData || [];
+  if (type === "semester") {
+    const currentSem = currentMonth <= 6 ? 1 : 2;
+    const semStart = currentSem === 1 ? 1 : 7;
+    const semEnd = currentSem === 1 ? 6 : 12;
+    filteredMonthly = filteredMonthly.filter(m => {
+      const mo = parseInt(m.month.substring(5, 7));
+      return mo >= semStart && mo <= semEnd;
+    });
+  } else if (type === "quarter") {
+    const currentQtr = Math.ceil(currentMonth / 3);
+    const qtrStart = (currentQtr - 1) * 3 + 1;
+    const qtrEnd = currentQtr * 3;
+    filteredMonthly = filteredMonthly.filter(m => {
+      const mo = parseInt(m.month.substring(5, 7));
+      return mo >= qtrStart && mo <= qtrEnd;
+    });
+  }
+
+  const chartData = filteredMonthly;
   const key = mode === "value" ? "value" : "orders";
   const maxVal = chartData.length > 0 ? Math.max(...chartData.map(d => d[key]), 1) : 1;
 
-  // SVG dimensions - same as DailyChart
+  // SVG dimensions
   const svgWidth = 1000;
   const svgHeight = 360;
   const paddingLeft = 75;
@@ -871,9 +895,13 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
   const plotW = svgWidth - paddingLeft - paddingRight;
   const plotH = svgHeight - paddingTop - paddingBottom;
 
-  // Thin bars like DailyChart
-  const barWidth = chartData.length > 0 ? Math.min(20, plotW / chartData.length * 0.65) : 20;
-  const barGap = chartData.length > 1 ? (plotW - barWidth * chartData.length) / Math.max(chartData.length - 1, 1) : 0;
+  // Bars closer together - use fixed spacing that keeps bars grouped
+  const barWidth = Math.min(28, plotW / Math.max(chartData.length, 1) * 0.5);
+  const totalBarsWidth = barWidth * chartData.length;
+  const totalGapsWidth = Math.min(barWidth * 1.2, 40) * Math.max(chartData.length - 1, 0);
+  const chartContentWidth = totalBarsWidth + totalGapsWidth;
+  const chartStartX = paddingLeft + (plotW - chartContentWidth) / 2;
+  const barGap = chartData.length > 1 ? Math.min(barWidth * 1.2, 40) : 0;
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({
     value: maxVal * pct,
@@ -886,34 +914,83 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
     return monthNames[m - 1] || month;
   };
 
-  const colors = {
-    annual: { bar: isDark ? "#d4a017" : "#0d9488", bg: "emerald" },
-    semester: { bar: isDark ? "#a78bfa" : "#7c3aed", bg: "violet" },
-    quarter: { bar: isDark ? "#60a5fa" : "#2563eb", bg: "blue" },
-  };
-
-  const barColor = colors[type].bar;
+  // Always use same color as DailyChart (teal)
+  const barColor = isDark ? "#14b8a6" : "#14b8a6";
 
   // Totals from period data
   const totalValue = data.reduce((s, d) => s + d.value, 0);
   const totalFaturado = data.reduce((s, d) => s + (d.faturado || 0), 0);
   const totalAFaturar = data.reduce((s, d) => s + (d.aFaturar || 0), 0);
+  const totalOrders = data.reduce((s, d) => s + d.orders, 0);
 
   return (
     <div>
-      {/* Summary row: Total, Faturado, A Faturar */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-          <div className="text-[10px] font-semibold text-slate-400 uppercase">Total Vendas</div>
-          <div className="text-sm font-bold text-slate-800 mt-0.5">{formatCurrencyFull(totalValue)}</div>
+      {/* Summary cards - same layout as Média Diária cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        {/* Total Vendas */}
+        <div className="relative bg-gradient-to-br from-teal-50 via-white to-teal-50/30 border border-teal-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600" />
+          <div className="absolute -top-6 -right-6 w-24 h-24 bg-teal-100/30 rounded-full blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">Total Vendas</span>
+              <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">{totalOrders} pedidos</span>
+            </div>
+            <div className="text-lg sm:text-2xl font-black text-teal-800 tracking-tight leading-none">{formatCurrencyFull(totalValue)}</div>
+            <div className="mt-3 pt-3 border-t border-teal-100/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-[2px] bg-teal-500 rounded" />
+                  <span className="text-xs font-medium text-teal-600 uppercase tracking-wide">{type === "annual" ? "Anual 2026" : type === "semester" ? (currentMonth <= 6 ? "1\u00b0 Sem" : "2\u00b0 Sem") : `${Math.ceil(currentMonth / 3)}\u00b0 Tri`}</span>
+                </div>
+                <span className="text-sm font-bold text-teal-700">{formatCurrencyFull(totalValue)}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-          <div className="text-[10px] font-semibold text-emerald-500 uppercase">Faturado</div>
-          <div className="text-sm font-bold text-emerald-700 mt-0.5">{formatCurrencyFull(totalFaturado)}</div>
+
+        {/* Faturado */}
+        <div className="relative bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 border border-emerald-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600" />
+          <div className="absolute -top-6 -right-6 w-24 h-24 bg-emerald-100/30 rounded-full blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600/70">Faturado</span>
+              <span className="text-[9px] text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full font-semibold">{totalFaturado > 0 ? ((totalFaturado / totalValue) * 100).toFixed(1) : 0}%</span>
+            </div>
+            <div className="text-lg sm:text-2xl font-black text-emerald-800 tracking-tight leading-none">{formatCurrencyFull(totalFaturado)}</div>
+            <div className="mt-3 pt-3 border-t border-emerald-100/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-[2px] bg-emerald-500 rounded" />
+                  <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Faturado</span>
+                </div>
+                <span className="text-sm font-bold text-emerald-700">{formatCurrencyFull(totalFaturado)}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-          <div className="text-[10px] font-semibold text-orange-500 uppercase">A Faturar</div>
-          <div className="text-sm font-bold text-orange-700 mt-0.5">{formatCurrencyFull(totalAFaturar)}</div>
+
+        {/* A Faturar */}
+        <div className="relative bg-gradient-to-br from-orange-50 via-white to-orange-50/30 border border-orange-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600" />
+          <div className="absolute -top-6 -right-6 w-24 h-24 bg-orange-100/30 rounded-full blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-orange-600/70">A Faturar</span>
+              <span className="text-[9px] text-orange-600 bg-orange-100/80 px-2 py-0.5 rounded-full font-semibold">{totalValue > 0 ? ((totalAFaturar / totalValue) * 100).toFixed(1) : 0}%</span>
+            </div>
+            <div className="text-lg sm:text-2xl font-black text-orange-800 tracking-tight leading-none">{formatCurrencyFull(totalAFaturar)}</div>
+            <div className="mt-3 pt-3 border-t border-orange-100/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-[2px] bg-orange-500 rounded" />
+                  <span className="text-xs font-medium text-orange-600 uppercase tracking-wide">Pendente</span>
+                </div>
+                <span className="text-sm font-bold text-orange-700">{formatCurrencyFull(totalAFaturar)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -967,11 +1044,11 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData }: {
               </g>
             ))}
 
-            {/* Bars - thin like DailyChart - one per month */}
+            {/* Bars - one per month, centered and close together */}
             {chartData.map((item, idx) => {
               const val = item[key];
               const barH = val > 0 ? Math.max((val / maxVal) * plotH, 2) : 1;
-              const x = paddingLeft + idx * (barWidth + barGap);
+              const x = chartStartX + idx * (barWidth + barGap);
               const y = paddingTop + plotH - barH;
 
               return (

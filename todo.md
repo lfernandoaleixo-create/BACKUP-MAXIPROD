@@ -4585,3 +4585,7 @@
 - [x] Graficos evolucao: mostrar total vendas, faturado e a faturar em cada card
 - [x] Card A FATURAR: reduzir espessura para ficar igual aos outros
 - [x] Graficos evolucao: mostrar meses envolvidos no grafico (barras por mes)
+- [x] Graficos evolucao: trimestre mostra apenas meses do trimestre, semestre mostra meses do semestre
+- [x] Graficos evolucao: barras mais proximas no trimestre
+- [x] Graficos evolucao: cards resumo com layout igual ao terceiro print (borda lateral colorida, titulo, valor grande, linha inferior)
+- [x] Graficos evolucao: cor das barras sempre igual a evolucao diaria (teal)
