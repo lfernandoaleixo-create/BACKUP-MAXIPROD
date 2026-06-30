@@ -4596,3 +4596,7 @@
 - [x] Abreviar valores nas barras com tooltip no hover mostrando valor completo
 - [ ] Corrigir linhas de comparacao (anterior/melhor) que estao no zero
 - [x] Reordenar cards: Diaria > Trimestral > Semestral > Anual
+- [x] Fix bar colors in PeriodEvolutionChart: change from blue to teal (#14b8a6)
+- [x] Fix quarter bars spacing: show all months of the year so quarters appear side by side
+- [x] Fix card closed value: show current quarter/semester value, not sum of all periods
+- [x] Fix comparison lines rendering to work with all-months display

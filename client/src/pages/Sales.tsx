@@ -869,30 +869,11 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
 
   if (data.length === 0) return <p className="text-sm text-slate-400 text-center py-8">Sem dados para o periodo</p>;
 
-  // Filter monthly data based on type:
-  // - annual: all months
-  // - semester: current semester months (Jan-Jun or Jul-Dec)
-  // - quarter: current quarter months (3 months)
+  // Show ALL months of the year for all chart types
+  // Quarter/Semester: show all months so bars are side by side
   const now = new Date();
   const currentMonth = now.getMonth() + 1; // 1-12
-  let filteredMonthly = monthlyData || [];
-  if (type === "semester") {
-    const currentSem = currentMonth <= 6 ? 1 : 2;
-    const semStart = currentSem === 1 ? 1 : 7;
-    const semEnd = currentSem === 1 ? 6 : 12;
-    filteredMonthly = filteredMonthly.filter(m => {
-      const mo = parseInt(m.month.substring(5, 7));
-      return mo >= semStart && mo <= semEnd;
-    });
-  } else if (type === "quarter") {
-    const currentQtr = Math.ceil(currentMonth / 3);
-    const qtrStart = (currentQtr - 1) * 3 + 1;
-    const qtrEnd = currentQtr * 3;
-    filteredMonthly = filteredMonthly.filter(m => {
-      const mo = parseInt(m.month.substring(5, 7));
-      return mo >= qtrStart && mo <= qtrEnd;
-    });
-  }
+  const filteredMonthly = monthlyData || [];
 
   const chartData = filteredMonthly;
   const key = mode === "value" ? "value" : "orders";
@@ -946,14 +927,39 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
   const maxCumulative = allCumulatives.length > 0 ? Math.ceil(Math.max(...allCumulatives) / 500000) * 500000 || 500000 : 1;
 
   // Map line data to bar center positions
+  // For quarter lines: month is 1-3 relative to the quarter, need to map to absolute month position
+  // For semester lines: month is 1-6 relative to the semester
+  // For annual lines: month is 1-12 absolute
+  const currentQtr = Math.ceil(currentMonth / 3);
+  const currentSem = currentMonth <= 6 ? 1 : 2;
   const buildLinePath = (lineData: Array<{ month: number; cumulative: number }>) => {
     if (!lineData || lineData.length === 0) return "";
-    return lineData.filter(d => d.month - 1 < chartData.length).map((d, i) => {
-      const idx = d.month - 1;
+    const points = lineData.map(d => {
+      // Convert relative month to absolute month index in chartData
+      let absMonth: number;
+      if (type === "quarter") {
+        // lines are relative to the CURRENT quarter (month 1-3)
+        // current quarter starts at (currentQtr-1)*3+1
+        absMonth = (currentQtr - 1) * 3 + d.month;
+      } else if (type === "semester") {
+        // lines are relative to the CURRENT semester (month 1-6)
+        absMonth = currentSem === 1 ? d.month : d.month + 6;
+      } else {
+        // annual: month is already 1-12
+        absMonth = d.month;
+      }
+      // Find the index in chartData that matches this absolute month
+      const idx = chartData.findIndex(cd => {
+        const mo = parseInt(cd.month.substring(5, 7));
+        return mo === absMonth;
+      });
+      if (idx < 0) return null;
       const x = chartStartX + idx * (barWidth + barGap) + barWidth / 2;
       const y = paddingTop + plotH - (d.cumulative / maxCumulative) * plotH;
-      return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    }).join(" ");
+      return { x, y };
+    }).filter(Boolean) as Array<{ x: number; y: number }>;
+    if (points.length === 0) return "";
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
   };
 
   // Comparison labels
@@ -1236,7 +1242,16 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                 {(() => {
                   const last = lines!.current[lines!.current.length - 1];
                   if (!last || last.cumulative === 0) return null;
-                  const idx = Math.min(last.month - 1, chartData.length - 1);
+                  let absMonth: number;
+                  if (type === "quarter") {
+                    absMonth = (currentQtr - 1) * 3 + last.month;
+                  } else if (type === "semester") {
+                    absMonth = currentSem === 1 ? last.month : last.month + 6;
+                  } else {
+                    absMonth = last.month;
+                  }
+                  const idx = chartData.findIndex(cd => parseInt(cd.month.substring(5, 7)) === absMonth);
+                  if (idx < 0) return null;
                   const x = chartStartX + idx * (barWidth + barGap) + barWidth / 2;
                   const y = paddingTop + plotH - (last.cumulative / maxCumulative) * plotH;
                   return <circle cx={x} cy={y} r="4" fill="#0d9488" stroke="white" strokeWidth="2" />;
@@ -1320,7 +1335,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                   <div className={`h-1.5 bg-gradient-to-r ${colors.from} ${colors.to}`} />
                   <div className="px-3 pt-3 pb-3 flex flex-col gap-2">
                     <div className="flex items-baseline justify-between gap-1">
-                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>{qtr.q}\u00b0 Trimestre</span>
+                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>{qtr.q}° Trimestre</span>
                       <span className="text-[10px] text-slate-400 font-semibold whitespace-nowrap">{qtr.monthNames.join(", ")}</span>
                     </div>
                     <div style={{ whiteSpace: 'nowrap' }}>
@@ -1329,7 +1344,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                           {mode === "value" ? formatCurrencyFull(qtr.total) : `${qtr.orders} pedidos`}
                         </span>
                       ) : (
-                        <span className="text-lg text-slate-300 font-semibold">\u2014</span>
+                        <span className="text-lg text-slate-300 font-semibold">—</span>
                       )}
                     </div>
                     {hasValue && mode === "value" && (
@@ -1381,7 +1396,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                   <div className={`h-1.5 bg-gradient-to-r ${colors.from} ${colors.to}`} />
                   <div className="px-3 pt-3 pb-3 flex flex-col gap-2">
                     <div className="flex items-baseline justify-between gap-1">
-                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>{sem.s}\u00b0 Semestre</span>
+                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>{sem.s}° Semestre</span>
                       <span className="text-[10px] text-slate-400 font-semibold whitespace-nowrap">{sem.mNames}</span>
                     </div>
                     <div style={{ whiteSpace: 'nowrap' }}>
@@ -1390,7 +1405,7 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                           {mode === "value" ? formatCurrencyFull(sem.total) : `${sem.orders} pedidos`}
                         </span>
                       ) : (
-                        <span className="text-lg text-slate-300 font-semibold">\u2014</span>
+                        <span className="text-lg text-slate-300 font-semibold">—</span>
                       )}
                     </div>
                     {hasValue && mode === "value" && (
@@ -4872,22 +4887,22 @@ export default function Sales() {
 
             {/* Card Evolução Trimestral - colapsável */}
             {quarterEvolution && quarterEvolution.byQuarter.length > 0 && (
-              <div className="bg-blue-50/40 rounded-lg border border-blue-200 shadow-sm overflow-hidden">
+              <div className="bg-teal-50/40 rounded-lg border border-teal-200 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setQuarterExpanded(!quarterExpanded)}
-                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-blue-50/50 transition-colors"
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-teal-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
+                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 flex-shrink-0" />
                     <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Trimestral</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(quarterEvolution.byQuarter.reduce((s, d) => s + d.value, 0))}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(quarterEvolution.quarterComparison?.current?.value || 0)}</span>
                     {quarterExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
                 {quarterExpanded && (
-                  <div id="sales-quarter-chart" className="border-t border-blue-200 p-5">
+                  <div id="sales-quarter-chart" className="border-t border-teal-200 p-5">
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                       <span className="text-xs font-semibold text-slate-500 uppercase">Filtro:</span>
                       {[{ value: "all", label: "Todos" }, { value: "importacao_revenda", label: "Revenda" }, { value: "industrializacao", label: "Industrializados" }, { value: "importacao_mp", label: "Materia Prima" }].map(opt => (
@@ -4896,8 +4911,8 @@ export default function Sales() {
                           onClick={() => setQuarterGrupo(opt.value)}
                           className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
                             quarterGrupo === opt.value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700"
+                              ? "bg-teal-600 text-white border-teal-600"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-teal-300 hover:text-teal-700"
                           }`}
                         >
                           {opt.label}
@@ -4928,7 +4943,7 @@ export default function Sales() {
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
                             const tableData = quarterEvolution.byQuarter.map(q => {
                               const [y, qtr] = q.label.split('-Q');
-                              return [`${qtr}\u00b0 Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
+                              return [`${qtr}° Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
                             });
                             (doc as any).autoTable({
                               startY: 24,
@@ -4960,7 +4975,7 @@ export default function Sales() {
                     <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Semestral</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(semesterEvolution.bySemester.reduce((s, d) => s + d.value, 0))}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(semesterEvolution.semesterComparison?.current?.value || 0)}</span>
                     {semesterExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
@@ -5006,7 +5021,7 @@ export default function Sales() {
                             doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
                             const tableData = semesterEvolution.bySemester.map(s => {
                               const [y, sem] = s.label.split('-S');
-                              return [`${sem}\u00b0 Semestre ${y}`, formatCurrencyFull(s.value), String(s.orders)];
+                              return [`${sem}° Semestre ${y}`, formatCurrencyFull(s.value), String(s.orders)];
                             });
                             (doc as any).autoTable({
                               startY: 24,
@@ -5038,7 +5053,7 @@ export default function Sales() {
                     <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Anual</h3>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(annualEvolution.byYear.reduce((s, y) => s + y.value, 0))}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(annualEvolution.annualComparison?.current?.value || 0)}</span>
                     {annualExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
