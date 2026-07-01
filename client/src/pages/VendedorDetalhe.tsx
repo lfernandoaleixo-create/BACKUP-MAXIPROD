@@ -3007,6 +3007,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const utils = trpc.useUtils();
 
   const [selectedClientName, setSelectedClientName] = useState("");
+  const [clientInfoExpanded, setClientInfoExpanded] = useState(false);
 
   // Client history query - fires when a client is selected
   const clientHistoryQuery = trpc.salesOrders.getClientHistory.useQuery(
@@ -3139,7 +3140,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     }
   };
 
-  const canProceedCliente = cnpjCpf.length >= 11 && razaoSocial.length >= 2;
+  const canProceedCliente = razaoSocial.length >= 2;
   const canProceedProdutos = items.length > 0 && items.every(i => i.quantidade > 0 && i.precoUnitario > 0);
 
   return (
@@ -3205,7 +3206,11 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                     >
                       <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{c.razaoSocial}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-[10px] text-slate-500 font-mono">{c.cnpjCpf}</span>
+                        {c.cnpjCpf ? (
+                          <span className="text-[10px] text-slate-500 font-mono">{c.cnpjCpf}</span>
+                        ) : (
+                          <span className="text-[10px] italic text-slate-400">Sem CNPJ</span>
+                        )}
                         {c.nomeFantasia && <span className="text-[10px] text-teal-600 dark:text-teal-400 font-medium">{c.nomeFantasia}</span>}
                         {c.municipio && <span className="text-[10px] text-slate-400">{c.municipio}/{c.uf}</span>}
                         {c.telefone1 && <span className="text-[10px] text-slate-400">{c.telefone1}</span>}
@@ -3221,7 +3226,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <OrderFormInput label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0000-00" />
+              <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="CNPJ não cadastrado — preencha se disponível" />
               <OrderFormInput label="Razão Social *" value={razaoSocial} onChange={setRazaoSocial} placeholder="Razão social do cliente" />
               <OrderFormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia" />
               <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
@@ -3245,35 +3250,97 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               </button>
             </div>
 
-            {/* Informações do Cliente - Card com histórico */}
+            {/* Informações do Cliente - Card com histórico (starts collapsed) */}
             {selectedClientName && (
-              <div className="mt-4 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <h4 className="text-sm font-bold text-white">Informações do Cliente</h4>
-                  {clientHistoryQuery.data?.summary?.titulosVencidos ? (
-                    <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-300 text-[10px] font-bold rounded-full border border-red-500/30">
-                      ⚠ INADIMPLENTE
-                    </span>
+              <div className={`mt-4 rounded-xl overflow-hidden transition-all duration-300 ${
+                clientHistoryQuery.data?.summary?.titulosVencidos
+                  ? 'border-2 border-red-400 dark:border-red-600 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
+                  : clientHistoryQuery.data?.summary?.totalEmAberto
+                    ? 'border-2 border-amber-400 dark:border-amber-600 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                    : clientHistoryQuery.data
+                      ? 'border-2 border-emerald-400 dark:border-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                      : 'border border-slate-200 dark:border-slate-700'
+              }`}>
+                {/* Collapsed Header - always visible, clickable to expand */}
+                <button
+                  onClick={() => setClientInfoExpanded(!clientInfoExpanded)}
+                  className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                    clientHistoryQuery.data?.summary?.titulosVencidos
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800'
+                      : clientHistoryQuery.data?.summary?.totalEmAberto
+                        ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800'
+                        : clientHistoryQuery.data
+                          ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800'
+                          : 'bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900'
+                  }`}
+                >
+                  {/* Status Icon */}
+                  {clientHistoryQuery.isLoading ? (
+                    <div className="animate-spin w-5 h-5 border-2 border-white/40 border-t-white rounded-full flex-shrink-0"></div>
+                  ) : clientHistoryQuery.data?.summary?.titulosVencidos ? (
+                    <div className="w-8 h-8 rounded-full bg-red-500/30 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                    </div>
                   ) : clientHistoryQuery.data?.summary?.totalEmAberto ? (
-                    <span className="ml-auto px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-full border border-amber-500/30">
-                      TÍTULOS EM ABERTO
-                    </span>
+                    <div className="w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
                   ) : clientHistoryQuery.data ? (
-                    <span className="ml-auto px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded-full border border-emerald-500/30">
-                      ✓ EM DIA
-                    </span>
-                  ) : null}
-                </div>
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                  )}
 
-                {clientHistoryQuery.isLoading && (
-                  <div className="p-4 text-center">
-                    <div className="animate-spin w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full mx-auto"></div>
-                    <p className="text-xs text-slate-400 mt-2">Carregando histórico...</p>
+                  {/* Main info */}
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white truncate">{selectedClientName}</h4>
+                      {clientHistoryQuery.data?.summary?.titulosVencidos ? (
+                        <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full animate-pulse">
+                          INADIMPLENTE
+                        </span>
+                      ) : clientHistoryQuery.data?.summary?.totalEmAberto ? (
+                        <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full">
+                          TÍTULOS EM ABERTO
+                        </span>
+                      ) : clientHistoryQuery.data ? (
+                        <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full">
+                          EM DIA
+                        </span>
+                      ) : null}
+                    </div>
+                    {clientHistoryQuery.data && (
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-[11px] text-white/70">
+                          {clientHistoryQuery.data.summary.totalPedidos} pedido(s)
+                        </span>
+                        <span className="text-[11px] text-white/70">
+                          Total: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(clientHistoryQuery.data.summary.totalCompras)}
+                        </span>
+                        {clientHistoryQuery.data.summary.totalEmAberto > 0 && (
+                          <span className="text-[11px] text-white font-semibold">
+                            Em aberto: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(clientHistoryQuery.data.summary.totalEmAberto)}
+                          </span>
+                        )}
+                        {clientHistoryQuery.data.summary.titulosVencidos > 0 && (
+                          <span className="text-[11px] text-white font-bold">
+                            {clientHistoryQuery.data.summary.titulosVencidos} vencido(s) — {clientHistoryQuery.data.summary.diasAtrasoMax}d atraso
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {clientHistoryQuery.data && (
+                  {/* Expand/Collapse chevron */}
+                  <ChevronDown className={`w-5 h-5 text-white/70 transition-transform duration-200 flex-shrink-0 ${clientInfoExpanded ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Expanded Content */}
+                {clientInfoExpanded && clientHistoryQuery.data && (
                   <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-800/50">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">

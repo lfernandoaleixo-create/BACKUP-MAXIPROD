@@ -373,7 +373,7 @@ export const salesOrderRouter = router({
     .input(z.object({
       sellerId: z.number(),
       // Client data
-      cnpjCpf: z.string().min(11),
+      cnpjCpf: z.string().optional().default(""),
       razaoSocial: z.string().min(2),
       nomeFantasia: z.string().optional(),
       inscricaoEstadual: z.string().optional(),
