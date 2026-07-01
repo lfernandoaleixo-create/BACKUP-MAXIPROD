@@ -4604,3 +4604,8 @@
 - [x] Afinar barras do Trimestral/Semestral/Anual para mesma espessura do gráfico Diário
 - [x] Fix timezone bug: server in UTC was computing currentQuarter=3/currentSemester=2 instead of Q2/S1 (Brazil timezone)
 - [x] Implementar PDF sofisticado para Trimestral, Semestral e Anual idêntico ao relatório diário
+- [x] Reestruturar Gestão Comercial: criar aba GESTORES com painel de cada gestor (Jordão, Ana Paula, Juvenal)
+- [x] Aba GESTORES: cada gestor configura tabela de preço, estoque, senha, catálogos, meta de venda dos seus vendedores
+- [x] Hierarquia: Juvenal vê Renato (sub-gestor) e todos os vendedores do Renato
+- [x] Criar aba VENDEDORES: visão do vendedor (estoque, cadastro clientes, tabela preço, pedidos, métricas, catálogos)
+- [x] Ana Paula tratada como gestora no novo layout
