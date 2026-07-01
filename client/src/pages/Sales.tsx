@@ -77,6 +77,7 @@ import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
 import { generateSalesPDF } from "@/lib/salesPdfExport";
+import { generatePeriodPDF } from "@/lib/periodPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import type { VerifySection } from "@/components/MaxiprodAutoVerifier";
@@ -4923,36 +4924,14 @@ export default function Sales() {
                       comparison={quarterEvolution.quarterComparison}
                       
                       onExportPdf={() => {
-                        import('jspdf').then(j => {
-                          import('jspdf-autotable').then(() => {
-                            const doc = new j.default({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                            const pageW = doc.internal.pageSize.getWidth();
-                            doc.setFillColor(37, 99, 235);
-                            doc.rect(0, 0, pageW, 1.2, 'F');
-                            doc.setFontSize(16);
-                            doc.setFont('helvetica', 'bold');
-                            doc.setTextColor(0);
-                            const grupoLabel = quarterGrupo === "all" ? "Todos" : quarterGrupo === "importacao_revenda" ? "Revenda" : quarterGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
-                            doc.text(`Evolucao Trimestral de Vendas - ${grupoLabel}`, 10, 12);
-                            doc.setFontSize(9);
-                            doc.setFont('helvetica', 'normal');
-                            doc.setTextColor(100);
-                            doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = quarterEvolution.byQuarter.map(q => {
-                              const [y, qtr] = q.label.split('-Q');
-                              return [`${qtr}° Trimestre ${y}`, formatCurrencyFull(q.value), String(q.orders)];
-                            });
-                            (doc as any).autoTable({
-                              startY: 24,
-                              head: [['Periodo', 'Valor Total', 'Pedidos']],
-                              body: tableData,
-                              theme: 'grid',
-                              headStyles: { fillColor: [37, 99, 235], fontSize: 10 },
-                              styles: { fontSize: 10 },
-                            });
-                            doc.save(`Evolucao_Trimestral_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
-                          });
-                        });
+                        generatePeriodPDF(
+                          "quarter",
+                          quarterEvolution.byQuarter.map(q => ({ label: q.label, value: q.value, orders: q.orders, faturado: q.faturado, aFaturar: q.aFaturar })),
+                          quarterEvolution.monthlyData,
+                          quarterEvolution.quarterComparison,
+                          quarterGrupo,
+                          "sales-quarter-chart",
+                        );
                       }}
                     />
                   </div>
@@ -5001,36 +4980,14 @@ export default function Sales() {
                       comparison={semesterEvolution.semesterComparison}
                       
                       onExportPdf={() => {
-                        import('jspdf').then(j => {
-                          import('jspdf-autotable').then(() => {
-                            const doc = new j.default({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                            const pageW = doc.internal.pageSize.getWidth();
-                            doc.setFillColor(124, 58, 237);
-                            doc.rect(0, 0, pageW, 1.2, 'F');
-                            doc.setFontSize(16);
-                            doc.setFont('helvetica', 'bold');
-                            doc.setTextColor(0);
-                            const grupoLabel = semesterGrupo === "all" ? "Todos" : semesterGrupo === "importacao_revenda" ? "Revenda" : semesterGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
-                            doc.text(`Evolucao Semestral de Vendas - ${grupoLabel}`, 10, 12);
-                            doc.setFontSize(9);
-                            doc.setFont('helvetica', 'normal');
-                            doc.setTextColor(100);
-                            doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = semesterEvolution.bySemester.map(s => {
-                              const [y, sem] = s.label.split('-S');
-                              return [`${sem}° Semestre ${y}`, formatCurrencyFull(s.value), String(s.orders)];
-                            });
-                            (doc as any).autoTable({
-                              startY: 24,
-                              head: [['Periodo', 'Valor Total', 'Pedidos']],
-                              body: tableData,
-                              theme: 'grid',
-                              headStyles: { fillColor: [124, 58, 237], fontSize: 10 },
-                              styles: { fontSize: 10 },
-                            });
-                            doc.save(`Evolucao_Semestral_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
-                          });
-                        });
+                        generatePeriodPDF(
+                          "semester",
+                          semesterEvolution.bySemester.map(s => ({ label: s.label, value: s.value, orders: s.orders, faturado: s.faturado, aFaturar: s.aFaturar })),
+                          semesterEvolution.monthlyData,
+                          semesterEvolution.semesterComparison,
+                          semesterGrupo,
+                          "sales-semester-chart",
+                        );
                       }}
                     />
                   </div>
@@ -5079,33 +5036,14 @@ export default function Sales() {
                       comparison={annualEvolution.annualComparison}
                       
                       onExportPdf={() => {
-                        import('jspdf').then(j => {
-                          import('jspdf-autotable').then(() => {
-                            const doc = new j.default({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                            const pageW = doc.internal.pageSize.getWidth();
-                            doc.setFillColor(13, 148, 136);
-                            doc.rect(0, 0, pageW, 1.2, 'F');
-                            doc.setFontSize(16);
-                            doc.setFont('helvetica', 'bold');
-                            doc.setTextColor(0);
-                            const grupoLabel = annualGrupo === "all" ? "Todos" : annualGrupo === "importacao_revenda" ? "Revenda" : annualGrupo === "industrializacao" ? "Industrializados" : "Materia Prima";
-                            doc.text(`Evolucao Anual de Vendas - ${grupoLabel}`, 10, 12);
-                            doc.setFontSize(9);
-                            doc.setFont('helvetica', 'normal');
-                            doc.setTextColor(100);
-                            doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 10, 18);
-                            const tableData = annualEvolution.byYear.map(y => [String(y.year), formatCurrencyFull(y.value), String(y.orders)]);
-                            (doc as any).autoTable({
-                              startY: 24,
-                              head: [['Ano', 'Valor Total', 'Pedidos']],
-                              body: tableData,
-                              theme: 'grid',
-                              headStyles: { fillColor: [13, 148, 136], fontSize: 10 },
-                              styles: { fontSize: 10 },
-                            });
-                            doc.save(`Evolucao_Anual_Vendas_${grupoLabel}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
-                          });
-                        });
+                        generatePeriodPDF(
+                          "annual",
+                          annualEvolution.byYear.map(y => ({ label: String(y.year), value: y.value, orders: y.orders, faturado: y.faturado, aFaturar: y.aFaturar })),
+                          annualEvolution.monthlyData,
+                          annualEvolution.annualComparison,
+                          annualGrupo,
+                          "sales-annual-chart",
+                        );
                       }}
                     />
                   </div>
