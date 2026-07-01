@@ -537,7 +537,25 @@ function StockCategorySection({
 
       {expanded && (
         <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-          {/* Header da tabela - mobile-friendly */}
+          {/* Mobile legend */}
+          <div className="md:hidden px-4 py-2 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-600">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="flex items-center gap-1">
+                <ShoppingCart className="w-3 h-3 text-emerald-500" />
+                <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">Disponível</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Ship className="w-3 h-3 text-blue-500" />
+                <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">PO (chegando)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">Projetado (total)</span>
+              </div>
+            </div>
+            <p className="text-[8px] text-slate-400 dark:text-slate-500 mt-1">Negativo = pedidos de venda excedem estoque físico</p>
+          </div>
+          {/* Header da tabela - desktop */}
           <div className={`hidden md:grid ${allowReserve ? 'md:grid-cols-12' : 'md:grid-cols-11'} gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700/30 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>
             <div className={allowReserve ? 'col-span-5' : 'col-span-5'}>Produto</div>
             <div className="col-span-2 text-center">Disponível</div>
@@ -599,16 +617,17 @@ function StockCategorySection({
                 </div>
 
                 {/* Mobile row */}
-                <div className="md:hidden px-4 py-3 space-y-2">
+                <div className="md:hidden px-4 py-3 space-y-1.5">
                   <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-tight">
-                    <span className="font-mono text-slate-400 mr-1">{item.codigoItem}</span>
+                    <span className="font-mono text-slate-500 dark:text-slate-400 font-bold mr-1.5">{item.codigoItem}</span>
                     {item.descricaoItem}
                   </p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <ShoppingCart className="w-3 h-3 text-emerald-500" />
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <ShoppingCart className="w-3 h-3 text-emerald-500 shrink-0" />
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">Disp:</span>
                       <span className={`text-xs font-bold ${
-                        dispCx > 0 ? "text-emerald-600" : "text-orange-500"
+                        dispCx > 0 ? "text-emerald-600 dark:text-emerald-400" : dispCx < 0 ? "text-red-600 dark:text-red-400" : "text-orange-500"
                       }`}>
                         {dispCx.toLocaleString("pt-BR")} cx
                       </span>
@@ -616,22 +635,25 @@ function StockCategorySection({
                     {poCx > 0 && (
                       <button
                         onClick={() => setExpandedPO(isPOExpanded ? null : item.codigoItem)}
-                        className="flex items-center gap-1 cursor-pointer"
+                        className="flex items-center gap-1.5 cursor-pointer"
                       >
-                        <Ship className="w-3 h-3 text-blue-500" />
-                        <span className="text-xs font-bold text-blue-600">
+                        <Ship className="w-3 h-3 text-blue-500 shrink-0" />
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">PO:</span>
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
                           +{poCx.toLocaleString("pt-BR")} cx
                         </span>
                       </button>
                     )}
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-purple-600">
-                        = {projCx.toLocaleString("pt-BR")} cx
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">Proj:</span>
+                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
+                        {projCx.toLocaleString("pt-BR")} cx
                       </span>
                     </div>
-                    {allowReserve && (
-                      <span className="ml-auto text-[9px] text-amber-600 font-bold">
-                        {reservationSummary[item.codigoItem] > 0 ? `${reservationSummary[item.codigoItem]} res.` : ''}
+                    {allowReserve && reservationSummary[item.codigoItem] > 0 && (
+                      <span className="text-[9px] text-amber-600 font-bold">
+                        {reservationSummary[item.codigoItem]} reservas
                       </span>
                     )}
                   </div>
@@ -3514,25 +3536,25 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                   };
 
                   return (
-                    <div key={p.codigoItem} className="border-b border-slate-100 dark:border-slate-700 last:border-0 px-2 sm:px-3 py-2">
-                      {/* Row 1: Product name + stock + price on right */}
-                      <div className="flex items-center gap-2">
+                    <div key={p.codigoItem} className="border-b border-slate-100 dark:border-slate-700 last:border-0 px-2 sm:px-3 py-3">
+                      {/* Row 1: Product name + stock + price */}
+                      <div className="flex items-start gap-2">
                         <div className="min-w-0 flex-1">
                           <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words leading-tight">{p.descricaoItem}</p>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg ${qtdCaixas > 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg ${qtdCaixas > 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
                             <span className={`text-sm font-black ${qtdCaixas > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-400'}`}>
                               {qtdCaixas.toLocaleString('pt-BR')}
                             </span>
                             <span className={`text-[8px] font-bold uppercase ${qtdCaixas > 0 ? 'text-emerald-500' : 'text-red-400'}`}>{unidadeVenda}</span>
                           </div>
                           {precoVendedor ? (
-                            <span className="text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded-lg">
+                            <span className="text-[10px] sm:text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
                               {formatCurrencySales(precoVendedor)}
                             </span>
                           ) : precoMinimo ? (
-                            <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-lg">
+                            <span className="text-[10px] sm:text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
                               {formatCurrencySales(precoMinimo)}
                             </span>
                           ) : null}
@@ -3540,124 +3562,129 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                       </div>
 
                       {/* Row 2: Code + Dimensions + Weight + POs */}
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1.5">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
                         {dims && (
-                          <span className="text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
+                          <span className="text-[9px] sm:text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
                             📐 {dims[1]}×{dims[2]}×{dims[3]} cm
                           </span>
                         )}
                         {p.pesoBruto && Number(p.pesoBruto) > 0 && (
-                          <span className="text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-400 font-bold">
+                          <span className="text-[9px] sm:text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1 py-0.5 rounded text-purple-700 dark:text-purple-400 font-bold">
                             ⚖️ {(Number(p.pesoBruto) * fator).toFixed(2)} kg/cx
                           </span>
                         )}
                         {hasPOs && (
-                          <span className="text-[10px] bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
+                          <span className="text-[9px] sm:text-[10px] bg-green-50 dark:bg-green-900/20 px-1 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
                             🚢 {p.pendingPOs.reduce((sum: number, po: any) => sum + Math.floor(Number(po.quantidade) || 0), 0).toLocaleString('pt-BR')} {unidadeVenda} chegando
                           </span>
                         )}
                       </div>
 
-                      {/* Row 3: Inline pricing tools + cart button */}
+                      {/* Row 3: Pricing tools - stacked on mobile for full visibility */}
                       {precoBase > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          {/* Discount % input */}
-                          <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2 py-1">
-                            <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold">Desc:</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.5"
-                              placeholder="0"
-                              value={calc.discount}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                updateCalc('discount', v);
-                                if (v) updateCalc('finalValue', '');
-                              }}
-                              className="w-12 px-1 py-0.5 text-[11px] font-bold text-center border border-amber-300 dark:border-amber-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
-                            />
-                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">%</span>
-                            {calc.discount && (
-                              <span className="text-[10px] font-bold text-amber-800 dark:text-amber-200 ml-1">
-                                = {formatCurrencySales(finalFromDiscount)}
-                              </span>
+                        <div className="mt-2 space-y-2">
+                          {/* Discount + Final Value row - wraps naturally */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Discount % input */}
+                            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2 py-1.5">
+                              <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">Desc:</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.5"
+                                placeholder="0"
+                                value={calc.discount}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  updateCalc('discount', v);
+                                  if (v) updateCalc('finalValue', '');
+                                }}
+                                className="w-11 px-1 py-0.5 text-[11px] font-bold text-center border border-amber-300 dark:border-amber-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                              />
+                              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">%</span>
+                              {calc.discount && (
+                                <span className="text-[9px] sm:text-[10px] font-bold text-amber-800 dark:text-amber-200 ml-0.5 whitespace-nowrap">
+                                  = {formatCurrencySales(finalFromDiscount)}
+                                </span>
+                              )}
+                            </div>
+                            {/* Final value input */}
+                            <div className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg px-2 py-1.5">
+                              <span className="text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">R$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0,00"
+                                value={calc.finalValue}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  updateCalc('finalValue', v);
+                                  if (v) updateCalc('discount', '');
+                                }}
+                                className="w-14 px-1 py-0.5 text-[11px] font-bold text-center border border-indigo-300 dark:border-indigo-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                              />
+                              {calc.finalValue && (
+                                <span className="text-[9px] sm:text-[10px] font-bold text-indigo-800 dark:text-indigo-200 ml-0.5 whitespace-nowrap">
+                                  = {discountFromValue.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                            {/* Below min warning */}
+                            {isBelowMin && (
+                              <span className="text-[9px] text-red-500 font-bold">⚠️ Abaixo mín.</span>
                             )}
                           </div>
-                          {/* Final value input */}
-                          <div className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg px-2 py-1">
-                            <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-bold">R$</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0,00"
-                              value={calc.finalValue}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                updateCalc('finalValue', v);
-                                if (v) updateCalc('discount', '');
-                              }}
-                              className="w-16 px-1 py-0.5 text-[11px] font-bold text-center border border-indigo-300 dark:border-indigo-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                            />
-                            {calc.finalValue && (
-                              <span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-200 ml-1">
-                                = {discountFromValue.toFixed(1)}%
-                              </span>
-                            )}
-                          </div>
-                          {/* Below min warning */}
-                          {isBelowMin && (
-                            <span className="text-[9px] text-red-500 font-bold">⚠️ Abaixo mín.</span>
-                          )}
-                          {/* Cart button */}
-                          {!calc.showQty ? (
-                            <button
-                              onClick={() => updateCalc('showQty', true)}
-                              className="ml-auto px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-sm transition-all hover:shadow-md"
-                            >
-                              <ShoppingCart className="w-3.5 h-3.5" />
-                            </button>
-                          ) : (
-                            <div className="ml-auto flex items-center gap-1.5">
-                              <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                          {/* Cart button row - always visible */}
+                          <div className="flex items-center gap-2">
+                            {!calc.showQty ? (
+                              <button
+                                onClick={() => updateCalc('showQty', true)}
+                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 shadow-sm transition-all hover:shadow-md"
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" /> Adicionar
+                              </button>
+                            ) : (
+                              <div className="flex flex-wrap items-center gap-2 w-full">
+                                <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                                  <button
+                                    onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))}
+                                    className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-sm"
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={calc.quantity}
+                                    onChange={(e) => { const v = Math.max(0, parseInt(e.target.value) || 0); updateCalc('quantity', v); }}
+                                    className="w-14 text-center py-1.5 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                                  />
+                                  <button
+                                    onClick={() => updateCalc('quantity', calc.quantity + 1)}
+                                    className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-sm"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                                  Total: {formatCurrencySales(effectivePrice * calc.quantity)}
+                                </span>
                                 <button
-                                  onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))}
-                                  className="px-2 py-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold"
+                                  onClick={() => {
+                                    addProduct(p, effectivePrice, calc.quantity);
+                                    updateCalc('showQty', false);
+                                    updateCalc('quantity', 1);
+                                  }}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all"
                                 >
-                                  −
-                                </button>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={calc.quantity}
-                                  onChange={(e) => { const v = Math.max(0, parseInt(e.target.value) || 0); updateCalc('quantity', v); }}
-                                  className="w-12 text-center py-1 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
-                                />
-                                <button
-                                  onClick={() => updateCalc('quantity', calc.quantity + 1)}
-                                  className="px-2 py-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold"
-                                >
-                                  +
+                                  <Plus className="w-3 h-3" /> Salvar
                                 </button>
                               </div>
-                              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                                {formatCurrencySales(effectivePrice * calc.quantity)}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  addProduct(p, effectivePrice, calc.quantity);
-                                  updateCalc('showQty', false);
-                                  updateCalc('quantity', 1);
-                                }}
-                                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm transition-all"
-                              >
-                                <Plus className="w-3 h-3" /> Salvar
-                              </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       )}
                       {/* If no price, just show cart button */}
@@ -3666,16 +3693,16 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                           {!calc.showQty ? (
                             <button
                               onClick={() => updateCalc('showQty', true)}
-                              className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-sm transition-all hover:shadow-md"
+                              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 shadow-sm transition-all hover:shadow-md"
                             >
                               <ShoppingCart className="w-3.5 h-3.5" /> Adicionar
                             </button>
                           ) : (
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
                               <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
                                 <button
                                   onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))}
-                                  className="px-2 py-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold"
+                                  className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-sm"
                                 >
                                   −
                                 </button>
@@ -3684,11 +3711,11 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                   min="0"
                                   value={calc.quantity}
                                   onChange={(e) => { const v = Math.max(0, parseInt(e.target.value) || 0); updateCalc('quantity', v); }}
-                                  className="w-12 text-center py-1 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                                  className="w-14 text-center py-1.5 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
                                 />
                                 <button
                                   onClick={() => updateCalc('quantity', calc.quantity + 1)}
-                                  className="px-2 py-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold"
+                                  className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-sm"
                                 >
                                   +
                                 </button>
@@ -3699,7 +3726,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                   updateCalc('showQty', false);
                                   updateCalc('quantity', 1);
                                 }}
-                                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm transition-all"
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all"
                               >
                                 <Plus className="w-3 h-3" /> Salvar
                               </button>

@@ -4682,3 +4682,5 @@
 - [x] Novo Pedido - Produtos: estoque à direita do nome (não à esquerda)
 - [x] Novo Pedido - Produtos: permitir quantidade 0 (zerar caixas)
 - [x] Novo Pedido - Produtos: tudo inline (preço, desconto, valor final, carrinho) sem precisar expandir
+- [x] Estoque mobile: adicionar legenda clara explicando cada cor/ícone (carrinho=disponível, fábrica=PO, verde=projetado)
+- [x] Estoque mobile: garantir que nada fique sobreposto ou confuso (labels Disp:/PO:/Proj: + nota sobre negativo)
