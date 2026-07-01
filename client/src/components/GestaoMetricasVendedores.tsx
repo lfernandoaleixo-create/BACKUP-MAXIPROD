@@ -93,11 +93,11 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
   const [detailPeriod, setDetailPeriod] = useState<"day" | "week" | "month" | "prev_month" | "custom">("month");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    day: true,
-    week: true,
-    month: true,
-    prev_month: true,
-    custom: true,
+    day: false,
+    week: false,
+    month: false,
+    prev_month: false,
+    custom: false,
   });
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
