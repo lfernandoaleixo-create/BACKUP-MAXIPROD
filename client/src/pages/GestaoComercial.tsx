@@ -526,7 +526,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                           );
                         })}
                       </div>
-                    )
+                    )}
                   </div>
                 )}
               </div>
