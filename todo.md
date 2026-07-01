@@ -4620,3 +4620,4 @@
 - [x] Sub-gestor Renato não inclui a si mesmo como vendedor no próprio card
 - [x] Adicionar botões "Pedidos de Venda" e "Métricas de Venda" no painel de configurações do gestor
 - [x] Ao clicar no vendedor dentro de cada configuração, navegar para a aba correspondente no VendedorDetalhe
+- [x] Fix: Estoque/Tabela/Catálogos/Senhas devem navegar para seções específicas, não para aba Configurações genérica

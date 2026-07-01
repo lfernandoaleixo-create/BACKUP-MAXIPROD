@@ -103,10 +103,14 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
   const params = useParams<{ sellerId: string }>();
   const [, setLocation] = useLocation();
   const sellerId = externalSellerId || parseInt(params.sellerId || "0", 10);
-  // Support opening a specific tab via URL search param ?tab=estoque
-  const urlTab = new URLSearchParams(window.location.search).get("tab") as TabType | null;
+  // Support opening a specific tab via URL search param ?tab=estoque&section=senha
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTab = urlParams.get("tab") as TabType | null;
+  const urlSection = urlParams.get("section") as string | null;
   const validTabs: TabType[] = ["estoque", "clientes", "tabela_precos", "catalogos", "pedidos", "relatorio_vendas", "vendas", "configuracoes"];
   const [activeTab, setActiveTab] = useState<TabType>(urlTab && validTabs.includes(urlTab) ? urlTab : "estoque");
+  // Section filter for configuracoes tab: shows only the relevant sub-section
+  const [configSection] = useState<string | null>(urlSection);
 
   // Buscar dados do vendedor
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
@@ -270,7 +274,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
         )}
 
         {activeTab === "configuracoes" && (
-          <SellerConfigPanel sellerId={sellerId} sellerName={seller.sellerName} seller={seller} />
+          <SellerConfigPanel sellerId={sellerId} sellerName={seller.sellerName} seller={seller} section={configSection} />
         )}
       </main>
     </div>
@@ -730,7 +734,7 @@ function StockCategorySection({
  * ABA CONFIGURAÇÕES - Autorização, senha, ticagem de produtos, catálogos
  * ============================================================
  */
-function SellerConfigPanel({ sellerId, sellerName, seller }: { sellerId: number; sellerName: string; seller: any }) {
+function SellerConfigPanel({ sellerId, sellerName, seller, section }: { sellerId: number; sellerName: string; seller: any; section?: string | null }) {
   const toggleAuthMutation = trpc.sales.toggleSellerAuthorization.useMutation();
   const utils = trpc.useUtils();
 
@@ -745,68 +749,75 @@ function SellerConfigPanel({ sellerId, sellerName, seller }: { sellerId: number;
     );
   };
 
+  // If a specific section is requested, show only that section
+  const showSenha = !section || section === "senha";
+  const showEstoque = !section || section === "estoque";
+  const showCatalogos = !section || section === "catalogos";
+
   return (
     <div className="space-y-4">
       {/* Card de Autorização e Senha */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Settings className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Acesso e Credenciais</h3>
-        </div>
-
-        <div className="space-y-4">
-          {/* Status de autorização */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Status de Acesso</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {seller.authorized ? "O vendedor pode acessar o app" : "O vendedor está bloqueado"}
-              </p>
-            </div>
-            <button
-              onClick={handleToggleAuth}
-              disabled={toggleAuthMutation.isPending}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                seller.authorized
-                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400"
-                  : "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-400"
-              }`}
-            >
-              {seller.authorized ? (
-                <>
-                  <ShieldCheck className="w-4 h-4" />
-                  Autorizado
-                </>
-              ) : (
-                <>
-                  <Shield className="w-4 h-4" />
-                  Bloqueado
-                </>
-              )}
-            </button>
+      {showSenha && (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Acesso e Credenciais</h3>
           </div>
 
-          {/* Senha */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Senha</p>
-              <p className="text-xs text-slate-400 mt-0.5">Senha de acesso ao app do vendedor</p>
+          <div className="space-y-4">
+            {/* Status de autorização */}
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Status de Acesso</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {seller.authorized ? "O vendedor pode acessar o app" : "O vendedor está bloqueado"}
+                </p>
+              </div>
+              <button
+                onClick={handleToggleAuth}
+                disabled={toggleAuthMutation.isPending}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  seller.authorized
+                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400"
+                    : "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-400"
+                }`}
+              >
+                {seller.authorized ? (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    Autorizado
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4" />
+                    Bloqueado
+                  </>
+                )}
+              </button>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-600 rounded-lg border border-slate-200 dark:border-slate-500">
-              <Lock className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs font-mono font-medium text-slate-700 dark:text-slate-200">
-                {seller.password}
-              </span>
+
+            {/* Senha */}
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Senha</p>
+                <p className="text-xs text-slate-400 mt-0.5">Senha de acesso ao app do vendedor</p>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-600 rounded-lg border border-slate-200 dark:border-slate-500">
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-xs font-mono font-medium text-slate-700 dark:text-slate-200">
+                  {seller.password}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Card de Produtos Visíveis (ticagem) */}
-      <SellerProductsPanel sellerId={sellerId} sellerName={sellerName} />
+      {showEstoque && <SellerProductsPanel sellerId={sellerId} sellerName={sellerName} />}
 
       {/* Card de PDFs/Catálogos */}
-      <SellerCatalogsPanel sellerId={sellerId} sellerName={sellerName} />
+      {showCatalogos && <SellerCatalogsPanel sellerId={sellerId} sellerName={sellerName} />}
     </div>
   );
 }

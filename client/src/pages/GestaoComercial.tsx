@@ -277,7 +277,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
       {/* Painel dos Gestores - Collapsible container */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {/* Panel Header - clickable to expand/collapse */}
-        <button
+        <div
           onClick={() => setPanelOpen(!panelOpen)}
           className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
         >
@@ -303,7 +303,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             </button>
             {panelOpen ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
           </div>
-        </button>
+        </div>
 
         {/* Panel Content - 4 gestor cards inside */}
         {panelOpen && (
@@ -482,20 +482,23 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       )}
                       {vendedores.map((vendedor) => {
                         const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
-                        // Map config type to VendedorDetalhe tab
-                        const tabMap: Record<string, string> = {
-                          estoque: "configuracoes",
-                          tabela_preco: "tabela_precos",
-                          catalogos: "configuracoes",
-                          senha: "configuracoes",
-                          pedidos: "pedidos",
-                          metricas: "vendas",
+                        // Map config type to VendedorDetalhe tab + section
+                        const tabMap: Record<string, { tab: string; section?: string }> = {
+                          estoque: { tab: "configuracoes", section: "estoque" },
+                          tabela_preco: { tab: "tabela_precos" },
+                          catalogos: { tab: "configuracoes", section: "catalogos" },
+                          senha: { tab: "configuracoes", section: "senha" },
+                          pedidos: { tab: "pedidos" },
+                          metricas: { tab: "vendas" },
                         };
-                        const targetTab = activeConfig ? tabMap[activeConfig] || "estoque" : "estoque";
+                        const target = activeConfig ? tabMap[activeConfig] || { tab: "estoque" } : { tab: "estoque" };
+                        const navUrl = target.section
+                          ? `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}&section=${target.section}`
+                          : `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}`;
                         return (
                           <div
                             key={vendedor}
-                            onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}?tab=${targetTab}`); }}
+                            onClick={() => { if (perm) navigate(navUrl); }}
                             className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
                           >
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
