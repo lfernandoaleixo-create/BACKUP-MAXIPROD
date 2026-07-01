@@ -2817,7 +2817,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
         </div>
       )}
 
-      {/* Lista de pedidos Maxiprod */}
+      {/* Lista de pedidos Maxiprod - hidden when new order form is open (tablet optimization) */}
+      {!showNewOrder && (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
           <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Histórico de Pedidos de Venda</h3>
@@ -2940,6 +2941,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
