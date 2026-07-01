@@ -4246,7 +4246,7 @@ export const salesRouter = router({
       if (!db) throw new Error("DB not available");
       // Get sellers for this gestor
       const allPerms = await db.select().from(sellerPermissions);
-      const sellersList = allPerms.filter(p => p.gestorName === input.gestorName && p.authorized);
+      const sellersList = allPerms.filter(p => p.gestorName === input.gestorName);
       // Get all active catalogs
       const allCatalogs = await db.select().from(catalogs).where(eq(catalogs.active, true));
       // Get all visibility records for these sellers
@@ -4315,7 +4315,7 @@ export const salesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("DB not available");
       const allPerms = await db.select().from(sellerPermissions);
-      const sellers = allPerms.filter(p => p.gestorName === input.gestorName && p.authorized);
+      const sellers = allPerms.filter(p => p.gestorName === input.gestorName);
       return sellers.map(s => ({
         id: s.id,
         name: s.sellerName,

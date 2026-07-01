@@ -4636,3 +4636,5 @@
 - [x] Catálogos no painel gestor: visão matricial (catálogos x vendedores) com checkboxes clicáveis
 - [x] Senhas no painel gestor: visão com todos os vendedores, campo de senha editável e ícone de cadeado
 - [x] Tabela de Preço: card "Margem de Negociação" editável (%) - preço vendedor = preço tabela / (1 - margem%)
+- [x] Bug: Catálogos no painel gestor deve mostrar TODOS os vendedores do gestor como colunas (não apenas 1)
+- [x] Bug: Senhas no painel gestor deve mostrar TODOS os vendedores do gestor (não apenas 1)
