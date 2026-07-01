@@ -1007,7 +1007,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
             </div>
             <div>
               <h4 className="text-sm font-bold text-teal-800 dark:text-teal-200">Margem de Negociação</h4>
-              <p className="text-[10px] text-teal-600/70 dark:text-teal-400/70">Preço vendedor = Preço tabela ÷ (1 - margem%)</p>
+              <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Preço vendedor = Preço tabela ÷ (1 - margem%)</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
