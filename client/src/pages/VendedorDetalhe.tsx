@@ -2993,6 +2993,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const [reservePO, setReservePO] = useState<{ codigoItem: string; descricaoItem: string; referencia: string; dataEntrega: string; quantidade: number } | null>(null);
   // Product pricing calculator state: { [codigoItem]: { discount%, finalValue, quantity } }
   const [productCalc, setProductCalc] = useState<Record<string, { discount: string; finalValue: string; quantity: number; showQty: boolean }>>({});
+  const [editingCartIdx, setEditingCartIdx] = useState<number | null>(null);
 
   // Payment
   const [condicaoPagamento, setCondicaoPagamento] = useState("");
@@ -3739,89 +3740,111 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             {productsQuery.isLoading && (
               <p className="text-xs text-slate-400 text-center py-3">Carregando produtos...</p>
             )}
-            {/* Selected items (cart) */}
+            {/* Confirmed items - STICKY at top */}
             {items.length > 0 && (
-              <div className="space-y-2 mt-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1">
-                    <ShoppingCart className="w-3.5 h-3.5" /> Carrinho ({items.length} {items.length === 1 ? 'item' : 'itens'})
+              <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 pb-2 border-b border-emerald-200 dark:border-emerald-700 shadow-sm rounded-lg">
+                <div className="flex items-center justify-between px-3 py-2 bg-emerald-600 rounded-t-lg">
+                  <p className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <ShoppingCart className="w-4 h-4" /> Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'})
                   </p>
-                  <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                    Total: {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
+                  <p className="text-sm font-bold text-white">
+                    {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
                   </p>
                 </div>
-                {items.map((item, idx) => (
-                  <div key={idx} className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-lg p-2 sm:p-3 border border-emerald-200 dark:border-emerald-700">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] sm:text-xs font-medium text-slate-700 dark:text-slate-200 break-words leading-tight">{item.descricaoItem}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-slate-400">Cód: {item.codigoItem}</span>
-                          {item.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-600 rounded text-slate-500 dark:text-slate-400">{item.grupo}</span>}
+                <div className="max-h-[200px] overflow-y-auto px-2 pt-2 space-y-1.5">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="rounded-lg border border-emerald-100 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/10">
+                      {editingCartIdx === idx ? (
+                        /* Editing mode */
+                        <div className="p-2.5">
+                          <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-2 truncate">{item.descricaoItem}</p>
+                          <div className="flex flex-wrap items-end gap-3">
+                            <div>
+                              <label className="text-[8px] text-slate-400 uppercase font-bold">Qtd ({item.unidadeMedida})</label>
+                              <div className="flex items-center mt-0.5 border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                                <button
+                                  onClick={() => updateItem(idx, "quantidade", Math.max(1, item.quantidade - 1))}
+                                  className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold"
+                                >
+                                  −
+                                </button>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={item.quantidade}
+                                  onChange={(e) => updateItem(idx, "quantidade", Math.max(1, Number(e.target.value) || 1))}
+                                  className="w-16 text-center py-1.5 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                                />
+                                <button
+                                  onClick={() => updateItem(idx, "quantidade", item.quantidade + 1)}
+                                  className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[8px] text-slate-400 uppercase font-bold">Preço/cx</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                value={item.precoUnitario}
+                                onChange={(e) => updateItem(idx, "precoUnitario", Number(e.target.value))}
+                                className={`w-24 mt-0.5 px-2 py-1.5 text-xs font-medium border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+                                  item.precoMinimo && item.precoUnitario < item.precoMinimo
+                                    ? "border-red-300 bg-red-50 dark:bg-red-900/20"
+                                    : "border-emerald-200 dark:border-emerald-600"
+                                }`}
+                              />
+                              {item.precoMinimo && <p className="text-[7px] text-slate-400 mt-0.5">Mín: {formatCurrencySales(item.precoMinimo)}</p>}
+                            </div>
+                            <button
+                              onClick={() => setEditingCartIdx(null)}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors"
+                            >
+                              Salvar
+                            </button>
+                          </div>
+                          {item.precoMinimo && item.precoUnitario < item.precoMinimo && (
+                            <p className="text-[9px] text-red-500 mt-1 flex items-center gap-1">
+                              <span>⚠️</span> Abaixo do mínimo
+                            </p>
+                          )}
                         </div>
-                      </div>
-                      <button onClick={() => removeProduct(idx)} className="p-1.5 hover:bg-red-100 rounded-lg transition-colors">
-                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap items-end gap-3 mt-2">
-                      {/* Quantity with +/- buttons */}
-                      <div>
-                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold">Qtd ({item.unidadeMedida})</label>
-                        <div className="flex items-center mt-0.5 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
-                          <button
-                            onClick={() => updateItem(idx, "quantidade", Math.max(1, item.quantidade - 1))}
-                            className="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 font-bold"
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            min={1}
-                            value={item.quantidade}
-                            onChange={(e) => updateItem(idx, "quantidade", Math.max(1, Number(e.target.value) || 1))}
-                            className="w-14 text-center py-1 text-xs font-bold border-x border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
-                          />
-                          <button
-                            onClick={() => updateItem(idx, "quantidade", item.quantidade + 1)}
-                            className="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 font-bold"
-                          >
-                            +
-                          </button>
+                      ) : (
+                        /* Locked/confirmed mode */
+                        <div className="flex items-center gap-2 px-2.5 py-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate">{item.descricaoItem}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">{item.codigoItem}</span>
+                              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold">{item.quantidade} {item.unidadeMedida} × {formatCurrencySales(item.precoUnitario)}</span>
+                              <span className="text-[10px] text-slate-400">=</span>
+                              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencySales(item.quantidade * item.precoUnitario)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => setEditingCartIdx(idx)}
+                              className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                              title="Editar"
+                            >
+                              <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                            <button
+                              onClick={() => removeProduct(idx)}
+                              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      {/* Unit price */}
-                      <div>
-                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold">Preço/cx</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={item.precoUnitario}
-                          onChange={(e) => updateItem(idx, "precoUnitario", Number(e.target.value))}
-                          className={`w-24 mt-0.5 px-2 py-1 text-xs font-medium border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-400 ${
-                            item.precoMinimo && item.precoUnitario < item.precoMinimo
-                              ? "border-red-300 bg-red-50 dark:bg-red-900/20"
-                              : "border-slate-200 dark:border-slate-600"
-                          }`}
-                        />
-                        {item.precoMinimo && <p className="text-[8px] text-slate-400 mt-0.5">Mín: {formatCurrencySales(item.precoMinimo)}</p>}
-                      </div>
-                      {/* Total */}
-                      <div className="ml-auto text-right">
-                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold">Total</label>
-                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrencySales(item.quantidade * item.precoUnitario)}
-                        </p>
-                      </div>
+                      )}
                     </div>
-                    {item.precoMinimo && item.precoUnitario < item.precoMinimo && (
-                      <p className="text-[10px] text-red-500 mt-1.5 flex items-center gap-1">
-                        <span>⚠️</span> Preço abaixo do mínimo - pedido precisará de aprovação
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
             <div className="flex justify-between pt-2">

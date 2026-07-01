@@ -4674,3 +4674,8 @@
 - [x] Novo Pedido - Produtos: destacar código, dimensões da caixa e peso da caixa
 - [x] Novo Pedido - Produtos: botão Adicionar ao Carrinho com ícone de carrinho, ao clicar abre seletor de quantidade (setinhas + input)
 - [x] Novo Pedido - Carrinho: corrigir para usar o novo formato com preço preenchido automaticamente
+- [x] Novo Pedido - Carrinho: itens confirmados ficam sticky (travados no topo) ao rolar
+- [x] Novo Pedido - Carrinho: mostrar valor unitário (margem+desconto), qtd caixas, e valor total por item
+- [x] Novo Pedido - Carrinho: botão Salvar para confirmar/travar o item
+- [x] Novo Pedido - Carrinho: opção de excluir item confirmado
+- [x] Novo Pedido - Carrinho: opção de editar quantidade/preço de item confirmado
