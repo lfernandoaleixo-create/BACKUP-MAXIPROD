@@ -4629,3 +4629,7 @@
 - [x] Adicionar checkboxes clicáveis para ticar/desticar manualmente produtos por vendedor
 - [x] Destacar mais os nomes dos vendedores no header da tabela
 - [x] Mostrar nome completo dos produtos (não cortar com truncate)
+- [x] Tabela de Preço no painel gestor: visão matricial com cards Bambu e Madeira
+- [x] Tabela de Preço: linhas = produtos, colunas = vendedores, células = valor de venda
+- [x] Tabela de Preço: botão "Desconto Máximo" editável (% de desconto)
+- [x] Tabela de Preço: botão de conversão para mostrar preço mínimo (preço × (1 - desconto%))

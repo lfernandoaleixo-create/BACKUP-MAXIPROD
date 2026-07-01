@@ -16,7 +16,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
-  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft
+  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -475,6 +475,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                     {/* Conditional content based on activeConfig */}
                     {activeConfig === "estoque" ? (
                       <EstoqueMatrixView gestorName={card.name} />
+                    ) : activeConfig === "tabela_preco" ? (
+                      <PriceMatrixView gestorName={card.name} />
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -510,9 +512,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                                 {activeConfig === "senha" && perm && (
                                   <p className="text-[10px] text-slate-400 dark:text-slate-500">Senha atual: {perm.password}</p>
                                 )}
-                                {activeConfig === "tabela_preco" && perm?.priceTableCode && (
-                                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Tabela: {perm.priceTableCode}</p>
-                                )}
+
                               </div>
                               <div className="flex items-center gap-2">
                                 {perm && (
@@ -729,9 +729,8 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
   }
 
     const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
-  // Separate products: Bambu Estoque, Bambu Sob Encomenda, Madeira Produto Acabado
-  const bambuEstoque = products.filter(p => p.segmento === "bambu" && (p as any).classification !== "encomenda");
-  const bambuEncomenda = products.filter(p => p.segmento === "bambu" && (p as any).classification === "encomenda");
+  // Separate products: Bambu (estoque + sob encomenda) and Madeira Produto Acabado
+  const bambuProducts = products.filter(p => p.segmento === "bambu");
   const madeiraProducts = products.filter(p => p.segmento === "madeira");
 
   // Filter by search
@@ -748,7 +747,7 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
       {/* Search bar */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          {bambuEstoque.length} estoque · {bambuEncomenda.length} sob encomenda · {madeiraProducts.length} madeira · {sellers.length} vendedores
+          {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vendedores
         </p>
         <div className="relative">
           <input
@@ -762,27 +761,18 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
         </div>
       </div>
 
-            {/* BAMBU ESTOQUE Card */}
+      {/* BAMBU Card */}
       <EstoqueSegmentCard
-        title="Estoque"
+        title="Bambu"
         color="blue"
-        products={filterProducts(bambuEstoque)}
+        products={filterProducts(bambuProducts)}
         sellers={sellers}
-        allProducts={bambuEstoque}
-        onToggle={handleToggle}
-      />
-      {/* BAMBU SOB ENCOMENDA Card */}
-      <EstoqueSegmentCard
-        title="Sob Encomenda"
-        color="yellow"
-        products={filterProducts(bambuEncomenda)}
-        sellers={sellers}
-        allProducts={bambuEncomenda}
+        allProducts={bambuProducts}
         onToggle={handleToggle}
       />
       {/* MADEIRA PRODUTO ACABADO Card */}
       <EstoqueSegmentCard
-        title="Madeira \u2013 Produto Acabado"
+        title="Madeira"
         color="amber"
         products={filterProducts(madeiraProducts)}
         sellers={sellers}
@@ -793,10 +783,10 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
       {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] text-slate-500 dark:text-slate-400">
         <span className="flex items-center gap-1">
-          <span className="text-emerald-600 font-bold">✓</span> Produto na tabela de preços do vendedor (Maxiprod)
+          <input type="checkbox" checked readOnly className="w-3 h-3 accent-emerald-600" /> Na tabela de preços (Maxiprod) ou adicionado manualmente
         </span>
         <span className="flex items-center gap-1">
-          <span className="text-slate-300">—</span> Produto não disponível para este vendedor
+          <input type="checkbox" readOnly className="w-3 h-3" /> Produto não disponível (clique para adicionar)
         </span>
       </div>
     </div>
@@ -908,13 +898,283 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
                   </td>
                   {sellers.map(seller => (
                     <td key={seller.id} className="text-center px-3 py-2.5">
-                      {product.sellers[seller.name] ? (
-                        <span className="text-emerald-600 font-bold text-sm">✓</span>
-                      ) : (
-                        <span className="text-slate-300 dark:text-slate-600">—</span>
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={product.sellers[seller.name] || false}
+                        onChange={() => onToggle(seller.id, product.codigoItem, product.sellers[seller.name] || false)}
+                        className={`w-4 h-4 rounded cursor-pointer ${color === "blue" ? "accent-blue-600" : color === "yellow" ? "accent-yellow-600" : "accent-amber-600"}`}
+                      />
                     </td>
                   ))}
+                </tr>
+              ))}
+              {products.length === 0 && (
+                <tr>
+                  <td colSpan={sellers.length + 1} className="text-center py-6 text-slate-400 dark:text-slate-500 text-xs">
+                    Nenhum produto encontrado
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ============================================================
+// PRICE MATRIX VIEW - Tabela de preços por vendedor (gestor)
+// ============================================================
+function PriceMatrixView({ gestorName }: { gestorName: string }) {
+  const [search, setSearch] = useState("");
+  const [showMinPrice, setShowMinPrice] = useState(false);
+  const [customDiscount, setCustomDiscount] = useState<string>("");
+  const [editingDiscount, setEditingDiscount] = useState(false);
+
+  const matrixQuery = trpc.sales.getPriceMatrix.useQuery({ gestorName });
+
+  if (matrixQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="w-5 h-5 animate-spin text-teal-500" />
+        <span className="ml-2 text-sm text-slate-500">Carregando tabela de preços...</span>
+      </div>
+    );
+  }
+  if (matrixQuery.error) {
+    return (
+      <div className="flex items-center justify-center py-12 text-red-500">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">Erro ao carregar tabela de preços</span>
+      </div>
+    );
+  }
+
+  const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
+  const bambuProducts = products.filter(p => p.segmento === "bambu");
+  const madeiraProducts = products.filter(p => p.segmento === "madeira");
+
+  const filterProducts = (list: typeof products) => {
+    if (!search.trim()) return list;
+    return list.filter(p =>
+      p.descricaoItem.toLowerCase().includes(search.toLowerCase()) ||
+      p.codigoItem.toLowerCase().includes(search.toLowerCase())
+    );
+  };
+
+  const formatPrice = (preco: string | null, descontoMax: string | null) => {
+    if (!preco) return null;
+    const price = parseFloat(preco);
+    if (showMinPrice) {
+      const discount = customDiscount ? parseFloat(customDiscount) : (descontoMax ? parseFloat(descontoMax) : 0);
+      const minPrice = price * (1 - discount / 100);
+      return minPrice;
+    }
+    return price;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Controls bar */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vendedores
+        </p>
+        <div className="flex items-center gap-2">
+          {/* Discount button */}
+          <div className="flex items-center gap-1">
+            {editingDiscount ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={customDiscount}
+                  onChange={(e) => setCustomDiscount(e.target.value)}
+                  placeholder="15"
+                  className="w-16 text-xs px-2 py-1 rounded border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                />
+                <span className="text-xs text-slate-500">%</span>
+                <button
+                  onClick={() => setEditingDiscount(false)}
+                  className="text-xs px-2 py-1 rounded bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-700"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingDiscount(true)}
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50 transition-colors"
+              >
+                <Tag className="w-3 h-3" />
+                Desconto Máximo{customDiscount ? `: ${customDiscount}%` : ""}
+              </button>
+            )}
+          </div>
+          {/* Convert button */}
+          <button
+            onClick={() => setShowMinPrice(!showMinPrice)}
+            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+              showMinPrice
+                ? "border-emerald-300 dark:border-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
+            }`}
+          >
+            <Calculator className="w-3 h-3" />
+            {showMinPrice ? "Preço Mínimo" : "Converter"}
+          </button>
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar produto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="text-xs px-3 py-1.5 pl-7 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 w-44 focus:outline-none focus:ring-1 focus:ring-teal-400"
+            />
+            <Package className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+          </div>
+        </div>
+      </div>
+
+      {/* BAMBU Card */}
+      <PriceSegmentCard
+        title="Bambu"
+        color="blue"
+        products={filterProducts(bambuProducts)}
+        sellers={sellers}
+        allProducts={bambuProducts}
+        showMinPrice={showMinPrice}
+        customDiscount={customDiscount}
+        formatPrice={formatPrice}
+      />
+      {/* MADEIRA Card */}
+      <PriceSegmentCard
+        title="Madeira"
+        color="amber"
+        products={filterProducts(madeiraProducts)}
+        sellers={sellers}
+        allProducts={madeiraProducts}
+        showMinPrice={showMinPrice}
+        customDiscount={customDiscount}
+        formatPrice={formatPrice}
+      />
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px] text-slate-500 dark:text-slate-400">
+        <span className="flex items-center gap-1">
+          <DollarSign className="w-3 h-3 text-emerald-500" /> Preço da tabela de preços do vendedor (Maxiprod)
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="text-slate-300">—</span> Produto não disponível para este vendedor
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// PRICE SEGMENT CARD - Card individual para Bambu ou Madeira (preços)
+// ============================================================
+interface PriceSegmentCardProps {
+  title: string;
+  color: "blue" | "amber";
+  products: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, { preco: string | null; descontoMax: string | null }> }[];
+  sellers: { id: number; name: string; hasTable: boolean }[];
+  allProducts: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, { preco: string | null; descontoMax: string | null }> }[];
+  showMinPrice: boolean;
+  customDiscount: string;
+  formatPrice: (preco: string | null, descontoMax: string | null) => number | null;
+}
+
+function PriceSegmentCard({ title, color, products, sellers, allProducts, showMinPrice, customDiscount, formatPrice }: PriceSegmentCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  const colorMap = {
+    blue: {
+      border: "border-blue-200 dark:border-blue-800",
+      header: "bg-blue-50 dark:bg-blue-900/30",
+      headerText: "text-blue-800 dark:text-blue-200",
+      badge: "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300",
+      accent: "text-blue-600 dark:text-blue-400",
+    },
+    amber: {
+      border: "border-amber-200 dark:border-amber-800",
+      header: "bg-amber-50 dark:bg-amber-900/30",
+      headerText: "text-amber-800 dark:text-amber-200",
+      badge: "bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300",
+      accent: "text-amber-600 dark:text-amber-400",
+    },
+  };
+  const colorClasses = colorMap[color];
+
+  return (
+    <div className={`border rounded-xl overflow-hidden ${colorClasses.border}`}>
+      {/* Header - clickable to expand/collapse */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className={`flex items-center justify-between px-4 py-3 cursor-pointer ${colorClasses.header}`}
+      >
+        <div className="flex items-center gap-3">
+          <DollarSign className={`w-5 h-5 ${colorClasses.accent}`} />
+          <h3 className={`text-sm font-bold ${colorClasses.headerText}`}>{title}</h3>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${colorClasses.badge}`}>
+            {allProducts.length} produtos
+          </span>
+        </div>
+        <ChevronRight className={`w-4 h-4 ${colorClasses.accent} transition-transform ${expanded ? "rotate-90" : ""}`} />
+      </div>
+
+      {/* Table content */}
+      {expanded && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-700">
+                <th className="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-white dark:bg-slate-800 min-w-[250px]">
+                  Produto
+                </th>
+                {sellers.map(seller => (
+                  <th key={seller.id} className="text-center px-2 py-2 min-w-[80px]">
+                    <span className="font-bold text-[11px] text-slate-800 dark:text-slate-100 uppercase">
+                      {seller.name.split(" ")[0]}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.codigoItem} className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-700/20">
+                  <td className="px-3 py-2 sticky left-0 bg-white dark:bg-slate-800">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">
+                        {product.codigoItem}
+                      </span>
+                      <span className="text-slate-700 dark:text-slate-200 leading-tight">
+                        {product.descricaoItem}
+                      </span>
+                    </div>
+                  </td>
+                  {sellers.map(seller => {
+                    const cellData = product.sellers[seller.name];
+                    const price = cellData ? formatPrice(cellData.preco, cellData.descontoMax) : null;
+                    return (
+                      <td key={seller.id} className="text-center px-2 py-2">
+                        {price !== null ? (
+                          <span className={`text-[10px] font-medium ${showMinPrice ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"}`}>
+                            {price.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
               {products.length === 0 && (

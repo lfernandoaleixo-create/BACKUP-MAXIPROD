@@ -4073,6 +4073,106 @@ export const salesRouter = router({
     }),
 
   /**
+   * Matriz de tabela de preços: produtos (linhas) x vendedores (colunas)
+   * Retorna o preço de cada produto para cada vendedor
+   * Usado no painel do gestor para visão ampla dos preços
+   */
+  getPriceMatrix: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // 1. Get all sellers for this gestor
+      const sellers = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.gestorName, input.gestorName));
+      // 2. Get all price tables
+      const allTables = await db.select().from(priceTables);
+      // 3. Get all price table items with prices
+      const allItems = await db.select({
+        itemCodigo: priceTableItems.itemCodigo,
+        itemDescricao: priceTableItems.itemDescricao,
+        priceTableId: priceTableItems.priceTableId,
+        preco: priceTableItems.preco,
+        descontoMaximoEmPercentual: priceTableItems.descontoMaximoEmPercentual,
+      }).from(priceTableItems);
+      // 4. Match each seller to their price table
+      const sellerTableMap = sellers.map(seller => {
+        let matchedTable = seller.priceTableCode
+          ? allTables.find(t => t.codigo === seller.priceTableCode)
+          : null;
+        if (!matchedTable) {
+          const nameParts = seller.sellerName.toUpperCase().split(' ');
+          matchedTable = allTables.find(t => {
+            const desc = t.descricao.toUpperCase();
+            return nameParts.some(part => part.length > 3 && desc.includes(part));
+          });
+        }
+        return {
+          sellerId: seller.id,
+          sellerName: seller.sellerName,
+          priceTableId: matchedTable?.id || null,
+        };
+      });
+      // 5. Get stock products (same as estoque matrix)
+      const dashData = await db.select().from(dashboardData).limit(1);
+      const classifications = await db.select().from(productClassification);
+      const classMap = new Map(classifications.map(c => [c.codigoItem, c.classification]));
+      let stockProducts: { codigoItem: string; descricaoItem: string; segmento: string }[] = [];
+      if (dashData.length > 0) {
+        try {
+          const items = JSON.parse(dashData[0].dataJson as string);
+          const filtered = items.filter((item: any) => {
+            if (item.isChild === true) return false;
+            if (item.grupo === "industrializacao" && item.subgrupo === "madeira") return true;
+            if (item.grupo === "importacao_revenda" && item.subgrupo === "bambu") return true;
+            return false;
+          });
+          stockProducts = filtered.map((item: any) => {
+            const isBambu = item.grupo === "importacao_revenda" && item.subgrupo === "bambu";
+            return {
+              codigoItem: item.codigoItem,
+              descricaoItem: item.descricaoItem,
+              segmento: isBambu ? "bambu" : "madeira",
+            };
+          });
+        } catch { stockProducts = []; }
+      }
+      // 6. Build price lookup: priceTableId -> itemCodigo -> { preco, descontoMax }
+      const priceByTable = new Map<number, Map<string, { preco: string; descontoMax: string | null }>>();
+      for (const item of allItems) {
+        if (!priceByTable.has(item.priceTableId)) {
+          priceByTable.set(item.priceTableId, new Map());
+        }
+        priceByTable.get(item.priceTableId)!.set(item.itemCodigo, {
+          preco: item.preco,
+          descontoMax: item.descontoMaximoEmPercentual,
+        });
+      }
+      // 7. Build matrix rows with prices
+      const matrix = stockProducts.map(product => {
+        const row: Record<string, { preco: string | null; descontoMax: string | null }> = {};
+        for (const st of sellerTableMap) {
+          if (st.priceTableId) {
+            const tableItems = priceByTable.get(st.priceTableId);
+            const item = tableItems?.get(product.codigoItem);
+            row[st.sellerName] = item ? { preco: item.preco, descontoMax: item.descontoMax } : { preco: null, descontoMax: null };
+          } else {
+            row[st.sellerName] = { preco: null, descontoMax: null };
+          }
+        }
+        return {
+          codigoItem: product.codigoItem,
+          descricaoItem: product.descricaoItem,
+          segmento: product.segmento,
+          sellers: row,
+        };
+      });
+      return {
+        sellers: sellerTableMap.map(s => ({ id: s.sellerId, name: s.sellerName, hasTable: !!s.priceTableId })),
+        products: matrix,
+      };
+    }),
+  /**
    * Get period evolution data (annual, semester, quarter)
    * Returns monthly totals for all time, grouped by fixed periods
    */
