@@ -4618,3 +4618,5 @@
 - [x] Renato aparece como vendedor dentro do card do Juvenal (subordinado)
 - [x] Botão "Cadastrar Vendedor" nos cards de todos os gestores para adicionar novos vendedores
 - [x] Sub-gestor Renato não inclui a si mesmo como vendedor no próprio card
+- [x] Adicionar botões "Pedidos de Venda" e "Métricas de Venda" no painel de configurações do gestor
+- [x] Ao clicar no vendedor dentro de cada configuração, navegar para a aba correspondente no VendedorDetalhe

@@ -14,7 +14,7 @@ import TopNav from "@/components/TopNav";
 import GestaoMetricasVendedores from "@/components/GestaoMetricasVendedores";
 import { trpc } from "@/lib/trpc";
 import {
-  Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings,
+  Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
   Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft
 } from "lucide-react";
@@ -24,7 +24,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 type GestaoView = "gestores" | "vendedores" | "metricas";
 
 // Config categories available for each gestor
-type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha";
+type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha" | "pedidos" | "metricas";
 
 interface GestorGroup {
   gestor: string;
@@ -425,6 +425,20 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Senhas</span>
                       </button>
                       <button
+                        onClick={() => setActiveConfig("pedidos")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <ShoppingCart className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Pedidos de Venda</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveConfig("metricas")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <BarChart3 className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Métricas de Venda</span>
+                      </button>
+                      <button
                         onClick={() => { /* TODO: open cadastrar vendedor modal */ }}
                         className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
                       >
@@ -453,6 +467,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         {activeConfig === "tabela_preco" && "Configurar Tabela de Preço"}
                         {activeConfig === "catalogos" && "Configurar Catálogos"}
                         {activeConfig === "senha" && "Configurar Senhas"}
+                        {activeConfig === "pedidos" && "Pedidos de Venda"}
+                        {activeConfig === "metricas" && "Métricas de Venda"}
                       </span>
                     </div>
 
@@ -466,10 +482,20 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       )}
                       {vendedores.map((vendedor) => {
                         const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
+                        // Map config type to VendedorDetalhe tab
+                        const tabMap: Record<string, string> = {
+                          estoque: "configuracoes",
+                          tabela_preco: "tabela_precos",
+                          catalogos: "configuracoes",
+                          senha: "configuracoes",
+                          pedidos: "pedidos",
+                          metricas: "vendas",
+                        };
+                        const targetTab = activeConfig ? tabMap[activeConfig] || "estoque" : "estoque";
                         return (
                           <div
                             key={vendedor}
-                            onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}`); }}
+                            onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}?tab=${targetTab}`); }}
                             className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
                           >
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">

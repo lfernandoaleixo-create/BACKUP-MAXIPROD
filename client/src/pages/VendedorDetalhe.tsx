@@ -103,7 +103,10 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
   const params = useParams<{ sellerId: string }>();
   const [, setLocation] = useLocation();
   const sellerId = externalSellerId || parseInt(params.sellerId || "0", 10);
-  const [activeTab, setActiveTab] = useState<TabType>("estoque");
+  // Support opening a specific tab via URL search param ?tab=estoque
+  const urlTab = new URLSearchParams(window.location.search).get("tab") as TabType | null;
+  const validTabs: TabType[] = ["estoque", "clientes", "tabela_precos", "catalogos", "pedidos", "relatorio_vendas", "vendas", "configuracoes"];
+  const [activeTab, setActiveTab] = useState<TabType>(urlTab && validTabs.includes(urlTab) ? urlTab : "estoque");
 
   // Buscar dados do vendedor
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
