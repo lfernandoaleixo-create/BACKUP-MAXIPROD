@@ -4659,3 +4659,4 @@
 - [x] Fix: busca de clientes no Novo Pedido não encontra clientes existentes (ex: Box 81 do Daniel)
 - [x] Novo Pedido: card "Informações do Cliente" com histórico completo (compras, débitos, boletos vencidos, inadimplência)
 - [x] Preparar estrutura para futura integração com API do Serasa (alerta nome sujo/limpo)
+- [x] Faturamento: usar quantidade em caixas da OBS do pedido quando disponível (ex: pedido #1414 = 175 caixas, não 1750.35 mil)

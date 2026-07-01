@@ -340,24 +340,24 @@ export const billingRouter = router({
         if (item.estadoItem === "Faturado parcial") {
           order.estadoItem = "Faturado parcial";
         }
-        // Conversão kg → caixa para exibição
+        // Conversão para caixas — prioriza OBS do pedido, depois fallback kg→cx
         const codigoItemVal = item.codigoItem || "";
         const unidadeVal = (item.unidadeMedidaCodigo || "").toLowerCase();
         let qtdExibicao = qtdEfetiva;
         let qtdOriginalExibicao = qtdOriginal;
         let unidadeExibicao = item.unidadeMedidaCodigo || "";
-        if (KG_TO_CAIXA_CONVERSION[codigoItemVal] && unidadeVal === 'kg') {
-          // REGRA: Se observações do pedido mencionam quantidade de caixas, usar esse valor
-          const obs = (item.observacoes || "");
-          const caixasMatch = obs.match(/(\d+)\s*caixas?/i);
-          if (caixasMatch) {
-            qtdExibicao = parseInt(caixasMatch[1], 10);
-            qtdOriginalExibicao = parseInt(caixasMatch[1], 10);
-          } else {
-            const pesoCx = KG_TO_CAIXA_CONVERSION[codigoItemVal];
-            qtdExibicao = Math.round(qtdEfetiva / pesoCx);
-            qtdOriginalExibicao = Math.round(qtdOriginal / pesoCx);
-          }
+        // REGRA GERAL: Se observações do pedido mencionam quantidade de caixas, usar esse valor
+        const obs = (item.observacoes || "");
+        const caixasMatch = obs.match(/(\d+)\s*caixas?/i);
+        if (caixasMatch) {
+          qtdExibicao = parseInt(caixasMatch[1], 10);
+          qtdOriginalExibicao = parseInt(caixasMatch[1], 10);
+          unidadeExibicao = "cx";
+        } else if (KG_TO_CAIXA_CONVERSION[codigoItemVal] && unidadeVal === 'kg') {
+          // Fallback: conversão matemática kg → caixa para produtos mapeados
+          const pesoCx = KG_TO_CAIXA_CONVERSION[codigoItemVal];
+          qtdExibicao = Math.round(qtdEfetiva / pesoCx);
+          qtdOriginalExibicao = Math.round(qtdOriginal / pesoCx);
           unidadeExibicao = "cx";
         }
         order.itens.push({
@@ -436,21 +436,21 @@ export const billingRouter = router({
         const order = billedMap.get(key)!;
         const vt = parseFloat(String(item.valorTotal || 0));
         order.valorTotal += vt;
-        // Conversão kg → caixa para exibição (faturados)
+        // Conversão para caixas (faturados) — prioriza OBS, depois fallback kg→cx
         const billedCodigoItem = item.codigoItem || "";
         const billedUnidade = (item.unidadeMedidaCodigo || "").toLowerCase();
         let billedQtd = parseFloat(String(item.quantidade || 0));
         let billedUnidadeExibicao = item.unidadeMedidaCodigo || "";
-        if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedUnidade === 'kg') {
-          // REGRA: Se observações do pedido mencionam quantidade de caixas, usar esse valor
-          const billedObs = (item.observacoes || "");
-          const billedCaixasMatch = billedObs.match(/(\d+)\s*caixas?/i);
-          if (billedCaixasMatch) {
-            billedQtd = parseInt(billedCaixasMatch[1], 10);
-          } else {
-            const pesoCx = KG_TO_CAIXA_CONVERSION[billedCodigoItem];
-            billedQtd = Math.round(billedQtd / pesoCx);
-          }
+        // REGRA GERAL: Se observações do pedido mencionam quantidade de caixas, usar esse valor
+        const billedObs = (item.observacoes || "");
+        const billedCaixasMatch = billedObs.match(/(\d+)\s*caixas?/i);
+        if (billedCaixasMatch) {
+          billedQtd = parseInt(billedCaixasMatch[1], 10);
+          billedUnidadeExibicao = "cx";
+        } else if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedUnidade === 'kg') {
+          // Fallback: conversão matemática kg → caixa para produtos mapeados
+          const pesoCx = KG_TO_CAIXA_CONVERSION[billedCodigoItem];
+          billedQtd = Math.round(billedQtd / pesoCx);
           billedUnidadeExibicao = "cx";
         }
         order.itens.push({
