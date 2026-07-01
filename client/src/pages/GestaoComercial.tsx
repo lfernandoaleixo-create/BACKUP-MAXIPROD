@@ -268,9 +268,12 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
   const getVendedoresForCard = (card: GestorCard): string[] => {
     if (card.role === "Sub-gestor") return []; // Sub-gestor doesn't have vendedores yet
     const vendedores = getVendedoresForGestor(card.name);
-    // Filter out vendedores who are also gestores (they have their own card)
-    const gestorNames = GESTOR_CARDS.map(g => g.name.toUpperCase());
-    return vendedores.filter(v => !gestorNames.includes(v.toUpperCase()));
+    // Filter out vendedores who are also Gestor/Gestora (they have their own independent card)
+    // Sub-gestores like Renato should NOT be filtered — they count as vendedores under their parent gestor
+    const gestorOnlyNames = GESTOR_CARDS
+      .filter(g => g.role === "Gestor" || g.role === "Gestora")
+      .map(g => g.name.toUpperCase());
+    return vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
   };
 
   const [panelOpen, setPanelOpen] = useState(false);
