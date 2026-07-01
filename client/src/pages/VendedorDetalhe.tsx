@@ -2660,9 +2660,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
           </div>
           <button
             onClick={() => setShowNewOrder(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-5 h-5" />
             Novo Pedido
           </button>
         </div>
@@ -2819,6 +2819,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 
       {/* Lista de pedidos Maxiprod */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
+          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Histórico de Pedidos de Venda</h3>
+        </div>
         {!pedidos || filteredPedidos.length === 0 ? (
           <div className="p-8 text-center">
             <ShoppingCart className="w-8 h-8 text-slate-300 mx-auto mb-2" />
