@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -318,6 +318,33 @@ export const salesOrderRouter = router({
       const prices = await db.select().from(productMinPrices);
       const priceMap = new Map(prices.map(p => [p.codigoItem, p.precoMinimo]));
 
+      // Get seller's price table prices
+      const seller = await db.select().from(sellerPermissions).where(eq(sellerPermissions.id, input.sellerId)).limit(1);
+      let priceTableMap = new Map<string, { preco: string; descontoMaximo: string | null }>();
+      let margemNegociacao: number | null = null;
+      if (seller.length > 0) {
+        const priceTableCode = seller[0].priceTableCode;
+        const gestorName = seller[0].gestorName;
+        // Get margem de negociação from settings
+        if (gestorName) {
+          const margemKey = `margem_negociacao_${gestorName}`;
+          const margemRow = await db.select().from(appSettings).where(eq(appSettings.settingKey, margemKey)).limit(1);
+          if (margemRow.length > 0 && margemRow[0].settingValue) {
+            try { margemNegociacao = parseFloat(JSON.parse(margemRow[0].settingValue as string)); } catch {}
+          }
+        }
+        // Get price table items for this seller's table
+        if (priceTableCode) {
+          const pt = await db.select().from(priceTables).where(eq(priceTables.codigo, priceTableCode)).limit(1);
+          if (pt.length > 0) {
+            const ptItems = await db.select().from(priceTableItems).where(eq(priceTableItems.priceTableId, pt[0].id));
+            for (const pti of ptItems) {
+              priceTableMap.set(pti.itemCodigo, { preco: pti.preco, descontoMaximo: pti.descontoMaximoEmPercentual });
+            }
+          }
+        }
+      }
+
       // Get pending POs (purchase orders) for these products
       const pendingPOs = await db.select({
         codigoItem: purchaseOrderItems.codigoItem,
@@ -347,23 +374,34 @@ export const salesOrderRouter = router({
         });
       }
 
-      return filteredItems.map(item => ({
-        codigoItem: item.codigoItem,
-        descricaoItem: item.descricaoItem,
-        disponivel: item.quantidade,
-        unidadeMedida: item.unidadeMedida,
-        unidadeDeVendaFator: item.unidadeDeVendaFator,
-        precoMinimo: priceMap.get(item.codigoItem) || null,
-        grupo: item.descricaoGrupo || item.codigoGrupo || "",
-        pesoLiquido: item.pesoLiquido,
-        pesoBruto: item.pesoBruto,
-        codigoBarras: item.codigoBarras,
-        descricaoComplementar: item.descricaoComplementar,
-        procedencia: item.procedencia,
-        estado: item.estado,
-        unidadeDeVendaCodigo: item.unidadeDeVendaCodigo,
-        pendingPOs: poMap.get(item.codigoItem) || [],
-      }));
+      return filteredItems.map(item => {
+        const ptData = priceTableMap.get(item.codigoItem);
+        const precoTabela = ptData ? parseFloat(ptData.preco) : null;
+        // Preço vendedor = Preço tabela ÷ (1 - margem%)
+        const precoVendedor = (precoTabela && margemNegociacao) ? precoTabela / (1 - margemNegociacao / 100) : precoTabela;
+        const descontoMaxTabela = ptData?.descontoMaximo ? parseFloat(ptData.descontoMaximo) : null;
+        return {
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem,
+          disponivel: item.quantidade,
+          unidadeMedida: item.unidadeMedida,
+          unidadeDeVendaFator: item.unidadeDeVendaFator,
+          precoMinimo: priceMap.get(item.codigoItem) || null,
+          precoTabela: precoTabela ? precoTabela.toFixed(2) : null,
+          precoVendedor: precoVendedor ? precoVendedor.toFixed(2) : null,
+          descontoMaxTabela: descontoMaxTabela ? descontoMaxTabela.toFixed(2) : null,
+          margemNegociacao: margemNegociacao,
+          grupo: item.descricaoGrupo || item.codigoGrupo || "",
+          pesoLiquido: item.pesoLiquido,
+          pesoBruto: item.pesoBruto,
+          codigoBarras: item.codigoBarras,
+          descricaoComplementar: item.descricaoComplementar,
+          procedencia: item.procedencia,
+          estado: item.estado,
+          unidadeDeVendaCodigo: item.unidadeDeVendaCodigo,
+          pendingPOs: poMap.get(item.codigoItem) || [],
+        };
+      });
     }),
 
   // ===== CREATE ORDER =====

@@ -2983,6 +2983,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     unidadeMedida: string;
     precoUnitario: number;
     precoMinimo: number | null;
+    precoVendedor: number | null;
     grupo: string;
     disponivel: string;
   }
@@ -2990,6 +2991,8 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const [productSearch, setProductSearch] = useState("");
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [reservePO, setReservePO] = useState<{ codigoItem: string; descricaoItem: string; referencia: string; dataEntrega: string; quantidade: number } | null>(null);
+  // Product pricing calculator state: { [codigoItem]: { discount%, finalValue, quantity } }
+  const [productCalc, setProductCalc] = useState<Record<string, { discount: string; finalValue: string; quantity: number; showQty: boolean }>>({});
 
   // Payment
   const [condicaoPagamento, setCondicaoPagamento] = useState("");
@@ -3057,18 +3060,24 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     return filtered;
   }, [productsQuery.data, items, productSearch]);
 
-  const addProduct = (product: any) => {
+  const addProduct = (product: any, customPrice?: number, customQty?: number) => {
+    const precoVendedor = product.precoVendedor ? Number(product.precoVendedor) : null;
+    const precoUnit = customPrice || precoVendedor || (product.precoMinimo ? Number(product.precoMinimo) : 0);
+    const qty = customQty || 1;
     setItems(prev => [...prev, {
       codigoItem: product.codigoItem,
       descricaoItem: product.descricaoItem,
-      quantidade: 1,
+      quantidade: qty,
       unidadeMedida: product.unidadeMedida || "CX",
-      precoUnitario: product.precoMinimo ? Number(product.precoMinimo) : 0,
+      precoUnitario: precoUnit,
       precoMinimo: product.precoMinimo ? Number(product.precoMinimo) : null,
+      precoVendedor: precoVendedor,
       grupo: product.grupo || "",
       disponivel: product.disponivel || "0",
     }]);
     setProductSearch("");
+    // Clear calculator state for this product
+    setProductCalc(prev => { const next = { ...prev }; delete next[product.codigoItem]; return next; });
   };
 
   const removeProduct = (index: number) => {
@@ -3472,127 +3481,222 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             </div>
             {/* Available products list - always visible */}
             {availableProducts.length > 0 && (
-              <div className="border border-slate-200 dark:border-slate-600 rounded-lg max-h-[420px] overflow-y-auto">
+              <div className="border border-slate-200 dark:border-slate-600 rounded-lg max-h-[520px] overflow-y-auto">
                 {availableProducts.map((p: any) => {
                   const fator = Number(p.unidadeDeVendaFator) || 1;
                   const qtdRaw = Number(p.disponivel) || 0;
                   const qtdCaixas = fator > 1 ? Math.floor(qtdRaw / fator) : qtdRaw;
                   const unidadeVenda = p.unidadeDeVendaCodigo || (fator >= 1000 ? "CX" : p.unidadeMedida || "un");
-                  // Parse dimensions from descricaoComplementar (format: LxAxC like 45X22X20)
                   const dims = p.descricaoComplementar ? p.descricaoComplementar.match(/([\d,.]+)[xX]([\d,.]+)[xX]([\d,.]+)/) : null;
                   const isExpanded = expandedProduct === p.codigoItem;
                   const hasPOs = p.pendingPOs && p.pendingPOs.length > 0;
+                  const precoVendedor = p.precoVendedor ? Number(p.precoVendedor) : null;
+                  const precoMinimo = p.precoMinimo ? Number(p.precoMinimo) : null;
+                  const precoBase = precoVendedor || precoMinimo || 0;
+                  const calc = productCalc[p.codigoItem] || { discount: "", finalValue: "", quantity: 1, showQty: false };
+
+                  // Calculate derived values
+                  const discountPct = calc.discount ? parseFloat(calc.discount) : 0;
+                  const finalFromDiscount = precoBase > 0 && discountPct > 0 ? precoBase * (1 - discountPct / 100) : precoBase;
+                  const finalFromValue = calc.finalValue ? parseFloat(calc.finalValue) : 0;
+                  const discountFromValue = precoBase > 0 && finalFromValue > 0 ? ((precoBase - finalFromValue) / precoBase) * 100 : 0;
+
+                  // The effective price to use (discount takes priority if set, otherwise finalValue)
+                  const effectivePrice = calc.discount ? finalFromDiscount : (calc.finalValue ? finalFromValue : precoBase);
+                  const isBelowMin = precoMinimo && effectivePrice > 0 && effectivePrice < precoMinimo;
+
+                  const updateCalc = (field: string, value: any) => {
+                    setProductCalc(prev => ({
+                      ...prev,
+                      [p.codigoItem]: { ...calc, [field]: value }
+                    }));
+                  };
+
                   return (
                     <div key={p.codigoItem} className="border-b border-slate-100 dark:border-slate-700 last:border-0">
-                      {/* Main product row - clickable to add (or expand if has POs) */}
-                      <div className="flex items-stretch">
-                        <button
-                          onClick={() => hasPOs ? setExpandedProduct(isExpanded ? null : p.codigoItem) : addProduct(p)}
-                          className="flex-1 text-left px-2 sm:px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors min-w-0"
-                        >
-                          <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words">{p.descricaoItem}</p>
-                          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-1.5">
-                            <span className="text-[10px] text-slate-500">Cód: <strong>{p.codigoItem}</strong></span>
-                            {p.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 font-medium">{p.grupo}</span>}
-                            {dims && (
-                              <span className="text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded text-orange-700 dark:text-orange-400 font-medium">
-                                📐 {dims[1]}×{dims[2]}×{dims[3]} cm
+                      {/* Main product row */}
+                      <div
+                        onClick={() => setExpandedProduct(isExpanded ? null : p.codigoItem)}
+                        className="cursor-pointer px-2 sm:px-3 py-2.5 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words">{p.descricaoItem}</p>
+                            <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-1">
+                              <span className="text-[10px] text-slate-500">Cód: <strong>{p.codigoItem}</strong></span>
+                              {p.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 font-medium">{p.grupo}</span>}
+                              {dims && (
+                                <span className="text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded text-orange-700 dark:text-orange-400 font-medium">
+                                  📐 {dims[1]}×{dims[2]}×{dims[3]} cm
+                                </span>
+                              )}
+                              {p.pesoBruto && Number(p.pesoBruto) > 0 && (
+                                <span className="text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-400 font-medium">
+                                  ⚖️ {(Number(p.pesoBruto) * fator).toFixed(2)} kg/cx
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                              <span className={`text-xs font-bold ${qtdCaixas > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                📦 {qtdCaixas.toLocaleString('pt-BR')} {unidadeVenda}
                               </span>
-                            )}
-                            {p.pesoBruto && Number(p.pesoBruto) > 0 && (
-                              <span className="text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-400 font-medium">
-                                ⚖️ {(Number(p.pesoBruto) * fator).toFixed(2)} kg/cx
-                              </span>
-                            )}
+                              {hasPOs && (
+                                <span className="text-[10px] bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
+                                  🚢 {p.pendingPOs.reduce((sum: number, po: any) => sum + Math.floor(Number(po.quantidade) || 0), 0).toLocaleString('pt-BR')} {unidadeVenda} chegando
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {/* Availability in caixas + PO projection */}
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                            <span className={`text-xs font-bold ${qtdCaixas > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                              📦 {qtdCaixas.toLocaleString('pt-BR')} {unidadeVenda}
-                            </span>
-                            {p.precoMinimo && <span className="text-[10px] text-slate-400">Mín: {formatCurrencySales(Number(p.precoMinimo))}</span>}
-                            {hasPOs && (
-                              <span className="text-[10px] bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
-                                🚢 {p.pendingPOs.reduce((sum: number, po: any) => sum + Math.floor(Number(po.quantidade) || 0), 0).toLocaleString('pt-BR')} {unidadeVenda} chegando
+                          {/* Price badge on the right */}
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {precoVendedor ? (
+                              <span className="text-sm font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-lg">
+                                {formatCurrencySales(precoVendedor)}
                               </span>
+                            ) : precoMinimo ? (
+                              <span className="text-sm font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-lg">
+                                {formatCurrencySales(precoMinimo)}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">Sem preço</span>
                             )}
+                            <span className="text-[9px] text-slate-400">{precoVendedor ? 'Preço/cx' : precoMinimo ? 'Mínimo/cx' : ''}</span>
+                            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                           </div>
-                        </button>
-                        {/* Expand button */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setExpandedProduct(isExpanded ? null : p.codigoItem); }}
-                          className="px-2 flex items-center justify-center border-l border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                          title="Ver detalhes completos"
-                        >
-                          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                        </button>
+                        </div>
                       </div>
-                      {/* Expanded details */}
+
+                      {/* Expanded: Pricing calculator + Add to cart */}
                       {isExpanded && (
-                        <div className="px-2 sm:px-3 pb-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700">
-                          <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-1.5 pt-2">
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Código</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.codigoItem}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Unidade Medida</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.unidadeMedida || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Grupo</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.grupo || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Fator de Venda</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{fator.toLocaleString('pt-BR')} un/{unidadeVenda}</p>
-                            </div>
-                            {dims && (
-                              <>
-                                <div>
-                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Largura</p>
-                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{dims[1]} cm</p>
+                        <div className="px-2 sm:px-3 pb-3 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-900/30 border-t border-slate-100 dark:border-slate-700">
+                          {/* Pricing section */}
+                          {precoBase > 0 && (
+                            <div className="pt-3 pb-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {/* Card 1: Price per box */}
+                                <div className="rounded-lg border border-teal-200 dark:border-teal-700 bg-teal-50/50 dark:bg-teal-900/20 p-2.5">
+                                  <p className="text-[9px] text-teal-600 dark:text-teal-400 uppercase font-bold mb-1">💰 Valor da Caixa</p>
+                                  <p className="text-lg font-bold text-teal-800 dark:text-teal-200">{formatCurrencySales(precoBase)}</p>
+                                  <p className="text-[9px] text-teal-500 mt-0.5">{precoVendedor ? `Margem ${p.margemNegociacao || 0}%` : 'Preço mínimo'}</p>
                                 </div>
-                                <div>
-                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Altura</p>
-                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{dims[2]} cm</p>
+                                {/* Card 2: Discount % → Final value */}
+                                <div className="rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/20 p-2.5">
+                                  <p className="text-[9px] text-amber-600 dark:text-amber-400 uppercase font-bold mb-1">📊 Desconto %</p>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.5"
+                                      placeholder="0"
+                                      value={calc.discount}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        updateCalc('discount', v);
+                                        if (v) updateCalc('finalValue', '');
+                                      }}
+                                      className="w-16 px-2 py-1 text-sm font-bold text-center border border-amber-300 dark:border-amber-600 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                    />
+                                    <span className="text-sm font-bold text-amber-700 dark:text-amber-300">%</span>
+                                  </div>
+                                  {calc.discount && (
+                                    <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-200 mt-1">
+                                      = {formatCurrencySales(finalFromDiscount)}/cx
+                                    </p>
+                                  )}
                                 </div>
-                                <div>
-                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Comprimento</p>
-                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{dims[3]} cm</p>
+                                {/* Card 3: Final value → Discount % */}
+                                <div className="rounded-lg border border-indigo-200 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20 p-2.5">
+                                  <p className="text-[9px] text-indigo-600 dark:text-indigo-400 uppercase font-bold mb-1">🎯 Valor Final</p>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-sm text-indigo-600 dark:text-indigo-400">R$</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0,00"
+                                      value={calc.finalValue}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        updateCalc('finalValue', v);
+                                        if (v) updateCalc('discount', '');
+                                      }}
+                                      className="w-20 px-2 py-1 text-sm font-bold text-center border border-indigo-300 dark:border-indigo-600 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    />
+                                  </div>
+                                  {calc.finalValue && (
+                                    <p className="text-[11px] font-semibold text-indigo-800 dark:text-indigo-200 mt-1">
+                                      = {discountFromValue.toFixed(1)}% desc.
+                                    </p>
+                                  )}
                                 </div>
-                              </>
-                            )}
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Peso Bruto (un)</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.pesoBruto ? `${Number(p.pesoBruto).toFixed(5)} kg` : '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Peso por Caixa</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.pesoBruto ? `${(Number(p.pesoBruto) * fator).toFixed(2)} kg` : '-'}</p>
-                            </div>
-                            {p.codigoBarras && (
-                              <div>
-                                <p className="text-[9px] text-slate-400 uppercase font-bold">Código de Barras</p>
-                                <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.codigoBarras}</p>
                               </div>
-                            )}
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Procedência</p>
-                              <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.procedencia || '-'}</p>
+                              {/* Warning if below minimum */}
+                              {isBelowMin && (
+                                <p className="text-[10px] text-red-500 mt-2 flex items-center gap-1">
+                                  <span>⚠️</span> Preço abaixo do mínimo ({formatCurrencySales(precoMinimo!)}) — pedido precisará de aprovação
+                                </p>
+                              )}
                             </div>
-                            <div>
-                              <p className="text-[9px] text-slate-400 uppercase font-bold">Estoque Disponível</p>
-                              <p className="text-[11px] text-emerald-600 font-bold">{qtdCaixas.toLocaleString('pt-BR')} {unidadeVenda} ({qtdRaw.toLocaleString('pt-BR')} un)</p>
-                            </div>
-                            {p.precoMinimo && (
-                              <div>
-                                <p className="text-[9px] text-slate-400 uppercase font-bold">Preço Mínimo</p>
-                                <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{formatCurrencySales(Number(p.precoMinimo))}</p>
+                          )}
+
+                          {/* Add to cart button + Quantity selector */}
+                          {!calc.showQty ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateCalc('showQty', true); }}
+                              className="w-full mt-2 px-3 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold cursor-pointer flex items-center justify-center gap-2 shadow-sm transition-all hover:shadow-md"
+                            >
+                              <ShoppingCart className="w-4 h-4" /> Adicionar ao Carrinho
+                            </button>
+                          ) : (
+                            <div className="mt-2 p-3 rounded-lg border-2 border-emerald-300 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/20">
+                              <p className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase mb-2">Quantidade de Caixas</p>
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); updateCalc('quantity', Math.max(1, calc.quantity - 1)); }}
+                                    className="px-3 py-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-lg"
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={calc.quantity}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => { const v = Math.max(1, parseInt(e.target.value) || 1); updateCalc('quantity', v); }}
+                                    className="w-16 text-center py-2 text-sm font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                                  />
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); updateCalc('quantity', calc.quantity + 1); }}
+                                    className="px-3 py-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-lg"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <div className="flex-1 text-right">
+                                  <p className="text-[10px] text-slate-400">Total</p>
+                                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                    {formatCurrencySales(effectivePrice * calc.quantity)}
+                                  </p>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          {/* PO Projections */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addProduct(p, effectivePrice, calc.quantity);
+                                  setExpandedProduct(null);
+                                }}
+                                className="w-full mt-3 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer flex items-center justify-center gap-2 shadow-md transition-all"
+                              >
+                                <Plus className="w-4 h-4" /> Confirmar — {calc.quantity} {unidadeVenda} × {formatCurrencySales(effectivePrice)}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* PO Projections (if any) */}
                           {hasPOs && (
                             <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-600">
                               <p className="text-[9px] text-slate-400 uppercase font-bold mb-1">🚢 Pedidos de Compra (Chegando)</p>
@@ -3607,7 +3711,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                     </div>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setReservePO({ codigoItem: p.codigoItem, descricaoItem: p.descricaoItem, referencia: po.referencia || 'PO', dataEntrega: poDate, quantidade: poQtd }); }}
-                                      className="mt-1.5 w-full px-2 sm:px-3 py-2 sm:py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-[11px] sm:text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                                      className="mt-1.5 w-full px-2 sm:px-3 py-2 sm:py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors"
                                     >
                                       <Bookmark className="w-3 h-3" /> Reservar Caixas desta PO
                                     </button>
@@ -3616,17 +3720,43 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                               })}
                             </div>
                           )}
-                          {/* Botão para adicionar produto ao pedido (quando expandido por ter PO) */}
-                          {hasPOs && (
-                            <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-600">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); addProduct(p); setExpandedProduct(null); }}
-                                className="w-full px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> Adicionar ao Pedido (estoque atual)
-                              </button>
+
+                          {/* Technical details (collapsed by default) */}
+                          <details className="mt-2">
+                            <summary className="text-[9px] text-slate-400 cursor-pointer hover:text-slate-600 uppercase font-bold">Detalhes técnicos</summary>
+                            <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-1.5 pt-2">
+                              <div>
+                                <p className="text-[9px] text-slate-400 uppercase font-bold">Unidade Medida</p>
+                                <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.unidadeMedida || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] text-slate-400 uppercase font-bold">Fator de Venda</p>
+                                <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{fator.toLocaleString('pt-BR')} un/{unidadeVenda}</p>
+                              </div>
+                              {p.pesoBruto && (
+                                <div>
+                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Peso por Caixa</p>
+                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{(Number(p.pesoBruto) * fator).toFixed(2)} kg</p>
+                                </div>
+                              )}
+                              {p.codigoBarras && (
+                                <div>
+                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Código de Barras</p>
+                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.codigoBarras}</p>
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-[9px] text-slate-400 uppercase font-bold">Estoque</p>
+                                <p className="text-[11px] text-emerald-600 font-bold">{qtdCaixas.toLocaleString('pt-BR')} {unidadeVenda} ({qtdRaw.toLocaleString('pt-BR')} un)</p>
+                              </div>
+                              {precoMinimo && (
+                                <div>
+                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Preço Mínimo</p>
+                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{formatCurrencySales(precoMinimo)}</p>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </details>
                         </div>
                       )}
                     </div>
@@ -3640,61 +3770,84 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             {productsQuery.isLoading && (
               <p className="text-xs text-slate-400 text-center py-3">Carregando produtos...</p>
             )}
-            {/* Selected items */}
+            {/* Selected items (cart) */}
             {items.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Itens adicionados ({items.length})</p>
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1">
+                    <ShoppingCart className="w-3.5 h-3.5" /> Carrinho ({items.length} {items.length === 1 ? 'item' : 'itens'})
+                  </p>
+                  <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                    Total: {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
+                  </p>
+                </div>
                 {items.map((item, idx) => (
-                  <div key={idx} className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 sm:p-3 border border-slate-200 dark:border-slate-600">
+                  <div key={idx} className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-lg p-2 sm:p-3 border border-emerald-200 dark:border-emerald-700">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] sm:text-xs font-medium text-slate-700 dark:text-slate-200 break-words leading-tight">{item.descricaoItem}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] text-slate-400">Cód: {item.codigoItem}</span>
                           {item.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-600 rounded text-slate-500 dark:text-slate-400">{item.grupo}</span>}
-
                         </div>
                       </div>
-                      <button onClick={() => removeProduct(idx)} className="p-1 hover:bg-red-50 rounded">
+                      <button onClick={() => removeProduct(idx)} className="p-1.5 hover:bg-red-100 rounded-lg transition-colors">
                         <Trash2 className="w-3.5 h-3.5 text-red-400" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-2">
+                    <div className="flex flex-wrap items-end gap-3 mt-2">
+                      {/* Quantity with +/- buttons */}
                       <div>
-                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase">Qtd ({item.unidadeMedida})</label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={item.quantidade}
-                          onChange={(e) => updateItem(idx, "quantidade", Number(e.target.value))}
-                          className="w-full mt-0.5 px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                        />
+                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold">Qtd ({item.unidadeMedida})</label>
+                        <div className="flex items-center mt-0.5 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                          <button
+                            onClick={() => updateItem(idx, "quantidade", Math.max(1, item.quantidade - 1))}
+                            className="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 font-bold"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.quantidade}
+                            onChange={(e) => updateItem(idx, "quantidade", Math.max(1, Number(e.target.value) || 1))}
+                            className="w-14 text-center py-1 text-xs font-bold border-x border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                          />
+                          <button
+                            onClick={() => updateItem(idx, "quantidade", item.quantidade + 1)}
+                            className="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
+                      {/* Unit price */}
                       <div>
-                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase">Preço Unit.</label>
+                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold">Preço/cx</label>
                         <input
                           type="number"
                           step="0.01"
                           min={0}
                           value={item.precoUnitario}
                           onChange={(e) => updateItem(idx, "precoUnitario", Number(e.target.value))}
-                          className={`w-full mt-0.5 px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs border rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${
+                          className={`w-24 mt-0.5 px-2 py-1 text-xs font-medium border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-400 ${
                             item.precoMinimo && item.precoUnitario < item.precoMinimo
-                              ? "border-red-300 bg-red-50"
+                              ? "border-red-300 bg-red-50 dark:bg-red-900/20"
                               : "border-slate-200 dark:border-slate-600"
                           }`}
                         />
-                        {item.precoMinimo && <p className="text-[8px] sm:text-[9px] text-slate-400 mt-0.5">Mín: {formatCurrencySales(item.precoMinimo)}</p>}
+                        {item.precoMinimo && <p className="text-[8px] text-slate-400 mt-0.5">Mín: {formatCurrencySales(item.precoMinimo)}</p>}
                       </div>
-                      <div>
-                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase">Total</label>
-                        <p className="mt-0.5 px-1 sm:px-2 py-1 text-[11px] sm:text-xs font-medium text-green-600">
+                      {/* Total */}
+                      <div className="ml-auto text-right">
+                        <label className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold">Total</label>
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {formatCurrencySales(item.quantidade * item.precoUnitario)}
                         </p>
                       </div>
                     </div>
                     {item.precoMinimo && item.precoUnitario < item.precoMinimo && (
-                      <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                      <p className="text-[10px] text-red-500 mt-1.5 flex items-center gap-1">
                         <span>⚠️</span> Preço abaixo do mínimo - pedido precisará de aprovação
                       </p>
                     )}

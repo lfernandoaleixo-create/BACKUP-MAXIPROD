@@ -4663,3 +4663,8 @@
 - [x] Card Informações do Cliente: começar recolhido com resumo compacto
 - [x] Card Informações do Cliente: destacar inadimplência (borda vermelha) vs em dia (verde)
 - [x] Novo Pedido: puxar CNPJ/CPF e cadastro completo ao selecionar cliente (preenche todos os campos disponíveis; CNPJ opcional para clientes Maxiprod sem cadastro)
+- [x] Novo Pedido - Produtos: mostrar valor da caixa baseado na margem do gestor (tabela de preço)
+- [x] Novo Pedido - Produtos: card de desconto por % (vendedor digita %, calcula valor final)
+- [x] Novo Pedido - Produtos: card de valor final (vendedor digita valor, calcula % de desconto)
+- [x] Novo Pedido - Produtos: botão "Adicionar ao Carrinho" em cada produto
+- [x] Novo Pedido - Produtos: seletor de quantidade com setinhas (+ e -) E campo para digitar direto
