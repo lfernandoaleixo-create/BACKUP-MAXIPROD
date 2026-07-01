@@ -4635,3 +4635,4 @@
 - [x] Tabela de Preço: botão de conversão para mostrar preço mínimo (preço × (1 - desconto%))
 - [x] Catálogos no painel gestor: visão matricial (catálogos x vendedores) com checkboxes clicáveis
 - [x] Senhas no painel gestor: visão com todos os vendedores, campo de senha editável e ícone de cadeado
+- [x] Tabela de Preço: card "Margem de Negociação" editável (%) - preço vendedor = preço tabela / (1 - margem%)

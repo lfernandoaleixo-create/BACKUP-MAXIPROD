@@ -4205,6 +4205,38 @@ export const salesRouter = router({
       return { discount: null };
     }),
   /**
+   * Salvar margem de negociação configurada pelo gestor
+   */
+  saveMargemNegociacao: publicProcedure
+    .input(z.object({ gestorName: z.string(), margem: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const key = `margem_negociacao_${input.gestorName}`;
+      const existing = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+      if (existing.length > 0) {
+        await db.update(appSettings).set({ settingValue: JSON.stringify(input.margem) }).where(eq(appSettings.settingKey, key));
+      } else {
+        await db.insert(appSettings).values({ settingKey: key, settingValue: JSON.stringify(input.margem) });
+      }
+      return { success: true };
+    }),
+  /**
+   * Carregar margem de negociação configurada pelo gestor
+   */
+  getMargemNegociacao: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const key = `margem_negociacao_${input.gestorName}`;
+      const row = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+      if (row.length > 0 && row[0].settingValue) {
+        return { margem: JSON.parse(row[0].settingValue as string) as string };
+      }
+      return { margem: null };
+    }),
+  /**
    * Matriz de catálogos por vendedor (gestor)
    */
   getCatalogMatrix: publicProcedure

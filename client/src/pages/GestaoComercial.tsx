@@ -16,7 +16,8 @@ import { trpc } from "@/lib/trpc";
 import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
-  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check
+  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check,
+  TrendingUp, Pencil
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -932,12 +933,15 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
 function PriceMatrixView({ gestorName }: { gestorName: string }) {
   const [search, setSearch] = useState("");
   const [showMinPrice, setShowMinPrice] = useState(false);
-  const [customDiscount, setCustomDiscount] = useState<string>("");
+    const [customDiscount, setCustomDiscount] = useState<string>("");
   const [editingDiscount, setEditingDiscount] = useState(false);
-
+  const [margemNegociacao, setMargemNegociacao] = useState<string>("");
+  const [editingMargem, setEditingMargem] = useState(false);
   const matrixQuery = trpc.sales.getPriceMatrix.useQuery({ gestorName });
   const discountQuery = trpc.sales.getMaxDiscount.useQuery({ gestorName });
+  const margemQuery = trpc.sales.getMargemNegociacao.useQuery({ gestorName });
   const saveDiscountMutation = trpc.sales.saveMaxDiscount.useMutation();
+  const saveMargemMutation = trpc.sales.saveMargemNegociacao.useMutation();
 
   // Load saved discount from DB
   useEffect(() => {
@@ -945,6 +949,12 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
       setCustomDiscount(discountQuery.data.discount);
     }
   }, [discountQuery.data]);
+  // Load saved margem from DB
+  useEffect(() => {
+    if (margemQuery.data?.margem && !margemNegociacao) {
+      setMargemNegociacao(margemQuery.data.margem);
+    }
+  }, [margemQuery.data]);
 
   if (matrixQuery.isLoading) {
     return (
@@ -988,6 +998,64 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
 
   return (
     <div className="space-y-4">
+      {/* Margem de Negociação card */}
+      <div className="rounded-xl border-2 border-teal-200 dark:border-teal-700 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-800 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-300" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-teal-800 dark:text-teal-200">Margem de Negociação</h4>
+              <p className="text-[10px] text-teal-600/70 dark:text-teal-400/70">Preço vendedor = Preço tabela ÷ (1 - margem%)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {editingMargem ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  step="0.5"
+                  value={margemNegociacao}
+                  onChange={(e) => setMargemNegociacao(e.target.value)}
+                  placeholder="30"
+                  className="w-20 text-sm px-3 py-1.5 rounded-lg border border-teal-300 dark:border-teal-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-center focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  autoFocus
+                />
+                <span className="text-sm font-bold text-teal-700 dark:text-teal-300">%</span>
+                <button
+                  onClick={() => {
+                    setEditingMargem(false);
+                    if (margemNegociacao) {
+                      saveMargemMutation.mutate({ gestorName, margem: margemNegociacao });
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+                >
+                  Salvar
+                </button>
+                <button
+                  onClick={() => setEditingMargem(false)}
+                  className="px-3 py-1.5 text-xs font-medium bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 rounded-lg hover:bg-slate-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingMargem(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-100 dark:bg-teal-800 text-teal-700 dark:text-teal-200 hover:bg-teal-200 dark:hover:bg-teal-700 transition-colors border border-teal-200 dark:border-teal-600"
+              >
+                <span className="text-lg font-bold">{margemNegociacao ? `${margemNegociacao}%` : "Definir"}</span>
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Controls bar */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs text-slate-500 dark:text-slate-400">
