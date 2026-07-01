@@ -4656,3 +4656,6 @@
 - [x] Remover seção Meta Mensal & Comissão das métricas de venda do vendedor
 - [x] Remover aba Configurações do painel do vendedor (tudo configurado pelo gestor)
 - [x] Melhorar visual da Tabela de Preços (remover coluna Comissão, design sofisticado com zebra stripes)
+- [x] Fix: busca de clientes no Novo Pedido não encontra clientes existentes (ex: Box 81 do Daniel)
+- [x] Novo Pedido: card "Informações do Cliente" com histórico completo (compras, débitos, boletos vencidos, inadimplência)
+- [x] Preparar estrutura para futura integração com API do Serasa (alerta nome sujo/limpo)

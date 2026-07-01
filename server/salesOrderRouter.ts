@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -18,16 +18,67 @@ export const salesOrderRouter = router({
 
   // ===== CLIENT SEARCH (AUTOCOMPLETE) =====
 
-  /** Search clients from existing sales_orders + sales_order_requests for autocomplete */
+  /** Search clients from existing sales_orders + sales_order_requests + vendor_clients for autocomplete */
   searchClients: publicProcedure
-    .input(z.object({ query: z.string().min(1) }))
+    .input(z.object({ query: z.string().min(1), sellerId: z.number().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
       
       const q = input.query.trim();
 
+      // 0. Search in vendor_clients (cadastro de clientes do vendedor)
+      let fromVendorClients: Array<{
+        cnpjCpf: string; razaoSocial: string; nomeFantasia: string;
+        inscricaoEstadual: string; tipoContribuinte: string; regimeTributario: string;
+        emailNfe: string; cnaeFiscal: string; cep: string; endereco: string;
+        numero: string; complemento: string; bairro: string; municipio: string;
+        uf: string; telefone1: string; telefone2: string; emailContato: string; segmento: string;
+      }> = [];
+      try {
+        const qL = q.toLowerCase();
+        const vcRows = await db.select()
+          .from(vendorClients)
+          .where(
+            and(
+              ...(input.sellerId ? [eq(vendorClients.sellerId, input.sellerId)] : []),
+              or(
+                sql`LOWER(${vendorClients.razaoSocial}) LIKE ${`%${qL}%`}`,
+                sql`LOWER(${vendorClients.nomeFantasia}) LIKE ${`%${qL}%`}`,
+                like(vendorClients.cnpjCpf, `%${q}%`)
+              )
+            )
+          )
+          .limit(20);
+        fromVendorClients = vcRows.map(vc => ({
+          cnpjCpf: vc.cnpjCpf || "",
+          razaoSocial: vc.razaoSocial || "",
+          nomeFantasia: vc.nomeFantasia || "",
+          inscricaoEstadual: vc.inscricaoEstadual || "",
+          tipoContribuinte: "Contribuinte",
+          regimeTributario: "Normal",
+          emailNfe: "",
+          cnaeFiscal: "",
+          cep: vc.cep || "",
+          endereco: vc.logradouro || "",
+          numero: vc.numero || "",
+          complemento: vc.complemento || "",
+          bairro: vc.bairro || "",
+          municipio: vc.cidade || "",
+          uf: vc.uf || "",
+          telefone1: vc.telefone1 || "",
+          telefone2: vc.telefone2 || "",
+          emailContato: vc.email || "",
+          segmento: vc.segmento || "",
+        }));
+      } catch (e) {
+        // Silently continue if vendor_clients lookup fails
+      }
+
       // 1. Search in previous sales_order_requests (manual orders from app)
+      const qUpper = q.toUpperCase();
+      const qLower = q.toLowerCase();
+
       const fromManualOrders = await db.select({
         cnpjCpf: salesOrderRequests.cnpjCpf,
         razaoSocial: salesOrderRequests.razaoSocial,
@@ -52,8 +103,8 @@ export const salesOrderRouter = router({
       .from(salesOrderRequests)
       .where(
         or(
-          like(salesOrderRequests.razaoSocial, `%${q}%`),
-          like(salesOrderRequests.nomeFantasia, `%${q}%`),
+          sql`LOWER(${salesOrderRequests.razaoSocial}) LIKE ${`%${qLower}%`}`,
+          sql`LOWER(${salesOrderRequests.nomeFantasia}) LIKE ${`%${qLower}%`}`,
           like(salesOrderRequests.cnpjCpf, `%${q}%`)
         )
       )
@@ -80,9 +131,9 @@ export const salesOrderRouter = router({
       .from(salesOrders)
       .where(
         or(
-          like(salesOrders.cliente, `%${q}%`),
-          like(salesOrders.clienteApelido, `%${q}%`),
-          like(salesOrders.razaoSocial, `%${q}%`)
+          sql`LOWER(${salesOrders.cliente}) LIKE ${`%${qLower}%`}`,
+          sql`LOWER(${salesOrders.clienteApelido}) LIKE ${`%${qLower}%`}`,
+          sql`LOWER(${salesOrders.razaoSocial}) LIKE ${`%${qLower}%`}`
         )
       )
       .orderBy(desc(salesOrders.dataEmissao))
@@ -186,11 +237,21 @@ export const salesOrderRouter = router({
         }
       }
 
-      // 4. Merge: manual orders first (more complete data), then Maxiprod
+      // 4. Merge: vendor_clients first (most complete local data), then manual orders, then Maxiprod
       const seen = new Set<string>();
       const results: typeof fromManualOrders = [];
 
-      // Add manual order clients first (they have CNPJ and full data)
+      // Add vendor_clients first (cadastro do vendedor - most complete)
+      for (const row of fromVendorClients) {
+        const key = row.cnpjCpf ? row.cnpjCpf : (row.razaoSocial || "").toUpperCase().trim();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        if (row.razaoSocial) seen.add(row.razaoSocial.toUpperCase().trim());
+        if (row.nomeFantasia) seen.add(row.nomeFantasia.toUpperCase().trim());
+        results.push(row as any);
+      }
+
+      // Add manual order clients (they have CNPJ and full data)
       for (const row of fromManualOrders) {
         const key = row.cnpjCpf ? row.cnpjCpf : (row.razaoSocial || "").toUpperCase().trim();
         if (!key || seen.has(key)) continue;
@@ -892,4 +953,135 @@ export const salesOrderRouter = router({
       processados: Number(stats?.processados || 0),
     };
   }),
+
+  // ===== CLIENT HISTORY (Informações do Cliente) =====
+
+  /** Get full client history: purchases, debts, overdue boletos */
+  getClientHistory: publicProcedure
+    .input(z.object({ clientName: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { purchases: [], debts: [], summary: { totalCompras: 0, totalPedidos: 0, totalEmAberto: 0, titulosVencidos: 0, diasAtrasoMax: 0, ultimaCompra: null as string | null } };
+
+      const clientNameLower = input.clientName.toLowerCase();
+
+      // 1. Purchase history - get distinct orders for this client
+      const purchases = await db.select({
+        pedido: salesOrders.pedido,
+        dataEmissao: salesOrders.dataEmissao,
+        cliente: salesOrders.cliente,
+        clienteApelido: salesOrders.clienteApelido,
+        valorTotalPedido: salesOrders.valorTotalPedido,
+        estadoNota: salesOrders.estadoNota,
+        condicaoPagamento: salesOrders.condicaoPagamento,
+        representante: salesOrders.representante,
+        uf: salesOrders.uf,
+      })
+      .from(salesOrders)
+      .where(
+        or(
+          sql`LOWER(${salesOrders.cliente}) LIKE ${`%${clientNameLower}%`}`,
+          sql`LOWER(${salesOrders.clienteApelido}) LIKE ${`%${clientNameLower}%`}`,
+          sql`LOWER(${salesOrders.razaoSocial}) LIKE ${`%${clientNameLower}%`}`
+        )
+      )
+      .orderBy(desc(salesOrders.dataEmissao))
+      .limit(200);
+
+      // Deduplicate by pedido number
+      const seenPedidos = new Set<string>();
+      const uniquePurchases: Array<{
+        pedido: string; dataEmissao: string; valor: number;
+        estado: string; condicaoPagamento: string; representante: string;
+      }> = [];
+      for (const p of purchases) {
+        const key = p.pedido || `${p.dataEmissao}-${p.valorTotalPedido}`;
+        if (seenPedidos.has(key)) continue;
+        seenPedidos.add(key);
+        uniquePurchases.push({
+          pedido: p.pedido || "",
+          dataEmissao: p.dataEmissao || "",
+          valor: Number(p.valorTotalPedido || 0),
+          estado: p.estadoNota || "",
+          condicaoPagamento: p.condicaoPagamento || "",
+          representante: p.representante || "",
+        });
+      }
+
+      // 2. Debts - accounts receivable for this client (EMITIDO = pending)
+      const debts = await db.select({
+        id: accountsReceivable.id,
+        estado: accountsReceivable.estado,
+        valorOriginal: accountsReceivable.valorOriginal,
+        valorLiquido: accountsReceivable.valorLiquido,
+        vencimentoData: accountsReceivable.vencimentoData,
+        emissaoData: accountsReceivable.emissaoData,
+        documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+        formaCobranca: accountsReceivable.formaCobranca,
+        cliente: accountsReceivable.cliente,
+        parcela: accountsReceivable.parcela,
+        parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+      })
+      .from(accountsReceivable)
+      .where(
+        and(
+          eq(accountsReceivable.estado, "EMITIDO"),
+          or(
+            sql`LOWER(${accountsReceivable.cliente}) LIKE ${`%${clientNameLower}%`}`,
+            sql`LOWER(${accountsReceivable.clienteApelido}) LIKE ${`%${clientNameLower}%`}`
+          )
+        )
+      )
+      .orderBy(accountsReceivable.vencimentoData)
+      .limit(50);
+
+      // Calculate summary
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      let totalEmAberto = 0;
+      let titulosVencidos = 0;
+      let diasAtrasoMax = 0;
+
+      const debtItems = debts.map(d => {
+        const valor = Number(d.valorLiquido || d.valorOriginal || 0);
+        totalEmAberto += valor;
+        const venc = d.vencimentoData || "";
+        let diasAtraso = 0;
+        let vencido = false;
+        if (venc && venc <= todayStr) {
+          vencido = true;
+          titulosVencidos++;
+          const vencDate = new Date(venc);
+          diasAtraso = Math.floor((today.getTime() - vencDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (diasAtraso > diasAtrasoMax) diasAtrasoMax = diasAtraso;
+        }
+        return {
+          id: d.id,
+          valor,
+          vencimento: venc,
+          documento: d.documentoVinculadoNumero || "",
+          formaCobranca: (d.formaCobranca || "").substring(0, 30),
+          parcela: d.parcela,
+          totalParcelas: d.parcelasQuantidadeTotal,
+          vencido,
+          diasAtraso,
+        };
+      });
+
+      const totalCompras = uniquePurchases.reduce((sum, p) => sum + p.valor, 0);
+      const ultimaCompra = uniquePurchases.length > 0 ? uniquePurchases[0].dataEmissao : null;
+
+      return {
+        purchases: uniquePurchases.slice(0, 20),
+        debts: debtItems,
+        summary: {
+          totalCompras,
+          totalPedidos: uniquePurchases.length,
+          totalEmAberto,
+          titulosVencidos,
+          diasAtrasoMax,
+          ultimaCompra,
+        },
+      };
+    }),
 });

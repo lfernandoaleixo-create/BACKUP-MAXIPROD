@@ -2997,12 +2997,20 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
 
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(
-    { query: clientSearch },
+    { query: clientSearch, sellerId },
     { enabled: clientSearch.length >= 1 }
   );
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
   const utils = trpc.useUtils();
+
+  const [selectedClientName, setSelectedClientName] = useState("");
+
+  // Client history query - fires when a client is selected
+  const clientHistoryQuery = trpc.salesOrders.getClientHistory.useQuery(
+    { clientName: selectedClientName },
+    { enabled: selectedClientName.length >= 3 }
+  );
 
   const selectClient = (client: any) => {
     setCnpjCpf(client.cnpjCpf || "");
@@ -3025,6 +3033,8 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     setSegmento(client.segmento || "");
     setShowClientDropdown(false);
     setClientSearch("");
+    // Set client name for history lookup
+    setSelectedClientName(client.razaoSocial || client.nomeFantasia || "");
   };
 
   // Filtered products for selection
@@ -3232,6 +3242,145 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                 Próximo: Produtos
               </button>
             </div>
+
+            {/* Informações do Cliente - Card com histórico */}
+            {selectedClientName && (
+              <div className="mt-4 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <h4 className="text-sm font-bold text-white">Informações do Cliente</h4>
+                  {clientHistoryQuery.data?.summary?.titulosVencidos ? (
+                    <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-300 text-[10px] font-bold rounded-full border border-red-500/30">
+                      ⚠ INADIMPLENTE
+                    </span>
+                  ) : clientHistoryQuery.data?.summary?.totalEmAberto ? (
+                    <span className="ml-auto px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-full border border-amber-500/30">
+                      TÍTULOS EM ABERTO
+                    </span>
+                  ) : clientHistoryQuery.data ? (
+                    <span className="ml-auto px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded-full border border-emerald-500/30">
+                      ✓ EM DIA
+                    </span>
+                  ) : null}
+                </div>
+
+                {clientHistoryQuery.isLoading && (
+                  <div className="p-4 text-center">
+                    <div className="animate-spin w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full mx-auto"></div>
+                    <p className="text-xs text-slate-400 mt-2">Carregando histórico...</p>
+                  </div>
+                )}
+
+                {clientHistoryQuery.data && (
+                  <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-800/50">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700">
+                        <p className="text-[10px] text-slate-400 uppercase font-medium">Total Comprado</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(clientHistoryQuery.data.summary.totalCompras)}
+                        </p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700">
+                        <p className="text-[10px] text-slate-400 uppercase font-medium">Pedidos</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{clientHistoryQuery.data.summary.totalPedidos}</p>
+                      </div>
+                      <div className={`bg-white dark:bg-slate-800 rounded-lg p-2.5 border ${clientHistoryQuery.data.summary.totalEmAberto > 0 ? 'border-amber-300 dark:border-amber-700' : 'border-slate-200 dark:border-slate-700'}`}>
+                        <p className="text-[10px] text-slate-400 uppercase font-medium">Em Aberto</p>
+                        <p className={`text-sm font-bold ${clientHistoryQuery.data.summary.totalEmAberto > 0 ? 'text-amber-600' : 'text-slate-800 dark:text-slate-200'}`}>
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(clientHistoryQuery.data.summary.totalEmAberto)}
+                        </p>
+                      </div>
+                      <div className={`bg-white dark:bg-slate-800 rounded-lg p-2.5 border ${clientHistoryQuery.data.summary.titulosVencidos > 0 ? 'border-red-300 dark:border-red-700' : 'border-slate-200 dark:border-slate-700'}`}>
+                        <p className="text-[10px] text-slate-400 uppercase font-medium">Vencidos</p>
+                        <p className={`text-sm font-bold ${clientHistoryQuery.data.summary.titulosVencidos > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                          {clientHistoryQuery.data.summary.titulosVencidos} título(s)
+                          {clientHistoryQuery.data.summary.diasAtrasoMax > 0 && (
+                            <span className="text-[10px] font-normal text-red-400 ml-1">({clientHistoryQuery.data.summary.diasAtrasoMax} dias)</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Débitos em Aberto */}
+                    {clientHistoryQuery.data.debts.length > 0 && (
+                      <div>
+                        <h5 className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Títulos em Aberto ({clientHistoryQuery.data.debts.length})
+                        </h5>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {clientHistoryQuery.data.debts.map((d: any, idx: number) => (
+                            <div key={idx} className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs ${d.vencido ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'}`}>
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${d.vencido ? 'bg-red-500 animate-pulse' : 'bg-amber-400'}`}></span>
+                                <span className="text-slate-600 dark:text-slate-300">
+                                  {d.documento || `Parcela ${d.parcela || '-'}/${d.totalParcelas || '-'}`}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-slate-400">{d.vencimento ? new Date(d.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</span>
+                                <span className={`font-semibold ${d.vencido ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'}`}>
+                                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(d.valor)}
+                                </span>
+                                {d.vencido && d.diasAtraso > 0 && (
+                                  <span className="text-[10px] text-red-500 font-medium">{d.diasAtraso}d atraso</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Histórico de Compras */}
+                    {clientHistoryQuery.data.purchases.length > 0 && (
+                      <div>
+                        <h5 className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                          Últimas Compras ({clientHistoryQuery.data.purchases.length})
+                        </h5>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {clientHistoryQuery.data.purchases.slice(0, 10).map((p: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-400">#{p.pedido}</span>
+                                <span className="text-slate-600 dark:text-slate-300">
+                                  {p.dataEmissao ? new Date(p.dataEmissao).toLocaleDateString('pt-BR') : '-'}
+                                </span>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  p.estado === 'Faturado' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                  p.estado === 'Aprovado' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                  'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                                }`}>{p.estado || 'N/A'}</span>
+                              </div>
+                              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.valor)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Última compra info */}
+                    {clientHistoryQuery.data.summary.ultimaCompra && (
+                      <p className="text-[10px] text-slate-400 text-center">
+                        Última compra: {new Date(clientHistoryQuery.data.summary.ultimaCompra).toLocaleDateString('pt-BR')}
+                        {' · '}
+                        Vendedor: {clientHistoryQuery.data.purchases[0]?.representante || '-'}
+                      </p>
+                    )}
+
+                    {/* Placeholder for future Serasa integration */}
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
+                      <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                      <span className="text-[10px] text-slate-400">Consulta Serasa — em breve</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
