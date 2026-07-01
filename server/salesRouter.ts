@@ -4275,6 +4275,35 @@ export const salesRouter = router({
       return { success: true };
     }),
   /**
+   * Get all seller passwords for a gestor
+   */
+  getSellerPasswords: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const allPerms = await db.select().from(sellerPermissions);
+      const sellers = allPerms.filter(p => p.gestorName === input.gestorName && p.authorized);
+      return sellers.map(s => ({
+        id: s.id,
+        name: s.sellerName,
+        password: s.password,
+      }));
+    }),
+  /**
+   * Update seller password
+   */
+  updateSellerPassword: publicProcedure
+    .input(z.object({ sellerId: z.number(), password: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(sellerPermissions)
+        .set({ password: input.password })
+        .where(eq(sellerPermissions.id, input.sellerId));
+      return { success: true };
+    }),
+  /**
    * Get period evolution data (annual, semester, quarter)
    * Returns monthly totals for all time, grouped by fixed periods
    */

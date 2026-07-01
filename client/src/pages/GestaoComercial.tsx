@@ -479,6 +479,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       <PriceMatrixView gestorName={card.name} />
                     ) : activeConfig === "catalogos" ? (
                       <CatalogMatrixView gestorName={card.name} />
+                    ) : activeConfig === "senha" ? (
+                      <PasswordManagerView gestorName={card.name} />
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -511,9 +513,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
-                                {activeConfig === "senha" && perm && (
-                                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Senha atual: {perm.password}</p>
-                                )}
+                
 
                               </div>
                               <div className="flex items-center gap-2">
@@ -1376,6 +1376,150 @@ function CatalogFolderCard({
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ============================================================
+// PASSWORD MANAGER VIEW - Senhas dos vendedores (gestor)
+// ============================================================
+function PasswordManagerView({ gestorName }: { gestorName: string }) {
+  const passwordsQuery = trpc.sales.getSellerPasswords.useQuery({ gestorName });
+  const updateMutation = trpc.sales.updateSellerPassword.useMutation({
+    onSuccess: () => passwordsQuery.refetch(),
+  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [showPasswords, setShowPasswords] = useState<Set<number>>(new Set());
+
+  if (passwordsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="w-5 h-5 animate-spin text-teal-500" />
+        <span className="ml-2 text-sm text-slate-500">Carregando senhas...</span>
+      </div>
+    );
+  }
+  if (passwordsQuery.error) {
+    return (
+      <div className="flex items-center justify-center py-12 text-red-500">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">Erro ao carregar senhas</span>
+      </div>
+    );
+  }
+
+  const sellers = passwordsQuery.data || [];
+
+  const toggleShowPassword = (id: number) => {
+    setShowPasswords(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const startEditing = (id: number, currentPassword: string) => {
+    setEditingId(id);
+    setEditValue(currentPassword);
+  };
+
+  const savePassword = (sellerId: number) => {
+    if (editValue.trim()) {
+      updateMutation.mutate({ sellerId, password: editValue.trim() });
+    }
+    setEditingId(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditValue("");
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        {sellers.length} vendedores · Defina a senha de acesso ao aplicativo
+      </p>
+
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {sellers.map((seller, idx) => (
+          <div
+            key={seller.id}
+            className={`flex items-center gap-4 px-4 py-3 ${
+              idx % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/50 dark:bg-slate-800/50"
+            } ${idx > 0 ? "border-t border-slate-100 dark:border-slate-700/50" : ""}`}
+          >
+            {/* Lock icon */}
+            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0">
+              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+
+            {/* Seller name */}
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                {seller.name}
+              </span>
+            </div>
+
+            {/* Password field */}
+            <div className="flex items-center gap-2">
+              {editingId === seller.id ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") savePassword(seller.id);
+                      if (e.key === "Escape") cancelEditing();
+                    }}
+                    className="w-36 px-3 py-1.5 text-sm border border-teal-300 dark:border-teal-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => savePassword(seller.id)}
+                    className="px-2.5 py-1.5 text-xs font-medium bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    className="px-2.5 py-1.5 text-xs font-medium bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="w-36 px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 rounded-lg text-center font-mono">
+                    {showPasswords.has(seller.id) ? (
+                      <span className="text-slate-800 dark:text-slate-100">{seller.password}</span>
+                    ) : (
+                      <span className="text-slate-400 dark:text-slate-500">••••••••</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => toggleShowPassword(seller.id)}
+                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                    title={showPasswords.has(seller.id) ? "Ocultar senha" : "Mostrar senha"}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => startEditing(seller.id, seller.password)}
+                    className="px-2.5 py-1.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                  >
+                    Editar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
