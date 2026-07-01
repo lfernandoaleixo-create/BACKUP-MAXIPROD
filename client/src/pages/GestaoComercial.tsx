@@ -16,7 +16,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
-  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator
+  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -477,6 +477,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       <EstoqueMatrixView gestorName={card.name} />
                     ) : activeConfig === "tabela_preco" ? (
                       <PriceMatrixView gestorName={card.name} />
+                    ) : activeConfig === "catalogos" ? (
+                      <CatalogMatrixView gestorName={card.name} />
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -858,17 +860,17 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
 
       {/* Card body */}
       {expanded && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
           <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-slate-50/80 dark:bg-slate-700/30 z-10">
+            <thead className="sticky top-0 z-20">
+              <tr className="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-700">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-slate-50 dark:bg-slate-700 z-30">
                   Produto
                 </th>
                 {sellerCounts.map(seller => (
                   <th
                     key={seller.id}
-                    className="text-center px-3 py-3 min-w-[90px]"
+                    className="text-center px-3 py-3 min-w-[90px] bg-slate-50 dark:bg-slate-700"
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
@@ -934,6 +936,15 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
   const [editingDiscount, setEditingDiscount] = useState(false);
 
   const matrixQuery = trpc.sales.getPriceMatrix.useQuery({ gestorName });
+  const discountQuery = trpc.sales.getMaxDiscount.useQuery({ gestorName });
+  const saveDiscountMutation = trpc.sales.saveMaxDiscount.useMutation();
+
+  // Load saved discount from DB
+  useEffect(() => {
+    if (discountQuery.data?.discount && !customDiscount) {
+      setCustomDiscount(discountQuery.data.discount);
+    }
+  }, [discountQuery.data]);
 
   if (matrixQuery.isLoading) {
     return (
@@ -999,7 +1010,12 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
                 />
                 <span className="text-xs text-slate-500">%</span>
                 <button
-                  onClick={() => setEditingDiscount(false)}
+                  onClick={() => {
+                    setEditingDiscount(false);
+                    if (customDiscount) {
+                      saveDiscountMutation.mutate({ gestorName, discount: customDiscount });
+                    }
+                  }}
                   className="text-xs px-2 py-1 rounded bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-700"
                 >
                   OK
@@ -1131,15 +1147,15 @@ function PriceSegmentCard({ title, color, products, sellers, allProducts, showMi
 
       {/* Table content */}
       {expanded && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
           <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-700">
-                <th className="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-white dark:bg-slate-800 min-w-[250px]">
+            <thead className="sticky top-0 z-20">
+              <tr className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                <th className="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-white dark:bg-slate-800 min-w-[250px] z-30">
                   Produto
                 </th>
                 {sellers.map(seller => (
-                  <th key={seller.id} className="text-center px-2 py-2 min-w-[80px]">
+                  <th key={seller.id} className="text-center px-2 py-2 min-w-[80px] bg-white dark:bg-slate-800">
                     <span className="font-bold text-[11px] text-slate-800 dark:text-slate-100 uppercase">
                       {seller.name.split(" ")[0]}
                     </span>
@@ -1166,8 +1182,8 @@ function PriceSegmentCard({ title, color, products, sellers, allProducts, showMi
                     return (
                       <td key={seller.id} className="text-center px-2 py-2">
                         {price !== null ? (
-                          <span className={`text-[10px] font-medium ${showMinPrice ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"}`}>
-                            {price.toFixed(2)}
+                          <span className={`text-[11px] font-bold ${showMinPrice ? "text-emerald-600 dark:text-emerald-400" : "text-slate-800 dark:text-slate-100"}`}>
+                            R$ {price.toFixed(2)}
                           </span>
                         ) : (
                           <span className="text-slate-300 dark:text-slate-600">—</span>
@@ -1184,6 +1200,178 @@ function PriceSegmentCard({ title, color, products, sellers, allProducts, showMi
                   </td>
                 </tr>
               )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ============================================================
+// CATALOG MATRIX VIEW - Catálogos x Vendedores (gestor)
+// ============================================================
+function CatalogMatrixView({ gestorName }: { gestorName: string }) {
+  const matrixQuery = trpc.sales.getCatalogMatrix.useQuery({ gestorName });
+  const toggleMutation = trpc.sales.toggleCatalogVisibility.useMutation({
+    onSuccess: () => matrixQuery.refetch(),
+  });
+
+  if (matrixQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="w-5 h-5 animate-spin text-teal-500" />
+        <span className="ml-2 text-sm text-slate-500">Carregando catálogos...</span>
+      </div>
+    );
+  }
+  if (matrixQuery.error) {
+    return (
+      <div className="flex items-center justify-center py-12 text-red-500">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">Erro ao carregar catálogos</span>
+      </div>
+    );
+  }
+
+  const { sellers, catalogs: catalogList } = matrixQuery.data || { sellers: [], catalogs: [] };
+
+  if (catalogList.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum catálogo cadastrado</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Faça upload de catálogos na aba de configurações</p>
+      </div>
+    );
+  }
+
+  // Group catalogs by folder
+  const folders = new Map<string, typeof catalogList>();
+  for (const cat of catalogList) {
+    const folder = cat.folder || "Catálogos";
+    if (!folders.has(folder)) folders.set(folder, []);
+    folders.get(folder)!.push(cat);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        {catalogList.length} catálogos · {sellers.length} vendedores
+      </p>
+
+      {Array.from(folders.entries()).map(([folderName, folderCatalogs]) => (
+        <CatalogFolderCard
+          key={folderName}
+          folderName={folderName}
+          catalogs={folderCatalogs}
+          sellers={sellers}
+          onToggle={(sellerId, catalogId, visible) => {
+            toggleMutation.mutate({ sellerId, catalogId, visible });
+          }}
+        />
+      ))}
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px] text-slate-400 dark:text-slate-500 pt-2">
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 rounded border-2 border-teal-400 bg-teal-50 flex items-center justify-center">
+            <Check className="w-3 h-3 text-teal-600" />
+          </div>
+          <span>Vendedor pode ver este catálogo</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 rounded border border-slate-300 bg-white"></div>
+          <span>Catálogo não disponível (clique para adicionar)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogFolderCard({
+  folderName,
+  catalogs: folderCatalogs,
+  sellers,
+  onToggle,
+}: {
+  folderName: string;
+  catalogs: Array<{ id: number; name: string; folder: string; visibility: Array<{ sellerId: number; visible: boolean }> }>;
+  sellers: Array<{ id: number; name: string }>;
+  onToggle: (sellerId: number, catalogId: number, visible: boolean) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden">
+      {/* Card header */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between px-4 py-3 bg-purple-50 dark:bg-purple-900/20 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <FolderOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <span className="font-bold text-purple-800 dark:text-purple-200 text-sm">{folderName}</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300 font-semibold">
+            {folderCatalogs.length} catálogos
+          </span>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-purple-500 transition-transform ${expanded ? "rotate-90" : ""}`} />
+      </div>
+
+      {/* Card body */}
+      {expanded && (
+        <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 z-20">
+              <tr className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-white dark:bg-slate-800 min-w-[250px] z-30">
+                  Catálogo
+                </th>
+                {sellers.map(seller => (
+                  <th key={seller.id} className="text-center px-3 py-3 min-w-[90px] bg-white dark:bg-slate-800">
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 uppercase whitespace-nowrap">
+                      {seller.name.split(" ")[0]}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {folderCatalogs.map((catalog, idx) => (
+                <tr
+                  key={catalog.id}
+                  className={`border-t border-slate-100 dark:border-slate-700/50 ${idx % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/30 dark:bg-slate-800/50"} hover:bg-slate-100/50 dark:hover:bg-slate-700/30 transition-colors`}
+                >
+                  <td className="px-4 py-3 sticky left-0 bg-inherit z-10">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-purple-400 dark:text-purple-500 flex-shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-200 leading-tight text-[11px]">
+                        {catalog.name}
+                      </span>
+                    </div>
+                  </td>
+                  {sellers.map(seller => {
+                    const vis = catalog.visibility.find(v => v.sellerId === seller.id);
+                    const isVisible = vis?.visible || false;
+                    return (
+                      <td key={seller.id} className="text-center px-3 py-3">
+                        <button
+                          onClick={() => onToggle(seller.id, catalog.id, !isVisible)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all mx-auto ${
+                            isVisible
+                              ? "border-teal-400 dark:border-teal-500 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-800/40"
+                              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
+                          }`}
+                        >
+                          {isVisible && <Check className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

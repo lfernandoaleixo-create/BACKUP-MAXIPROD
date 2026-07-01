@@ -4633,3 +4633,4 @@
 - [x] Tabela de Preço: linhas = produtos, colunas = vendedores, células = valor de venda
 - [x] Tabela de Preço: botão "Desconto Máximo" editável (% de desconto)
 - [x] Tabela de Preço: botão de conversão para mostrar preço mínimo (preço × (1 - desconto%))
+- [x] Catálogos no painel gestor: visão matricial (catálogos x vendedores) com checkboxes clicáveis

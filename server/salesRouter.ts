@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification, appSettings } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -4171,6 +4171,108 @@ export const salesRouter = router({
         sellers: sellerTableMap.map(s => ({ id: s.sellerId, name: s.sellerName, hasTable: !!s.priceTableId })),
         products: matrix,
       };
+    }),
+  /**
+   * Salvar desconto máximo configurado pelo gestor (persiste no banco)
+   */
+  saveMaxDiscount: publicProcedure
+    .input(z.object({ gestorName: z.string(), discount: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const key = `max_discount_${input.gestorName}`;
+      const existing = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+      if (existing.length > 0) {
+        await db.update(appSettings).set({ settingValue: JSON.stringify(input.discount) }).where(eq(appSettings.settingKey, key));
+      } else {
+        await db.insert(appSettings).values({ settingKey: key, settingValue: JSON.stringify(input.discount) });
+      }
+      return { success: true };
+    }),
+  /**
+   * Carregar desconto máximo configurado pelo gestor
+   */
+  getMaxDiscount: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const key = `max_discount_${input.gestorName}`;
+      const row = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+      if (row.length > 0 && row[0].settingValue) {
+        return { discount: JSON.parse(row[0].settingValue as string) as string };
+      }
+      return { discount: null };
+    }),
+  /**
+   * Matriz de catálogos por vendedor (gestor)
+   */
+  getCatalogMatrix: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Get sellers for this gestor
+      const allPerms = await db.select().from(sellerPermissions);
+      const sellersList = allPerms.filter(p => p.gestorName === input.gestorName && p.authorized);
+      // Get all active catalogs
+      const allCatalogs = await db.select().from(catalogs).where(eq(catalogs.active, true));
+      // Get all visibility records for these sellers
+      const sellerIds = sellersList.map(s => s.id);
+      let visibilityRows: any[] = [];
+      if (sellerIds.length > 0) {
+        visibilityRows = await db.select().from(sellerCatalogVisibility)
+          .where(inArray(sellerCatalogVisibility.sellerId, sellerIds));
+      }
+      // Build visibility map: sellerId -> Set of catalogIds
+      const visMap = new Map<number, Set<number>>();
+      for (const row of visibilityRows) {
+        if (!visMap.has(row.sellerId)) visMap.set(row.sellerId, new Set());
+        visMap.get(row.sellerId)!.add(row.catalogId);
+      }
+      return {
+        sellers: sellersList.map(s => ({ id: s.id, name: s.sellerName })),
+        catalogs: allCatalogs.map(c => ({
+          id: c.id,
+          name: c.name,
+          folder: c.folder,
+          visibility: sellersList.map(s => ({
+            sellerId: s.id,
+            visible: visMap.get(s.id)?.has(c.id) || false,
+          })),
+        })),
+      };
+    }),
+  /**
+   * Toggle catalog visibility for a seller
+   */
+  toggleCatalogVisibility: publicProcedure
+    .input(z.object({ sellerId: z.number(), catalogId: z.number(), visible: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      if (input.visible) {
+        // Add visibility
+        const existing = await db.select().from(sellerCatalogVisibility)
+          .where(and(
+            eq(sellerCatalogVisibility.sellerId, input.sellerId),
+            eq(sellerCatalogVisibility.catalogId, input.catalogId)
+          )).limit(1);
+        if (existing.length === 0) {
+          await db.insert(sellerCatalogVisibility).values({
+            sellerId: input.sellerId,
+            catalogId: input.catalogId,
+          });
+        }
+      } else {
+        // Remove visibility
+        await db.delete(sellerCatalogVisibility)
+          .where(and(
+            eq(sellerCatalogVisibility.sellerId, input.sellerId),
+            eq(sellerCatalogVisibility.catalogId, input.catalogId)
+          ));
+      }
+      return { success: true };
     }),
   /**
    * Get period evolution data (annual, semester, quarter)
