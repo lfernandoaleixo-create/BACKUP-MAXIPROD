@@ -4651,3 +4651,5 @@
 - [x] Métricas de Venda (gestor): mostrar mês atual com total e ranking dos vendedores
 - [x] Métricas de Venda (gestor): mostrar mês anterior com total e ranking dos vendedores
 - [x] Métricas de Venda (gestor): drill-down ao clicar no vendedor (clientes, valores, informações completas)
+- [x] Métricas: adicionar card "Vendas da Semana" entre "Vendas do Dia" e "Mês Atual"
+- [x] Métricas: adicionar card "Vendas Personalizado" com seletor de período (data início e fim)

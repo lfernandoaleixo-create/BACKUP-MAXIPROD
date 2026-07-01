@@ -30,6 +30,14 @@ function getDateRanges() {
   // Day
   const dayRange = { startDate: today, endDate: today };
   
+  // Week (Monday to today)
+  const dayOfWeek = spNow.getDay(); // 0=Sun, 1=Mon, ...
+  const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(spNow);
+  monday.setDate(spNow.getDate() - diffToMonday);
+  const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+  const weekRange = { startDate: weekStart, endDate: today };
+  
   // Current month
   const monthStart = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-01`;
   const monthRange = { startDate: monthStart, endDate: today };
@@ -41,7 +49,7 @@ function getDateRanges() {
   const prevMonthEnd = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
   const prevMonthRange = { startDate: prevMonthStart, endDate: prevMonthEnd };
   
-  return { dayRange, monthRange, prevMonthRange };
+  return { dayRange, weekRange, monthRange, prevMonthRange };
 }
 
 function formatCurrency(value: number) {
@@ -83,14 +91,22 @@ type RankingItem = {
 
 export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
-  const [detailPeriod, setDetailPeriod] = useState<"day" | "month" | "prev_month">("month");
+  const [detailPeriod, setDetailPeriod] = useState<"day" | "week" | "month" | "prev_month" | "custom">("month");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     day: true,
+    week: true,
     month: true,
     prev_month: true,
+    custom: true,
   });
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
-  const { dayRange, monthRange, prevMonthRange } = useMemo(() => getDateRanges(), []);
+  const { dayRange, weekRange, monthRange, prevMonthRange } = useMemo(() => getDateRanges(), []);
+  const customRange = useMemo(() => ({
+    startDate: customStartDate || monthRange.startDate,
+    endDate: customEndDate || monthRange.endDate,
+  }), [customStartDate, customEndDate, monthRange]);
 
   // Fetch rankings for all 3 periods simultaneously
   const { data: dayRanking, isLoading: loadingDay, isError: errorDay } = trpc.salesMetrics.getVendedorRanking.useQuery(
@@ -105,9 +121,17 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
     prevMonthRange,
     { staleTime: 60 * 1000, retry: 1 }
   );
+  const { data: weekRanking, isLoading: loadingWeek, isError: errorWeek } = trpc.salesMetrics.getVendedorRanking.useQuery(
+    weekRange,
+    { staleTime: 60 * 1000, retry: 1 }
+  );
+  const { data: customRanking, isLoading: loadingCustom, isError: errorCustom } = trpc.salesMetrics.getVendedorRanking.useQuery(
+    customRange,
+    { staleTime: 60 * 1000, retry: 1, enabled: !!customStartDate && !!customEndDate }
+  );
 
   // Fetch detail when a seller is selected
-  const detailRange = detailPeriod === "day" ? dayRange : detailPeriod === "month" ? monthRange : prevMonthRange;
+  const detailRange = detailPeriod === "day" ? dayRange : detailPeriod === "week" ? weekRange : detailPeriod === "month" ? monthRange : detailPeriod === "custom" ? customRange : prevMonthRange;
   const { data: vendedorDetail, isLoading: loadingDetail } = trpc.salesMetrics.getVendedorDetail.useQuery(
     { vendedor: selectedVendedor || "", startDate: detailRange.startDate, endDate: detailRange.endDate },
     { enabled: !!selectedVendedor }
@@ -161,12 +185,16 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   };
 
   const filteredDay = useMemo(() => filterRanking(dayRanking), [dayRanking, sellerNamesUpper]);
+  const filteredWeek = useMemo(() => filterRanking(weekRanking), [weekRanking, sellerNamesUpper]);
   const filteredMonth = useMemo(() => filterRanking(monthRanking), [monthRanking, sellerNamesUpper]);
   const filteredPrevMonth = useMemo(() => filterRanking(prevMonthRanking), [prevMonthRanking, sellerNamesUpper]);
+  const filteredCustom = useMemo(() => filterRanking(customRanking), [customRanking, sellerNamesUpper]);
 
   const totalDay = filteredDay.reduce((s, v) => s + v.totalVendas, 0);
+  const totalWeek = filteredWeek.reduce((s, v) => s + v.totalVendas, 0);
   const totalMonth = filteredMonth.reduce((s, v) => s + v.totalVendas, 0);
   const totalPrevMonth = filteredPrevMonth.reduce((s, v) => s + v.totalVendas, 0);
+  const totalCustom = filteredCustom.reduce((s, v) => s + v.totalVendas, 0);
 
   const toggleSection = (key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -175,7 +203,7 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   // Detail view
   if (selectedVendedor) {
     const detailTotal = vendedorDetail?.reduce((s, c) => s + c.totalVendas, 0) || 0;
-    const periodLabel = detailPeriod === "day" ? "Hoje" : detailPeriod === "month" ? "Mês Atual" : "Mês Anterior";
+    const periodLabel = detailPeriod === "day" ? "Hoje" : detailPeriod === "week" ? "Semana" : detailPeriod === "month" ? "Mês Atual" : detailPeriod === "custom" ? "Personalizado" : "Mês Anterior";
 
     return (
       <div className="space-y-4">
@@ -212,8 +240,10 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
           <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
             {([
               { key: "day", label: "Hoje" },
+              { key: "week", label: "Semana" },
               { key: "month", label: "Mês Atual" },
               { key: "prev_month", label: "Mês Anterior" },
+              ...(customStartDate && customEndDate ? [{ key: "custom" as const, label: "Personalizado" }] : []),
             ] as const).map(p => (
               <button
                 key={p.key}
@@ -289,9 +319,9 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
     );
   }
 
-  // Main view: 3 ranking sections
-  const isLoading = (loadingDay && !errorDay) || (loadingMonth && !errorMonth) || (loadingPrevMonth && !errorPrevMonth);
-  const hasAnyError = errorDay || errorMonth || errorPrevMonth;
+  // Main view: 5 ranking sections
+  const isLoading = (loadingDay && !errorDay) || (loadingWeek && !errorWeek) || (loadingMonth && !errorMonth) || (loadingPrevMonth && !errorPrevMonth);
+  const hasAnyError = errorDay || errorMonth || errorPrevMonth || errorWeek;
 
   return (
     <div className="space-y-4">
@@ -327,7 +357,7 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
       {!isLoading && (
         <>
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
@@ -337,6 +367,17 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
               </div>
               <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">{formatCurrency(totalDay)}</p>
               <p className="text-[10px] text-slate-400 mt-1">{filteredDay.filter(v => v.totalVendas > 0).length} vendedores com vendas</p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                  <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Semana</span>
+              </div>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">{formatCurrency(totalWeek)}</p>
+              <p className="text-[10px] text-slate-400 mt-1">{filteredWeek.filter(v => v.totalVendas > 0).length} vendedores com vendas</p>
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
@@ -375,6 +416,19 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
             accentColor="orange"
           />
 
+          {/* Ranking: Vendas da Semana */}
+          <RankingSection
+            title="Vendas da Semana"
+            subtitle="Seg-Hoje"
+            icon={<Calendar className="w-4 h-4 text-purple-500" />}
+            ranking={filteredWeek}
+            total={totalWeek}
+            expanded={expandedSections.week}
+            onToggle={() => toggleSection("week")}
+            onSelectVendedor={(name) => { setSelectedVendedor(name); setDetailPeriod("week"); }}
+            accentColor="purple"
+          />
+
           {/* Ranking: Mês Atual */}
           <RankingSection
             title="Mês Atual"
@@ -400,6 +454,113 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
             onSelectVendedor={(name) => { setSelectedVendedor(name); setDetailPeriod("prev_month"); }}
             accentColor="blue"
           />
+
+          {/* Vendas Personalizado */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <button
+              onClick={() => toggleSection("custom")}
+              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-rose-50 to-pink-100/50 dark:from-rose-900/10 dark:to-rose-900/5 cursor-pointer hover:opacity-90 transition-opacity"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-4 h-4 text-rose-500" />
+                <div className="text-left">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">Vendas Personalizado</h4>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">Período Livre</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Escolha as datas para ver o ranking
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {customStartDate && customEndDate && (
+                  <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100">{formatCurrency(totalCustom)}</p>
+                )}
+                {expandedSections.custom ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+              </div>
+            </button>
+
+            {expandedSections.custom && (
+              <div>
+                {/* Date selectors */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                      <label className="text-[10px] text-slate-500 uppercase font-medium mb-1 block">Data Início</label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-rose-300 focus:border-rose-400 outline-none"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[10px] text-slate-500 uppercase font-medium mb-1 block">Data Fim</label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-rose-300 focus:border-rose-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom ranking results */}
+                {customStartDate && customEndDate && (
+                  loadingCustom ? (
+                    <div className="p-6 text-center">
+                      <RefreshCw className="w-5 h-5 text-rose-500 animate-spin mx-auto" />
+                      <p className="text-sm text-slate-400 mt-2">Carregando...</p>
+                    </div>
+                  ) : filteredCustom.length === 0 ? (
+                    <div className="p-6 text-center text-slate-400 text-sm">
+                      Nenhuma venda encontrada no período.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-50 dark:divide-slate-700">
+                      {filteredCustom.map((seller, idx) => {
+                        const maxVendas = Math.max(...filteredCustom.map(s => s.totalVendas));
+                        const percentual = maxVendas > 0 ? (seller.totalVendas / maxVendas) * 100 : 0;
+                        const percentOfTotal = totalCustom > 0 ? (seller.totalVendas / totalCustom) * 100 : 0;
+                        return (
+                          <div
+                            key={seller.vendedor}
+                            className={`flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group border-l-3 ${getRankBgColor(idx)}`}
+                            onClick={() => { setSelectedVendedor(seller.vendedor); setDetailPeriod("custom"); }}
+                          >
+                            <div className="flex-shrink-0 w-8 text-center">{getRankIcon(idx)}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{seller.vendedor}</p>
+                                <p className="text-xs md:text-sm font-bold text-green-700 dark:text-green-400 ml-2 flex-shrink-0">{formatCurrency(seller.totalVendas)}</p>
+                              </div>
+                              <div className="flex items-center gap-3 text-[10px] md:text-xs text-slate-500">
+                                <span>{seller.qtdPedidos} pedido{seller.qtdPedidos !== 1 ? "s" : ""}</span>
+                                <span>{seller.qtdClientes} cliente{seller.qtdClientes !== 1 ? "s" : ""}</span>
+                                {percentOfTotal > 0 && <span>{percentOfTotal.toFixed(1)}% do total</span>}
+                              </div>
+                              <div className="mt-1.5 h-1.5 bg-slate-100 dark:bg-slate-600 rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-500" style={{ width: `${percentual}%` }} />
+                              </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-teal-500 transition-colors flex-shrink-0" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                )}
+
+                {!customStartDate || !customEndDate ? (
+                  <div className="p-6 text-center text-slate-400 text-sm">
+                    Selecione as datas acima para ver o ranking do período.
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
@@ -418,7 +579,7 @@ interface RankingSectionProps {
   expanded: boolean;
   onToggle: () => void;
   onSelectVendedor: (name: string) => void;
-  accentColor: "orange" | "green" | "blue";
+  accentColor: "orange" | "green" | "blue" | "purple" | "rose";
 }
 
 function RankingSection({ title, subtitle, icon, ranking, total, expanded, onToggle, onSelectVendedor, accentColor }: RankingSectionProps) {
@@ -440,6 +601,16 @@ function RankingSection({ title, subtitle, icon, ranking, total, expanded, onTog
       header: "from-blue-50 to-indigo-100/50 dark:from-blue-900/10 dark:to-blue-900/5",
       badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
       bar: "from-blue-400 to-indigo-500",
+    },
+    purple: {
+      header: "from-purple-50 to-violet-100/50 dark:from-purple-900/10 dark:to-purple-900/5",
+      badge: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+      bar: "from-purple-400 to-violet-500",
+    },
+    rose: {
+      header: "from-rose-50 to-pink-100/50 dark:from-rose-900/10 dark:to-rose-900/5",
+      badge: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+      bar: "from-rose-400 to-pink-500",
     },
   };
 
