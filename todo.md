@@ -4602,3 +4602,4 @@
 - [x] Fix comparison lines rendering to work with all-months display
 - [x] Remover linhas de comparação (atual/anterior/melhor) dos gráficos Trimestral, Semestral e Anual - manter apenas no Diário
 - [x] Afinar barras do Trimestral/Semestral/Anual para mesma espessura do gráfico Diário
+- [x] Fix timezone bug: server in UTC was computing currentQuarter=3/currentSemester=2 instead of Q2/S1 (Brazil timezone)

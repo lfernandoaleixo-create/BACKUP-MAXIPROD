@@ -796,7 +796,7 @@ export const salesRouter = router({
       }
 
       // Current month and last month
-      const now = new Date();
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
       const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
@@ -3969,8 +3969,10 @@ export const salesRouter = router({
       }
 
       // Keep ALL items (not just current year) for comparison purposes
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth() + 1; // 1-12
+      // Use Brazil timezone to determine current period (server may be in UTC)
+      const brNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const currentYear = brNow.getFullYear();
+      const currentMonth = brNow.getMonth() + 1; // 1-12
       const currentQuarter = Math.ceil(currentMonth / 3);
       const currentSemester = currentMonth <= 6 ? 1 : 2;
 
