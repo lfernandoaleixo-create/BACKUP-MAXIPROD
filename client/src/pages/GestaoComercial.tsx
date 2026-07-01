@@ -605,7 +605,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
               <Users className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Vendedores</h2>
+              <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Vendedores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {authorizedCount} autorizados de {allVendedores.length} · Clique para ver o app do vendedor
               </p>
