@@ -4613,3 +4613,5 @@
 - [x] Aba Gestores: ao expandir gestor, mostrar painel de configuração (não lista de vendedores)
 - [x] Aba Gestores: botões Estoque/Tabela de Preço/Catálogos/Senha → ao clicar mostra vendedores para configurar individualmente
 - [x] Aba Vendedores: incluir gestores (Jordão, Ana Paula, Juvenal) como vendedores também
+- [x] Painel dos Gestores como card colapsável contendo os 4 cards dentro
+- [x] Cada gestor inclui a si mesmo como vendedor na lista de configuração

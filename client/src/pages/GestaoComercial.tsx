@@ -266,58 +266,71 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     return getVendedoresForGestor(card.name);
   };
 
+  const [panelOpen, setPanelOpen] = useState(false);
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
-        <div className="flex items-center justify-between">
+      {/* Painel dos Gestores - Collapsible container */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        {/* Panel Header - clickable to expand/collapse */}
+        <button
+          onClick={() => setPanelOpen(!panelOpen)}
+          className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
               <Crown className="w-5 h-5 text-white" />
             </div>
-            <div>
+            <div className="text-left">
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Gestores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores · 1 sub-gestor · {totalVendedores} vendedores
               </p>
             </div>
           </div>
-          <button
-            onClick={onRefresh}
-            disabled={isFetching}
-            className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-            title="Atualizar do Maxiprod"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </div>
-
-      {/* Loading */}
-      {isLoading && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
-          <RefreshCw className="w-6 h-6 text-teal-500 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Buscando representantes do Maxiprod...</p>
-        </div>
-      )}
-
-      {/* Error */}
-      {isError && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-800 shadow-sm p-6">
-          <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium">Erro ao buscar representantes</p>
-              <p className="text-xs text-red-500 mt-1">{errorMessage}</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); onRefresh(); }}
+              disabled={isFetching}
+              className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              title="Atualizar do Maxiprod"
+            >
+              <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+            </button>
+            {panelOpen ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
           </div>
-        </div>
-      )}
+        </button>
 
-      {/* 4 Gestor Cards */}
-      {!isLoading && GESTOR_CARDS.map((card) => {
+        {/* Panel Content - 4 gestor cards inside */}
+        {panelOpen && (
+          <div className="border-t border-slate-100 dark:border-slate-700 p-4 md:p-5 space-y-3">
+            {/* Loading */}
+            {isLoading && (
+              <div className="p-8 text-center">
+                <RefreshCw className="w-6 h-6 text-teal-500 animate-spin mx-auto mb-3" />
+                <p className="text-sm text-slate-500 dark:text-slate-400">Buscando representantes do Maxiprod...</p>
+              </div>
+            )}
+
+            {/* Error */}
+            {isError && (
+              <div className="rounded-lg border border-red-200 dark:border-red-800 p-4">
+                <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">Erro ao buscar representantes</p>
+                    <p className="text-xs text-red-500 mt-1">{errorMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4 Gestor Cards */}
+            {!isLoading && GESTOR_CARDS.map((card) => {
         const isExpanded = expandedGestor === card.name;
-        const vendedores = getVendedoresForCard(card);
+        const vendedoresBase = getVendedoresForCard(card);
+        // Include the gestor themselves as a vendedor in their own card
+        const vendedores = [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== card.name.toUpperCase())];
         const vendedorCount = vendedores.length;
         const isSubGestor = card.role === "Sub-gestor";
 
@@ -475,6 +488,9 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
           </div>
         );
       })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
