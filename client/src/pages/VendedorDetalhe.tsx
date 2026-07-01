@@ -426,8 +426,8 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           color="green"
           sellerName={sellerName}
           sellerId={sellerId}
-          allowReserve={true}
-          onReserve={(item, po) => { setReservationItem(item); setReservationPO(po || null); }}
+          allowReserve={false}
+          onReserve={() => {}}
           reservationSummary={reservationSummary.data || {}}
           trackingMap={trackingQuery.data?.trackingByPO || {}}
           onTrack={(uuid, bl) => { if (uuid) setTrackingUuid(uuid); else if (bl) setTrackingBl(bl); }}
