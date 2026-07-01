@@ -538,22 +538,31 @@ function StockCategorySection({
       {expanded && (
         <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
           {/* Mobile legend */}
-          <div className="md:hidden px-4 py-2 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-600">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <div className="flex items-center gap-1">
-                <ShoppingCart className="w-3 h-3 text-emerald-500" />
-                <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">Disponível</span>
+          <div className="md:hidden px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-600 space-y-1.5">
+            <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Legenda</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <ShoppingCart className="w-3 h-3 text-emerald-500 shrink-0" />
+                <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-300">Disp.</span>
+                <span className="text-[8px] text-slate-500 dark:text-slate-400">= Estoque físico − Pedidos de venda aprovados</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Ship className="w-3 h-3 text-blue-500" />
-                <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">PO (chegando)</span>
+              <div className="flex items-center gap-1.5">
+                <Ship className="w-3 h-3 text-blue-500 shrink-0" />
+                <span className="text-[9px] font-semibold text-blue-700 dark:text-blue-300">PO</span>
+                <span className="text-[8px] text-slate-500 dark:text-slate-400">= Pedidos de compra a caminho (reposição)</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">Projetado (total)</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
+                <span className="text-[9px] font-semibold text-purple-700 dark:text-purple-300">Proj.</span>
+                <span className="text-[8px] text-slate-500 dark:text-slate-400">= Disponível + PO (estoque futuro)</span>
               </div>
             </div>
-            <p className="text-[8px] text-slate-400 dark:text-slate-500 mt-1">Negativo = pedidos de venda excedem estoque físico</p>
+            <div className="border-t border-slate-200 dark:border-slate-600 pt-1.5 mt-1">
+              <div className="flex items-start gap-1.5">
+                <span className="text-[9px] text-red-500 font-bold shrink-0">⚠️</span>
+                <span className="text-[8px] text-red-600 dark:text-red-400 font-medium">Disp. negativo = pedidos aprovados excedem estoque (aguardando reposição/produção)</span>
+              </div>
+            </div>
           </div>
           {/* Header da tabela - desktop */}
           <div className={`hidden md:grid ${allowReserve ? 'md:grid-cols-12' : 'md:grid-cols-11'} gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700/30 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>
