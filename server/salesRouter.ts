@@ -4379,6 +4379,30 @@ export const salesRouter = router({
       return { success: true };
     }),
   /**
+   * Move a catalog item to a different folder (or to root)
+   */
+  moveCatalogItem: publicProcedure
+    .input(z.object({ id: z.number(), targetFolderId: z.number().nullable() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(catalogs)
+        .set({ parentId: input.targetFolderId })
+        .where(eq(catalogs.id, input.id));
+      return { success: true };
+    }),
+  /**
+   * Get all folders (for move dialog)
+   */
+  getCatalogFolders: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const allFolders = await db.select().from(catalogs)
+        .where(and(eq(catalogs.isFolder, true), eq(catalogs.active, true)));
+      return allFolders.map(f => ({ id: f.id, name: f.name, parentId: f.parentId }));
+    }),
+  /**
    * Toggle catalog visibility for a seller
    */
   toggleCatalogVisibility: publicProcedure

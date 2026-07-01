@@ -4644,3 +4644,6 @@
 - [x] Catálogos: upload funciona dentro e fora de pastas
 - [x] Catálogos: navegação por pastas (clicar abre a pasta e mostra conteúdo)
 - [x] Catálogos: manter matriz de visibilidade (checkboxes por vendedor) para cada arquivo
+- [x] Renomear "Configurar Catálogos" para "Documentos/Catálogos"
+- [x] Criar pasta "Catálogos" e mover os 2 catálogos Bambusa para dentro dela
+- [x] Adicionar opção de mover arquivo para dentro de uma pasta (migrar documento)
