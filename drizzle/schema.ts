@@ -2058,21 +2058,29 @@ export type SellerProductVisibility = typeof sellerProductVisibility.$inferSelec
 export type InsertSellerProductVisibility = typeof sellerProductVisibility.$inferInsert;
 
 /**
- * Catálogos (PDFs) disponíveis - preparação para futuras abas
- * - name: nome do catálogo
- * - url: URL do PDF armazenado
+ * Catálogos/Arquivos disponíveis para vendedores
+ * - parentId: null = raiz, ou id de outra entrada com isFolder=true
+ * - isFolder: true = pasta, false = arquivo
+ * - url: URL do arquivo armazenado (vazio para pastas)
+ * - mimeType: tipo MIME do arquivo (null para pastas)
+ * - fileSize: tamanho em bytes (null para pastas)
  */
 export const catalogs = mysqlTable("catalogs", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
-  folder: varchar("folder", { length: 200 }).notNull().default("Catálogos"),
-  url: varchar("url", { length: 500 }).notNull(),
+  folder: varchar("folder", { length: 200 }).notNull().default("Catálogos"), // legacy - kept for compat
+  parentId: int("parent_id"), // null = root level, otherwise FK to catalogs.id (folder)
+  isFolder: boolean("is_folder").default(false).notNull(),
+  url: varchar("url", { length: 500 }).notNull().default(""),
+  mimeType: varchar("mime_type", { length: 100 }),
+  fileSize: int("file_size"), // bytes
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Catalog = typeof catalogs.$inferSelect;
+export type InsertCatalog = typeof catalogs.$inferInsert;
 
 /**
  * Visibilidade de catálogos por vendedor

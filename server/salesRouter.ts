@@ -1,6 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
+import { storagePut } from "./storage";
 import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification, appSettings } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
@@ -4240,15 +4241,23 @@ export const salesRouter = router({
    * Matriz de catálogos por vendedor (gestor)
    */
   getCatalogMatrix: publicProcedure
-    .input(z.object({ gestorName: z.string() }))
+    .input(z.object({ gestorName: z.string(), parentId: z.number().nullable().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
       // Get sellers for this gestor
       const allPerms = await db.select().from(sellerPermissions);
       const sellersList = allPerms.filter(p => p.gestorName === input.gestorName);
-      // Get all active catalogs
+      // Get active items at this level (parentId)
+      const parentId = input.parentId ?? null;
       const allCatalogs = await db.select().from(catalogs).where(eq(catalogs.active, true));
+      const levelItems = allCatalogs.filter(c => {
+        if (parentId === null) return c.parentId === null || c.parentId === undefined;
+        return c.parentId === parentId;
+      });
+      // Separate folders and files
+      const folders = levelItems.filter(c => c.isFolder);
+      const files = levelItems.filter(c => !c.isFolder);
       // Get all visibility records for these sellers
       const sellerIds = sellersList.map(s => s.id);
       let visibilityRows: any[] = [];
@@ -4262,18 +4271,112 @@ export const salesRouter = router({
         if (!visMap.has(row.sellerId)) visMap.set(row.sellerId, new Set());
         visMap.get(row.sellerId)!.add(row.catalogId);
       }
+      // Get current folder info if navigating inside a folder
+      let currentFolder: { id: number; name: string } | null = null;
+      if (parentId !== null) {
+        const folder = allCatalogs.find(c => c.id === parentId);
+        if (folder) currentFolder = { id: folder.id, name: folder.name };
+      }
       return {
+        currentFolder,
         sellers: sellersList.map(s => ({ id: s.id, name: s.sellerName })),
-        catalogs: allCatalogs.map(c => ({
+        folders: folders.map(f => ({
+          id: f.id,
+          name: f.name,
+          itemCount: allCatalogs.filter(c => c.parentId === f.id && c.active).length,
+        })),
+        files: files.map(c => ({
           id: c.id,
           name: c.name,
-          folder: c.folder,
+          url: c.url,
+          mimeType: c.mimeType,
+          fileSize: c.fileSize,
           visibility: sellersList.map(s => ({
             sellerId: s.id,
             visible: visMap.get(s.id)?.has(c.id) || false,
           })),
         })),
       };
+    }),
+  /**
+   * Create a folder in the catalog system
+   */
+  createCatalogFolder: publicProcedure
+    .input(z.object({ name: z.string().min(1), parentId: z.number().nullable().optional() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const result = await db.insert(catalogs).values({
+        name: input.name,
+        parentId: input.parentId ?? null,
+        isFolder: true,
+        url: "",
+        active: true,
+      });
+      return { success: true, id: Number(result[0].insertId) };
+    }),
+  /**
+   * Upload a file to the catalog system
+   */
+  uploadCatalogFile: publicProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      parentId: z.number().nullable().optional(),
+      fileData: z.string(), // base64 encoded file data
+      mimeType: z.string(),
+      fileSize: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Upload to S3
+      const buffer = Buffer.from(input.fileData, "base64");
+      const ext = input.name.split(".").pop() || "bin";
+      const randomSuffix = Math.random().toString(36).substring(2, 10);
+      const fileKey = `catalogs/${Date.now()}-${randomSuffix}.${ext}`;
+      const { url } = await storagePut(fileKey, buffer, input.mimeType);
+      // Save to DB
+      const result = await db.insert(catalogs).values({
+        name: input.name,
+        parentId: input.parentId ?? null,
+        isFolder: false,
+        url,
+        mimeType: input.mimeType,
+        fileSize: input.fileSize,
+        active: true,
+      });
+      return { success: true, id: Number(result[0].insertId), url };
+    }),
+  /**
+   * Delete a catalog item (file or folder)
+   */
+  deleteCatalogItem: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Soft delete (set active = false)
+      await db.update(catalogs)
+        .set({ active: false })
+        .where(eq(catalogs.id, input.id));
+      // Also deactivate children if it's a folder
+      await db.update(catalogs)
+        .set({ active: false })
+        .where(eq(catalogs.parentId, input.id));
+      return { success: true };
+    }),
+  /**
+   * Rename a catalog item (file or folder)
+   */
+  renameCatalogItem: publicProcedure
+    .input(z.object({ id: z.number(), name: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(catalogs)
+        .set({ name: input.name })
+        .where(eq(catalogs.id, input.id));
+      return { success: true };
     }),
   /**
    * Toggle catalog visibility for a seller

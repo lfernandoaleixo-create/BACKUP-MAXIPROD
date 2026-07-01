@@ -4638,3 +4638,9 @@
 - [x] Tabela de Preço: card "Margem de Negociação" editável (%) - preço vendedor = preço tabela / (1 - margem%)
 - [x] Bug: Catálogos no painel gestor deve mostrar TODOS os vendedores do gestor como colunas (não apenas 1)
 - [x] Bug: Senhas no painel gestor deve mostrar TODOS os vendedores do gestor (não apenas 1)
+- [x] Catálogos: sistema de gerenciamento de arquivos completo
+- [x] Catálogos: botão "Nova Pasta" para criar pastas com nome personalizado
+- [x] Catálogos: upload de arquivos (qualquer tipo: planilha, catálogo, foto, documento)
+- [x] Catálogos: upload funciona dentro e fora de pastas
+- [x] Catálogos: navegação por pastas (clicar abre a pasta e mostra conteúdo)
+- [x] Catálogos: manter matriz de visibilidade (checkboxes por vendedor) para cada arquivo

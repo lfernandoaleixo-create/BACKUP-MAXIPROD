@@ -17,7 +17,7 @@ import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
   Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check,
-  TrendingUp, Pencil
+  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -1278,19 +1278,64 @@ function PriceSegmentCard({ title, color, products, sellers, allProducts, showMi
 
 
 // ============================================================
-// CATALOG MATRIX VIEW - Catálogos x Vendedores (gestor)
+// CATALOG MATRIX VIEW - Gerenciamento de Arquivos (gestor)
 // ============================================================
 function CatalogMatrixView({ gestorName }: { gestorName: string }) {
-  const matrixQuery = trpc.sales.getCatalogMatrix.useQuery({ gestorName });
+  const [currentParentId, setCurrentParentId] = useState<number | null>(null);
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const matrixQuery = trpc.sales.getCatalogMatrix.useQuery({ gestorName, parentId: currentParentId });
   const toggleMutation = trpc.sales.toggleCatalogVisibility.useMutation({
     onSuccess: () => matrixQuery.refetch(),
   });
+  const createFolderMutation = trpc.sales.createCatalogFolder.useMutation({
+    onSuccess: () => {
+      matrixQuery.refetch();
+      setShowNewFolderDialog(false);
+      setNewFolderName("");
+    },
+  });
+  const uploadFileMutation = trpc.sales.uploadCatalogFile.useMutation({
+    onSuccess: () => {
+      matrixQuery.refetch();
+      setUploading(false);
+    },
+    onError: () => setUploading(false),
+  });
+  const deleteMutation = trpc.sales.deleteCatalogItem.useMutation({
+    onSuccess: () => matrixQuery.refetch(),
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        uploadFileMutation.mutate({
+          name: file.name,
+          parentId: currentParentId,
+          fileData: base64,
+          mimeType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    e.target.value = "";
+  };
 
   if (matrixQuery.isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <RefreshCw className="w-5 h-5 animate-spin text-teal-500" />
-        <span className="ml-2 text-sm text-slate-500">Carregando catálogos...</span>
+        <span className="ml-2 text-sm text-slate-500">Carregando arquivos...</span>
       </div>
     );
   }
@@ -1298,48 +1343,206 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
     return (
       <div className="flex items-center justify-center py-12 text-red-500">
         <AlertCircle className="w-5 h-5 mr-2" />
-        <span className="text-sm">Erro ao carregar catálogos</span>
+        <span className="text-sm">Erro ao carregar arquivos</span>
       </div>
     );
   }
 
-  const { sellers, catalogs: catalogList } = matrixQuery.data || { sellers: [], catalogs: [] };
-
-  if (catalogList.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum catálogo cadastrado</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Faça upload de catálogos na aba de configurações</p>
-      </div>
-    );
-  }
-
-  // Group catalogs by folder
-  const folders = new Map<string, typeof catalogList>();
-  for (const cat of catalogList) {
-    const folder = cat.folder || "Catálogos";
-    if (!folders.has(folder)) folders.set(folder, []);
-    folders.get(folder)!.push(cat);
-  }
+  const { sellers, folders, files, currentFolder } = matrixQuery.data || { sellers: [], folders: [], files: [], currentFolder: null };
+  const totalItems = folders.length + files.length;
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        {catalogList.length} catálogos · {sellers.length} vendedores
-      </p>
+      {/* Breadcrumb / Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {currentParentId !== null && (
+            <button
+              onClick={() => setCurrentParentId(null)}
+              className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Voltar</span>
+            </button>
+          )}
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {currentFolder ? `📁 ${currentFolder.name}` : "Raiz"} — {totalItems} {totalItems === 1 ? "item" : "itens"} · {sellers.length} vendedores
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNewFolderDialog(true)}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800/40 transition-colors"
+          >
+            <FolderPlus className="w-3.5 h-3.5" />
+            Nova Pasta
+          </button>
+          <label className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/40 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" />
+            {uploading ? "Enviando..." : "Upload"}
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={uploading}
+            />
+          </label>
+        </div>
+      </div>
 
-      {Array.from(folders.entries()).map(([folderName, folderCatalogs]) => (
-        <CatalogFolderCard
-          key={folderName}
-          folderName={folderName}
-          catalogs={folderCatalogs}
-          sellers={sellers}
-          onToggle={(sellerId, catalogId, visible) => {
-            toggleMutation.mutate({ sellerId, catalogId, visible });
-          }}
-        />
-      ))}
+      {/* New Folder Dialog */}
+      {showNewFolderDialog && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20">
+          <FolderPlus className="w-4 h-4 text-purple-500" />
+          <input
+            type="text"
+            placeholder="Nome da pasta..."
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newFolderName.trim()) {
+                createFolderMutation.mutate({ name: newFolderName.trim(), parentId: currentParentId });
+              }
+            }}
+            className="flex-1 text-sm px-2 py-1 rounded border border-purple-300 dark:border-purple-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            autoFocus
+          />
+          <button
+            onClick={() => {
+              if (newFolderName.trim()) {
+                createFolderMutation.mutate({ name: newFolderName.trim(), parentId: currentParentId });
+              }
+            }}
+            disabled={!newFolderName.trim()}
+            className="px-3 py-1 text-xs font-medium rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+          >
+            Criar
+          </button>
+          <button
+            onClick={() => { setShowNewFolderDialog(false); setNewFolderName(""); }}
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Folders */}
+      {folders.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          {folders.map(folder => (
+            <div
+              key={folder.id}
+              className="group relative flex items-center gap-2 p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20 cursor-pointer transition-colors"
+              onClick={() => setCurrentParentId(folder.id)}
+            >
+              <FolderOpen className="w-5 h-5 text-purple-500 dark:text-purple-400 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-purple-800 dark:text-purple-200 truncate">{folder.name}</p>
+                <p className="text-[10px] text-purple-500 dark:text-purple-400">{folder.itemCount} {folder.itemCount === 1 ? "item" : "itens"}</p>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: folder.id }); }}
+                className="absolute top-1 right-1 p-1 rounded opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                title="Excluir pasta"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Files with visibility matrix */}
+      {files.length > 0 && (
+        <div className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden">
+          <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 z-20">
+                <tr className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-white dark:bg-slate-800 min-w-[250px] z-30">
+                    Arquivo
+                  </th>
+                  {sellers.map(seller => (
+                    <th key={seller.id} className="text-center px-3 py-3 min-w-[90px] bg-white dark:bg-slate-800">
+                      <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 uppercase whitespace-nowrap">
+                        {seller.name.split(" ")[0]}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {files.map((file, idx) => (
+                  <tr
+                    key={file.id}
+                    className={`border-t border-slate-100 dark:border-slate-700/50 ${idx % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/30 dark:bg-slate-800/50"} hover:bg-slate-100/50 dark:hover:bg-slate-700/30 transition-colors`}
+                  >
+                    <td className="px-4 py-3 sticky left-0 bg-inherit z-10">
+                      <div className="flex items-center gap-2 group">
+                        <FileText className="w-3.5 h-3.5 text-purple-400 dark:text-purple-500 flex-shrink-0" />
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-700 dark:text-slate-200 leading-tight text-[11px] hover:text-purple-600 dark:hover:text-purple-400 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {file.name}
+                        </a>
+                        {file.fileSize && (
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                            {file.fileSize < 1024 ? `${file.fileSize}B` : file.fileSize < 1048576 ? `${(file.fileSize / 1024).toFixed(0)}KB` : `${(file.fileSize / 1048576).toFixed(1)}MB`}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: file.id }); }}
+                          className="p-0.5 rounded opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                          title="Excluir arquivo"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                    {sellers.map(seller => {
+                      const vis = file.visibility.find(v => v.sellerId === seller.id);
+                      const isVisible = vis?.visible || false;
+                      return (
+                        <td key={seller.id} className="text-center px-3 py-3">
+                          <button
+                            onClick={() => toggleMutation.mutate({ sellerId: seller.id, catalogId: file.id, visible: !isVisible })}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all mx-auto ${
+                              isVisible
+                                ? "border-teal-400 dark:border-teal-500 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-800/40"
+                                : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
+                            }`}
+                          >
+                            {isVisible && <Check className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {totalItems === 0 && (
+        <div className="text-center py-8">
+          <FolderOpen className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {currentParentId ? "Pasta vazia" : "Nenhum arquivo ou pasta"}
+          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            Use os botões acima para criar pastas ou fazer upload de arquivos
+          </p>
+        </div>
+      )}
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] text-slate-400 dark:text-slate-500 pt-2">
@@ -1347,103 +1550,13 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
           <div className="w-4 h-4 rounded border-2 border-teal-400 bg-teal-50 flex items-center justify-center">
             <Check className="w-3 h-3 text-teal-600" />
           </div>
-          <span>Vendedor pode ver este catálogo</span>
+          <span>Vendedor pode ver este arquivo</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-4 h-4 rounded border border-slate-300 bg-white"></div>
-          <span>Catálogo não disponível (clique para adicionar)</span>
+          <span>Arquivo não disponível (clique para adicionar)</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function CatalogFolderCard({
-  folderName,
-  catalogs: folderCatalogs,
-  sellers,
-  onToggle,
-}: {
-  folderName: string;
-  catalogs: Array<{ id: number; name: string; folder: string; visibility: Array<{ sellerId: number; visible: boolean }> }>;
-  sellers: Array<{ id: number; name: string }>;
-  onToggle: (sellerId: number, catalogId: number, visible: boolean) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden">
-      {/* Card header */}
-      <div
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between px-4 py-3 bg-purple-50 dark:bg-purple-900/20 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <FolderOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          <span className="font-bold text-purple-800 dark:text-purple-200 text-sm">{folderName}</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300 font-semibold">
-            {folderCatalogs.length} catálogos
-          </span>
-        </div>
-        <ChevronRight className={`w-4 h-4 text-purple-500 transition-transform ${expanded ? "rotate-90" : ""}`} />
-      </div>
-
-      {/* Card body */}
-      {expanded && (
-        <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 z-20">
-              <tr className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
-                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-white dark:bg-slate-800 min-w-[250px] z-30">
-                  Catálogo
-                </th>
-                {sellers.map(seller => (
-                  <th key={seller.id} className="text-center px-3 py-3 min-w-[90px] bg-white dark:bg-slate-800">
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 uppercase whitespace-nowrap">
-                      {seller.name.split(" ")[0]}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {folderCatalogs.map((catalog, idx) => (
-                <tr
-                  key={catalog.id}
-                  className={`border-t border-slate-100 dark:border-slate-700/50 ${idx % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/30 dark:bg-slate-800/50"} hover:bg-slate-100/50 dark:hover:bg-slate-700/30 transition-colors`}
-                >
-                  <td className="px-4 py-3 sticky left-0 bg-inherit z-10">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-3.5 h-3.5 text-purple-400 dark:text-purple-500 flex-shrink-0" />
-                      <span className="text-slate-700 dark:text-slate-200 leading-tight text-[11px]">
-                        {catalog.name}
-                      </span>
-                    </div>
-                  </td>
-                  {sellers.map(seller => {
-                    const vis = catalog.visibility.find(v => v.sellerId === seller.id);
-                    const isVisible = vis?.visible || false;
-                    return (
-                      <td key={seller.id} className="text-center px-3 py-3">
-                        <button
-                          onClick={() => onToggle(seller.id, catalog.id, !isVisible)}
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all mx-auto ${
-                            isVisible
-                              ? "border-teal-400 dark:border-teal-500 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-800/40"
-                              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
-                          }`}
-                        >
-                          {isVisible && <Check className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }
