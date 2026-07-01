@@ -3519,35 +3519,39 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                         onClick={() => setExpandedProduct(isExpanded ? null : p.codigoItem)}
                         className="cursor-pointer px-2 sm:px-3 py-2.5 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors"
                       >
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-3">
+                          {/* Stock quantity - FIRST and prominent */}
+                          <div className={`shrink-0 flex flex-col items-center justify-center px-2.5 py-1.5 rounded-lg min-w-[60px] ${qtdCaixas > 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                            <span className={`text-base sm:text-lg font-black leading-tight ${qtdCaixas > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-400'}`}>
+                              {qtdCaixas.toLocaleString('pt-BR')}
+                            </span>
+                            <span className={`text-[8px] font-bold uppercase ${qtdCaixas > 0 ? 'text-emerald-500' : 'text-red-400'}`}>{unidadeVenda}</span>
+                          </div>
+                          {/* Product info */}
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words">{p.descricaoItem}</p>
+                            <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words leading-tight">{p.descricaoItem}</p>
                             <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-1">
-                              <span className="text-[10px] text-slate-500">Cód: <strong>{p.codigoItem}</strong></span>
-                              {p.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 font-medium">{p.grupo}</span>}
+                              <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
                               {dims && (
-                                <span className="text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded text-orange-700 dark:text-orange-400 font-medium">
+                                <span className="text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
                                   📐 {dims[1]}×{dims[2]}×{dims[3]} cm
                                 </span>
                               )}
                               {p.pesoBruto && Number(p.pesoBruto) > 0 && (
-                                <span className="text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-400 font-medium">
+                                <span className="text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-400 font-bold">
                                   ⚖️ {(Number(p.pesoBruto) * fator).toFixed(2)} kg/cx
                                 </span>
                               )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                              <span className={`text-xs font-bold ${qtdCaixas > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                📦 {qtdCaixas.toLocaleString('pt-BR')} {unidadeVenda}
-                              </span>
-                              {hasPOs && (
+                            {hasPOs && (
+                              <div className="mt-1">
                                 <span className="text-[10px] bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
                                   🚢 {p.pendingPOs.reduce((sum: number, po: any) => sum + Math.floor(Number(po.quantidade) || 0), 0).toLocaleString('pt-BR')} {unidadeVenda} chegando
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                          {/* Price badge on the right */}
+                          {/* Price + chevron on the right */}
                           <div className="flex flex-col items-end gap-1 shrink-0">
                             {precoVendedor ? (
                               <span className="text-sm font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-lg">
@@ -3721,42 +3725,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                             </div>
                           )}
 
-                          {/* Technical details (collapsed by default) */}
-                          <details className="mt-2">
-                            <summary className="text-[9px] text-slate-400 cursor-pointer hover:text-slate-600 uppercase font-bold">Detalhes técnicos</summary>
-                            <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-1.5 pt-2">
-                              <div>
-                                <p className="text-[9px] text-slate-400 uppercase font-bold">Unidade Medida</p>
-                                <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.unidadeMedida || '-'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[9px] text-slate-400 uppercase font-bold">Fator de Venda</p>
-                                <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{fator.toLocaleString('pt-BR')} un/{unidadeVenda}</p>
-                              </div>
-                              {p.pesoBruto && (
-                                <div>
-                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Peso por Caixa</p>
-                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{(Number(p.pesoBruto) * fator).toFixed(2)} kg</p>
-                                </div>
-                              )}
-                              {p.codigoBarras && (
-                                <div>
-                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Código de Barras</p>
-                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{p.codigoBarras}</p>
-                                </div>
-                              )}
-                              <div>
-                                <p className="text-[9px] text-slate-400 uppercase font-bold">Estoque</p>
-                                <p className="text-[11px] text-emerald-600 font-bold">{qtdCaixas.toLocaleString('pt-BR')} {unidadeVenda} ({qtdRaw.toLocaleString('pt-BR')} un)</p>
-                              </div>
-                              {precoMinimo && (
-                                <div>
-                                  <p className="text-[9px] text-slate-400 uppercase font-bold">Preço Mínimo</p>
-                                  <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium">{formatCurrencySales(precoMinimo)}</p>
-                                </div>
-                              )}
-                            </div>
-                          </details>
+
                         </div>
                       )}
                     </div>

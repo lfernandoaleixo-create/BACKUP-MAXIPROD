@@ -4668,3 +4668,9 @@
 - [x] Novo Pedido - Produtos: card de valor final (vendedor digita valor, calcula % de desconto)
 - [x] Novo Pedido - Produtos: botão "Adicionar ao Carrinho" em cada produto
 - [x] Novo Pedido - Produtos: seletor de quantidade com setinhas (+ e -) E campo para digitar direto
+- [x] Novo Pedido - Produtos: estoque em caixas como primeira info destacada (antes do nome)
+- [x] Novo Pedido - Produtos: remover seção "Detalhes técnicos" expandida
+- [x] Novo Pedido - Produtos: remover badge de grupo (ESPETO/PALITO em azul)
+- [x] Novo Pedido - Produtos: destacar código, dimensões da caixa e peso da caixa
+- [x] Novo Pedido - Produtos: botão Adicionar ao Carrinho com ícone de carrinho, ao clicar abre seletor de quantidade (setinhas + input)
+- [x] Novo Pedido - Carrinho: corrigir para usar o novo formato com preço preenchido automaticamente
