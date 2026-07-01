@@ -1,15 +1,13 @@
 /**
  * Gestão Comercial - Reestruturada com duas abas principais:
- * 1. GESTORES - Painel administrativo onde cada gestor configura seus vendedores
- * 2. VENDEDORES - Visão do vendedor após configuração
+ * 1. GESTORES - 4 cards (Jordão, Ana Paula, Juvenal, Renato) com painel de configuração
+ * 2. VENDEDORES - Visão do vendedor (inclui gestores como vendedores)
  * 
  * Hierarquia:
- * - Jordão Laine (gestor)
- * - Ana Paula Aleixo (gestora - promovida)
- * - Juvenal Teixeira (gestor)
- *   - Renato Aleixo (sub-gestor do Juvenal)
- * 
- * Vitória tem acesso restrito: apenas à parte de Pedidos
+ * - Jordão Laine (Gestor)
+ * - Ana Paula Aleixo (Gestora)
+ * - Juvenal Teixeira (Gestor)
+ * - Renato Aleixo (Sub-gestor)
  */
 import { useState, useMemo, useEffect } from "react";
 import TopNav from "@/components/TopNav";
@@ -18,20 +16,15 @@ import { trpc } from "@/lib/trpc";
 import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
-  Package, Tag, FolderOpen, Target, Eye, UserPlus
+  Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
 
 type GestaoView = "gestores" | "vendedores" | "metricas";
 
-// Gestores promovidos: vendedores no Maxiprod que são tratados como gestores
-const PROMOTED_GESTORES = ["ANA PAULA ALEIXO"];
-
-// Sub-gestores: vendedores que são sub-gestores de outro gestor
-const SUB_GESTORES: Record<string, string> = {
-  "RENATO ALEIXO": "JUVENAL TEIXEIRA", // Renato é sub-gestor do Juvenal
-};
+// Config categories available for each gestor
+type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha";
 
 interface GestorGroup {
   gestor: string;
@@ -46,6 +39,28 @@ interface SellerPermission {
   authorized: boolean;
   priceTableCode?: string | null;
 }
+
+// Define the 4 gestores/sub-gestores with their roles
+interface GestorCard {
+  name: string;
+  role: "Gestor" | "Gestora" | "Sub-gestor";
+  parentGestor?: string; // For sub-gestores
+}
+
+const GESTOR_CARDS: GestorCard[] = [
+  { name: "JORDÃO LAINE", role: "Gestor" },
+  { name: "ANA PAULA ALEIXO", role: "Gestora" },
+  { name: "JUVENAL TEIXEIRA", role: "Gestor" },
+  { name: "RENATO ALEIXO", role: "Sub-gestor", parentGestor: "JUVENAL TEIXEIRA" },
+];
+
+// Map gestor names to their Maxiprod group names (may differ in accents/case)
+const GESTOR_NAME_MAP: Record<string, string> = {
+  "JORDÃO LAINE": "JORDÃO LAINE",
+  "ANA PAULA ALEIXO": "ANA PAULA ALEIXO",
+  "JUVENAL TEIXEIRA": "JUVENAL TEIXEIRA",
+  "RENATO ALEIXO": "RENATO ALEIXO",
+};
 
 export default function GestaoComercial() {
   const [view, setView] = useState<GestaoView>("gestores");
@@ -72,55 +87,20 @@ export default function GestaoComercial() {
     enabled: !isVitoria,
   });
 
-  // Build the gestores hierarchy from Maxiprod data
-  const gestoresHierarchy = useMemo(() => {
+  // Get vendedores for a specific gestor from Maxiprod data
+  const getVendedoresForGestor = (gestorName: string): string[] => {
     if (!representantesQuery.data) return [];
-    const rawGestores = representantesQuery.data.gestores as GestorGroup[];
-
-    // Result: list of gestores with their vendedores (excluding promoted gestores and sub-gestores from vendedores lists)
-    const result: { gestor: string; vendedores: string[]; subGestores: { name: string; vendedores: string[] }[]; isPromoted: boolean }[] = [];
-
-    for (const grupo of rawGestores) {
-      // Filter out promoted gestores from vendedores list
-      const vendedoresFiltered = grupo.vendedores.filter(
-        v => !PROMOTED_GESTORES.includes(v.toUpperCase()) && !Object.keys(SUB_GESTORES).includes(v.toUpperCase())
-      );
-
-      // Find sub-gestores under this gestor
-      const subGestoresUnderThis = Object.entries(SUB_GESTORES)
-        .filter(([_, parentGestor]) => parentGestor.toUpperCase() === grupo.gestor.toUpperCase())
-        .map(([subGestor]) => ({
-          name: subGestor,
-          vendedores: [] as string[], // Sub-gestores don't have vendedores yet
-        }));
-
-      result.push({
-        gestor: grupo.gestor,
-        vendedores: vendedoresFiltered,
-        subGestores: subGestoresUnderThis,
-        isPromoted: false,
-      });
-    }
-
-    // Add promoted gestores as top-level gestores
-    for (const promoted of PROMOTED_GESTORES) {
-      // Find which gestor group they came from
-      const parentGroup = rawGestores.find(g =>
-        g.vendedores.some(v => v.toUpperCase() === promoted.toUpperCase())
-      );
-      if (parentGroup) {
-        result.push({
-          gestor: promoted,
-          vendedores: [], // No vendedores yet
-          subGestores: [],
-          isPromoted: true,
-        });
-      }
-    }
-
-    // Sort: non-promoted first, then promoted
-    return result.sort((a, b) => a.gestor.localeCompare(b.gestor, 'pt-BR'));
-  }, [representantesQuery.data]);
+    const gestores = representantesQuery.data.gestores as GestorGroup[];
+    // Try exact match first
+    const grupo = gestores.find(g => g.gestor.toUpperCase() === gestorName.toUpperCase());
+    if (grupo) return grupo.vendedores;
+    // Try without accents
+    const normalized = gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const grupoNorm = gestores.find(g => 
+      g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
+    );
+    return grupoNorm?.vendedores || [];
+  };
 
   // Extract all seller names for metrics
   const allSellerNames = useMemo(() => {
@@ -192,7 +172,7 @@ export default function GestaoComercial() {
         {/* Content */}
         {view === "gestores" && (
           <GestoresTab
-            gestoresHierarchy={gestoresHierarchy}
+            getVendedoresForGestor={getVendedoresForGestor}
             permissions={permissionsQuery.data || []}
             isLoading={representantesQuery.isLoading}
             isError={representantesQuery.isError}
@@ -206,7 +186,7 @@ export default function GestaoComercial() {
         )}
         {view === "vendedores" && (
           <VendedoresTab
-            gestoresHierarchy={gestoresHierarchy}
+            getVendedoresForGestor={getVendedoresForGestor}
             permissions={permissionsQuery.data || []}
             isLoading={representantesQuery.isLoading}
           />
@@ -220,10 +200,10 @@ export default function GestaoComercial() {
 }
 
 // ============================================================
-// GESTORES TAB - Painel administrativo de cada gestor
+// GESTORES TAB - 4 cards with config panels
 // ============================================================
 interface GestoresTabProps {
-  gestoresHierarchy: { gestor: string; vendedores: string[]; subGestores: { name: string; vendedores: string[] }[]; isPromoted: boolean }[];
+  getVendedoresForGestor: (gestorName: string) => string[];
   permissions: SellerPermission[];
   isLoading: boolean;
   isError: boolean;
@@ -232,8 +212,9 @@ interface GestoresTabProps {
   isFetching: boolean;
 }
 
-function GestoresTab({ gestoresHierarchy, permissions, isLoading, isError, errorMessage, onRefresh, isFetching }: GestoresTabProps) {
+function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching }: GestoresTabProps) {
   const [expandedGestor, setExpandedGestor] = useState<string | null>(null);
+  const [activeConfig, setActiveConfig] = useState<ConfigCategory | null>(null);
   const [, navigate] = useLocation();
 
   const toggleAuthMutation = trpc.sales.toggleSellerAuthorization.useMutation();
@@ -248,12 +229,42 @@ function GestoresTab({ gestoresHierarchy, permissions, isLoading, isError, error
 
   const getPermission = (sellerName: string, gestorName: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.toUpperCase() === sellerName.toUpperCase() &&
-             p.gestorName.toUpperCase() === gestorName.toUpperCase()
+      (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() &&
+             p.gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
     );
   };
 
-  const totalVendedores = gestoresHierarchy.reduce((acc, g) => acc + g.vendedores.length + g.subGestores.length, 0);
+  const getPermissionByName = (sellerName: string): SellerPermission | undefined => {
+    return permissions.find(
+      (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    );
+  };
+
+  const totalVendedores = useMemo(() => {
+    let count = 0;
+    for (const gc of GESTOR_CARDS) {
+      if (gc.role !== "Sub-gestor") {
+        count += getVendedoresForGestor(gc.name).length;
+      }
+    }
+    return count;
+  }, [getVendedoresForGestor]);
+
+  const handleExpandGestor = (name: string) => {
+    if (expandedGestor === name) {
+      setExpandedGestor(null);
+      setActiveConfig(null);
+    } else {
+      setExpandedGestor(name);
+      setActiveConfig(null);
+    }
+  };
+
+  // Get vendedores for a gestor card (for sub-gestor Renato, he has no vendedores yet)
+  const getVendedoresForCard = (card: GestorCard): string[] => {
+    if (card.role === "Sub-gestor") return []; // Sub-gestor doesn't have vendedores yet
+    return getVendedoresForGestor(card.name);
+  };
 
   return (
     <div className="space-y-4">
@@ -267,7 +278,7 @@ function GestoresTab({ gestoresHierarchy, permissions, isLoading, isError, error
             <div>
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Gestores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {gestoresHierarchy.length} gestores · {totalVendedores} vendedores
+                {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores · 1 sub-gestor · {totalVendedores} vendedores
               </p>
             </div>
           </div>
@@ -303,154 +314,162 @@ function GestoresTab({ gestoresHierarchy, permissions, isLoading, isError, error
         </div>
       )}
 
-      {/* Gestor Cards */}
-      {gestoresHierarchy.map((gestorData) => {
-        const isExpanded = expandedGestor === gestorData.gestor;
-        const vendedorCount = gestorData.vendedores.length + gestorData.subGestores.length;
+      {/* 4 Gestor Cards */}
+      {!isLoading && GESTOR_CARDS.map((card) => {
+        const isExpanded = expandedGestor === card.name;
+        const vendedores = getVendedoresForCard(card);
+        const vendedorCount = vendedores.length;
+        const isSubGestor = card.role === "Sub-gestor";
 
         return (
-          <div key={gestorData.gestor} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            {/* Gestor Header */}
+          <div key={card.name} className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden transition-all ${
+            isSubGestor 
+              ? "border-purple-200 dark:border-purple-800 ml-4 md:ml-6" 
+              : "border-slate-200 dark:border-slate-700"
+          }`}>
+            {/* Card Header - collapsible */}
             <button
-              onClick={() => setExpandedGestor(isExpanded ? null : gestorData.gestor)}
-              className="w-full flex items-center justify-between p-4 md:px-6 md:py-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+              onClick={() => handleExpandGestor(card.name)}
+              className="w-full flex items-center justify-between p-4 md:px-6 md:py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="text-slate-400">
-                  {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </div>
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold text-base shadow-md">
-                  {gestorData.gestor.charAt(0).toUpperCase()}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ${
+                  isSubGestor 
+                    ? "bg-gradient-to-br from-purple-400 to-purple-600" 
+                    : "bg-gradient-to-br from-teal-400 to-teal-600"
+                }`}>
+                  {card.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="text-left">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm md:text-base font-bold text-slate-800 dark:text-white">{gestorData.gestor}</p>
-                    {gestorData.isPromoted && (
-                      <span className="text-[9px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded font-medium">
-                        GESTORA
-                      </span>
-                    )}
+                    <p className="text-sm md:text-base font-bold text-slate-800 dark:text-white">{card.name}</p>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${
+                      isSubGestor
+                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                        : "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
+                    }`}>
+                      {card.role.toUpperCase()}
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-400 dark:text-slate-500">
                     {vendedorCount} vendedor{vendedorCount !== 1 ? "es" : ""}
-                    {gestorData.subGestores.length > 0 && ` · ${gestorData.subGestores.length} sub-gestor${gestorData.subGestores.length !== 1 ? "es" : ""}`}
+                    {isSubGestor && card.parentGestor && ` · subordinado a ${card.parentGestor}`}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-2.5 py-1 rounded-full font-medium">
-                  {vendedorCount}
-                </span>
-              </div>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                isSubGestor
+                  ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                  : "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
+              }`}>
+                {vendedorCount}
+              </span>
             </button>
 
-            {/* Expanded Content */}
+            {/* Expanded: Configuration Panel */}
             {isExpanded && (
               <div className="border-t border-slate-100 dark:border-slate-700">
-                {/* Gestor info bar */}
-                <div className="px-4 md:px-6 py-2.5 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700">
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Clique em um vendedor para configurar individualmente: Estoque, Tabela de Preço, Catálogos, Meta de Venda, Senha
-                  </p>
-                </div>
-
-                {/* Sub-gestores */}
-                {gestorData.subGestores.length > 0 && (
-                  <div className="px-4 md:px-6 py-3 border-b border-slate-100 dark:border-slate-700 bg-purple-50/50 dark:bg-purple-900/10">
-                    <p className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2">Sub-Gestores</p>
-                    {gestorData.subGestores.map((sub) => {
-                      const perm = getPermission(sub.name, gestorData.gestor);
-                      return (
-                        <div key={sub.name} className="flex items-center gap-3 py-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-300 to-purple-500 flex items-center justify-center text-white font-bold text-[10px]">
-                            {sub.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}`); }}>
-                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-teal-600 transition-colors">{sub.name}</p>
-                            <p className="text-[10px] text-purple-500 dark:text-purple-400">Sub-gestor · {sub.vendedores.length} vendedores</p>
-                          </div>
-                          {perm && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleToggleAuth(perm.id, perm.authorized); }}
-                              disabled={toggleAuthMutation.isPending}
-                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                                perm.authorized
-                                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200"
-                                  : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100"
-                              }`}
-                            >
-                              {perm.authorized ? <><ShieldCheck className="w-3.5 h-3.5" /><span className="hidden sm:inline">Autorizado</span></> : <><Shield className="w-3.5 h-3.5" /><span className="hidden sm:inline">Bloqueado</span></>}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                {/* Config buttons */}
+                {!activeConfig && (
+                  <div className="p-4 md:p-6">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">Configurações dos vendedores:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <button
+                        onClick={() => setActiveConfig("estoque")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <Package className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Estoque</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveConfig("tabela_preco")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <Tag className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Tabela de Preço</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveConfig("catalogos")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <FolderOpen className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Catálogos</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveConfig("senha")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <Lock className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Senhas</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Vendedores List */}
-                <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {gestorData.vendedores.length === 0 && gestorData.subGestores.length === 0 && (
-                    <div className="px-6 py-6 text-center">
-                      <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                      <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
-                      <p className="text-xs text-slate-300 dark:text-slate-600 mt-1">Os vendedores aparecerão aqui quando forem vinculados no Maxiprod</p>
+                {/* Active config: show vendedores list for individual configuration */}
+                {activeConfig && (
+                  <div className="p-4 md:p-6">
+                    {/* Back button */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <button
+                        onClick={() => setActiveConfig(null)}
+                        className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium cursor-pointer"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Voltar
+                      </button>
+                      <span className="text-xs text-slate-300 dark:text-slate-600">|</span>
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        {activeConfig === "estoque" && "Configurar Estoque"}
+                        {activeConfig === "tabela_preco" && "Configurar Tabela de Preço"}
+                        {activeConfig === "catalogos" && "Configurar Catálogos"}
+                        {activeConfig === "senha" && "Configurar Senhas"}
+                      </span>
                     </div>
-                  )}
-                  {gestorData.vendedores.map((vendedor) => {
-                    const perm = getPermission(vendedor, gestorData.gestor);
-                    return (
-                      <div key={vendedor} className="flex items-center gap-3 px-4 md:px-6 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                        {/* Avatar */}
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
-                          {vendedor.charAt(0).toUpperCase()}
-                        </div>
 
-                        {/* Name & password - clickable to open detail */}
-                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}`); }}>
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-teal-600 transition-colors">{vendedor}</p>
-                          {perm && (
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <Lock className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500">Senha: {perm.password}</span>
+                    {/* Vendedores list */}
+                    <div className="space-y-2">
+                      {vendedores.length === 0 && (
+                        <div className="text-center py-6">
+                          <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                          <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
+                        </div>
+                      )}
+                      {vendedores.map((vendedor) => {
+                        const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
+                        return (
+                          <div
+                            key={vendedor}
+                            onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}`); }}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
+                              {vendedor.charAt(0).toUpperCase()}
                             </div>
-                          )}
-                        </div>
-
-                        {/* Config button */}
-                        {perm && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/gestao-comercial/vendedor/${perm.id}`); }}
-                            className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-colors cursor-pointer"
-                            title="Configurar vendedor"
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                        )}
-
-                        {/* Authorization toggle */}
-                        {perm && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleAuth(perm.id, perm.authorized); }}
-                            disabled={toggleAuthMutation.isPending}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                              perm.authorized
-                                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200"
-                                : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100"
-                            }`}
-                            title={perm.authorized ? "Clique para bloquear acesso" : "Clique para autorizar acesso"}
-                          >
-                            {perm.authorized ? (
-                              <><ShieldCheck className="w-3.5 h-3.5" /><span className="hidden sm:inline">Autorizado</span></>
-                            ) : (
-                              <><Shield className="w-3.5 h-3.5" /><span className="hidden sm:inline">Bloqueado</span></>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
+                              {activeConfig === "senha" && perm && (
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500">Senha atual: {perm.password}</p>
+                              )}
+                              {activeConfig === "tabela_preco" && perm?.priceTableCode && (
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500">Tabela: {perm.priceTableCode}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {perm && (
+                                <span className={`w-2 h-2 rounded-full ${perm.authorized ? "bg-emerald-500" : "bg-red-400"}`} />
+                              )}
+                              <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -461,37 +480,55 @@ function GestoresTab({ gestoresHierarchy, permissions, isLoading, isError, error
 }
 
 // ============================================================
-// VENDEDORES TAB - Visão do vendedor após configuração
+// VENDEDORES TAB - Visão do vendedor (inclui gestores como vendedores)
 // ============================================================
 interface VendedoresTabProps {
-  gestoresHierarchy: { gestor: string; vendedores: string[]; subGestores: { name: string; vendedores: string[] }[]; isPromoted: boolean }[];
+  getVendedoresForGestor: (gestorName: string) => string[];
   permissions: SellerPermission[];
   isLoading: boolean;
 }
 
-function VendedoresTab({ gestoresHierarchy, permissions, isLoading }: VendedoresTabProps) {
+function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: VendedoresTabProps) {
   const [, navigate] = useLocation();
 
-  // Flatten all vendedores with their gestor info
+  // Build list of ALL vendedores including gestores themselves
   const allVendedores = useMemo(() => {
-    const result: { name: string; gestor: string; permission?: SellerPermission }[] = [];
-    for (const g of gestoresHierarchy) {
-      for (const v of g.vendedores) {
+    const result: { name: string; gestor: string; permission?: SellerPermission; isGestor: boolean }[] = [];
+    
+    // Add gestores as vendedores (they sell too)
+    for (const gc of GESTOR_CARDS) {
+      const perm = permissions.find(
+        p => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === gc.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      );
+      result.push({ 
+        name: gc.name, 
+        gestor: gc.parentGestor || "—", 
+        permission: perm, 
+        isGestor: true 
+      });
+    }
+
+    // Add regular vendedores
+    for (const gc of GESTOR_CARDS) {
+      if (gc.role === "Sub-gestor") continue; // Sub-gestor doesn't have vendedores yet
+      const vendedores = getVendedoresForGestor(gc.name);
+      for (const v of vendedores) {
+        // Skip if already added as gestor
+        if (GESTOR_CARDS.some(g => g.name.toUpperCase() === v.toUpperCase())) continue;
         const perm = permissions.find(
-          p => p.sellerName.toUpperCase() === v.toUpperCase() && p.gestorName.toUpperCase() === g.gestor.toUpperCase()
+          p => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
         );
-        result.push({ name: v, gestor: g.gestor, permission: perm });
-      }
-      // Include sub-gestores as vendedores too
-      for (const sub of g.subGestores) {
-        const perm = permissions.find(
-          p => p.sellerName.toUpperCase() === sub.name.toUpperCase() && p.gestorName.toUpperCase() === g.gestor.toUpperCase()
-        );
-        result.push({ name: sub.name, gestor: g.gestor, permission: perm });
+        result.push({ name: v, gestor: gc.name, permission: perm, isGestor: false });
       }
     }
-    return result.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-  }, [gestoresHierarchy, permissions]);
+
+    return result.sort((a, b) => {
+      // Gestores first, then alphabetical
+      if (a.isGestor && !b.isGestor) return -1;
+      if (!a.isGestor && b.isGestor) return 1;
+      return a.name.localeCompare(b.name, 'pt-BR');
+    });
+  }, [getVendedoresForGestor, permissions]);
 
   const authorizedCount = allVendedores.filter(v => v.permission?.authorized).length;
 
@@ -541,25 +578,36 @@ function VendedoresTab({ gestoresHierarchy, permissions, isLoading }: Vendedores
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {allVendedores.map((v) => (
             <div
-              key={`${v.gestor}|${v.name}`}
+              key={v.name}
               onClick={() => { if (v.permission) navigate(`/gestao-comercial/vendedor/${v.permission.id}`); }}
               className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 transition-all cursor-pointer hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 ${
-                v.permission?.authorized
-                  ? "border-slate-200 dark:border-slate-700"
-                  : "border-red-200 dark:border-red-800 opacity-60"
+                v.isGestor
+                  ? "border-teal-200 dark:border-teal-800"
+                  : v.permission?.authorized
+                    ? "border-slate-200 dark:border-slate-700"
+                    : "border-red-200 dark:border-red-800 opacity-60"
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  v.permission?.authorized
-                    ? "bg-gradient-to-br from-orange-300 to-orange-500"
-                    : "bg-gradient-to-br from-slate-300 to-slate-400"
+                  v.isGestor
+                    ? "bg-gradient-to-br from-teal-400 to-teal-600"
+                    : v.permission?.authorized
+                      ? "bg-gradient-to-br from-orange-300 to-orange-500"
+                      : "bg-gradient-to-br from-slate-300 to-slate-400"
                 }`}>
                   {v.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Gestor: {v.gestor}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
+                    {v.isGestor && (
+                      <Crown className="w-3 h-3 text-teal-500 flex-shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                    {v.isGestor ? "Gestor · também vende" : `Gestor: ${v.gestor}`}
+                  </p>
                 </div>
                 {v.permission?.authorized ? (
                   <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />

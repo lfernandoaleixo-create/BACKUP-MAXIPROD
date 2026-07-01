@@ -4609,3 +4609,7 @@
 - [x] Hierarquia: Juvenal vê Renato (sub-gestor) e todos os vendedores do Renato
 - [x] Criar aba VENDEDORES: visão do vendedor (estoque, cadastro clientes, tabela preço, pedidos, métricas, catálogos)
 - [x] Ana Paula tratada como gestora no novo layout
+- [x] Aba Gestores: 4 cards separados (Jordão-Gestor, Ana Paula-Gestora, Juvenal-Gestor, Renato-Sub-gestor) com cargo na frente
+- [x] Aba Gestores: ao expandir gestor, mostrar painel de configuração (não lista de vendedores)
+- [x] Aba Gestores: botões Estoque/Tabela de Preço/Catálogos/Senha → ao clicar mostra vendedores para configurar individualmente
+- [x] Aba Vendedores: incluir gestores (Jordão, Ana Paula, Juvenal) como vendedores também
