@@ -4615,3 +4615,6 @@
 - [x] Aba Vendedores: incluir gestores (Jordão, Ana Paula, Juvenal) como vendedores também
 - [x] Painel dos Gestores como card colapsável contendo os 4 cards dentro
 - [x] Cada gestor inclui a si mesmo como vendedor na lista de configuração
+- [x] Renato aparece como vendedor dentro do card do Juvenal (subordinado)
+- [x] Botão "Cadastrar Vendedor" nos cards de todos os gestores para adicionar novos vendedores
+- [x] Sub-gestor Renato não inclui a si mesmo como vendedor no próprio card

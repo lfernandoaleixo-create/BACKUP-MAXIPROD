@@ -260,10 +260,14 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     }
   };
 
-  // Get vendedores for a gestor card (for sub-gestor Renato, he has no vendedores yet)
+  // Get vendedores for a gestor card
+  // For Juvenal: includes Renato as one of his vendedores
+  // For sub-gestor Renato: no vendedores yet (future)
+  // For Ana Paula: no vendedores yet (future)
   const getVendedoresForCard = (card: GestorCard): string[] => {
     if (card.role === "Sub-gestor") return []; // Sub-gestor doesn't have vendedores yet
-    return getVendedoresForGestor(card.name);
+    const vendedores = getVendedoresForGestor(card.name);
+    return vendedores;
   };
 
   const [panelOpen, setPanelOpen] = useState(false);
@@ -329,8 +333,10 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             {!isLoading && GESTOR_CARDS.map((card) => {
         const isExpanded = expandedGestor === card.name;
         const vendedoresBase = getVendedoresForCard(card);
-        // Include the gestor themselves as a vendedor in their own card
-        const vendedores = [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== card.name.toUpperCase())];
+        // Include the gestor themselves as a vendedor in their own card (except sub-gestores)
+        const vendedores = card.role === "Sub-gestor" 
+          ? vendedoresBase 
+          : [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== card.name.toUpperCase())];
         const vendedorCount = vendedores.length;
         const isSubGestor = card.role === "Sub-gestor";
 
@@ -389,7 +395,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                 {!activeConfig && (
                   <div className="p-4 md:p-6">
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">Configurações dos vendedores:</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                       <button
                         onClick={() => setActiveConfig("estoque")}
                         className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
@@ -417,6 +423,13 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       >
                         <Lock className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Senhas</span>
+                      </button>
+                      <button
+                        onClick={() => { /* TODO: open cadastrar vendedor modal */ }}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <UserPlus className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-teal-700 dark:text-teal-300">Cadastrar Vendedor</span>
                       </button>
                     </div>
                   </div>
