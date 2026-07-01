@@ -4653,3 +4653,6 @@
 - [x] Métricas de Venda (gestor): drill-down ao clicar no vendedor (clientes, valores, informações completas)
 - [x] Métricas: adicionar card "Vendas da Semana" entre "Vendas do Dia" e "Mês Atual"
 - [x] Métricas: adicionar card "Vendas Personalizado" com seletor de período (data início e fim)
+- [x] Remover seção Meta Mensal & Comissão das métricas de venda do vendedor
+- [x] Remover aba Configurações do painel do vendedor (tudo configurado pelo gestor)
+- [x] Melhorar visual da Tabela de Preços (remover coluna Comissão, design sofisticado com zebra stripes)

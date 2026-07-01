@@ -157,11 +157,9 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
     { id: "catalogos", label: "Catálogos", icon: FolderOpen },
     { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
     { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
-    { id: "configuracoes", label: "Configurações", icon: Settings },
   ];
 
-  // No modo vendedor, esconde a aba Configurações
-  const tabs = sellerMode ? allTabs.filter(t => t.id !== "configuracoes") : allTabs;
+  const tabs = allTabs;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -268,9 +266,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           <SellerSalesView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
         )}
 
-        {activeTab === "configuracoes" && (
-          <SellerConfigPanel sellerId={sellerId} sellerName={seller.sellerName} seller={seller} section={configSection} />
-        )}
+
       </main>
     </div>
   );
@@ -3879,216 +3875,6 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
 
       {!isLoading && (
         <>
-          {/* ═══ METAS E AVALIAÇÃO ═══ */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-orange-500" />
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Meta Mensal & Comissão</h3>
-              </div>
-              <button
-                onClick={() => setShowTargetForm(!showTargetForm)}
-                className="text-xs px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors font-medium"
-              >
-                {showTargetForm ? 'Cancelar' : '+ Definir Meta'}
-              </button>
-            </div>
-
-            {/* Form para definir meta */}
-            {showTargetForm && (
-              <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 font-medium block mb-1">Mês/Ano</label>
-                    <input
-                      type="month"
-                      value={targetMonth}
-                      onChange={(e) => setTargetMonth(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 font-medium block mb-1">Tipo da Meta</label>
-                    <div className="flex rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden">
-                      <button
-                        onClick={() => setTargetType('valor')}
-                        className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                          targetType === 'valor'
-                            ? 'bg-teal-600 text-white'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
-                        }`}
-                      >
-                        R$ Valor
-                      </button>
-                      <button
-                        onClick={() => setTargetType('quantidade')}
-                        className={`flex-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                          targetType === 'quantidade'
-                            ? 'bg-teal-600 text-white'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
-                        }`}
-                      >
-                        Qtd Pedidos
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 font-medium block mb-1">
-                      {targetType === 'valor' ? 'Meta (R$)' : 'Meta (Nº Pedidos)'}
-                    </label>
-                    <input
-                      type="number"
-                      value={targetValue}
-                      onChange={(e) => setTargetValue(e.target.value)}
-                      placeholder={targetType === 'valor' ? 'Ex: 50000' : 'Ex: 30'}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 font-medium block mb-1">Comissão (%)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={commissionPercent}
-                      onChange={(e) => setCommissionPercent(e.target.value)}
-                      placeholder="Ex: 5"
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <button
-                    onClick={handleSaveTarget}
-                    disabled={upsertTarget.isPending || !targetValue || !commissionPercent}
-                    className="px-4 py-1.5 text-xs font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {upsertTarget.isPending ? 'Salvando...' : 'Salvar Meta'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Avaliação Semestral */}
-            {loadingEval ? (
-              <div className="p-6 flex items-center justify-center">
-                <RefreshCw className="w-4 h-4 text-teal-500 animate-spin" />
-              </div>
-            ) : evaluation && evaluation.months.length > 0 ? (
-              <div className="p-4">
-                {/* Média Semestral */}
-                {evaluation.semesterAvg !== null && (
-                  <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-indigo-600" />
-                        <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Média Semestral (últimos 6 meses)</span>
-                      </div>
-                      <span className={`text-lg font-bold ${
-                        evaluation.semesterAvg >= 100 ? 'text-green-600' :
-                        evaluation.semesterAvg >= 80 ? 'text-amber-600' : 'text-red-600'
-                      }`}>
-                        {evaluation.semesterAvg.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tabela mensal */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left py-2 px-2 text-slate-500 font-medium">Mês</th>
-                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Meta</th>
-                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Realizado</th>
-                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Atingimento</th>
-                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Comissão</th>
-                        <th className="text-center py-2 px-2 text-slate-500 font-medium">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {evaluation.months.map((m) => (
-                        <tr key={`${m.year}-${m.month}`} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                          <td className="py-2.5 px-2 font-medium text-slate-700 dark:text-slate-200">{m.monthLabel}</td>
-                          <td className="py-2.5 px-2 text-center">
-                            {m.target ? (
-                              <span className="text-slate-600 dark:text-slate-300">
-                                {m.target.type === 'valor'
-                                  ? `R$ ${m.target.value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
-                                  : `${m.target.value} pedidos`
-                                }
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 italic">Sem meta</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-2 text-center">
-                            <span className="font-medium text-slate-700 dark:text-slate-200">
-                              {m.target?.type === 'quantidade'
-                                ? `${m.actual.qtdPedidos} pedidos`
-                                : `R$ ${m.actual.totalVendas.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
-                              }
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-2 text-center">
-                            {m.atingimento !== null ? (
-                              <div className="flex items-center justify-center gap-1.5">
-                                <div className="w-16 h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all ${
-                                      m.atingimento >= 100 ? 'bg-green-500' :
-                                      m.atingimento >= 80 ? 'bg-amber-500' : 'bg-red-500'
-                                    }`}
-                                    style={{ width: `${Math.min(m.atingimento, 150)}%` }}
-                                  />
-                                </div>
-                                <span className={`font-bold text-[11px] ${
-                                  m.atingimento >= 100 ? 'text-green-600' :
-                                  m.atingimento >= 80 ? 'text-amber-600' : 'text-red-600'
-                                }`}>
-                                  {m.atingimento.toFixed(0)}%
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400">—</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-2 text-center">
-                            {m.comissaoCalculada !== null ? (
-                              <span className="font-medium text-green-700 dark:text-green-400">
-                                R$ {m.comissaoCalculada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">—</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-2 text-center">
-                            {m.target && targets?.find((t: any) => t.year === m.year && t.month === m.month) && (
-                              <button
-                                onClick={() => {
-                                  const t = targets?.find((t: any) => t.year === m.year && t.month === m.month);
-                                  if (t) deleteTarget.mutate({ id: t.id });
-                                }}
-                                className="text-red-400 hover:text-red-600 transition-colors"
-                                title="Remover meta"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="p-6 text-center">
-                <p className="text-sm text-slate-400">Nenhuma meta definida ainda. Clique em "+ Definir Meta" para começar.</p>
-              </div>
-            )}
-          </div>
-
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
@@ -4278,76 +4064,77 @@ function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerNa
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Tag className="w-5 h-5 text-teal-600" />
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Tabela de Preços</h3>
-            <span className="text-xs bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium">
-              {data.items.length} produtos
-            </span>
+      <div className="px-5 md:px-6 py-5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800 border-b border-slate-100 dark:border-slate-700">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-sm">
+              <Tag className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{data.priceTable.descricao}</h3>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{data.items.length} produtos cadastrados</p>
+            </div>
           </div>
-          <span className="text-xs text-slate-400">{data.priceTable.descricao}</span>
         </div>
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Buscar por código ou descrição..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-300 transition-all shadow-sm"
           />
         </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-700/50">
-              <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Código</th>
-              <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Produto</th>
-              <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Preço</th>
-              <th className="px-4 py-2.5 text-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Desc. Máx.</th>
-              <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Preço Mínimo</th>
-              <th className="px-4 py-2.5 text-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comissão</th>
+            <tr className="bg-slate-50/80 dark:bg-slate-700/40">
+              <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
+              <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
+              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Unit.</th>
+              <th className="px-5 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Desc. Máx.</th>
+              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Mínimo</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {filteredItems.map((item: any) => (
-              <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                <td className="px-4 py-2.5">
-                  <span className="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+          <tbody>
+            {filteredItems.map((item: any, idx: number) => (
+              <tr key={item.id} className={`transition-colors hover:bg-teal-50/40 dark:hover:bg-teal-900/10 ${
+                idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/40 dark:bg-slate-750/30'
+              }`}>
+                <td className="px-5 py-3">
+                  <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md font-medium">
                     {item.itemCodigo}
                   </span>
                 </td>
-                <td className="px-4 py-2.5">
-                  <span className="text-xs text-slate-700 dark:text-slate-200 line-clamp-1">
+                <td className="px-5 py-3">
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
                     {item.itemDescricao}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 text-right">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                <td className="px-5 py-3 text-right">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
                     R$ {parseFloat(item.preco).toFixed(2)}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 text-center">
-                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
-                    {item.descontoMaximoEmPercentual ? `${parseFloat(item.descontoMaximoEmPercentual)}%` : "—"}
-                  </span>
+                <td className="px-5 py-3 text-center">
+                  {item.descontoMaximoEmPercentual ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
+                      {parseFloat(item.descontoMaximoEmPercentual)}%
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
+                  )}
                 </td>
-                <td className="px-4 py-2.5 text-right">
+                <td className="px-5 py-3 text-right">
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     R$ {parseFloat(item.precoMinimo).toFixed(2)}
-                  </span>
-                </td>
-                <td className="px-4 py-2.5 text-center">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {item.comissaoEmPercentual ? `${parseFloat(item.comissaoEmPercentual)}%` : "—"}
                   </span>
                 </td>
               </tr>
@@ -4356,16 +4143,17 @@ function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerNa
         </table>
       </div>
 
-      {/* Footer with summary */}
-      <div className="px-4 md:px-6 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
+      {/* Footer */}
+      <div className="px-5 md:px-6 py-3.5 border-t border-slate-100 dark:border-slate-700 bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-800 dark:to-slate-800">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-slate-400">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             {filteredItems.length === data.items.length
               ? `${data.items.length} produtos na tabela`
-              : `${filteredItems.length} de ${data.items.length} produtos`}
+              : `Exibindo ${filteredItems.length} de ${data.items.length} produtos`}
           </span>
-          <span className="text-[10px] text-slate-400">
-            Sincronizado automaticamente do Maxiprod
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3" />
+            Sincronizado do Maxiprod
           </span>
         </div>
       </div>
