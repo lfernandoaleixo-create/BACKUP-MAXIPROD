@@ -25,7 +25,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 type GestaoView = "gestores" | "vendedores" | "metricas";
 
 // Config categories available for each gestor
-type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha" | "pedidos" | "metricas";
+type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha" | "pedidos" | "metricas" | "acesso";
 
 interface GestorGroup {
   gestor: string;
@@ -445,6 +445,13 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Métricas de Venda</span>
                       </button>
                       <button
+                        onClick={() => setActiveConfig("acesso")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <Shield className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Acesso ao Aplicativo</span>
+                      </button>
+                      <button
                         onClick={() => { /* TODO: open cadastrar vendedor modal */ }}
                         className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
                       >
@@ -475,6 +482,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         {activeConfig === "senha" && "Configurar Senhas"}
                         {activeConfig === "pedidos" && "Pedidos de Venda"}
                         {activeConfig === "metricas" && "Métricas de Venda"}
+                        {activeConfig === "acesso" && "Acesso ao Aplicativo"}
                       </span>
                     </div>
 
@@ -489,6 +497,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       <PasswordManagerView gestorName={card.name} />
                     ) : activeConfig === "metricas" ? (
                       <GestaoMetricasVendedores sellerNames={vendedores} />
+                    ) : activeConfig === "acesso" ? (
+                      <AcessoAppView gestorName={card.name} vendedores={vendedores} permissions={permissions} onToggleAuth={handleToggleAuth} />
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -541,6 +551,85 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
       })}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ACESSO AO APLICATIVO VIEW - Shows all sellers with authorized/blocked status
+// ============================================================
+interface AcessoAppViewProps {
+  gestorName: string;
+  vendedores: string[];
+  permissions: SellerPermission[];
+  onToggleAuth: (sellerId: number, currentAuth: boolean) => void;
+}
+
+function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: AcessoAppViewProps) {
+  const getPermForVendedor = (vendedor: string): SellerPermission | undefined => {
+    return permissions.find(
+      (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === vendedor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    );
+  };
+
+  const authorizedCount = vendedores.filter(v => getPermForVendedor(v)?.authorized).length;
+
+  return (
+    <div className="space-y-3">
+      {/* Summary */}
+      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            {authorizedCount} autorizado{authorizedCount !== 1 ? "s" : ""} de {vendedores.length} vendedor{vendedores.length !== 1 ? "es" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Sellers list */}
+      <div className="space-y-2">
+        {vendedores.map((vendedor) => {
+          const perm = getPermForVendedor(vendedor);
+          const isAuthorized = perm?.authorized ?? false;
+
+          return (
+            <div
+              key={vendedor}
+              className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[10px] ${
+                isAuthorized
+                  ? "bg-gradient-to-br from-emerald-400 to-emerald-600"
+                  : "bg-gradient-to-br from-red-300 to-red-500"
+              }`}>
+                {vendedor.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
+                <p className={`text-[10px] font-medium ${
+                  isAuthorized
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-500 dark:text-red-400"
+                }`}>
+                  {isAuthorized ? "Autorizado" : "Bloqueado"}
+                </p>
+              </div>
+              {perm && (
+                <button
+                  onClick={() => onToggleAuth(perm.id, isAuthorized)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    isAuthorized
+                      ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40"
+                      : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
+                  }`}
+                >
+                  {isAuthorized ? "Bloquear" : "Autorizar"}
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
