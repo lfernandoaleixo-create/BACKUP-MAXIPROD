@@ -732,7 +732,7 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
 
   // Separate products by segmento
   const bambuProducts = products.filter(p => p.segmento === "bambu");
-  const madeiraProducts = products.filter(p => p.segmento !== "bambu"); // industrializado + outro = madeira
+  const madeiraProducts = products.filter(p => p.segmento === "madeira");
 
   // Filter by search
   const filterProducts = (list: typeof products) => {

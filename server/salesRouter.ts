@@ -3995,16 +3995,22 @@ export const salesRouter = router({
           priceTableId: matchedTable?.id || null,
         };
       });
-      // 5. Get all stock products from dashboard_data
+      // 5. Get all stock products from dashboard_data (only madeira and bambu)
       const dashData = await db.select().from(dashboardData).limit(1);
       let stockProducts: { codigoItem: string; descricaoItem: string; segmento: string }[] = [];
       if (dashData.length > 0) {
         try {
           const items = JSON.parse(dashData[0].dataJson as string);
-          stockProducts = items.map((item: any) => ({
+          // Filter: only madeira (industrializacao + subgrupo=madeira) and bambu (importacao_revenda + subgrupo=bambu)
+          const filtered = items.filter((item: any) => {
+            if (item.grupo === "industrializacao" && item.subgrupo === "madeira") return true;
+            if (item.grupo === "importacao_revenda" && item.subgrupo === "bambu") return true;
+            return false;
+          });
+          stockProducts = filtered.map((item: any) => ({
             codigoItem: item.codigoItem,
             descricaoItem: item.descricaoItem,
-            segmento: item.segmento || "outro",
+            segmento: (item.grupo === "importacao_revenda" && item.subgrupo === "bambu") ? "bambu" : "madeira",
           }));
         } catch { stockProducts = []; }
       }
@@ -4024,15 +4030,8 @@ export const salesRouter = router({
         }
         itemsByTable.get(item.priceTableId)!.add(item.itemCodigo);
       }
-      // Also include products that are in price tables but not in stock (for completeness)
-      const allProductCodes = new Set(stockProducts.map(p => p.codigoItem));
-      // Add price table items not in stock
-      for (const item of allItems) {
-        if (!allProductCodes.has(item.itemCodigo)) {
-          allProductCodes.add(item.itemCodigo);
-          stockProducts.push({ codigoItem: item.itemCodigo, descricaoItem: item.itemDescricao, segmento: "outro" });
-        }
-      }
+      // Note: we only show products that are in the stock (madeira + bambu)
+      // Price table items not in stock are not shown in this matrix
       // Build matrix rows
       const matrix = stockProducts.map(product => {
         const row: Record<string, boolean> = {};
