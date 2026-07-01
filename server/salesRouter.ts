@@ -3422,6 +3422,42 @@ export const salesRouter = router({
     }),
 
   /**
+   * Toggle individual product visibility for a seller (used by matrix view)
+   */
+  toggleSellerProduct: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      productCode: z.string(),
+      visible: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      if (input.visible) {
+        // Add product visibility
+        const existing = await db.select().from(sellerProductVisibility)
+          .where(and(
+            eq(sellerProductVisibility.sellerId, input.sellerId),
+            eq(sellerProductVisibility.productCode, input.productCode)
+          ));
+        if (existing.length === 0) {
+          await db.insert(sellerProductVisibility).values({
+            sellerId: input.sellerId,
+            productCode: input.productCode,
+            visible: true,
+          });
+        }
+      } else {
+        // Remove product visibility
+        await db.delete(sellerProductVisibility)
+          .where(and(
+            eq(sellerProductVisibility.sellerId, input.sellerId),
+            eq(sellerProductVisibility.productCode, input.productCode)
+          ));
+      }
+      return { success: true };
+    }),
+  /**
    * Configurar produtos visíveis para um vendedor (bulk update)
    * Recebe lista de productCodes que o vendedor pode ver.
    */
@@ -3961,17 +3997,26 @@ export const salesRouter = router({
       });
       // 5. Get all stock products from dashboard_data
       const dashData = await db.select().from(dashboardData).limit(1);
-      let stockProducts: { codigoItem: string; descricaoItem: string }[] = [];
+      let stockProducts: { codigoItem: string; descricaoItem: string; segmento: string }[] = [];
       if (dashData.length > 0) {
         try {
           const items = JSON.parse(dashData[0].dataJson as string);
           stockProducts = items.map((item: any) => ({
             codigoItem: item.codigoItem,
             descricaoItem: item.descricaoItem,
+            segmento: item.segmento || "outro",
           }));
         } catch { stockProducts = []; }
       }
-      // 6. Build the matrix: for each product, check which sellers have it in their price table
+      // 6. Get manual overrides from seller_product_visibility
+      const manualOverrides = await db.select().from(sellerProductVisibility);
+      const overrideMap = new Map<string, Set<string>>(); // sellerId -> Set<productCode>
+      for (const ov of manualOverrides) {
+        const key = String(ov.sellerId);
+        if (!overrideMap.has(key)) overrideMap.set(key, new Set());
+        overrideMap.get(key)!.add(ov.productCode);
+      }
+      // 7. Build the matrix: for each product, check which sellers have it in their price table
       const itemsByTable = new Map<number, Set<string>>();
       for (const item of allItems) {
         if (!itemsByTable.has(item.priceTableId)) {
@@ -3985,23 +4030,29 @@ export const salesRouter = router({
       for (const item of allItems) {
         if (!allProductCodes.has(item.itemCodigo)) {
           allProductCodes.add(item.itemCodigo);
-          stockProducts.push({ codigoItem: item.itemCodigo, descricaoItem: item.itemDescricao });
+          stockProducts.push({ codigoItem: item.itemCodigo, descricaoItem: item.itemDescricao, segmento: "outro" });
         }
       }
       // Build matrix rows
       const matrix = stockProducts.map(product => {
         const row: Record<string, boolean> = {};
         for (const st of sellerTableMap) {
+          // Check price table first
+          let fromPriceTable = false;
           if (st.priceTableId) {
             const tableItems = itemsByTable.get(st.priceTableId);
-            row[st.sellerName] = tableItems?.has(product.codigoItem) || false;
-          } else {
-            row[st.sellerName] = false;
+            fromPriceTable = tableItems?.has(product.codigoItem) || false;
           }
+          // Check manual override
+          const manualSet = overrideMap.get(String(st.sellerId));
+          const hasManualOverride = manualSet?.has(product.codigoItem) || false;
+          // Product is visible if either in price table OR manually added
+          row[st.sellerName] = fromPriceTable || hasManualOverride;
         }
         return {
           codigoItem: product.codigoItem,
           descricaoItem: product.descricaoItem,
+          segmento: product.segmento,
           sellers: row,
         };
       });

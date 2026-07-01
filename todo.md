@@ -4625,3 +4625,7 @@
 - [x] Tabela matricial: linhas = produtos do estoque, colunas = vendedores do gestor
 - [x] Checkmarks (✓) read-only baseados na tabela de preços do Maxiprod (se produto está na tabela do vendedor = ✓)
 - [x] Remover edição manual de checkboxes (gestor altera no Maxiprod, sync puxa automaticamente)
+- [x] Separar estoque em 2 cards: Estoque Madeira (cor marrom/amarelado) e Estoque Bambu (cor azul)
+- [x] Adicionar checkboxes clicáveis para ticar/desticar manualmente produtos por vendedor
+- [x] Destacar mais os nomes dos vendedores no header da tabela
+- [x] Mostrar nome completo dos produtos (não cortar com truncate)
