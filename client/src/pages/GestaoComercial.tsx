@@ -472,57 +472,59 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       </span>
                     </div>
 
-                    {/* Vendedores list */}
-                    <div className="space-y-2">
-                      {vendedores.length === 0 && (
-                        <div className="text-center py-6">
-                          <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                          <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
-                        </div>
-                      )}
-                      {vendedores.map((vendedor) => {
-                        const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
-                        // Map config type to VendedorDetalhe tab + section
-                        const tabMap: Record<string, { tab: string; section?: string }> = {
-                          estoque: { tab: "configuracoes", section: "estoque" },
-                          tabela_preco: { tab: "tabela_precos" },
-                          catalogos: { tab: "configuracoes", section: "catalogos" },
-                          senha: { tab: "configuracoes", section: "senha" },
-                          pedidos: { tab: "pedidos" },
-                          metricas: { tab: "vendas" },
-                        };
-                        const target = activeConfig ? tabMap[activeConfig] || { tab: "estoque" } : { tab: "estoque" };
-                        const navUrl = target.section
-                          ? `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}&section=${target.section}`
-                          : `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}`;
-                        return (
-                          <div
-                            key={vendedor}
-                            onClick={() => { if (perm) navigate(navUrl); }}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
-                          >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
-                              {vendedor.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
-                              {activeConfig === "senha" && perm && (
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500">Senha atual: {perm.password}</p>
-                              )}
-                              {activeConfig === "tabela_preco" && perm?.priceTableCode && (
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500">Tabela: {perm.priceTableCode}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {perm && (
-                                <span className={`w-2 h-2 rounded-full ${perm.authorized ? "bg-emerald-500" : "bg-red-400"}`} />
-                              )}
-                              <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                            </div>
+                    {/* Conditional content based on activeConfig */}
+                    {activeConfig === "estoque" ? (
+                      <EstoqueMatrixView gestorName={card.name} />
+                    ) : (
+                      <div className="space-y-2">
+                        {vendedores.length === 0 && (
+                          <div className="text-center py-6">
+                            <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                            <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                        {vendedores.map((vendedor) => {
+                          const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
+                          const tabMap: Record<string, { tab: string; section?: string }> = {
+                            tabela_preco: { tab: "tabela_precos" },
+                            catalogos: { tab: "configuracoes", section: "catalogos" },
+                            senha: { tab: "configuracoes", section: "senha" },
+                            pedidos: { tab: "pedidos" },
+                            metricas: { tab: "vendas" },
+                          };
+                          const target = activeConfig ? tabMap[activeConfig] || { tab: "estoque" } : { tab: "estoque" };
+                          const navUrl = target.section
+                            ? `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}&section=${target.section}`
+                            : `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}`;
+                          return (
+                            <div
+                              key={vendedor}
+                              onClick={() => { if (perm) navigate(navUrl); }}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
+                                {vendedor.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
+                                {activeConfig === "senha" && perm && (
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Senha atual: {perm.password}</p>
+                                )}
+                                {activeConfig === "tabela_preco" && perm?.priceTableCode && (
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Tabela: {perm.priceTableCode}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {perm && (
+                                  <span className={`w-2 h-2 rounded-full ${perm.authorized ? "bg-emerald-500" : "bg-red-400"}`} />
+                                )}
+                                <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -684,6 +686,148 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ============================================================
+// ESTOQUE MATRIX VIEW - Tabela matricial produtos x vendedores
+// ============================================================
+function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
+  const [search, setSearch] = useState("");
+  const matrixQuery = trpc.sales.getEstoqueMatrix.useQuery(
+    { gestorName },
+    { staleTime: 60 * 1000 }
+  );
+
+  if (matrixQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="w-5 h-5 text-teal-500 animate-spin mr-2" />
+        <span className="text-sm text-slate-500 dark:text-slate-400">Carregando matriz de estoque...</span>
+      </div>
+    );
+  }
+
+  if (matrixQuery.isError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+        <span className="text-sm text-red-500">Erro ao carregar dados</span>
+      </div>
+    );
+  }
+
+  const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
+
+  // Filter products by search
+  const filteredProducts = search.trim()
+    ? products.filter(p =>
+        p.descricaoItem.toLowerCase().includes(search.toLowerCase()) ||
+        p.codigoItem.toLowerCase().includes(search.toLowerCase())
+      )
+    : products;
+
+  // Get first name of seller for column header
+  const getShortName = (name: string) => {
+    const parts = name.split(" ");
+    return parts[0].charAt(0) + parts[0].slice(1).toLowerCase();
+  };
+
+  // Count how many products each seller has
+  const sellerCounts = sellers.map(s => {
+    const count = products.filter(p => p.sellers[s.name]).length;
+    return { ...s, count };
+  });
+
+  return (
+    <div className="space-y-3">
+      {/* Info bar */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {products.length} produtos · {sellers.length} vendedores
+        </p>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar produto..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="text-xs px-3 py-1.5 pl-7 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 w-48 focus:outline-none focus:ring-1 focus:ring-teal-400"
+          />
+          <Package className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+        </div>
+      </div>
+
+      {/* Matrix table */}
+      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-700/50">
+              <th className="text-left px-3 py-2.5 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-slate-50 dark:bg-slate-700/50 z-10 min-w-[200px]">
+                Produto
+              </th>
+              {sellerCounts.map(seller => (
+                <th
+                  key={seller.id}
+                  className="text-center px-2 py-2.5 font-medium text-slate-600 dark:text-slate-300 min-w-[70px]"
+                >
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[10px] font-bold">{getShortName(seller.name)}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${seller.hasTable ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400" : "bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-400"}`}>
+                      {seller.count}
+                    </span>
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.map((product, idx) => (
+              <tr
+                key={product.codigoItem}
+                className={`border-t border-slate-100 dark:border-slate-700 ${idx % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/50 dark:bg-slate-800/50"}`}
+              >
+                <td className="px-3 py-2 sticky left-0 bg-inherit z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 w-10 shrink-0">{product.codigoItem}</span>
+                    <span className="text-slate-700 dark:text-slate-200 truncate max-w-[180px]" title={product.descricaoItem}>
+                      {product.descricaoItem}
+                    </span>
+                  </div>
+                </td>
+                {sellers.map(seller => (
+                  <td key={seller.id} className="text-center px-2 py-2">
+                    {product.sellers[seller.name] ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">✓</span>
+                    ) : (
+                      <span className="text-slate-300 dark:text-slate-600">—</span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {filteredProducts.length === 0 && (
+              <tr>
+                <td colSpan={sellers.length + 1} className="text-center py-8 text-slate-400 dark:text-slate-500">
+                  Nenhum produto encontrado
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px] text-slate-500 dark:text-slate-400">
+        <span className="flex items-center gap-1">
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span> Produto na tabela de preços
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="text-slate-300 dark:text-slate-600">—</span> Produto não disponível
+        </span>
+      </div>
     </div>
   );
 }

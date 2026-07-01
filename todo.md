@@ -4621,3 +4621,7 @@
 - [x] Adicionar botões "Pedidos de Venda" e "Métricas de Venda" no painel de configurações do gestor
 - [x] Ao clicar no vendedor dentro de cada configuração, navegar para a aba correspondente no VendedorDetalhe
 - [x] Fix: Estoque/Tabela/Catálogos/Senhas devem navegar para seções específicas, não para aba Configurações genérica
+- [x] Refatorar visão Estoque no painel gestor: substituir lista de vendedores por tabela matricial (produtos x vendedores)
+- [x] Tabela matricial: linhas = produtos do estoque, colunas = vendedores do gestor
+- [x] Checkmarks (✓) read-only baseados na tabela de preços do Maxiprod (se produto está na tabela do vendedor = ✓)
+- [x] Remover edição manual de checkboxes (gestor altera no Maxiprod, sync puxa automaticamente)

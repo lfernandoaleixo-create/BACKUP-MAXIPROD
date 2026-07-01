@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -3917,6 +3917,99 @@ export const salesRouter = router({
     const result = await syncPriceTables();
     return { success: true, ...result };
   }),
+
+  /**
+   * Matriz de estoque: produtos (linhas) x vendedores (colunas)
+   * Retorna ✓ se o produto está na tabela de preços do vendedor
+   * Usado no painel do gestor para visão ampla de quais produtos cada vendedor pode vender
+   */
+  getEstoqueMatrix: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // 1. Get all sellers for this gestor
+      const sellers = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.gestorName, input.gestorName));
+      // 2. Get all price tables
+      const allTables = await db.select().from(priceTables);
+      // 3. Get all price table items
+      const allItems = await db.select({
+        itemCodigo: priceTableItems.itemCodigo,
+        itemDescricao: priceTableItems.itemDescricao,
+        priceTableId: priceTableItems.priceTableId,
+      }).from(priceTableItems);
+      // 4. Match each seller to their price table
+      const sellerTableMap: { sellerId: number; sellerName: string; priceTableId: number | null }[] = sellers.map(seller => {
+        // Try direct mapping via priceTableCode
+        let matchedTable = seller.priceTableCode
+          ? allTables.find(t => t.codigo === seller.priceTableCode)
+          : null;
+        // Fallback: match by seller name in table description
+        if (!matchedTable) {
+          const nameParts = seller.sellerName.toUpperCase().split(' ');
+          matchedTable = allTables.find(t => {
+            const desc = t.descricao.toUpperCase();
+            return nameParts.some(part => part.length > 3 && desc.includes(part));
+          });
+        }
+        return {
+          sellerId: seller.id,
+          sellerName: seller.sellerName,
+          priceTableId: matchedTable?.id || null,
+        };
+      });
+      // 5. Get all stock products from dashboard_data
+      const dashData = await db.select().from(dashboardData).limit(1);
+      let stockProducts: { codigoItem: string; descricaoItem: string }[] = [];
+      if (dashData.length > 0) {
+        try {
+          const items = JSON.parse(dashData[0].dataJson as string);
+          stockProducts = items.map((item: any) => ({
+            codigoItem: item.codigoItem,
+            descricaoItem: item.descricaoItem,
+          }));
+        } catch { stockProducts = []; }
+      }
+      // 6. Build the matrix: for each product, check which sellers have it in their price table
+      const itemsByTable = new Map<number, Set<string>>();
+      for (const item of allItems) {
+        if (!itemsByTable.has(item.priceTableId)) {
+          itemsByTable.set(item.priceTableId, new Set());
+        }
+        itemsByTable.get(item.priceTableId)!.add(item.itemCodigo);
+      }
+      // Also include products that are in price tables but not in stock (for completeness)
+      const allProductCodes = new Set(stockProducts.map(p => p.codigoItem));
+      // Add price table items not in stock
+      for (const item of allItems) {
+        if (!allProductCodes.has(item.itemCodigo)) {
+          allProductCodes.add(item.itemCodigo);
+          stockProducts.push({ codigoItem: item.itemCodigo, descricaoItem: item.itemDescricao });
+        }
+      }
+      // Build matrix rows
+      const matrix = stockProducts.map(product => {
+        const row: Record<string, boolean> = {};
+        for (const st of sellerTableMap) {
+          if (st.priceTableId) {
+            const tableItems = itemsByTable.get(st.priceTableId);
+            row[st.sellerName] = tableItems?.has(product.codigoItem) || false;
+          } else {
+            row[st.sellerName] = false;
+          }
+        }
+        return {
+          codigoItem: product.codigoItem,
+          descricaoItem: product.descricaoItem,
+          sellers: row,
+        };
+      });
+      return {
+        sellers: sellerTableMap.map(s => ({ id: s.sellerId, name: s.sellerName, hasTable: !!s.priceTableId })),
+        products: matrix,
+      };
+    }),
 
   /**
    * Get period evolution data (annual, semester, quarter)
