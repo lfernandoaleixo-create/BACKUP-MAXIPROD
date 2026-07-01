@@ -673,7 +673,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
                     )}
                   </div>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                    {v.isGestor ? "Vendedor/Vendedora" : `Gestor: ${v.gestor}`}
+                    {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Gestor: ${v.gestor}`}
                   </p>
                 </div>
                 {v.permission?.authorized ? (
