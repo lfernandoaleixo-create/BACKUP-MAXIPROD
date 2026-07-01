@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -3995,23 +3995,33 @@ export const salesRouter = router({
           priceTableId: matchedTable?.id || null,
         };
       });
-      // 5. Get all stock products from dashboard_data (only madeira and bambu)
+      // 5. Get all stock products from dashboard_data (only madeira and bambu, parent only)
       const dashData = await db.select().from(dashboardData).limit(1);
-      let stockProducts: { codigoItem: string; descricaoItem: string; segmento: string }[] = [];
+      // Also get product classifications to separate bambu estoque vs encomenda
+      const classifications = await db.select().from(productClassification);
+      const classMap = new Map(classifications.map(c => [c.codigoItem, c.classification]));
+      let stockProducts: { codigoItem: string; descricaoItem: string; segmento: string; classification: string }[] = [];
       if (dashData.length > 0) {
         try {
           const items = JSON.parse(dashData[0].dataJson as string);
           // Filter: only madeira (industrializacao + subgrupo=madeira) and bambu (importacao_revenda + subgrupo=bambu)
+          // Only parent products (not children/variants)
           const filtered = items.filter((item: any) => {
+            if (item.isChild === true) return false; // exclude variants
             if (item.grupo === "industrializacao" && item.subgrupo === "madeira") return true;
             if (item.grupo === "importacao_revenda" && item.subgrupo === "bambu") return true;
             return false;
           });
-          stockProducts = filtered.map((item: any) => ({
-            codigoItem: item.codigoItem,
-            descricaoItem: item.descricaoItem,
-            segmento: (item.grupo === "importacao_revenda" && item.subgrupo === "bambu") ? "bambu" : "madeira",
-          }));
+          stockProducts = filtered.map((item: any) => {
+            const isBambu = item.grupo === "importacao_revenda" && item.subgrupo === "bambu";
+            const cls = classMap.get(item.codigoItem) || "estoque";
+            return {
+              codigoItem: item.codigoItem,
+              descricaoItem: item.descricaoItem,
+              segmento: isBambu ? "bambu" : "madeira",
+              classification: isBambu ? cls : "madeira", // madeira doesn't use classification
+            };
+          });
         } catch { stockProducts = []; }
       }
       // 6. Get manual overrides from seller_product_visibility
@@ -4052,6 +4062,7 @@ export const salesRouter = router({
           codigoItem: product.codigoItem,
           descricaoItem: product.descricaoItem,
           segmento: product.segmento,
+          classification: product.classification,
           sellers: row,
         };
       });

@@ -728,10 +728,10 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
     );
   }
 
-  const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
-
-  // Separate products by segmento
-  const bambuProducts = products.filter(p => p.segmento === "bambu");
+    const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
+  // Separate products: Bambu Estoque, Bambu Sob Encomenda, Madeira Produto Acabado
+  const bambuEstoque = products.filter(p => p.segmento === "bambu" && (p as any).classification !== "encomenda");
+  const bambuEncomenda = products.filter(p => p.segmento === "bambu" && (p as any).classification === "encomenda");
   const madeiraProducts = products.filter(p => p.segmento === "madeira");
 
   // Filter by search
@@ -748,7 +748,7 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
       {/* Search bar */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vendedores
+          {bambuEstoque.length} estoque · {bambuEncomenda.length} sob encomenda · {madeiraProducts.length} madeira · {sellers.length} vendedores
         </p>
         <div className="relative">
           <input
@@ -762,19 +762,27 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
         </div>
       </div>
 
-      {/* BAMBU Card */}
+            {/* BAMBU ESTOQUE Card */}
       <EstoqueSegmentCard
-        title="Estoque Bambu"
+        title="Estoque"
         color="blue"
-        products={filterProducts(bambuProducts)}
+        products={filterProducts(bambuEstoque)}
         sellers={sellers}
-        allProducts={bambuProducts}
+        allProducts={bambuEstoque}
         onToggle={handleToggle}
       />
-
-      {/* MADEIRA Card */}
+      {/* BAMBU SOB ENCOMENDA Card */}
       <EstoqueSegmentCard
-        title="Estoque Madeira"
+        title="Sob Encomenda"
+        color="yellow"
+        products={filterProducts(bambuEncomenda)}
+        sellers={sellers}
+        allProducts={bambuEncomenda}
+        onToggle={handleToggle}
+      />
+      {/* MADEIRA PRODUTO ACABADO Card */}
+      <EstoqueSegmentCard
+        title="Madeira \u2013 Produto Acabado"
         color="amber"
         products={filterProducts(madeiraProducts)}
         sellers={sellers}
@@ -785,10 +793,10 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
       {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] text-slate-500 dark:text-slate-400">
         <span className="flex items-center gap-1">
-          <input type="checkbox" checked readOnly className="w-3 h-3 accent-emerald-600" /> Na tabela de preços ou adicionado manualmente
+          <span className="text-emerald-600 font-bold">✓</span> Produto na tabela de preços do vendedor (Maxiprod)
         </span>
         <span className="flex items-center gap-1">
-          <input type="checkbox" readOnly className="w-3 h-3" /> Produto não disponível (clique para adicionar)
+          <span className="text-slate-300">—</span> Produto não disponível para este vendedor
         </span>
       </div>
     </div>
@@ -800,7 +808,7 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
 // ============================================================
 interface EstoqueSegmentCardProps {
   title: string;
-  color: "blue" | "amber";
+  color: "blue" | "amber" | "yellow";
   products: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, boolean> }[];
   sellers: { id: number; name: string; hasTable: boolean }[];
   allProducts: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, boolean> }[];
@@ -808,21 +816,32 @@ interface EstoqueSegmentCardProps {
 }
 
 function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onToggle }: EstoqueSegmentCardProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
-  const colorClasses = color === "blue" ? {
-    border: "border-blue-200 dark:border-blue-800",
-    header: "bg-blue-50 dark:bg-blue-900/30",
-    headerText: "text-blue-800 dark:text-blue-200",
-    badge: "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300",
-    accent: "text-blue-600 dark:text-blue-400",
-  } : {
-    border: "border-amber-200 dark:border-amber-800",
-    header: "bg-amber-50 dark:bg-amber-900/30",
-    headerText: "text-amber-800 dark:text-amber-200",
-    badge: "bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300",
-    accent: "text-amber-600 dark:text-amber-400",
+  const colorMap = {
+    blue: {
+      border: "border-blue-200 dark:border-blue-800",
+      header: "bg-blue-50 dark:bg-blue-900/30",
+      headerText: "text-blue-800 dark:text-blue-200",
+      badge: "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300",
+      accent: "text-blue-600 dark:text-blue-400",
+    },
+    yellow: {
+      border: "border-yellow-200 dark:border-yellow-700",
+      header: "bg-yellow-50 dark:bg-yellow-900/30",
+      headerText: "text-yellow-800 dark:text-yellow-200",
+      badge: "bg-yellow-100 dark:bg-yellow-800 text-yellow-700 dark:text-yellow-300",
+      accent: "text-yellow-600 dark:text-yellow-400",
+    },
+    amber: {
+      border: "border-amber-200 dark:border-amber-800",
+      header: "bg-amber-50 dark:bg-amber-900/30",
+      headerText: "text-amber-800 dark:text-amber-200",
+      badge: "bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300",
+      accent: "text-amber-600 dark:text-amber-400",
+    },
   };
+  const colorClasses = colorMap[color];
 
   // Count products per seller for this segment
   const sellerCounts = sellers.map(s => {
@@ -889,12 +908,11 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
                   </td>
                   {sellers.map(seller => (
                     <td key={seller.id} className="text-center px-3 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={product.sellers[seller.name] || false}
-                        onChange={() => onToggle(seller.id, product.codigoItem, product.sellers[seller.name] || false)}
-                        className={`w-4 h-4 rounded cursor-pointer ${color === "blue" ? "accent-blue-600" : "accent-amber-600"}`}
-                      />
+                      {product.sellers[seller.name] ? (
+                        <span className="text-emerald-600 font-bold text-sm">✓</span>
+                      ) : (
+                        <span className="text-slate-300 dark:text-slate-600">—</span>
+                      )}
                     </td>
                   ))}
                 </tr>
