@@ -4679,3 +4679,6 @@
 - [x] Novo Pedido - Carrinho: botão Salvar para confirmar/travar o item
 - [x] Novo Pedido - Carrinho: opção de excluir item confirmado
 - [x] Novo Pedido - Carrinho: opção de editar quantidade/preço de item confirmado
+- [x] Novo Pedido - Produtos: estoque à direita do nome (não à esquerda)
+- [x] Novo Pedido - Produtos: permitir quantidade 0 (zerar caixas)
+- [x] Novo Pedido - Produtos: tudo inline (preço, desconto, valor final, carrinho) sem precisar expandir
