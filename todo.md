@@ -4647,3 +4647,7 @@
 - [x] Renomear "Configurar Catálogos" para "Documentos/Catálogos"
 - [x] Criar pasta "Catálogos" e mover os 2 catálogos Bambusa para dentro dela
 - [x] Adicionar opção de mover arquivo para dentro de uma pasta (migrar documento)
+- [x] Métricas de Venda (gestor): mostrar vendas do dia com total e ranking dos vendedores
+- [x] Métricas de Venda (gestor): mostrar mês atual com total e ranking dos vendedores
+- [x] Métricas de Venda (gestor): mostrar mês anterior com total e ranking dos vendedores
+- [x] Métricas de Venda (gestor): drill-down ao clicar no vendedor (clientes, valores, informações completas)

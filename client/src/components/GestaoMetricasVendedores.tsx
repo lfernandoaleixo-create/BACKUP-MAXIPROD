@@ -1,11 +1,11 @@
 /**
  * GestaoMetricasVendedores - Painel consolidado de métricas de vendas
  * de todos os vendedores da Gestão Comercial.
- * Mostra: KPIs totais, ranking com barras de progresso, filtros de período.
+ * Mostra simultaneamente: Vendas do Dia, Mês Atual, Mês Anterior com rankings.
+ * Drill-down: clique no vendedor para ver detalhes (clientes, valores, etc.)
  */
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
 import {
   DollarSign,
   ShoppingCart,
@@ -17,58 +17,42 @@ import {
   Calendar,
   RefreshCw,
   ChevronRight,
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
-type SalesPeriod = "day" | "week" | "month" | "prev_month" | "3months" | "custom";
-
-const SALES_PERIODS: { label: string; value: SalesPeriod }[] = [
-  { label: "Hoje", value: "day" },
-  { label: "Semana", value: "week" },
-  { label: "Mês Atual", value: "month" },
-  { label: "Mês Anterior", value: "prev_month" },
-  { label: "3 Meses", value: "3months" },
-  { label: "Personalizado", value: "custom" },
-];
-
-function getSalesDateRange(period: SalesPeriod, customStart?: string, customEnd?: string): { startDate: string; endDate: string } {
+function getDateRanges() {
   const now = new Date();
   const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const today = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
-
-  switch (period) {
-    case "day":
-      return { startDate: today, endDate: today };
-    case "week": {
-      const dow = spNow.getDay();
-      const mondayOff = dow === 0 ? -6 : 1 - dow;
-      const monday = new Date(spNow);
-      monday.setDate(spNow.getDate() + mondayOff);
-      const startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
-      return { startDate, endDate: today };
-    }
-    case "month": {
-      const startDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-01`;
-      return { startDate, endDate: today };
-    }
-    case "prev_month": {
-      const prevMonth = new Date(spNow.getFullYear(), spNow.getMonth() - 1, 1);
-      const lastDay = new Date(spNow.getFullYear(), spNow.getMonth(), 0);
-      const startDate = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}-01`;
-      const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
-      return { startDate, endDate };
-    }
-    case "3months": {
-      const threeMonthsAgo = new Date(spNow.getFullYear(), spNow.getMonth() - 2, 1);
-      const startDate = `${threeMonthsAgo.getFullYear()}-${String(threeMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
-      return { startDate, endDate: today };
-    }
-    case "custom":
-      return { startDate: customStart || today, endDate: customEnd || today };
-  }
+  
+  // Day
+  const dayRange = { startDate: today, endDate: today };
+  
+  // Current month
+  const monthStart = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-01`;
+  const monthRange = { startDate: monthStart, endDate: today };
+  
+  // Previous month
+  const prevMonth = new Date(spNow.getFullYear(), spNow.getMonth() - 1, 1);
+  const lastDay = new Date(spNow.getFullYear(), spNow.getMonth(), 0);
+  const prevMonthStart = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}-01`;
+  const prevMonthEnd = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
+  const prevMonthRange = { startDate: prevMonthStart, endDate: prevMonthEnd };
+  
+  return { dayRange, monthRange, prevMonthRange };
 }
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function formatDate(dateStr: string) {
+  if (!dateStr) return "-";
+  const d = dateStr.substring(0, 10);
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
 }
 
 function getRankIcon(index: number) {
@@ -78,155 +62,166 @@ function getRankIcon(index: number) {
   return <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-slate-400">{index + 1}º</span>;
 }
 
+function getRankBgColor(index: number) {
+  if (index === 0) return "bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800";
+  if (index === 1) return "bg-slate-50 dark:bg-slate-700/30 border-slate-200 dark:border-slate-600";
+  if (index === 2) return "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800";
+  return "border-slate-100 dark:border-slate-700";
+}
+
 interface Props {
-  /** List of seller names that belong to this gestão comercial */
   sellerNames: string[];
 }
 
+type RankingItem = {
+  vendedor: string;
+  totalVendas: number;
+  qtdPedidos: number;
+  qtdClientes: number;
+  vendedoresReais?: string[];
+};
+
 export default function GestaoMetricasVendedores({ sellerNames }: Props) {
-  const [, navigate] = useLocation();
-  const [period, setPeriod] = useState<SalesPeriod>("month");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
+  const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
+  const [detailPeriod, setDetailPeriod] = useState<"day" | "month" | "prev_month">("month");
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    day: true,
+    month: true,
+    prev_month: true,
+  });
 
-  const { startDate, endDate } = useMemo(
-    () => getSalesDateRange(period, customStart, customEnd),
-    [period, customStart, customEnd]
+  const { dayRange, monthRange, prevMonthRange } = useMemo(() => getDateRanges(), []);
+
+  // Fetch rankings for all 3 periods simultaneously
+  const { data: dayRanking, isLoading: loadingDay } = trpc.salesMetrics.getVendedorRanking.useQuery(
+    dayRange,
+    { staleTime: 60 * 1000 }
   );
-
-  // Fetch the full ranking (all sellers)
-  const { data: ranking, isLoading } = trpc.salesMetrics.getVendedorRanking.useQuery(
-    { startDate, endDate },
+  const { data: monthRanking, isLoading: loadingMonth } = trpc.salesMetrics.getVendedorRanking.useQuery(
+    monthRange,
+    { staleTime: 60 * 1000 }
+  );
+  const { data: prevMonthRanking, isLoading: loadingPrevMonth } = trpc.salesMetrics.getVendedorRanking.useQuery(
+    prevMonthRange,
     { staleTime: 60 * 1000 }
   );
 
+  // Fetch detail when a seller is selected
+  const detailRange = detailPeriod === "day" ? dayRange : detailPeriod === "month" ? monthRange : prevMonthRange;
+  const { data: vendedorDetail, isLoading: loadingDetail } = trpc.salesMetrics.getVendedorDetail.useQuery(
+    { vendedor: selectedVendedor || "", startDate: detailRange.startDate, endDate: detailRange.endDate },
+    { enabled: !!selectedVendedor }
+  );
+
   // Filter ranking to only show sellers from this gestão comercial
-  // Use fuzzy matching: seller_permissions has short names (e.g. "DANIEL TAVARES")
-  // but ranking may have full names (e.g. "DANIEL DA CONCEIÇÃO TAVARES")
   const sellerNamesUpper = useMemo(() => sellerNames.map(n => n.toUpperCase()), [sellerNames]);
 
-  // Check if a ranking vendedor name matches any of our seller names (partial match)
-  // seller_permissions has short names like "DANIEL TAVARES", "ROMERA REPRESENTACOES"
-  // ranking has full names like "DANIEL DA CONCEIÇÃO TAVARES", "ROMERA REPRESENTACAO COMERCIAL..."
   const matchesSeller = (rankingName: string): string | null => {
     const upper = rankingName.toUpperCase();
-    // First try exact match
     for (const sn of sellerNamesUpper) {
       if (upper === sn) return sn;
     }
-    // Then try: all words of the short name appear in the full name
     for (const sn of sellerNamesUpper) {
       const shortWords = sn.split(/\s+/);
-      if (shortWords.length >= 2 && shortWords.every(w => upper.includes(w))) {
-        return sn;
-      }
+      if (shortWords.length >= 2 && shortWords.every(w => upper.includes(w))) return sn;
     }
-    // Try: first and last word of short name match first and last word of full name
     for (const sn of sellerNamesUpper) {
       const shortWords = sn.split(/\s+/);
       const fullWords = upper.split(/\s+/);
       if (shortWords.length >= 2 && fullWords.length >= 2) {
-        if (shortWords[0] === fullWords[0] && shortWords[shortWords.length - 1] === fullWords[fullWords.length - 1]) {
-          return sn;
-        }
+        if (shortWords[0] === fullWords[0] && shortWords[shortWords.length - 1] === fullWords[fullWords.length - 1]) return sn;
       }
     }
-    // Try: first word matches and it's a distinctive name (not a common word)
-    // This handles ROMERA REPRESENTACOES vs ROMERA REPRESENTACAO COMERCIAL...
     for (const sn of sellerNamesUpper) {
       const shortWords = sn.split(/\s+/);
       const fullWords = upper.split(/\s+/);
       if (shortWords.length >= 1 && fullWords.length >= 1 && shortWords[0].length >= 4) {
-        if (shortWords[0] === fullWords[0]) {
-          return sn;
-        }
+        if (shortWords[0] === fullWords[0]) return sn;
       }
     }
     return null;
   };
 
-  const filteredRanking = useMemo(() => {
+  const filterRanking = (ranking: RankingItem[] | undefined): RankingItem[] => {
     if (!ranking) return [];
-    return ranking.filter(r => matchesSeller(r.vendedor) !== null);
-  }, [ranking, sellerNamesUpper]);
-
-  // Also show sellers with 0 sales (not in ranking)
-  const allSellersWithMetrics = useMemo(() => {
-    // Track which seller_permissions names have been matched
-    const matchedSellerNames = new Set<string>();
-    const result: Array<{
-      vendedor: string;
-      totalVendas: number;
-      qtdPedidos: number;
-      qtdClientes: number;
-      vendedoresReais?: string[];
-    }> = [];
-
-    // Add sellers from ranking first (sorted by totalVendas desc)
-    for (const r of filteredRanking) {
-      result.push(r);
+    const filtered = ranking.filter(r => matchesSeller(r.vendedor) !== null);
+    // Add sellers with 0 sales
+    const matchedNames = new Set<string>();
+    for (const r of filtered) {
       const matched = matchesSeller(r.vendedor);
-      if (matched) matchedSellerNames.add(matched);
+      if (matched) matchedNames.add(matched);
     }
-
-    // Add sellers not in ranking with 0 values
+    const result = [...filtered];
     for (const name of sellerNames) {
-      if (!matchedSellerNames.has(name.toUpperCase())) {
-        result.push({
-          vendedor: name,
-          totalVendas: 0,
-          qtdPedidos: 0,
-          qtdClientes: 0,
-        });
+      if (!matchedNames.has(name.toUpperCase())) {
+        result.push({ vendedor: name, totalVendas: 0, qtdPedidos: 0, qtdClientes: 0 });
       }
     }
-
     return result;
-  }, [filteredRanking, sellerNames]);
+  };
 
-  // KPIs
-  const totalVendas = filteredRanking.reduce((sum, v) => sum + v.totalVendas, 0);
-  const totalPedidos = filteredRanking.reduce((sum, v) => sum + v.qtdPedidos, 0);
-  const totalClientes = filteredRanking.reduce((sum, v) => sum + v.qtdClientes, 0);
-  const ticketMedio = totalPedidos > 0 ? totalVendas / totalPedidos : 0;
-  const maxVendas = allSellersWithMetrics.length > 0 ? Math.max(...allSellersWithMetrics.map(s => s.totalVendas)) : 0;
+  const filteredDay = useMemo(() => filterRanking(dayRanking), [dayRanking, sellerNamesUpper]);
+  const filteredMonth = useMemo(() => filterRanking(monthRanking), [monthRanking, sellerNamesUpper]);
+  const filteredPrevMonth = useMemo(() => filterRanking(prevMonthRanking), [prevMonthRanking, sellerNamesUpper]);
 
-  const periodLabel = SALES_PERIODS.find(p => p.value === period)?.label || "";
+  const totalDay = filteredDay.reduce((s, v) => s + v.totalVendas, 0);
+  const totalMonth = filteredMonth.reduce((s, v) => s + v.totalVendas, 0);
+  const totalPrevMonth = filteredPrevMonth.reduce((s, v) => s + v.totalVendas, 0);
 
-  return (
-    <div className="space-y-4">
-      {/* Header with period filter */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
-              <TrendingUp className="w-4.5 h-4.5 text-white" />
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Detail view
+  if (selectedVendedor) {
+    const detailTotal = vendedorDetail?.reduce((s, c) => s + c.totalVendas, 0) || 0;
+    const periodLabel = detailPeriod === "day" ? "Hoje" : detailPeriod === "month" ? "Mês Atual" : "Mês Anterior";
+
+    return (
+      <div className="space-y-4">
+        {/* Back button */}
+        <button
+          onClick={() => setSelectedVendedor(null)}
+          className="flex items-center gap-2 text-sm text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar ao Ranking
+        </button>
+
+        {/* Seller header */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-sm">
+                {selectedVendedor.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                  {selectedVendedor}
+                </h3>
+                <p className="text-xs text-slate-400">Detalhes de vendas — {periodLabel}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200">
-                Métricas de Vendas — Equipe
-              </h3>
-              <p className="text-[10px] md:text-xs text-slate-400">
-                {sellerNames.length} vendedor{sellerNames.length !== 1 ? "es" : ""} · {periodLabel}
-              </p>
+            <div className="text-right">
+              <p className="text-lg font-bold text-green-700 dark:text-green-400">{formatCurrency(detailTotal)}</p>
+              <p className="text-[10px] text-slate-400">Total no período</p>
             </div>
           </div>
 
-          {/* Period chips */}
-          <div className="flex flex-wrap gap-1.5">
-            {SALES_PERIODS.map((p) => (
+          {/* Period tabs */}
+          <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
+            {([
+              { key: "day", label: "Hoje" },
+              { key: "month", label: "Mês Atual" },
+              { key: "prev_month", label: "Mês Anterior" },
+            ] as const).map(p => (
               <button
-                key={p.value}
-                onClick={() => {
-                  setPeriod(p.value);
-                  if (p.value === "custom") setShowCustom(true);
-                  else setShowCustom(false);
-                }}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
-                  period === p.value
+                key={p.key}
+                onClick={() => setDetailPeriod(p.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  detailPeriod === p.key
                     ? "bg-teal-600 text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-teal-50"
                 }`}
               >
                 {p.label}
@@ -235,28 +230,87 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
           </div>
         </div>
 
-        {/* Custom date inputs */}
-        {showCustom && period === "custom" && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <input
-              type="date"
-              value={customStart}
-              onChange={(e) => setCustomStart(e.target.value)}
-              className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-            />
-            <span className="text-xs text-slate-400">até</span>
-            <input
-              type="date"
-              value={customEnd}
-              onChange={(e) => setCustomEnd(e.target.value)}
-              className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-            />
+        {/* Detail content */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          {loadingDetail ? (
+            <div className="p-8 text-center">
+              <RefreshCw className="w-5 h-5 text-teal-500 animate-spin mx-auto" />
+              <p className="text-sm text-slate-400 mt-2">Carregando detalhes...</p>
+            </div>
+          ) : !vendedorDetail || vendedorDetail.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">
+              <ShoppingCart className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+              <p className="text-sm">Nenhuma venda encontrada para {selectedVendedor} no período</p>
+            </div>
+          ) : (
+            <>
+              {/* Summary */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold">{vendedorDetail.length}</span> clientes atendidos
+                  </p>
+                  <p className="text-sm font-bold text-teal-700 dark:text-teal-400">
+                    Total: {formatCurrency(detailTotal)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Client list */}
+              <div className="divide-y divide-slate-50 dark:divide-slate-700 max-h-[500px] overflow-y-auto">
+                {vendedorDetail.map((c) => (
+                  <div key={c.cliente} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0 flex-1 mr-3">
+                        <p className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate">{c.cliente}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {c.qtdPedidos} pedido{c.qtdPedidos > 1 ? "s" : ""} • Último: {formatDate(c.ultimoPedido)}
+                        </p>
+                        {c.estadosConfiguraveis && c.estadosConfiguraveis.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {c.estadosConfiguraveis.map((ec: string) => (
+                              <span key={ec} className="text-[9px] px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-800">{ec}</span>
+                            ))}
+                            {c.segmentos && c.segmentos.map((seg: string) => (
+                              <span key={seg} className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800">{seg}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <p className="font-bold text-sm text-green-700 dark:text-green-400 flex-shrink-0">{formatCurrency(c.totalVendas)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Main view: 3 ranking sections
+  const isLoading = loadingDay || loadingMonth || loadingPrevMonth;
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
+            <TrendingUp className="w-4.5 h-4.5 text-white" />
           </div>
-        )}
+          <div>
+            <h3 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200">
+              Métricas de Vendas — Visão Geral
+            </h3>
+            <p className="text-[10px] md:text-xs text-slate-400">
+              {sellerNames.length} vendedor{sellerNames.length !== 1 ? "es" : ""} · Clique no vendedor para ver detalhes
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center py-8">
           <RefreshCw className="w-5 h-5 text-teal-500 animate-spin" />
@@ -265,128 +319,204 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
 
       {!isLoading && (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
+                  <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Vendas Hoje</span>
+              </div>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">{formatCurrency(totalDay)}</p>
+              <p className="text-[10px] text-slate-400 mt-1">{filteredDay.filter(v => v.totalVendas > 0).length} vendedores com vendas</p>
+            </div>
+
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
                   <DollarSign className="w-3.5 h-3.5 text-green-600" />
                 </div>
-                <span className="text-[10px] text-slate-500 uppercase font-medium">Total Vendas</span>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Mês Atual</span>
               </div>
-              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 truncate" title={formatCurrency(totalVendas)}>
-                {formatCurrency(totalVendas)}
-              </p>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">{formatCurrency(totalMonth)}</p>
+              <p className="text-[10px] text-slate-400 mt-1">{filteredMonth.filter(v => v.totalVendas > 0).length} vendedores com vendas</p>
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                  <ShoppingCart className="w-3.5 h-3.5 text-blue-600" />
+                  <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
                 </div>
-                <span className="text-[10px] text-slate-500 uppercase font-medium">Pedidos</span>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Mês Anterior</span>
               </div>
-              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100">
-                {totalPedidos}
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
-                  <Users className="w-3.5 h-3.5 text-purple-600" />
-                </div>
-                <span className="text-[10px] text-slate-500 uppercase font-medium">Clientes</span>
-              </div>
-              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100">
-                {totalClientes}
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-600" />
-                </div>
-                <span className="text-[10px] text-slate-500 uppercase font-medium">Ticket Médio</span>
-              </div>
-              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 truncate" title={formatCurrency(ticketMedio)}>
-                {formatCurrency(ticketMedio)}
-              </p>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">{formatCurrency(totalPrevMonth)}</p>
+              <p className="text-[10px] text-slate-400 mt-1">{filteredPrevMonth.filter(v => v.totalVendas > 0).length} vendedores com vendas</p>
             </div>
           </div>
 
-          {/* Ranking de vendedores */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-amber-500" />
-                  <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                    Ranking de Vendedores
-                  </h4>
-                </div>
-                <span className="text-[10px] text-slate-400">{periodLabel}</span>
-              </div>
-            </div>
+          {/* Ranking: Vendas do Dia */}
+          <RankingSection
+            title="Vendas do Dia"
+            subtitle="Hoje"
+            icon={<Calendar className="w-4 h-4 text-orange-500" />}
+            ranking={filteredDay}
+            total={totalDay}
+            expanded={expandedSections.day}
+            onToggle={() => toggleSection("day")}
+            onSelectVendedor={(name) => { setSelectedVendedor(name); setDetailPeriod("day"); }}
+            accentColor="orange"
+          />
 
-            {allSellersWithMetrics.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm">
-                Nenhum vendedor cadastrado.
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-50 dark:divide-slate-700">
-                {allSellersWithMetrics.map((seller, idx) => {
-                  const percentual = maxVendas > 0 ? (seller.totalVendas / maxVendas) * 100 : 0;
-                  const percentOfTotal = totalVendas > 0 ? (seller.totalVendas / totalVendas) * 100 : 0;
+          {/* Ranking: Mês Atual */}
+          <RankingSection
+            title="Mês Atual"
+            subtitle="Acumulado"
+            icon={<DollarSign className="w-4 h-4 text-green-500" />}
+            ranking={filteredMonth}
+            total={totalMonth}
+            expanded={expandedSections.month}
+            onToggle={() => toggleSection("month")}
+            onSelectVendedor={(name) => { setSelectedVendedor(name); setDetailPeriod("month"); }}
+            accentColor="green"
+          />
 
-                  return (
-                    <div
-                      key={seller.vendedor}
-                      className="flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group"
-                      onClick={() => {
-                        // Navigate to seller detail page if we can find their ID
-                        // For now just show the detail inline
-                      }}
-                    >
-                      {/* Rank icon */}
-                      <div className="flex-shrink-0 w-8 text-center">
-                        {getRankIcon(idx)}
-                      </div>
-
-                      {/* Seller info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            {seller.vendedor}
-                          </p>
-                          <p className="text-xs md:text-sm font-bold text-green-700 dark:text-green-400 ml-2 flex-shrink-0">
-                            {formatCurrency(seller.totalVendas)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 text-[10px] md:text-xs text-slate-500">
-                          <span>{seller.qtdPedidos} pedido{seller.qtdPedidos !== 1 ? "s" : ""}</span>
-                          <span>{seller.qtdClientes} cliente{seller.qtdClientes !== 1 ? "s" : ""}</span>
-                          {percentOfTotal > 0 && <span>{percentOfTotal.toFixed(1)}% do total</span>}
-                        </div>
-                        {/* Progress bar */}
-                        <div className="mt-1.5 h-1.5 bg-slate-100 dark:bg-slate-600 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full transition-all duration-500"
-                            style={{ width: `${percentual}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Arrow */}
-                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-teal-500 transition-colors flex-shrink-0" />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Ranking: Mês Anterior */}
+          <RankingSection
+            title="Mês Anterior"
+            subtitle="Fechado"
+            icon={<TrendingUp className="w-4 h-4 text-blue-500" />}
+            ranking={filteredPrevMonth}
+            total={totalPrevMonth}
+            expanded={expandedSections.prev_month}
+            onToggle={() => toggleSection("prev_month")}
+            onSelectVendedor={(name) => { setSelectedVendedor(name); setDetailPeriod("prev_month"); }}
+            accentColor="blue"
+          />
         </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Ranking Section Component
+// ============================================================
+interface RankingSectionProps {
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  ranking: RankingItem[];
+  total: number;
+  expanded: boolean;
+  onToggle: () => void;
+  onSelectVendedor: (name: string) => void;
+  accentColor: "orange" | "green" | "blue";
+}
+
+function RankingSection({ title, subtitle, icon, ranking, total, expanded, onToggle, onSelectVendedor, accentColor }: RankingSectionProps) {
+  const maxVendas = ranking.length > 0 ? Math.max(...ranking.map(s => s.totalVendas)) : 0;
+  const activeCount = ranking.filter(v => v.totalVendas > 0).length;
+
+  const accentClasses = {
+    orange: {
+      header: "from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-900/5",
+      badge: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+      bar: "from-orange-400 to-amber-500",
+    },
+    green: {
+      header: "from-green-50 to-emerald-100/50 dark:from-green-900/10 dark:to-green-900/5",
+      badge: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+      bar: "from-teal-400 to-emerald-500",
+    },
+    blue: {
+      header: "from-blue-50 to-indigo-100/50 dark:from-blue-900/10 dark:to-blue-900/5",
+      badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      bar: "from-blue-400 to-indigo-500",
+    },
+  };
+
+  const colors = accentClasses[accentColor];
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between p-4 bg-gradient-to-r ${colors.header} cursor-pointer hover:opacity-90 transition-opacity`}
+      >
+        <div className="flex items-center gap-3">
+          {icon}
+          <div className="text-left">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{title}</h4>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${colors.badge}`}>{subtitle}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              {activeCount} vendedor{activeCount !== 1 ? "es" : ""} com vendas
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100">{formatCurrency(total)}</p>
+          {expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      {/* Ranking list */}
+      {expanded && (
+        <div className="divide-y divide-slate-50 dark:divide-slate-700">
+          {ranking.length === 0 ? (
+            <div className="p-6 text-center text-slate-400 text-sm">
+              Nenhum vendedor cadastrado.
+            </div>
+          ) : (
+            ranking.map((seller, idx) => {
+              const percentual = maxVendas > 0 ? (seller.totalVendas / maxVendas) * 100 : 0;
+              const percentOfTotal = total > 0 ? (seller.totalVendas / total) * 100 : 0;
+
+              return (
+                <div
+                  key={seller.vendedor}
+                  className={`flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group border-l-3 ${getRankBgColor(idx)}`}
+                  onClick={() => onSelectVendedor(seller.vendedor)}
+                >
+                  {/* Rank icon */}
+                  <div className="flex-shrink-0 w-8 text-center">
+                    {getRankIcon(idx)}
+                  </div>
+
+                  {/* Seller info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        {seller.vendedor}
+                      </p>
+                      <p className="text-xs md:text-sm font-bold text-green-700 dark:text-green-400 ml-2 flex-shrink-0">
+                        {formatCurrency(seller.totalVendas)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] md:text-xs text-slate-500">
+                      <span>{seller.qtdPedidos} pedido{seller.qtdPedidos !== 1 ? "s" : ""}</span>
+                      <span>{seller.qtdClientes} cliente{seller.qtdClientes !== 1 ? "s" : ""}</span>
+                      {percentOfTotal > 0 && <span>{percentOfTotal.toFixed(1)}% do total</span>}
+                    </div>
+                    {/* Progress bar */}
+                    <div className="mt-1.5 h-1.5 bg-slate-100 dark:bg-slate-600 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${colors.bar} rounded-full transition-all duration-500`}
+                        style={{ width: `${percentual}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-teal-500 transition-colors flex-shrink-0" />
+                </div>
+              );
+            })
+          )}
+        </div>
       )}
     </div>
   );

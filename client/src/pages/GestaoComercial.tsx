@@ -482,6 +482,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       <CatalogMatrixView gestorName={card.name} />
                     ) : activeConfig === "senha" ? (
                       <PasswordManagerView gestorName={card.name} />
+                    ) : activeConfig === "metricas" ? (
+                      <GestaoMetricasVendedores sellerNames={vendedores} />
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -497,7 +499,6 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                             catalogos: { tab: "configuracoes", section: "catalogos" },
                             senha: { tab: "configuracoes", section: "senha" },
                             pedidos: { tab: "pedidos" },
-                            metricas: { tab: "vendas" },
                           };
                           const target = activeConfig ? tabMap[activeConfig] || { tab: "estoque" } : { tab: "estoque" };
                           const navUrl = target.section
@@ -514,8 +515,6 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
-                
-
                               </div>
                               <div className="flex items-center gap-2">
                                 {perm && (
@@ -527,7 +526,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                           );
                         })}
                       </div>
-                    )}
+                    )
                   </div>
                 )}
               </div>
