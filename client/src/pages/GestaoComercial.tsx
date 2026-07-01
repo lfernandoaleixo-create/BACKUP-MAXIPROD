@@ -416,7 +416,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
                       >
                         <FolderOpen className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Documentos</span>
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Documentos/Catálogos</span>
                       </button>
                       <button
                         onClick={() => setActiveConfig("senha")}
