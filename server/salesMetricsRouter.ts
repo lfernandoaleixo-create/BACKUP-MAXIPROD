@@ -106,8 +106,27 @@ function categorizeProduct(descricao: string, grupoDesc: string): 'madeira' | 'b
   return null;
 }
 
+// Deduplication: if a fetch is already in progress, reuse the same promise
+let vendedorFetchPromise: Promise<Record<string, string>> | null = null;
+
 async function fetchVendedorMap(): Promise<Record<string, string>> {
   const now = Date.now();
+  if (now - vendedorCacheTimestamp < VENDEDOR_CACHE_TTL && Object.keys(vendedorCacheMap).length > 0) {
+    return vendedorCacheMap;
+  }
+  // If already fetching, wait for the same result
+  if (vendedorFetchPromise) return vendedorFetchPromise;
+  vendedorFetchPromise = _doFetchVendedorMap();
+  try {
+    return await vendedorFetchPromise;
+  } finally {
+    vendedorFetchPromise = null;
+  }
+}
+
+async function _doFetchVendedorMap(): Promise<Record<string, string>> {
+  const now = Date.now();
+  // Double-check cache after acquiring "lock"
   if (now - vendedorCacheTimestamp < VENDEDOR_CACHE_TTL && Object.keys(vendedorCacheMap).length > 0) {
     return vendedorCacheMap;
   }
@@ -137,6 +156,8 @@ async function fetchVendedorMap(): Promise<Record<string, string>> {
         }
       }`;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       const resp = await fetch("https://api.maxiprod.com.br/graphql/", {
         method: "POST",
         headers: {
@@ -144,7 +165,9 @@ async function fetchVendedorMap(): Promise<Record<string, string>> {
           Authorization: `Basic ${token}`,
         },
         body: JSON.stringify({ query }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const data = await resp.json();
       if (data.errors) {
@@ -1413,3 +1436,10 @@ export const salesMetricsRouter = router({
       return { months, segmentos, data, trimestrais, semestrais };
     }),
 });
+
+// Pre-warm vendedor cache on server start to avoid slow first load
+setTimeout(() => {
+  fetchVendedorMap().then(() => {
+    console.log("[SalesMetrics] Vendedor cache pre-warmed on startup");
+  }).catch(() => {});
+}, 3000);

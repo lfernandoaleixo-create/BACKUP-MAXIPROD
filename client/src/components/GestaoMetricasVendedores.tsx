@@ -93,17 +93,17 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   const { dayRange, monthRange, prevMonthRange } = useMemo(() => getDateRanges(), []);
 
   // Fetch rankings for all 3 periods simultaneously
-  const { data: dayRanking, isLoading: loadingDay } = trpc.salesMetrics.getVendedorRanking.useQuery(
+  const { data: dayRanking, isLoading: loadingDay, isError: errorDay } = trpc.salesMetrics.getVendedorRanking.useQuery(
     dayRange,
-    { staleTime: 60 * 1000 }
+    { staleTime: 60 * 1000, retry: 1 }
   );
-  const { data: monthRanking, isLoading: loadingMonth } = trpc.salesMetrics.getVendedorRanking.useQuery(
+  const { data: monthRanking, isLoading: loadingMonth, isError: errorMonth } = trpc.salesMetrics.getVendedorRanking.useQuery(
     monthRange,
-    { staleTime: 60 * 1000 }
+    { staleTime: 60 * 1000, retry: 1 }
   );
-  const { data: prevMonthRanking, isLoading: loadingPrevMonth } = trpc.salesMetrics.getVendedorRanking.useQuery(
+  const { data: prevMonthRanking, isLoading: loadingPrevMonth, isError: errorPrevMonth } = trpc.salesMetrics.getVendedorRanking.useQuery(
     prevMonthRange,
-    { staleTime: 60 * 1000 }
+    { staleTime: 60 * 1000, retry: 1 }
   );
 
   // Fetch detail when a seller is selected
@@ -290,7 +290,8 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   }
 
   // Main view: 3 ranking sections
-  const isLoading = loadingDay || loadingMonth || loadingPrevMonth;
+  const isLoading = (loadingDay && !errorDay) || (loadingMonth && !errorMonth) || (loadingPrevMonth && !errorPrevMonth);
+  const hasAnyError = errorDay || errorMonth || errorPrevMonth;
 
   return (
     <div className="space-y-4">
@@ -314,6 +315,12 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
       {isLoading && (
         <div className="flex items-center justify-center py-8">
           <RefreshCw className="w-5 h-5 text-teal-500 animate-spin" />
+        </div>
+      )}
+
+      {hasAnyError && !isLoading && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
+          <p className="text-sm text-amber-700 dark:text-amber-300">Alguns dados podem estar indisponíveis temporariamente. Tente novamente em alguns segundos.</p>
         </div>
       )}
 
