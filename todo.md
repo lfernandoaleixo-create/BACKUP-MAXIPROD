@@ -4684,3 +4684,7 @@
 - [x] Novo Pedido - Produtos: tudo inline (preço, desconto, valor final, carrinho) sem precisar expandir
 - [x] Estoque mobile: adicionar legenda clara explicando cada cor/ícone (carrinho=disponível, fábrica=PO, verde=projetado)
 - [x] Estoque mobile: garantir que nada fique sobreposto ou confuso (labels Disp:/PO:/Proj: + nota sobre negativo)
+- [x] Novo Pedido - Produtos: layout em linha única com labels acima (Caixas disponíveis → Valor da Caixa → Desconto % → Valor com desconto → Qtd. pedido)
+- [x] Novo Pedido - Produtos: corrigir input de desconto (type="text" + inputMode="decimal" em vez de type="number")
+- [x] Novo Pedido - Produtos: botão OK para travar desconto escolhido (locked state com barra verde)
+- [x] Novo Pedido - Produtos: legendas acima de cada elemento (Caixas disponíveis, Valor da Caixa, Desconto %, Valor com desconto, Qtd. pedido)
