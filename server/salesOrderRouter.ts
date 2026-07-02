@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -1159,6 +1159,21 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) return { success: false };
+      // Delete related notifications (pedido_vendedor type with this orderId in metadata)
+      const notifications = await db.select().from(systemNotifications)
+        .where(eq(systemNotifications.type, "pedido_vendedor"));
+      const relatedNotifIds = notifications
+        .filter(n => {
+          try {
+            const meta = typeof n.metadata === "string" ? JSON.parse(n.metadata) : n.metadata;
+            return meta?.orderId === input.orderId;
+          } catch { return false; }
+        })
+        .map(n => n.id);
+      if (relatedNotifIds.length > 0) {
+        await db.delete(notificationReads).where(inArray(notificationReads.notificationId, relatedNotifIds));
+        await db.delete(systemNotifications).where(inArray(systemNotifications.id, relatedNotifIds));
+      }
       // Delete items first (foreign key)
       await db.delete(salesOrderRequestItems).where(eq(salesOrderRequestItems.orderId, input.orderId));
       // Delete the order
