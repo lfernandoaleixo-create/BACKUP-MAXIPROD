@@ -3023,7 +3023,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [reservePO, setReservePO] = useState<{ codigoItem: string; descricaoItem: string; referencia: string; dataEntrega: string; quantidade: number } | null>(null);
   // Product pricing calculator state: { [codigoItem]: { discount%, finalValue, quantity } }
-  const [productCalc, setProductCalc] = useState<Record<string, { discount: string; finalValue: string; quantity: number; showQty: boolean }>>({});
+  const [productCalc, setProductCalc] = useState<Record<string, { discount: string; finalValue: string; quantity: number; showQty: boolean; locked: boolean }>>({});
   const [editingCartIdx, setEditingCartIdx] = useState<number | null>(null);
 
   // Payment
