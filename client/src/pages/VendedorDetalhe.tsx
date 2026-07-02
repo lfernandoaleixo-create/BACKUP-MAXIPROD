@@ -3685,7 +3685,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                         <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                           <div className="flex flex-col items-center">
-                            <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide">Código</span>
+                            <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium tracking-wide">Código do Produto</span>
                             <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
                           </div>
                           {dims && (
