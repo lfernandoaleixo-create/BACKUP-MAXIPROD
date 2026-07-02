@@ -3594,12 +3594,18 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                     <ShoppingCart className="w-3.5 h-3.5" />
                                   </button>
                                 ) : (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
                                     <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded overflow-hidden bg-white dark:bg-slate-800">
                                       <button onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))} className="px-1.5 py-1 hover:bg-emerald-100 text-emerald-700 font-bold text-xs">−</button>
                                       <input type="text" inputMode="numeric" value={calc.quantity} onChange={(e) => { const v = Math.max(0, parseInt(e.target.value) || 0); updateCalc('quantity', v); }} className="w-10 text-center py-1 text-xs font-bold border-x border-emerald-200 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none" />
                                       <button onClick={() => updateCalc('quantity', calc.quantity + 1)} className="px-1.5 py-1 hover:bg-emerald-100 text-emerald-700 font-bold text-xs">+</button>
                                     </div>
+                                    {/* Live subtotal */}
+                                    {calc.quantity > 0 && (
+                                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                        = {formatCurrencySales(calc.quantity * effectivePrice)}
+                                      </span>
+                                    )}
                                     <button
                                       onClick={() => { addProduct(p, effectivePrice, calc.quantity); updateCalc('showQty', false); updateCalc('quantity', 1); }}
                                       className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold shadow-sm"
@@ -3700,7 +3706,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                     <ShoppingCart className="w-3.5 h-3.5" /> Adicionar
                                   </button>
                                 ) : (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
                                     <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
                                       <button onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))} className="px-2 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm">−</button>
                                       <input
@@ -3712,6 +3718,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                       />
                                       <button onClick={() => updateCalc('quantity', calc.quantity + 1)} className="px-2 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm">+</button>
                                     </div>
+                                    {/* Live subtotal */}
+                                    {calc.quantity > 0 && (
+                                      <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg whitespace-nowrap">
+                                        = {formatCurrencySales(calc.quantity * effectivePrice)}
+                                      </span>
+                                    )}
                                     <button
                                       onClick={() => { addProduct(p, effectivePrice, calc.quantity); updateCalc('showQty', false); updateCalc('quantity', 1); }}
                                       className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm"
@@ -3763,6 +3775,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                   +
                                 </button>
                               </div>
+                              {/* Live subtotal */}
+                              {calc.quantity > 0 && effectivePrice > 0 && (
+                                <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg whitespace-nowrap">
+                                  = {formatCurrencySales(calc.quantity * effectivePrice)}
+                                </span>
+                              )}
                               <button
                                 onClick={() => {
                                   addProduct(p, effectivePrice, calc.quantity);

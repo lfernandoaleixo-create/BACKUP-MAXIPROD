@@ -142,7 +142,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     }
                     setTimeout(() => { window.location.reload(); }, 300);
                   }}
-                  className="relative z-10 w-9 h-9 min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-teal-600 dark:text-amber-400 active:scale-90 bg-teal-50 dark:bg-amber-900/30 active:bg-teal-200 dark:active:bg-amber-700/50 transition-all border border-teal-200 dark:border-amber-600/40 touch-manipulation"
+                  className="relative z-10 w-9 h-9 min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-teal-600 dark:text-amber-400 bg-teal-50 dark:bg-amber-900/30 border border-teal-200 dark:border-amber-600/40 touch-manipulation transition-all duration-150 active:scale-75 active:bg-teal-200 dark:active:bg-amber-700/50 active:shadow-inner"
                   title="Atualizar versão"
                 >
                   <RefreshCw className="w-4.5 h-4.5" />
@@ -316,8 +316,23 @@ export default function TopNav({ rightContent }: TopNavProps) {
             })}
           </nav>
 
-          {/* Right: notification bell + operator info + logout */}
+          {/* Right: refresh + notification bell + operator info + logout */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(regs => {
+                    regs.forEach(r => r.unregister());
+                  });
+                  caches.keys().then(names => names.forEach(n => caches.delete(n)));
+                }
+                setTimeout(() => { window.location.reload(); }, 300);
+              }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-teal-600 dark:text-amber-400 bg-teal-50 dark:bg-amber-900/30 border border-teal-200 dark:border-amber-600/40 hover:bg-teal-100 dark:hover:bg-amber-800/40 transition-all duration-150 active:scale-75 active:shadow-inner"
+              title="Atualizar versão"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
             {operator && ["Erica", "Maria", "Danubia", "Guilherme"].includes(operator.name) && (
               <NotificationBell />
             )}

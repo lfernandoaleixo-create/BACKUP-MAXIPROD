@@ -4688,3 +4688,6 @@
 - [x] Novo Pedido - Produtos: corrigir input de desconto (type="text" + inputMode="decimal" em vez de type="number")
 - [x] Novo Pedido - Produtos: botão OK para travar desconto escolhido (locked state com barra verde)
 - [x] Novo Pedido - Produtos: legendas acima de cada elemento (Caixas disponíveis, Valor da Caixa, Desconto %, Valor com desconto, Qtd. pedido)
+- [x] Novo Pedido - Produtos: soma automática em tempo real (subtotal = qtd × preço com desconto) ao lado do seletor de quantidade
+- [x] Desktop/Tablet: botão Atualizar (RefreshCw) no header igual ao mobile - limpa cache e recarrega
+- [x] Mobile: botão Atualizar com efeito "afundar" (active:scale-75 + active:shadow-inner) para feedback tátil
