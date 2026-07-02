@@ -3017,6 +3017,8 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     precoVendedor: number | null;
     grupo: string;
     disponivel: string;
+    pesoBrutoCaixa?: number; // peso bruto por caixa em kg
+    dimsStr?: string; // "LxAxP" em cm
   }
   const [items, setItems] = useState<OrderItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
@@ -3113,6 +3115,10 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     const precoVendedor = product.precoVendedor ? Number(product.precoVendedor) : null;
     const precoUnit = customPrice || precoVendedor || (product.precoMinimo ? Number(product.precoMinimo) : 0);
     const qty = customQty || 1;
+    const fatorProd = Number(product.unidadeDeVendaFator) || 1;
+    const pesoBrutoCaixa = product.pesoBruto && Number(product.pesoBruto) > 0 ? Number(product.pesoBruto) * fatorProd : undefined;
+    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\d,.]+)[xX]([\d,.]+)[xX]([\d,.]+)/) : null;
+    const dimsStr = dimsMatch ? `${dimsMatch[1]}x${dimsMatch[2]}x${dimsMatch[3]}` : undefined;
     setItems(prev => [...prev, {
       codigoItem: product.codigoItem,
       descricaoItem: product.descricaoItem,
@@ -3123,6 +3129,8 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
       precoVendedor: precoVendedor,
       grupo: product.grupo || "",
       disponivel: product.disponivel || "0",
+      pesoBrutoCaixa,
+      dimsStr,
     }]);
     setProductSearch("");
     // Clear calculator state for this product
@@ -3578,6 +3586,25 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                 <span className="text-orange-500 ml-1">({(((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100).toFixed(1)}% desc.)</span>
                               )}
                             </p>
+                            {/* Weight + Volume in saved cart item */}
+                            {(item.pesoBrutoCaixa || item.dimsStr) && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                {item.pesoBrutoCaixa && item.pesoBrutoCaixa > 0 && (
+                                  <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded">
+                                    ⚖️ {(item.pesoBrutoCaixa * item.quantidade).toFixed(1)} kg
+                                  </span>
+                                )}
+                                {item.dimsStr && (() => {
+                                  const d = item.dimsStr!.split('x').map(v => parseFloat(v.replace(',', '.')));
+                                  const vol = d.length === 3 ? (d[0] * d[1] * d[2] / 1000000) * item.quantidade : 0;
+                                  return vol > 0 ? (
+                                    <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded">
+                                      📦 {vol.toFixed(3)} m³
+                                    </span>
+                                  ) : null;
+                                })()}
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-1 shrink-0 ml-2">
                             <button
@@ -3666,67 +3693,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                       {/* Row 3: ALL PRICING IN ONE LINE with labels above */}
                       {precoBase > 0 && (
                         <div className="mt-2.5">
-                          {calc.locked ? (
-                            /* Locked state - show confirmed price in green bar */
-                            <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg px-3 py-2">
-                              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✓ Preço travado:</span>
-                              <span className="text-sm font-bold text-emerald-800 dark:text-emerald-200">{formatCurrencySales(effectivePrice)}</span>
-                              {calc.discount && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">({calc.discount}% desc.)</span>}
-                              <button
-                                onClick={() => updateCalc('locked', false)}
-                                className="ml-auto px-2 py-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded hover:bg-amber-200 transition-colors"
-                              >
-                                ✏️ Editar
-                              </button>
-                              {/* Cart section when locked */}
-                              <div className="flex items-center gap-1 ml-2">
-                                {!calc.showQty ? (
-                                  <button
-                                    onClick={() => updateCalc('showQty', true)}
-                                    className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm"
-                                  >
-                                    <ShoppingCart className="w-3.5 h-3.5" />
-                                  </button>
-                                ) : (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded overflow-hidden bg-white dark:bg-slate-800">
-                                      <button onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))} className="px-1.5 py-1 hover:bg-emerald-100 text-emerald-700 font-bold text-xs">−</button>
-                                      <input type="text" inputMode="numeric" value={calc.quantity} onChange={(e) => { const v = Math.max(0, parseInt(e.target.value) || 0); updateCalc('quantity', v); }} className="w-10 text-center py-1 text-xs font-bold border-x border-emerald-200 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none" />
-                                      <button onClick={() => updateCalc('quantity', calc.quantity + 1)} className="px-1.5 py-1 hover:bg-emerald-100 text-emerald-700 font-bold text-xs">+</button>
-                                    </div>
-                                    {/* Live subtotal */}
-                                    {calc.quantity > 0 && (
-                                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                        = {formatCurrencySales(calc.quantity * effectivePrice)}
-                                      </span>
-                                    )}
-                                    {/* Weight + Volume totals */}
-                                    {calc.quantity > 0 && (p.pesoBruto || dims) && (
-                                      <div className="flex items-center gap-1.5 ml-1">
-                                        {p.pesoBruto && Number(p.pesoBruto) > 0 && (
-                                          <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                            ⚖️ {(Number(p.pesoBruto) * fator * calc.quantity).toFixed(1)} kg
-                                          </span>
-                                        )}
-                                        {dims && (
-                                          <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                            📦 {((parseFloat(dims[1].replace(',', '.')) * parseFloat(dims[2].replace(',', '.')) * parseFloat(dims[3].replace(',', '.')) / 1000000) * calc.quantity).toFixed(3)} m³
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    <button
-                                      onClick={() => { addProduct(p, effectivePrice, calc.quantity); updateCalc('showQty', false); updateCalc('quantity', 1); }}
-                                      className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold shadow-sm"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            /* Editable state - single line: Stock → Price → Desc% → Final → Cart */
+                            {/* Single unified layout - same structure whether locked or not */}
                             <div className="flex flex-wrap items-end gap-2 sm:gap-3">
                               {/* Stock */}
                               <div className="flex flex-col items-center">
@@ -3750,11 +3717,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                               {/* Discount % */}
                               <div className="flex flex-col items-center">
                                 <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-medium mb-0.5 whitespace-nowrap">Desconto %</span>
-                                <div className="flex items-center gap-0.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-1.5 py-1">
+                                <div className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1 ${calc.locked ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700' : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700'}`}>
                                   <input
                                     type="text"
                                     inputMode="decimal"
                                     placeholder="0"
+                                    disabled={calc.locked}
                                     value={calc.discount !== '' ? calc.discount : (calc.finalValue && precoBase > 0 && parseFloat(calc.finalValue.replace(',', '.')) > 0 ? ((1 - parseFloat(calc.finalValue.replace(',', '.')) / precoBase) * 100).toFixed(1) : '')}
                                     onChange={(e) => {
                                       const v = e.target.value.replace(/[^0-9.,]/g, '');
@@ -3763,21 +3731,22 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                         [p.codigoItem]: { ...calc, discount: v, finalValue: '' }
                                       }));
                                     }}
-                                    className="w-12 px-1 py-0.5 text-xs font-bold text-center border border-amber-300 dark:border-amber-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                    className={`w-12 px-1 py-0.5 text-xs font-bold text-center border rounded focus:outline-none ${calc.locked ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 cursor-not-allowed' : 'border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-amber-400'}`}
                                   />
-                                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">%</span>
+                                  <span className={`text-[10px] font-bold ${calc.locked ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>%</span>
                                 </div>
                               </div>
 
-                              {/* Final value after discount */}
+                              {/* Final value after discount - HIGHLIGHTED when locked */}
                               <div className="flex flex-col items-center">
-                                <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-medium mb-0.5 whitespace-nowrap">Valor com desconto</span>
-                                <div className="flex items-center gap-0.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg px-1.5 py-1">
-                                  <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">R$</span>
+                                <span className={`text-[8px] sm:text-[9px] font-medium mb-0.5 whitespace-nowrap ${calc.locked ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>{calc.locked ? '✓ Valor Final' : 'Valor com desconto'}</span>
+                                <div className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1 ${calc.locked ? 'bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-400 dark:border-emerald-500 shadow-md' : 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700'}`}>
+                                  <span className={`text-[10px] font-bold ${calc.locked ? 'text-emerald-700 dark:text-emerald-300' : 'text-indigo-600 dark:text-indigo-400'}`}>R$</span>
                                   <input
                                     type="text"
                                     inputMode="decimal"
                                     placeholder="0,00"
+                                    disabled={calc.locked}
                                     value={calc.finalValue !== '' ? calc.finalValue : (calc.discount && discountPct > 0 ? finalFromDiscount.toFixed(2) : '')}
                                     onChange={(e) => {
                                       const v = e.target.value.replace(/[^0-9.,]/g, '');
@@ -3786,21 +3755,30 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                         [p.codigoItem]: { ...calc, finalValue: v, discount: '' }
                                       }));
                                     }}
-                                    className="w-16 px-1 py-0.5 text-xs font-bold text-center border border-indigo-300 dark:border-indigo-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    className={`w-16 px-1 py-0.5 text-xs font-bold text-center border rounded focus:outline-none ${calc.locked ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 text-sm cursor-not-allowed' : 'border-indigo-300 dark:border-indigo-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-indigo-400'}`}
                                   />
                                 </div>
                               </div>
 
-                              {/* OK button to lock */}
+                              {/* OK / Editar button */}
                               {(calc.discount || calc.finalValue) && (
                                 <div className="flex flex-col items-center">
                                   <span className="text-[8px] sm:text-[9px] text-transparent font-medium mb-0.5">.</span>
-                                  <button
-                                    onClick={() => updateCalc('locked', true)}
-                                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
-                                  >
-                                    OK
-                                  </button>
+                                  {calc.locked ? (
+                                    <button
+                                      onClick={() => updateCalc('locked', false)}
+                                      className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-800/40 border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 rounded-lg text-[10px] font-bold transition-all"
+                                    >
+                                      ✏️ Editar
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => updateCalc('locked', true)}
+                                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
+                                    >
+                                      OK
+                                    </button>
+                                  )}
                                 </div>
                               )}
 
@@ -3863,7 +3841,22 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                 <span className="text-[9px] text-red-500 font-bold self-end pb-1.5">⚠️ Abaixo mín.</span>
                               )}
                             </div>
-                          )}
+                            {/* Highlighted totals row when locked + quantity selected */}
+                            {calc.locked && calc.quantity > 0 && (p.pesoBruto || dims) && (
+                              <div className="mt-2 flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2">
+                                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">📦 Totais ({calc.quantity} cx):</span>
+                                {p.pesoBruto && Number(p.pesoBruto) > 0 && (
+                                  <span className="text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-lg">
+                                    ⚖️ Peso: {(Number(p.pesoBruto) * fator * calc.quantity).toFixed(1)} kg
+                                  </span>
+                                )}
+                                {dims && (
+                                  <span className="text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-lg">
+                                    📦 Cubagem: {((parseFloat(dims[1].replace(',', '.')) * parseFloat(dims[2].replace(',', '.')) * parseFloat(dims[3].replace(',', '.')) / 1000000) * calc.quantity).toFixed(3)} m³
+                                  </span>
+                                )}
+                              </div>
+                            )}
                         </div>
                       )}
                       {/* If no price, just show cart button */}

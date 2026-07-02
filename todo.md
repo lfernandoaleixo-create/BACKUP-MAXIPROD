@@ -4701,3 +4701,7 @@
 - [x] GestaoComercial: renomear "Desc. Máx" para "Desconto Máximo" no botão do painel do gestor
 - [x] Novo Pedido: adicionar legenda "Código" acima do número do produto (ex: 00034) para o vendedor entender
 - [x] Novo Pedido: após selecionar quantidade de caixas, mostrar Peso Total (peso da caixa × qtd caixas) e Volume/Cubagem Total (dimensões da caixa multiplicadas × qtd caixas)
+- [x] Novo Pedido: ao travar preço (OK), NÃO mudar layout — manter mesma tela, apenas travar campos de desconto/valor e mostrar seletor de quantidade
+- [x] Novo Pedido: após OK, destacar valor final da venda, peso total e cubagem total
+- [x] Novo Pedido: no card salvo no carrinho, mostrar peso total e cubagem total
+- [x] Novo Pedido: editar item do carrinho volta pro mesmo layout inicial (mesma tela)
