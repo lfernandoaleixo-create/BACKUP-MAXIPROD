@@ -3076,6 +3076,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   );
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
+  const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const utils = trpc.useUtils();
 
   const [selectedClientName, setSelectedClientName] = useState("");
@@ -4219,7 +4220,23 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">{observacoes}</p>
             </div>
           )}
-          <div className="flex justify-center pt-2">
+          <div className="flex justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                if (submittedOrderId && confirm("Tem certeza que deseja APAGAR este pedido? Esta ação não pode ser desfeita.")) {
+                  deleteOrderMutation.mutate({ orderId: submittedOrderId }, {
+                    onSuccess: () => {
+                      utils.salesOrders.getSellerOrders.invalidate();
+                      onClose();
+                    }
+                  });
+                }
+              }}
+              disabled={deleteOrderMutation.isPending}
+              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-sm font-bold rounded-lg transition-colors"
+            >
+              {deleteOrderMutation.isPending ? "Apagando..." : "🗑️ Apagar Pedido"}
+            </button>
             <button
               onClick={onClose}
               className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-lg transition-colors"

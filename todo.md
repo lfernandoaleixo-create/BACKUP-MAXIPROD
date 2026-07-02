@@ -4712,3 +4712,4 @@
 - [x] Novo Pedido: tela de resumo completo do pedido ao clicar em "Pedido Concluído" (itens, quantidades, preços, descontos, peso total, cubagem total, valor total)
 - [x] Novo Pedido: ao confirmar pedido, enviar notificação para Juvenal e Vitória com detalhes do pedido
 - [x] Novo Pedido: mover botão "Pedido Concluído" para a etapa de produtos (após adicionar itens ao carrinho), antes do pagamento/frete
+- [x] Novo Pedido: opção de apagar pedido (para testes) - botão na tela de resumo e na lista de pedidos do vendedor

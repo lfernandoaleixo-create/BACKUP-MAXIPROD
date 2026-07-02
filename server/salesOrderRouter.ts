@@ -1152,4 +1152,17 @@ export const salesOrderRouter = router({
         },
       };
     }),
+
+  /** Delete an order (for testing purposes) */
+  deleteOrder: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      // Delete items first (foreign key)
+      await db.delete(salesOrderRequestItems).where(eq(salesOrderRequestItems.orderId, input.orderId));
+      // Delete the order
+      await db.delete(salesOrderRequests).where(eq(salesOrderRequests.id, input.orderId));
+      return { success: true };
+    }),
 });
