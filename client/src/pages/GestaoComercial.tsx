@@ -695,73 +695,94 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
         </div>
       </div>
 
-      {/* Info card */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
-        <div className="flex items-start gap-3">
-          <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-xs font-medium text-blue-800 dark:text-blue-300">Visão do Vendedor</p>
-            <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">
-              Cada vendedor tem acesso a: Estoque, Cadastro de Clientes, Tabela de Preço, Pedidos de Venda, Métricas e Catálogos.
-              Clique em um vendedor para ver exatamente o que ele vê no app.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Vendedores - Collapsible panel */}
+      <VendedoresCollapsible allVendedores={allVendedores} isLoading={isLoading} navigate={navigate} />
+    </div>
+  );
+}
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
-          <RefreshCw className="w-6 h-6 text-orange-500 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Carregando vendedores...</p>
-        </div>
-      )}
 
-      {/* Vendedores - Compact collapsed list */}
-      {!isLoading && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-          {allVendedores.map((v, idx) => (
-            <div
-              key={v.name}
-              className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
-            >
-              <button
-                onClick={() => { if (v.permission) navigate(`/gestao-comercial/vendedor/${v.permission.id}`); }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${
-                  v.isGestor
-                    ? "bg-gradient-to-br from-teal-400 to-teal-600"
-                    : v.permission?.authorized
-                      ? "bg-gradient-to-br from-orange-300 to-orange-500"
-                      : "bg-gradient-to-br from-slate-300 to-slate-400"
-                }`}>
-                  {v.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
-                  {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                    {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Gestor: ${v.gestor}`}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {v.permission?.authorized ? (
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full bg-red-400" title="Bloqueado" />
-                  )}
-                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-500" />
-                </div>
-              </button>
+// ============================================================
+// VENDEDORES COLLAPSIBLE - starts collapsed, expands to show list
+// ============================================================
+function VendedoresCollapsible({ allVendedores, isLoading, navigate }: { allVendedores: any[]; isLoading: boolean; navigate: (path: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm overflow-hidden">
+      {/* Clickable header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors text-left"
+      >
+        <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-blue-800 dark:text-blue-300">Visão do Vendedor</p>
+          <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+            Clique para ver os vendedores ({allVendedores.length})
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+            {allVendedores.length}
+          </span>
+          <ChevronDown className={`w-4 h-4 text-blue-400 transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
+        </div>
+      </button>
+
+      {/* Expandable content */}
+      {expanded && (
+        <div className="border-t border-blue-100 dark:border-blue-800">
+          {isLoading ? (
+            <div className="p-6 text-center">
+              <RefreshCw className="w-5 h-5 text-orange-500 animate-spin mx-auto mb-2" />
+              <p className="text-xs text-slate-500 dark:text-slate-400">Carregando vendedores...</p>
             </div>
-          ))}
+          ) : (
+            <div>
+              {allVendedores.map((v, idx) => (
+                <div
+                  key={v.name}
+                  className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
+                >
+                  <button
+                    onClick={() => { if (v.permission) navigate(`/gestao-comercial/vendedor/${v.permission.id}`); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${
+                      v.isGestor
+                        ? "bg-gradient-to-br from-teal-400 to-teal-600"
+                        : v.permission?.authorized
+                          ? "bg-gradient-to-br from-orange-300 to-orange-500"
+                          : "bg-gradient-to-br from-slate-300 to-slate-400"
+                    }`}>
+                      {v.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
+                      {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                        {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor \u00b7 Gestor: ${v.gestor}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {v.permission?.authorized ? (
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-red-400" title="Bloqueado" />
+                      )}
+                      <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-500" />
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-
 
 // ============================================================
 // ESTOQUE MATRIX VIEW - 2 cards: Bambu (azul) e Madeira (marrom)
