@@ -3525,7 +3525,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                   const precoVendedor = p.precoVendedor ? Number(p.precoVendedor) : null;
                   const precoMinimo = p.precoMinimo ? Number(p.precoMinimo) : null;
                   const precoBase = precoVendedor || precoMinimo || 0;
-                  const calc = productCalc[p.codigoItem] || { discount: "", finalValue: "", quantity: 1, showQty: false };
+                  const calc = productCalc[p.codigoItem] || { discount: "", finalValue: "", quantity: 1, showQty: false, locked: false };
 
                   // Calculate derived values
                   const discountPct = calc.discount ? parseFloat(calc.discount) : 0;
@@ -3595,55 +3595,84 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                         <div className="mt-2 space-y-2">
                           {/* Discount + Final Value row - wraps naturally */}
                           <div className="flex flex-wrap items-center gap-2">
-                            {/* Discount % input */}
-                            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2 py-1.5">
-                              <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">Desc:</span>
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.5"
-                                placeholder="0"
-                                value={calc.discount}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  updateCalc('discount', v);
-                                  if (v) updateCalc('finalValue', '');
-                                }}
-                                className="w-11 px-1 py-0.5 text-[11px] font-bold text-center border border-amber-300 dark:border-amber-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
-                              />
-                              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">%</span>
-                              {calc.discount && (
-                                <span className="text-[9px] sm:text-[10px] font-bold text-amber-800 dark:text-amber-200 ml-0.5 whitespace-nowrap">
-                                  = {formatCurrencySales(finalFromDiscount)}
-                                </span>
-                              )}
-                            </div>
-                            {/* Final value input */}
-                            <div className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg px-2 py-1.5">
-                              <span className="text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">R$</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="0,00"
-                                value={calc.finalValue}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  updateCalc('finalValue', v);
-                                  if (v) updateCalc('discount', '');
-                                }}
-                                className="w-14 px-1 py-0.5 text-[11px] font-bold text-center border border-indigo-300 dark:border-indigo-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                              />
-                              {calc.finalValue && (
-                                <span className="text-[9px] sm:text-[10px] font-bold text-indigo-800 dark:text-indigo-200 ml-0.5 whitespace-nowrap">
-                                  = {discountFromValue.toFixed(1)}%
-                                </span>
-                              )}
-                            </div>
-                            {/* Below min warning */}
-                            {isBelowMin && (
-                              <span className="text-[9px] text-red-500 font-bold">⚠️ Abaixo mín.</span>
+                            {calc.locked ? (
+                              /* Locked state - show confirmed price */
+                              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg px-3 py-2 w-full">
+                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✓ Preço travado:</span>
+                                <span className="text-sm font-bold text-emerald-800 dark:text-emerald-200">{formatCurrencySales(effectivePrice)}</span>
+                                {calc.discount && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">({calc.discount}% desc.)</span>}
+                                <button
+                                  onClick={() => updateCalc('locked', false)}
+                                  className="ml-auto px-2 py-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded hover:bg-amber-200 transition-colors"
+                                >
+                                  ✏️ Editar
+                                </button>
+                              </div>
+                            ) : (
+                              /* Editable state - discount and final value inputs */
+                              <>
+                                {/* Discount % input */}
+                                <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2 py-1.5">
+                                  <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">Desc:</span>
+                                  <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    min="0"
+                                    max="100"
+                                    step="0.5"
+                                    placeholder="0"
+                                    value={calc.discount}
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      updateCalc('discount', v);
+                                      if (v) updateCalc('finalValue', '');
+                                    }}
+                                    className="w-11 px-1 py-0.5 text-[11px] font-bold text-center border border-amber-300 dark:border-amber-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                  />
+                                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">%</span>
+                                  {calc.discount && (
+                                    <span className="text-[9px] sm:text-[10px] font-bold text-amber-800 dark:text-amber-200 ml-0.5 whitespace-nowrap">
+                                      = {formatCurrencySales(finalFromDiscount)}
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Final value input */}
+                                <div className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg px-2 py-1.5">
+                                  <span className="text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">R$</span>
+                                  <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="0,00"
+                                    value={calc.finalValue}
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      updateCalc('finalValue', v);
+                                      if (v) updateCalc('discount', '');
+                                    }}
+                                    className="w-14 px-1 py-0.5 text-[11px] font-bold text-center border border-indigo-300 dark:border-indigo-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                  />
+                                  {calc.finalValue && (
+                                    <span className="text-[9px] sm:text-[10px] font-bold text-indigo-800 dark:text-indigo-200 ml-0.5 whitespace-nowrap">
+                                      = {discountFromValue.toFixed(1)}%
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Lock/Save button */}
+                                {(calc.discount || calc.finalValue) && (
+                                  <button
+                                    onClick={() => updateCalc('locked', true)}
+                                    className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm transition-all"
+                                  >
+                                    ✓ Travar
+                                  </button>
+                                )}
+                                {/* Below min warning */}
+                                {isBelowMin && (
+                                  <span className="text-[9px] text-red-500 font-bold">⚠️ Abaixo mín.</span>
+                                )}
+                              </>
                             )}
                           </div>
                           {/* Cart button row - always visible */}
