@@ -4691,3 +4691,7 @@
 - [x] Novo Pedido - Produtos: soma automática em tempo real (subtotal = qtd × preço com desconto) ao lado do seletor de quantidade
 - [x] Desktop/Tablet: botão Atualizar (RefreshCw) no header igual ao mobile - limpa cache e recarrega
 - [x] Mobile: botão Atualizar com efeito "afundar" (active:scale-75 + active:shadow-inner) para feedback tátil
+- [x] Tabela de Preços do Vendedor: adicionar coluna "Preço Sugerido" (Preço Tabelado ÷ (1 - margem%))
+- [x] Tabela de Preços do Vendedor: renomear "Preço Unit." para "Preço Tabelado"
+- [x] Tabela de Preços do Vendedor: Preço Mínimo calculado dinamicamente (Preço Tabelado × (1 - desconto máximo%))
+- [x] Tabela de Preços do Vendedor: busca margem de negociação do gestor para calcular Preço Sugerido

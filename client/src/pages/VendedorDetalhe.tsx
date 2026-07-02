@@ -250,7 +250,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
         )}
 
         {activeTab === "tabela_precos" && (
-          <TabelaPrecosView sellerId={sellerId} sellerName={seller.sellerName} />
+          <TabelaPrecosView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
         )}
 
         {activeTab === "catalogos" && (
@@ -4442,9 +4442,11 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
  * Mostra: Código, Produto, Preço, Desc.Máx%, Preço Mínimo
  * ============================================================
  */
-function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: number; sellerName: string; gestorName: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const { data, isLoading, error } = trpc.sales.getPriceTableItems.useQuery({ sellerId });
+  const margemQuery = trpc.sales.getMargemNegociacao.useQuery({ gestorName });
+  const margemPercent = margemQuery.data?.margem ? parseFloat(margemQuery.data.margem) : 0;
   const syncMutation = trpc.sales.syncPriceTables.useMutation({
     onSuccess: () => {
       // Refetch after sync
@@ -4534,7 +4536,8 @@ function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerNa
             <tr className="bg-slate-50/80 dark:bg-slate-700/40">
               <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
               <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
-              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Unit.</th>
+              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Sugerido</th>
+              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Tabelado</th>
               <th className="px-5 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Desc. Máx.</th>
               <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Mínimo</th>
             </tr>
@@ -4555,6 +4558,17 @@ function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerNa
                   </span>
                 </td>
                 <td className="px-5 py-3 text-right">
+                  {(() => {
+                    const precoTab = parseFloat(item.preco);
+                    const precoSugerido = margemPercent > 0 ? precoTab / (1 - margemPercent / 100) : precoTab;
+                    return (
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                        R$ {precoSugerido.toFixed(2)}
+                      </span>
+                    );
+                  })()}
+                </td>
+                <td className="px-5 py-3 text-right">
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
                     R$ {parseFloat(item.preco).toFixed(2)}
                   </span>
@@ -4569,9 +4583,16 @@ function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerNa
                   )}
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    R$ {parseFloat(item.precoMinimo).toFixed(2)}
-                  </span>
+                  {(() => {
+                    const precoTab = parseFloat(item.preco);
+                    const descMax = item.descontoMaximoEmPercentual ? parseFloat(item.descontoMaximoEmPercentual) : 0;
+                    const precoMin = descMax > 0 ? precoTab * (1 - descMax / 100) : precoTab;
+                    return (
+                      <span className="text-xs font-bold text-red-600 dark:text-red-400">
+                        R$ {precoMin.toFixed(2)}
+                      </span>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}
