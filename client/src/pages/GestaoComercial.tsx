@@ -1114,7 +1114,7 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
 // ============================================================
 function PriceMatrixView({ gestorName }: { gestorName: string }) {
   const [search, setSearch] = useState("");
-  const [showMinPrice, setShowMinPrice] = useState(false);
+  const [priceMode, setPriceMode] = useState<"ideal" | "tabelado" | "minimo">("tabelado");
     const [customDiscount, setCustomDiscount] = useState<string>("");
   const [editingDiscount, setEditingDiscount] = useState(false);
   const [margemNegociacao, setMargemNegociacao] = useState<string>("");
@@ -1170,7 +1170,11 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
   const formatPrice = (preco: string | null, descontoMax: string | null) => {
     if (!preco) return null;
     const price = parseFloat(preco);
-    if (showMinPrice) {
+    if (priceMode === "ideal") {
+      const margem = margemNegociacao ? parseFloat(margemNegociacao) : 0;
+      return margem > 0 ? price / (1 - margem / 100) : price;
+    }
+    if (priceMode === "minimo") {
       const discount = customDiscount ? parseFloat(customDiscount) : (descontoMax ? parseFloat(descontoMax) : 0);
       const minPrice = price * (1 - discount / 100);
       return minPrice;
@@ -1239,12 +1243,46 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
       </div>
 
       {/* Controls bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vendedores
-        </p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* Price mode buttons */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+          <button
+            onClick={() => setPriceMode("ideal")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
+              priceMode === "ideal"
+                ? "bg-blue-500 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            Preço Ideal
+          </button>
+          <button
+            onClick={() => setPriceMode("tabelado")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
+              priceMode === "tabelado"
+                ? "bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800 shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            Preço Tabelado
+          </button>
+          <button
+            onClick={() => setPriceMode("minimo")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
+              priceMode === "minimo"
+                ? "bg-red-500 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+            }`}
+          >
+            <Tag className="w-3.5 h-3.5" />
+            Preço Mínimo
+          </button>
+        </div>
+
         <div className="flex items-center gap-2">
-          {/* Discount button */}
+          {/* Discount config */}
           <div className="flex items-center gap-1">
             {editingDiscount ? (
               <div className="flex items-center gap-1">
@@ -1277,22 +1315,14 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
                 className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50 transition-colors"
               >
                 <Tag className="w-3 h-3" />
-                Desconto Máximo{customDiscount ? `: ${customDiscount}%` : ""}
+                Desc. Máx{customDiscount ? `: ${customDiscount}%` : ""}
               </button>
             )}
           </div>
-          {/* Convert button */}
-          <button
-            onClick={() => setShowMinPrice(!showMinPrice)}
-            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
-              showMinPrice
-                ? "border-emerald-300 dark:border-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
-                : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
-            }`}
-          >
-            <Calculator className="w-3 h-3" />
-            {showMinPrice ? "Preço Mínimo" : "Converter"}
-          </button>
+          {/* Info badges */}
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">
+            {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vend.
+          </span>
           {/* Search */}
           <div className="relative">
             <input
@@ -1314,7 +1344,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
         products={filterProducts(bambuProducts)}
         sellers={sellers}
         allProducts={bambuProducts}
-        showMinPrice={showMinPrice}
+        priceMode={priceMode}
         customDiscount={customDiscount}
         formatPrice={formatPrice}
       />
@@ -1325,7 +1355,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
         products={filterProducts(madeiraProducts)}
         sellers={sellers}
         allProducts={madeiraProducts}
-        showMinPrice={showMinPrice}
+        priceMode={priceMode}
         customDiscount={customDiscount}
         formatPrice={formatPrice}
       />
@@ -1352,12 +1382,12 @@ interface PriceSegmentCardProps {
   products: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, { preco: string | null; descontoMax: string | null }> }[];
   sellers: { id: number; name: string; hasTable: boolean }[];
   allProducts: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, { preco: string | null; descontoMax: string | null }> }[];
-  showMinPrice: boolean;
+  priceMode: "ideal" | "tabelado" | "minimo";
   customDiscount: string;
   formatPrice: (preco: string | null, descontoMax: string | null) => number | null;
 }
 
-function PriceSegmentCard({ title, color, products, sellers, allProducts, showMinPrice, customDiscount, formatPrice }: PriceSegmentCardProps) {
+function PriceSegmentCard({ title, color, products, sellers, allProducts, priceMode, customDiscount, formatPrice }: PriceSegmentCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const colorMap = {
@@ -1432,7 +1462,11 @@ function PriceSegmentCard({ title, color, products, sellers, allProducts, showMi
                     return (
                       <td key={seller.id} className="text-center px-2 py-2">
                         {price !== null ? (
-                          <span className={`text-[11px] font-bold ${showMinPrice ? "text-emerald-600 dark:text-emerald-400" : "text-slate-800 dark:text-slate-100"}`}>
+                          <span className={`text-[11px] font-bold tabular-nums ${
+                            priceMode === "ideal" ? "text-blue-600 dark:text-blue-400" :
+                            priceMode === "minimo" ? "text-red-600 dark:text-red-400" :
+                            "text-slate-800 dark:text-slate-100"
+                          }`}>
                             R$ {price.toFixed(2)}
                           </span>
                         ) : (

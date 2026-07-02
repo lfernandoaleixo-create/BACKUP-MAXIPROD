@@ -4531,64 +4531,62 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead>
-            <tr className="bg-slate-50/80 dark:bg-slate-700/40">
-              <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
-              <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
-              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Sugerido</th>
-              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Tabelado</th>
-              <th className="px-5 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Desc. Máx.</th>
-              <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Mínimo</th>
+            <tr className="bg-slate-50/80 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-600">
+              <th className="w-[80px] px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
+              <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">P. Sugerido</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">P. Tabelado</th>
+              <th className="w-[80px] px-3 py-3 text-center text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wider">Desc.Máx</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider">P. Mínimo</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filteredItems.map((item: any, idx: number) => (
-              <tr key={item.id} className={`transition-colors hover:bg-teal-50/40 dark:hover:bg-teal-900/10 ${
-                idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/40 dark:bg-slate-750/30'
-              }`}>
-                <td className="px-5 py-3">
-                  <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md font-medium">
+              <tr key={item.id} className={`transition-colors hover:bg-teal-50/40 dark:hover:bg-teal-900/10 ${idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/40 dark:bg-slate-750/30'}`}>
+                <td className="px-3 py-2.5 align-middle">
+                  <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded font-medium">
                     {item.itemCodigo}
                   </span>
                 </td>
-                <td className="px-5 py-3">
+                <td className="px-3 py-2.5 align-middle truncate">
                   <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
                     {item.itemDescricao}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-right">
+                <td className="px-3 py-2.5 text-right align-middle">
                   {(() => {
                     const precoTab = parseFloat(item.preco);
                     const precoSugerido = margemPercent > 0 ? precoTab / (1 - margemPercent / 100) : precoTab;
                     return (
-                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 tabular-nums">
                         R$ {precoSugerido.toFixed(2)}
                       </span>
                     );
                   })()}
                 </td>
-                <td className="px-5 py-3 text-right">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                <td className="px-3 py-2.5 text-right align-middle">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tabular-nums">
                     R$ {parseFloat(item.preco).toFixed(2)}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-center">
+                <td className="px-3 py-2.5 text-center align-middle">
                   {item.descontoMaximoEmPercentual ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
+                    <span className="inline-flex items-center justify-center w-10 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
                       {parseFloat(item.descontoMaximoEmPercentual)}%
                     </span>
                   ) : (
                     <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
                   )}
                 </td>
-                <td className="px-5 py-3 text-right">
+                <td className="px-3 py-2.5 text-right align-middle">
                   {(() => {
                     const precoTab = parseFloat(item.preco);
                     const descMax = item.descontoMaximoEmPercentual ? parseFloat(item.descontoMaximoEmPercentual) : 0;
                     const precoMin = descMax > 0 ? precoTab * (1 - descMax / 100) : precoTab;
                     return (
-                      <span className="text-xs font-bold text-red-600 dark:text-red-400">
+                      <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums">
                         R$ {precoMin.toFixed(2)}
                       </span>
                     );
