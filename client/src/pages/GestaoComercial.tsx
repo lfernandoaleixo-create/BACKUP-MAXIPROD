@@ -17,7 +17,7 @@ import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
   Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check,
-  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft
+  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -25,7 +25,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 type GestaoView = "gestores" | "vendedores" | "metricas";
 
 // Config categories available for each gestor
-type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha" | "pedidos" | "metricas" | "acesso";
+type ConfigCategory = "estoque" | "tabela_preco" | "catalogos" | "senha" | "pedidos" | "metricas" | "acesso" | "comissao";
 
 interface GestorGroup {
   gestor: string;
@@ -431,6 +431,13 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Acesso ao Aplicativo</span>
                       </button>
                       <button
+                        onClick={() => setActiveConfig("comissao")}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                      >
+                        <Percent className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Comissão</span>
+                      </button>
+                      <button
                         onClick={() => { /* TODO: open cadastrar vendedor modal */ }}
                         className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
                       >
@@ -462,6 +469,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         {activeConfig === "pedidos" && "Pedidos de Venda"}
                         {activeConfig === "metricas" && "Métricas de Venda"}
                         {activeConfig === "acesso" && "Acesso ao Aplicativo"}
+                        {activeConfig === "comissao" && "Comissão dos Vendedores"}
                       </span>
                     </div>
 
@@ -524,6 +532,8 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                           );
                         })}
                       </div>
+                    ) : activeConfig === "comissao" ? (
+                      <ComissaoView gestorName={card.name} />
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -1977,6 +1987,115 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ComissaoView({ gestorName }: { gestorName: string }) {
+  const utils = trpc.useUtils();
+  const { data: commissions, isLoading } = trpc.sales.getCommissions.useQuery({ gestorName });
+  const updateMutation = trpc.sales.updateCommission.useMutation({
+    onSuccess: () => {
+      utils.sales.getCommissions.invalidate({ gestorName });
+    },
+  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const startEdit = (id: number, currentValue: number | null) => {
+    setEditingId(id);
+    setEditValue(currentValue != null ? String(currentValue) : "");
+  };
+
+  const saveEdit = (sellerId: number) => {
+    const val = parseFloat(editValue);
+    if (isNaN(val) || val < 0 || val > 100) return;
+    updateMutation.mutate({ sellerId, commissionPercent: val });
+    setEditingId(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <RefreshCw className="w-5 h-5 animate-spin text-teal-500" />
+        <span className="ml-2 text-sm text-slate-500">Carregando...</span>
+      </div>
+    );
+  }
+
+  if (!commissions || commissions.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+        <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+        Defina a porcentagem de comissão para cada vendedor:
+      </p>
+      {commissions.map((seller) => (
+        <div
+          key={seller.id}
+          className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+              <span className="text-xs font-bold text-teal-700 dark:text-teal-300">
+                {seller.sellerName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {seller.sellerName}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {editingId === seller.id ? (
+              <>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(seller.id); if (e.key === "Escape") setEditingId(null); }}
+                  className="w-20 px-2 py-1 text-sm border border-teal-300 dark:border-teal-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  autoFocus
+                />
+                <span className="text-sm text-slate-500">%</span>
+                <button
+                  onClick={() => saveEdit(seller.id)}
+                  className="p-1.5 rounded-md bg-teal-500 hover:bg-teal-600 text-white transition-colors"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="p-1.5 rounded-md bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-600 dark:text-slate-300 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              <>
+                <span className={`text-sm font-semibold ${seller.commissionPercent != null ? "text-teal-600 dark:text-teal-400" : "text-slate-400 dark:text-slate-500 italic"}`}>
+                  {seller.commissionPercent != null ? `${seller.commissionPercent}%` : "Não definida"}
+                </span>
+                <button
+                  onClick={() => startEdit(seller.id, seller.commissionPercent)}
+                  className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

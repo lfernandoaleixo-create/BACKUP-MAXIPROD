@@ -4768,4 +4768,37 @@ export const salesRouter = router({
         annualLines,
       };
     }),
+
+  // ===== COMISSÃO =====
+
+  /** Get commission for all sellers of a gestor */
+  getCommissions: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const sellers = await db.select({
+        id: sellerPermissions.id,
+        sellerName: sellerPermissions.sellerName,
+        commissionPercent: sellerPermissions.commissionPercent,
+      }).from(sellerPermissions)
+        .where(eq(sellerPermissions.gestorName, input.gestorName));
+      return sellers.map(s => ({
+        id: s.id,
+        sellerName: s.sellerName,
+        commissionPercent: s.commissionPercent ? Number(s.commissionPercent) : null,
+      }));
+    }),
+
+  /** Update commission for a seller */
+  updateCommission: publicProcedure
+    .input(z.object({ sellerId: z.number(), commissionPercent: z.number().min(0).max(100) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      await db.update(sellerPermissions)
+        .set({ commissionPercent: String(input.commissionPercent) })
+        .where(eq(sellerPermissions.id, input.sellerId));
+      return { success: true };
+    }),
 });

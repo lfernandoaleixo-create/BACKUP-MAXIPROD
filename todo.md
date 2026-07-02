@@ -4713,3 +4713,4 @@
 - [x] Novo Pedido: ao confirmar pedido, enviar notificação para Juvenal e Vitória com detalhes do pedido
 - [x] Novo Pedido: mover botão "Pedido Concluído" para a etapa de produtos (após adicionar itens ao carrinho), antes do pagamento/frete
 - [x] Novo Pedido: opção de apagar pedido (para testes) - botão na tela de resumo e na lista de pedidos do vendedor
+- [x] Gestão Comercial: novo card "Comissão" na aba de configurações dos vendedores, onde o gestor pode ver todos os vendedores e editar a porcentagem de comissão de cada um
