@@ -3641,7 +3641,10 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
+                          <div className="flex flex-col items-center">
+                            <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide">Código</span>
+                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
+                          </div>
                           {dims && (
                             <span className="text-[9px] sm:text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
                               📐 {dims[1]}×{dims[2]}×{dims[3]} cm
@@ -3696,6 +3699,21 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                       <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
                                         = {formatCurrencySales(calc.quantity * effectivePrice)}
                                       </span>
+                                    )}
+                                    {/* Weight + Volume totals */}
+                                    {calc.quantity > 0 && (p.pesoBruto || dims) && (
+                                      <div className="flex items-center gap-1.5 ml-1">
+                                        {p.pesoBruto && Number(p.pesoBruto) > 0 && (
+                                          <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                            ⚖️ {(Number(p.pesoBruto) * fator * calc.quantity).toFixed(1)} kg
+                                          </span>
+                                        )}
+                                        {dims && (
+                                          <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                            📦 {((parseFloat(dims[1].replace(',', '.')) * parseFloat(dims[2].replace(',', '.')) * parseFloat(dims[3].replace(',', '.')) / 1000000) * calc.quantity).toFixed(3)} m³
+                                          </span>
+                                        )}
+                                      </div>
                                     )}
                                     <button
                                       onClick={() => { addProduct(p, effectivePrice, calc.quantity); updateCalc('showQty', false); updateCalc('quantity', 1); }}
@@ -3814,6 +3832,21 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                       <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg whitespace-nowrap">
                                         = {formatCurrencySales(calc.quantity * effectivePrice)}
                                       </span>
+                                    )}
+                                    {/* Weight + Volume totals */}
+                                    {calc.quantity > 0 && (p.pesoBruto || dims) && (
+                                      <div className="flex items-center gap-1.5">
+                                        {p.pesoBruto && Number(p.pesoBruto) > 0 && (
+                                          <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                            ⚖️ {(Number(p.pesoBruto) * fator * calc.quantity).toFixed(1)} kg
+                                          </span>
+                                        )}
+                                        {dims && (
+                                          <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                            📦 {((parseFloat(dims[1].replace(',', '.')) * parseFloat(dims[2].replace(',', '.')) * parseFloat(dims[3].replace(',', '.')) / 1000000) * calc.quantity).toFixed(3)} m³
+                                          </span>
+                                        )}
+                                      </div>
                                     )}
                                     <button
                                       onClick={() => { addProduct(p, effectivePrice, calc.quantity); updateCalc('showQty', false); updateCalc('quantity', 1); }}

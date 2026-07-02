@@ -4699,3 +4699,5 @@
 - [x] BUG FIX: Desconto máximo do gestor não sincronizava na tabela do vendedor (usava campo do Maxiprod em vez do valor configurado pelo gestor)
 - [x] Tabela de Preços do Vendedor: agora busca desconto máximo do gestor via getMaxDiscount e usa como prioridade sobre o campo do Maxiprod
 - [x] GestaoComercial: renomear "Desc. Máx" para "Desconto Máximo" no botão do painel do gestor
+- [x] Novo Pedido: adicionar legenda "Código" acima do número do produto (ex: 00034) para o vendedor entender
+- [x] Novo Pedido: após selecionar quantidade de caixas, mostrar Peso Total (peso da caixa × qtd caixas) e Volume/Cubagem Total (dimensões da caixa multiplicadas × qtd caixas)
