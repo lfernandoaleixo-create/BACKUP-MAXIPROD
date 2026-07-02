@@ -1255,7 +1255,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            Preço Ideal
+            Preço com Acréscimo
           </button>
           <button
             onClick={() => setPriceMode("tabelado")}
@@ -1266,7 +1266,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
             }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
-            Preço Tabelado
+            Preço Ideal
           </button>
           <button
             onClick={() => setPriceMode("minimo")}

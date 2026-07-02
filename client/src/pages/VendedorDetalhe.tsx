@@ -4536,8 +4536,8 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
             <tr className="bg-slate-50/80 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-600">
               <th className="w-[80px] px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
               <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
-              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">P. Sugerido</th>
-              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">P. Tabelado</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">P. Acréscimo</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">P. Ideal</th>
               <th className="w-[80px] px-3 py-3 text-center text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wider">Desc.Máx</th>
               <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider">P. Mínimo</th>
             </tr>
