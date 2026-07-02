@@ -4705,3 +4705,5 @@
 - [x] Novo Pedido: após OK, destacar valor final da venda, peso total e cubagem total
 - [x] Novo Pedido: no card salvo no carrinho, mostrar peso total e cubagem total
 - [x] Novo Pedido: editar item do carrinho volta pro mesmo layout inicial (mesma tela)
+- [x] Novo Pedido: lápis azul (editar item do carrinho) deve voltar pro layout completo do produto (com Caixas disponíveis, Valor da Caixa, Desconto %, Valor Final, Qtd. pedido) em vez da tela simplificada
+- [x] Novo Pedido: no card salvo no carrinho, legendas "Peso Total:" e "Cubagem:" bem visíveis e grandes antes dos valores

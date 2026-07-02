@@ -3033,9 +3033,25 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const startEditCartItem = (idx: number) => {
     const item = items[idx];
     if (item) {
-      setEditCartQty(item.quantidade);
-      setEditCartPrice(String(item.precoUnitario));
-      setEditingCartIdx(idx);
+      // Remove item from cart and restore it to the product list with pre-filled calc
+      const precoVendedor = item.precoVendedor || 0;
+      const precoBase = precoVendedor || item.precoMinimo || 0;
+      const discountPct = precoBase > 0 && item.precoUnitario < precoBase
+        ? (((precoBase - item.precoUnitario) / precoBase) * 100).toFixed(1)
+        : '';
+      // Pre-fill the calculator with the item's current values
+      setProductCalc(prev => ({
+        ...prev,
+        [item.codigoItem]: {
+          discount: discountPct ? String(discountPct) : '',
+          finalValue: !discountPct ? String(item.precoUnitario) : '',
+          quantity: item.quantidade,
+          showQty: true,
+          locked: true,
+        }
+      }));
+      // Remove from cart
+      setItems(prev => prev.filter((_, i) => i !== idx));
     }
   };
 
@@ -3586,20 +3602,20 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                 <span className="text-orange-500 ml-1">({(((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100).toFixed(1)}% desc.)</span>
                               )}
                             </p>
-                            {/* Weight + Volume in saved cart item */}
+                            {/* Weight + Volume in saved cart item - with large visible labels */}
                             {(item.pesoBrutoCaixa || item.dimsStr) && (
-                              <div className="flex items-center gap-1.5 mt-1">
+                              <div className="flex items-center gap-3 mt-1.5">
                                 {item.pesoBrutoCaixa && item.pesoBrutoCaixa > 0 && (
-                                  <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-1.5 py-0.5 rounded">
-                                    ⚖️ {(item.pesoBrutoCaixa * item.quantidade).toFixed(1)} kg
+                                  <span className="text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-lg">
+                                    ⚖️ Peso Total: {(item.pesoBrutoCaixa * item.quantidade).toFixed(1)} kg
                                   </span>
                                 )}
                                 {item.dimsStr && (() => {
                                   const d = item.dimsStr!.split('x').map(v => parseFloat(v.replace(',', '.')));
                                   const vol = d.length === 3 ? (d[0] * d[1] * d[2] / 1000000) * item.quantidade : 0;
                                   return vol > 0 ? (
-                                    <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded">
-                                      📦 {vol.toFixed(3)} m³
+                                    <span className="text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-lg">
+                                      📦 Cubagem: {vol.toFixed(3)} m³
                                     </span>
                                   ) : null;
                                 })()}
