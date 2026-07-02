@@ -4695,3 +4695,7 @@
 - [x] Tabela de Preços do Vendedor: renomear "Preço Unit." para "Preço Tabelado"
 - [x] Tabela de Preços do Vendedor: Preço Mínimo calculado dinamicamente (Preço Tabelado × (1 - desconto máximo%))
 - [x] Tabela de Preços do Vendedor: busca margem de negociação do gestor para calcular Preço Sugerido
+- [x] Tabela de Preços do Vendedor: renomear colunas abreviadas para nomes completos (P. Acréscimo → Preço com Acréscimo, P. Ideal → Preço Ideal, Desc.Máx → Desconto Máximo, P. Mínimo → Preço Mínimo)
+- [x] BUG FIX: Desconto máximo do gestor não sincronizava na tabela do vendedor (usava campo do Maxiprod em vez do valor configurado pelo gestor)
+- [x] Tabela de Preços do Vendedor: agora busca desconto máximo do gestor via getMaxDiscount e usa como prioridade sobre o campo do Maxiprod
+- [x] GestaoComercial: renomear "Desc. Máx" para "Desconto Máximo" no botão do painel do gestor

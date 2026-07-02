@@ -1315,7 +1315,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
                 className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50 transition-colors"
               >
                 <Tag className="w-3 h-3" />
-                Desc. Máx{customDiscount ? `: ${customDiscount}%` : ""}
+                Desconto Máximo{customDiscount ? `: ${customDiscount}%` : ""}
               </button>
             )}
           </div>

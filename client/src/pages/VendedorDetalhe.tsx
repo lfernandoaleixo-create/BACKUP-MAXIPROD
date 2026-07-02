@@ -4439,7 +4439,7 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
  * ============================================================
  * ABA TABELA DE PREÇOS - Preços dos produtos do vendedor
  * Dados sincronizados do Maxiprod (tabela de vendas)
- * Mostra: Código, Produto, Preço, Desc.Máx%, Preço Mínimo
+ * Mostra: Código, Produto, Preço com Acréscimo, Preço Ideal, Desconto Máximo, Preço Mínimo
  * ============================================================
  */
 function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: number; sellerName: string; gestorName: string }) {
@@ -4447,6 +4447,8 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
   const { data, isLoading, error } = trpc.sales.getPriceTableItems.useQuery({ sellerId });
   const margemQuery = trpc.sales.getMargemNegociacao.useQuery({ gestorName });
   const margemPercent = margemQuery.data?.margem ? parseFloat(margemQuery.data.margem) : 0;
+  const discountQuery = trpc.sales.getMaxDiscount.useQuery({ gestorName });
+  const gestorDescontoMax = discountQuery.data?.discount ? parseFloat(discountQuery.data.discount) : 0;
   const syncMutation = trpc.sales.syncPriceTables.useMutation({
     onSuccess: () => {
       // Refetch after sync
@@ -4536,10 +4538,10 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
             <tr className="bg-slate-50/80 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-600">
               <th className="w-[80px] px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
               <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
-              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">P. Acréscimo</th>
-              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">P. Ideal</th>
-              <th className="w-[80px] px-3 py-3 text-center text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wider">Desc.Máx</th>
-              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider">P. Mínimo</th>
+              <th className="w-[130px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Preço com Acréscimo</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Ideal</th>
+              <th className="w-[100px] px-3 py-3 text-center text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wider">Desconto Máximo</th>
+              <th className="w-[120px] px-3 py-3 text-right text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider">Preço Mínimo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -4572,7 +4574,11 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
                   </span>
                 </td>
                 <td className="px-3 py-2.5 text-center align-middle">
-                  {item.descontoMaximoEmPercentual ? (
+                  {gestorDescontoMax > 0 ? (
+                    <span className="inline-flex items-center justify-center w-10 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
+                      {gestorDescontoMax}%
+                    </span>
+                  ) : item.descontoMaximoEmPercentual ? (
                     <span className="inline-flex items-center justify-center w-10 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
                       {parseFloat(item.descontoMaximoEmPercentual)}%
                     </span>
@@ -4583,7 +4589,7 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
                 <td className="px-3 py-2.5 text-right align-middle">
                   {(() => {
                     const precoTab = parseFloat(item.preco);
-                    const descMax = item.descontoMaximoEmPercentual ? parseFloat(item.descontoMaximoEmPercentual) : 0;
+                    const descMax = gestorDescontoMax > 0 ? gestorDescontoMax : (item.descontoMaximoEmPercentual ? parseFloat(item.descontoMaximoEmPercentual) : 0);
                     const precoMin = descMax > 0 ? precoTab * (1 - descMax / 100) : precoTab;
                     return (
                       <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums">
