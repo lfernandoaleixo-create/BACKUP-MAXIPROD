@@ -2982,7 +2982,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
  * Puxa produtos do estoque visível do vendedor com especificações
  */
 function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; sellerName: string; onClose: () => void }) {
-  const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao">("cliente");
+  const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
   
   // Client fields
   const [clientSearch, setClientSearch] = useState("");
@@ -3207,7 +3209,9 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
         if (result.success) {
           utils.salesOrders.getSellerOrders.invalidate();
           setShowBelowMinConfirm(false);
-          onClose();
+          setOrderSubmitted(true);
+          setSubmittedOrderId(result.orderId);
+          setStep("resumo_final");
         }
       },
     });
@@ -3244,7 +3248,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             <div
               key={s}
               className={`flex-1 h-1.5 rounded-full ${
-                (["cliente", "produtos", "pagamento", "revisao"] as const).indexOf(step) >= i
+                (step === "resumo_final" ? 4 : (["cliente", "produtos", "pagamento", "revisao"] as const).indexOf(step as any)) >= i
                   ? "bg-teal-500"
                   : "bg-slate-200 dark:bg-slate-600"
               }`}
@@ -4094,12 +4098,122 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                Enviar Pedido
+                Pedido Concluído
               </button>
             </div>
           </div>
         )}
       </div>
+      {/* RESUMO FINAL - Shown after order is submitted */}
+      {step === "resumo_final" && orderSubmitted && (
+        <div className="p-4 space-y-4">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-3">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-lg font-bold text-green-700 dark:text-green-300">Pedido Enviado com Sucesso!</h3>
+            <p className="text-xs text-slate-500 mt-1">Pedido #{submittedOrderId} • Notificação enviada para Juvenal e Vitória</p>
+          </div>
+          {/* Resumo completo */}
+          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-3 border border-slate-200 dark:border-slate-600">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase border-b border-slate-200 dark:border-slate-600 pb-2">Resumo do Pedido</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div><span className="text-slate-400">Vendedor:</span> <span className="font-bold text-slate-700 dark:text-slate-200">{sellerName}</span></div>
+              <div><span className="text-slate-400">Cliente:</span> <span className="font-bold text-slate-700 dark:text-slate-200">{razaoSocial}</span></div>
+              {cnpjCpf && <div><span className="text-slate-400">CNPJ/CPF:</span> <span className="text-slate-700 dark:text-slate-200">{cnpjCpf}</span></div>}
+              {municipio && <div><span className="text-slate-400">Local:</span> <span className="text-slate-700 dark:text-slate-200">{municipio}/{uf}</span></div>}
+              {condicaoPagamento && <div><span className="text-slate-400">Pagamento:</span> <span className="text-slate-700 dark:text-slate-200">{condicaoPagamento}</span></div>}
+              {tipoFrete && <div><span className="text-slate-400">Frete:</span> <span className="text-slate-700 dark:text-slate-200">{tipoFrete}</span></div>}
+            </div>
+            {/* Items */}
+            <div className="border-t border-slate-200 dark:border-slate-600 pt-3 mt-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Itens do Pedido ({items.length})</p>
+              <div className="space-y-2">
+                {items.map((item, idx) => {
+                  const pesoTotal = item.pesoBrutoCaixa ? item.pesoBrutoCaixa * item.quantidade : 0;
+                  const dimsArr = item.dimsStr ? item.dimsStr.split('x').map(v => parseFloat(v.replace(',', '.'))) : [];
+                  const volumeTotal = dimsArr.length === 3 ? (dimsArr[0] * dimsArr[1] * dimsArr[2] / 1000000) * item.quantidade : 0;
+                  return (
+                    <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-3">
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{item.descricaoItem}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px]">
+                        <span className="text-slate-400">Cód: <span className="font-mono text-slate-600 dark:text-slate-300">{item.codigoItem}</span></span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400">{item.quantidade} cx × {formatCurrencySales(item.precoUnitario)} = {formatCurrencySales(item.quantidade * item.precoUnitario)}</span>
+                        {item.precoVendedor && item.precoUnitario < item.precoVendedor && (
+                          <span className="text-orange-500">({(((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100).toFixed(1)}% desc.)</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        {pesoTotal > 0 && <span className="text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded">⚖️ Peso Total: {pesoTotal.toFixed(1)} kg</span>}
+                        {volumeTotal > 0 && <span className="text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded">📦 Cubagem: {volumeTotal.toFixed(3)} m³</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Totais gerais */}
+            <div className="border-t border-slate-200 dark:border-slate-600 pt-3 mt-2 space-y-2">
+              {(() => {
+                const pesoGeral = items.reduce((sum, i) => sum + (i.pesoBrutoCaixa ? i.pesoBrutoCaixa * i.quantidade : 0), 0);
+                const volumeGeral = items.reduce((sum, i) => {
+                  const d = i.dimsStr ? i.dimsStr.split('x').map(v => parseFloat(v.replace(',', '.'))) : [];
+                  return sum + (d.length === 3 ? (d[0] * d[1] * d[2] / 1000000) * i.quantidade : 0);
+                }, 0);
+                const totalCaixas = items.reduce((sum, i) => sum + i.quantidade, 0);
+                return (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Total de Caixas:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200">{totalCaixas} caixas</span>
+                    </div>
+                    {pesoGeral > 0 && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500 font-bold text-purple-600">⚖️ Peso Total Geral:</span>
+                        <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">{pesoGeral.toFixed(1)} kg</span>
+                      </div>
+                    )}
+                    {volumeGeral > 0 && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500 font-bold text-orange-600">📦 Cubagem Total:</span>
+                        <span className="font-bold text-orange-700 dark:text-orange-300 text-sm">{volumeGeral.toFixed(3)} m³</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Subtotal Produtos:</span>
+                      <span className="text-slate-700 dark:text-slate-200">{formatCurrencySales(totalProdutos)}</span>
+                    </div>
+                    {Number(valorFrete) > 0 && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500">Frete ({tipoFrete}):</span>
+                        <span className="text-slate-700 dark:text-slate-200">{formatCurrencySales(Number(valorFrete))}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-bold border-t border-slate-300 dark:border-slate-500 pt-2">
+                      <span className="text-slate-700 dark:text-slate-200">TOTAL DO PEDIDO:</span>
+                      <span className="text-green-600 text-lg">{formatCurrencySales(totalPedido)}</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          {observacoes && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <p className="text-[10px] font-bold text-amber-600 uppercase">Observações:</p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">{observacoes}</p>
+            </div>
+          )}
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-lg transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
       {/* Below Minimum Price Confirmation Modal */}
       {showBelowMinConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

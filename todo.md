@@ -4708,3 +4708,6 @@
 - [x] Novo Pedido: lápis azul (editar item do carrinho) deve voltar pro layout completo do produto (com Caixas disponíveis, Valor da Caixa, Desconto %, Valor Final, Qtd. pedido) em vez da tela simplificada
 - [x] Novo Pedido: no card salvo no carrinho, legendas "Peso Total:" e "Cubagem:" bem visíveis e grandes antes dos valores
 - [x] Novo Pedido: botão "Cancelar" ao lado do "Salvar" que zera tudo (desconto, valor, quantidade) e volta pro estado inicial com "Adicionar ao Carrinho"
+- [x] Novo Pedido: botão "Pedido Concluído" quando tem itens no carrinho
+- [x] Novo Pedido: tela de resumo completo do pedido ao clicar em "Pedido Concluído" (itens, quantidades, preços, descontos, peso total, cubagem total, valor total)
+- [x] Novo Pedido: ao confirmar pedido, enviar notificação para Juvenal e Vitória com detalhes do pedido

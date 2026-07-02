@@ -20,17 +20,21 @@ import { systemNotifications, notificationReads } from "../drizzle/schema";
 import { desc, eq, sql, and, isNull, isNotNull, lt, inArray } from "drizzle-orm";
 
 // Tipos de notificação: faturamento (para todos) + cobrança (apenas gestão financeira)
-const ALL_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada", "cobranca_documento", "cobranca_alerta"];
+const ALL_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada", "cobranca_documento", "cobranca_alerta", "pedido_vendedor"];
 const FATURAMENTO_ONLY_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada"];
 
 // Operadores que só devem ver notificações de faturamento (NÃO cobrança/inadimplência)
 const FATURAMENTO_ONLY_OPERATORS = ["Maria", "Erica", "Danubia"];
+
+// Operadores que veem notificações de pedidos de vendedores
+const PEDIDO_VENDEDOR_OPERATORS = ["Juvenal", "Vitória", "Vitoria", "Fernando", "Guilherme"];
 
 /** Retorna os tipos de notificação permitidos para o operador */
 function getAllowedTypes(operatorName?: string): string[] {
   if (operatorName && FATURAMENTO_ONLY_OPERATORS.includes(operatorName)) {
     return FATURAMENTO_ONLY_TYPES;
   }
+  // Pedido vendedor é visível para todos que estão em ALL_NOTIFICATION_TYPES
   return ALL_NOTIFICATION_TYPES;
 }
 

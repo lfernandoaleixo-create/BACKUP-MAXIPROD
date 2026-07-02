@@ -560,6 +560,22 @@ export const salesOrderRouter = router({
         );
       }
 
+      // Send notification to Juvenal and Vitória about new seller order
+      try {
+        const { createNotification } = await import("./notificationRouter");
+        const totalCaixas = itemsWithValidation.reduce((sum, i) => sum + i.quantidade, 0);
+        const itemsResume = itemsWithValidation.map(i => `${i.descricaoItem} (${i.quantidade}cx × R$ ${i.precoUnitario.toFixed(2)} = R$ ${i.totalItem.toFixed(2)})`).join(" | ");
+        await createNotification({
+          type: "pedido_vendedor",
+          title: `Novo Pedido - ${seller.sellerName}`,
+          message: `Cliente: ${input.razaoSocial} | ${itemsWithValidation.length} ${itemsWithValidation.length === 1 ? 'item' : 'itens'} | ${totalCaixas} caixas | Total: R$ ${totalPedido.toFixed(2)}${temPrecoAbaixoMinimo ? ' ⚠️ PREÇO ABAIXO DO MÍNIMO' : ''} | Itens: ${itemsResume}`,
+          severity: temPrecoAbaixoMinimo ? "warning" : "success",
+          metadata: { orderId: Number(orderId), sellerName: seller.sellerName, gestorName: seller.gestorName, clientName: input.razaoSocial, totalPedido, totalCaixas, status },
+        });
+      } catch (err) {
+        console.error("[SalesOrder] Failed to create notification:", err);
+      }
+
       return {
         success: true,
         orderId: Number(orderId),
