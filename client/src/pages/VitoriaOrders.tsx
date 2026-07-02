@@ -215,7 +215,7 @@ export default function VitoriaOrders() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-400">#{order.id}</span>
+                        <span className="text-[10px] font-bold text-slate-400">#{order.orderNumber || order.id}</span>
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                           {order.razaoSocial || order.nomeFantasia}
                         </p>

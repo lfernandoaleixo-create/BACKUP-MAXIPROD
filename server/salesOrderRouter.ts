@@ -506,8 +506,14 @@ export const salesOrderRouter = router({
       const status = temPrecoAbaixoMinimo ? "pendente" as const : "aprovado" as const;
       const motivoAlerta = alertMotivos.length > 0 ? alertMotivos.join("; ") : null;
 
+      // Get next sequential order number atomically
+      await db.execute(sql`UPDATE order_number_counter SET next_number = next_number + 1 WHERE id = 1`);
+      const [counterRow] = await db.execute(sql`SELECT next_number - 1 as current_number FROM order_number_counter WHERE id = 1`);
+      const orderNumber = (counterRow as any).current_number;
+
       // Insert order
       const [result] = await db.insert(salesOrderRequests).values({
+        orderNumber,
         sellerId: input.sellerId,
         sellerName: seller.sellerName,
         gestorName: seller.gestorName || null,
@@ -579,6 +585,7 @@ export const salesOrderRouter = router({
       return {
         success: true,
         orderId: Number(orderId),
+        orderNumber,
         status,
         temPrecoAbaixoMinimo,
         motivoAlerta,

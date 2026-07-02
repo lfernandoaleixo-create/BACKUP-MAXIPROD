@@ -2119,6 +2119,7 @@ export type ProductMinPrice = typeof productMinPrices.$inferSelect;
  */
 export const salesOrderRequests = mysqlTable("sales_order_requests", {
   id: int("id").autoincrement().primaryKey(),
+  orderNumber: int("order_number"), // Número sequencial do pedido (travado no momento da criação)
   sellerId: int("seller_id").notNull(), // FK seller_permissions.id
   sellerName: varchar("seller_name", { length: 200 }).notNull(),
   gestorName: varchar("gestor_name", { length: 200 }),

@@ -4714,3 +4714,4 @@
 - [x] Novo Pedido: mover botão "Pedido Concluído" para a etapa de produtos (após adicionar itens ao carrinho), antes do pagamento/frete
 - [x] Novo Pedido: opção de apagar pedido (para testes) - botão na tela de resumo e na lista de pedidos do vendedor
 - [x] Gestão Comercial: novo card "Comissão" na aba de configurações dos vendedores, onde o gestor pode ver todos os vendedores e editar a porcentagem de comissão de cada um
+- [x] Pedidos: número sequencial atômico (contador no banco) que é travado no momento do "Pedido Concluído", sem conflito entre tablets. Resetar para 1 já que todos foram apagados.

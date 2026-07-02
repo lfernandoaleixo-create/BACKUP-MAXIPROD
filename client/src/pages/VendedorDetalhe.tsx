@@ -2783,6 +2783,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold text-slate-400">#{pm.orderNumber || pm.id}</span>
                       <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
                         {pm.razaoSocial || pm.nomeFantasia || "Cliente"}
                       </p>
@@ -2985,6 +2986,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
+  const [submittedOrderNumber, setSubmittedOrderNumber] = useState<number | null>(null);
   
   // Client fields
   const [clientSearch, setClientSearch] = useState("");
@@ -3212,6 +3214,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
           setShowBelowMinConfirm(false);
           setOrderSubmitted(true);
           setSubmittedOrderId(result.orderId);
+          setSubmittedOrderNumber(result.orderNumber);
           setStep("resumo_final");
         }
       },
@@ -4128,7 +4131,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
             <h3 className="text-lg font-bold text-green-700 dark:text-green-300">Pedido Enviado com Sucesso!</h3>
-            <p className="text-xs text-slate-500 mt-1">Pedido #{submittedOrderId} • Notificação enviada para Juvenal e Vitória</p>
+            <p className="text-xs text-slate-500 mt-1">Pedido #{submittedOrderNumber || submittedOrderId} • Notificação enviada para Juvenal e Vitória</p>
           </div>
           {/* Resumo completo */}
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-3 border border-slate-200 dark:border-slate-600">
