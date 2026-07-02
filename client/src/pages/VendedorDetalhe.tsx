@@ -3546,31 +3546,27 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
 
                   return (
                     <div key={p.codigoItem} className="border-b border-slate-100 dark:border-slate-700 last:border-0 px-2 sm:px-3 py-3">
-                      {/* Row 1: Product name + code */}
-                      <div className="flex items-start gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words leading-tight">{p.descricaoItem}</p>
+                      {/* Row 1: Product name (big + bold) with code/dims/weight to the right */}
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
+                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
+                          {dims && (
+                            <span className="text-[9px] sm:text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
+                              📐 {dims[1]}×{dims[2]}×{dims[3]} cm
+                            </span>
+                          )}
+                          {p.pesoBruto && Number(p.pesoBruto) > 0 && (
+                            <span className="text-[9px] sm:text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1 py-0.5 rounded text-purple-700 dark:text-purple-400 font-bold">
+                              ⚖️ {(Number(p.pesoBruto) * fator).toFixed(2)} kg/cx
+                            </span>
+                          )}
+                          {hasPOs && (
+                            <span className="text-[9px] sm:text-[10px] bg-green-50 dark:bg-green-900/20 px-1 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
+                              🚢 {p.pendingPOs.reduce((sum: number, po: any) => sum + Math.floor(Number(po.quantidade) || 0), 0).toLocaleString('pt-BR')} {unidadeVenda} chegando
+                            </span>
+                          )}
                         </div>
-                      </div>
-
-                      {/* Row 2: Code + Dimensions + Weight + POs */}
-                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1">
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
-                        {dims && (
-                          <span className="text-[9px] sm:text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
-                            📐 {dims[1]}×{dims[2]}×{dims[3]} cm
-                          </span>
-                        )}
-                        {p.pesoBruto && Number(p.pesoBruto) > 0 && (
-                          <span className="text-[9px] sm:text-[10px] bg-purple-50 dark:bg-purple-900/20 px-1 py-0.5 rounded text-purple-700 dark:text-purple-400 font-bold">
-                            ⚖️ {(Number(p.pesoBruto) * fator).toFixed(2)} kg/cx
-                          </span>
-                        )}
-                        {hasPOs && (
-                          <span className="text-[9px] sm:text-[10px] bg-green-50 dark:bg-green-900/20 px-1 py-0.5 rounded text-green-700 dark:text-green-400 font-medium">
-                            🚢 {p.pendingPOs.reduce((sum: number, po: any) => sum + Math.floor(Number(po.quantidade) || 0), 0).toLocaleString('pt-BR')} {unidadeVenda} chegando
-                          </span>
-                        )}
                       </div>
 
                       {/* Row 3: ALL PRICING IN ONE LINE with labels above */}
@@ -3816,7 +3812,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 pb-2 border-b border-emerald-200 dark:border-emerald-700 shadow-sm rounded-lg">
                 <div className="flex items-center justify-between px-3 py-2 bg-emerald-600 rounded-t-lg">
                   <p className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                    <ShoppingCart className="w-4 h-4" /> Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'})
+                    <ShoppingCart className="w-4 h-4" /> Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'}) — {items.reduce((sum, i) => sum + i.quantidade, 0)} caixas
                   </p>
                   <p className="text-sm font-bold text-white">
                     {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
@@ -3887,12 +3883,17 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                         /* Locked/confirmed mode */
                         <div className="flex items-center gap-2 px-2.5 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate">{item.descricaoItem}</p>
+                            <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">{item.descricaoItem}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">{item.codigoItem}</span>
-                              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold">{item.quantidade} {item.unidadeMedida} × {formatCurrencySales(item.precoUnitario)}</span>
+                              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                                {item.quantidade} cx × {formatCurrencySales(item.precoUnitario)}
+                              </span>
                               <span className="text-[10px] text-slate-400">=</span>
-                              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencySales(item.quantidade * item.precoUnitario)}</span>
+                              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">{formatCurrencySales(item.quantidade * item.precoUnitario)}</span>
+                              {item.precoVendedor && item.precoUnitario < item.precoVendedor && (
+                                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium">({(((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100).toFixed(1)}% desc.)</span>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
