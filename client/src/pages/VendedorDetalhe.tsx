@@ -3848,6 +3848,18 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                     >
                                       <Plus className="w-3 h-3" /> Salvar
                                     </button>
+                                    <button
+                                      onClick={() => {
+                                        setProductCalc(prev => {
+                                          const next = { ...prev };
+                                          delete next[p.codigoItem];
+                                          return next;
+                                        });
+                                      }}
+                                      className="px-2.5 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-[10px] font-bold transition-colors"
+                                    >
+                                      Cancelar
+                                    </button>
                                   </div>
                                 )}
                               </div>
