@@ -3646,7 +3646,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                     type="text"
                                     inputMode="decimal"
                                     placeholder="0"
-                                    value={calc.discount}
+                                    value={calc.discount !== '' ? calc.discount : (calc.finalValue && precoBase > 0 && parseFloat(calc.finalValue.replace(',', '.')) > 0 ? ((1 - parseFloat(calc.finalValue.replace(',', '.')) / precoBase) * 100).toFixed(1) : '')}
                                     onChange={(e) => {
                                       const v = e.target.value.replace(/[^0-9.,]/g, '');
                                       setProductCalc(prev => ({
@@ -3669,7 +3669,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                     type="text"
                                     inputMode="decimal"
                                     placeholder="0,00"
-                                    value={calc.finalValue || (calc.discount ? finalFromDiscount.toFixed(2) : '')}
+                                    value={calc.finalValue !== '' ? calc.finalValue : (calc.discount && discountPct > 0 ? finalFromDiscount.toFixed(2) : '')}
                                     onChange={(e) => {
                                       const v = e.target.value.replace(/[^0-9.,]/g, '');
                                       setProductCalc(prev => ({

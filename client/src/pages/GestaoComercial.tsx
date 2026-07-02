@@ -717,23 +717,19 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
         </div>
       )}
 
-      {/* Vendedores Grid */}
+      {/* Vendedores - Compact collapsed list */}
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {allVendedores.map((v) => (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          {allVendedores.map((v, idx) => (
             <div
               key={v.name}
-              onClick={() => { if (v.permission) navigate(`/gestao-comercial/vendedor/${v.permission.id}`); }}
-              className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 transition-all cursor-pointer hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 ${
-                v.isGestor
-                  ? "border-teal-200 dark:border-teal-800"
-                  : v.permission?.authorized
-                    ? "border-slate-200 dark:border-slate-700"
-                    : "border-red-200 dark:border-red-800 opacity-60"
-              }`}
+              className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+              <button
+                onClick={() => { if (v.permission) navigate(`/gestao-comercial/vendedor/${v.permission.id}`); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${
                   v.isGestor
                     ? "bg-gradient-to-br from-teal-400 to-teal-600"
                     : v.permission?.authorized
@@ -742,30 +738,22 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
                 }`}>
                   {v.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
-                    {v.isGestor && (
-                      <Crown className="w-3 h-3 text-teal-500 flex-shrink-0" />
-                    )}
-                  </div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
+                  {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
                     {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Gestor: ${v.gestor}`}
-                  </p>
+                  </span>
                 </div>
-                {v.permission?.authorized ? (
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />
-                ) : (
-                  <div className="w-2 h-2 rounded-full bg-red-400" title="Bloqueado" />
-                )}
-              </div>
-              {/* Quick access icons */}
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 flex items-center gap-1"><Package className="w-3 h-3" /> Estoque</span>
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 flex items-center gap-1"><UserPlus className="w-3 h-3" /> Clientes</span>
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 flex items-center gap-1"><Tag className="w-3 h-3" /> Preços</span>
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 flex items-center gap-1"><FolderOpen className="w-3 h-3" /> Catálogos</span>
-              </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {v.permission?.authorized ? (
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />
+                  ) : (
+                    <div className="w-2 h-2 rounded-full bg-red-400" title="Bloqueado" />
+                  )}
+                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-500" />
+                </div>
+              </button>
             </div>
           ))}
         </div>
