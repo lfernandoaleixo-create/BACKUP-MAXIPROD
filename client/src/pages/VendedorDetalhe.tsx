@@ -3979,13 +3979,28 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <button onClick={() => setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar
               </button>
-              <button
-                onClick={() => setStep("pagamento")}
-                
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                Próximo: Pagamento
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStep("pagamento")}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+                >
+                  Pagamento/Frete
+                </button>
+                {items.length > 0 && (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={createOrderMutation.isPending || !canProceedProdutos}
+                    className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    {createOrderMutation.isPending ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    Pedido Concluído
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
