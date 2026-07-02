@@ -334,13 +334,27 @@ export const salesOrderRouter = router({
           }
         }
         // Get price table items for this seller's table
+        const allTables = await db.select().from(priceTables);
+        let matchedTable: typeof allTables[0] | undefined;
+        
+        // 1. Try direct mapping via priceTableCode field
         if (priceTableCode) {
-          const pt = await db.select().from(priceTables).where(eq(priceTables.codigo, priceTableCode)).limit(1);
-          if (pt.length > 0) {
-            const ptItems = await db.select().from(priceTableItems).where(eq(priceTableItems.priceTableId, pt[0].id));
-            for (const pti of ptItems) {
-              priceTableMap.set(pti.itemCodigo, { preco: pti.preco, descontoMaximo: pti.descontoMaximoEmPercentual });
-            }
+          matchedTable = allTables.find(t => t.codigo === priceTableCode);
+        }
+        
+        // 2. Fallback: match by seller name in table description
+        if (!matchedTable) {
+          const nameParts = seller[0].sellerName.toUpperCase().split(' ');
+          matchedTable = allTables.find(t => {
+            const desc = t.descricao.toUpperCase();
+            return nameParts.some(part => part.length > 3 && desc.includes(part));
+          });
+        }
+        
+        if (matchedTable) {
+          const ptItems = await db.select().from(priceTableItems).where(eq(priceTableItems.priceTableId, matchedTable.id));
+          for (const pti of ptItems) {
+            priceTableMap.set(pti.itemCodigo, { preco: pti.preco, descontoMaximo: pti.descontoMaximoEmPercentual });
           }
         }
       }
