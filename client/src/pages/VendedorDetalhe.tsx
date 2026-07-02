@@ -3533,7 +3533,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 pb-2 border-b-2 border-emerald-300 dark:border-emerald-700 shadow-md rounded-lg mb-3">
                 <div className="flex items-center justify-between px-3 py-2 bg-emerald-600 rounded-t-lg">
                   <p className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                    <ShoppingCart className="w-4 h-4" /> Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'}) \u2014 {items.reduce((sum, i) => sum + i.quantidade, 0)} caixas
+                    <ShoppingCart className="w-4 h-4" /> Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'}) — {items.reduce((sum, i) => sum + i.quantidade, 0)} caixas
                   </p>
                   <p className="text-sm font-bold text-white">
                     {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
@@ -3556,7 +3556,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                               </div>
                             </div>
                             <div>
-                              <label className="text-[8px] text-slate-400 uppercase font-bold">Pre\u00e7o unit.</label>
+                              <label className="text-[8px] text-slate-400 uppercase font-bold">Preço unit.</label>
                               <input type="text" inputMode="decimal" value={editCartPrice} onChange={(e) => { const v = e.target.value.replace(/[^0-9.,]/g, ''); setEditCartPrice(v); }} className="mt-0.5 w-20 px-2 py-1 text-xs border border-emerald-300 dark:border-emerald-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
                             </div>
                             <button onClick={() => saveCartEdit(idx)} className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700">Salvar</button>
@@ -3567,12 +3567,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                         /* Display mode */
                         <div className="flex items-center justify-between px-2.5 py-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate">{item.descricaoItem}</p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{item.descricaoItem}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                               <span className="font-mono text-slate-400">{item.codigoItem}</span>
                               {' '}
                               <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                                {item.quantidade} cx \u00d7 {formatCurrencySales(item.precoUnitario)} = {formatCurrencySales(item.quantidade * item.precoUnitario)}
+                                {item.quantidade} cx × {formatCurrencySales(item.precoUnitario)} = {formatCurrencySales(item.quantidade * item.precoUnitario)}
                               </span>
                               {item.precoVendedor && item.precoUnitario < item.precoVendedor && (
                                 <span className="text-orange-500 ml-1">({(((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100).toFixed(1)}% desc.)</span>
