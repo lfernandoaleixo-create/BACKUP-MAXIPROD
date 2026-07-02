@@ -148,16 +148,7 @@ export default function GestaoComercial() {
             Vendedores
           </button>
 
-          <div className="ml-auto flex items-center gap-2">
-            <Link href="/gestao-comercial/aprovacoes" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Aprovações
-            </Link>
-            <Link href="/gestao-comercial/pedidos-operador" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all cursor-pointer">
-              <ClipboardCheck className="w-3.5 h-3.5" />
-              Pedidos (Vitória)
-            </Link>
-          </div>
+
         </div>
 
         {/* Content */}
@@ -487,6 +478,52 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       <GestaoMetricasVendedores sellerNames={vendedores} />
                     ) : activeConfig === "acesso" ? (
                       <AcessoAppView gestorName={card.name} vendedores={vendedores} permissions={permissions} onToggleAuth={handleToggleAuth} />
+                    ) : activeConfig === "pedidos" ? (
+                      <div className="space-y-3">
+                        {/* Quick access: Aprovações + Pedidos (Vitória) */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Link href="/gestao-comercial/aprovacoes" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Aprovações
+                          </Link>
+                          <Link href="/gestao-comercial/pedidos-operador" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all cursor-pointer">
+                            <ClipboardCheck className="w-3.5 h-3.5" />
+                            Pedidos (Vitória)
+                          </Link>
+                        </div>
+                        {/* Vendedores list */}
+                        {vendedores.length === 0 && (
+                          <div className="text-center py-6">
+                            <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                            <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
+                          </div>
+                        )}
+                        {vendedores.map((vendedor) => {
+                          const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
+                          const target = { tab: "pedidos" };
+                          const navUrl = `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}`;
+                          return (
+                            <div
+                              key={vendedor}
+                              onClick={() => { if (perm) navigate(navUrl); }}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
+                                {vendedor.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {perm && (
+                                  <span className={`w-2 h-2 rounded-full ${perm.authorized ? "bg-emerald-500" : "bg-red-400"}`} />
+                                )}
+                                <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         {vendedores.length === 0 && (
@@ -676,11 +713,17 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
 
   const authorizedCount = allVendedores.filter(v => v.permission?.authorized).length;
 
+  const [panelExpanded, setPanelExpanded] = useState(false);
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
-        <div className="flex items-center justify-between">
+      {/* Painel dos Vendedores - Collapsible */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        {/* Clickable header */}
+        <button
+          onClick={() => setPanelExpanded(!panelExpanded)}
+          className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors text-left"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
               <Users className="w-5 h-5 text-white" />
@@ -688,15 +731,64 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
             <div>
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Vendedores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {authorizedCount} autorizados de {allVendedores.length} · Clique para ver o app do vendedor
+                {authorizedCount} autorizados de {allVendedores.length} · Clique para expandir
               </p>
             </div>
           </div>
-        </div>
-      </div>
+          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${panelExpanded ? '' : '-rotate-90'}`} />
+        </button>
 
-      {/* Vendedores - Collapsible panel */}
-      <VendedoresCollapsible allVendedores={allVendedores} isLoading={isLoading} navigate={navigate} />
+        {/* Expanded content - vendedores list */}
+        {panelExpanded && (
+          <div className="border-t border-slate-200 dark:border-slate-700">
+            {isLoading ? (
+              <div className="p-6 text-center">
+                <RefreshCw className="w-5 h-5 text-orange-500 animate-spin mx-auto mb-2" />
+                <p className="text-xs text-slate-500 dark:text-slate-400">Carregando vendedores...</p>
+              </div>
+            ) : (
+              <div>
+                {allVendedores.map((v, idx) => (
+                  <div
+                    key={v.name}
+                    className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
+                  >
+                    <button
+                      onClick={() => { if (v.permission) navigate(`/gestao-comercial/vendedor/${v.permission.id}`); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${
+                        v.isGestor
+                          ? "bg-gradient-to-br from-teal-400 to-teal-600"
+                          : v.permission?.authorized
+                            ? "bg-gradient-to-br from-orange-300 to-orange-500"
+                            : "bg-gradient-to-br from-slate-300 to-slate-400"
+                      }`}>
+                        {v.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
+                        {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                          {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor \u00b7 Gestor: ${v.gestor}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {v.permission?.authorized ? (
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-red-400" title="Bloqueado" />
+                        )}
+                        <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-500" />
+                      </div>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
