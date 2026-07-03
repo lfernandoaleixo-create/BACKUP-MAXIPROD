@@ -4729,7 +4729,7 @@
 - [ ] Confirmar se vendas dentro de MG mantêm 18% ou têm redução
 - [ ] Confirmar se benefício se aplica a todos os produtos ou só importados
 - [ ] Confirmar impostos federais (PIS 0,65% + COFINS 3% + IRPJ 1,2% + CSLL 1,08% = ~5,93%)
-- [ ] Implementar barra de margem de lucro com cálculo automático de impostos
+- [x] Implementar barra de margem de lucro com cálculo automático de impostos
 
 ## Cadastro de Cliente Expandido - Campos do Maxiprod (03/07/2026)
 - [x] Adicionar campos fiscais: Regime Tributário, Inscrição Municipal, SUFRAMA, Situação Fiscal Especial, CNAE Fiscal, Email NF-e
@@ -4737,3 +4737,19 @@
 - [x] Adicionar campos CRM: Região, Perfil, Forma de Pedido, Produtos, Probabilidade de Negócio, Tamanho, Atenção, Fornecedor Atual
 - [x] Adicionar campo Cobrança: SITUAÇÃO (Com Protesto / Sem Protesto)
 - [x] Organizar formulário em seções como no Maxiprod
+
+## Barra de Margem de Lucro com Impostos (03/07/2026)
+- [x] Criar lógica de cálculo de impostos no backend (ICMS, PIS, COFINS, IRPJ, CSLL)
+- [x] Implementar cálculo de DIFAL por UF (simples e por dentro) para não contribuinte
+- [x] Puxar faturamento trimestral para calcular IRPJ variável (1,20% a 2,28%)
+- [x] Criar UI da barra de margem no fluxo de pedido de venda
+- [x] Mostrar breakdown de impostos (ICMS + PIS + COFINS + IRPJ + CSLL + DIFAL)
+- [x] Considerar tipo do produto (importado/industrializado) e destino (MG/interestadual)
+- [x] Considerar contribuinte vs não contribuinte para DIFAL
+
+## Integração de Frete — Transportadoras (03/07/2026)
+- [x] Integrar API Braspress (cotação + tracking) com 3 CNPJs
+- [ ] Integrar API SSW/Camilo dos Santos (cotação + ocorrências)
+- [x] Opção de cotar pelos 3 CNPJs em qualquer transportadora
+- [x] UI de cotação de frete no pedido de venda
+- [ ] Exibir comparativo de fretes entre transportadoras

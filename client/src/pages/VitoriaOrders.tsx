@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import MarginBar from "@/components/MarginBar";
 
 function formatCurrency(value: number | string) {
   const num = typeof value === "string" ? Number(value) : value;
@@ -372,6 +373,18 @@ export default function VitoriaOrders() {
                             </p>
                           )}
                         </div>
+                      )}
+
+                      {/* Margin Bar - shown for all expanded orders */}
+                      {isExpanded && (
+                        <MarginBar
+                          orderId={order.id}
+                          orderUf={order.uf || "MG"}
+                          orderCep={order.cep || ""}
+                          orderCnpj={order.cnpjCpf || ""}
+                          orderTotal={Number(order.totalPedido || 0)}
+                          tipoContribuinte={order.tipoContribuinte || "Contribuinte"}
+                        />
                       )}
                     </div>
                   )}

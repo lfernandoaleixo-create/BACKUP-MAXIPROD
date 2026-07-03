@@ -1,8 +1,10 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
+import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
+import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 
 /**
  * Sales Order Requests Router
@@ -1186,5 +1188,215 @@ export const salesOrderRouter = router({
       // Delete the order
       await db.delete(salesOrderRequests).where(eq(salesOrderRequests.id, input.orderId));
       return { success: true };
+    }),
+
+  // ===== MARGIN CALCULATION =====
+
+  /** Calculate profit margin for a closed order */
+  calculateMargin: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      tipoProduto: z.enum(["importado", "industrializado"]).default("importado"),
+      comissaoPercentual: z.number().min(0).max(100).default(0),
+      freteValor: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // 1. Get order data
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido não encontrado");
+
+      const items = await db.select().from(salesOrderRequestItems)
+        .where(eq(salesOrderRequestItems.orderId, input.orderId));
+
+      const valorVenda = Number(order.totalPedido || 0);
+      const ufDestino = (order.uf || "MG").toUpperCase();
+      const tipoContribuinte = (order.tipoContribuinte || "Contribuinte") as TipoContribuinte;
+
+      // 2. Get quarterly revenue for IRPJ calculation
+      const now = new Date();
+      const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+      const quarterStartStr = quarterStart.toISOString().split("T")[0];
+      
+      const [revenueRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${salesOrders.valorTotalPedido} AS DECIMAL(15,2))), 0)`,
+      }).from(salesOrders)
+        .where(sql`${salesOrders.dataEmissao} >= ${quarterStartStr}`);
+      
+      const faturamentoTrimestral = Number(revenueRow?.total || 0);
+
+      // 3. Get product costs from import PO data (custo projetado - orange column)
+      // Use same logic as getRealTimeCosts: get costs by product code
+      const productCodes = items.map(i => i.codigoItem).filter(Boolean) as string[];
+      
+      let custoMercadoriaTotal = 0;
+      const itemCosts: Array<{ codigoItem: string; descricao: string; quantidade: number; custoUnitario: number; custoTotal: number; fonte: string }> = [];
+
+      if (productCodes.length > 0) {
+        // Get stock items to know fator (unidade de venda)
+        const stockRows = await db.select({
+          codigoItem: stockItems.codigoItem,
+          unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+          grupoCodigo: stockItems.grupoCodigo,
+        }).from(stockItems).where(
+          sql`${stockItems.codigoItem} IN (${sql.join(productCodes.map(c => sql`${c}`), sql`, `)})`
+        );
+        const stockMap = new Map(stockRows.map(s => [s.codigoItem, s]));
+
+        // Get PO products with costs (prioritize patio > concluida)
+        const poProducts = await db.select({
+          productCode: importPoProducts.productCode,
+          valorCaixaBrl: importPoProducts.valorCaixaBrl,
+          precoMilUnid: importPoProducts.precoMilUnid,
+          navigationStatus: importPos.navigationStatus,
+        }).from(importPoProducts)
+          .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
+          .where(
+            and(
+              sql`${importPoProducts.productCode} IN (${sql.join(productCodes.map(c => sql`${c}`), sql`, `)})`,
+              sql`${importPos.navigationStatus} IN ('concluida', 'recebida', 'chegou_patio')`,
+              sql`(${importPoProducts.valorCaixaBrl} IS NOT NULL OR ${importPoProducts.precoMilUnid} IS NOT NULL)`,
+            )
+          );
+
+        // Group by product code, prioritize patio (projetado) over concluida (real)
+        const costByProduct: Record<string, { cost: number; fonte: string }> = {};
+        for (const pp of poProducts) {
+          const code = pp.productCode!;
+          const cost = Number(pp.valorCaixaBrl || pp.precoMilUnid || 0);
+          if (cost <= 0) continue;
+          const isPatio = pp.navigationStatus === 'chegou_patio';
+          // Prefer patio (projetado/orange) over concluida (real/green)
+          if (!costByProduct[code] || isPatio) {
+            costByProduct[code] = { cost, fonte: isPatio ? "Projetado" : "Real" };
+          }
+        }
+
+        // Calculate cost for each order item
+        for (const item of items) {
+          const code = item.codigoItem;
+          if (!code) continue;
+          const qty = Number(item.quantidade || 0);
+          const stockInfo = stockMap.get(code);
+          const fator = Number(stockInfo?.unidadeDeVendaFator || 1);
+          
+          // Cost per unit (valorCaixaBrl is per box, divide by fator to get per unit)
+          const costData = costByProduct[code];
+          if (costData) {
+            const custoUnitario = fator > 0 ? costData.cost / fator : costData.cost;
+            const custoTotal = custoUnitario * qty;
+            custoMercadoriaTotal += custoTotal;
+            itemCosts.push({
+              codigoItem: code,
+              descricao: item.descricaoItem || code,
+              quantidade: qty,
+              custoUnitario,
+              custoTotal,
+              fonte: costData.fonte,
+            });
+          } else {
+            itemCosts.push({
+              codigoItem: code,
+              descricao: item.descricaoItem || code,
+              quantidade: qty,
+              custoUnitario: 0,
+              custoTotal: 0,
+              fonte: "Sem custo",
+            });
+          }
+        }
+      }
+
+      // 4. Calculate taxes
+      const impostos = calcularImpostos({
+        valorVenda: valorVenda,
+        ufDestino,
+        tipoProduto: input.tipoProduto as TipoProduto,
+        tipoContribuinte,
+        faturamentoTrimestral,
+      });
+
+      // 5. Calculate commission
+      const comissaoValor = valorVenda * (input.comissaoPercentual / 100);
+
+      // 6. Calculate margin
+      const margem = calcularMargem({
+        valorVenda,
+        custoMercadoria: custoMercadoriaTotal,
+        frete: input.freteValor,
+        comissao: comissaoValor,
+        impostos,
+      });
+
+      return {
+        orderId: input.orderId,
+        orderNumber: order.orderNumber,
+        cliente: order.razaoSocial,
+        uf: ufDestino,
+        tipoContribuinte,
+        tipoProduto: input.tipoProduto,
+        valorVenda,
+        faturamentoTrimestral,
+        impostos,
+        custoMercadoria: {
+          total: custoMercadoriaTotal,
+          items: itemCosts,
+        },
+        frete: input.freteValor,
+        comissao: {
+          percentual: input.comissaoPercentual,
+          valor: comissaoValor,
+        },
+        margem,
+      };
+    }),
+
+  // ===== BRASPRESS FREIGHT QUOTE =====
+
+  /** Get available CNPJs for freight quotation */
+  getFreightCnpjs: publicProcedure.query(() => {
+    return BRASPRESS_CNPJS.map((c, i) => ({
+      index: i,
+      cnpj: c.cnpj,
+      label: c.label,
+    }));
+  }),
+
+  /** Quote freight via Braspress API */
+  quoteBraspress: publicProcedure
+    .input(z.object({
+      cnpjIndex: z.number().min(0).max(2),
+      cnpjDestinatario: z.string(),
+      cepOrigem: z.string().default("32210130"), // CEP padrão Grupo Fox - Contagem/MG
+      cepDestino: z.string(),
+      valorMercadoria: z.number(),
+      peso: z.number(),
+      volumes: z.number().default(1),
+      altura: z.number().default(0.5),
+      largura: z.number().default(0.5),
+      comprimento: z.number().default(0.5),
+    }))
+    .mutation(async ({ input }) => {
+      return cotarBraspress(input);
+    }),
+
+  /** Quote freight via all 3 Braspress CNPJs simultaneously */
+  quoteAllBraspress: publicProcedure
+    .input(z.object({
+      cnpjDestinatario: z.string(),
+      cepOrigem: z.string().default("32210130"),
+      cepDestino: z.string(),
+      valorMercadoria: z.number(),
+      peso: z.number(),
+      volumes: z.number().default(1),
+      altura: z.number().default(0.5),
+      largura: z.number().default(0.5),
+      comprimento: z.number().default(0.5),
+    }))
+    .mutation(async ({ input }) => {
+      return cotarTodosCnpjs(input);
     }),
 });
