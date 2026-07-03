@@ -4791,3 +4791,5 @@
 - [x] Observação aparece integralmente no pedido concluído (view da Vitória com whitespace-pre-wrap + view do gestor)
 - [x] Número do pedido recomeçado do zero — resetado order_number_counter para 1 e apagados pedidos de teste anteriores
 - [x] Botão "Resetar Número de Pedidos" na página Aprovação de Pedidos (gestor) — botão vermelho com confirmação, apaga todos pedidos + reseta contador para #1
+- [x] Ícone de lixeira ao lado do pedido na view da Vitória (VitoriaOrders) para excluir pedido — Trash2 ao lado do valor, usa confirmDelete existente
+- [x] Ícone de lixeira ao lado do pedido na view do Juvenal (GestorAprovacoes) para excluir pedido — Trash2 ao lado do valor + modal de confirmação

@@ -9,7 +9,7 @@ import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
-  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw
+  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -74,8 +74,10 @@ export default function GestorAprovacoes() {
   const approveMutation = trpc.salesOrders.approveOrder.useMutation();
   const rejectMutation = trpc.salesOrders.rejectOrder.useMutation();
   const resetMutation = trpc.salesOrders.resetOrderNumbers.useMutation();
+  const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const utils = trpc.useUtils();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const handleApprove = (orderId: number) => {
     approveMutation.mutate(
@@ -320,11 +322,18 @@ export default function GestorAprovacoes() {
                       </div>
                     </div>
 
-                    {/* Total */}
-                    <div className="text-right flex-shrink-0">
+                    {/* Total + Delete */}
+                    <div className="text-right flex-shrink-0 flex items-center gap-2">
                       <p className="text-sm font-bold text-green-700 dark:text-green-400">
                         {formatCurrency(order.totalPedido)}
                       </p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(order.id); }}
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                        title="Excluir pedido"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
@@ -487,6 +496,47 @@ export default function GestorAprovacoes() {
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-sm w-full p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Excluir Pedido</h3>
+                <p className="text-xs text-slate-500">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  deleteOrderMutation.mutate({ orderId: confirmDeleteId }, {
+                    onSuccess: () => {
+                      utils.salesOrders.listOrders.invalidate();
+                      utils.salesOrders.getOrdersForGestor.invalidate();
+                      setConfirmDeleteId(null);
+                      setExpandedOrder(null);
+                    }
+                  });
+                }}
+                disabled={deleteOrderMutation.isPending}
+                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 rounded-lg cursor-pointer"
+              >
+                {deleteOrderMutation.isPending ? "Apagando..." : "Sim, excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

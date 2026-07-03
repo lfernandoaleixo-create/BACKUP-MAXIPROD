@@ -267,10 +267,17 @@ export default function VitoriaOrders() {
                       </div>
                     </div>
 
-                    <div className="text-right flex-shrink-0">
+                    <div className="text-right flex-shrink-0 flex items-center gap-2">
                       <p className="text-sm font-bold text-green-700 dark:text-green-400">
                         {formatCurrency(order.totalPedido)}
                       </p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(order.id); }}
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                        title="Excluir pedido"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
