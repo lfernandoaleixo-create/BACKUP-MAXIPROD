@@ -4787,3 +4787,6 @@
 - [x] Botão de atualização na tela do vendedor para forçar reload e puxar última publicação — ícone RefreshCw ao lado do badge Autorizado (só aparece no sellerMode)
 - [x] Lixeira no card de cliente cadastrado (estado vazio) para vendedor poder apagar cliente — usa ManualClientRow com botão Excluir + confirmação
 - [x] Lixeira no card de pedido via App para vendedor poder excluir pedido mesmo depois de concluído — OrderDeleteButton com ícone Trash2 + confirmação Sim/Não
+- [x] Campo "Observação" no formulário de pedido (antes do botão Pedido Concluído) — já existia no step Pagamento/Frete (textarea) e aparece na revisão
+- [x] Observação aparece integralmente no pedido concluído (view da Vitória com whitespace-pre-wrap + view do gestor)
+- [x] Número do pedido recomeçado do zero — resetado order_number_counter para 1 e apagados pedidos de teste anteriores
