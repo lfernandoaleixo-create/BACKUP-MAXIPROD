@@ -28,7 +28,9 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
+  DollarSign,
 } from "lucide-react";
+import MarginBar from "@/components/MarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
@@ -356,6 +358,24 @@ export default function PedidosVendedoresTab() {
                 <div className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs text-slate-500 font-medium">Observações</p>
                   <p className="text-sm text-slate-700">{detailsQuery.data.order.observacoes}</p>
+                </div>
+              )}
+
+              {/* Card LUCRO - Margem de Lucro */}
+              {(detailsQuery.data.order.status === "aprovado" || detailsQuery.data.order.status === "processado") && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Lucro</p>
+                  </div>
+                  <MarginBar
+                    orderId={detailsQuery.data.order.id}
+                    orderUf={detailsQuery.data.order.uf || "MG"}
+                    orderCep={detailsQuery.data.order.cep || ""}
+                    orderCnpj={detailsQuery.data.order.cnpjCpf || ""}
+                    orderTotal={Number(detailsQuery.data.order.totalPedido) || 0}
+                    tipoContribuinte={detailsQuery.data.order.tipoContribuinte || "Contribuinte"}
+                  />
                 </div>
               )}
 

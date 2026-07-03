@@ -3630,11 +3630,14 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setStep("produtos")}
-                
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-medium rounded-lg transition-colors"
+                disabled={!canProceedCliente}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
               >
                 Próximo: Produtos
               </button>
+              {!canProceedCliente && (
+                <p className="text-[10px] text-red-500 mt-1">Preencha a Razão Social do cliente para continuar</p>
+              )}
             </div>
 
             {/* Informações do Cliente - Card com histórico (starts collapsed) */}

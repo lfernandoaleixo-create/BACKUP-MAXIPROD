@@ -4753,3 +4753,11 @@
 - [x] Opção de cotar pelos 3 CNPJs em qualquer transportadora
 - [x] UI de cotação de frete no pedido de venda
 - [ ] Exibir comparativo de fretes entre transportadoras
+
+## Card "Lucro" na Tela do Gestor (03/07/2026)
+- [x] Criar card "Lucro" no painel do gestor mostrando cálculo completo de margem/lucro do pedido
+- [x] Mostrar breakdown: impostos (ICMS, PIS, COFINS, IRPJ, CSLL, DIFAL), frete, comissão, custo mercadoria
+- [x] Integrar cotação Braspress no card de Lucro
+
+## Bug Fix: razaoSocial vazio no createOrder (03/07/2026)
+- [x] Corrigir validação: forçar preenchimento de Razão Social com mensagem clara + botão disabled no frontend
