@@ -5,7 +5,7 @@
  * - Product type (importado vs industrializado)
  * - Destination (MG internal vs interestadual)
  * - Client type (contribuinte vs não contribuinte)
- * - Quarterly revenue (for IRPJ calculation)
+ * - IRPJ fixo 1,32% e CSLL fixo 1,19% (confirmado pelo contador Thiago)
  */
 
 // ===== ALÍQUOTAS INTERNAS POR ESTADO (diagonal tabela ICMS 2026) =====
@@ -109,35 +109,18 @@ function calcularCOFINS(isInternaMG: boolean): number {
 }
 
 /**
- * Calcula IRPJ baseado no faturamento trimestral
- * Base: presunção de 8% sobre receita bruta → 15% de IRPJ = 1,20%
- * Adicional: se base > R$ 60.000/trimestre (equivale a faturamento > R$ 750.000)
- * Na prática: se faturamento > R$ 1.250.000/trimestre → alíquota entre 1,20% e 2,28%
+ * IRPJ fixo em 1,32% conforme apuração do contador (Thiago)
+ * Valor fixo aplicado sobre o valor da venda
  */
-function calcularIRPJ(faturamentoTrimestral: number): number {
-  const basePresuncao = faturamentoTrimestral * 0.08; // 8% presunção
-  const irpjBase = basePresuncao * 0.15; // 15% sobre a base
-  
-  // Adicional de 10% sobre excesso de R$ 60.000 no trimestre
-  let irpjAdicional = 0;
-  if (basePresuncao > 60000) {
-    irpjAdicional = (basePresuncao - 60000) * 0.10;
-  }
-  
-  const totalIRPJ = irpjBase + irpjAdicional;
-  // Retorna como % do faturamento
-  if (faturamentoTrimestral === 0) return 1.20;
-  const percentual = (totalIRPJ / faturamentoTrimestral) * 100;
-  
-  // Limitar entre 1,20% e 2,28%
-  return Math.min(Math.max(percentual, 1.20), 2.28);
+function calcularIRPJ(_faturamentoTrimestral: number): number {
+  return 1.32;
 }
 
 /**
- * CSLL fixa
+ * CSLL fixa em 1,19% conforme apuração do contador (Thiago)
  */
 function calcularCSLL(): number {
-  return 1.188;
+  return 1.19;
 }
 
 /**

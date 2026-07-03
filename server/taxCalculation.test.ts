@@ -19,8 +19,8 @@ describe("Tax Calculation Engine", () => {
       expect(result.pisEfetivo).toBeCloseTo(0.533, 3);
       // COFINS interna MG = 2.46%
       expect(result.cofinsEfetiva).toBeCloseTo(2.46, 2);
-      // CSLL = 1.188%
-      expect(result.csllEfetiva).toBeCloseTo(1.188, 3);
+      // CSLL = 1.19% (fixo, confirmado pelo contador Thiago)
+      expect(result.csllEfetiva).toBeCloseTo(1.19, 2);
       // No DIFAL for contribuinte
       expect(result.temDifal).toBe(false);
       expect(result.difalValor).toBe(0);
@@ -116,7 +116,7 @@ describe("Tax Calculation Engine", () => {
       expect(result.difalValor).toBe(0);
     });
 
-    it("should calculate higher IRPJ when quarterly revenue exceeds 1.25M", () => {
+    it("should use fixed IRPJ 1.32% regardless of quarterly revenue", () => {
       const resultLow = calcularImpostos({
         valorVenda: 10000,
         ufDestino: "MG",
@@ -133,12 +133,10 @@ describe("Tax Calculation Engine", () => {
         faturamentoTrimestral: 2000000,
       });
 
-      // IRPJ should be higher when revenue exceeds 1.25M
-      expect(resultHigh.irpjEfetivo).toBeGreaterThan(resultLow.irpjEfetivo);
-      // Low should be 1.20%, high should be between 1.20% and 2.28%
-      expect(resultLow.irpjEfetivo).toBeCloseTo(1.20, 1);
-      expect(resultHigh.irpjEfetivo).toBeGreaterThanOrEqual(1.20);
-      expect(resultHigh.irpjEfetivo).toBeLessThanOrEqual(2.28);
+      // IRPJ is now fixed at 1.32% (confirmed by accountant Thiago)
+      expect(resultLow.irpjEfetivo).toBeCloseTo(1.32, 2);
+      expect(resultHigh.irpjEfetivo).toBeCloseTo(1.32, 2);
+      expect(resultLow.irpjEfetivo).toBe(resultHigh.irpjEfetivo);
     });
 
     it("should calculate total taxes correctly", () => {
