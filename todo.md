@@ -4772,3 +4772,10 @@
 - [x] Criar módulo de integração Alfa Transportes
 - [x] Adicionar cotação Alfa ao backend (router salesOrderRouter)
 - [x] Atualizar MarginBar para exibir comparativo Braspress vs Alfa vs Camilo
+
+## Dados do Cliente no Pedido Concluído (03/07/2026)
+- [x] Garantir que TODOS os campos do cadastro do cliente são salvos no pedido (backend já faz spread de todos os campos)
+- [x] Exibir dados completos do cliente na view da Vitória (operação) — 4 seções: Dados do Cliente, Endereço, Contato, Dados Comerciais
+- [x] Campos: razão social, nome fantasia, CNPJ/CPF, inscrição estadual, tipo contribuinte (badge), regime tributário, email NF-e, CNAE fiscal, CEP, endereço completo, bairro, município/UF, telefone1, telefone2, email contato, segmento, condição de pagamento, tipo frete, observações
+- [x] Pedidos persistem (já funciona - banco de dados)
+- [x] Opção de apagar pedidos — botão "Apagar Pedido (teste)" adicionado na view da Vitória com confirmação

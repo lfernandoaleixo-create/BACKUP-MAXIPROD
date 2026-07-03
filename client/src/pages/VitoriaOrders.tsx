@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
-  Inbox, CheckCheck, AlertCircle
+  Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Truck, Tag, CreditCard, Trash2
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -37,7 +37,24 @@ export default function VitoriaOrders() {
 
   const markRecebidoMutation = trpc.salesOrders.markRecebido.useMutation();
   const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
+  const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const utils = trpc.useUtils();
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+
+  const handleDeleteOrder = (orderId: number) => {
+    deleteOrderMutation.mutate(
+      { orderId },
+      {
+        onSuccess: () => {
+          toast.success("Pedido apagado com sucesso!");
+          setConfirmDelete(null);
+          setExpandedOrder(null);
+          utils.salesOrders.getOrdersForOperator.invalidate();
+          utils.salesOrders.countPendingVitoria.invalidate();
+        },
+      }
+    );
+  };
 
   const handleMarkRecebido = (orderId: number) => {
     markRecebidoMutation.mutate(
@@ -308,22 +325,178 @@ export default function VitoriaOrders() {
                         </div>
                       )}
 
-                      {/* Client Info */}
-                      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-                        <div>
-                          <span className="text-slate-400 uppercase font-bold">CNPJ/CPF</span>
-                          <p className="text-slate-700 dark:text-slate-200 font-mono">{order.cnpjCpf}</p>
+                      {/* Client Info - Full Data */}
+                      <div className="mt-4 space-y-3">
+                        {/* Section: Dados do Cliente */}
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                            <Building2 className="w-3 h-3" />
+                            Dados do Cliente
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {order.razaoSocial && (
+                              <div className="col-span-2 md:col-span-3">
+                                <span className="text-slate-400 font-semibold">Razão Social</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-medium">{order.razaoSocial}</p>
+                              </div>
+                            )}
+                            {order.nomeFantasia && (
+                              <div className="col-span-2 md:col-span-2">
+                                <span className="text-slate-400 font-semibold">Nome Fantasia</span>
+                                <p className="text-slate-800 dark:text-slate-100">{order.nomeFantasia}</p>
+                              </div>
+                            )}
+                            {order.cnpjCpf && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">CNPJ/CPF</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.cnpjCpf}</p>
+                              </div>
+                            )}
+                            {order.inscricaoEstadual && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">Inscrição Estadual</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.inscricaoEstadual}</p>
+                              </div>
+                            )}
+                            {order.tipoContribuinte && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">Contribuinte ICMS</span>
+                                <p>
+                                  <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                    order.tipoContribuinte === "Contribuinte"
+                                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                      : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                  }`}>
+                                    {order.tipoContribuinte}
+                                  </span>
+                                </p>
+                              </div>
+                            )}
+                            {order.regimeTributario && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">Regime Tributário</span>
+                                <p className="text-slate-800 dark:text-slate-100">{order.regimeTributario}</p>
+                              </div>
+                            )}
+                            {order.emailNfe && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">Email NF-e</span>
+                                <p className="text-slate-800 dark:text-slate-100 text-[9px] truncate">{order.emailNfe}</p>
+                              </div>
+                            )}
+                            {order.cnaeFiscal && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">CNAE Fiscal</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.cnaeFiscal}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        {order.condicaoPagamento && (
-                          <div>
-                            <span className="text-slate-400 uppercase font-bold">Pagamento</span>
-                            <p className="text-slate-700 dark:text-slate-200">{order.condicaoPagamento}</p>
+
+                        {/* Section: Endereço */}
+                        {(order.cep || order.endereco || order.municipio) && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <MapPin className="w-3 h-3" />
+                              Endereço
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.cep && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100 font-mono">{order.cep}</p>
+                                </div>
+                              )}
+                              {(order.endereco || order.numero) && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100">
+                                    {order.endereco}{order.numero ? `, ${order.numero}` : ""}{order.complemento ? ` - ${order.complemento}` : ""}
+                                  </p>
+                                </div>
+                              )}
+                              {order.bairro && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Bairro</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.bairro}</p>
+                                </div>
+                              )}
+                              {(order.municipio || order.uf) && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Município/UF</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.municipio}{order.uf ? `/${order.uf}` : ""}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
-                        {order.observacoes && (
-                          <div className="col-span-2">
-                            <span className="text-slate-400 uppercase font-bold">Observações</span>
-                            <p className="text-slate-700 dark:text-slate-200">{order.observacoes}</p>
+
+                        {/* Section: Contato */}
+                        {(order.telefone1 || order.telefone2 || order.emailContato) && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <Phone className="w-3 h-3" />
+                              Contato
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.telefone1 && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone 1</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.telefone1}</p>
+                                </div>
+                              )}
+                              {order.telefone2 && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone 2</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.telefone2}</p>
+                                </div>
+                              )}
+                              {order.emailContato && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Email</span>
+                                  <p className="text-slate-800 dark:text-slate-100 truncate">{order.emailContato}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Section: Dados Comerciais */}
+                        {(order.segmento || order.condicaoPagamento || order.tipoFrete || order.observacoes) && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <CreditCard className="w-3 h-3" />
+                              Dados Comerciais
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.segmento && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Segmento</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.segmento}</p>
+                                </div>
+                              )}
+                              {order.condicaoPagamento && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Condição de Pagamento</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.condicaoPagamento}</p>
+                                </div>
+                              )}
+                              {order.tipoFrete && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Tipo de Frete</span>
+                                  <p className="text-slate-800 dark:text-slate-100 flex items-center gap-1">
+                                    <Truck className="w-3 h-3 text-slate-400" />
+                                    {order.tipoFrete}
+                                  </p>
+                                </div>
+                              )}
+                              {order.observacoes && (
+                                <div className="col-span-2 md:col-span-3">
+                                  <span className="text-slate-400 font-semibold">Observações</span>
+                                  <p className="text-slate-800 dark:text-slate-100 whitespace-pre-wrap">{order.observacoes}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -374,6 +547,36 @@ export default function VitoriaOrders() {
                           )}
                         </div>
                       )}
+
+                      {/* Delete Order Button */}
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                        {confirmDelete === order.id ? (
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] text-red-600 font-medium flex-1">Tem certeza? Esta ação não pode ser desfeita.</p>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              disabled={deleteOrderMutation.isPending}
+                              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-[10px] font-bold rounded transition-colors cursor-pointer"
+                            >
+                              {deleteOrderMutation.isPending ? "Apagando..." : "Confirmar"}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded transition-colors cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDelete(order.id)}
+                            className="flex items-center gap-1 text-[10px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Apagar Pedido (teste)
+                          </button>
+                        )}
+                      </div>
 
                       {/* Margin Bar - shown for all expanded orders */}
                       {isExpanded && (
