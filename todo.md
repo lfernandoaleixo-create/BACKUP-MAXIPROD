@@ -4793,3 +4793,4 @@
 - [x] Botão "Resetar Número de Pedidos" na página Aprovação de Pedidos (gestor) — botão vermelho com confirmação, apaga todos pedidos + reseta contador para #1
 - [x] Ícone de lixeira ao lado do pedido na view da Vitória (VitoriaOrders) para excluir pedido — Trash2 ao lado do valor, usa confirmDelete existente
 - [x] Ícone de lixeira ao lado do pedido na view do Juvenal (GestorAprovacoes) para excluir pedido — Trash2 ao lado do valor + modal de confirmação
+- [x] Margem de Lucro (tipo produto, comissão, frete, detalhamento impostos) aparece APENAS na senha Guilherme (gestor) — removido MarginBar da VitoriaOrders; vendedores já não tinham
