@@ -4779,3 +4779,7 @@
 - [x] Campos: razão social, nome fantasia, CNPJ/CPF, inscrição estadual, tipo contribuinte (badge), regime tributário, email NF-e, CNAE fiscal, CEP, endereço completo, bairro, município/UF, telefone1, telefone2, email contato, segmento, condição de pagamento, tipo frete, observações
 - [x] Pedidos persistem (já funciona - banco de dados)
 - [x] Opção de apagar pedidos — botão "Apagar Pedido (teste)" adicionado na view da Vitória com confirmação
+
+## Correções Pedido de Venda - Cadastro Cliente (03/07/2026)
+- [x] Cadastro de novo cliente deve aparecer SEMPRE, mesmo para vendedores sem histórico de vendas (ex: Renato) — botão agora aparece no estado vazio + lista clientes cadastrados manualmente
+- [x] Campo "Inscrição Estadual" já existia no formulário de cadastro E no formulário de novo pedido (confirmado)

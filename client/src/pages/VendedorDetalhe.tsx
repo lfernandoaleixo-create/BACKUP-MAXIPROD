@@ -1881,14 +1881,53 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
 
   if (!clientes || clientes.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
-        <div className="text-center">
-          <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-slate-500">Nenhum cliente encontrado</p>
-          <p className="text-xs text-slate-400 mt-1">
-            Não há pedidos de venda registrados para {sellerName}.
-          </p>
+      <div className="space-y-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+          <div className="text-center">
+            <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm font-medium text-slate-500">Nenhum cliente encontrado</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Não há pedidos de venda registrados para {sellerName}.
+            </p>
+            <button
+              onClick={() => setShowNewClientForm(true)}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 transition-colors shadow-sm cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Cadastrar Novo Cliente
+            </button>
+          </div>
         </div>
+
+        {/* Formulário de Cadastro de Novo Cliente */}
+        {showNewClientForm && (
+          <NewClientForm
+            sellerId={sellerId}
+            sellerName={sellerName}
+            onClose={() => setShowNewClientForm(false)}
+            onSuccess={() => {
+              setShowNewClientForm(false);
+              refetchManual();
+            }}
+          />
+        )}
+
+        {/* Clientes cadastrados manualmente */}
+        {manualClients && manualClients.length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Clientes Cadastrados</p>
+            <div className="space-y-2">
+              {manualClients.map((client: any) => (
+                <div key={client.id} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <div>
+                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200">{client.razaoSocial || client.nomeFantasia}</p>
+                    <p className="text-[10px] text-slate-500">{client.cnpjCpf} {client.municipio ? `• ${client.municipio}/${client.uf}` : ""}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
