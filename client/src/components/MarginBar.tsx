@@ -51,10 +51,10 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
   // Freight CNPJs
   const { data: freightCnpjs } = trpc.salesOrders.getFreightCnpjs.useQuery();
 
-  // Freight quote mutation
-  const quoteAllMutation = trpc.salesOrders.quoteAllBraspress.useMutation({
+  // Freight quote mutation - ALL carriers (Braspress + Alfa)
+  const quoteAllMutation = trpc.salesOrders.quoteAllCarriers.useMutation({
     onSuccess: (data) => {
-      toast.success("Cotações de frete recebidas!");
+      toast.success(`${data.length} cotações de frete recebidas!`);
     },
     onError: (err) => {
       toast.error("Erro ao cotar frete: " + err.message);
@@ -67,11 +67,12 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
       return;
     }
     quoteAllMutation.mutate({
-      cnpjDestinatario: orderCnpj.replace(/\D/g, ""),
+      cnpjDestinatario: orderCnpj.replace(/\D/g, "") || undefined,
       cepDestino: orderCep.replace(/\D/g, ""),
       valorMercadoria: orderTotal,
       peso: 100, // TODO: get from order items weight
       volumes: 1,
+      metroCubico: 0.05,
     });
   };
 
@@ -222,7 +223,7 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
               {quoteAllMutation.isPending ? (
                 <Loader2 className="w-3 h-3 animate-spin inline" />
               ) : (
-                "Cotar Braspress"
+                "Cotar Todas Transportadoras"
               )}
             </button>
             <button
@@ -249,30 +250,32 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
               />
             </div>
 
-            {/* Braspress quotes results */}
+            {/* All carriers quotes results */}
             {quoteAllMutation.data && (
               <div className="space-y-1.5">
-                <p className="text-[9px] text-slate-400 uppercase font-bold">Cotações Braspress:</p>
+                <p className="text-[9px] text-slate-400 uppercase font-bold">Cotações (Braspress + Alfa Transportes):</p>
                 {quoteAllMutation.data.map((quote: any, idx: number) => (
                   <div
                     key={idx}
                     className={`flex items-center justify-between p-2 rounded border text-[10px] ${
-                      quote.success
+                      !quote.error
                         ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
                         : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
                     }`}
                   >
                     <div>
                       <p className="font-bold text-slate-700 dark:text-slate-200">
-                        {freightCnpjs?.[idx]?.label || `CNPJ ${idx + 1}`}
+                        {quote.transportadora}
                       </p>
-                      <p className="text-slate-500">{freightCnpjs?.[idx]?.cnpj}</p>
+                      <p className="text-slate-500 text-[9px]">
+                        CNPJ: {quote.cnpj ? quote.cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}
+                      </p>
                     </div>
-                    {quote.success ? (
+                    {!quote.error ? (
                       <div className="flex items-center gap-2">
                         <div className="text-right">
                           <p className="font-bold text-green-700">{formatCurrency(quote.totalFrete)}</p>
-                          <p className="text-slate-400">{quote.prazoEntrega} dias</p>
+                          <p className="text-slate-400">{quote.prazo}</p>
                         </div>
                         <button
                           onClick={() => handleSelectFreight(quote.totalFrete)}
@@ -282,7 +285,7 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
                         </button>
                       </div>
                     ) : (
-                      <span className="text-red-600 text-[9px]">{quote.error || "Erro"}</span>
+                      <span className="text-red-600 text-[9px]">{quote.error}</span>
                     )}
                   </div>
                 ))}

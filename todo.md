@@ -4761,3 +4761,14 @@
 
 ## Bug Fix: razaoSocial vazio no createOrder (03/07/2026)
 - [x] Corrigir validação: forçar preenchimento de Razão Social com mensagem clara + botão disabled no frontend
+
+## Integração Camilo dos Santos (SSW) - Cotação de Frete (03/07/2026)
+- [ ] Criar módulo de integração SSW (API SOAP de cotação)
+- [ ] Adicionar cotação SSW ao backend (router salesOrderRouter)
+- [ ] Atualizar MarginBar para exibir comparativo Braspress vs Camilo dos Santos
+
+## Integração Alfa Transportes - Cotação de Frete (03/07/2026)
+- [x] Pesquisar documentação API Alfa Transportes (cotação + rastreamento)
+- [x] Criar módulo de integração Alfa Transportes
+- [x] Adicionar cotação Alfa ao backend (router salesOrderRouter)
+- [x] Atualizar MarginBar para exibir comparativo Braspress vs Alfa vs Camilo

@@ -5,6 +5,7 @@ import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPer
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
+import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
 
 /**
  * Sales Order Requests Router
@@ -1398,5 +1399,166 @@ export const salesOrderRouter = router({
     }))
     .mutation(async ({ input }) => {
       return cotarTodosCnpjs(input);
+    }),
+
+  /** Quote freight via Alfa Transportes (single CNPJ) */
+  quoteAlfa: publicProcedure
+    .input(z.object({
+      cnpjIndex: z.number().min(0).max(1), // 0 = CNPJ 36562762000129, 1 = CNPJ 50128808000127
+      cepOrigem: z.string().default("32210130"),
+      cepDestino: z.string(),
+      valorMercadoria: z.number(),
+      peso: z.number(),
+      metroCubico: z.number().default(0.05),
+      volumes: z.number().default(1),
+      cnpjDestinatario: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const keys = [process.env.ALFA_API_KEY_1, process.env.ALFA_API_KEY_2];
+      const cnpjs = ["36562762000129", "50128808000127"];
+      const apiKey = keys[input.cnpjIndex];
+      if (!apiKey) throw new Error("Chave API Alfa não configurada para este CNPJ");
+
+      const result = await quoteAlfaFreight({
+        apiKey,
+        cepDestino: input.cepDestino,
+        cepOrigem: input.cepOrigem,
+        valorMercadoria: input.valorMercadoria,
+        peso: input.peso,
+        metroCubico: input.metroCubico,
+        volumes: input.volumes,
+        cnpjDestinatario: input.cnpjDestinatario,
+        tipoPessoa: 1,
+      });
+
+      return {
+        cnpj: cnpjs[input.cnpjIndex],
+        transportadora: "Alfa Transportes",
+        totalFrete: result.cotacao?.emissao.valoresCotacao.valorTotal || 0,
+        prazo: result.cotacao?.emissao.diasEntrega || "N/A",
+        detalhes: result.cotacao?.emissao.valoresCotacao || null,
+      };
+    }),
+
+  /** Quote freight via all Alfa Transportes CNPJs simultaneously */
+  quoteAllAlfa: publicProcedure
+    .input(z.object({
+      cepOrigem: z.string().default("32210130"),
+      cepDestino: z.string(),
+      valorMercadoria: z.number(),
+      peso: z.number(),
+      metroCubico: z.number().default(0.05),
+      volumes: z.number().default(1),
+      cnpjDestinatario: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      return quoteAllAlfaCnpjs({
+        cepDestino: input.cepDestino,
+        cepOrigem: input.cepOrigem,
+        valorMercadoria: input.valorMercadoria,
+        peso: input.peso,
+        metroCubico: input.metroCubico,
+        volumes: input.volumes,
+        cnpjDestinatario: input.cnpjDestinatario,
+      });
+    }),
+
+  /** Quote freight from ALL carriers (Braspress + Alfa) for comparison */
+  quoteAllCarriers: publicProcedure
+    .input(z.object({
+      cnpjDestinatario: z.string().optional(),
+      cepOrigem: z.string().default("32210130"),
+      cepDestino: z.string(),
+      valorMercadoria: z.number(),
+      peso: z.number(),
+      volumes: z.number().default(1),
+      metroCubico: z.number().default(0.05),
+      altura: z.number().default(0.5),
+      largura: z.number().default(0.5),
+      comprimento: z.number().default(0.5),
+    }))
+    .mutation(async ({ input }) => {
+      // Quote from all carriers in parallel
+      const [braspressResults, alfaResults] = await Promise.allSettled([
+        cotarTodosCnpjs({
+          cnpjDestinatario: input.cnpjDestinatario || "00000000000000",
+          cepOrigem: input.cepOrigem,
+          cepDestino: input.cepDestino,
+          valorMercadoria: input.valorMercadoria,
+          peso: input.peso,
+          volumes: input.volumes,
+          altura: input.altura,
+          largura: input.largura,
+          comprimento: input.comprimento,
+        }),
+        quoteAllAlfaCnpjs({
+          cepDestino: input.cepDestino,
+          cepOrigem: input.cepOrigem,
+          valorMercadoria: input.valorMercadoria,
+          peso: input.peso,
+          metroCubico: input.metroCubico,
+          volumes: input.volumes,
+          cnpjDestinatario: input.cnpjDestinatario,
+        }),
+      ]);
+
+      const carriers: Array<{
+        transportadora: string;
+        cnpj: string;
+        totalFrete: number;
+        prazo: string;
+        error?: string;
+      }> = [];
+
+      // Process Braspress results
+      if (braspressResults.status === "fulfilled") {
+        for (const r of braspressResults.value) {
+          carriers.push({
+            transportadora: "Braspress",
+            cnpj: r.cnpjUsado,
+            totalFrete: r.totalFrete || 0,
+            prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A",
+            error: r.error,
+          });
+        }
+      } else {
+        carriers.push({
+          transportadora: "Braspress",
+          cnpj: "",
+          totalFrete: 0,
+          prazo: "N/A",
+          error: braspressResults.reason?.message || "Erro ao cotar Braspress",
+        });
+      }
+
+      // Process Alfa results
+      if (alfaResults.status === "fulfilled") {
+        for (const r of alfaResults.value) {
+          carriers.push({
+            transportadora: "Alfa Transportes",
+            cnpj: r.cnpj,
+            totalFrete: r.totalFrete,
+            prazo: r.prazo || "N/A",
+            error: r.error,
+          });
+        }
+      } else {
+        carriers.push({
+          transportadora: "Alfa Transportes",
+          cnpj: "",
+          totalFrete: 0,
+          prazo: "N/A",
+          error: alfaResults.reason?.message || "Erro ao cotar Alfa",
+        });
+      }
+
+      // Sort by lowest freight (errors at the end)
+      carriers.sort((a, b) => {
+        if (a.error && !b.error) return 1;
+        if (!a.error && b.error) return -1;
+        return a.totalFrete - b.totalFrete;
+      });
+
+      return carriers;
     }),
 });
