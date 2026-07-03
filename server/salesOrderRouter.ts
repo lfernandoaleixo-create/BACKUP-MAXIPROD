@@ -55,7 +55,7 @@ export const salesOrderRouter = router({
           razaoSocial: vc.razaoSocial || "",
           nomeFantasia: vc.nomeFantasia || "",
           inscricaoEstadual: vc.inscricaoEstadual || "",
-          tipoContribuinte: "Contribuinte",
+          tipoContribuinte: vc.tipoContribuinte || "Contribuinte",
           regimeTributario: "Normal",
           emailNfe: "",
           cnaeFiscal: "",

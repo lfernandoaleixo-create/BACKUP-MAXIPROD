@@ -4715,3 +4715,18 @@
 - [x] Novo Pedido: opção de apagar pedido (para testes) - botão na tela de resumo e na lista de pedidos do vendedor
 - [x] Gestão Comercial: novo card "Comissão" na aba de configurações dos vendedores, onde o gestor pode ver todos os vendedores e editar a porcentagem de comissão de cada um
 - [x] Pedidos: número sequencial atômico (contador no banco) que é travado no momento do "Pedido Concluído", sem conflito entre tablets. Resetar para 1 já que todos foram apagados.
+- [ ] Gestão Comercial: novo card "Margens de Lucro" para gestor editar as faixas de porcentagem (vermelho=prejuízo, laranja=0.1-10%, amarelo=10-15%, verde=15-20%, azul=25%+)
+- [ ] Novo Pedido: barra de cores com marcador mostrando em tempo real a faixa de margem de lucro do pedido conforme vendedor preenche desconto/preço
+
+## Cadastro de Cliente: Card Contribuinte de ICMS (03/07/2026)
+- [x] Quando vendedor preencher CNPJ no cadastro de novo cliente, exibir card/pergunta "Cliente é Contribuinte de ICMS?"
+- [x] Salvar campo contribuinte (sim/não) no banco (vendor_clients)
+- [x] Lógica: Contribuinte = cliente paga DIFAL; Não Contribuinte = Grupo Fox paga DIFAL (desconta do lucro)
+- [x] Persistir campo tipoContribuinte no pedido de venda para cálculos futuros de margem
+
+## LEMBRETE: Voltar na parte de IMPOSTOS
+- [ ] Confirmar carga efetiva de ICMS com TTS + Corredor de Importação nas saídas interestaduais
+- [ ] Confirmar se vendas dentro de MG mantêm 18% ou têm redução
+- [ ] Confirmar se benefício se aplica a todos os produtos ou só importados
+- [ ] Confirmar impostos federais (PIS 0,65% + COFINS 3% + IRPJ 1,2% + CSLL 1,08% = ~5,93%)
+- [ ] Implementar barra de margem de lucro com cálculo automático de impostos

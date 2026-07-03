@@ -2163,10 +2163,26 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [nomeContato, setNomeContato] = useState("");
   const [segmento, setSegmento] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [tipoContribuinte, setTipoContribuinte] = useState<string>("");
+  const [showContribuinteCard, setShowContribuinteCard] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const createMutation = trpc.sales.createVendorClient.useMutation();
+
+  // Detectar CNPJ (14+ dígitos) para mostrar card de contribuinte
+  const isCnpj = cnpjCpf.replace(/\D/g, "").length >= 14;
+  const prevIsCnpjRef = useRef(false);
+  useEffect(() => {
+    if (isCnpj && !prevIsCnpjRef.current && !tipoContribuinte) {
+      setShowContribuinteCard(true);
+    }
+    if (!isCnpj) {
+      setShowContribuinteCard(false);
+      setTipoContribuinte("");
+    }
+    prevIsCnpjRef.current = isCnpj;
+  }, [isCnpj]);
 
   const handleSave = async () => {
     if (!cnpjCpf.trim() || !razaoSocial.trim()) {
@@ -2196,6 +2212,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         nomeContato: nomeContato.trim() || undefined,
         segmento: segmento || undefined,
         observacoes: observacoes.trim() || undefined,
+        tipoContribuinte: tipoContribuinte || undefined,
       });
       onSuccess();
     } catch (e: any) {
@@ -2237,6 +2254,57 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <FormInput label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" />
           <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
         </div>
+
+        {/* Card Contribuinte - aparece quando CNPJ é preenchido */}
+        {showContribuinteCard && !tipoContribuinte && (
+          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-600 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <p className="text-xs font-bold text-amber-800 dark:text-amber-200">Este cliente é Contribuinte de ICMS?</p>
+            </div>
+            <p className="text-[10px] text-amber-700 dark:text-amber-300 mb-3">
+              Se <b>Contribuinte</b>: o cliente paga o DIFAL na venda interestadual.<br/>
+              Se <b>Não Contribuinte</b>: o Grupo Fox paga o DIFAL (desconta do lucro).
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setTipoContribuinte("Contribuinte"); setShowContribuinteCard(false); }}
+                className="flex-1 px-3 py-2 text-xs font-semibold text-green-700 bg-green-100 border border-green-300 rounded-lg hover:bg-green-200 transition-colors cursor-pointer"
+              >
+                ✓ Contribuinte
+              </button>
+              <button
+                type="button"
+                onClick={() => { setTipoContribuinte("Não Contribuinte"); setShowContribuinteCard(false); }}
+                className="flex-1 px-3 py-2 text-xs font-semibold text-red-700 bg-red-100 border border-red-300 rounded-lg hover:bg-red-200 transition-colors cursor-pointer"
+              >
+                ✗ Não Contribuinte
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Badge mostrando escolha feita */}
+        {tipoContribuinte && isCnpj && (
+          <div className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-lg border ${tipoContribuinte === "Contribuinte" ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700" : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-700"}`}>
+            <span className={`text-xs font-bold ${tipoContribuinte === "Contribuinte" ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"}`}>
+              {tipoContribuinte === "Contribuinte" ? "✓ Contribuinte de ICMS" : "✗ Não Contribuinte de ICMS"}
+            </span>
+            <span className="text-[10px] text-slate-500">
+              {tipoContribuinte === "Contribuinte" ? "(cliente paga DIFAL)" : "(Grupo Fox paga DIFAL)"}
+            </span>
+            <button
+              type="button"
+              onClick={() => { setTipoContribuinte(""); setShowContribuinteCard(true); }}
+              className="ml-auto text-[10px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
+            >
+              alterar
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
           <FormInput label="Razão Social *" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" />
           <FormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />

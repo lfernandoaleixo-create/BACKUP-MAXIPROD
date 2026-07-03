@@ -2248,6 +2248,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   razaoSocial: varchar("razao_social", { length: 300 }).notNull(),
   nomeFantasia: varchar("nome_fantasia", { length: 300 }),
   inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
+  tipoContribuinte: varchar("tipo_contribuinte", { length: 30 }), // "Contribuinte" | "Não Contribuinte"
   
   // Endereço
   cep: varchar("cep", { length: 10 }),

@@ -3760,6 +3760,7 @@ export const salesRouter = router({
       nomeContato: z.string().max(200).optional(),
       segmento: z.string().max(100).optional(),
       observacoes: z.string().optional(),
+      tipoContribuinte: z.string().max(30).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -3772,6 +3773,7 @@ export const salesRouter = router({
         razaoSocial: input.razaoSocial,
         nomeFantasia: input.nomeFantasia || null,
         inscricaoEstadual: input.inscricaoEstadual || null,
+        tipoContribuinte: input.tipoContribuinte || null,
         cep: input.cep || null,
         logradouro: input.logradouro || null,
         numero: input.numero || null,
