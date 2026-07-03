@@ -4730,3 +4730,10 @@
 - [ ] Confirmar se benefício se aplica a todos os produtos ou só importados
 - [ ] Confirmar impostos federais (PIS 0,65% + COFINS 3% + IRPJ 1,2% + CSLL 1,08% = ~5,93%)
 - [ ] Implementar barra de margem de lucro com cálculo automático de impostos
+
+## Cadastro de Cliente Expandido - Campos do Maxiprod (03/07/2026)
+- [x] Adicionar campos fiscais: Regime Tributário, Inscrição Municipal, SUFRAMA, Situação Fiscal Especial, CNAE Fiscal, Email NF-e
+- [x] Adicionar campos de venda: Limite de Crédito, Forma de Cobrança, Tabela de Preços, Condição de Pagamento
+- [x] Adicionar campos CRM: Região, Perfil, Forma de Pedido, Produtos, Probabilidade de Negócio, Tamanho, Atenção, Fornecedor Atual
+- [x] Adicionar campo Cobrança: SITUAÇÃO (Com Protesto / Sem Protesto)
+- [x] Organizar formulário em seções como no Maxiprod

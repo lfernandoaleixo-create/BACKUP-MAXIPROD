@@ -2249,6 +2249,32 @@ export const vendorClients = mysqlTable("vendor_clients", {
   nomeFantasia: varchar("nome_fantasia", { length: 300 }),
   inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
   tipoContribuinte: varchar("tipo_contribuinte", { length: 30 }), // "Contribuinte" | "Não Contribuinte"
+  regimeTributario: varchar("regime_tributario", { length: 50 }), // Normal, Simples Nacional, etc.
+  inscricaoMunicipal: varchar("inscricao_municipal", { length: 30 }),
+  inscricaoSuframa: varchar("inscricao_suframa", { length: 30 }),
+  situacaoFiscalEspecial: varchar("situacao_fiscal_especial", { length: 100 }),
+  cnaeFiscal: varchar("cnae_fiscal", { length: 20 }),
+  emailNfe: varchar("email_nfe", { length: 300 }),
+  website: varchar("website", { length: 300 }),
+  
+  // Dados de venda
+  limiteCredito: decimal("limite_credito", { precision: 18, scale: 2 }),
+  formaCobranca: varchar("forma_cobranca", { length: 200 }),
+  tabelaPrecos: varchar("tabela_precos", { length: 200 }),
+  condicaoPagamento: varchar("condicao_pagamento", { length: 200 }),
+  
+  // CRM / Relacionamento
+  regiao: varchar("regiao", { length: 100 }),
+  perfil: varchar("perfil", { length: 100 }),
+  formaPedido: varchar("forma_pedido", { length: 100 }),
+  produtos: text("produtos"),
+  probabilidadeNegocio: varchar("probabilidade_negocio", { length: 50 }),
+  tamanho: varchar("tamanho", { length: 50 }),
+  atencao: varchar("atencao", { length: 50 }),
+  fornecedorAtual: varchar("fornecedor_atual", { length: 200 }),
+  
+  // Cobrança
+  situacaoCobranca: varchar("situacao_cobranca", { length: 30 }), // "COM PROTESTO" | "SEM PROTESTO"
   
   // Endereço
   cep: varchar("cep", { length: 10 }),

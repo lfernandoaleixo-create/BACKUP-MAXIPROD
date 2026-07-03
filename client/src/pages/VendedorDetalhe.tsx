@@ -53,6 +53,10 @@ import {
   ChevronLeft,
   Tag,
   Target,
+  CreditCard,
+  Globe,
+  Briefcase,
+  AlertTriangle,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -2165,6 +2169,31 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [observacoes, setObservacoes] = useState("");
   const [tipoContribuinte, setTipoContribuinte] = useState<string>("");
   const [showContribuinteCard, setShowContribuinteCard] = useState(false);
+  // Dados fiscais
+  const [regimeTributario, setRegimeTributario] = useState("");
+  const [inscricaoMunicipal, setInscricaoMunicipal] = useState("");
+  const [inscricaoSuframa, setInscricaoSuframa] = useState("");
+  const [situacaoFiscalEspecial, setSituacaoFiscalEspecial] = useState("");
+  const [cnaeFiscal, setCnaeFiscal] = useState("");
+  const [emailNfe, setEmailNfe] = useState("");
+  const [website, setWebsite] = useState("");
+  // Dados de venda
+  const [limiteCredito, setLimiteCredito] = useState("");
+  const [formaCobranca, setFormaCobranca] = useState("");
+  const [tabelaPrecos, setTabelaPrecos] = useState("");
+  const [condicaoPagamento, setCondicaoPagamento] = useState("");
+  // CRM
+  const [regiao, setRegiao] = useState("");
+  const [perfil, setPerfil] = useState("");
+  const [formaPedido, setFormaPedido] = useState("");
+  const [produtos, setProdutos] = useState("");
+  const [probabilidadeNegocio, setProbabilidadeNegocio] = useState("");
+  const [tamanho, setTamanho] = useState("");
+  const [atencao, setAtencao] = useState("");
+  const [fornecedorAtual, setFornecedorAtual] = useState("");
+  // Cobrança
+  const [situacaoCobranca, setSituacaoCobranca] = useState("");
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -2213,6 +2242,26 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         segmento: segmento || undefined,
         observacoes: observacoes.trim() || undefined,
         tipoContribuinte: tipoContribuinte || undefined,
+        regimeTributario: regimeTributario || undefined,
+        inscricaoMunicipal: inscricaoMunicipal.trim() || undefined,
+        inscricaoSuframa: inscricaoSuframa.trim() || undefined,
+        situacaoFiscalEspecial: situacaoFiscalEspecial || undefined,
+        cnaeFiscal: cnaeFiscal.trim() || undefined,
+        emailNfe: emailNfe.trim() || undefined,
+        website: website.trim() || undefined,
+        limiteCredito: limiteCredito.trim() || undefined,
+        formaCobranca: formaCobranca || undefined,
+        tabelaPrecos: tabelaPrecos || undefined,
+        condicaoPagamento: condicaoPagamento.trim() || undefined,
+        regiao: regiao || undefined,
+        perfil: perfil || undefined,
+        formaPedido: formaPedido || undefined,
+        produtos: produtos.trim() || undefined,
+        probabilidadeNegocio: probabilidadeNegocio || undefined,
+        tamanho: tamanho || undefined,
+        atencao: atencao || undefined,
+        fornecedorAtual: fornecedorAtual.trim() || undefined,
+        situacaoCobranca: situacaoCobranca || undefined,
       });
       onSuccess();
     } catch (e: any) {
@@ -2348,6 +2397,186 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" />
           <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
           <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" />
+        </div>
+      </div>
+
+      {/* Dados Fiscais */}
+      <div className="mb-3">
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+          <FileText className="w-3 h-3" /> Dados Fiscais
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Regime Tributário</label>
+            <select
+              value={regimeTributario}
+              onChange={(e) => setRegimeTributario(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="Normal">Normal</option>
+              <option value="Simples Nacional">Simples Nacional</option>
+              <option value="Simples Nacional - Excesso">Simples Nacional - Excesso</option>
+              <option value="MEI">MEI</option>
+            </select>
+          </div>
+          <FormInput label="Inscrição Municipal" value={inscricaoMunicipal} onChange={setInscricaoMunicipal} placeholder="IM" />
+          <FormInput label="Inscrição SUFRAMA" value={inscricaoSuframa} onChange={setInscricaoSuframa} placeholder="SUFRAMA" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação Fiscal Especial</label>
+            <select
+              value={situacaoFiscalEspecial}
+              onChange={(e) => setSituacaoFiscalEspecial(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Nenhuma</option>
+              <option value="Isento">Isento</option>
+              <option value="Imune">Imune</option>
+              <option value="Substituto Tributário">Substituto Tributário</option>
+            </select>
+          </div>
+          <FormInput label="CNAE Fiscal" value={cnaeFiscal} onChange={setCnaeFiscal} placeholder="0000000" />
+          <FormInput label="Email NF-e/NFC-e" value={emailNfe} onChange={setEmailNfe} placeholder="nfe@empresa.com" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <FormInput label="Website" value={website} onChange={setWebsite} placeholder="www.empresa.com.br" />
+        </div>
+      </div>
+
+      {/* Dados de Venda */}
+      <div className="mb-3">
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+          <CreditCard className="w-3 h-3" /> Dados de Venda
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <FormInput label="Limite de Crédito (R$)" value={limiteCredito} onChange={setLimiteCredito} placeholder="999.999,99" />
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Cobrança (padrão)</label>
+            <select
+              value={formaCobranca}
+              onChange={(e) => setFormaCobranca(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Boleto (com registro)">Boleto (com registro)</option>
+              <option value="Depósito">Depósito</option>
+              <option value="PIX">PIX</option>
+              <option value="Cartão">Cartão</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Dinheiro">Dinheiro</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <FormInput label="Tabela de Preços" value={tabelaPrecos} onChange={setTabelaPrecos} placeholder="Nome da tabela" />
+          <FormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="30/60/90 dias" />
+        </div>
+      </div>
+
+      {/* Dados de Relacionamento (CRM) */}
+      <div className="mb-3">
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+          <Briefcase className="w-3 h-3" /> Dados de Relacionamento (CRM)
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <FormInput label="Região" value={regiao} onChange={setRegiao} placeholder="Região" />
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Perfil</label>
+            <select
+              value={perfil}
+              onChange={(e) => setPerfil(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Pedido</label>
+            <select
+              value={formaPedido}
+              onChange={(e) => setFormaPedido(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="Presencial">Presencial</option>
+              <option value="Telefone">Telefone</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Email">Email</option>
+              <option value="App">App</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <FormInput label="Produtos" value={produtos} onChange={setProdutos} placeholder="Produtos de interesse" />
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Probabilidade de Negócio</label>
+            <select
+              value={probabilidadeNegocio}
+              onChange={(e) => setProbabilidadeNegocio(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="Alta">Alta</option>
+              <option value="Média">Média</option>
+              <option value="Baixa">Baixa</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Tamanho</label>
+            <select
+              value={tamanho}
+              onChange={(e) => setTamanho(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="Pequeno">Pequeno</option>
+              <option value="Médio">Médio</option>
+              <option value="Grande">Grande</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Atenção</label>
+            <select
+              value={atencao}
+              onChange={(e) => setAtencao(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="Normal">Normal</option>
+              <option value="Prioritário">Prioritário</option>
+              <option value="VIP">VIP</option>
+            </select>
+          </div>
+          <FormInput label="Fornecedor Atual" value={fornecedorAtual} onChange={setFornecedorAtual} placeholder="Concorrente atual" />
+        </div>
+      </div>
+
+      {/* Cobrança */}
+      <div className="mb-3">
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> Cobrança
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação</label>
+            <select
+              value={situacaoCobranca}
+              onChange={(e) => setSituacaoCobranca(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              <option value="">Selecione...</option>
+              <option value="COM PROTESTO">COM PROTESTO</option>
+              <option value="SEM PROTESTO">SEM PROTESTO</option>
+            </select>
+          </div>
         </div>
       </div>
 
