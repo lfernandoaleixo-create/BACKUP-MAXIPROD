@@ -4371,6 +4371,18 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <p className="text-xs text-slate-400 text-center py-3">Carregando produtos...</p>
             )}
 
+            {/* Observações - visível na tela de produtos */}
+            <div className="pt-2">
+              <label className="text-[10px] text-slate-500 font-medium">Observações (opcional)</label>
+              <textarea
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                placeholder="Observações adicionais para o gestor/operação..."
+                rows={2}
+                className="w-full mt-0.5 px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 resize-none"
+              />
+            </div>
+
             <div className="flex justify-between pt-2">
               <button onClick={() => setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar

@@ -4794,3 +4794,4 @@
 - [x] Ícone de lixeira ao lado do pedido na view da Vitória (VitoriaOrders) para excluir pedido — Trash2 ao lado do valor, usa confirmDelete existente
 - [x] Ícone de lixeira ao lado do pedido na view do Juvenal (GestorAprovacoes) para excluir pedido — Trash2 ao lado do valor + modal de confirmação
 - [x] Margem de Lucro (tipo produto, comissão, frete, detalhamento impostos) aparece APENAS na senha Guilherme (gestor) — removido MarginBar da VitoriaOrders; vendedores já não tinham
+- [x] Campo Observações agora visível na tela de produtos (acima dos botões Pagamento/Frete e Pedido Concluído) — textarea com placeholder "Observações adicionais para o gestor/operação..."
