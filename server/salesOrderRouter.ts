@@ -1191,6 +1191,27 @@ export const salesOrderRouter = router({
       return { success: true };
     }),
 
+  // ===== RESET ORDER NUMBERS (for testing) =====
+  resetOrderNumbers: publicProcedure
+    .mutation(async () => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      // Delete all notifications related to orders
+      const notifications = await db.select().from(systemNotifications)
+        .where(eq(systemNotifications.type, "pedido_vendedor"));
+      if (notifications.length > 0) {
+        const notifIds = notifications.map(n => n.id);
+        await db.delete(notificationReads).where(inArray(notificationReads.notificationId, notifIds));
+        await db.delete(systemNotifications).where(inArray(systemNotifications.id, notifIds));
+      }
+      // Delete all order items and orders
+      await db.delete(salesOrderRequestItems);
+      await db.delete(salesOrderRequests);
+      // Reset counter to 1
+      await db.execute(sql`UPDATE order_number_counter SET next_number = 1 WHERE id = 1`);
+      return { success: true, message: "Pedidos apagados e contador resetado para #1" };
+    }),
+
   // ===== MARGIN CALCULATION =====
 
   /** Calculate profit margin for a closed order */

@@ -9,7 +9,7 @@ import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
-  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw
+  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -73,7 +73,9 @@ export default function GestorAprovacoes() {
 
   const approveMutation = trpc.salesOrders.approveOrder.useMutation();
   const rejectMutation = trpc.salesOrders.rejectOrder.useMutation();
+  const resetMutation = trpc.salesOrders.resetOrderNumbers.useMutation();
   const utils = trpc.useUtils();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleApprove = (orderId: number) => {
     approveMutation.mutate(
@@ -130,13 +132,50 @@ export default function GestorAprovacoes() {
               <p className="text-xs text-slate-500">Gerencie os pedidos dos vendedores de rua</p>
             </div>
           </div>
-          <button
-            onClick={() => refetch()}
-            className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-lg text-xs font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Atualizar
-          </button>
+          <div className="flex items-center gap-2">
+            {!showResetConfirm ? (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
+                title="Resetar número de pedidos (apaga todos os pedidos de teste)"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Resetar Pedidos
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-red-600 font-medium">Apagar TODOS os pedidos?</span>
+                <button
+                  onClick={() => {
+                    resetMutation.mutate(undefined, {
+                      onSuccess: () => {
+                        utils.salesOrders.listOrders.invalidate();
+                        utils.salesOrders.getOrdersForGestor.invalidate();
+                        setShowResetConfirm(false);
+                      }
+                    });
+                  }}
+                  disabled={resetMutation.isPending}
+                  className="px-2.5 py-1.5 text-[10px] font-bold text-white bg-red-500 rounded-md hover:bg-red-600 cursor-pointer"
+                >
+                  {resetMutation.isPending ? "..." : "Sim, resetar"}
+                </button>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="px-2.5 py-1.5 text-[10px] font-medium text-slate-500 bg-slate-100 rounded-md hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => refetch()}
+              className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-lg text-xs font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Atualizar
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
