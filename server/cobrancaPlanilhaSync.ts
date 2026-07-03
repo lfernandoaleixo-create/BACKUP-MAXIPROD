@@ -279,9 +279,40 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       const statusInad = action?.status || "pendente";
       let statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
 
-      // Cada título novo entra como "Pendente" — sem herdar status de registros anteriores
-      // O status será atualizado manualmente pela equipe de cobrança
-      statusPlanilha = "Pendente";
+      // REGRA DE HERANÇA DE STATUS:
+      // 1. Se a empresa já tem títulos ativos com status "Especial s/ cobrança" → herda "Especial s/ cobrança"
+      // 2. Se existe registro inativo com mesma empresa+vencimento e status não-Pendente → herda esse status
+      //    (caso de arId que mudou no Maxiprod mas é o mesmo título)
+      // 3. Se a empresa tem outros títulos ativos com status não-Pendente → herda o status mais recente
+      // 4. Caso contrário → entra como Pendente
+      const empresaUpper = title.empresa.toUpperCase().trim();
+      const especialMatch = allPlanilhaRecords.find(
+        r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper && r.status === "Especial s/ cobrança"
+      );
+      if (especialMatch) {
+        statusPlanilha = "Especial s/ cobrança";
+      } else {
+        // Check for same empresa+vencimento in inactive records (arId changed in Maxiprod)
+        const sameEmpVenc = allPlanilhaRecords.find(
+          r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+            && r.vencimento === title.vencDate && r.status && r.status !== "Pendente"
+        );
+        if (sameEmpVenc) {
+          statusPlanilha = sameEmpVenc.status!;
+        } else {
+          // Check for same empresa with active non-Pendente status
+          const activeOther = allPlanilhaRecords.find(
+            r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+              && r.status && r.status !== "Pendente"
+          );
+          if (activeOther) {
+            statusPlanilha = activeOther.status!;
+          } else {
+            // Genuinely new → Pendente
+            statusPlanilha = "Pendente";
+          }
+        }
+      }
 
 
 
