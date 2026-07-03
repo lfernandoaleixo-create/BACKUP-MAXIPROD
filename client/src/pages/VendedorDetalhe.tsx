@@ -210,10 +210,22 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
                 </>
               )}
             </div>
+            {sellerMode && (
+              <button
+                onClick={() => {
+                  // Force reload all data from server (latest publication)
+                  window.location.reload();
+                }}
+                className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 hover:text-teal-700 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors ml-1"
+                title="Atualizar dados"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            )}
             {sellerMode && onLogout && (
               <button
                 onClick={onLogout}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ml-2"
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ml-1"
                 title="Sair"
               >
                 <ArrowLeft className="w-4 h-4" />

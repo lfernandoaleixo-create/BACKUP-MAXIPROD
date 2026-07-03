@@ -4783,3 +4783,5 @@
 ## Correções Pedido de Venda - Cadastro Cliente (03/07/2026)
 - [x] Cadastro de novo cliente deve aparecer SEMPRE, mesmo para vendedores sem histórico de vendas (ex: Renato) — botão agora aparece no estado vazio + lista clientes cadastrados manualmente
 - [x] Campo "Inscrição Estadual" já existia no formulário de cadastro E no formulário de novo pedido (confirmado)
+- [x] Clientes cadastrados manualmente devem aparecer na busca/autocomplete do formulário de Novo Pedido de Venda — já funciona: searchClients busca vendor_clients (prioridade 1), depois pedidos manuais, depois Maxiprod
+- [x] Botão de atualização na tela do vendedor para forçar reload e puxar última publicação — ícone RefreshCw ao lado do badge Autorizado (só aparece no sellerMode)
