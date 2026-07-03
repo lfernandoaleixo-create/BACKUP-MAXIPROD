@@ -1930,12 +1930,7 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
             <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Clientes Cadastrados</p>
             <div className="space-y-2">
               {manualClients.map((client: any) => (
-                <div key={client.id} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                  <div>
-                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200">{client.razaoSocial || client.nomeFantasia}</p>
-                    <p className="text-[10px] text-slate-500">{client.cnpjCpf} {client.municipio ? `• ${client.municipio}/${client.uf}` : ""}</p>
-                  </div>
-                </div>
+                <ManualClientRow key={client.id} client={client} onDeleted={refetchManual} />
               ))}
             </div>
           </div>
@@ -2857,7 +2852,50 @@ function getOrderDateRange(period: string, customMonth?: { year: number; month: 
   };
 }
 
+/**
+ * OrderDeleteButton - Botão de lixeira inline para excluir pedido
+ */
+function OrderDeleteButton({ orderId, onDeleted }: { orderId: number; onDeleted: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const deleteMutation = trpc.salesOrders.deleteOrder.useMutation();
+
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-1">
+        <button
+          onClick={async () => {
+            await deleteMutation.mutateAsync({ orderId });
+            onDeleted();
+            setConfirming(false);
+          }}
+          disabled={deleteMutation.isPending}
+          className="px-2 py-0.5 text-[9px] font-bold text-white bg-red-500 rounded hover:bg-red-600 cursor-pointer"
+        >
+          {deleteMutation.isPending ? "..." : "Sim"}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="px-2 py-0.5 text-[9px] font-medium text-slate-500 bg-slate-100 rounded hover:bg-slate-200 cursor-pointer"
+        >
+          Não
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+      className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+      title="Excluir pedido"
+    >
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+
 function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
@@ -3160,9 +3198,12 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       {pm.items?.length > 0 && ` · ${pm.items.length} ite${pm.items.length !== 1 ? "ns" : "m"}`}
                     </p>
                   </div>
-                  <p className="text-xs font-bold text-green-700 dark:text-green-400 ml-3">
-                    {formatCurrencySales(Number(pm.totalPedido || pm.totalProdutos || 0))}
-                  </p>
+                  <div className="flex items-center gap-2 ml-3">
+                    <p className="text-xs font-bold text-green-700 dark:text-green-400">
+                      {formatCurrencySales(Number(pm.totalPedido || pm.totalProdutos || 0))}
+                    </p>
+                    <OrderDeleteButton orderId={pm.id} onDeleted={() => utils.salesOrders.getSellerOrders.invalidate()} />
+                  </div>
                 </div>
                 {/* Rejection notification */}
                 {pm.status === "rejeitado" && pm.motivoRejeicao && (
