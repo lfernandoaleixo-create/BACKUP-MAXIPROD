@@ -2306,6 +2306,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   redespachoBairro: varchar("redespacho_bairro", { length: 200 }),
   redespachoCidade: varchar("redespacho_cidade", { length: 200 }),
   redespachoUf: varchar("redespacho_uf", { length: 2 }),
+  redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

@@ -3794,6 +3794,7 @@ export const salesRouter = router({
       redespachoBairro: z.string().max(200).optional(),
       redespachoCidade: z.string().max(200).optional(),
       redespachoUf: z.string().max(2).optional(),
+      redespachoTelefone: z.string().max(30).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -3848,6 +3849,7 @@ export const salesRouter = router({
         redespachoBairro: input.redespachoBairro || null,
         redespachoCidade: input.redespachoCidade || null,
         redespachoUf: input.redespachoUf || null,
+        redespachoTelefone: input.redespachoTelefone || null,
       });
 
       return { success: true, id: result[0].insertId };

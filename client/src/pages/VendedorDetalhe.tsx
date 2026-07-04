@@ -2249,6 +2249,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [redespachoBairro, setRedespachoBairro] = useState("");
   const [redespachoCidade, setRedespachoCidade] = useState("");
   const [redespachoUf, setRedespachoUf] = useState("");
+  const [redespachoTelefone, setRedespachoTelefone] = useState("");
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -2338,6 +2339,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         redespachoBairro: redespachoBairro.trim() || undefined,
         redespachoCidade: redespachoCidade.trim() || undefined,
         redespachoUf: redespachoUf.trim() || undefined,
+        redespachoTelefone: redespachoTelefone.trim() || undefined,
       });
       onSuccess();
     } catch (e: any) {
@@ -2516,6 +2518,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             </div>
             <div className="grid grid-cols-4 gap-2 mt-2">
               <FormInput label="UF" value={redespachoUf} onChange={setRedespachoUf} placeholder="XX" />
+              <FormInput label="Telefone" value={redespachoTelefone} onChange={setRedespachoTelefone} placeholder="(00) 00000-0000" />
             </div>
           </div>
         )}
