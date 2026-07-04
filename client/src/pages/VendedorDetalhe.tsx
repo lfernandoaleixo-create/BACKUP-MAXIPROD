@@ -2477,21 +2477,21 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
 
         {/* Possui Redespacho? */}
         <div className="mt-3 flex items-center gap-3">
-          <label className="text-[10px] font-medium text-slate-500">Possui redespacho?</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Possui redespacho?</label>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setPossuiRedespacho(true)}
-              className={`px-3 py-1 text-[10px] font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
             >
               Sim
             </button>
             <button
               type="button"
               onClick={() => setPossuiRedespacho(false)}
-              className={`px-3 py-1 text-[10px] font-semibold rounded-lg border transition-colors cursor-pointer ${!possuiRedespacho ? "bg-slate-600 text-white border-slate-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${!possuiRedespacho ? "bg-slate-600 text-white border-slate-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
             >
-              N\u00e3o
+              Não
             </button>
           </div>
         </div>
