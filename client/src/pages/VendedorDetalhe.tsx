@@ -2496,11 +2496,11 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           </div>
         </div>
 
-        {/* Endere\u00e7o Redespacho */}
+        {/* Endereço Redespacho */}
         {possuiRedespacho && (
           <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
             <p className="text-[10px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-2 flex items-center gap-1">
-              <Truck className="w-3 h-3" /> Endere\u00e7o Redespacho
+              <Truck className="w-3 h-3" /> Endereço Redespacho
             </p>
             <div className="grid grid-cols-3 gap-2">
               <FormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
@@ -2509,7 +2509,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2 mt-2">
-              <FormInput label="N\u00famero" value={redespachoNumero} onChange={setRedespachoNumero} placeholder="N\u00ba" />
+              <FormInput label="Número" value={redespachoNumero} onChange={setRedespachoNumero} placeholder="Nº" />
               <FormInput label="Complemento" value={redespachoComplemento} onChange={setRedespachoComplemento} placeholder="Sala, Bloco..." />
               <FormInput label="Bairro" value={redespachoBairro} onChange={setRedespachoBairro} placeholder="Bairro" />
               <FormInput label="Cidade" value={redespachoCidade} onChange={setRedespachoCidade} placeholder="Cidade" />
