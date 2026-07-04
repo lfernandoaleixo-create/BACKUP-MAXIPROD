@@ -2297,6 +2297,16 @@ export const vendorClients = mysqlTable("vendor_clients", {
   // Observações
   observacoes: text("observacoes"),
   
+  // Redespacho
+  possuiRedespacho: tinyint("possui_redespacho").default(0),
+  redespachoCep: varchar("redespacho_cep", { length: 10 }),
+  redespachoLogradouro: varchar("redespacho_logradouro", { length: 300 }),
+  redespachoNumero: varchar("redespacho_numero", { length: 20 }),
+  redespachoComplemento: varchar("redespacho_complemento", { length: 200 }),
+  redespachoBairro: varchar("redespacho_bairro", { length: 200 }),
+  redespachoCidade: varchar("redespacho_cidade", { length: 200 }),
+  redespachoUf: varchar("redespacho_uf", { length: 2 }),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

@@ -3785,6 +3785,15 @@ export const salesRouter = router({
       fornecedorAtual: z.string().max(200).optional(),
       // Cobrança
       situacaoCobranca: z.string().max(30).optional(),
+      // Redespacho
+      possuiRedespacho: z.boolean().optional(),
+      redespachoCep: z.string().max(10).optional(),
+      redespachoLogradouro: z.string().max(300).optional(),
+      redespachoNumero: z.string().max(20).optional(),
+      redespachoComplemento: z.string().max(200).optional(),
+      redespachoBairro: z.string().max(200).optional(),
+      redespachoCidade: z.string().max(200).optional(),
+      redespachoUf: z.string().max(2).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -3831,6 +3840,14 @@ export const salesRouter = router({
         nomeContato: input.nomeContato || null,
         segmento: input.segmento || null,
         observacoes: input.observacoes || null,
+        possuiRedespacho: input.possuiRedespacho ? 1 : 0,
+        redespachoCep: input.redespachoCep || null,
+        redespachoLogradouro: input.redespachoLogradouro || null,
+        redespachoNumero: input.redespachoNumero || null,
+        redespachoComplemento: input.redespachoComplemento || null,
+        redespachoBairro: input.redespachoBairro || null,
+        redespachoCidade: input.redespachoCidade || null,
+        redespachoUf: input.redespachoUf || null,
       });
 
       return { success: true, id: result[0].insertId };

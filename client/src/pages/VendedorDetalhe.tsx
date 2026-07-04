@@ -57,6 +57,7 @@ import {
   Globe,
   Briefcase,
   AlertTriangle,
+  Truck,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -2239,6 +2240,15 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [fornecedorAtual, setFornecedorAtual] = useState("");
   // Cobrança
   const [situacaoCobranca, setSituacaoCobranca] = useState("");
+  // Redespacho
+  const [possuiRedespacho, setPossuiRedespacho] = useState(false);
+  const [redespachoCep, setRedespachoCep] = useState("");
+  const [redespachoLogradouro, setRedespachoLogradouro] = useState("");
+  const [redespachoNumero, setRedespachoNumero] = useState("");
+  const [redespachoComplemento, setRedespachoComplemento] = useState("");
+  const [redespachoBairro, setRedespachoBairro] = useState("");
+  const [redespachoCidade, setRedespachoCidade] = useState("");
+  const [redespachoUf, setRedespachoUf] = useState("");
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -2320,6 +2330,14 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         atencao: atencao || undefined,
         fornecedorAtual: fornecedorAtual.trim() || undefined,
         situacaoCobranca: situacaoCobranca || undefined,
+        possuiRedespacho: possuiRedespacho || undefined,
+        redespachoCep: redespachoCep.trim() || undefined,
+        redespachoLogradouro: redespachoLogradouro.trim() || undefined,
+        redespachoNumero: redespachoNumero.trim() || undefined,
+        redespachoComplemento: redespachoComplemento.trim() || undefined,
+        redespachoBairro: redespachoBairro.trim() || undefined,
+        redespachoCidade: redespachoCidade.trim() || undefined,
+        redespachoUf: redespachoUf.trim() || undefined,
       });
       onSuccess();
     } catch (e: any) {
@@ -2456,6 +2474,51 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
           <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" required />
         </div>
+
+        {/* Possui Redespacho? */}
+        <div className="mt-3 flex items-center gap-3">
+          <label className="text-[10px] font-medium text-slate-500">Possui redespacho?</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPossuiRedespacho(true)}
+              className={`px-3 py-1 text-[10px] font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+            >
+              Sim
+            </button>
+            <button
+              type="button"
+              onClick={() => setPossuiRedespacho(false)}
+              className={`px-3 py-1 text-[10px] font-semibold rounded-lg border transition-colors cursor-pointer ${!possuiRedespacho ? "bg-slate-600 text-white border-slate-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+            >
+              N\u00e3o
+            </button>
+          </div>
+        </div>
+
+        {/* Endere\u00e7o Redespacho */}
+        {possuiRedespacho && (
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
+            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-2 flex items-center gap-1">
+              <Truck className="w-3 h-3" /> Endere\u00e7o Redespacho
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <FormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
+              <div className="col-span-2">
+                <FormInput label="Logradouro" value={redespachoLogradouro} onChange={setRedespachoLogradouro} placeholder="Rua/Av" />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              <FormInput label="N\u00famero" value={redespachoNumero} onChange={setRedespachoNumero} placeholder="N\u00ba" />
+              <FormInput label="Complemento" value={redespachoComplemento} onChange={setRedespachoComplemento} placeholder="Sala, Bloco..." />
+              <FormInput label="Bairro" value={redespachoBairro} onChange={setRedespachoBairro} placeholder="Bairro" />
+              <FormInput label="Cidade" value={redespachoCidade} onChange={setRedespachoCidade} placeholder="Cidade" />
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              <FormInput label="UF" value={redespachoUf} onChange={setRedespachoUf} placeholder="XX" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dados Fiscais */}

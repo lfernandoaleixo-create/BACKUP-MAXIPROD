@@ -4797,3 +4797,4 @@
 - [x] Campo Observações agora visível na tela de produtos (acima dos botões Pagamento/Frete e Pedido Concluído) — textarea com placeholder "Observações adicionais para o gestor/operação..."
 - [x] Campos obrigatórios no Cadastro de Novo Cliente com asterisco vermelho: CNPJ/CPF, Inscrição Estadual, Razão Social, CEP, Logradouro, Número, Bairro, Cidade, UF, E-mail, Telefone 1
 - [x] Bloquear finalização do cadastro se campos obrigatórios não estiverem preenchidos — mensagem lista campos faltantes, borda vermelha nos campos vazios
+- [x] Campo "Possui redespacho?" (Sim/Não) após e-mail, antes de Dados Fiscais. Se Sim, exibe seção "Endereço Redespacho" (CEP, Logradouro, Número, Complemento, Bairro, Cidade, UF) — salvo no banco

@@ -1,0 +1,31 @@
+ALTER TABLE `sales_order_requests` ADD `order_number` int;--> statement-breakpoint
+ALTER TABLE `seller_permissions` ADD `commission_percent` decimal(5,2);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `tipo_contribuinte` varchar(30);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `regime_tributario` varchar(50);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `inscricao_municipal` varchar(30);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `inscricao_suframa` varchar(30);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `situacao_fiscal_especial` varchar(100);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `cnae_fiscal` varchar(20);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `email_nfe` varchar(300);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `website` varchar(300);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `limite_credito` decimal(18,2);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `forma_cobranca` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `tabela_precos` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `condicao_pagamento` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `regiao` varchar(100);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `perfil` varchar(100);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `forma_pedido` varchar(100);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `produtos` text;--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `probabilidade_negocio` varchar(50);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `tamanho` varchar(50);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `atencao` varchar(50);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `fornecedor_atual` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `situacao_cobranca` varchar(30);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `possui_redespacho` tinyint DEFAULT 0;--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_cep` varchar(10);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_logradouro` varchar(300);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_numero` varchar(20);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_complemento` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_bairro` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_cidade` varchar(200);--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_uf` varchar(2);

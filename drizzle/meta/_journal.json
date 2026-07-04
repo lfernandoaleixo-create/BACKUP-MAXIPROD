@@ -1121,6 +1121,13 @@
       "when": 1782918513396,
       "tag": "0159_late_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "5",
+      "when": 1783168349932,
+      "tag": "0160_short_klaw",
+      "breakpoints": true
     }
   ]
 }
