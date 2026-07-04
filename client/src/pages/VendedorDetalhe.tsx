@@ -2260,8 +2260,20 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   }, [isCnpj]);
 
   const handleSave = async () => {
-    if (!cnpjCpf.trim() || !razaoSocial.trim()) {
-      setError("CNPJ/CPF e Razão Social são obrigatórios.");
+    const missingFields: string[] = [];
+    if (!cnpjCpf.trim()) missingFields.push("CNPJ/CPF");
+    if (!inscricaoEstadual.trim()) missingFields.push("Inscrição Estadual");
+    if (!razaoSocial.trim()) missingFields.push("Razão Social");
+    if (!cep.trim()) missingFields.push("CEP");
+    if (!logradouro.trim()) missingFields.push("Logradouro");
+    if (!numero.trim()) missingFields.push("Número");
+    if (!bairro.trim()) missingFields.push("Bairro");
+    if (!cidade.trim()) missingFields.push("Cidade");
+    if (!uf.trim()) missingFields.push("UF");
+    if (!email.trim()) missingFields.push("E-mail");
+    if (!telefone1.trim()) missingFields.push("Telefone 1");
+    if (missingFields.length > 0) {
+      setError(`Campos obrigatórios não preenchidos: ${missingFields.join(", ")}`);
       return;
     }
     setSaving(true);
@@ -2346,8 +2358,8 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <Building2 className="w-3 h-3" /> Dados da Empresa
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <FormInput label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" />
-          <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
+          <FormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" required />
+          <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" required />
         </div>
 
         {/* Card Contribuinte - aparece quando CNPJ é preenchido */}
@@ -2401,7 +2413,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <FormInput label="Razão Social *" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" />
+          <FormInput label="Razão Social" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" required />
           <FormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
@@ -2427,22 +2439,22 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <MapPin className="w-3 h-3" /> Endereço
         </p>
         <div className="grid grid-cols-3 gap-2">
-          <FormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" />
+          <FormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" required />
           <div className="col-span-2">
-            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" />
+            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" required />
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2 mt-2">
-          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" />
+          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" required />
           <FormInput label="Complemento" value={complemento} onChange={setComplemento} placeholder="Sala, Bloco..." />
-          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" />
-          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" />
+          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" required />
+          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" required />
         </div>
         <div className="grid grid-cols-4 gap-2 mt-2">
-          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" />
-          <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" />
+          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" required />
+          <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" required />
           <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
-          <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" />
+          <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" required />
         </div>
       </div>
 
@@ -2666,18 +2678,20 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
 /**
  * Helper input field for the form
  */
-function FormInput({ label, value, onChange, placeholder, type = "text" }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function FormInput({ label, value, onChange, placeholder, type = "text", required = false }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; required?: boolean;
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-medium text-slate-500 mb-1">{label}</label>
+      <label className="block text-[10px] font-medium text-slate-500 mb-1">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+        className={`w-full px-3 py-2 border rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500 ${required && !value.trim() ? "border-red-300 dark:border-red-600" : "border-slate-200 dark:border-slate-600"}`}
       />
     </div>
   );
