@@ -1,0 +1,1 @@
+ALTER TABLE `vendor_clients` ADD `last_modified_by` varchar(200);

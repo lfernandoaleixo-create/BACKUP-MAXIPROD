@@ -3813,9 +3813,20 @@ export const salesRouter = router({
         .limit(1);
 
       if (existing) {
+        // Buscar dados completos do cliente existente para pré-preencher o formulário de edição
+        const [fullExisting] = await db.select().from(vendorClients)
+          .where(eq(vendorClients.id, existing.id))
+          .limit(1);
+        
         throw new TRPCError({
           code: "CONFLICT",
-          message: `CNPJ já cadastrado! Cliente: ${existing.razaoSocial} (cadastrado por ${existing.sellerName})`,
+          message: JSON.stringify({
+            type: "CNPJ_DUPLICATE",
+            clientId: existing.id,
+            razaoSocial: existing.razaoSocial,
+            sellerName: existing.sellerName,
+            existingClient: fullExisting || null,
+          }),
         });
       }
 
@@ -3898,10 +3909,37 @@ export const salesRouter = router({
   updateVendorClient: publicProcedure
     .input(z.object({
       id: z.number(),
+      sellerName: z.string().optional(), // Quem está fazendo a alteração
       cnpjCpf: z.string().min(11).max(18).optional(),
       razaoSocial: z.string().min(2).max(300).optional(),
       nomeFantasia: z.string().max(300).optional(),
       inscricaoEstadual: z.string().max(30).optional(),
+      tipoContribuinte: z.string().max(30).optional(),
+      // Dados fiscais
+      regimeTributario: z.string().max(50).optional(),
+      inscricaoMunicipal: z.string().max(30).optional(),
+      inscricaoSuframa: z.string().max(30).optional(),
+      situacaoFiscalEspecial: z.string().max(100).optional(),
+      cnaeFiscal: z.string().max(20).optional(),
+      emailNfe: z.string().max(300).optional(),
+      website: z.string().max(300).optional(),
+      // Dados de venda
+      limiteCredito: z.string().max(30).optional(),
+      formaCobranca: z.string().max(200).optional(),
+      tabelaPrecos: z.string().max(200).optional(),
+      condicaoPagamento: z.string().max(200).optional(),
+      // CRM
+      regiao: z.string().max(100).optional(),
+      perfil: z.string().max(100).optional(),
+      formaPedido: z.string().max(100).optional(),
+      produtos: z.string().optional(),
+      probabilidadeNegocio: z.string().max(50).optional(),
+      tamanho: z.string().max(50).optional(),
+      atencao: z.string().max(50).optional(),
+      fornecedorAtual: z.string().max(200).optional(),
+      // Cobrança
+      situacaoCobranca: z.string().max(30).optional(),
+      // Endereço
       cep: z.string().max(10).optional(),
       logradouro: z.string().max(300).optional(),
       numero: z.string().max(20).optional(),
@@ -3909,22 +3947,43 @@ export const salesRouter = router({
       bairro: z.string().max(200).optional(),
       cidade: z.string().max(200).optional(),
       uf: z.string().max(2).optional(),
+      // Contato
       telefone1: z.string().max(30).optional(),
       telefone2: z.string().max(30).optional(),
       email: z.string().max(300).optional(),
       nomeContato: z.string().max(200).optional(),
       segmento: z.string().max(100).optional(),
       observacoes: z.string().optional(),
+      // Redespacho
+      possuiRedespacho: z.boolean().optional(),
+      redespachoCep: z.string().max(10).optional(),
+      redespachoLogradouro: z.string().max(300).optional(),
+      redespachoNumero: z.string().max(20).optional(),
+      redespachoComplemento: z.string().max(200).optional(),
+      redespachoBairro: z.string().max(200).optional(),
+      redespachoCidade: z.string().max(200).optional(),
+      redespachoUf: z.string().max(2).optional(),
+      redespachoTelefone: z.string().max(30).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      const { id, ...updateData } = input;
+      const { id, sellerName, possuiRedespacho, ...updateData } = input;
       // Remove undefined fields
       const cleanData: Record<string, any> = {};
       for (const [key, value] of Object.entries(updateData)) {
         if (value !== undefined) cleanData[key] = value || null;
+      }
+      
+      // Handle possuiRedespacho boolean -> tinyint
+      if (possuiRedespacho !== undefined) {
+        cleanData.possuiRedespacho = possuiRedespacho ? 1 : 0;
+      }
+      
+      // Track who modified
+      if (sellerName) {
+        cleanData.lastModifiedBy = sellerName;
       }
 
       if (Object.keys(cleanData).length > 0) {
@@ -4922,5 +4981,38 @@ export const salesRouter = router({
         .set({ commissionPercent: String(input.commissionPercent) })
         .where(eq(sellerPermissions.id, input.sellerId));
       return { success: true };
+    }),
+
+  /**
+   * Export vendor clients as Maxiprod-format Excel (.xlsx)
+   * Returns base64-encoded Excel file
+   */
+  exportMaxiprodExcel: publicProcedure
+    .input(z.object({
+      clientIds: z.array(z.number()).optional(),
+      sinceDays: z.number().optional(), // export clients created in the last N days
+    }))
+    .mutation(async ({ input }) => {
+      const { generateMaxiprodExcel, generateMaxiprodExcelByDate } = await import("./maxiprodExcelExport");
+
+      let buffer: Buffer;
+      let count: number;
+
+      if (input.sinceDays) {
+        const sinceDate = new Date();
+        sinceDate.setDate(sinceDate.getDate() - input.sinceDays);
+        const result = await generateMaxiprodExcelByDate(sinceDate);
+        buffer = result.buffer;
+        count = result.count;
+      } else {
+        buffer = await generateMaxiprodExcel(input.clientIds);
+        count = input.clientIds?.length || -1; // -1 means all
+      }
+
+      return {
+        base64: buffer.toString("base64"),
+        filename: `Maxiprod_Empresas_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        count,
+      };
     }),
 });

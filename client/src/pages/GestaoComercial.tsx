@@ -17,7 +17,7 @@ import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
   Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check,
-  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent
+  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent, FileSpreadsheet
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -62,6 +62,86 @@ const GESTOR_NAME_MAP: Record<string, string> = {
   "JUVENAL TEIXEIRA": "JUVENAL TEIXEIRA",
   "RENATO LEDESMA": "RENATO ALEIXO",  // Nome no Maxiprod ainda é RENATO ALEIXO
 };
+
+/**
+ * Button to export vendor clients as Maxiprod-format Excel
+ */
+function ExportMaxiprodButton() {
+  const [showOptions, setShowOptions] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const exportMutation = trpc.sales.exportMaxiprodExcel.useMutation();
+
+  const handleExport = async (sinceDays?: number) => {
+    setIsExporting(true);
+    setShowOptions(false);
+    try {
+      const result = await exportMutation.mutateAsync({ sinceDays });
+      // Download the file
+      const byteCharacters = atob(result.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Erro ao exportar: " + (err as Error).message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowOptions(!showOptions)}
+        disabled={isExporting}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all cursor-pointer disabled:opacity-50"
+      >
+        <FileSpreadsheet className="w-3.5 h-3.5" />
+        {isExporting ? "Exportando..." : "Exportar Maxiprod"}
+      </button>
+
+      {showOptions && (
+        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[200px] py-1">
+          <button
+            onClick={() => handleExport(7)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            Últimos 7 dias
+          </button>
+          <button
+            onClick={() => handleExport(30)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            Últimos 30 dias
+          </button>
+          <button
+            onClick={() => handleExport(undefined)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            Todos os clientes
+          </button>
+          <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+          <button
+            onClick={() => setShowOptions(false)}
+            className="w-full text-left px-4 py-2 text-xs text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function GestaoComercial() {
   const [view, setView] = useState<GestaoView>("gestores");
@@ -150,7 +230,11 @@ export default function GestaoComercial() {
             Vendedores
           </button>
 
+          {/* Spacer */}
+          <div className="flex-1" />
 
+          {/* Exportar Maxiprod button */}
+          <ExportMaxiprodButton />
         </div>
 
         {/* Content */}

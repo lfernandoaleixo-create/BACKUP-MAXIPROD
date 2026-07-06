@@ -2254,8 +2254,15 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  
+  // Edit mode: when CNPJ duplicate is detected and user confirms edit
+  const [editMode, setEditMode] = useState(false);
+  const [editingClientId, setEditingClientId] = useState<number | null>(null);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<{ clientId: number; razaoSocial: string; sellerName: string } | null>(null);
 
   const createMutation = trpc.sales.createVendorClient.useMutation();
+  const updateMutation = trpc.sales.updateVendorClient.useMutation();
 
   // Auto-determinar tipoContribuinte com base na Inscrição Estadual
   const isCnpj = cnpjCpf.replace(/\D/g, "").length >= 14;
@@ -2346,7 +2353,135 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
       });
       onSuccess();
     } catch (e: any) {
-      setError(e.message || "Erro ao salvar cliente.");
+      // Check if this is a CNPJ duplicate conflict with structured data
+      const errMsg = e.message || "";
+      try {
+        const parsed = JSON.parse(errMsg);
+        if (parsed.type === "CNPJ_DUPLICATE") {
+          setDuplicateInfo({
+            clientId: parsed.clientId,
+            razaoSocial: parsed.razaoSocial,
+            sellerName: parsed.sellerName,
+          });
+          setShowDuplicateDialog(true);
+          // Pre-fill form with existing client data
+          if (parsed.existingClient) {
+            const ec = parsed.existingClient;
+            setRazaoSocial(ec.razaoSocial || "");
+            setNomeFantasia(ec.nomeFantasia || "");
+            setInscricaoEstadual(ec.inscricaoEstadual || "");
+            setCep(ec.cep || "");
+            setLogradouro(ec.logradouro || "");
+            setNumero(ec.numero || "");
+            setComplemento(ec.complemento || "");
+            setBairro(ec.bairro || "");
+            setCidade(ec.cidade || "");
+            setUf(ec.uf || "");
+            setTelefone1(ec.telefone1 || "");
+            setTelefone2(ec.telefone2 || "");
+            setEmail(ec.email || "");
+            setNomeContato(ec.nomeContato || "");
+            setSegmento(ec.segmento || "");
+            setObservacoes(ec.observacoes || "");
+            setRegimeTributario(ec.regimeTributario || "");
+            setInscricaoMunicipal(ec.inscricaoMunicipal || "");
+            setInscricaoSuframa(ec.inscricaoSuframa || "");
+            setSituacaoFiscalEspecial(ec.situacaoFiscalEspecial || "");
+            setCnaeFiscal(ec.cnaeFiscal || "");
+            setEmailNfe(ec.emailNfe || "");
+            setWebsite(ec.website || "");
+            setLimiteCredito(ec.limiteCredito || "");
+            setFormaCobranca(ec.formaCobranca || "");
+            setTabelaPrecos(ec.tabelaPrecos || "");
+            setCondicaoPagamento(ec.condicaoPagamento || "");
+            setRegiao(ec.regiao || "");
+            setPerfil(ec.perfil || "");
+            setFormaPedido(ec.formaPedido || "");
+            setProdutos(ec.produtos || "");
+            setProbabilidadeNegocio(ec.probabilidadeNegocio || "");
+            setTamanho(ec.tamanho || "");
+            setAtencao(ec.atencao || "");
+            setFornecedorAtual(ec.fornecedorAtual || "");
+            setSituacaoCobranca(ec.situacaoCobranca || "");
+            setPossuiRedespacho(ec.possuiRedespacho === 1);
+            setRedespachoCep(ec.redespachoCep || "");
+            setRedespachoLogradouro(ec.redespachoLogradouro || "");
+            setRedespachoNumero(ec.redespachoNumero || "");
+            setRedespachoComplemento(ec.redespachoComplemento || "");
+            setRedespachoBairro(ec.redespachoBairro || "");
+            setRedespachoCidade(ec.redespachoCidade || "");
+            setRedespachoUf(ec.redespachoUf || "");
+            setRedespachoTelefone(ec.redespachoTelefone || "");
+          }
+          return;
+        }
+      } catch { /* not JSON, show raw error */ }
+      setError(errMsg || "Erro ao salvar cliente.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle update when in edit mode
+  const handleUpdate = async () => {
+    if (!editingClientId) return;
+    setSaving(true);
+    setError("");
+    try {
+      await updateMutation.mutateAsync({
+        id: editingClientId,
+        sellerName,
+        cnpjCpf: cnpjCpf.trim() || undefined,
+        razaoSocial: razaoSocial.trim() || undefined,
+        nomeFantasia: nomeFantasia.trim() || undefined,
+        inscricaoEstadual: inscricaoEstadual.trim() || undefined,
+        tipoContribuinte: tipoContribuinte || undefined,
+        cep: cep.trim() || undefined,
+        logradouro: logradouro.trim() || undefined,
+        numero: numero.trim() || undefined,
+        complemento: complemento.trim() || undefined,
+        bairro: bairro.trim() || undefined,
+        cidade: cidade.trim() || undefined,
+        uf: uf.trim() || undefined,
+        telefone1: telefone1.trim() || undefined,
+        telefone2: telefone2.trim() || undefined,
+        email: email.trim() || undefined,
+        nomeContato: nomeContato.trim() || undefined,
+        segmento: segmento || undefined,
+        observacoes: observacoes.trim() || undefined,
+        regimeTributario: regimeTributario || undefined,
+        inscricaoMunicipal: inscricaoMunicipal.trim() || undefined,
+        inscricaoSuframa: inscricaoSuframa.trim() || undefined,
+        situacaoFiscalEspecial: situacaoFiscalEspecial || undefined,
+        cnaeFiscal: cnaeFiscal.trim() || undefined,
+        emailNfe: emailNfe.trim() || undefined,
+        website: website.trim() || undefined,
+        limiteCredito: limiteCredito.trim() || undefined,
+        formaCobranca: formaCobranca || undefined,
+        tabelaPrecos: tabelaPrecos || undefined,
+        condicaoPagamento: condicaoPagamento.trim() || undefined,
+        regiao: regiao || undefined,
+        perfil: perfil || undefined,
+        formaPedido: formaPedido || undefined,
+        produtos: produtos.trim() || undefined,
+        probabilidadeNegocio: probabilidadeNegocio || undefined,
+        tamanho: tamanho || undefined,
+        atencao: atencao || undefined,
+        fornecedorAtual: fornecedorAtual.trim() || undefined,
+        situacaoCobranca: situacaoCobranca || undefined,
+        possuiRedespacho: possuiRedespacho || undefined,
+        redespachoCep: redespachoCep.trim() || undefined,
+        redespachoLogradouro: redespachoLogradouro.trim() || undefined,
+        redespachoNumero: redespachoNumero.trim() || undefined,
+        redespachoComplemento: redespachoComplemento.trim() || undefined,
+        redespachoBairro: redespachoBairro.trim() || undefined,
+        redespachoCidade: redespachoCidade.trim() || undefined,
+        redespachoUf: redespachoUf.trim() || undefined,
+        redespachoTelefone: redespachoTelefone.trim() || undefined,
+      });
+      onSuccess();
+    } catch (e: any) {
+      setError(e.message || "Erro ao atualizar cliente.");
     } finally {
       setSaving(false);
     }
@@ -2355,11 +2490,18 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const segmentoOptions = ["", "DISTRIBUIDORA", "SUPERMERCADO", "ATACADO", "VAREJO", "INDÚSTRIA", "RESTAURANTE", "LOJA", "OUTROS"];
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-300 dark:border-teal-600 shadow-lg p-5">
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border-2 ${editMode ? "border-amber-400 dark:border-amber-600" : "border-teal-300 dark:border-teal-600"} shadow-lg p-5`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-teal-600" />
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Cadastrar Novo Cliente</h3>
+          <Building2 className={`w-5 h-5 ${editMode ? "text-amber-600" : "text-teal-600"}`} />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            {editMode ? "Alterar Dados Cadastrais" : "Cadastrar Novo Cliente"}
+          </h3>
+          {editMode && (
+            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+              Editando cliente existente
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
@@ -2368,6 +2510,48 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <X className="w-4 h-4" />
         </button>
       </div>
+
+      {/* CNPJ Duplicate Dialog */}
+      {showDuplicateDialog && duplicateInfo && (
+        <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-600 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-200 mb-1">
+                CNPJ já cadastrado!
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                Cliente: <strong>{duplicateInfo.razaoSocial}</strong> (cadastrado por {duplicateInfo.sellerName})
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                Deseja fazer alterações cadastrais nesse cliente? Os dados atuais já foram carregados no formulário.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditMode(true);
+                    setEditingClientId(duplicateInfo.clientId);
+                    setShowDuplicateDialog(false);
+                    setError("");
+                  }}
+                  className="px-4 py-2 text-xs font-bold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors cursor-pointer"
+                >
+                  Sim, alterar dados
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDuplicateDialog(false);
+                    setError("");
+                  }}
+                  className="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Não, cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
@@ -2689,16 +2873,16 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           Cancelar
         </button>
         <button
-          onClick={handleSave}
+          onClick={editMode ? handleUpdate : handleSave}
           disabled={saving}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white rounded-lg disabled:opacity-50 transition-colors shadow-sm cursor-pointer ${editMode ? "bg-amber-600 hover:bg-amber-700" : "bg-teal-600 hover:bg-teal-700"}`}
         >
           {saving ? (
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
             <Save className="w-3.5 h-3.5" />
           )}
-          {saving ? "Salvando..." : "Salvar Cliente"}
+          {saving ? "Salvando..." : editMode ? "Salvar Altera\u00e7\u00f5es" : "Salvar Cliente"}
         </button>
       </div>
     </div>

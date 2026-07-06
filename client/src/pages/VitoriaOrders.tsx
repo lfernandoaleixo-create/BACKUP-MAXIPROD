@@ -2,13 +2,14 @@
  * Vitória Orders - Painel da operadora para processar pedidos aprovados
  * Fluxo de status: Pendente → Recebido → Lançado no Maxiprod
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
-  Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2
+  Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2,
+  FileSpreadsheet, AlertTriangle, Download
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -37,8 +38,57 @@ export default function VitoriaOrders() {
   const markRecebidoMutation = trpc.salesOrders.markRecebido.useMutation();
   const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
+  const exportMaxiprodMutation = trpc.salesOrders.exportClientMaxiprod.useMutation();
   const utils = trpc.useUtils();
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [exportingOrderId, setExportingOrderId] = useState<number | null>(null);
+
+  // Get modification info for all visible orders
+  const orderIds = useMemo(() => (orders || []).map((o: any) => o.id), [orders]);
+  const { data: modificationInfo } = trpc.salesOrders.getClientModificationInfo.useQuery(
+    { orderIds },
+    { enabled: orderIds.length > 0, staleTime: 60 * 1000 }
+  );
+
+  // Helper to get modification info for a specific order
+  const getModInfo = (orderId: number) => {
+    if (!modificationInfo) return null;
+    return modificationInfo.find((m: any) => m.orderId === orderId) || null;
+  };
+
+  // Handle Maxiprod export download
+  const handleExportMaxiprod = (orderId: number) => {
+    setExportingOrderId(orderId);
+    exportMaxiprodMutation.mutate(
+      { orderId },
+      {
+        onSuccess: (data) => {
+          // Convert base64 to blob and download
+          const byteCharacters = atob(data.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success(`Planilha Maxiprod exportada: ${data.clientName}`);
+          setExportingOrderId(null);
+        },
+        onError: (err) => {
+          toast.error(err.message || "Erro ao exportar planilha Maxiprod");
+          setExportingOrderId(null);
+        },
+      }
+    );
+  };
 
   const handleDeleteOrder = (orderId: number) => {
     deleteOrderMutation.mutate(
@@ -333,6 +383,45 @@ export default function VitoriaOrders() {
 
                       {/* Client Info - Full Data */}
                       <div className="mt-4 space-y-3">
+                        {/* Modification Banner + Export Button */}
+                        {(() => {
+                          const modInfo = getModInfo(order.id);
+                          return (
+                            <div className="flex flex-col gap-2">
+                              {/* Modification warning banner */}
+                              {modInfo?.modified && (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg">
+                                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                                  <p className="text-[11px] text-amber-800 dark:text-amber-200 font-medium">
+                                    Dados do cliente <strong>{modInfo.clientName || order.razaoSocial}</strong> foram modificados
+                                    {modInfo.modifiedBy ? ` por ${modInfo.modifiedBy}` : " por um vendedor"}
+                                  </p>
+                                </div>
+                              )}
+                              {/* Exportar Maxiprod button */}
+                              {modInfo?.hasVendorClient && (
+                                <button
+                                  onClick={() => handleExportMaxiprod(order.id)}
+                                  disabled={exportingOrderId === order.id}
+                                  className="flex items-center gap-2 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                  {exportingOrderId === order.id ? (
+                                    <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
+                                  ) : (
+                                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                  )}
+                                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                                    {exportingOrderId === order.id ? "Gerando..." : "Exportar Maxiprod"}
+                                  </span>
+                                  <span className="text-[9px] text-emerald-500 dark:text-emerald-400">
+                                    (Planilha Empresas .xlsx)
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {/* Section: Dados do Cliente */}
                         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
                           <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">

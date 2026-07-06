@@ -4865,3 +4865,19 @@
 ## Gestores - Vendedor adicionado em Senhas aparece em Acesso ao Aplicativo (06/07/2026)
 - [x] Garantir que vendedor adicionado em "Senhas" aparece automaticamente em "Acesso ao Aplicativo" (já funciona pois ambos usam seller_permissions)
 - [x] Renomear "Renato Aleixo" para "Renato Ledesma" em todo o aplicativo (código + banco + GESTOR_NAME_MAP para Maxiprod)
+
+## Exportação de Clientes no Formato Maxiprod (.xls) (06/07/2026)
+- [x] Backend: criar endpoint que gera arquivo Excel no formato Maxiprod (44 colunas) a partir dos clientes cadastrados
+- [x] Frontend: botão para Vitória baixar planilha de clientes novos no formato Maxiprod
+- [x] Mapear campos do vendor_clients para as colunas do modelo Maxiprod (Apelido, CNPJ, Razão Social, IE, CEP, Endereço, etc.)
+
+## CNPJ Duplicado - Perguntar se quer alterar cliente existente (06/07/2026)
+- [x] Ao digitar CNPJ já existente no cadastro, em vez de só bloquear, perguntar: "CNPJ já cadastrado. Deseja fazer alterações cadastrais nesse cliente?"
+- [x] Se sim, abrir formulário preenchido com dados atuais para o vendedor atualizar
+- [x] Salvar alterações no vendor_clients com lastModifiedBy rastreando quem alterou
+
+## Exportar Maxiprod - Botão no Faturamento para Vitória (06/07/2026)
+- [x] Adicionar botão "Exportar Maxiprod" no painel da Vitória ao visualizar pedidos com clientes novos/atualizados
+- [x] Gerar Excel .xlsx no formato Maxiprod (modelo de empresas) com os dados do cliente do pedido
+- [x] Banner de notificação quando dados do cliente foram modificados por vendedor
+- [x] Campo lastModifiedBy adicionado à tabela vendor_clients para rastreamento

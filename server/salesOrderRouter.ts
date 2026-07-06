@@ -909,6 +909,99 @@ export const salesOrderRouter = router({
     return { pending: approved.length, naoRecebido, recebidoNaoLancado };
   }),
 
+  /** Export client data in Maxiprod Excel format for a specific order */
+  exportClientMaxiprod: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Get the order to find client CNPJ
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido n\u00e3o encontrado");
+
+      const cnpjLimpo = (order.cnpjCpf || "").replace(/[^\d]/g, "");
+      if (!cnpjLimpo) throw new Error("Pedido sem CNPJ do cliente");
+
+      // Find matching vendor_client by CNPJ
+      const [client] = await db.select().from(vendorClients)
+        .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') = ${cnpjLimpo}`)
+        .limit(1);
+
+      if (!client) {
+        throw new Error("Cliente n\u00e3o encontrado no cadastro de vendedores. Apenas clientes cadastrados manualmente podem ser exportados.");
+      }
+
+      // Generate Excel using existing utility
+      const { generateMaxiprodExcel } = await import("./maxiprodExcelExport");
+      const buffer = await generateMaxiprodExcel([client.id]);
+
+      // Return base64 for frontend download
+      const base64 = buffer.toString("base64");
+      const filename = `Maxiprod_${client.razaoSocial.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      return { base64, filename, clientName: client.razaoSocial };
+    }),
+
+  /** Get modification info for clients in orders (for Vit\u00f3ria's banner) */
+  getClientModificationInfo: publicProcedure
+    .input(z.object({ orderIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      if (input.orderIds.length === 0) return [];
+
+      // Get orders to extract CNPJs
+      const orders = await db.select({
+        id: salesOrderRequests.id,
+        cnpjCpf: salesOrderRequests.cnpjCpf,
+      }).from(salesOrderRequests)
+        .where(inArray(salesOrderRequests.id, input.orderIds));
+
+      // For each order, check if the vendor_client has been modified
+      const results: Array<{ orderId: number; modified: boolean; modifiedBy: string | null; clientName: string | null; hasVendorClient: boolean }> = [];
+
+      for (const order of orders) {
+        const cnpjLimpo = (order.cnpjCpf || "").replace(/[^\d]/g, "");
+        if (!cnpjLimpo) {
+          results.push({ orderId: order.id, modified: false, modifiedBy: null, clientName: null, hasVendorClient: false });
+          continue;
+        }
+
+        const [client] = await db.select({
+          id: vendorClients.id,
+          razaoSocial: vendorClients.razaoSocial,
+          lastModifiedBy: vendorClients.lastModifiedBy,
+          createdAt: vendorClients.createdAt,
+          updatedAt: vendorClients.updatedAt,
+        }).from(vendorClients)
+          .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') = ${cnpjLimpo}`)
+          .limit(1);
+
+        if (!client) {
+          results.push({ orderId: order.id, modified: false, modifiedBy: null, clientName: null, hasVendorClient: false });
+          continue;
+        }
+
+        // Client was modified if lastModifiedBy is set OR updatedAt > createdAt + 1 minute
+        const wasModified = !!client.lastModifiedBy || 
+          (client.updatedAt && client.createdAt && 
+           client.updatedAt.getTime() - client.createdAt.getTime() > 60000);
+
+        results.push({
+          orderId: order.id,
+          modified: wasModified,
+          modifiedBy: client.lastModifiedBy || null,
+          clientName: client.razaoSocial,
+          hasVendorClient: true,
+        });
+      }
+
+      return results;
+    }),
+
   /** Count pending orders for gestores (pendente = needs approval) */
   countPendingGestor: publicProcedure.query(async () => {
     const db = await getDb();
