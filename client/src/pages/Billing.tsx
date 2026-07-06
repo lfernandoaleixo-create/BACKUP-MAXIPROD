@@ -716,7 +716,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         </div>
 
         {/* Pedido number + Grupo badge + Tipo Especial badge */}
-        <div className="flex-shrink-0" style={{ width: compact ? '170px' : (showValues ? '170px' : '200px') }}>
+        <div className="flex-shrink-0" style={{ width: compact ? '220px' : (showValues ? '230px' : '260px') }}>
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5 flex-nowrap">
               <span className={`font-bold text-teal-600 ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')}`}>#{order.pedido}</span>
@@ -742,8 +742,8 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
           </div>
         </div>
 
-        {/* Client name - clean, no icons here */}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+        {/* Client name - clean, aligned with consistent left padding */}
+        <div className="flex-1 min-w-0 flex items-center pl-2">
           <span className={`text-slate-700 font-medium ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} truncate`} title={order.cliente}>{displayName}</span>
         </div>
 
@@ -1719,7 +1719,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
 
           {/* Table header + orders with horizontal scroll */}
           <div className="overflow-x-auto">
-          <div style={{ minWidth: compact ? '1050px' : '1200px' }}>
+          <div style={{ minWidth: compact ? '1100px' : '1260px' }}>
           <div className={`flex items-center gap-0 px-3 ${compact ? 'py-1.5' : 'py-2'} bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold`}>
             {(showAuthorize || showDeauthorize) && (
               <div className="flex-shrink-0" style={{ width: compact ? '90px' : '120px' }}>
@@ -1727,10 +1727,10 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
               </div>
             )}
             <div style={{ width: compact ? '14px' : '20px' }} className="flex-shrink-0" />
-            <div style={{ width: compact ? '170px' : (showValues ? '170px' : '200px') }} className="flex-shrink-0">
+            <div style={{ width: compact ? '220px' : (showValues ? '230px' : '260px') }} className="flex-shrink-0">
               <span className="text-[10px]">Pedido</span>
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pl-2">
               <span className="text-[10px]">Cliente</span>
             </div>
             {(showAuthorize || !showNf) && (
