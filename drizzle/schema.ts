@@ -2776,7 +2776,7 @@ export const stockWithdrawalRequests = mysqlTable("stock_withdrawal_requests", {
   productName: varchar("product_name", { length: 300 }).notNull(),
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
   // Motivo
-  motivo: mysqlEnum("motivo", ["amostra", "reembalagem", "complemento_pedido", "outro"]).notNull(),
+  motivo: mysqlEnum("motivo", ["consumo_pedido", "amostra", "reembalagem", "ajuste_inventario", "avaria_perda", "uso_interno", "devolucao_retrabalho", "outro"]).notNull(),
   motivoDescricao: text("motivo_descricao"), // obrigatório se motivo = "outro"
   // Campos para Reembalagem
   produtoDestinoCode: varchar("produto_destino_code", { length: 50 }),

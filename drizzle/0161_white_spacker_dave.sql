@@ -1,0 +1,2 @@
+ALTER TABLE `stock_withdrawal_requests` MODIFY COLUMN `motivo` enum('consumo_pedido','amostra','reembalagem','ajuste_inventario','avaria_perda','uso_interno','devolucao_retrabalho','outro') NOT NULL;--> statement-breakpoint
+ALTER TABLE `vendor_clients` ADD `redespacho_telefone` varchar(30);

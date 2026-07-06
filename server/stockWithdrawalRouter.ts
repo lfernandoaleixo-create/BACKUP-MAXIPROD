@@ -44,7 +44,7 @@ export const stockWithdrawalRouter = router({
       productCode: z.string().min(1),
       productName: z.string().min(1),
       quantity: z.string().min(1),
-      motivo: z.enum(["amostra", "reembalagem", "complemento_pedido", "outro"]),
+      motivo: z.enum(["consumo_pedido", "amostra", "reembalagem", "ajuste_inventario", "avaria_perda", "uso_interno", "devolucao_retrabalho", "outro"]),
       motivoDescricao: z.string().optional(),
       produtoDestinoCode: z.string().optional(),
       produtoDestinoName: z.string().optional(),

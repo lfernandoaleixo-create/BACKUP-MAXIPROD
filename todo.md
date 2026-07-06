@@ -4798,3 +4798,8 @@
 - [x] Campos obrigatórios no Cadastro de Novo Cliente com asterisco vermelho: CNPJ/CPF, Inscrição Estadual, Razão Social, CEP, Logradouro, Número, Bairro, Cidade, UF, E-mail, Telefone 1
 - [x] Bloquear finalização do cadastro se campos obrigatórios não estiverem preenchidos — mensagem lista campos faltantes, borda vermelha nos campos vazios
 - [x] Campo "Possui redespacho?" (Sim/Não) após e-mail, antes de Dados Fiscais. Se Sim, exibe seção "Endereço Redespacho" (CEP, Logradouro, Número, Complemento, Bairro, Cidade, UF) — salvo no banco
+
+## Produção - Motivos de Baixa no Estoque
+- [x] Adicionar campo "Motivo" obrigatório no formulário de baixa manual com 8 opções fixas (Consumo em pedido, Amostra para cliente, Reembalagem/Transformação, Ajuste de inventário, Avaria/Perda, Uso interno, Devolução/Retrabalho, Outros)
+- [x] Se motivo = "Outros", exibir campo de texto obrigatório para descrever o motivo (não pode salvar sem preencher)
+- [x] Histórico de movimentação: adicionar filtro por motivo para gestão ver quantas caixas por motivo, período e líder

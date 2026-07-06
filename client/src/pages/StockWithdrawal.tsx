@@ -19,10 +19,14 @@ import {
 } from "lucide-react";
 
 const MOTIVO_LABELS: Record<string, string> = {
-  amostra: "Amostra",
-  reembalagem: "Reembalagem",
-  complemento_pedido: "Complemento de Pedido",
-  outro: "Outro",
+  consumo_pedido: "Consumo em pedido",
+  amostra: "Amostra para cliente",
+  reembalagem: "Reembalagem/Transformação",
+  ajuste_inventario: "Ajuste de inventário",
+  avaria_perda: "Avaria/Perda",
+  uso_interno: "Uso interno",
+  devolucao_retrabalho: "Devolução/Retrabalho",
+  outro: "Outros",
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
@@ -126,7 +130,7 @@ function SolicitarForm() {
   const [productSearch, setProductSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<{ codigoItem: string; descricaoItem: string } | null>(null);
   const [quantity, setQuantity] = useState("");
-  const [motivo, setMotivo] = useState<"amostra" | "reembalagem" | "complemento_pedido" | "outro">("amostra");
+  const [motivo, setMotivo] = useState<string>("consumo_pedido");
   const [motivoDescricao, setMotivoDescricao] = useState("");
   const [produtoDestinoSearch, setProdutoDestinoSearch] = useState("");
   const [selectedProdutoDestino, setSelectedProdutoDestino] = useState<{ codigoItem: string; descricaoItem: string } | null>(null);
@@ -160,7 +164,7 @@ function SolicitarForm() {
     setProductSearch("");
     setSelectedProduct(null);
     setQuantity("");
-    setMotivo("amostra");
+    setMotivo("consumo_pedido");
     setMotivoDescricao("");
     setProdutoDestinoSearch("");
     setSelectedProdutoDestino(null);
@@ -181,7 +185,7 @@ function SolicitarForm() {
       productCode: selectedProduct.codigoItem,
       productName: selectedProduct.descricaoItem,
       quantity,
-      motivo,
+      motivo: motivo as any,
       motivoDescricao: motivo === "outro" ? motivoDescricao : undefined,
       produtoDestinoCode: motivo === "reembalagem" ? selectedProdutoDestino?.codigoItem : undefined,
       produtoDestinoName: motivo === "reembalagem" ? selectedProdutoDestino?.descricaoItem : undefined,
@@ -255,7 +259,7 @@ function SolicitarForm() {
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Motivo *</label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {(["amostra", "reembalagem", "complemento_pedido", "outro"] as const).map((m) => (
+          {(["consumo_pedido", "amostra", "reembalagem", "ajuste_inventario", "avaria_perda", "uso_interno", "devolucao_retrabalho", "outro"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMotivo(m)}
@@ -688,6 +692,7 @@ function RequestCard({ request, actions }: { request: any; actions?: React.React
 /* ─── Histórico Completo ─── */
 function HistoricoList() {
   const [statusFilter, setStatusFilter] = useState<"todas" | "pendente" | "aprovada" | "concluida" | "recusada">("todas");
+  const [motivoFilter, setMotivoFilter] = useState<string>("todos");
   const { data: requests, isLoading } = trpc.stockWithdrawal.list.useQuery({ status: statusFilter, limit: 200 });
   const utils = trpc.useUtils();
   const deleteMutation = trpc.stockWithdrawal.delete.useMutation({
@@ -700,12 +705,21 @@ function HistoricoList() {
     onError: (err) => toast.error(err.message || "Erro ao apagar"),
   });
 
+  // Filtrar por motivo no client-side
+  const filteredRequests = useMemo(() => {
+    if (!requests) return [];
+    if (motivoFilter === "todos") return requests;
+    return requests.filter((r) => r.motivo === motivoFilter);
+  }, [requests, motivoFilter]);
+
   if (isLoading) return <div className="flex items-center gap-2 text-slate-500 py-8 justify-center"><Loader2 className="w-5 h-5 animate-spin" /> Carregando...</div>;
 
   return (
     <div className="space-y-4">
+      {/* Filtro por Status */}
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-slate-500" />
+        <span className="text-xs text-slate-500 font-medium">Status:</span>
         {(["todas", "pendente", "aprovada", "concluida", "recusada"] as const).map((s) => (
           <button
             key={s}
@@ -717,17 +731,43 @@ function HistoricoList() {
         ))}
       </div>
 
-      {(!requests || requests.length === 0) ? (
+      {/* Filtro por Motivo */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Package className="w-4 h-4 text-slate-500" />
+        <span className="text-xs text-slate-500 font-medium">Motivo:</span>
+        <button
+          onClick={() => setMotivoFilter("todos")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${motivoFilter === "todos" ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+        >
+          Todos
+        </button>
+        {(["consumo_pedido", "amostra", "reembalagem", "ajuste_inventario", "avaria_perda", "uso_interno", "devolucao_retrabalho", "outro"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMotivoFilter(m)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${motivoFilter === m ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+          >
+            {MOTIVO_LABELS[m]}
+          </button>
+        ))}
+      </div>
+
+      {/* Contador de resultados */}
+      <div className="text-xs text-slate-500">
+        {filteredRequests.length} solicitação(ões) encontrada(s)
+      </div>
+
+      {filteredRequests.length === 0 ? (
         <div className="text-center py-8 text-slate-400 bg-white rounded-xl border border-slate-200">
           Nenhuma solicitação encontrada
         </div>
       ) : (
         <div className="space-y-3">
-          {requests.map((req) => (
+          {filteredRequests.map((req) => (
             <RequestCard key={req.id} request={req} actions={
               <div className="mt-3 flex justify-end">
                 <button
-                  onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicita\u00e7\u00e3o?")) deleteMutation.mutate({ id: req.id }); }}
+                  onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
                   disabled={deleteMutation.isPending}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors"
                 >
@@ -750,9 +790,13 @@ function Indicadores() {
   if (!data) return null;
 
   const motivoColors: Record<string, string> = {
+    consumo_pedido: "bg-green-100 text-green-700",
     amostra: "bg-purple-100 text-purple-700",
     reembalagem: "bg-blue-100 text-blue-700",
-    complemento_pedido: "bg-amber-100 text-amber-700",
+    ajuste_inventario: "bg-amber-100 text-amber-700",
+    avaria_perda: "bg-red-100 text-red-700",
+    uso_interno: "bg-cyan-100 text-cyan-700",
+    devolucao_retrabalho: "bg-orange-100 text-orange-700",
     outro: "bg-slate-100 text-slate-700",
   };
 
