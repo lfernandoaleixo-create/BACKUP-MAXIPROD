@@ -4809,3 +4809,7 @@
 - [x] Listar transportadoras cadastradas com API separadas por nome no step de Cálculo de Frete
 - [x] Ocultar informações de margem nos pedidos concluídos para Vitória e Juvenal (em fase de teste)
 - [x] Ocultar informações de transportadora/frete nos pedidos concluídos para Vitória e Juvenal (em fase de teste)
+
+## Cadastro de Cliente - Remover pergunta Contribuinte ICMS (06/07/2026)
+- [x] Remover a pergunta "Este cliente é Contribuinte de ICMS?" do formulário de cadastro de novo cliente
+- [x] Determinar automaticamente se é contribuinte com base na Inscrição Estadual (IE preenchida = Contribuinte, IE vazia = Não Contribuinte)
