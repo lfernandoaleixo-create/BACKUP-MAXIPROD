@@ -61,7 +61,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
-import FreightStep from "@/components/FreightStep";
+import CustosDeVendaStep from "@/components/CustosDeVendaStep";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
 
@@ -4436,7 +4436,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                   onClick={() => setStep("pagamento")}
                   className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded-lg transition-colors"
                 >
-                  Cálculo de Frete
+                  Custos de Venda
                 </button>
                 {items.length > 0 && (
                   <button
@@ -4458,10 +4458,11 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
         )}
 
         {step === "pagamento" && (
-          <FreightStep
+          <CustosDeVendaStep
             cep={cep}
             cnpjCpf={cnpjCpf}
             tipoContribuinte={tipoContribuinte}
+            uf={uf}
             items={items}
             condicaoPagamento={condicaoPagamento}
             setCondicaoPagamento={setCondicaoPagamento}

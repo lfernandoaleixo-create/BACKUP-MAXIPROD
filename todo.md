@@ -4820,3 +4820,13 @@
 - [x] Botão "Simular Frete" que consulta as 3 APIs em paralelo e mostra valor + prazo por transportadora
 - [x] Integrar SSW (Camilo dos Santos) no quoteAllCarriers para comparação completa
 - [x] Mostrar todas as informações necessárias: valor total, prazo, CNPJ remetente, detalhes do cálculo
+
+## Transformar "Cálculo de Frete" em "Custos de Venda" (06/07/2026)
+- [x] Renomear botão/step de "Cálculo de Frete" para "Custos de Venda"
+- [x] Seção 1: Custo da Mercadoria (puxar custo em tempo real da aba importação)
+- [x] Seção 2: Impostos discriminados com todas as porcentagens (ICMS, PIS, COFINS, IRPJ, CSLL, DIFAL)
+- [x] Seção 3: Comissão do Vendedor (campo para estipular %)
+- [x] Seção 4: Transportadora/Frete (simulação com 3 APIs)
+- [x] Seção 5: Gastos Adicionais (campo manual)
+- [x] Barra de margem de lucro líquido consolidando todos os custos
+- [x] Procedure calculateSalesCosts no backend com cálculo completo

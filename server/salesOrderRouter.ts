@@ -1615,4 +1615,142 @@ export const salesOrderRouter = router({
 
       return carriers;
     }),
+
+  // ===== INLINE SALES COSTS CALCULATION (for order form, before order is saved) =====
+  /** Calculate all sales costs inline - custo mercadoria, impostos, comissão, margem */
+  calculateSalesCosts: publicProcedure
+    .input(z.object({
+      items: z.array(z.object({
+        codigoItem: z.string(),
+        quantidade: z.number(),
+        precoUnitario: z.number(),
+      })),
+      ufDestino: z.string().default("MG"),
+      tipoContribuinte: z.enum(["Contribuinte", "Não contribuinte", "Isento"]).default("Contribuinte"),
+      tipoProduto: z.enum(["importado", "industrializado"]).default("importado"),
+      comissaoPercentual: z.number().min(0).max(100).default(0),
+      freteValor: z.number().min(0).default(0),
+      gastosAdicionais: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Calculate total sale value
+      const valorVenda = input.items.reduce((sum, item) => sum + item.precoUnitario * item.quantidade, 0);
+
+      // Get quarterly revenue for IRPJ
+      const now = new Date();
+      const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+      const quarterStartStr = quarterStart.toISOString().split("T")[0];
+      const [revenueRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${salesOrders.valorTotalPedido} AS DECIMAL(15,2))), 0)`,
+      }).from(salesOrders)
+        .where(sql`${salesOrders.dataEmissao} >= ${quarterStartStr}`);
+      const faturamentoTrimestral = Number(revenueRow?.total || 0);
+
+      // Get product costs from import PO data
+      const productCodes = input.items.map(i => i.codigoItem).filter(Boolean);
+      let custoMercadoriaTotal = 0;
+      const itemCosts: Array<{ codigoItem: string; descricao: string; quantidade: number; custoUnitario: number; custoTotal: number; fonte: string }> = [];
+
+      if (productCodes.length > 0) {
+        const stockRows = await db.select({
+          codigoItem: stockItems.codigoItem,
+          descricaoItem: stockItems.descricaoItem,
+          unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+          grupoCodigo: stockItems.grupoCodigo,
+        }).from(stockItems).where(
+          sql`${stockItems.codigoItem} IN (${sql.join(productCodes.map(c => sql`${c}`), sql`, `)})`
+        );
+        const stockMap = new Map(stockRows.map(s => [s.codigoItem, s]));
+
+        const poProducts = await db.select({
+          productCode: importPoProducts.productCode,
+          valorCaixaBrl: importPoProducts.valorCaixaBrl,
+          precoMilUnid: importPoProducts.precoMilUnid,
+          navigationStatus: importPos.navigationStatus,
+        }).from(importPoProducts)
+          .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
+          .where(
+            and(
+              sql`${importPoProducts.productCode} IN (${sql.join(productCodes.map(c => sql`${c}`), sql`, `)})`,
+              sql`${importPos.navigationStatus} IN ('concluida', 'recebida', 'chegou_patio')`,
+              sql`(${importPoProducts.valorCaixaBrl} IS NOT NULL OR ${importPoProducts.precoMilUnid} IS NOT NULL)`,
+            )
+          );
+
+        const costByProduct: Record<string, { cost: number; fonte: string }> = {};
+        for (const pp of poProducts) {
+          const code = pp.productCode!;
+          const cost = Number(pp.valorCaixaBrl || pp.precoMilUnid || 0);
+          if (cost <= 0) continue;
+          const isPatio = pp.navigationStatus === 'chegou_patio';
+          if (!costByProduct[code] || isPatio) {
+            costByProduct[code] = { cost, fonte: isPatio ? "Projetado" : "Real" };
+          }
+        }
+
+        for (const item of input.items) {
+          const code = item.codigoItem;
+          if (!code) continue;
+          const qty = item.quantidade;
+          const stockInfo = stockMap.get(code);
+          const fator = Number(stockInfo?.unidadeDeVendaFator || 1);
+          const costData = costByProduct[code];
+          const descricao = stockInfo?.descricaoItem || code;
+          if (costData) {
+            const custoUnitario = fator > 0 ? costData.cost / fator : costData.cost;
+            const custoTotal = custoUnitario * qty;
+            custoMercadoriaTotal += custoTotal;
+            itemCosts.push({ codigoItem: code, descricao, quantidade: qty, custoUnitario, custoTotal, fonte: costData.fonte });
+          } else {
+            itemCosts.push({ codigoItem: code, descricao, quantidade: qty, custoUnitario: 0, custoTotal: 0, fonte: "Sem custo" });
+          }
+        }
+      }
+
+      // Calculate taxes
+      const impostos = calcularImpostos({
+        valorVenda,
+        ufDestino: input.ufDestino,
+        tipoProduto: input.tipoProduto as TipoProduto,
+        tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
+        faturamentoTrimestral,
+      });
+
+      // Calculate commission
+      const comissaoValor = valorVenda * (input.comissaoPercentual / 100);
+
+      // Calculate margin (including gastos adicionais)
+      const totalCustos = custoMercadoriaTotal + input.freteValor + comissaoValor + impostos.totalImpostosValor + input.gastosAdicionais;
+      const lucroLiquido = valorVenda - totalCustos;
+      const margemPercentual = valorVenda > 0 ? (lucroLiquido / valorVenda) * 100 : 0;
+
+      return {
+        valorVenda,
+        faturamentoTrimestral,
+        impostos,
+        custoMercadoria: {
+          total: custoMercadoriaTotal,
+          items: itemCosts,
+        },
+        frete: input.freteValor,
+        comissao: {
+          percentual: input.comissaoPercentual,
+          valor: comissaoValor,
+        },
+        gastosAdicionais: input.gastosAdicionais,
+        margem: {
+          valorVenda,
+          custoMercadoria: custoMercadoriaTotal,
+          frete: input.freteValor,
+          comissao: comissaoValor,
+          totalImpostos: impostos.totalImpostosValor,
+          gastosAdicionais: input.gastosAdicionais,
+          lucroLiquido,
+          margemPercentual,
+        },
+      };
+    }),
 });
