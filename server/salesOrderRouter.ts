@@ -1649,64 +1649,65 @@ export const salesOrderRouter = router({
         .where(sql`${salesOrders.dataEmissao} >= ${quarterStartStr}`);
       const faturamentoTrimestral = Number(revenueRow?.total || 0);
 
-      // Get product costs from import PO data
+      // Get product costs from getRealTimeCosts (same logic as Importação tab)
+      // This uses the correct weighted average / projected / estimated cost per box in BRL
+      const { importRouter } = await import("./importRouter");
+      const { createCallerFactory } = await import("./_core/trpc");
+      const createCaller = createCallerFactory(importRouter);
+      const importCaller = createCaller({ user: null, req: {} as any, res: {} as any });
+      const realTimeCosts = await importCaller.getRealTimeCosts();
+
+      // Build a map: codigoItem -> best cost (R$/caixa)
+      // Priority: custoProjetado (includes patio) > custoReal > custoEstimativa
+      const costMap = new Map<string, { cost: number; fonte: string; descricao: string }>();
+      for (const item of realTimeCosts) {
+        let cost = 0;
+        let fonte = "Sem custo";
+        if (item.custoProjetado > 0 && item.temPatio) {
+          cost = item.custoProjetado;
+          fonte = "Projetado";
+        } else if (item.custoReal > 0) {
+          cost = item.custoReal;
+          fonte = "Real";
+        } else if (item.custoEstimativa > 0 && item.temNavegando) {
+          cost = item.custoEstimativa;
+          fonte = "Estimativa";
+        }
+        if (cost > 0) {
+          costMap.set(item.codigoItem, { cost, fonte, descricao: item.descricao });
+        }
+      }
+
       const productCodes = input.items.map(i => i.codigoItem).filter(Boolean);
       let custoMercadoriaTotal = 0;
       const itemCosts: Array<{ codigoItem: string; descricao: string; quantidade: number; custoUnitario: number; custoTotal: number; fonte: string }> = [];
 
+      // Also get stock item descriptions for items not in costMap
+      let stockDescMap = new Map<string, string>();
       if (productCodes.length > 0) {
         const stockRows = await db.select({
           codigoItem: stockItems.codigoItem,
           descricaoItem: stockItems.descricaoItem,
-          unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
-          grupoCodigo: stockItems.grupoCodigo,
         }).from(stockItems).where(
           sql`${stockItems.codigoItem} IN (${sql.join(productCodes.map(c => sql`${c}`), sql`, `)})`
         );
-        const stockMap = new Map(stockRows.map(s => [s.codigoItem, s]));
+        stockDescMap = new Map(stockRows.map(s => [s.codigoItem, s.descricaoItem]));
+      }
 
-        const poProducts = await db.select({
-          productCode: importPoProducts.productCode,
-          valorCaixaBrl: importPoProducts.valorCaixaBrl,
-          precoMilUnid: importPoProducts.precoMilUnid,
-          navigationStatus: importPos.navigationStatus,
-        }).from(importPoProducts)
-          .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
-          .where(
-            and(
-              sql`${importPoProducts.productCode} IN (${sql.join(productCodes.map(c => sql`${c}`), sql`, `)})`,
-              sql`${importPos.navigationStatus} IN ('concluida', 'recebida', 'chegou_patio')`,
-              sql`(${importPoProducts.valorCaixaBrl} IS NOT NULL OR ${importPoProducts.precoMilUnid} IS NOT NULL)`,
-            )
-          );
-
-        const costByProduct: Record<string, { cost: number; fonte: string }> = {};
-        for (const pp of poProducts) {
-          const code = pp.productCode!;
-          const cost = Number(pp.valorCaixaBrl || pp.precoMilUnid || 0);
-          if (cost <= 0) continue;
-          const isPatio = pp.navigationStatus === 'chegou_patio';
-          if (!costByProduct[code] || isPatio) {
-            costByProduct[code] = { cost, fonte: isPatio ? "Projetado" : "Real" };
-          }
-        }
-
-        for (const item of input.items) {
-          const code = item.codigoItem;
-          if (!code) continue;
-          const qty = item.quantidade;
-          const stockInfo = stockMap.get(code);
-          const fator = Number(stockInfo?.unidadeDeVendaFator || 1);
-          const costData = costByProduct[code];
-          const descricao = stockInfo?.descricaoItem || code;
-          if (costData) {
-            const custoUnitario = fator > 0 ? costData.cost / fator : costData.cost;
-            const custoTotal = custoUnitario * qty;
-            custoMercadoriaTotal += custoTotal;
-            itemCosts.push({ codigoItem: code, descricao, quantidade: qty, custoUnitario, custoTotal, fonte: costData.fonte });
-          } else {
-            itemCosts.push({ codigoItem: code, descricao, quantidade: qty, custoUnitario: 0, custoTotal: 0, fonte: "Sem custo" });
-          }
+      for (const item of input.items) {
+        const code = item.codigoItem;
+        if (!code) continue;
+        const qty = item.quantidade; // quantity is already in BOXES
+        const costData = costMap.get(code);
+        const descricao = costData?.descricao || stockDescMap.get(code) || code;
+        if (costData && costData.cost > 0) {
+          // custoUnitario = cost per BOX in BRL (already correct from getRealTimeCosts)
+          const custoUnitario = costData.cost;
+          const custoTotal = custoUnitario * qty;
+          custoMercadoriaTotal += custoTotal;
+          itemCosts.push({ codigoItem: code, descricao, quantidade: qty, custoUnitario, custoTotal, fonte: costData.fonte });
+        } else {
+          itemCosts.push({ codigoItem: code, descricao, quantidade: qty, custoUnitario: 0, custoTotal: 0, fonte: "Sem custo" });
         }
       }
 
