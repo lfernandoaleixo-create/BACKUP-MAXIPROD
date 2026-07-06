@@ -4844,3 +4844,9 @@
 - [x] Mover card "Devolução/Retrabalho" para a aba "Nova Solicitação de Acréscimo"
 - [x] Na aba Acréscimo com Devolução/Retrabalho selecionado: busca de produto, quantidade de caixas, campo de observação detalhada
 - [x] Manter os demais motivos (Consumo em pedido, Amostra, Reembalagem, Ajuste, Avaria, Uso interno, Outros) na aba "Nova Solicitação de Baixa"
+
+## Inadimplência - Restaurar histórico de cobrança perdido (06/07/2026)
+- [x] Investigar perda de etapas de cobrança após sync de sexta-feira (03/Jul)
+- [x] Restaurar etapas herdando do registro mais recente da mesma empresa (152 registros corrigidos)
+- [x] Corrigir sync automático (cobrancaPlanilhaSync.ts) para herdar etapas ao criar novos títulos
+- [x] Prevenir regressão futura: novos títulos agora herdam etapas automaticamente

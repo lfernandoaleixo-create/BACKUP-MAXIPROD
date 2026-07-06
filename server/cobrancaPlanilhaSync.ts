@@ -352,16 +352,39 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         formaCobranca: title.row.formaCobranca || null,
         documento,
         centroCustos,
-        // Cada título novo começa do zero — sem herdar etapas de cobrança
-        primeiraCobranca: null,
-        semAcao1: null,
-        segundaCobranca: null,
-        semAcao2: null,
-        terceiraCobranca: null,
-        semAcao3: null,
-        acaoFinal: null,
-        etapasHerdadasDeId: null,
-        etapasHerdadasDeDoc: null,
+        // HERANÇA DE ETAPAS: herda do registro mais recente da mesma empresa que tenha etapas
+        ...(() => {
+          const donor = allPlanilhaRecords
+            .filter(r => r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+              && (r.primeiraCobranca || r.promessaPgto || r.semAcao1 || r.segundaCobranca || r.semAcao2 || r.terceiraCobranca || r.semAcao3 || r.acaoFinal))
+            .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0];
+          if (donor) {
+            return {
+              primeiraCobranca: donor.primeiraCobranca,
+              promessaPgto: donor.promessaPgto,
+              semAcao1: donor.semAcao1,
+              segundaCobranca: donor.segundaCobranca,
+              semAcao2: donor.semAcao2,
+              terceiraCobranca: donor.terceiraCobranca,
+              semAcao3: donor.semAcao3,
+              acaoFinal: donor.acaoFinal,
+              etapasHerdadasDeId: donor.id,
+              etapasHerdadasDeDoc: donor.documento,
+              etapasPausadas: donor.etapasPausadas,
+            };
+          }
+          return {
+            primeiraCobranca: null,
+            semAcao1: null,
+            segundaCobranca: null,
+            semAcao2: null,
+            terceiraCobranca: null,
+            semAcao3: null,
+            acaoFinal: null,
+            etapasHerdadasDeId: null,
+            etapasHerdadasDeDoc: null,
+          };
+        })(),
         updatedBy: "Auto-sync (novo título vencido)",
       });
       added++;

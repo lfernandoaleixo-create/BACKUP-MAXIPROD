@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 export default function StockWithdrawal() {
   const { operator, hasGranularAccess } = useOperator();
-  const [activeView, setActiveView] = useState<"solicitar" | "pendentes" | "historico" | "indicadores">("pendentes");
+  const [activeView, setActiveView] = useState<"solicitar" | "pendentes" | "historico" | "indicadores">("solicitar");
   
   // Permissões
   const canCreate = hasGranularAccess("prod.mov_solicitar");
