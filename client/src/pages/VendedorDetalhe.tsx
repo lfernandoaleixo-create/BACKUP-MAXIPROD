@@ -3516,12 +3516,16 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
 
   const [selectedClientName, setSelectedClientName] = useState("");
   const [clientInfoExpanded, setClientInfoExpanded] = useState(false);
+  const [vendorClientId, setVendorClientId] = useState<number | null>(null);
+  const [showClientValidationError, setShowClientValidationError] = useState(false);
 
   // Client history query - fires when a client is selected
   const clientHistoryQuery = trpc.salesOrders.getClientHistory.useQuery(
     { clientName: selectedClientName },
     { enabled: selectedClientName.length >= 3 }
   );
+
+  const updateVendorClientMutation = trpc.sales.updateVendorClient.useMutation();
 
   const selectClient = (client: any) => {
     setCnpjCpf(client.cnpjCpf || "");
@@ -3542,8 +3546,10 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     setTelefone2(client.telefone2 || "");
     setEmailContato(client.emailContato || "");
     setSegmento(client.segmento || "");
+    setVendorClientId(client.vendorClientId || null);
     setShowClientDropdown(false);
     setClientSearch("");
+    setShowClientValidationError(false);
     // Set client name for history lookup
     setSelectedClientName(client.razaoSocial || client.nomeFantasia || "");
   };
@@ -3663,8 +3669,59 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     }
   };
 
-  const canProceedCliente = razaoSocial.length >= 2;
+  // Required fields for client (same as new client registration)
+  const getClientMissingFields = () => {
+    const missing: string[] = [];
+    if (!cnpjCpf.trim()) missing.push("CNPJ/CPF");
+    if (!inscricaoEstadual.trim()) missing.push("Inscrição Estadual");
+    if (!razaoSocial.trim()) missing.push("Razão Social");
+    if (!cep.trim()) missing.push("CEP");
+    if (!endereco.trim()) missing.push("Endereço");
+    if (!numero.trim()) missing.push("Número");
+    if (!bairro.trim()) missing.push("Bairro");
+    if (!municipio.trim()) missing.push("Município");
+    if (!uf.trim()) missing.push("UF");
+    if (!emailContato.trim()) missing.push("Email");
+    if (!telefone1.trim()) missing.push("Telefone 1");
+    return missing;
+  };
+  const clientMissingFields = getClientMissingFields();
+  const canProceedCliente = clientMissingFields.length === 0;
   const canProceedProdutos = items.length > 0 && items.every(i => i.quantidade > 0 && i.precoUnitario > 0);
+
+  const handleProceedToProducts = async () => {
+    if (!canProceedCliente) {
+      setShowClientValidationError(true);
+      return;
+    }
+    setShowClientValidationError(false);
+    // If this client came from vendor_clients, save any completed fields back
+    if (vendorClientId) {
+      try {
+        await updateVendorClientMutation.mutateAsync({
+          id: vendorClientId,
+          cnpjCpf: cnpjCpf.trim() || undefined,
+          razaoSocial: razaoSocial.trim() || undefined,
+          inscricaoEstadual: inscricaoEstadual.trim() || undefined,
+          cep: cep.trim() || undefined,
+          logradouro: endereco.trim() || undefined,
+          numero: numero.trim() || undefined,
+          complemento: complemento.trim() || undefined,
+          bairro: bairro.trim() || undefined,
+          cidade: municipio.trim() || undefined,
+          uf: uf.trim() || undefined,
+          telefone1: telefone1.trim() || undefined,
+          telefone2: telefone2.trim() || undefined,
+          email: emailContato.trim() || undefined,
+          segmento: segmento.trim() || undefined,
+        });
+      } catch (e) {
+        // Silently continue - saving back is best-effort
+        console.warn("Failed to update vendor client:", e);
+      }
+    }
+    setStep("produtos");
+  };
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-300 dark:border-teal-700 shadow-lg overflow-hidden">
@@ -3749,31 +3806,38 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="CNPJ não cadastrado — preencha se disponível" />
-              <OrderFormInput label="Razão Social *" value={razaoSocial} onChange={setRazaoSocial} placeholder="Razão social do cliente" />
+              <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={(v) => { setCnpjCpf(v); setShowClientValidationError(false); }} placeholder="00.000.000/0001-00" required error={showClientValidationError} />
+              <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" required error={showClientValidationError} />
               <OrderFormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia" />
-              <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
-              <OrderFormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" />
-              <OrderFormInput label="Endereço" value={endereco} onChange={setEndereco} placeholder="Rua/Av" />
-              <OrderFormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" />
-              <OrderFormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" />
-              <OrderFormInput label="Município" value={municipio} onChange={setMunicipio} placeholder="Cidade" />
-              <OrderFormInput label="UF" value={uf} onChange={setUf} placeholder="UF" />
-              <OrderFormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" />
-              <OrderFormInput label="Email" value={emailContato} onChange={setEmailContato} placeholder="email@empresa.com" />
+              <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" required error={showClientValidationError} />
+              <OrderFormInput label="CEP" value={cep} onChange={(v) => { setCep(v); setShowClientValidationError(false); }} placeholder="00000-000" required error={showClientValidationError} />
+              <OrderFormInput label="Endereço" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" required error={showClientValidationError} />
+              <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" required error={showClientValidationError} />
+              <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" required error={showClientValidationError} />
+              <OrderFormInput label="Município" value={municipio} onChange={(v) => { setMunicipio(v); setShowClientValidationError(false); }} placeholder="Cidade" required error={showClientValidationError} />
+              <OrderFormInput label="UF" value={uf} onChange={(v) => { setUf(v); setShowClientValidationError(false); }} placeholder="UF" required error={showClientValidationError} />
+              <OrderFormInput label="Telefone 1" value={telefone1} onChange={(v) => { setTelefone1(v); setShowClientValidationError(false); }} placeholder="(00) 00000-0000" required error={showClientValidationError} />
+              <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error={showClientValidationError} />
               <OrderFormInput label="Segmento" value={segmento} onChange={setSegmento} placeholder="Indústria, Loja, Distribuidora..." />
             </div>
+
+            {/* Validation error message */}
+            {showClientValidationError && clientMissingFields.length > 0 && (
+              <div className="mt-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                <p className="text-xs font-bold text-red-600 dark:text-red-400 mb-1">Campos obrigatórios não preenchidos:</p>
+                <p className="text-xs text-red-500 dark:text-red-300">{clientMissingFields.join(", ")}</p>
+                <p className="text-[10px] text-red-400 dark:text-red-500 mt-1">Preencha todos os campos marcados com * para continuar.</p>
+              </div>
+            )}
+
             <div className="flex justify-end pt-2">
               <button
-                onClick={() => setStep("produtos")}
-                disabled={!canProceedCliente}
+                onClick={handleProceedToProducts}
+                disabled={updateVendorClientMutation.isPending}
                 className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
               >
-                Próximo: Produtos
+                {updateVendorClientMutation.isPending ? "Salvando..." : "Próximo: Produtos"}
               </button>
-              {!canProceedCliente && (
-                <p className="text-[10px] text-red-500 mt-1">Preencha a Razão Social do cliente para continuar</p>
-              )}
             </div>
 
             {/* Informações do Cliente - Card com histórico (starts collapsed) */}
@@ -4764,18 +4828,23 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   );
 }
 
-function OrderFormInput({ label, value, onChange, placeholder, type = "text" }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function OrderFormInput({ label, value, onChange, placeholder, type = "text", required, error }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; required?: boolean; error?: boolean;
 }) {
+  const showError = error && required && !value.trim();
   return (
     <div>
-      <label className="text-[10px] text-slate-500 font-medium">{label}</label>
+      <label className={`text-[10px] font-medium ${showError ? 'text-red-500' : 'text-slate-500'}`}>
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/30"
+        className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/30 ${
+          showError ? 'border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-slate-200 dark:border-slate-600'
+        }`}
       />
     </div>
   );

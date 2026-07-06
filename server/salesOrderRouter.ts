@@ -33,7 +33,7 @@ export const salesOrderRouter = router({
 
       // 0. Search in vendor_clients (cadastro de clientes do vendedor)
       let fromVendorClients: Array<{
-        cnpjCpf: string; razaoSocial: string; nomeFantasia: string;
+        vendorClientId?: number; cnpjCpf: string; razaoSocial: string; nomeFantasia: string;
         inscricaoEstadual: string; tipoContribuinte: string; regimeTributario: string;
         emailNfe: string; cnaeFiscal: string; cep: string; endereco: string;
         numero: string; complemento: string; bairro: string; municipio: string;
@@ -55,6 +55,7 @@ export const salesOrderRouter = router({
           )
           .limit(20);
         fromVendorClients = vcRows.map(vc => ({
+          vendorClientId: vc.id,
           cnpjCpf: vc.cnpjCpf || "",
           razaoSocial: vc.razaoSocial || "",
           nomeFantasia: vc.nomeFantasia || "",
@@ -243,7 +244,7 @@ export const salesOrderRouter = router({
 
       // 4. Merge: vendor_clients first (most complete local data), then manual orders, then Maxiprod
       const seen = new Set<string>();
-      const results: typeof fromManualOrders = [];
+      const results: Array<typeof fromManualOrders[number] & { vendorClientId?: number }> = [];
 
       // Add vendor_clients first (cadastro do vendedor - most complete)
       for (const row of fromVendorClients) {

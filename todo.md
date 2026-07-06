@@ -4830,3 +4830,11 @@
 - [x] Seção 5: Gastos Adicionais (campo manual)
 - [x] Barra de margem de lucro líquido consolidando todos os custos
 - [x] Procedure calculateSalesCosts no backend com cálculo completo
+
+## Validação de Campos Obrigatórios para Clientes Antigos no Pedido de Venda
+- [x] Exigir mesmos campos obrigatórios do cadastro de novo cliente quando selecionar cliente antigo do histórico
+- [x] Se cliente antigo tiver campos faltando (CEP, telefone, endereço, etc.), exibir formulário para completar antes de avançar — campos com borda vermelha + mensagem listando campos faltantes
+- [x] Garantir que todas as informações obrigatórias cheguem para a Vitória
+- [x] Salvar dados completados de volta no cadastro do cliente (vendor_clients) automaticamente ao avançar
+- [x] Backend: searchClients agora retorna vendorClientId para clientes do cadastro local
+- [x] Frontend: OrderFormInput com suporte a required/error (asterisco vermelho + borda vermelha quando vazio)
