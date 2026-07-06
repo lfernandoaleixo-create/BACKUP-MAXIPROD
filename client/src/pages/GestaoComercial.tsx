@@ -244,10 +244,16 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
 
   // Get vendedores for a gestor card
   // For Juvenal: includes Renato as one of his vendedores
-  // For sub-gestor Renato: no vendedores yet (future)
-  // For Ana Paula: no vendedores yet (future)
+  // For sub-gestor Renato: get vendedores from seller_permissions (manually added)
+  // For Ana Paula: from Maxiprod
   const getVendedoresForCard = (card: GestorCard): string[] => {
-    if (card.role === "Sub-gestor") return []; // Sub-gestor doesn't have vendedores yet
+    if (card.role === "Sub-gestor") {
+      // Sub-gestor gets vendedores from seller_permissions (manually added via "Adicionar Vendedor")
+      const permsForGestor = permissions.filter(
+        p => p.gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      );
+      return permsForGestor.map(p => p.sellerName);
+    }
     const vendedores = getVendedoresForGestor(card.name);
     // Filter out vendedores who are also Gestor/Gestora (they have their own independent card)
     // Sub-gestores like Renato should NOT be filtered — they count as vendedores under their parent gestor
