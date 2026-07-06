@@ -6,6 +6,7 @@ import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
+import { quoteAllSswCnpjs } from "./sswApi";
 
 /**
  * Sales Order Requests Router
@@ -1497,10 +1498,11 @@ export const salesOrderRouter = router({
       altura: z.number().default(0.5),
       largura: z.number().default(0.5),
       comprimento: z.number().default(0.5),
+      tipoContribuinte: z.enum(["Contribuinte", "Não Contribuinte"]).default("Contribuinte"),
     }))
     .mutation(async ({ input }) => {
-      // Quote from all carriers in parallel
-      const [braspressResults, alfaResults] = await Promise.allSettled([
+      // Quote from all 3 carriers in parallel: Braspress + Alfa + Camilo (SSW)
+      const [braspressResults, alfaResults, sswResults] = await Promise.allSettled([
         cotarTodosCnpjs({
           cnpjDestinatario: input.cnpjDestinatario || "00000000000000",
           cepOrigem: input.cepOrigem,
@@ -1520,6 +1522,16 @@ export const salesOrderRouter = router({
           metroCubico: input.metroCubico,
           volumes: input.volumes,
           cnpjDestinatario: input.cnpjDestinatario,
+        }),
+        quoteAllSswCnpjs({
+          cepOrigem: Number(input.cepOrigem.replace(/\D/g, "")),
+          cepDestino: Number(input.cepDestino.replace(/\D/g, "")),
+          valorNF: input.valorMercadoria,
+          quantidade: input.volumes,
+          peso: input.peso,
+          volume: input.metroCubico,
+          cnpjDestinatario: input.cnpjDestinatario,
+          destContribuinte: input.tipoContribuinte === "Contribuinte" ? "S" : "N",
         }),
       ]);
 
@@ -1570,6 +1582,27 @@ export const salesOrderRouter = router({
           totalFrete: 0,
           prazo: "N/A",
           error: alfaResults.reason?.message || "Erro ao cotar Alfa",
+        });
+      }
+
+      // Process Camilo dos Santos (SSW) results
+      if (sswResults.status === "fulfilled") {
+        for (const r of sswResults.value) {
+          carriers.push({
+            transportadora: "Camilo dos Santos",
+            cnpj: r.cnpj,
+            totalFrete: r.totalFrete,
+            prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A",
+            error: r.error,
+          });
+        }
+      } else {
+        carriers.push({
+          transportadora: "Camilo dos Santos",
+          cnpj: "",
+          totalFrete: 0,
+          prazo: "N/A",
+          error: sswResults.reason?.message || "Erro ao cotar Camilo dos Santos",
         });
       }
 

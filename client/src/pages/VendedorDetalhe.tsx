@@ -61,6 +61,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
+import FreightStep from "@/components/FreightStep";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
 
@@ -4457,45 +4458,22 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
         )}
 
         {step === "pagamento" && (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase">3. Cálculo de Frete</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <OrderFormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="Ex: 30/60/90 dias" />
-              <OrderFormInput label="Valor do Frete (R$)" value={valorFrete} onChange={setValorFrete} placeholder="0,00" type="number" />
-              <div>
-                <label className="text-[10px] text-slate-500 font-medium">Tipo de Frete</label>
-                <select
-                  value={tipoFrete}
-                  onChange={(e) => setTipoFrete(e.target.value)}
-                  className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                >
-                  <option value="CIF">CIF (Frete por conta do vendedor)</option>
-                  <option value="FOB">FOB (Frete por conta do comprador)</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="text-[10px] text-slate-500 font-medium">Observações</label>
-              <textarea
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Observações adicionais do pedido..."
-                rows={3}
-                className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 resize-none"
-              />
-            </div>
-            <div className="flex justify-between pt-2">
-              <button onClick={() => setStep("produtos")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
-                Voltar
-              </button>
-              <button
-                onClick={() => setStep("revisao")}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                Próximo: Revisão
-              </button>
-            </div>
-          </div>
+          <FreightStep
+            cep={cep}
+            cnpjCpf={cnpjCpf}
+            tipoContribuinte={tipoContribuinte}
+            items={items}
+            condicaoPagamento={condicaoPagamento}
+            setCondicaoPagamento={setCondicaoPagamento}
+            valorFrete={valorFrete}
+            setValorFrete={setValorFrete}
+            tipoFrete={tipoFrete}
+            setTipoFrete={setTipoFrete}
+            observacoes={observacoes}
+            setObservacoes={setObservacoes}
+            onBack={() => setStep("produtos")}
+            onNext={() => setStep("revisao")}
+          />
         )}
 
         {step === "revisao" && (

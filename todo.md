@@ -4813,3 +4813,10 @@
 ## Cadastro de Cliente - Remover pergunta Contribuinte ICMS (06/07/2026)
 - [x] Remover a pergunta "Este cliente é Contribuinte de ICMS?" do formulário de cadastro de novo cliente
 - [x] Determinar automaticamente se é contribuinte com base na Inscrição Estadual (IE preenchida = Contribuinte, IE vazia = Não Contribuinte)
+
+## Redesenhar Step "Cálculo de Frete" com 3 Transportadoras (06/07/2026)
+- [x] Redesenhar UI do step "Cálculo de Frete" para mostrar cards das 3 transportadoras (Camilo dos Santos, Braspress, Alfa Transportes)
+- [x] Cada transportadora deve mostrar seus CNPJs disponíveis e status da API
+- [x] Botão "Simular Frete" que consulta as 3 APIs em paralelo e mostra valor + prazo por transportadora
+- [x] Integrar SSW (Camilo dos Santos) no quoteAllCarriers para comparação completa
+- [x] Mostrar todas as informações necessárias: valor total, prazo, CNPJ remetente, detalhes do cálculo
