@@ -4803,3 +4803,9 @@
 - [x] Adicionar campo "Motivo" obrigatório no formulário de baixa manual com 8 opções fixas (Consumo em pedido, Amostra para cliente, Reembalagem/Transformação, Ajuste de inventário, Avaria/Perda, Uso interno, Devolução/Retrabalho, Outros)
 - [x] Se motivo = "Outros", exibir campo de texto obrigatório para descrever o motivo (não pode salvar sem preencher)
 - [x] Histórico de movimentação: adicionar filtro por motivo para gestão ver quantas caixas por motivo, período e líder
+
+## Cálculo de Frete e Ocultação de Dados (06/07/2026)
+- [x] Renomear botão/step "Pagamento/Frete" para "Cálculo de Frete" no formulário de pedido do vendedor
+- [x] Listar transportadoras cadastradas com API separadas por nome no step de Cálculo de Frete
+- [x] Ocultar informações de margem nos pedidos concluídos para Vitória e Juvenal (em fase de teste)
+- [x] Ocultar informações de transportadora/frete nos pedidos concluídos para Vitória e Juvenal (em fase de teste)

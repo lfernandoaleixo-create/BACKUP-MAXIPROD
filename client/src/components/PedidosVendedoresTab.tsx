@@ -28,9 +28,8 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  DollarSign,
 } from "lucide-react";
-import MarginBar from "@/components/MarginBar";
+// import MarginBar from "@/components/MarginBar"; // oculto temporariamente - fase de teste
 import { useOperator } from "@/contexts/OperatorContext";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
@@ -333,12 +332,7 @@ export default function PedidosVendedoresTab() {
                   <span className="text-slate-600">Produtos:</span>
                   <span className="font-medium">{formatCurrency(detailsQuery.data.order.totalProdutos)}</span>
                 </div>
-                {Number(detailsQuery.data.order.valorFrete) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Frete ({detailsQuery.data.order.tipoFrete}):</span>
-                    <span className="font-medium">{formatCurrency(detailsQuery.data.order.valorFrete)}</span>
-                  </div>
-                )}
+                {/* Frete oculto temporariamente - fase de teste */}
                 <div className="flex justify-between text-sm font-bold border-t border-teal-200 pt-1">
                   <span className="text-teal-700">Total:</span>
                   <span className="text-teal-700">{formatCurrency(detailsQuery.data.order.totalPedido)}</span>
@@ -361,23 +355,7 @@ export default function PedidosVendedoresTab() {
                 </div>
               )}
 
-              {/* Card LUCRO - Margem de Lucro */}
-              {(detailsQuery.data.order.status === "aprovado" || detailsQuery.data.order.status === "processado") && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 px-1">
-                    <DollarSign className="w-4 h-4 text-emerald-600" />
-                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Lucro</p>
-                  </div>
-                  <MarginBar
-                    orderId={detailsQuery.data.order.id}
-                    orderUf={detailsQuery.data.order.uf || "MG"}
-                    orderCep={detailsQuery.data.order.cep || ""}
-                    orderCnpj={detailsQuery.data.order.cnpjCpf || ""}
-                    orderTotal={Number(detailsQuery.data.order.totalPedido) || 0}
-                    tipoContribuinte={detailsQuery.data.order.tipoContribuinte || "Contribuinte"}
-                  />
-                </div>
-              )}
+              {/* Card LUCRO - Margem de Lucro (oculto temporariamente - fase de teste) */}
 
               {/* Alerta */}
               {detailsQuery.data.order.motivoAlerta && (

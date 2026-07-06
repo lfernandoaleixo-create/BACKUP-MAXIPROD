@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
-  Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Truck, Tag, CreditCard, Trash2
+  Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -468,7 +468,7 @@ export default function VitoriaOrders() {
                         )}
 
                         {/* Section: Dados Comerciais */}
-                        {(order.segmento || order.condicaoPagamento || order.tipoFrete || order.observacoes) && (
+                        {(order.segmento || order.condicaoPagamento || order.observacoes) && (
                           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
                             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
                               <CreditCard className="w-3 h-3" />
@@ -487,15 +487,7 @@ export default function VitoriaOrders() {
                                   <p className="text-slate-800 dark:text-slate-100">{order.condicaoPagamento}</p>
                                 </div>
                               )}
-                              {order.tipoFrete && (
-                                <div>
-                                  <span className="text-slate-400 font-semibold">Tipo de Frete</span>
-                                  <p className="text-slate-800 dark:text-slate-100 flex items-center gap-1">
-                                    <Truck className="w-3 h-3 text-slate-400" />
-                                    {order.tipoFrete}
-                                  </p>
-                                </div>
-                              )}
+                              {/* tipoFrete oculto temporariamente - fase de teste */}
                               {order.observacoes && (
                                 <div className="col-span-2 md:col-span-3">
                                   <span className="text-slate-400 font-semibold">Observações</span>

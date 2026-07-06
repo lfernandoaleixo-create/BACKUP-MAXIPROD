@@ -4472,7 +4472,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                   onClick={() => setStep("pagamento")}
                   className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded-lg transition-colors"
                 >
-                  Pagamento/Frete
+                  Cálculo de Frete
                 </button>
                 {items.length > 0 && (
                   <button
@@ -4495,7 +4495,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
 
         {step === "pagamento" && (
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase">3. Condições de Pagamento</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase">3. Cálculo de Frete</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <OrderFormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="Ex: 30/60/90 dias" />
               <OrderFormInput label="Valor do Frete (R$)" value={valorFrete} onChange={setValorFrete} placeholder="0,00" type="number" />
