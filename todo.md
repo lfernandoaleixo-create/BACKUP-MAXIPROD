@@ -4850,3 +4850,8 @@
 - [x] Restaurar etapas herdando do registro mais recente da mesma empresa (152 registros corrigidos)
 - [x] Corrigir sync automático (cobrancaPlanilhaSync.ts) para herdar etapas ao criar novos títulos
 - [x] Prevenir regressão futura: novos títulos agora herdam etapas automaticamente
+
+## Gestão Comercial - Validação CNPJ duplicado no cadastro de clientes (06/07/2026)
+- [x] Impedir cadastro de cliente com CNPJ já existente
+- [x] Exibir aviso "CNPJ já cadastrado" com nome do cliente que já possui aquele CNPJ
+- [x] Validação tanto no backend (procedure) quanto no frontend (feedback visual)

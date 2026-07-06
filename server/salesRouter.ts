@@ -1,4 +1,5 @@
 import { publicProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
@@ -3799,6 +3800,24 @@ export const salesRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // Validação: CNPJ/CPF não pode ser duplicado
+      const cnpjLimpo = input.cnpjCpf.replace(/[^\d]/g, "");
+      const [existing] = await db.select({
+        id: vendorClients.id,
+        razaoSocial: vendorClients.razaoSocial,
+        cnpjCpf: vendorClients.cnpjCpf,
+        sellerName: vendorClients.sellerName,
+      }).from(vendorClients)
+        .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') = ${cnpjLimpo}`)
+        .limit(1);
+
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `CNPJ já cadastrado! Cliente: ${existing.razaoSocial} (cadastrado por ${existing.sellerName})`,
+        });
+      }
 
       const result = await db.insert(vendorClients).values({
         sellerId: input.sellerId,
