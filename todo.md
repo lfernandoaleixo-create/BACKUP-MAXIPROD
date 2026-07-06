@@ -4855,3 +4855,9 @@
 - [x] Impedir cadastro de cliente com CNPJ já existente
 - [x] Exibir aviso "CNPJ já cadastrado" com nome do cliente que já possui aquele CNPJ
 - [x] Validação tanto no backend (procedure) quanto no frontend (feedback visual)
+
+## Gestores - Botão "Adicionar Vendedor" na seção de senhas (06/07/2026)
+- [x] Adicionar botão "Adicionar Vendedor" na seção de senhas do gestor
+- [x] Formulário com nome do vendedor e senha
+- [x] Opção "Autorizado" que libera acesso imediato com aquela senha
+- [x] Backend: criar procedure para adicionar vendedor manualmente (seller_permissions)

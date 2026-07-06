@@ -1856,9 +1856,24 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
   const updateMutation = trpc.sales.updateSellerPassword.useMutation({
     onSuccess: () => passwordsQuery.refetch(),
   });
+  const addSellerMutation = trpc.sales.addSellerWithPassword.useMutation({
+    onSuccess: () => {
+      passwordsQuery.refetch();
+      setShowAddForm(false);
+      setNewSellerName("");
+      setNewSellerPassword("");
+      setNewSellerAuthorized(true);
+      setAddError("");
+    },
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [showPasswords, setShowPasswords] = useState<Set<number>>(new Set());
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSellerName, setNewSellerName] = useState("");
+  const [newSellerPassword, setNewSellerPassword] = useState("");
+  const [newSellerAuthorized, setNewSellerAuthorized] = useState(true);
+  const [addError, setAddError] = useState("");
 
   if (passwordsQuery.isLoading) {
     return (
@@ -1905,11 +1920,105 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
     setEditValue("");
   };
 
+  const handleAddSeller = async () => {
+    if (!newSellerName.trim()) {
+      setAddError("Informe o nome do vendedor");
+      return;
+    }
+    if (!newSellerPassword.trim()) {
+      setAddError("Informe a senha");
+      return;
+    }
+    setAddError("");
+    try {
+      await addSellerMutation.mutateAsync({
+        gestorName,
+        sellerName: newSellerName.trim(),
+        password: newSellerPassword.trim(),
+        authorized: newSellerAuthorized,
+      });
+    } catch (e: any) {
+      setAddError(e.message || "Erro ao adicionar vendedor");
+    }
+  };
+
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        {sellers.length} vendedores · Defina a senha de acesso ao aplicativo
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {sellers.length} vendedores · Defina a senha de acesso ao aplicativo
+        </p>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+        >
+          <UserPlus className="w-3.5 h-3.5" />
+          Adicionar Vendedor
+        </button>
+      </div>
+
+      {/* Add seller form */}
+      {showAddForm && (
+        <div className="p-4 rounded-xl border-2 border-teal-200 dark:border-teal-700 bg-teal-50/50 dark:bg-teal-900/10 space-y-3">
+          <h4 className="text-sm font-semibold text-teal-700 dark:text-teal-300 flex items-center gap-2">
+            <UserPlus className="w-4 h-4" />
+            Novo Vendedor
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Nome do Vendedor *</label>
+              <input
+                type="text"
+                value={newSellerName}
+                onChange={(e) => setNewSellerName(e.target.value.toUpperCase())}
+                placeholder="Ex: JOÃO SILVA"
+                className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Senha *</label>
+              <input
+                type="text"
+                value={newSellerPassword}
+                onChange={(e) => setNewSellerPassword(e.target.value)}
+                placeholder="Senha de acesso"
+                className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setNewSellerAuthorized(!newSellerAuthorized)}
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                newSellerAuthorized
+                  ? "bg-emerald-500 border-emerald-500 text-white"
+                  : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
+              }`}
+            >
+              {newSellerAuthorized && <Check className="w-3 h-3" />}
+            </button>
+            <span className="text-xs text-slate-600 dark:text-slate-400">Autorizado (libera acesso imediato)</span>
+          </div>
+          {addError && (
+            <p className="text-xs text-red-600 font-medium">{addError}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddSeller}
+              disabled={addSellerMutation.isPending}
+              className="px-4 py-2 text-xs font-medium bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
+            >
+              {addSellerMutation.isPending ? "Salvando..." : "Salvar Vendedor"}
+            </button>
+            <button
+              onClick={() => { setShowAddForm(false); setAddError(""); }}
+              className="px-4 py-2 text-xs font-medium bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {sellers.map((seller, idx) => (

@@ -4547,6 +4547,44 @@ export const salesRouter = router({
       return { success: true };
     }),
   /**
+   * Add a new seller with password (manual registration by gestor)
+   */
+  addSellerWithPassword: publicProcedure
+    .input(z.object({
+      gestorName: z.string(),
+      sellerName: z.string().min(2),
+      password: z.string().min(1),
+      authorized: z.boolean().default(false),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Check if seller already exists for this gestor
+      const [existing] = await db.select().from(sellerPermissions)
+        .where(and(
+          eq(sellerPermissions.sellerName, input.sellerName.trim().toUpperCase()),
+          eq(sellerPermissions.gestorName, input.gestorName)
+        ))
+        .limit(1);
+
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Vendedor "${input.sellerName.trim().toUpperCase()}" já existe neste gestor.`,
+        });
+      }
+
+      const result = await db.insert(sellerPermissions).values({
+        sellerName: input.sellerName.trim().toUpperCase(),
+        gestorName: input.gestorName,
+        password: input.password.trim(),
+        authorized: input.authorized,
+      });
+
+      return { success: true, id: result[0].insertId };
+    }),
+  /**
    * Get period evolution data (annual, semester, quarter)
    * Returns monthly totals for all time, grouped by fixed periods
    */
