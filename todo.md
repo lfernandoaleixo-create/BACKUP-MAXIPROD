@@ -4838,3 +4838,9 @@
 - [x] Salvar dados completados de volta no cadastro do cliente (vendor_clients) automaticamente ao avançar
 - [x] Backend: searchClients agora retorna vendorClientId para clientes do cadastro local
 - [x] Frontend: OrderFormInput com suporte a required/error (asterisco vermelho + borda vermelha quando vazio)
+
+## Produção - Reorganizar Nova Solicitação em Baixa e Acréscimo (06/07/2026)
+- [x] Separar "Nova Solicitação" em duas sub-abas: "Nova Solicitação de Baixa" e "Nova Solicitação de Acréscimo"
+- [x] Mover card "Devolução/Retrabalho" para a aba "Nova Solicitação de Acréscimo"
+- [x] Na aba Acréscimo com Devolução/Retrabalho selecionado: busca de produto, quantidade de caixas, campo de observação detalhada
+- [x] Manter os demais motivos (Consumo em pedido, Amostra, Reembalagem, Ajuste, Avaria, Uso interno, Outros) na aba "Nova Solicitação de Baixa"

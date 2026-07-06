@@ -123,8 +123,44 @@ function AlertOver24h({ canApprove }: { canApprove: boolean }) {
   );
 }
 
-/* ─── Formulário de Solicitação (Líder) ─── */
+/* ─── Formulário de Solicitação (Líder) - com sub-abas Baixa e Acréscimo ─── */
 function SolicitarForm() {
+  const [subTab, setSubTab] = useState<"baixa" | "acrescimo">("baixa");
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tabs: Baixa vs Acréscimo */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-0">
+        <button
+          onClick={() => setSubTab("baixa")}
+          className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            subTab === "baixa"
+              ? "border-violet-600 text-violet-700"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Nova Solicitação de Baixa
+        </button>
+        <button
+          onClick={() => setSubTab("acrescimo")}
+          className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            subTab === "acrescimo"
+              ? "border-emerald-600 text-emerald-700"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Nova Solicitação de Acréscimo
+        </button>
+      </div>
+
+      {subTab === "baixa" && <SolicitarBaixaForm />}
+      {subTab === "acrescimo" && <SolicitarAcrescimoForm />}
+    </div>
+  );
+}
+
+/* ─── Formulário de Baixa (motivos exceto Devolução/Retrabalho) ─── */
+function SolicitarBaixaForm() {
   const { operator } = useOperator();
   const utils = trpc.useUtils();
   const [productSearch, setProductSearch] = useState("");
@@ -150,7 +186,7 @@ function SolicitarForm() {
 
   const createMutation = trpc.stockWithdrawal.create.useMutation({
     onSuccess: () => {
-      toast.success("Solicitação criada com sucesso!");
+      toast.success("Solicitação de baixa criada com sucesso!");
       resetForm();
       utils.stockWithdrawal.list.invalidate();
       utils.stockWithdrawal.countPending.invalidate();
@@ -255,11 +291,11 @@ function SolicitarForm() {
         />
       </div>
 
-      {/* Motivo */}
+      {/* Motivo - sem Devolução/Retrabalho (agora está na aba Acréscimo) */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Motivo *</label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {(["consumo_pedido", "amostra", "reembalagem", "ajuste_inventario", "avaria_perda", "uso_interno", "devolucao_retrabalho", "outro"] as const).map((m) => (
+          {(["consumo_pedido", "amostra", "reembalagem", "ajuste_inventario", "avaria_perda", "uso_interno", "outro"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMotivo(m)}
@@ -364,7 +400,164 @@ function SolicitarForm() {
         className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
       >
         {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-        Enviar Solicitação
+        Enviar Solicitação de Baixa
+      </button>
+    </div>
+  );
+}
+
+/* ─── Formulário de Acréscimo (Devolução/Retrabalho) ─── */
+function SolicitarAcrescimoForm() {
+  const { operator } = useOperator();
+  const utils = trpc.useUtils();
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<{ codigoItem: string; descricaoItem: string } | null>(null);
+  const [quantity, setQuantity] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [senha, setSenha] = useState("");
+
+  const { data: products } = trpc.stockWithdrawal.searchProducts.useQuery(
+    { query: productSearch },
+    { enabled: productSearch.length >= 2 }
+  );
+
+  const createMutation = trpc.stockWithdrawal.create.useMutation({
+    onSuccess: () => {
+      toast.success("Solicitação de acréscimo criada com sucesso!");
+      resetForm();
+      utils.stockWithdrawal.list.invalidate();
+      utils.stockWithdrawal.countPending.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Erro ao criar solicitação");
+    },
+  });
+
+  function resetForm() {
+    setProductSearch("");
+    setSelectedProduct(null);
+    setQuantity("");
+    setObservacao("");
+    setSenha("");
+  }
+
+  function handleSubmit() {
+    if (!selectedProduct) return toast.error("Selecione um produto");
+    if (!quantity || parseFloat(quantity) <= 0) return toast.error("Informe a quantidade de caixas");
+    if (!observacao.trim()) return toast.error("Descreva o motivo detalhado da devolução/retrabalho");
+    if (!senha.trim()) return toast.error("Digite sua senha para confirmar a solicitação");
+
+    createMutation.mutate({
+      productCode: selectedProduct.codigoItem,
+      productName: selectedProduct.descricaoItem,
+      quantity,
+      motivo: "devolucao_retrabalho" as any,
+      motivoDescricao: observacao.trim(),
+      senha: senha.trim(),
+    });
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-emerald-200 p-6 space-y-5">
+      <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+        <Plus className="w-5 h-5 text-emerald-600" />
+        Nova Solicitação de Acréscimo
+      </h3>
+
+      {/* Motivo fixo: Devolução/Retrabalho */}
+      <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <span className="text-sm font-medium text-emerald-800">Motivo: Devolução/Retrabalho</span>
+        <span className="text-xs text-emerald-600 ml-auto">(produto retorna ao estoque)</span>
+      </div>
+
+      {/* Produto */}
+      <div className="relative">
+        <label className="block text-sm font-medium text-slate-700 mb-1">Produto *</label>
+        {selectedProduct ? (
+          <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <Package className="w-4 h-4 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-900">{selectedProduct.codigoItem} — {selectedProduct.descricaoItem}</span>
+            <button onClick={() => { setSelectedProduct(null); setProductSearch(""); }} className="ml-auto text-emerald-500 hover:text-emerald-700">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={productSearch}
+              onChange={(e) => { setProductSearch(e.target.value); setShowProductDropdown(true); }}
+              onFocus={() => setShowProductDropdown(true)}
+              placeholder="Buscar por código ou nome do produto..."
+              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            {showProductDropdown && products && products.length > 0 && (
+              <div className="absolute z-20 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {products.map((p) => (
+                  <button
+                    key={p.codigoItem}
+                    onClick={() => { setSelectedProduct(p); setShowProductDropdown(false); setProductSearch(""); }}
+                    className="w-full text-left px-3 py-2 hover:bg-emerald-50 text-sm border-b border-slate-100 last:border-0"
+                  >
+                    <span className="font-medium text-slate-700">{p.codigoItem}</span>
+                    <span className="text-slate-500 ml-2">{p.descricaoItem}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Quantidade */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Quantidade de Caixas *</label>
+        <input
+          type="number"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          placeholder="Ex: 5"
+          min="0.01"
+          step="0.01"
+          className="w-full max-w-xs px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+      </div>
+
+      {/* Observação detalhada - obrigatória */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Observação (motivo detalhado) *</label>
+        <textarea
+          value={observacao}
+          onChange={(e) => setObservacao(e.target.value)}
+          placeholder="Descreva detalhadamente o motivo da devolução ou retrabalho (ex: produto voltou do cliente por defeito, lote retrabalhado na produção, etc.)..."
+          rows={3}
+          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+        />
+      </div>
+
+      {/* Senha do operador */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Sua Senha (para confirmar) *</label>
+        <input
+          type="password"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          placeholder="Digite sua senha"
+          className="w-full max-w-xs px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+      </div>
+
+      {/* Submit */}
+      <button
+        onClick={handleSubmit}
+        disabled={createMutation.isPending}
+        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+      >
+        {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+        Enviar Solicitação de Acréscimo
       </button>
     </div>
   );
