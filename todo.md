@@ -4861,3 +4861,7 @@
 - [x] Formulário com nome do vendedor e senha
 - [x] Opção "Autorizado" que libera acesso imediato com aquela senha
 - [x] Backend: criar procedure para adicionar vendedor manualmente (seller_permissions)
+
+## Gestores - Vendedor adicionado em Senhas aparece em Acesso ao Aplicativo (06/07/2026)
+- [x] Garantir que vendedor adicionado em "Senhas" aparece automaticamente em "Acesso ao Aplicativo" (já funciona pois ambos usam seller_permissions)
+- [x] Renomear "Renato Aleixo" para "Renato Ledesma" em todo o aplicativo (código + banco + GESTOR_NAME_MAP para Maxiprod)

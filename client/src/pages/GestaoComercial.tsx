@@ -7,7 +7,7 @@
  * - Jordão Laine (Gestor)
  * - Ana Paula Aleixo (Gestora)
  * - Juvenal Teixeira (Gestor)
- * - Renato Aleixo (Sub-gestor)
+ * - Renato Ledesma (Sub-gestor)
  */
 import { useState, useMemo, useEffect } from "react";
 import TopNav from "@/components/TopNav";
@@ -52,7 +52,7 @@ const GESTOR_CARDS: GestorCard[] = [
   { name: "JORDÃO LAINE", role: "Gestor" },
   { name: "ANA PAULA ALEIXO", role: "Gestora" },
   { name: "JUVENAL TEIXEIRA", role: "Gestor" },
-  { name: "RENATO ALEIXO", role: "Sub-gestor", parentGestor: "JUVENAL TEIXEIRA" },
+  { name: "RENATO LEDESMA", role: "Sub-gestor", parentGestor: "JUVENAL TEIXEIRA" },
 ];
 
 // Map gestor names to their Maxiprod group names (may differ in accents/case)
@@ -60,7 +60,7 @@ const GESTOR_NAME_MAP: Record<string, string> = {
   "JORDÃO LAINE": "JORDÃO LAINE",
   "ANA PAULA ALEIXO": "ANA PAULA ALEIXO",
   "JUVENAL TEIXEIRA": "JUVENAL TEIXEIRA",
-  "RENATO ALEIXO": "RENATO ALEIXO",
+  "RENATO LEDESMA": "RENATO ALEIXO",  // Nome no Maxiprod ainda é RENATO ALEIXO
 };
 
 export default function GestaoComercial() {
@@ -92,11 +92,13 @@ export default function GestaoComercial() {
   const getVendedoresForGestor = (gestorName: string): string[] => {
     if (!representantesQuery.data) return [];
     const gestores = representantesQuery.data.gestores as GestorGroup[];
+    // Use GESTOR_NAME_MAP to resolve the Maxiprod name (e.g. "RENATO LEDESMA" -> "RENATO ALEIXO")
+    const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
     // Try exact match first
-    const grupo = gestores.find(g => g.gestor.toUpperCase() === gestorName.toUpperCase());
+    const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
     // Try without accents
-    const normalized = gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const normalized = maxiprodName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
     const grupoNorm = gestores.find(g => 
       g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
     );
