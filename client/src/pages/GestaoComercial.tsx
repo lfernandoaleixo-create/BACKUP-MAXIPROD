@@ -2306,9 +2306,9 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                 ))}
               </tr>
               <tr className="bg-slate-50/80 dark:bg-slate-800/80">
-                {META_PERCENTS.map(mp => (
-                  TIERS.map(tier => (
-                    <th key={`${mp}-${tier}`} className="px-1.5 py-1 text-center font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 text-[10px] whitespace-nowrap">
+                {META_PERCENTS.map((mp, mpIdx) => (
+                  TIERS.map((tier, tierIdx) => (
+                    <th key={`${mp}-${tier}`} className={`px-1.5 py-1 text-center font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 text-[10px] whitespace-nowrap ${tierIdx === 0 ? "border-l-2 border-l-slate-300 dark:border-l-slate-600" : ""}`}>
                       {TIER_LABELS[tier]}
                     </th>
                   ))
@@ -2380,12 +2380,12 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                       )}
                     </td>
                     {/* Commission cells: for each metaPercent x tier */}
-                    {META_PERCENTS.map(mp => (
-                      TIERS.map(tier => {
+                    {META_PERCENTS.map((mp, mpIdx) => (
+                      TIERS.map((tier, tierIdx) => {
                         const key = cellKey(seller.id, mp, tier);
                         const val = isEditing ? (editingCells[key] ?? 0) : getSellerCommission(seller.id, mp, tier);
                         return (
-                          <td key={key} className="px-1 py-1.5 text-center">
+                          <td key={key} className={`px-1 py-1.5 text-center ${tierIdx === 0 ? "border-l-2 border-l-slate-300 dark:border-l-slate-600" : ""}`}>
                             {isEditing ? (
                               <input
                                 type="number"
