@@ -5327,8 +5327,6 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
 function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: number; sellerName: string; gestorName: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const { data, isLoading, error } = trpc.sales.getPriceTableItems.useQuery({ sellerId });
-  const margemQuery = trpc.sales.getMargemNegociacao.useQuery({ gestorName });
-  const margemPercent = margemQuery.data?.margem ? parseFloat(margemQuery.data.margem) : 0;
   const tiersQuery = trpc.sales.getPriceTierDiscounts.useQuery({ gestorName });
   const tiers = tiersQuery.data?.tiers || { alto: 20, medioAlto: 23, medio: 27, baixo: 32 };
   const syncMutation = trpc.sales.syncPriceTables.useMutation({
@@ -5441,8 +5439,8 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
                   </span>
                 </td>
                 {(() => {
-                  const precoTab = parseFloat(item.preco);
-                  const precoMostrado = margemPercent > 0 ? precoTab / (1 - margemPercent / 100) : precoTab;
+                  const precoMostrado = parseFloat(item.preco);
+                  // Preço Mostrado = preço direto da tabela Maxiprod (sem margem)
                   return (
                     <>
                       <td className="px-3 py-2.5 text-right align-middle">

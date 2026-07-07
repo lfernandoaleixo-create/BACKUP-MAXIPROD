@@ -4902,3 +4902,11 @@
 - [x] Aplicar desconto sobre o preço base (Preço Mostrado) para calcular cada nível
 - [x] Abaixo do Preço Baixo, vendedor não pode vender (regra de mínimo)
 - [x] Atualizar tabela de preços do vendedor (VendedorDetalhe) com as 5 colunas
+
+## Ajuste Lógica de Preços - Preço Mostrado = Preço Maxiprod Direto (07/07/2026)
+- [x] Preço Mostrado = preço da tabela do Maxiprod direto (sem aplicar margem de negociação)
+- [x] Não puxar valor de desconto do Maxiprod - usar apenas coluna Preço
+- [x] Demais colunas (Alto, M-Alto, Médio, Baixo) derivam do Preço Mostrado com desconto configurado
+- [x] Tabela do Rafael visível tanto para Juvenal (gestor) quanto para Renato (sub-gestor)
+- [x] Removido card "Margem de Negociação" (não mais necessário)
+- [x] Sub-gestores: vendedores de sub-gestores aparecem para o gestor principal (getPriceMatrix + getEstoqueMatrix)

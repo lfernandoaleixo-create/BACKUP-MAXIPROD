@@ -4108,9 +4108,22 @@ export const salesRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      // 1. Get all sellers for this gestor
-      const sellers = await db.select().from(sellerPermissions)
+      // 1. Get all sellers for this gestor (including sub-gestor's sellers)
+      const directSellers = await db.select().from(sellerPermissions)
         .where(eq(sellerPermissions.gestorName, input.gestorName));
+      const subGestorNames = directSellers.map(s => s.sellerName);
+      const subGestorSellers = subGestorNames.length > 0
+        ? await db.select().from(sellerPermissions)
+            .where(inArray(sellerPermissions.gestorName, subGestorNames))
+        : [];
+      const seenIds = new Set(directSellers.map(s => s.id));
+      const sellers = [...directSellers];
+      for (const sub of subGestorSellers) {
+        if (!seenIds.has(sub.id)) {
+          seenIds.add(sub.id);
+          sellers.push(sub);
+        }
+      }
       // 2. Get all price tables
       const allTables = await db.select().from(priceTables);
       // 3. Get all price table items
@@ -4226,9 +4239,24 @@ export const salesRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      // 1. Get all sellers for this gestor
-      const sellers = await db.select().from(sellerPermissions)
+      // 1. Get all sellers for this gestor (including sub-gestor's sellers)
+      const directSellers = await db.select().from(sellerPermissions)
         .where(eq(sellerPermissions.gestorName, input.gestorName));
+      // Also get sellers managed by sub-gestors (e.g., Rafael under Renato, visible to Juvenal)
+      const subGestorNames = directSellers.map(s => s.sellerName);
+      const subGestorSellers = subGestorNames.length > 0
+        ? await db.select().from(sellerPermissions)
+            .where(inArray(sellerPermissions.gestorName, subGestorNames))
+        : [];
+      // Merge: direct sellers + sub-gestor's sellers (avoid duplicates)
+      const seenIds = new Set(directSellers.map(s => s.id));
+      const sellers = [...directSellers];
+      for (const sub of subGestorSellers) {
+        if (!seenIds.has(sub.id)) {
+          seenIds.add(sub.id);
+          sellers.push(sub);
+        }
+      }
       // 2. Get all price tables
       const allTables = await db.select().from(priceTables);
       // 3. Get all price table items with prices
