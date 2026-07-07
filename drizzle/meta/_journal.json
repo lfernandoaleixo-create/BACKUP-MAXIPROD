@@ -1149,6 +1149,13 @@
       "when": 1783437513144,
       "tag": "0163_regular_forge",
       "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "5",
+      "when": 1783441224501,
+      "tag": "0164_perfect_gunslinger",
+      "breakpoints": true
     }
   ]
 }

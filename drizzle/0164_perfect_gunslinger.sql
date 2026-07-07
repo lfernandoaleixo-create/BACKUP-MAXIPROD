@@ -1,0 +1,1 @@
+ALTER TABLE `commission_matrix` ADD `seller_id` int;

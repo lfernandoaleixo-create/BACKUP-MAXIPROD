@@ -5057,7 +5057,7 @@ export const salesRouter = router({
           eq(sellerMonthlyTargets.month, month),
         ));
       const goalMap = new Map(goals.map(g => [g.sellerId, g]));
-      // Get commission matrix
+      // Get commission matrix (all sellers for this gestor)
       const matrix = await db.select().from(commissionMatrix)
         .where(eq(commissionMatrix.gestorName, input.gestorName));
       // Build response
@@ -5074,6 +5074,7 @@ export const salesRouter = router({
         sellers,
         matrix: matrix.map(m => ({
           id: m.id,
+          sellerId: m.sellerId,
           metaPercent: m.metaPercent,
           priceTier: m.priceTier,
           commissionPercent: Number(m.commissionPercent),
@@ -5122,10 +5123,11 @@ export const salesRouter = router({
       return { success: true };
     }),
 
-  /** Save/update the entire commission matrix for a gestor */
+  /** Save/update the commission matrix for a specific seller */
   saveCommissionMatrix: publicProcedure
     .input(z.object({
       gestorName: z.string(),
+      sellerId: z.number(),
       matrix: z.array(z.object({
         metaPercent: z.number(),
         priceTier: z.enum(["mostrado_alto", "medio_alto", "medio", "baixo"]),
@@ -5135,13 +5137,19 @@ export const salesRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) return { success: false };
-      // Delete existing matrix for this gestor
-      await db.delete(commissionMatrix).where(eq(commissionMatrix.gestorName, input.gestorName));
+      // Delete existing matrix for this seller
+      await db.delete(commissionMatrix).where(
+        and(
+          eq(commissionMatrix.gestorName, input.gestorName),
+          eq(commissionMatrix.sellerId, input.sellerId),
+        )
+      );
       // Insert new matrix
       if (input.matrix.length > 0) {
         await db.insert(commissionMatrix).values(
           input.matrix.map(m => ({
             gestorName: input.gestorName,
+            sellerId: input.sellerId,
             metaPercent: m.metaPercent,
             priceTier: m.priceTier,
             commissionPercent: String(m.commissionPercent),

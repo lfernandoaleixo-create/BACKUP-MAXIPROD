@@ -4917,3 +4917,11 @@
 - [x] Frontend: layout planilha com todos vendedores + meta editável por mês/ano
 - [x] Frontend: tabela de comissão cruzada (faixa preço x % meta) editável
 - [x] Substituir layout antigo de comissão individual por novo layout planilha
+
+## Comissão Per-Seller (07/07/2026)
+- [x] Adicionar coluna sellerId na tabela commission_matrix (migração SQL)
+- [x] Backend: saveCommissionMatrix aceita sellerId para salvar tabela individual por vendedor
+- [x] Backend: getCommissions retorna sellerId no array matrix para filtrar por vendedor
+- [x] Frontend: chips de vendedor no topo — clicar expande tabela de comissão individual
+- [x] Frontend: cada vendedor tem tabela independente editável (5 faixas meta × 4 faixas preço)
+- [x] TypeScript compila sem erros

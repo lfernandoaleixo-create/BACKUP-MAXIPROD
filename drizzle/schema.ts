@@ -2817,6 +2817,7 @@ export type InsertStockWithdrawalRequest = typeof stockWithdrawalRequests.$infer
 export const commissionMatrix = mysqlTable("commission_matrix", {
   id: int("id").autoincrement().primaryKey(),
   gestorName: varchar("gestor_name", { length: 200 }).notNull(),
+  sellerId: int("seller_id"), // null = tabela padrão do gestor, preenchido = tabela individual do vendedor
   metaPercent: int("meta_percent").notNull(), // 80, 90, 100, 110, 120
   priceTier: mysqlEnum("price_tier", ["mostrado_alto", "medio_alto", "medio", "baixo"]).notNull(),
   commissionPercent: decimal("commission_percent", { precision: 5, scale: 2 }).notNull(), // % de comissão
