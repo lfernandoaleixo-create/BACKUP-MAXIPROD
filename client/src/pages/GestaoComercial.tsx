@@ -2189,6 +2189,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
   const [goalValue, setGoalValue] = useState("");
   const [editingSellerId, setEditingSellerId] = useState<number | null>(null);
+  const [editingCells, setEditingCells] = useState<Record<string, number>>({});
 
   // Default commission matrix values
   const DEFAULT_MATRIX = [
@@ -2236,9 +2237,6 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     const cell = data.matrix.find(m => m.sellerId === sellerId && m.metaPercent === metaPercent && m.priceTier === tier);
     return cell ? cell.commissionPercent : DEFAULT_MATRIX.find(r => r.metaPercent === metaPercent)?.[tier] ?? 0;
   };
-
-  // Editing state for individual cells
-  const [editingCells, setEditingCells] = useState<Record<string, number>>({});
 
   const cellKey = (sellerId: number, metaPercent: number, tier: string) => `${sellerId}-${metaPercent}-${tier}`;
 
