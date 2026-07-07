@@ -2298,8 +2298,8 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800">
-                <th rowSpan={2} className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-20 min-w-[160px] w-[160px]">Vendedor</th>
-                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px] sticky left-[160px] bg-slate-50 dark:bg-slate-800 z-20">Meta em R$</th>
+                <th rowSpan={2} className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-20 min-w-[240px] w-[240px]">Vendedor</th>
+                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px] sticky left-[240px] bg-slate-50 dark:bg-slate-800 z-20">Meta em R$</th>
                 {META_PERCENTS.map(mp => (
                   <th key={mp} colSpan={4} className="px-2 py-1.5 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700">
                     {mp}% da Meta
@@ -2323,7 +2323,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                 return (
                   <tr key={seller.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                     {/* Seller name + edit button */}
-                    <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-white dark:bg-slate-900 z-20 min-w-[160px] w-[160px]">
+                    <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-white dark:bg-slate-900 z-20 min-w-[240px] w-[240px]">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center shrink-0">
                           <span className="text-[9px] font-bold text-teal-700 dark:text-teal-300">
@@ -2355,7 +2355,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                       </div>
                     </td>
                     {/* Meta em R$ */}
-                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700 sticky left-[160px] bg-white dark:bg-slate-900 z-20">
+                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700 sticky left-[240px] bg-white dark:bg-slate-900 z-20">
                       {isEditingGoal ? (
                         <div className="flex items-center gap-0.5">
                           <input
