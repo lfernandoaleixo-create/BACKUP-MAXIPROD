@@ -353,25 +353,36 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         documento,
         centroCustos,
         // HERANÇA DE ETAPAS: herda do registro mais recente da mesma empresa que tenha etapas
+        // MAS SÓ se as datas forem compatíveis (primeiraCobranca >= vencimento do título novo)
         ...(() => {
           const donor = allPlanilhaRecords
             .filter(r => r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
               && (r.primeiraCobranca || r.promessaPgto || r.semAcao1 || r.segundaCobranca || r.semAcao2 || r.terceiraCobranca || r.semAcao3 || r.acaoFinal))
             .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0];
           if (donor) {
-            return {
-              primeiraCobranca: donor.primeiraCobranca,
-              promessaPgto: donor.promessaPgto,
-              semAcao1: donor.semAcao1,
-              segundaCobranca: donor.segundaCobranca,
-              semAcao2: donor.semAcao2,
-              terceiraCobranca: donor.terceiraCobranca,
-              semAcao3: donor.semAcao3,
-              acaoFinal: donor.acaoFinal,
-              etapasHerdadasDeId: donor.id,
-              etapasHerdadasDeDoc: donor.documento,
-              etapasPausadas: donor.etapasPausadas,
-            };
+            // VALIDAÇÃO: Só herdar etapas se primeiraCobranca >= vencimento do título novo
+            // Se as datas são de um título antigo (cliente saiu e voltou), NÃO herda
+            const etapasValidas = (() => {
+              if (!donor.primeiraCobranca || !vencDate) return true;
+              const primeiraDate = new Date(donor.primeiraCobranca);
+              const vencDateObj = new Date(vencDate);
+              return primeiraDate >= vencDateObj;
+            })();
+            if (etapasValidas) {
+              return {
+                primeiraCobranca: donor.primeiraCobranca,
+                promessaPgto: donor.promessaPgto,
+                semAcao1: donor.semAcao1,
+                segundaCobranca: donor.segundaCobranca,
+                semAcao2: donor.semAcao2,
+                terceiraCobranca: donor.terceiraCobranca,
+                semAcao3: donor.semAcao3,
+                acaoFinal: donor.acaoFinal,
+                etapasHerdadasDeId: donor.id,
+                etapasHerdadasDeDoc: donor.documento,
+                etapasPausadas: donor.etapasPausadas,
+              };
+            }
           }
           return {
             primeiraCobranca: null,

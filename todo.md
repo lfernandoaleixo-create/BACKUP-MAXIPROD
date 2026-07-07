@@ -4941,3 +4941,7 @@
 - [x] Renomear colunas: 1ª = Meta em R$, grupos = 80%/90%/100%/110%/120% da Meta com sub-colunas Preço
 - [x] Edição individual por vendedor na tabela transposta
 - [x] Visão única sem cards recolhidos - todos vendedores visíveis numa tabela só
+
+## Fix: Não herdar etapas de cobrança antiga (07/07/2026)
+- [x] Corrigir cobrancaPlanilhaSync.ts: validar que primeiraCobranca do doador >= vencimento do título novo antes de herdar
+- [x] Evitar que cliente que saiu e voltou à inadimplência herde datas de cobrança do ciclo anterior
