@@ -3879,11 +3879,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const canProceedProdutos = items.length > 0 && items.every(i => i.quantidade > 0 && i.precoUnitario > 0);
 
   const handleProceedToProducts = async () => {
+    // Campos com asterisco continuam sinalizados, mas não bloqueiam o avanço
     if (!canProceedCliente) {
       setShowClientValidationError(true);
-      return;
+      // Não bloqueia mais - permite avançar mesmo com campos faltando
+    } else {
+      setShowClientValidationError(false);
     }
-    setShowClientValidationError(false);
     // If this client came from vendor_clients, save any completed fields back
     if (vendorClientId) {
       try {
@@ -4033,10 +4035,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
             {/* Validation error message */}
             {showClientValidationError && clientMissingFields.length > 0 && (
-              <div className="mt-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-                <p className="text-xs font-bold text-red-600 dark:text-red-400 mb-1">Campos obrigatórios não preenchidos:</p>
-                <p className="text-xs text-red-500 dark:text-red-300">{clientMissingFields.join(", ")}</p>
-                <p className="text-[10px] text-red-400 dark:text-red-500 mt-1">Preencha todos os campos marcados com * para continuar.</p>
+              <div className="mt-3 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Campos pendentes (não obrigatórios para avançar):</p>
+                <p className="text-xs text-amber-500 dark:text-amber-300">{clientMissingFields.join(", ")}</p>
+                <p className="text-[10px] text-amber-400 dark:text-amber-500 mt-1">Você pode avançar e preencher depois.</p>
               </div>
             )}
 
@@ -4442,7 +4444,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                               {/* Price per box */}
                               <div className="flex flex-col items-center">
-                                <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-medium mb-0.5 whitespace-nowrap">Valor da Caixa</span>
+                                <span className="text-[8px] sm:text-[9px] text-blue-600 dark:text-blue-400 font-bold mb-0.5 whitespace-nowrap uppercase">Preço Mostrado</span>
                                 <span className="text-xs sm:text-sm font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2 py-1 rounded-lg whitespace-nowrap">
                                   {formatCurrencySales(precoBase)}
                                 </span>

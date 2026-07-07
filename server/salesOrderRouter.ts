@@ -397,8 +397,8 @@ export const salesOrderRouter = router({
       return filteredItems.map(item => {
         const ptData = priceTableMap.get(item.codigoItem);
         const precoTabela = ptData ? parseFloat(ptData.preco) : null;
-        // Preço vendedor = Preço tabela ÷ (1 - margem%)
-        const precoVendedor = (precoTabela && margemNegociacao) ? precoTabela / (1 - margemNegociacao / 100) : precoTabela;
+        // Preço Mostrado = Preço direto da tabela (sem margem)
+        const precoVendedor = precoTabela;
         const descontoMaxTabela = ptData?.descontoMaximo ? parseFloat(ptData.descontoMaximo) : null;
         return {
           codigoItem: item.codigoItem,
@@ -432,7 +432,7 @@ export const salesOrderRouter = router({
       sellerId: z.number(),
       // Client data
       cnpjCpf: z.string().optional().default(""),
-      razaoSocial: z.string().min(1),
+      razaoSocial: z.string().optional().default(""),
       nomeFantasia: z.string().optional(),
       inscricaoEstadual: z.string().optional(),
       tipoContribuinte: z.string().optional(),
