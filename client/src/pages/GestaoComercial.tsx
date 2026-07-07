@@ -2186,11 +2186,9 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     onSuccess: () => utils.sales.getCommissions.invalidate({ gestorName }),
   });
 
-  const [selectedSellerId, setSelectedSellerId] = useState<number | null>(null);
-  const [editingGoal, setEditingGoal] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
   const [goalValue, setGoalValue] = useState("");
-  const [editingMatrix, setEditingMatrix] = useState(false);
-  const [selectedMetaPercent, setSelectedMetaPercent] = useState(100);
+  const [editingSellerId, setEditingSellerId] = useState<number | null>(null);
 
   // Default commission matrix values
   const DEFAULT_MATRIX = [
@@ -2210,46 +2208,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   };
   const META_PERCENTS = [80, 90, 100, 110, 120];
 
-  // Build matrix from data for a specific seller (or defaults)
-  const buildMatrixRowsForSeller = (sellerId: number) => {
-    if (!data?.matrix) return DEFAULT_MATRIX;
-    const sellerMatrix = data.matrix.filter(m => m.sellerId === sellerId);
-    if (sellerMatrix.length === 0) return DEFAULT_MATRIX;
-    const rows: typeof DEFAULT_MATRIX = [];
-    for (const mp of [80, 90, 100, 110, 120]) {
-      const row: any = { metaPercent: mp };
-      for (const tier of TIERS) {
-        const cell = sellerMatrix.find(m => m.metaPercent === mp && m.priceTier === tier);
-        row[tier] = cell ? cell.commissionPercent : 0;
-      }
-      rows.push(row);
-    }
-    return rows;
-  };
 
-  const [matrixRows, setMatrixRows] = useState(DEFAULT_MATRIX);
-
-  // Computed rows for the selected seller
-  const computedRows = selectedSellerId ? buildMatrixRowsForSeller(selectedSellerId) : DEFAULT_MATRIX;
-
-  const saveGoal = (sellerId: number, sellerName: string) => {
-    const val = parseFloat(goalValue);
-    if (isNaN(val) || val < 0) return;
-    saveGoalMutation.mutate({ sellerId, sellerName, gestorName, year, month, goalAmount: val });
-    setEditingGoal(false);
-  };
-
-  const saveMatrix = () => {
-    if (!selectedSellerId) return;
-    const flat: { metaPercent: number; priceTier: "mostrado_alto" | "medio_alto" | "medio" | "baixo"; commissionPercent: number }[] = [];
-    for (const row of matrixRows) {
-      for (const tier of TIERS) {
-        flat.push({ metaPercent: row.metaPercent, priceTier: tier, commissionPercent: (row as any)[tier] });
-      }
-    }
-    saveMatrixMutation.mutate({ gestorName, sellerId: selectedSellerId, matrix: flat });
-    setEditingMatrix(false);
-  };
 
   const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -2271,14 +2230,47 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     );
   }
 
-  const selectedSeller = data.sellers.find(s => s.id === selectedSellerId);
+  // Get commission value for a seller at a given metaPercent and tier
+  const getSellerCommission = (sellerId: number, metaPercent: number, tier: typeof TIERS[number]) => {
+    if (!data?.matrix) return DEFAULT_MATRIX.find(r => r.metaPercent === metaPercent)?.[tier] ?? 0;
+    const cell = data.matrix.find(m => m.sellerId === sellerId && m.metaPercent === metaPercent && m.priceTier === tier);
+    return cell ? cell.commissionPercent : DEFAULT_MATRIX.find(r => r.metaPercent === metaPercent)?.[tier] ?? 0;
+  };
 
-  // Build a transposed table: rows = sellers, columns = Meta | % da Meta | Price tiers
-  // For the selected metaPercent
-  const getSellerCommission = (sellerId: number, tier: typeof TIERS[number]) => {
-    if (!data?.matrix) return 0;
-    const cell = data.matrix.find(m => m.sellerId === sellerId && m.metaPercent === selectedMetaPercent && m.priceTier === tier);
-    return cell ? cell.commissionPercent : DEFAULT_MATRIX.find(r => r.metaPercent === selectedMetaPercent)?.[tier] ?? 0;
+  // Editing state for individual cells
+  const [editingCells, setEditingCells] = useState<Record<string, number>>({});
+
+  const cellKey = (sellerId: number, metaPercent: number, tier: string) => `${sellerId}-${metaPercent}-${tier}`;
+
+  const startEditingSeller = (sellerId: number) => {
+    // Load current values into editing state
+    const cells: Record<string, number> = {};
+    for (const mp of META_PERCENTS) {
+      for (const tier of TIERS) {
+        cells[cellKey(sellerId, mp, tier)] = getSellerCommission(sellerId, mp, tier);
+      }
+    }
+    setEditingCells(cells);
+    setEditingSellerId(sellerId);
+  };
+
+  const saveSellerMatrix = (sellerId: number) => {
+    const flat: { metaPercent: number; priceTier: "mostrado_alto" | "medio_alto" | "medio" | "baixo"; commissionPercent: number }[] = [];
+    for (const mp of META_PERCENTS) {
+      for (const tier of TIERS) {
+        flat.push({ metaPercent: mp, priceTier: tier, commissionPercent: editingCells[cellKey(sellerId, mp, tier)] ?? 0 });
+      }
+    }
+    saveMatrixMutation.mutate({ gestorName, sellerId, matrix: flat });
+    setEditingSellerId(null);
+    setEditingCells({});
+  };
+
+  const saveGoal = (sellerId: number, sellerName: string) => {
+    const val = parseFloat(goalValue);
+    if (isNaN(val) || val < 0) return;
+    saveGoalMutation.mutate({ sellerId, sellerName, gestorName, year, month, goalAmount: val });
+    setEditingGoalId(null);
   };
 
   return (
@@ -2301,192 +2293,132 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
         </select>
       </div>
 
-      {/* Sellers list - click to expand */}
-      <div className="space-y-2">
-        {data.sellers.map((seller) => {
-          const isExpanded = selectedSellerId === seller.id;
-          return (
-            <div key={seller.id} className={`border rounded-lg transition-all ${
-              isExpanded
-                ? "border-teal-300 dark:border-teal-600 shadow-sm"
-                : "border-slate-200 dark:border-slate-700"
-            }`}>
-              {/* Seller row - clickable */}
-              <button
-                onClick={() => {
-                  if (isExpanded) {
-                    setSelectedSellerId(null);
-                    setEditingMatrix(false);
-                    setEditingGoal(false);
-                  } else {
-                    setSelectedSellerId(seller.id);
-                    setEditingMatrix(false);
-                    setEditingGoal(false);
-                    setGoalValue(seller.goalAmount ? String(seller.goalAmount) : "");
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-colors ${
-                  isExpanded
-                    ? "bg-teal-50/50 dark:bg-teal-900/10"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                    isExpanded
-                      ? "bg-teal-500 text-white"
-                      : "bg-teal-100 dark:bg-teal-900/40"
-                  }`}>
-                    <span className={`text-xs font-bold ${
-                      isExpanded ? "text-white" : "text-teal-700 dark:text-teal-300"
-                    }`}>
-                      {seller.sellerName.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="font-medium text-slate-700 dark:text-slate-200 text-sm">
-                    {seller.sellerName}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs font-mono ${
-                    seller.goalAmount ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600"
-                  }`}>
-                    {seller.goalAmount ? `Meta: R$ ${seller.goalAmount.toLocaleString("pt-BR")}` : "Sem meta"}
-                  </span>
-                  <svg className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-
-              {/* Expanded card: Meta + Commission table */}
-              {isExpanded && selectedSeller && (
-                <div className="border-t border-slate-200 dark:border-slate-700">
-                  {/* Meta section */}
-                  <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Meta Mensal</span>
-                      {!editingGoal ? (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditingGoal(true); setGoalValue(seller.goalAmount ? String(seller.goalAmount) : ""); }}
-                          className="flex items-center gap-1 px-2 py-0.5 text-xs text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded"
-                        >
-                          <Pencil className="w-3 h-3" /> Editar
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => saveGoal(seller.id, seller.sellerName)} className="p-1 rounded bg-teal-500 hover:bg-teal-600 text-white">
-                            <Check className="w-3 h-3" />
-                          </button>
-                          <button onClick={() => setEditingGoal(false)} className="p-1 rounded bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300">
-                            <X className="w-3 h-3" />
-                          </button>
+      {/* Single unified table: rows = sellers, columns = Meta R$ | % da Meta tiers x Price tiers */}
+      <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800">
+                <th rowSpan={2} className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">Vendedor</th>
+                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px]">Meta em R$</th>
+                {META_PERCENTS.map(mp => (
+                  <th key={mp} colSpan={4} className="px-2 py-1.5 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700">
+                    {mp}% da Meta
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80">
+                {META_PERCENTS.map(mp => (
+                  TIERS.map(tier => (
+                    <th key={`${mp}-${tier}`} className="px-1.5 py-1 text-center font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 text-[10px] whitespace-nowrap">
+                      {TIER_LABELS[tier]}
+                    </th>
+                  ))
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.sellers.map((seller) => {
+                const isEditing = editingSellerId === seller.id;
+                const isEditingGoal = editingGoalId === seller.id;
+                return (
+                  <tr key={seller.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                    {/* Seller name + edit button */}
+                    <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-white dark:bg-slate-900 z-10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center shrink-0">
+                          <span className="text-[9px] font-bold text-teal-700 dark:text-teal-300">
+                            {seller.sellerName.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    {editingGoal ? (
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-sm text-slate-400">R$</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1000"
-                          value={goalValue}
-                          onChange={(e) => setGoalValue(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") saveGoal(seller.id, seller.sellerName); if (e.key === "Escape") setEditingGoal(false); }}
-                          className="w-40 px-3 py-1.5 text-sm border border-teal-300 dark:border-teal-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
-                          autoFocus
-                        />
+                        <span className="font-medium text-slate-700 dark:text-slate-200 text-[11px] whitespace-nowrap">
+                          {seller.sellerName}
+                        </span>
+                        {!isEditing && (
+                          <button
+                            onClick={() => startEditingSeller(seller.id)}
+                            className="ml-1 p-0.5 rounded hover:bg-teal-50 dark:hover:bg-teal-900/20 text-slate-400 hover:text-teal-600"
+                            title="Editar comissões"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                        {isEditing && (
+                          <div className="flex items-center gap-0.5 ml-1">
+                            <button onClick={() => saveSellerMatrix(seller.id)} className="p-0.5 rounded bg-teal-500 hover:bg-teal-600 text-white" title="Salvar">
+                              <Check className="w-3 h-3" />
+                            </button>
+                            <button onClick={() => { setEditingSellerId(null); setEditingCells({}); }} className="p-0.5 rounded bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300" title="Cancelar">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <p className={`text-lg font-semibold mt-1 ${
-                        seller.goalAmount ? "text-slate-800 dark:text-slate-100" : "text-slate-300 dark:text-slate-600 italic"
-                      }`}>
-                        {seller.goalAmount ? `R$ ${seller.goalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}` : "Não definida"}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Commission matrix - transposed: rows = metaPercent, cols = price tiers */}
-                  <div>
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tabela de Comissão</span>
-                      {!editingMatrix ? (
-                        <button
-                          onClick={() => { setMatrixRows(buildMatrixRowsForSeller(selectedSellerId)); setEditingMatrix(true); }}
-                          className="flex items-center gap-1 px-2 py-0.5 text-xs text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded"
-                        >
-                          <Pencil className="w-3 h-3" /> Editar
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button onClick={saveMatrix} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-teal-500 hover:bg-teal-600 rounded">
-                            <Check className="w-3 h-3" /> Salvar
-                          </button>
-                          <button onClick={() => setEditingMatrix(false)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 rounded">
-                            <X className="w-3 h-3" /> Cancelar
-                          </button>
+                    </td>
+                    {/* Meta em R$ */}
+                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700">
+                      {isEditingGoal ? (
+                        <div className="flex items-center gap-0.5">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={goalValue}
+                            onChange={(e) => setGoalValue(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveGoal(seller.id, seller.sellerName); if (e.key === "Escape") setEditingGoalId(null); }}
+                            className="w-20 px-1 py-0.5 text-xs text-center border border-teal-300 dark:border-teal-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                            autoFocus
+                          />
+                          <button onClick={() => saveGoal(seller.id, seller.sellerName)} className="p-0.5 rounded bg-teal-500 text-white"><Check className="w-2.5 h-2.5" /></button>
+                          <button onClick={() => setEditingGoalId(null)} className="p-0.5 rounded bg-slate-200 dark:bg-slate-600 text-slate-500"><X className="w-2.5 h-2.5" /></button>
                         </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingGoalId(seller.id); setGoalValue(seller.goalAmount ? String(seller.goalAmount) : ""); }}
+                          className="font-mono text-[11px] text-slate-600 dark:text-slate-300 hover:text-teal-600 cursor-pointer"
+                        >
+                          {seller.goalAmount ? `R$ ${seller.goalAmount.toLocaleString("pt-BR")}` : "—"}
+                        </button>
                       )}
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 dark:bg-slate-800/50">
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">% da Meta</th>
-                            {TIERS.map(tier => (
-                              <th key={tier} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                                {TIER_LABELS[tier]}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(editingMatrix ? matrixRows : computedRows).map((row, idx) => (
-                            <tr key={row.metaPercent} className={`border-b border-slate-100 dark:border-slate-700 ${row.metaPercent === 100 ? "bg-teal-50/50 dark:bg-teal-900/10" : ""}`}>
-                              <td className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">
-                                {row.metaPercent}%
-                              </td>
-                              {TIERS.map(tier => (
-                                <td key={tier} className="px-3 py-2 text-center">
-                                  {editingMatrix ? (
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      step="0.5"
-                                      value={(matrixRows[idx] as any)[tier]}
-                                      onChange={(e) => {
-                                        const newRows = [...matrixRows];
-                                        (newRows[idx] as any)[tier] = parseFloat(e.target.value) || 0;
-                                        setMatrixRows(newRows);
-                                      }}
-                                      className="w-14 px-1 py-0.5 text-center text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
-                                    />
-                                  ) : (
-                                    <span className="font-mono text-slate-700 dark:text-slate-200">
-                                      {(row as any)[tier]}%
-                                    </span>
-                                  )}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                        Comissão baseada na faixa de preço da venda e % da meta atingida no mês.
-                        Mostrado/Alto = sem desconto ou até 20% | Médio-Alto = 23% | Médio = 27% | Baixo = 32%
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                    </td>
+                    {/* Commission cells: for each metaPercent x tier */}
+                    {META_PERCENTS.map(mp => (
+                      TIERS.map(tier => {
+                        const key = cellKey(seller.id, mp, tier);
+                        const val = isEditing ? (editingCells[key] ?? 0) : getSellerCommission(seller.id, mp, tier);
+                        return (
+                          <td key={key} className="px-1 py-1.5 text-center">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.5"
+                                value={editingCells[key] ?? 0}
+                                onChange={(e) => setEditingCells(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+                                className="w-12 px-0.5 py-0.5 text-center text-[10px] border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                              />
+                            ) : (
+                              <span className="font-mono text-[11px] text-slate-700 dark:text-slate-200">
+                                {val}%
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            Comissão baseada na faixa de preço da venda e % da meta atingida no mês.
+            Mostrado/Alto = sem desconto ou até 20% | Médio-Alto = 23% | Médio = 27% | Baixo = 32%
+          </p>
+        </div>
       </div>
     </div>
   );

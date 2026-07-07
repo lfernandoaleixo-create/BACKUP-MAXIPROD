@@ -4937,6 +4937,7 @@
 
 ## Comissão - Fix encoding + transpor tabela (07/07/2026)
 - [x] Fix encoding: COMISS\U00E3O → COMISSÃO (e outros textos com unicode escapado)
-- [x] Transpor tabela: vendedores viram linhas, colunas = Meta | % da Meta | Preço X
-- [x] Renomear colunas: 1ª = Meta, 2ª = % da Meta, faixas = Preço Mostrado/Alto, Preço Médio-Alto, etc.
+- [x] Transpor tabela: vendedores viram linhas, colunas = Meta em R$ | % da Meta x Preço
+- [x] Renomear colunas: 1ª = Meta em R$, grupos = 80%/90%/100%/110%/120% da Meta com sub-colunas Preço
 - [x] Edição individual por vendedor na tabela transposta
+- [x] Visão única sem cards recolhidos - todos vendedores visíveis numa tabela só
