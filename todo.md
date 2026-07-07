@@ -4929,3 +4929,8 @@
 ## Variação 00035 como filho do 00036 (07/07/2026)
 - [x] Produto 00035 adicionado como variação do 00036 (fator 2.0: 1 cx 00035 = 2 cx 00036)
 - [x] 00036 agora é produto-mãe com duas variações: 00034 (fator 1.0) e 00035 (fator 2.0)
+
+## Comissão - Redesign UI: meta dentro do card expandido (07/07/2026)
+- [x] Remover tabela separada de metas (Vendedor | Meta R$ | Editar)
+- [x] Ao clicar no nome do vendedor, expandir card com meta editável + tabela de comissão juntos
+- [x] Layout mais limpo: lista de vendedores clicáveis → card expandido com tudo junto
