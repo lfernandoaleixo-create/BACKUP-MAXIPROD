@@ -4881,3 +4881,11 @@
 - [x] Gerar Excel .xlsx no formato Maxiprod (modelo de empresas) com os dados do cliente do pedido
 - [x] Banner de notificação quando dados do cliente foram modificados por vendedor
 - [x] Campo lastModifiedBy adicionado à tabela vendor_clients para rastreamento
+
+## Integração API Rodonaves (RTE/Paulineris) (07/07/2026)
+- [x] Backend: módulo rodonavesApi.ts com autenticação, busca cidade por CEP, cotação de frete e prazo de entrega
+- [x] Backend: integrar Rodonaves no quoteAllCarriers (4 transportadoras em paralelo)
+- [x] Frontend: adicionar Rodonaves na lista de transportadoras (FreightStep + CustosDeVendaStep)
+- [x] Frontend: cor verde para resultados da Rodonaves nos agrupamentos
+- [x] Secrets: RODONAVES_USERNAME e RODONAVES_PASSWORD configurados
+- [x] Atualizar textos dos botões de "3 transportadoras" para "4 transportadoras"

@@ -86,6 +86,18 @@ const TRANSPORTADORAS = [
     cor: "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800",
     corBadge: "bg-amber-100 text-amber-700",
   },
+  {
+    nome: "Rodonaves",
+    tipo: "REST/JSON (RTE)",
+    cnpjs: [
+      { cnpj: "36562762000129", label: "Palitos Indústria e Comércio" },
+      { cnpj: "45558059000138", label: "Varetas Indústria e Comércio" },
+      { cnpj: "50128808000127", label: "Espetos Indústria e Comércio" },
+    ],
+    status: "Ativa",
+    cor: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800",
+    corBadge: "bg-green-100 text-green-700",
+  },
 ];
 
 export default function FreightStep({
@@ -254,12 +266,12 @@ export default function FreightStep({
         {quoteAllMutation.isPending ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Consultando 3 transportadoras...
+            Consultando 4 transportadoras...
           </>
         ) : (
           <>
             <Truck className="w-4 h-4" />
-            Simular Frete (Braspress + Alfa + Camilo)
+            Simular Frete (Braspress + Alfa + Camilo + Rodonaves)
           </>
         )}
       </button>
@@ -273,6 +285,8 @@ export default function FreightStep({
               ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20"
               : transportadora === "Alfa Transportes"
               ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20"
+              : transportadora === "Rodonaves"
+              ? "border-green-300 bg-green-50 dark:bg-green-900/20"
               : "border-amber-300 bg-amber-50 dark:bg-amber-900/20";
 
             return (

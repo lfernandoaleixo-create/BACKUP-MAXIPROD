@@ -253,7 +253,7 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
             {/* All carriers quotes results */}
             {quoteAllMutation.data && (
               <div className="space-y-1.5">
-                <p className="text-[9px] text-slate-400 uppercase font-bold">Cotações (Braspress + Alfa Transportes):</p>
+                <p className="text-[9px] text-slate-400 uppercase font-bold">Cotações (Braspress + Alfa + Camilo + Rodonaves):</p>
                 {quoteAllMutation.data.map((quote: any, idx: number) => (
                   <div
                     key={idx}

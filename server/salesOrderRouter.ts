@@ -7,6 +7,7 @@ import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuin
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
 import { quoteAllSswCnpjs } from "./sswApi";
+import { quoteAllRodonavesCnpjs, RODONAVES_CNPJS } from "./rodonavesApi";
 
 /**
  * Sales Order Requests Router
@@ -1595,8 +1596,8 @@ export const salesOrderRouter = router({
       tipoContribuinte: z.enum(["Contribuinte", "Não Contribuinte"]).default("Contribuinte"),
     }))
     .mutation(async ({ input }) => {
-      // Quote from all 3 carriers in parallel: Braspress + Alfa + Camilo (SSW)
-      const [braspressResults, alfaResults, sswResults] = await Promise.allSettled([
+      // Quote from all 4 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves
+      const [braspressResults, alfaResults, sswResults, rodonavesResults] = await Promise.allSettled([
         cotarTodosCnpjs({
           cnpjDestinatario: input.cnpjDestinatario || "00000000000000",
           cepOrigem: input.cepOrigem,
@@ -1626,6 +1627,14 @@ export const salesOrderRouter = router({
           volume: input.metroCubico,
           cnpjDestinatario: input.cnpjDestinatario,
           destContribuinte: input.tipoContribuinte === "Contribuinte" ? "S" : "N",
+        }),
+        quoteAllRodonavesCnpjs({
+          cepOrigem: input.cepOrigem,
+          cepDestino: input.cepDestino,
+          valorMercadoria: input.valorMercadoria,
+          peso: input.peso,
+          volumes: input.volumes,
+          cnpjDestinatario: input.cnpjDestinatario,
         }),
       ]);
 
@@ -1697,6 +1706,27 @@ export const salesOrderRouter = router({
           totalFrete: 0,
           prazo: "N/A",
           error: sswResults.reason?.message || "Erro ao cotar Camilo dos Santos",
+        });
+      }
+
+      // Process Rodonaves results
+      if (rodonavesResults.status === "fulfilled") {
+        for (const r of rodonavesResults.value) {
+          carriers.push({
+            transportadora: "Rodonaves",
+            cnpj: r.cnpj,
+            totalFrete: r.totalFrete,
+            prazo: r.prazo || "N/A",
+            error: r.error,
+          });
+        }
+      } else {
+        carriers.push({
+          transportadora: "Rodonaves",
+          cnpj: "",
+          totalFrete: 0,
+          prazo: "N/A",
+          error: rodonavesResults.reason?.message || "Erro ao cotar Rodonaves",
         });
       }
 
