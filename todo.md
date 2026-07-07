@@ -4952,3 +4952,4 @@
 - [x] Ajustar stockProcessor: reservar apenas (quantidade - quantidadeFaturada) para pedidos com faturamento parcial
 - [x] Aplicar mesma lógica em: orderByCode, aggregateOrdersByClient, ecommerceByCode
 - [x] Incluir FATURADO_PARCIAL e PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA na query GraphQL de pedidos abertos (fetchOpenSalesOrderItems)
+- [x] Estoque: mostrar info completa de faturamento parcial no card (pedido original X cx - faturado Y cx - a faturar Z cx)

@@ -108,6 +108,8 @@ interface PedidoCliente {
   cliente: string;
   quantidadeCx: number;
   quantidadeUn: number;
+  quantidadeOriginalCx: number;
+  quantidadeFaturadaCx: number;
   status: string;
   estadoConfiguravel?: string;
   crmSegmento?: string;
@@ -1099,7 +1101,16 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                       {pc.cliente}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-bold text-orange-600 whitespace-nowrap text-sm">
-                                                      {formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}
+                                                      {pc.quantidadeFaturadaCx > 0 ? (
+                                                        <div className="flex flex-col items-end gap-0.5">
+                                                          <span className="text-orange-600 font-bold">{formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}</span>
+                                                          <span className="text-[10px] text-slate-500 font-normal leading-tight">
+                                                            Pedido {formatNumber(Math.ceil(pc.quantidadeOriginalCx), true)} - Faturado {formatNumber(Math.ceil(pc.quantidadeFaturadaCx), true)} - A faturar {formatNumber(Math.ceil(pc.quantidadeCx), true)}
+                                                          </span>
+                                                        </div>
+                                                      ) : (
+                                                        <>{formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}</>
+                                                      )}
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                       <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
@@ -1134,7 +1145,16 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                         {pc.cliente}
                                                       </td>
                                                       <td className="px-4 py-3 text-right font-bold text-violet-600 whitespace-nowrap text-sm">
-                                                        {formatNumber(Math.ceil(pc.quantidadeCx), true)} cx
+                                                        {pc.quantidadeFaturadaCx > 0 ? (
+                                                          <div className="flex flex-col items-end gap-0.5">
+                                                            <span className="text-violet-600 font-bold">{formatNumber(Math.ceil(pc.quantidadeCx), true)} cx</span>
+                                                            <span className="text-[10px] text-slate-500 font-normal leading-tight">
+                                                              Pedido {formatNumber(Math.ceil(pc.quantidadeOriginalCx), true)} - Faturado {formatNumber(Math.ceil(pc.quantidadeFaturadaCx), true)} - A faturar {formatNumber(Math.ceil(pc.quantidadeCx), true)}
+                                                            </span>
+                                                          </div>
+                                                        ) : (
+                                                          <>{formatNumber(Math.ceil(pc.quantidadeCx), true)} cx</>
+                                                        )}
                                                       </td>
                                                       <td className="px-4 py-3 text-center">
                                                         <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${

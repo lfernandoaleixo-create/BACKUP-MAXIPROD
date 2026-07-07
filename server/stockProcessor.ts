@@ -43,6 +43,8 @@ interface PedidoCliente {
   cliente: string;
   quantidadeCx: number;
   quantidadeUn: number;
+  quantidadeOriginalCx: number; // Pedido original total em caixas
+  quantidadeFaturadaCx: number; // Quantidade já faturada em caixas
   status: string; // Aprovado, A aprovar, Digitação, etc.
   estadoConfiguravel?: string; // Estado configurável do pedido (BAMBU, FIBRA, MADEIRA, etc.)
   crmSegmento?: string; // Segmento CRM do cliente (DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.)
@@ -605,11 +607,15 @@ export async function processStockData(): Promise<void> {
       if (existing) {
         existing.quantidadeCx += qtyCx;
         existing.quantidadeUn += qtyUn;
+        existing.quantidadeOriginalCx += qtyTotalCx;
+        existing.quantidadeFaturadaCx += qtyFaturada;
       } else {
         byClientStatus.set(key, {
           cliente,
           quantidadeCx: qtyCx,
           quantidadeUn: qtyUn,
+          quantidadeOriginalCx: qtyTotalCx,
+          quantidadeFaturadaCx: qtyFaturada,
           status,
           estadoConfiguravel: estadoConf,
           crmSegmento: segCRM,
