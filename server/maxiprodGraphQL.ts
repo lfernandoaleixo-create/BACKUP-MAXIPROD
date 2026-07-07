@@ -643,6 +643,7 @@ function transformOrderItems(graphqlItems: any[]): any[] {
       // Estado configurável e segmento CRM
       estadoConfiguravel: pv.estadoConfiguravel?.descricao || null,
       crmSegmento: pv.cliente?.crmSegmento?.descricao || null,
+      quantidadeFaturada: item.entregaFuturaQuantidadeEntregue != null ? String(item.entregaFuturaQuantidadeEntregue) : null,
     };
   });
 }

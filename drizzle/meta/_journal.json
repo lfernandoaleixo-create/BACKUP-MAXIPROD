@@ -1156,6 +1156,13 @@
       "when": 1783441224501,
       "tag": "0164_perfect_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 165,
+      "version": "5",
+      "when": 1783446740350,
+      "tag": "0165_aspiring_risque",
+      "breakpoints": true
     }
   ]
 }

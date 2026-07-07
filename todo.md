@@ -4945,3 +4945,9 @@
 ## Fix: Não herdar etapas de cobrança antiga (07/07/2026)
 - [x] Corrigir cobrancaPlanilhaSync.ts: validar que primeiraCobranca do doador >= vencimento do título novo antes de herdar
 - [x] Evitar que cliente que saiu e voltou à inadimplência herde datas de cobrança do ciclo anterior
+
+## Fix: Faturamento Parcial - Reservar apenas qtd pendente (07/07/2026)
+- [x] Adicionar campo quantidadeFaturada na tabela order_items (schema + migration)
+- [x] Atualizar transformOrderItems no GraphQL sync para preencher quantidadeFaturada
+- [x] Ajustar stockProcessor: reservar apenas (quantidade - quantidadeFaturada) para pedidos com faturamento parcial
+- [x] Aplicar mesma lógica em: orderByCode, aggregateOrdersByClient, ecommerceByCode

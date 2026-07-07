@@ -100,6 +100,7 @@ export const orderItems = mysqlTable("order_items", {
   // Estado configurável e segmento CRM
   estadoConfiguravel: varchar("estadoConfiguravel", { length: 100 }), // Estado configurável do pedido (BAMBU, FIBRA, MADEIRA, etc.)
   crmSegmento: varchar("crmSegmento", { length: 100 }), // Segmento CRM do cliente (DISTRIBUIDORA, INDÚST RIA, LOJA, etc.)
+  quantidadeFaturada: decimal("quantidadeFaturada", { precision: 18, scale: 5 }), // Quantidade já faturada (faturamento parcial)
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 

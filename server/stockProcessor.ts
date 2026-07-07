@@ -463,11 +463,15 @@ export async function processStockData(): Promise<void> {
     if (!code) continue;
     const existing = ecommerceByCode.get(code) || { totalUn: 0, totalCx: 0, items: [] };
     existing.items.push(order);
-    const qtyCx = parseFloat(order.quantidade);
+    // Para faturamento parcial: reservar apenas a parte NÃO faturada
+    const qtyTotal = parseFloat(order.quantidade);
+    const qtyFaturada = order.quantidadeFaturada ? parseFloat(order.quantidadeFaturada) : 0;
+    const qtyCx = Math.max(0, qtyTotal - qtyFaturada);
     existing.totalCx += qtyCx;
     const qtyUnEstoque = order.quantidadeUnEstoque ? parseFloat(order.quantidadeUnEstoque) : 0;
     if (qtyUnEstoque > 0) {
-      existing.totalUn += qtyUnEstoque;
+      const ratio = qtyTotal > 0 ? qtyCx / qtyTotal : 1;
+      existing.totalUn += qtyUnEstoque * ratio;
     } else {
       const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
       const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
@@ -532,12 +536,19 @@ export async function processStockData(): Promise<void> {
     existing.items.push(order);
     
     // Acumular quantidade direta (caixas/unidade de venda) para pedidosCx
-    const qtyCx = parseFloat(order.quantidade);
+    // Para faturamento parcial: reservar apenas a parte NÃO faturada (quantidade - quantidadeFaturada)
+    const qtyTotal = parseFloat(order.quantidade);
+    const qtyFaturada = order.quantidadeFaturada ? parseFloat(order.quantidadeFaturada) : 0;
+    const qtyCx = Math.max(0, qtyTotal - qtyFaturada);
     existing.totalCx += qtyCx;
     
     const qtyUnEstoque = order.quantidadeUnEstoque ? parseFloat(order.quantidadeUnEstoque) : 0;
     if (qtyUnEstoque > 0) {
-      existing.totalUn += qtyUnEstoque;
+      // Também descontar proporcional da unidade de estoque
+      const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
+      const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
+      const ratio = qtyTotal > 0 ? qtyCx / qtyTotal : 1;
+      existing.totalUn += qtyUnEstoque * ratio;
     } else {
       const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
       const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
@@ -571,11 +582,16 @@ export async function processStockData(): Promise<void> {
       const status = order.estadoNota || "";
       const key = `${cliente}|||${status}`;
       
-      const qtyCx = parseFloat(order.quantidade);
+      // Para faturamento parcial: usar apenas a parte NÃO faturada
+      const qtyTotalCx = parseFloat(order.quantidade);
+      const qtyFaturada = order.quantidadeFaturada ? parseFloat(order.quantidadeFaturada) : 0;
+      const qtyCx = Math.max(0, qtyTotalCx - qtyFaturada);
       const qtyUnEstoque = order.quantidadeUnEstoque ? parseFloat(order.quantidadeUnEstoque) : 0;
       let qtyUn = 0;
       if (qtyUnEstoque > 0) {
-        qtyUn = qtyUnEstoque;
+        // Proporcional ao faturamento parcial
+        const ratio = qtyTotalCx > 0 ? qtyCx / qtyTotalCx : 1;
+        qtyUn = qtyUnEstoque * ratio;
       } else {
         const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
         const upb = fator > 0 ? fator : (unitsPerBox || 0);
