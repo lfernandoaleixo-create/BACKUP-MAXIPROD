@@ -4934,3 +4934,9 @@
 - [x] Remover tabela separada de metas (Vendedor | Meta R$ | Editar)
 - [x] Ao clicar no nome do vendedor, expandir card com meta editável + tabela de comissão juntos
 - [x] Layout mais limpo: lista de vendedores clicáveis → card expandido com tudo junto
+
+## Comissão - Fix encoding + transpor tabela (07/07/2026)
+- [x] Fix encoding: COMISS\U00E3O → COMISSÃO (e outros textos com unicode escapado)
+- [x] Transpor tabela: vendedores viram linhas, colunas = Meta | % da Meta | Preço X
+- [x] Renomear colunas: 1ª = Meta, 2ª = % da Meta, faixas = Preço Mostrado/Alto, Preço Médio-Alto, etc.
+- [x] Edição individual por vendedor na tabela transposta

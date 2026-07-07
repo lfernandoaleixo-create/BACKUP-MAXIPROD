@@ -2190,6 +2190,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalValue, setGoalValue] = useState("");
   const [editingMatrix, setEditingMatrix] = useState(false);
+  const [selectedMetaPercent, setSelectedMetaPercent] = useState(100);
 
   // Default commission matrix values
   const DEFAULT_MATRIX = [
@@ -2202,11 +2203,12 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
 
   const TIERS = ["mostrado_alto", "medio_alto", "medio", "baixo"] as const;
   const TIER_LABELS: Record<string, string> = {
-    mostrado_alto: "Mostrado/Alto",
-    medio_alto: "M\u00e9dio-Alto",
-    medio: "M\u00e9dio",
-    baixo: "Baixo",
+    mostrado_alto: "Preço Mostrado/Alto",
+    medio_alto: "Preço Médio-Alto",
+    medio: "Preço Médio",
+    baixo: "Preço Baixo",
   };
+  const META_PERCENTS = [80, 90, 100, 110, 120];
 
   // Build matrix from data for a specific seller (or defaults)
   const buildMatrixRowsForSeller = (sellerId: number) => {
@@ -2270,6 +2272,14 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   }
 
   const selectedSeller = data.sellers.find(s => s.id === selectedSellerId);
+
+  // Build a transposed table: rows = sellers, columns = Meta | % da Meta | Price tiers
+  // For the selected metaPercent
+  const getSellerCommission = (sellerId: number, tier: typeof TIERS[number]) => {
+    if (!data?.matrix) return 0;
+    const cell = data.matrix.find(m => m.sellerId === sellerId && m.metaPercent === selectedMetaPercent && m.priceTier === tier);
+    return cell ? cell.commissionPercent : DEFAULT_MATRIX.find(r => r.metaPercent === selectedMetaPercent)?.[tier] ?? 0;
+  };
 
   return (
     <div className="space-y-4">
@@ -2392,15 +2402,15 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                       <p className={`text-lg font-semibold mt-1 ${
                         seller.goalAmount ? "text-slate-800 dark:text-slate-100" : "text-slate-300 dark:text-slate-600 italic"
                       }`}>
-                        {seller.goalAmount ? `R$ ${seller.goalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}` : "N\u00e3o definida"}
+                        {seller.goalAmount ? `R$ ${seller.goalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}` : "Não definida"}
                       </p>
                     )}
                   </div>
 
-                  {/* Commission matrix */}
+                  {/* Commission matrix - transposed: rows = metaPercent, cols = price tiers */}
                   <div>
                     <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tabela de Comiss\u00e3o</span>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tabela de Comissão</span>
                       {!editingMatrix ? (
                         <button
                           onClick={() => { setMatrixRows(buildMatrixRowsForSeller(selectedSellerId)); setEditingMatrix(true); }}
@@ -2423,7 +2433,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                       <table className="w-full text-xs border-collapse">
                         <thead>
                           <tr className="bg-slate-50 dark:bg-slate-800/50">
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">Meta %</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">% da Meta</th>
                             {TIERS.map(tier => (
                               <th key={tier} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
                                 {TIER_LABELS[tier]}
@@ -2467,8 +2477,8 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                     </div>
                     <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
                       <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                        Comiss\u00e3o baseada na faixa de pre\u00e7o da venda e % da meta atingida no m\u00eas.
-                        Mostrado/Alto = sem desconto ou at\u00e9 20% | M\u00e9dio-Alto = 23% | M\u00e9dio = 27% | Baixo = 32%
+                        Comissão baseada na faixa de preço da venda e % da meta atingida no mês.
+                        Mostrado/Alto = sem desconto ou até 20% | Médio-Alto = 23% | Médio = 27% | Baixo = 32%
                       </p>
                     </div>
                   </div>
