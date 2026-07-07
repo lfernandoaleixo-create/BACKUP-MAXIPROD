@@ -4889,3 +4889,16 @@
 - [x] Frontend: cor verde para resultados da Rodonaves nos agrupamentos
 - [x] Secrets: RODONAVES_USERNAME e RODONAVES_PASSWORD configurados
 - [x] Atualizar textos dos botões de "3 transportadoras" para "4 transportadoras"
+
+## Reformulação Filtros de Preço - 5 Abas com Descontos Editáveis (07/07/2026)
+- [x] Substituir 3 abas (Preço com Acréscimo, Preço Ideal, Preço Mínimo) por 5 abas:
+  - Preço Mostrado (Sem Desconto - 0%)
+  - Preço Alto (Com 20% de Desconto)
+  - Preço Médio-Alto (Com 23% de Desconto)
+  - Preço Médio (Com 27% de Desconto)
+  - Preço Baixo (Com 32% de Desconto)
+- [x] Criar configuração editável das porcentagens de desconto (botão Editar Porcentagens)
+- [x] Salvar porcentagens no banco (app_settings) para persistência
+- [x] Aplicar desconto sobre o preço base (Preço Mostrado) para calcular cada nível
+- [x] Abaixo do Preço Baixo, vendedor não pode vender (regra de mínimo)
+- [x] Atualizar tabela de preços do vendedor (VendedorDetalhe) com as 5 colunas

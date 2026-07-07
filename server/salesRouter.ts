@@ -4317,6 +4317,49 @@ export const salesRouter = router({
       };
     }),
   /**
+   * Salvar porcentagens dos níveis de preço (5 abas editáveis)
+   * Preço Mostrado (0%), Preço Alto (20%), Preço Médio-Alto (23%), Preço Médio (27%), Preço Baixo (32%)
+   */
+  savePriceTierDiscounts: publicProcedure
+    .input(z.object({
+      gestorName: z.string(),
+      tiers: z.object({
+        alto: z.number().min(0).max(100),
+        medioAlto: z.number().min(0).max(100),
+        medio: z.number().min(0).max(100),
+        baixo: z.number().min(0).max(100),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const key = `price_tier_discounts_${input.gestorName}`;
+      const value = JSON.stringify(input.tiers);
+      const existing = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+      if (existing.length > 0) {
+        await db.update(appSettings).set({ settingValue: value }).where(eq(appSettings.settingKey, key));
+      } else {
+        await db.insert(appSettings).values({ settingKey: key, settingValue: value });
+      }
+      return { success: true };
+    }),
+  /**
+   * Carregar porcentagens dos níveis de preço
+   */
+  getPriceTierDiscounts: publicProcedure
+    .input(z.object({ gestorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const key = `price_tier_discounts_${input.gestorName}`;
+      const row = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+      if (row.length > 0 && row[0].settingValue) {
+        return { tiers: JSON.parse(row[0].settingValue as string) as { alto: number; medioAlto: number; medio: number; baixo: number } };
+      }
+      // Defaults
+      return { tiers: { alto: 20, medioAlto: 23, medio: 27, baixo: 32 } };
+    }),
+  /**
    * Salvar desconto máximo configurado pelo gestor (persiste no banco)
    */
   saveMaxDiscount: publicProcedure

@@ -5321,7 +5321,7 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
  * ============================================================
  * ABA TABELA DE PREÇOS - Preços dos produtos do vendedor
  * Dados sincronizados do Maxiprod (tabela de vendas)
- * Mostra: Código, Produto, Preço com Acréscimo, Preço Ideal, Desconto Máximo, Preço Mínimo
+ * Mostra: Código, Produto, Preço Mostrado, Preço Alto, Preço Médio-Alto, Preço Médio, Preço Baixo
  * ============================================================
  */
 function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: number; sellerName: string; gestorName: string }) {
@@ -5329,8 +5329,8 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
   const { data, isLoading, error } = trpc.sales.getPriceTableItems.useQuery({ sellerId });
   const margemQuery = trpc.sales.getMargemNegociacao.useQuery({ gestorName });
   const margemPercent = margemQuery.data?.margem ? parseFloat(margemQuery.data.margem) : 0;
-  const discountQuery = trpc.sales.getMaxDiscount.useQuery({ gestorName });
-  const gestorDescontoMax = discountQuery.data?.discount ? parseFloat(discountQuery.data.discount) : 0;
+  const tiersQuery = trpc.sales.getPriceTierDiscounts.useQuery({ gestorName });
+  const tiers = tiersQuery.data?.tiers || { alto: 20, medioAlto: 23, medio: 27, baixo: 32 };
   const syncMutation = trpc.sales.syncPriceTables.useMutation({
     onSuccess: () => {
       // Refetch after sync
@@ -5420,10 +5420,11 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
             <tr className="bg-slate-50/80 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-600">
               <th className="w-[80px] px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
               <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
-              <th className="w-[130px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Preço com Acréscimo</th>
-              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preço Ideal</th>
-              <th className="w-[100px] px-3 py-3 text-center text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wider">Desconto Máximo</th>
-              <th className="w-[120px] px-3 py-3 text-right text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider">Preço Mínimo</th>
+              <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Preço Mostrado</th>
+              <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Alto ({tiers.alto}%)</th>
+              <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">M-Alto ({tiers.medioAlto}%)</th>
+              <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Médio ({tiers.medio}%)</th>
+              <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Baixo ({tiers.baixo}%)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -5439,47 +5440,39 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
                     {item.itemDescricao}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 text-right align-middle">
-                  {(() => {
-                    const precoTab = parseFloat(item.preco);
-                    const precoSugerido = margemPercent > 0 ? precoTab / (1 - margemPercent / 100) : precoTab;
-                    return (
-                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                        R$ {precoSugerido.toFixed(2)}
-                      </span>
-                    );
-                  })()}
-                </td>
-                <td className="px-3 py-2.5 text-right align-middle">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tabular-nums">
-                    R$ {parseFloat(item.preco).toFixed(2)}
-                  </span>
-                </td>
-                <td className="px-3 py-2.5 text-center align-middle">
-                  {gestorDescontoMax > 0 ? (
-                    <span className="inline-flex items-center justify-center w-10 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
-                      {gestorDescontoMax}%
-                    </span>
-                  ) : item.descontoMaximoEmPercentual ? (
-                    <span className="inline-flex items-center justify-center w-10 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
-                      {parseFloat(item.descontoMaximoEmPercentual)}%
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
-                  )}
-                </td>
-                <td className="px-3 py-2.5 text-right align-middle">
-                  {(() => {
-                    const precoTab = parseFloat(item.preco);
-                    const descMax = gestorDescontoMax > 0 ? gestorDescontoMax : (item.descontoMaximoEmPercentual ? parseFloat(item.descontoMaximoEmPercentual) : 0);
-                    const precoMin = descMax > 0 ? precoTab * (1 - descMax / 100) : precoTab;
-                    return (
-                      <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums">
-                        R$ {precoMin.toFixed(2)}
-                      </span>
-                    );
-                  })()}
-                </td>
+                {(() => {
+                  const precoTab = parseFloat(item.preco);
+                  const precoMostrado = margemPercent > 0 ? precoTab / (1 - margemPercent / 100) : precoTab;
+                  return (
+                    <>
+                      <td className="px-3 py-2.5 text-right align-middle">
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                          R$ {precoMostrado.toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right align-middle">
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          R$ {(precoMostrado * (1 - tiers.alto / 100)).toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right align-middle">
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                          R$ {(precoMostrado * (1 - tiers.medioAlto / 100)).toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right align-middle">
+                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400 tabular-nums">
+                          R$ {(precoMostrado * (1 - tiers.medio / 100)).toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right align-middle">
+                        <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums">
+                          R$ {(precoMostrado * (1 - tiers.baixo / 100)).toFixed(2)}
+                        </span>
+                      </td>
+                    </>
+                  );
+                })()}
               </tr>
             ))}
           </tbody>

@@ -1216,23 +1216,23 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
 // ============================================================
 function PriceMatrixView({ gestorName }: { gestorName: string }) {
   const [search, setSearch] = useState("");
-  const [priceMode, setPriceMode] = useState<"ideal" | "tabelado" | "minimo">("tabelado");
-    const [customDiscount, setCustomDiscount] = useState<string>("");
-  const [editingDiscount, setEditingDiscount] = useState(false);
+  const [priceMode, setPriceMode] = useState<"mostrado" | "alto" | "medioAlto" | "medio" | "baixo">("mostrado");
+  const [editingTiers, setEditingTiers] = useState(false);
+  const [tierValues, setTierValues] = useState({ alto: 20, medioAlto: 23, medio: 27, baixo: 32 });
   const [margemNegociacao, setMargemNegociacao] = useState<string>("");
   const [editingMargem, setEditingMargem] = useState(false);
   const matrixQuery = trpc.sales.getPriceMatrix.useQuery({ gestorName });
-  const discountQuery = trpc.sales.getMaxDiscount.useQuery({ gestorName });
+  const tiersQuery = trpc.sales.getPriceTierDiscounts.useQuery({ gestorName });
   const margemQuery = trpc.sales.getMargemNegociacao.useQuery({ gestorName });
-  const saveDiscountMutation = trpc.sales.saveMaxDiscount.useMutation();
+  const saveTiersMutation = trpc.sales.savePriceTierDiscounts.useMutation();
   const saveMargemMutation = trpc.sales.saveMargemNegociacao.useMutation();
 
-  // Load saved discount from DB
+  // Load saved tier discounts from DB
   useEffect(() => {
-    if (discountQuery.data?.discount && !customDiscount) {
-      setCustomDiscount(discountQuery.data.discount);
+    if (tiersQuery.data?.tiers) {
+      setTierValues(tiersQuery.data.tiers);
     }
-  }, [discountQuery.data]);
+  }, [tiersQuery.data]);
   // Load saved margem from DB
   useEffect(() => {
     if (margemQuery.data?.margem && !margemNegociacao) {
@@ -1269,19 +1269,18 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
     );
   };
 
-  const formatPrice = (preco: string | null, descontoMax: string | null) => {
+  const formatPrice = (preco: string | null, _descontoMax: string | null) => {
     if (!preco) return null;
     const price = parseFloat(preco);
-    if (priceMode === "ideal") {
-      const margem = margemNegociacao ? parseFloat(margemNegociacao) : 0;
-      return margem > 0 ? price / (1 - margem / 100) : price;
-    }
-    if (priceMode === "minimo") {
-      const discount = customDiscount ? parseFloat(customDiscount) : (descontoMax ? parseFloat(descontoMax) : 0);
-      const minPrice = price * (1 - discount / 100);
-      return minPrice;
-    }
-    return price;
+    // Preço Mostrado = preço da tabela com margem de negociação (sem desconto)
+    const margem = margemNegociacao ? parseFloat(margemNegociacao) : 0;
+    const precoBase = margem > 0 ? price / (1 - margem / 100) : price;
+    if (priceMode === "mostrado") return precoBase;
+    if (priceMode === "alto") return precoBase * (1 - tierValues.alto / 100);
+    if (priceMode === "medioAlto") return precoBase * (1 - tierValues.medioAlto / 100);
+    if (priceMode === "medio") return precoBase * (1 - tierValues.medio / 100);
+    if (priceMode === "baixo") return precoBase * (1 - tierValues.baixo / 100);
+    return precoBase;
   };
 
   return (
@@ -1345,96 +1344,144 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
       </div>
 
       {/* Controls bar */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        {/* Price mode buttons */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+      <div className="flex flex-col gap-3">
+        {/* Price mode buttons - 5 tabs */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1 flex-wrap">
           <button
-            onClick={() => setPriceMode("ideal")}
+            onClick={() => setPriceMode("mostrado")}
             className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
-              priceMode === "ideal"
+              priceMode === "mostrado"
                 ? "bg-blue-500 text-white shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            Preço com Acréscimo
+            Preço Mostrado
           </button>
           <button
-            onClick={() => setPriceMode("tabelado")}
+            onClick={() => setPriceMode("alto")}
             className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
-              priceMode === "tabelado"
-                ? "bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800 shadow-sm"
+              priceMode === "alto"
+                ? "bg-emerald-500 text-white shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
             }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
-            Preço Ideal
+            Preço Alto ({tierValues.alto}%)
           </button>
           <button
-            onClick={() => setPriceMode("minimo")}
+            onClick={() => setPriceMode("medioAlto")}
             className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
-              priceMode === "minimo"
+              priceMode === "medioAlto"
+                ? "bg-amber-500 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            Preço Médio-Alto ({tierValues.medioAlto}%)
+          </button>
+          <button
+            onClick={() => setPriceMode("medio")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
+              priceMode === "medio"
+                ? "bg-orange-500 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            Preço Médio ({tierValues.medio}%)
+          </button>
+          <button
+            onClick={() => setPriceMode("baixo")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-md font-bold transition-all ${
+              priceMode === "baixo"
                 ? "bg-red-500 text-white shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
             }`}
           >
             <Tag className="w-3.5 h-3.5" />
-            Preço Mínimo
+            Preço Baixo ({tierValues.baixo}%)
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Discount config */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          {/* Editar porcentagens */}
           <div className="flex items-center gap-1">
-            {editingDiscount ? (
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={customDiscount}
-                  onChange={(e) => setCustomDiscount(e.target.value)}
-                  placeholder="15"
-                  className="w-16 text-xs px-2 py-1 rounded border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-400"
-                />
-                <span className="text-xs text-slate-500">%</span>
+            {editingTiers ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-500">Alto:</span>
+                  <input type="number" min="0" max="100" step="0.5" value={tierValues.alto}
+                    onChange={(e) => setTierValues(v => ({ ...v, alto: Number(e.target.value) }))}
+                    className="w-14 text-xs px-1.5 py-1 rounded border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                  <span className="text-[10px] text-slate-400">%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-500">M-Alto:</span>
+                  <input type="number" min="0" max="100" step="0.5" value={tierValues.medioAlto}
+                    onChange={(e) => setTierValues(v => ({ ...v, medioAlto: Number(e.target.value) }))}
+                    className="w-14 text-xs px-1.5 py-1 rounded border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                  <span className="text-[10px] text-slate-400">%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-500">Médio:</span>
+                  <input type="number" min="0" max="100" step="0.5" value={tierValues.medio}
+                    onChange={(e) => setTierValues(v => ({ ...v, medio: Number(e.target.value) }))}
+                    className="w-14 text-xs px-1.5 py-1 rounded border border-orange-300 dark:border-orange-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-orange-400" />
+                  <span className="text-[10px] text-slate-400">%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-500">Baixo:</span>
+                  <input type="number" min="0" max="100" step="0.5" value={tierValues.baixo}
+                    onChange={(e) => setTierValues(v => ({ ...v, baixo: Number(e.target.value) }))}
+                    className="w-14 text-xs px-1.5 py-1 rounded border border-red-300 dark:border-red-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-red-400" />
+                  <span className="text-[10px] text-slate-400">%</span>
+                </div>
                 <button
                   onClick={() => {
-                    setEditingDiscount(false);
-                    if (customDiscount) {
-                      saveDiscountMutation.mutate({ gestorName, discount: customDiscount });
-                    }
+                    setEditingTiers(false);
+                    saveTiersMutation.mutate({ gestorName, tiers: tierValues });
                   }}
-                  className="text-xs px-2 py-1 rounded bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-700"
+                  className="text-xs px-2.5 py-1 rounded bg-teal-500 text-white hover:bg-teal-600 font-bold"
                 >
-                  OK
+                  Salvar
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingTiers(false);
+                    if (tiersQuery.data?.tiers) setTierValues(tiersQuery.data.tiers);
+                  }}
+                  className="text-xs px-2.5 py-1 rounded bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 hover:bg-slate-300"
+                >
+                  Cancelar
                 </button>
               </div>
             ) : (
               <button
-                onClick={() => setEditingDiscount(true)}
-                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50 transition-colors"
+                onClick={() => setEditingTiers(true)}
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-800/50 transition-colors"
               >
-                <Tag className="w-3 h-3" />
-                Desconto Máximo{customDiscount ? `: ${customDiscount}%` : ""}
+                <Pencil className="w-3 h-3" />
+                Editar Porcentagens
               </button>
             )}
           </div>
-          {/* Info badges */}
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">
-            {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vend.
-          </span>
-          {/* Search */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Buscar produto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="text-xs px-3 py-1.5 pl-7 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 w-44 focus:outline-none focus:ring-1 focus:ring-teal-400"
-            />
-            <Package className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+          <div className="flex items-center gap-2">
+            {/* Info badges */}
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+              {bambuProducts.length} bambu · {madeiraProducts.length} madeira · {sellers.length} vend.
+            </span>
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar produto..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="text-xs px-3 py-1.5 pl-7 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 w-44 focus:outline-none focus:ring-1 focus:ring-teal-400"
+              />
+              <Package className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+            </div>
           </div>
         </div>
       </div>
@@ -1447,7 +1494,6 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
         sellers={sellers}
         allProducts={bambuProducts}
         priceMode={priceMode}
-        customDiscount={customDiscount}
         formatPrice={formatPrice}
       />
       {/* MADEIRA Card */}
@@ -1458,7 +1504,6 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
         sellers={sellers}
         allProducts={madeiraProducts}
         priceMode={priceMode}
-        customDiscount={customDiscount}
         formatPrice={formatPrice}
       />
 
@@ -1484,12 +1529,11 @@ interface PriceSegmentCardProps {
   products: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, { preco: string | null; descontoMax: string | null }> }[];
   sellers: { id: number; name: string; hasTable: boolean }[];
   allProducts: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, { preco: string | null; descontoMax: string | null }> }[];
-  priceMode: "ideal" | "tabelado" | "minimo";
-  customDiscount: string;
+  priceMode: "mostrado" | "alto" | "medioAlto" | "medio" | "baixo";
   formatPrice: (preco: string | null, descontoMax: string | null) => number | null;
 }
 
-function PriceSegmentCard({ title, color, products, sellers, allProducts, priceMode, customDiscount, formatPrice }: PriceSegmentCardProps) {
+function PriceSegmentCard({ title, color, products, sellers, allProducts, priceMode, formatPrice }: PriceSegmentCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const colorMap = {
@@ -1565,8 +1609,11 @@ function PriceSegmentCard({ title, color, products, sellers, allProducts, priceM
                       <td key={seller.id} className="text-center px-2 py-2">
                         {price !== null ? (
                           <span className={`text-[11px] font-bold tabular-nums ${
-                            priceMode === "ideal" ? "text-blue-600 dark:text-blue-400" :
-                            priceMode === "minimo" ? "text-red-600 dark:text-red-400" :
+                            priceMode === "mostrado" ? "text-blue-600 dark:text-blue-400" :
+                            priceMode === "alto" ? "text-emerald-600 dark:text-emerald-400" :
+                            priceMode === "medioAlto" ? "text-amber-600 dark:text-amber-400" :
+                            priceMode === "medio" ? "text-orange-600 dark:text-orange-400" :
+                            priceMode === "baixo" ? "text-red-600 dark:text-red-400" :
                             "text-slate-800 dark:text-slate-100"
                           }`}>
                             R$ {price.toFixed(2)}
