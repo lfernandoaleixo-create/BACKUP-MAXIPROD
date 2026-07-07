@@ -2190,6 +2190,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   const [goalValue, setGoalValue] = useState("");
   const [editingSellerId, setEditingSellerId] = useState<number | null>(null);
   const [editingCells, setEditingCells] = useState<Record<string, number>>({});
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; content: { percent: number; metaPercent: number; metaValue: number; result: number } } | null>(null);
 
   // Default commission matrix values
   const DEFAULT_MATRIX = [
@@ -2298,7 +2299,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800">
                 <th rowSpan={2} className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">Vendedor</th>
-                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px] sticky left-[140px] bg-slate-50 dark:bg-slate-800 z-10">Meta em R$</th>
+                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px]">Meta em R$</th>
                 {META_PERCENTS.map(mp => (
                   <th key={mp} colSpan={4} className="px-2 py-1.5 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700">
                     {mp}% da Meta
@@ -2354,7 +2355,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                       </div>
                     </td>
                     {/* Meta em R$ */}
-                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700 sticky left-[140px] bg-white dark:bg-slate-900 z-10">
+                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700">
                       {isEditingGoal ? (
                         <div className="flex items-center gap-0.5">
                           <input
@@ -2398,12 +2399,13 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                               />
                             ) : (
                               <span
-                                className="font-mono text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer hover:text-teal-600 transition-colors"
-                                title={seller.goalAmount ? `R$ ${((val / 100) * seller.goalAmount * (mp / 100)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "Defina a meta para ver o valor em R$"}
-                                onClick={() => {
+                                className="font-mono text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer hover:text-teal-600 hover:underline transition-colors"
+                                onClick={(e) => {
                                   if (seller.goalAmount) {
-                                    const reais = (val / 100) * seller.goalAmount * (mp / 100);
-                                    alert(`${val}% de comissão sobre ${mp}% da meta (R$ ${(seller.goalAmount * mp / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}) = R$ ${reais.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                    const rect = (e.target as HTMLElement).getBoundingClientRect();
+                                    const metaValue = seller.goalAmount * (mp / 100);
+                                    const result = (val / 100) * metaValue;
+                                    setTooltip({ x: rect.left + rect.width / 2, y: rect.top - 10, content: { percent: val, metaPercent: mp, metaValue, result } });
                                   }
                                 }}
                               >
@@ -2427,6 +2429,44 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
           </p>
         </div>
       </div>
+
+      {/* Tooltip popover for commission calculation */}
+      {tooltip && (
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => setTooltip(null)}
+        >
+          <div
+            className="absolute bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl p-4 min-w-[220px]"
+            style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px`, transform: "translate(-50%, -100%)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Cálculo da Comissão</div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Meta atingida ({tooltip.content.metaPercent}%):</span>
+                <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">R$ {tooltip.content.metaValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Comissão:</span>
+                <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{tooltip.content.percent}%</span>
+              </div>
+              <div className="border-t border-slate-200 dark:border-slate-600 pt-1.5 mt-1.5">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-teal-700 dark:text-teal-300">Valor:</span>
+                  <span className="font-mono font-bold text-teal-700 dark:text-teal-300">R$ {tooltip.content.result.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setTooltip(null)}
+              className="absolute top-1.5 right-1.5 p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
