@@ -2175,26 +2175,93 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
 
 function ComissaoView({ gestorName }: { gestorName: string }) {
   const utils = trpc.useUtils();
-  const { data: commissions, isLoading } = trpc.sales.getCommissions.useQuery({ gestorName });
-  const updateMutation = trpc.sales.updateCommission.useMutation({
-    onSuccess: () => {
-      utils.sales.getCommissions.invalidate({ gestorName });
-    },
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const { data, isLoading } = trpc.sales.getCommissions.useQuery({ gestorName, year, month });
+  const saveGoalMutation = trpc.sales.saveSellerGoal.useMutation({
+    onSuccess: () => utils.sales.getCommissions.invalidate({ gestorName }),
   });
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const saveMatrixMutation = trpc.sales.saveCommissionMatrix.useMutation({
+    onSuccess: () => utils.sales.getCommissions.invalidate({ gestorName }),
+  });
 
-  const startEdit = (id: number, currentValue: number | null) => {
-    setEditingId(id);
-    setEditValue(currentValue != null ? String(currentValue) : "");
+  const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
+  const [goalValue, setGoalValue] = useState("");
+  const [editingMatrix, setEditingMatrix] = useState(false);
+
+  // Default commission matrix values
+  const DEFAULT_MATRIX = [
+    { metaPercent: 80, mostrado_alto: 5.0, medio_alto: 4.0, medio: 3.0, baixo: 2.0 },
+    { metaPercent: 90, mostrado_alto: 5.5, medio_alto: 4.5, medio: 3.5, baixo: 2.5 },
+    { metaPercent: 100, mostrado_alto: 6.0, medio_alto: 5.0, medio: 4.0, baixo: 3.0 },
+    { metaPercent: 110, mostrado_alto: 6.5, medio_alto: 5.5, medio: 4.5, baixo: 3.5 },
+    { metaPercent: 120, mostrado_alto: 7.0, medio_alto: 6.0, medio: 5.0, baixo: 4.0 },
+  ];
+
+  const TIERS = ["mostrado_alto", "medio_alto", "medio", "baixo"] as const;
+  const TIER_LABELS: Record<string, string> = {
+    mostrado_alto: "Mostrado/Alto",
+    medio_alto: "Médio-Alto",
+    medio: "Médio",
+    baixo: "Baixo",
   };
 
-  const saveEdit = (sellerId: number) => {
-    const val = parseFloat(editValue);
-    if (isNaN(val) || val < 0 || val > 100) return;
-    updateMutation.mutate({ sellerId, commissionPercent: val });
-    setEditingId(null);
+  // Build matrix from data or defaults
+  const buildMatrixRows = () => {
+    if (!data?.matrix || data.matrix.length === 0) return DEFAULT_MATRIX;
+    const rows: typeof DEFAULT_MATRIX = [];
+    for (const mp of [80, 90, 100, 110, 120]) {
+      const row: any = { metaPercent: mp };
+      for (const tier of TIERS) {
+        const cell = data.matrix.find(m => m.metaPercent === mp && m.priceTier === tier);
+        row[tier] = cell ? cell.commissionPercent : 0;
+      }
+      rows.push(row);
+    }
+    return rows;
   };
+
+  const [matrixRows, setMatrixRows] = useState(DEFAULT_MATRIX);
+
+  // Update matrixRows when data loads
+  const dataMatrixStr = JSON.stringify(data?.matrix);
+  useState(() => {});
+  // Use effect-like pattern with useMemo
+  const computedRows = (() => {
+    if (!data?.matrix) return DEFAULT_MATRIX;
+    if (data.matrix.length === 0) return DEFAULT_MATRIX;
+    const rows: typeof DEFAULT_MATRIX = [];
+    for (const mp of [80, 90, 100, 110, 120]) {
+      const row: any = { metaPercent: mp };
+      for (const tier of TIERS) {
+        const cell = data.matrix.find(m => m.metaPercent === mp && m.priceTier === tier);
+        row[tier] = cell ? cell.commissionPercent : 0;
+      }
+      rows.push(row);
+    }
+    return rows;
+  })();
+
+  const saveGoal = (sellerId: number, sellerName: string) => {
+    const val = parseFloat(goalValue);
+    if (isNaN(val) || val < 0) return;
+    saveGoalMutation.mutate({ sellerId, sellerName, gestorName, year, month, goalAmount: val });
+    setEditingGoalId(null);
+  };
+
+  const saveMatrix = () => {
+    const flat: { metaPercent: number; priceTier: "mostrado_alto" | "medio_alto" | "medio" | "baixo"; commissionPercent: number }[] = [];
+    for (const row of matrixRows) {
+      for (const tier of TIERS) {
+        flat.push({ metaPercent: row.metaPercent, priceTier: tier, commissionPercent: (row as any)[tier] });
+      }
+    }
+    saveMatrixMutation.mutate({ gestorName, matrix: flat });
+    setEditingMatrix(false);
+  };
+
+  const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
   if (isLoading) {
     return (
@@ -2205,7 +2272,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     );
   }
 
-  if (!commissions || commissions.length === 0) {
+  if (!data?.sellers || data.sellers.length === 0) {
     return (
       <div className="text-center py-6">
         <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
@@ -2215,69 +2282,171 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-        Defina a porcentagem de comissão para cada vendedor:
-      </p>
-      {commissions.map((seller) => (
-        <div
-          key={seller.id}
-          className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
+    <div className="space-y-6">
+      {/* Period selector */}
+      <div className="flex items-center gap-3">
+        <select
+          value={month}
+          onChange={(e) => setMonth(Number(e.target.value))}
+          className="px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
-              <span className="text-xs font-bold text-teal-700 dark:text-teal-300">
-                {seller.sellerName.charAt(0).toUpperCase()}
-              </span>
+          {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+        </select>
+        <select
+          value={year}
+          onChange={(e) => setYear(Number(e.target.value))}
+          className="px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+        >
+          {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </div>
+
+      {/* Sellers + Goals table (spreadsheet style) */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-800">
+              <th className="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">Vendedor</th>
+              <th className="text-right px-3 py-2 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">Meta (R$)</th>
+              <th className="text-center px-3 py-2 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 w-16"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.sellers.map((seller) => (
+              <tr key={seller.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center shrink-0">
+                      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300">
+                        {seller.sellerName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="font-medium text-slate-700 dark:text-slate-200 text-xs">
+                      {seller.sellerName}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  {editingGoalId === seller.id ? (
+                    <div className="flex items-center justify-end gap-1">
+                      <span className="text-xs text-slate-400">R$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={goalValue}
+                        onChange={(e) => setGoalValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveGoal(seller.id, seller.sellerName); if (e.key === "Escape") setEditingGoalId(null); }}
+                        className="w-28 px-2 py-1 text-sm text-right border border-teal-300 dark:border-teal-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <span className={`text-sm font-mono ${seller.goalAmount ? "text-slate-700 dark:text-slate-200" : "text-slate-400 italic"}`}>
+                      {seller.goalAmount ? `R$ ${seller.goalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}` : "—"}
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2.5 text-center">
+                  {editingGoalId === seller.id ? (
+                    <div className="flex items-center justify-center gap-1">
+                      <button onClick={() => saveGoal(seller.id, seller.sellerName)} className="p-1 rounded bg-teal-500 hover:bg-teal-600 text-white">
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => setEditingGoalId(null)} className="p-1 rounded bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setEditingGoalId(seller.id); setGoalValue(seller.goalAmount ? String(seller.goalAmount) : ""); }}
+                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-teal-600"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Commission Matrix */}
+      <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Tabela de Comissão</h4>
+          {!editingMatrix ? (
+            <button
+              onClick={() => { setMatrixRows(buildMatrixRows()); setEditingMatrix(true); }}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded transition-colors"
+            >
+              <Pencil className="w-3 h-3" /> Editar
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button onClick={saveMatrix} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-teal-500 hover:bg-teal-600 rounded">
+                <Check className="w-3 h-3" /> Salvar
+              </button>
+              <button onClick={() => setEditingMatrix(false)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 rounded">
+                <X className="w-3 h-3" /> Cancelar
+              </button>
             </div>
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              {seller.sellerName}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {editingId === seller.id ? (
-              <>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(seller.id); if (e.key === "Escape") setEditingId(null); }}
-                  className="w-20 px-2 py-1 text-sm border border-teal-300 dark:border-teal-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
-                  autoFocus
-                />
-                <span className="text-sm text-slate-500">%</span>
-                <button
-                  onClick={() => saveEdit(seller.id)}
-                  className="p-1.5 rounded-md bg-teal-500 hover:bg-teal-600 text-white transition-colors"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setEditingId(null)}
-                  className="p-1.5 rounded-md bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </>
-            ) : (
-              <>
-                <span className={`text-sm font-semibold ${seller.commissionPercent != null ? "text-teal-600 dark:text-teal-400" : "text-slate-400 dark:text-slate-500 italic"}`}>
-                  {seller.commissionPercent != null ? `${seller.commissionPercent}%` : "Não definida"}
-                </span>
-                <button
-                  onClick={() => startEdit(seller.id, seller.commissionPercent)}
-                  className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-          </div>
+          )}
         </div>
-      ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/50">
+                <th className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">Meta %</th>
+                {TIERS.map(tier => (
+                  <th key={tier} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                    {TIER_LABELS[tier]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(editingMatrix ? matrixRows : computedRows).map((row, idx) => (
+                <tr key={row.metaPercent} className={`border-b border-slate-100 dark:border-slate-700 ${row.metaPercent === 100 ? "bg-teal-50/50 dark:bg-teal-900/10" : ""}`}>
+                  <td className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">
+                    {row.metaPercent}%
+                  </td>
+                  {TIERS.map(tier => (
+                    <td key={tier} className="px-3 py-2 text-center">
+                      {editingMatrix ? (
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                          value={(matrixRows[idx] as any)[tier]}
+                          onChange={(e) => {
+                            const newRows = [...matrixRows];
+                            (newRows[idx] as any)[tier] = parseFloat(e.target.value) || 0;
+                            setMatrixRows(newRows);
+                          }}
+                          className="w-14 px-1 py-0.5 text-center text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                        />
+                      ) : (
+                        <span className="font-mono text-slate-700 dark:text-slate-200">
+                          {(row as any)[tier]}%
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            Comissão baseada na faixa de preço da venda e % da meta atingida no mês.
+            Mostrado/Alto = sem desconto ou até 20% | Médio-Alto = 23% | Médio = 27% | Baixo = 32%
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

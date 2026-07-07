@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification, appSettings } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification, appSettings, sellerMonthlyTargets, commissionMatrix } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -5023,26 +5023,135 @@ export const salesRouter = router({
 
   // ===== COMISSÃO =====
 
-  /** Get commission for all sellers of a gestor */
+  /** Get commission for all sellers of a gestor (with monthly goals) */
   getCommissions: publicProcedure
-    .input(z.object({ gestorName: z.string() }))
+    .input(z.object({ gestorName: z.string(), year: z.number().optional(), month: z.number().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return [];
-      const sellers = await db.select({
+      if (!db) return { sellers: [], matrix: [] };
+      // Get all sellers for this gestor (including sub-gestor sellers)
+      const directSellers = await db.select({
         id: sellerPermissions.id,
         sellerName: sellerPermissions.sellerName,
-        commissionPercent: sellerPermissions.commissionPercent,
       }).from(sellerPermissions)
         .where(eq(sellerPermissions.gestorName, input.gestorName));
-      return sellers.map(s => ({
-        id: s.id,
-        sellerName: s.sellerName,
-        commissionPercent: s.commissionPercent ? Number(s.commissionPercent) : null,
-      }));
+      // Sub-gestor sellers
+      const subGestorNames = directSellers.map(s => s.sellerName);
+      const subGestorSellers = subGestorNames.length > 0
+        ? await db.select({ id: sellerPermissions.id, sellerName: sellerPermissions.sellerName })
+            .from(sellerPermissions).where(inArray(sellerPermissions.gestorName, subGestorNames))
+        : [];
+      const seenIds = new Set(directSellers.map(s => s.id));
+      const allSellers = [...directSellers];
+      for (const sub of subGestorSellers) {
+        if (!seenIds.has(sub.id)) { seenIds.add(sub.id); allSellers.push(sub); }
+      }
+      // Get monthly goals for current period
+      const now = new Date();
+      const year = input.year || now.getFullYear();
+      const month = input.month || (now.getMonth() + 1);
+      const goals = await db.select().from(sellerMonthlyTargets)
+        .where(and(
+          eq(sellerMonthlyTargets.gestorName, input.gestorName),
+          eq(sellerMonthlyTargets.year, year),
+          eq(sellerMonthlyTargets.month, month),
+        ));
+      const goalMap = new Map(goals.map(g => [g.sellerId, g]));
+      // Get commission matrix
+      const matrix = await db.select().from(commissionMatrix)
+        .where(eq(commissionMatrix.gestorName, input.gestorName));
+      // Build response
+      const sellers = allSellers.map(s => {
+        const goal = goalMap.get(s.id);
+        return {
+          id: s.id,
+          sellerName: s.sellerName,
+          goalAmount: goal ? Number(goal.targetValue) : null,
+          goalId: goal?.id || null,
+        };
+      });
+      return {
+        sellers,
+        matrix: matrix.map(m => ({
+          id: m.id,
+          metaPercent: m.metaPercent,
+          priceTier: m.priceTier,
+          commissionPercent: Number(m.commissionPercent),
+        })),
+        year,
+        month,
+      };
     }),
 
-  /** Update commission for a seller */
+  /** Save/update monthly goal for a seller */
+  saveSellerGoal: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      sellerName: z.string(),
+      gestorName: z.string(),
+      year: z.number(),
+      month: z.number(),
+      goalAmount: z.number().min(0),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      // Check if goal exists for this seller/period
+      const existing = await db.select().from(sellerMonthlyTargets)
+        .where(and(
+          eq(sellerMonthlyTargets.sellerId, input.sellerId),
+          eq(sellerMonthlyTargets.year, input.year),
+          eq(sellerMonthlyTargets.month, input.month),
+        )).limit(1);
+      if (existing.length > 0) {
+        await db.update(sellerMonthlyTargets)
+          .set({ targetValue: String(input.goalAmount) })
+          .where(eq(sellerMonthlyTargets.id, existing[0].id));
+      } else {
+        await db.insert(sellerMonthlyTargets).values({
+          sellerId: input.sellerId,
+          sellerName: input.sellerName,
+          gestorName: input.gestorName,
+          year: input.year,
+          month: input.month,
+          targetType: "valor",
+          targetValue: String(input.goalAmount),
+          commissionPercent: "0",
+        });
+      }
+      return { success: true };
+    }),
+
+  /** Save/update the entire commission matrix for a gestor */
+  saveCommissionMatrix: publicProcedure
+    .input(z.object({
+      gestorName: z.string(),
+      matrix: z.array(z.object({
+        metaPercent: z.number(),
+        priceTier: z.enum(["mostrado_alto", "medio_alto", "medio", "baixo"]),
+        commissionPercent: z.number().min(0).max(100),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      // Delete existing matrix for this gestor
+      await db.delete(commissionMatrix).where(eq(commissionMatrix.gestorName, input.gestorName));
+      // Insert new matrix
+      if (input.matrix.length > 0) {
+        await db.insert(commissionMatrix).values(
+          input.matrix.map(m => ({
+            gestorName: input.gestorName,
+            metaPercent: m.metaPercent,
+            priceTier: m.priceTier,
+            commissionPercent: String(m.commissionPercent),
+          }))
+        );
+      }
+      return { success: true };
+    }),
+
+  /** Legacy: Update commission for a seller (kept for backward compat) */
   updateCommission: publicProcedure
     .input(z.object({ sellerId: z.number(), commissionPercent: z.number().min(0).max(100) }))
     .mutation(async ({ input }) => {

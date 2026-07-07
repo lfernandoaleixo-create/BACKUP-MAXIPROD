@@ -2801,3 +2801,28 @@ export const stockWithdrawalRequests = mysqlTable("stock_withdrawal_requests", {
 });
 export type StockWithdrawalRequest = typeof stockWithdrawalRequests.$inferSelect;
 export type InsertStockWithdrawalRequest = typeof stockWithdrawalRequests.$inferInsert;
+
+
+// ═══════════════════════════════════════════════════════════════
+// MATRIZ DE COMISSÃO - Tabela cruzada (faixa de preço x % meta)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Matriz de comissão: cruza faixa de preço com % da meta atingida
+ * Faixas de preço: mostrado_alto (sem desconto ou até 20%), medio_alto (23%), medio (27%), baixo (32%)
+ * Faixas de meta: 80%, 90%, 100%, 110%, 120%
+ * Cada célula contém a % de comissão do vendedor
+ * Editável pelo gestor
+ */
+export const commissionMatrix = mysqlTable("commission_matrix", {
+  id: int("id").autoincrement().primaryKey(),
+  gestorName: varchar("gestor_name", { length: 200 }).notNull(),
+  metaPercent: int("meta_percent").notNull(), // 80, 90, 100, 110, 120
+  priceTier: mysqlEnum("price_tier", ["mostrado_alto", "medio_alto", "medio", "baixo"]).notNull(),
+  commissionPercent: decimal("commission_percent", { precision: 5, scale: 2 }).notNull(), // % de comissão
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CommissionMatrix = typeof commissionMatrix.$inferSelect;
+export type InsertCommissionMatrix = typeof commissionMatrix.$inferInsert;

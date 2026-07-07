@@ -4910,3 +4910,10 @@
 - [x] Tabela do Rafael visível tanto para Juvenal (gestor) quanto para Renato (sub-gestor)
 - [x] Removido card "Margem de Negociação" (não mais necessário)
 - [x] Sub-gestores: vendedores de sub-gestores aparecem para o gestor principal (getPriceMatrix + getEstoqueMatrix)
+
+## Reformulação Comissão dos Vendedores (07/07/2026)
+- [x] Criar tabela commission_matrix (faixa de preço x % meta → % comissão, editável)
+- [x] Backend: endpoints CRUD para metas (saveSellerGoal) e tabela de comissão (saveCommissionMatrix)
+- [x] Frontend: layout planilha com todos vendedores + meta editável por mês/ano
+- [x] Frontend: tabela de comissão cruzada (faixa preço x % meta) editável
+- [x] Substituir layout antigo de comissão individual por novo layout planilha
