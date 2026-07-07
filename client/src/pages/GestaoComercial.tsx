@@ -2298,7 +2298,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800">
                 <th rowSpan={2} className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">Vendedor</th>
-                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px]">Meta em R$</th>
+                <th rowSpan={2} className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700 min-w-[100px] sticky left-[140px] bg-slate-50 dark:bg-slate-800 z-10">Meta em R$</th>
                 {META_PERCENTS.map(mp => (
                   <th key={mp} colSpan={4} className="px-2 py-1.5 text-center font-semibold text-slate-600 dark:text-slate-300 border-b border-r border-slate-200 dark:border-slate-700">
                     {mp}% da Meta
@@ -2354,7 +2354,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                       </div>
                     </td>
                     {/* Meta em R$ */}
-                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700">
+                    <td className="px-2 py-2 text-center border-r border-slate-200 dark:border-slate-700 sticky left-[140px] bg-white dark:bg-slate-900 z-10">
                       {isEditingGoal ? (
                         <div className="flex items-center gap-0.5">
                           <input
@@ -2397,7 +2397,16 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
                                 className="w-12 px-0.5 py-0.5 text-center text-[10px] border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-400"
                               />
                             ) : (
-                              <span className="font-mono text-[11px] text-slate-700 dark:text-slate-200">
+                              <span
+                                className="font-mono text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer hover:text-teal-600 transition-colors"
+                                title={seller.goalAmount ? `R$ ${((val / 100) * seller.goalAmount * (mp / 100)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "Defina a meta para ver o valor em R$"}
+                                onClick={() => {
+                                  if (seller.goalAmount) {
+                                    const reais = (val / 100) * seller.goalAmount * (mp / 100);
+                                    alert(`${val}% de comissão sobre ${mp}% da meta (R$ ${(seller.goalAmount * mp / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}) = R$ ${reais.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  }
+                                }}
+                              >
                                 {val}%
                               </span>
                             )}
