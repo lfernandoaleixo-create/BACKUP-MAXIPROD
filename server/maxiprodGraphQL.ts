@@ -296,7 +296,7 @@ function extractMadeiraItemsFromOrders(openOrderData: any[], allSalesData: any[]
 }
 
 /**
- * Fetch open sales order items (A_FATURAR + FATURADO_COM_ENTREGA_FUTURA)
+ * Fetch open sales order items (A_FATURAR + FATURADO_COM_ENTREGA_FUTURA + FATURADO_PARCIAL + PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA)
  * These are the orders that affect stock availability
  * Includes pedidoDeVenda.minhaEmpresaId for multi-company support
  */
@@ -306,7 +306,7 @@ async function fetchOpenSalesOrderItems(): Promise<any[]> {
   const items = await fetchAllPages("itensDosPedidosDeVendas", (skip, take) => `{
     itensDosPedidosDeVendas(
       skip: ${skip}, take: ${take},
-      where: { estado: { in: [A_FATURAR, FATURADO_COM_ENTREGA_FUTURA] } }
+      where: { estado: { in: [A_FATURAR, FATURADO_COM_ENTREGA_FUTURA, FATURADO_PARCIAL, PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA] } }
     ) {
       totalCount
       items {

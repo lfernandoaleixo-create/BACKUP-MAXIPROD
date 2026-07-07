@@ -4951,3 +4951,4 @@
 - [x] Atualizar transformOrderItems no GraphQL sync para preencher quantidadeFaturada
 - [x] Ajustar stockProcessor: reservar apenas (quantidade - quantidadeFaturada) para pedidos com faturamento parcial
 - [x] Aplicar mesma lógica em: orderByCode, aggregateOrdersByClient, ecommerceByCode
+- [x] Incluir FATURADO_PARCIAL e PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA na query GraphQL de pedidos abertos (fetchOpenSalesOrderItems)
