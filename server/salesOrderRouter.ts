@@ -432,7 +432,7 @@ export const salesOrderRouter = router({
       sellerId: z.number(),
       // Client data
       cnpjCpf: z.string().optional().default(""),
-      razaoSocial: z.string().min(2),
+      razaoSocial: z.string().min(1),
       nomeFantasia: z.string().optional(),
       inscricaoEstadual: z.string().optional(),
       tipoContribuinte: z.string().optional(),
@@ -466,6 +466,8 @@ export const salesOrderRouter = router({
       })).min(1),
       // Flag: vendedor confirmou que quer enviar mesmo com preço abaixo do mínimo
       forceSubmitBelowMin: z.boolean().optional(),
+      // Flag: pedido é simulação (sem dados reais de cliente)
+      isSimulation: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -509,7 +511,7 @@ export const salesOrderRouter = router({
       const totalPedido = totalProdutos + valorFrete;
 
       // Determine status
-      const status = temPrecoAbaixoMinimo ? "pendente" as const : "aprovado" as const;
+      const status = input.isSimulation ? "simulacao" as const : (temPrecoAbaixoMinimo ? "pendente" as const : "aprovado" as const);
       const motivoAlerta = alertMotivos.length > 0 ? alertMotivos.join("; ") : null;
 
       // Get next sequential order number atomically
@@ -572,20 +574,22 @@ export const salesOrderRouter = router({
         );
       }
 
-      // Send notification to Juvenal and Vitória about new seller order
-      try {
-        const { createNotification } = await import("./notificationRouter");
-        const totalCaixas = itemsWithValidation.reduce((sum, i) => sum + i.quantidade, 0);
-        const itemsResume = itemsWithValidation.map(i => `${i.descricaoItem} (${i.quantidade}cx × R$ ${i.precoUnitario.toFixed(2)} = R$ ${i.totalItem.toFixed(2)})`).join(" | ");
-        await createNotification({
-          type: "pedido_vendedor",
-          title: `Novo Pedido - ${seller.sellerName}`,
-          message: `Cliente: ${input.razaoSocial} | ${itemsWithValidation.length} ${itemsWithValidation.length === 1 ? 'item' : 'itens'} | ${totalCaixas} caixas | Total: R$ ${totalPedido.toFixed(2)}${temPrecoAbaixoMinimo ? ' ⚠️ PREÇO ABAIXO DO MÍNIMO' : ''} | Itens: ${itemsResume}`,
-          severity: temPrecoAbaixoMinimo ? "warning" : "success",
-          metadata: { orderId: Number(orderId), sellerName: seller.sellerName, gestorName: seller.gestorName, clientName: input.razaoSocial, totalPedido, totalCaixas, status },
-        });
-      } catch (err) {
-        console.error("[SalesOrder] Failed to create notification:", err);
+      // Send notification to Juvenal and Vitória about new seller order (skip for simulations)
+      if (!input.isSimulation) {
+        try {
+          const { createNotification } = await import("./notificationRouter");
+          const totalCaixas = itemsWithValidation.reduce((sum, i) => sum + i.quantidade, 0);
+          const itemsResume = itemsWithValidation.map(i => `${i.descricaoItem} (${i.quantidade}cx × R$ ${i.precoUnitario.toFixed(2)} = R$ ${i.totalItem.toFixed(2)})`).join(" | ");
+          await createNotification({
+            type: "pedido_vendedor",
+            title: `Novo Pedido - ${seller.sellerName}`,
+            message: `Cliente: ${input.razaoSocial} | ${itemsWithValidation.length} ${itemsWithValidation.length === 1 ? 'item' : 'itens'} | ${totalCaixas} caixas | Total: R$ ${totalPedido.toFixed(2)}${temPrecoAbaixoMinimo ? ' ⚠️ PREÇO ABAIXO DO MÍNIMO' : ''} | Itens: ${itemsResume}`,
+            severity: temPrecoAbaixoMinimo ? "warning" : "success",
+            metadata: { orderId: Number(orderId), sellerName: seller.sellerName, gestorName: seller.gestorName, clientName: input.razaoSocial, totalPedido, totalCaixas, status },
+          });
+        } catch (err) {
+          console.error("[SalesOrder] Failed to create notification:", err);
+        }
       }
 
       return {

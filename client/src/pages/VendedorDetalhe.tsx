@@ -62,6 +62,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
 import CustosDeVendaStep from "@/components/CustosDeVendaStep";
+import { useOperator } from "@/contexts/OperatorContext";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
 
@@ -3124,6 +3125,8 @@ function OrderDeleteButton({ orderId, onDeleted }: { orderId: number; onDeleted:
 
 function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const utils = trpc.useUtils();
+  const { operator } = useOperator();
+  const canSkipClient = operator?.name === "Guilherme" || operator?.name === "Lu\u00eds Eduardo";
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
@@ -3375,7 +3378,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 
       {/* Novo Pedido de Venda Form */}
       {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} onClose={() => setShowNewOrder(false)} />
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} onClose={() => setShowNewOrder(false)} />
       )}
 
       {/* Pedidos manuais (via App) */}
@@ -3599,7 +3602,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
  * NewOrderInline - Formulário inline para criar novo pedido de venda
  * Puxa produtos do estoque visível do vendedor com especificações
  */
-function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; sellerName: string; onClose: () => void }) {
+function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; onClose: () => void }) {
+  const [isSimulation, setIsSimulation] = useState(false);
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
@@ -3800,8 +3804,9 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const doSubmitOrder = (forceSubmitBelowMin?: boolean) => {
     createOrderMutation.mutate({
       sellerId,
-      cnpjCpf,
-      razaoSocial,
+      cnpjCpf: isSimulation ? (cnpjCpf || "SIMULACAO") : cnpjCpf,
+      razaoSocial: isSimulation ? (razaoSocial || "SIMULAÇÃO - " + sellerName) : razaoSocial,
+      isSimulation,
       nomeFantasia: nomeFantasia || undefined,
       inscricaoEstadual: inscricaoEstadual || undefined,
       tipoContribuinte: tipoContribuinte || undefined,
@@ -3907,27 +3912,48 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
     setStep("produtos");
   };
 
+  const simulationSteps = isSimulation ? ["produtos", "pagamento", "revisao"] as const : ["cliente", "produtos", "pagamento", "revisao"] as const;
+
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-300 dark:border-teal-700 shadow-lg overflow-hidden">
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border-2 ${isSimulation ? 'border-amber-300 dark:border-amber-700' : 'border-teal-300 dark:border-teal-700'} shadow-lg overflow-hidden`}>
       {/* Header */}
-      <div className="bg-teal-50 dark:bg-teal-900/30 px-4 py-3 border-b border-teal-200 dark:border-teal-800">
+      <div className={`${isSimulation ? 'bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800' : 'bg-teal-50 dark:bg-teal-900/30 border-b border-teal-200 dark:border-teal-800'} px-4 py-3`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Plus className="w-4 h-4 text-teal-600" />
-            <h4 className="text-sm font-bold text-teal-800 dark:text-teal-200">Novo Pedido de Venda</h4>
+            <Plus className={`w-4 h-4 ${isSimulation ? 'text-amber-600' : 'text-teal-600'}`} />
+            <h4 className={`text-sm font-bold ${isSimulation ? 'text-amber-800 dark:text-amber-200' : 'text-teal-800 dark:text-teal-200'}`}>
+              {isSimulation ? 'Simular Pedido de Venda' : 'Novo Pedido de Venda'}
+            </h4>
+            {isSimulation && (
+              <span className="px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-[10px] font-bold rounded-full">SIMULAÇÃO</span>
+            )}
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-teal-100 dark:hover:bg-teal-800 rounded-lg">
-            <X className="w-4 h-4 text-slate-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            {canSkipClient && (
+              <button
+                onClick={() => { setIsSimulation(!isSimulation); setStep(isSimulation ? 'cliente' : 'produtos'); }}
+                className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
+                  isSimulation
+                    ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                }`}
+              >
+                {isSimulation ? 'Pedido Real' : 'Simular'}
+              </button>
+            )}
+            <button onClick={onClose} className="p-1 hover:bg-teal-100 dark:hover:bg-teal-800 rounded-lg">
+              <X className="w-4 h-4 text-slate-500" />
+            </button>
+          </div>
         </div>
         {/* Progress */}
         <div className="flex gap-1 mt-2">
-          {(["cliente", "produtos", "pagamento", "revisao"] as const).map((s, i) => (
+          {simulationSteps.map((s, i) => (
             <div
               key={s}
               className={`flex-1 h-1.5 rounded-full ${
-                (step === "resumo_final" ? 4 : (["cliente", "produtos", "pagamento", "revisao"] as const).indexOf(step as any)) >= i
-                  ? "bg-teal-500"
+                (step === "resumo_final" ? simulationSteps.length : simulationSteps.indexOf(step as any)) >= i
+                  ? (isSimulation ? "bg-amber-500" : "bg-teal-500")
                   : "bg-slate-200 dark:bg-slate-600"
               }`}
             />
@@ -4676,8 +4702,8 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             </div>
 
             <div className="flex justify-between pt-2">
-              <button onClick={() => setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
-                Voltar
+              <button onClick={() => isSimulation ? onClose() : setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                {isSimulation ? 'Cancelar' : 'Voltar'}
               </button>
               <div className="flex gap-2">
                 <button
@@ -4727,21 +4753,36 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
 
         {step === "revisao" && (
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase">4. Revisão do Pedido</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase">{isSimulation ? '3. Revisão da Simulação' : '4. Revisão do Pedido'}</p>
+            {isSimulation && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-2 mb-2">
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">Este é um pedido de <strong>simulação</strong> — não será enviado ao Maxiprod e não reserva estoque.</p>
+              </div>
+            )}
             {/* Summary */}
             <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Cliente:</span>
-                <span className="font-medium text-slate-700 dark:text-slate-200">{razaoSocial}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">CNPJ/CPF:</span>
-                <span className="text-slate-700 dark:text-slate-200">{cnpjCpf}</span>
-              </div>
-              {municipio && (
+              {!isSimulation && (
+                <>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Cliente:</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{razaoSocial}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">CNPJ/CPF:</span>
+                    <span className="text-slate-700 dark:text-slate-200">{cnpjCpf}</span>
+                  </div>
+                  {municipio && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Local:</span>
+                      <span className="text-slate-700 dark:text-slate-200">{municipio}/{uf}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {isSimulation && (
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Local:</span>
-                  <span className="text-slate-700 dark:text-slate-200">{municipio}/{uf}</span>
+                  <span className="text-slate-500">Modo:</span>
+                  <span className="font-bold text-amber-600">SIMULAÇÃO</span>
                 </div>
               )}
               <div className="border-t border-slate-200 dark:border-slate-600 pt-2 mt-2">
@@ -4784,14 +4825,14 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               <button
                 onClick={handleSubmit}
                 disabled={createOrderMutation.isPending}
-                className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                className={`px-5 py-2 ${isSimulation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5`}
               >
                 {createOrderMutation.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                Pedido Concluído
+                {isSimulation ? 'Concluir Simulação' : 'Pedido Concluído'}
               </button>
             </div>
           </div>
@@ -4801,11 +4842,18 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
       {step === "resumo_final" && orderSubmitted && (
         <div className="p-4 space-y-4">
           <div className="text-center py-4">
-            <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-3">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <div className={`w-16 h-16 mx-auto ${isSimulation ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-green-100 dark:bg-green-900/30'} rounded-full flex items-center justify-center mb-3`}>
+              <svg className={`w-8 h-8 ${isSimulation ? 'text-amber-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
-            <h3 className="text-lg font-bold text-green-700 dark:text-green-300">Pedido Enviado com Sucesso!</h3>
-            <p className="text-xs text-slate-500 mt-1">Pedido #{submittedOrderNumber || submittedOrderId} • Notificação enviada para Juvenal e Vitória</p>
+            <h3 className={`text-lg font-bold ${isSimulation ? 'text-amber-700 dark:text-amber-300' : 'text-green-700 dark:text-green-300'}`}>
+              {isSimulation ? 'Simulação Concluída!' : 'Pedido Enviado com Sucesso!'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              {isSimulation
+                ? `Simulação #${submittedOrderNumber || submittedOrderId} • Apenas para referência interna`
+                : `Pedido #${submittedOrderNumber || submittedOrderId} • Notificação enviada para Juvenal e Vitória`
+              }
+            </p>
           </div>
           {/* Resumo completo */}
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-3 border border-slate-200 dark:border-slate-600">
