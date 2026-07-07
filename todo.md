@@ -4925,3 +4925,7 @@
 - [x] Frontend: chips de vendedor no topo — clicar expande tabela de comissão individual
 - [x] Frontend: cada vendedor tem tabela independente editável (5 faixas meta × 4 faixas preço)
 - [x] TypeScript compila sem erros
+
+## Variação 00035 como filho do 00036 (07/07/2026)
+- [x] Produto 00035 adicionado como variação do 00036 (fator 2.0: 1 cx 00035 = 2 cx 00036)
+- [x] 00036 agora é produto-mãe com duas variações: 00034 (fator 1.0) e 00035 (fator 2.0)
