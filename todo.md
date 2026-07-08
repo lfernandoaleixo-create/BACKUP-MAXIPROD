@@ -4965,3 +4965,5 @@
 - [x] Vincular tabela de preços 008 (Rafael Londrina) ao gestor Juvenal e subgestor Renato - produtos visíveis no estoque + preços
 - [x] Cadastro cliente: Redespacho exige Razão Social obrigatória além do CNPJ
 - [x] Cadastro cliente: Endereço de entrega diferente exige CEP e Telefone obrigatórios
+- [x] Card de cliente cadastrado: mostrar TODAS as informações (razão social, CNPJ, IE, CEP, endereço, telefone, email, contato, segmento, regime, cobrança, pagamento, fornecedor, obs, redespacho, entrega)
+- [x] Card de cliente cadastrado: botão de lápis (Editar) para abrir formulário em modo edição

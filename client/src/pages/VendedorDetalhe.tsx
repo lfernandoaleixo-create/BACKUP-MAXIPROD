@@ -58,6 +58,7 @@ import {
   Briefcase,
   AlertTriangle,
   Truck,
+  Pencil,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -1842,6 +1843,7 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"valor" | "pedidos" | "recente">("valor");
   const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
 
   const { data: clientes, isLoading } = trpc.salesMetrics.getClientesByVendedor.useQuery(
     { vendedor: sellerName },
@@ -1914,16 +1916,18 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
           </div>
         </div>
 
-        {/* Formulário de Cadastro de Novo Cliente */}
-        {showNewClientForm && (
+        {/* Formulário de Cadastro/Edição de Cliente */}
+        {(showNewClientForm || editingClient) && (
           <NewClientForm
             sellerId={sellerId}
             sellerName={sellerName}
-            onClose={() => setShowNewClientForm(false)}
+            onClose={() => { setShowNewClientForm(false); setEditingClient(null); }}
             onSuccess={() => {
               setShowNewClientForm(false);
+              setEditingClient(null);
               refetchManual();
             }}
+            editClient={editingClient}
           />
         )}
 
@@ -1933,7 +1937,7 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
             <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Clientes Cadastrados</p>
             <div className="space-y-2">
               {manualClients.map((client: any) => (
-                <ManualClientRow key={client.id} client={client} onDeleted={refetchManual} />
+                <ManualClientRow key={client.id} client={client} onDeleted={refetchManual} onEdit={(c) => setEditingClient(c)} />
               ))}
             </div>
           </div>
@@ -2013,16 +2017,18 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
         </div>
       </div>
 
-      {/* Formulário de Cadastro de Novo Cliente */}
-      {showNewClientForm && (
+      {/* Formulário de Cadastro/Edição de Cliente */}
+      {(showNewClientForm || editingClient) && (
         <NewClientForm
           sellerId={sellerId}
           sellerName={sellerName}
-          onClose={() => setShowNewClientForm(false)}
+          onClose={() => { setShowNewClientForm(false); setEditingClient(null); }}
           onSuccess={() => {
             setShowNewClientForm(false);
+            setEditingClient(null);
             refetchManual();
           }}
+          editClient={editingClient}
         />
       )}
 
@@ -2050,7 +2056,7 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
                 );
               })
               .map((mc) => (
-                <ManualClientRow key={mc.id} client={mc} onDeleted={refetchManual} />
+                <ManualClientRow key={mc.id} client={mc} onDeleted={refetchManual} onEdit={(c) => setEditingClient(c)} />
               ))}
           </div>
         </div>
@@ -2193,11 +2199,12 @@ function ClientRow({ client, index }: { client: {
 /**
  * Formulário de cadastro de novo cliente
  */
-function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
+function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }: {
   sellerId: number;
   sellerName: string;
   onClose: () => void;
   onSuccess: () => void;
+  editClient?: any;
 }) {
   const { operator } = useOperator();
   const isGuilherme = operator?.name === "Guilherme";
@@ -2278,6 +2285,71 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
 
   const createMutation = trpc.sales.createVendorClient.useMutation();
   const updateMutation = trpc.sales.updateVendorClient.useMutation();
+
+  // Hydrate form when editClient prop is provided (edit from card)
+  useEffect(() => {
+    if (editClient) {
+      setEditMode(true);
+      setEditingClientId(editClient.id);
+      setCnpjCpf(editClient.cnpjCpf || "");
+      setRazaoSocial(editClient.razaoSocial || "");
+      setNomeFantasia(editClient.nomeFantasia || "");
+      setInscricaoEstadual(editClient.inscricaoEstadual || "");
+      setCep(editClient.cep || "");
+      setLogradouro(editClient.logradouro || "");
+      setNumero(editClient.numero || "");
+      setComplemento(editClient.complemento || "");
+      setBairro(editClient.bairro || "");
+      setCidade(editClient.cidade || "");
+      setUf(editClient.uf || "");
+      setTelefone1(editClient.telefone1 || "");
+      setTelefone2(editClient.telefone2 || "");
+      setEmail(editClient.email || "");
+      setNomeContato(editClient.nomeContato || "");
+      setSegmento(editClient.segmento || "");
+      setObservacoes(editClient.observacoes || "");
+      setRegimeTributario(editClient.regimeTributario || "");
+      setInscricaoMunicipal(editClient.inscricaoMunicipal || "");
+      setInscricaoSuframa(editClient.inscricaoSuframa || "");
+      setSituacaoFiscalEspecial(editClient.situacaoFiscalEspecial || "");
+      setCnaeFiscal(editClient.cnaeFiscal || "");
+      setEmailNfe(editClient.emailNfe || "");
+      setWebsite(editClient.website || "");
+      setLimiteCredito(editClient.limiteCredito || "");
+      setFormaCobranca(editClient.formaCobranca || "");
+      setTabelaPrecos(editClient.tabelaPrecos || "");
+      setCondicaoPagamento(editClient.condicaoPagamento || "");
+      setRegiao(editClient.regiao || "");
+      setPerfil(editClient.perfil || "");
+      setFormaPedido(editClient.formaPedido || "");
+      setProdutos(editClient.produtos || "");
+      setProbabilidadeNegocio(editClient.probabilidadeNegocio || "");
+      setTamanho(editClient.tamanho || "");
+      setAtencao(editClient.atencao || "");
+      setFornecedorAtual(editClient.fornecedorAtual || "");
+      setSituacaoCobranca(editClient.situacaoCobranca || "");
+      setPossuiRedespacho(editClient.possuiRedespacho === 1 ? true : editClient.possuiRedespacho === 0 ? false : null);
+      setRedespachoCep(editClient.redespachoCep || "");
+      setRedespachoLogradouro(editClient.redespachoLogradouro || "");
+      setRedespachoNumero(editClient.redespachoNumero || "");
+      setRedespachoComplemento(editClient.redespachoComplemento || "");
+      setRedespachoBairro(editClient.redespachoBairro || "");
+      setRedespachoCidade(editClient.redespachoCidade || "");
+      setRedespachoUf(editClient.redespachoUf || "");
+      setRedespachoTelefone(editClient.redespachoTelefone || "");
+      setRedespachoCnpj(editClient.redespachoCnpj || "");
+      setRedespachoRazaoSocial(editClient.redespachoRazaoSocial || "");
+      setEnderecoEntregaMesmo(editClient.enderecoEntregaMesmo !== 0 && editClient.enderecoEntregaMesmo !== false ? true : false);
+      setEntregaCep(editClient.entregaCep || "");
+      setEntregaLogradouro(editClient.entregaLogradouro || "");
+      setEntregaNumero(editClient.entregaNumero || "");
+      setEntregaComplemento(editClient.entregaComplemento || "");
+      setEntregaBairro(editClient.entregaBairro || "");
+      setEntregaCidade(editClient.entregaCidade || "");
+      setEntregaUf(editClient.entregaUf || "");
+      setEntregaTelefone(editClient.entregaTelefone || "");
+    }
+  }, [editClient]);
 
   // Auto-determinar tipoContribuinte - DESATIVADO por enquanto (ajustar configurações primeiro)
   const isCnpj = cnpjCpf.replace(/\D/g, "").length >= 14;
@@ -2999,7 +3071,7 @@ function FormInput({ label, value, onChange, placeholder, type = "text", require
 /**
  * Row for manually registered clients
  */
-function ManualClientRow({ client, onDeleted }: { client: any; onDeleted: () => void }) {
+function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted: () => void; onEdit?: (client: any) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const deleteMutation = trpc.sales.deleteVendorClient.useMutation();
@@ -3010,6 +3082,10 @@ function ManualClientRow({ client, onDeleted }: { client: any; onDeleted: () => 
   };
 
   const endereco = [client.logradouro, client.numero, client.bairro, client.cidade, client.uf]
+    .filter(Boolean).join(", ");
+  const enderecoEntrega = [client.entregaLogradouro, client.entregaNumero, client.entregaBairro, client.entregaCidade, client.entregaUf]
+    .filter(Boolean).join(", ");
+  const enderecoRedespacho = [client.redespachoLogradouro, client.redespachoNumero, client.redespachoBairro, client.redespachoCidade, client.redespachoUf]
     .filter(Boolean).join(", ");
 
   return (
@@ -3058,16 +3134,34 @@ function ManualClientRow({ client, onDeleted }: { client: any; onDeleted: () => 
       {expanded && (
         <div className="px-4 pb-3 ml-8 border-l-2 border-teal-200 dark:border-teal-800">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {client.razaoSocial && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Razão Social:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.razaoSocial}</span>
+              </div>
+            )}
             {client.nomeFantasia && (
               <div className="flex items-start gap-1.5">
                 <span className="text-slate-400 font-medium whitespace-nowrap">Nome Fantasia:</span>
                 <span className="text-slate-600 dark:text-slate-300">{client.nomeFantasia}</span>
               </div>
             )}
+            {client.cnpjCpf && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">CNPJ/CPF:</span>
+                <span className="text-slate-600 dark:text-slate-300 font-mono">{client.cnpjCpf}</span>
+              </div>
+            )}
             {client.inscricaoEstadual && (
               <div className="flex items-start gap-1.5">
                 <span className="text-slate-400 font-medium whitespace-nowrap">IE:</span>
                 <span className="text-slate-600 dark:text-slate-300">{client.inscricaoEstadual}</span>
+              </div>
+            )}
+            {client.cep && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">CEP:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.cep}</span>
               </div>
             )}
             {endereco && (
@@ -3089,6 +3183,42 @@ function ManualClientRow({ client, onDeleted }: { client: any; onDeleted: () => 
                 <a href={`mailto:${client.email}`} className="text-teal-600 hover:underline truncate">{client.email}</a>
               </div>
             )}
+            {client.nomeContato && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Contato:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.nomeContato}</span>
+              </div>
+            )}
+            {client.segmento && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Segmento:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.segmento}</span>
+              </div>
+            )}
+            {client.regimeTributario && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Regime:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.regimeTributario}</span>
+              </div>
+            )}
+            {client.formaCobranca && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Cobrança:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.formaCobranca}</span>
+              </div>
+            )}
+            {client.condicaoPagamento && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Pag.:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.condicaoPagamento}</span>
+              </div>
+            )}
+            {client.fornecedorAtual && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Fornecedor Atual:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.fornecedorAtual}</span>
+              </div>
+            )}
             {client.observacoes && (
               <div className="flex items-start gap-1.5 sm:col-span-2">
                 <span className="text-slate-400 font-medium whitespace-nowrap">Obs:</span>
@@ -3096,8 +3226,41 @@ function ManualClientRow({ client, onDeleted }: { client: any; onDeleted: () => 
               </div>
             )}
           </div>
-          {/* Delete button */}
+          {/* Redespacho info */}
+          {client.possuiRedespacho === 1 && (
+            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+              <p className="text-[9px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Redespacho</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                {client.redespachoCnpj && <span className="text-slate-600 dark:text-slate-300">CNPJ: {client.redespachoCnpj}</span>}
+                {client.redespachoRazaoSocial && <span className="text-slate-600 dark:text-slate-300">Razão: {client.redespachoRazaoSocial}</span>}
+                {client.redespachoCep && <span className="text-slate-600 dark:text-slate-300">CEP: {client.redespachoCep}</span>}
+                {enderecoRedespacho && <span className="text-slate-600 dark:text-slate-300">{enderecoRedespacho}</span>}
+                {client.redespachoTelefone && <span className="text-slate-600 dark:text-slate-300">Tel: {client.redespachoTelefone}</span>}
+              </div>
+            </div>
+          )}
+          {/* Endereço de entrega diferente */}
+          {client.enderecoEntregaMesmo === 0 && (
+            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
+              <p className="text-[9px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-1">Endereço de Entrega</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                {client.entregaCep && <span className="text-slate-600 dark:text-slate-300">CEP: {client.entregaCep}</span>}
+                {enderecoEntrega && <span className="text-slate-600 dark:text-slate-300">{enderecoEntrega}</span>}
+                {client.entregaTelefone && <span className="text-slate-600 dark:text-slate-300">Tel: {client.entregaTelefone}</span>}
+              </div>
+            </div>
+          )}
+          {/* Edit and Delete buttons */}
           <div className="mt-3 flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(client)}
+                className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-amber-600 bg-amber-50 rounded-md hover:bg-amber-100 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3 h-3" />
+                Editar
+              </button>
+            )}
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
