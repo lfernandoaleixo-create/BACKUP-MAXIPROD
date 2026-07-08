@@ -404,12 +404,12 @@ export default function GestorAprovacoes() {
                           <span className="text-slate-400 uppercase font-bold">CNPJ/CPF</span>
                           <p className="text-slate-700 dark:text-slate-200 font-mono">{order.cnpjCpf}</p>
                         </div>
-                        {order.condicaoPagamento && (
-                          <div>
-                            <span className="text-slate-400 uppercase font-bold">Pagamento</span>
-                            <p className="text-slate-700 dark:text-slate-200">{order.condicaoPagamento}</p>
-                          </div>
-                        )}
+                        {order.segmento && (<div><span className="text-slate-400 uppercase font-bold">Segmento</span><p className="text-slate-700 dark:text-slate-200">{order.segmento}</p></div>)}
+                        {order.condicaoPagamento && (<div><span className="text-slate-400 uppercase font-bold">Pagamento</span><p className="text-slate-700 dark:text-slate-200">{order.condicaoPagamento}</p></div>)}
+                        {order.formaCobranca && (<div><span className="text-slate-400 uppercase font-bold">Cobrança</span><p className="text-slate-700 dark:text-slate-200">{order.formaCobranca}</p></div>)}
+                        {order.regiao && (<div><span className="text-slate-400 uppercase font-bold">Região</span><p className="text-slate-700 dark:text-slate-200">{order.regiao}</p></div>)}
+                        {order.perfil && (<div><span className="text-slate-400 uppercase font-bold">Perfil</span><p className="text-slate-700 dark:text-slate-200">{order.perfil}</p></div>)}
+                        {order.situacaoCobranca && order.situacaoCobranca !== "SEM PROTESTO" && (<div><span className="text-red-500 uppercase font-bold">Sit. Cobrança</span><p className="text-red-600 dark:text-red-400 font-bold">{order.situacaoCobranca}</p></div>)}
                         {order.observacoes && (
                           <div className="col-span-2">
                             <span className="text-slate-400 uppercase font-bold">Observações</span>

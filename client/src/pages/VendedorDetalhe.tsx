@@ -3202,10 +3202,58 @@ function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted
                 <span className="text-slate-600 dark:text-slate-300">{client.regimeTributario}</span>
               </div>
             )}
+            {client.inscricaoMunicipal && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">IM:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.inscricaoMunicipal}</span>
+              </div>
+            )}
+            {client.inscricaoSuframa && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">SUFRAMA:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.inscricaoSuframa}</span>
+              </div>
+            )}
+            {client.situacaoFiscalEspecial && client.situacaoFiscalEspecial !== "Nenhuma" && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Sit. Fiscal:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.situacaoFiscalEspecial}</span>
+              </div>
+            )}
+            {client.cnaeFiscal && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">CNAE:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.cnaeFiscal}</span>
+              </div>
+            )}
+            {client.emailNfe && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Email NFe:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.emailNfe}</span>
+              </div>
+            )}
+            {client.website && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Website:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.website}</span>
+              </div>
+            )}
+            {client.limiteCredito && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Limite Créd.:</span>
+                <span className="text-slate-600 dark:text-slate-300">R$ {client.limiteCredito}</span>
+              </div>
+            )}
             {client.formaCobranca && (
               <div className="flex items-start gap-1.5">
                 <span className="text-slate-400 font-medium whitespace-nowrap">Cobrança:</span>
                 <span className="text-slate-600 dark:text-slate-300">{client.formaCobranca}</span>
+              </div>
+            )}
+            {client.tabelaPrecos && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Tabela Preços:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.tabelaPrecos}</span>
               </div>
             )}
             {client.condicaoPagamento && (
@@ -3214,10 +3262,58 @@ function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted
                 <span className="text-slate-600 dark:text-slate-300">{client.condicaoPagamento}</span>
               </div>
             )}
+            {client.regiao && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Região:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.regiao}</span>
+              </div>
+            )}
+            {client.perfil && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Perfil:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.perfil}</span>
+              </div>
+            )}
+            {client.formaPedido && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Forma Pedido:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.formaPedido}</span>
+              </div>
+            )}
+            {client.produtos && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Produtos:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.produtos}</span>
+              </div>
+            )}
+            {client.probabilidadeNegocio && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Probabilidade:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.probabilidadeNegocio}</span>
+              </div>
+            )}
+            {client.tamanho && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Tamanho:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.tamanho}</span>
+              </div>
+            )}
+            {client.atencao && client.atencao !== "Normal" && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Atenção:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.atencao}</span>
+              </div>
+            )}
             {client.fornecedorAtual && (
               <div className="flex items-start gap-1.5">
                 <span className="text-slate-400 font-medium whitespace-nowrap">Fornecedor Atual:</span>
                 <span className="text-slate-600 dark:text-slate-300">{client.fornecedorAtual}</span>
+              </div>
+            )}
+            {client.situacaoCobranca && client.situacaoCobranca !== "SEM PROTESTO" && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-red-500 font-medium whitespace-nowrap">Sit. Cobrança:</span>
+                <span className="text-red-600 dark:text-red-400 font-bold">{client.situacaoCobranca}</span>
               </div>
             )}
             {client.observacoes && (
@@ -3886,6 +3982,25 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const [formaCobranca, setFormaCobranca] = useState("");
   const [fornecedorAtual, setFornecedorAtual] = useState("");
   const [observacoesCliente, setObservacoesCliente] = useState("");
+  // Dados Fiscais extras
+  const [inscricaoMunicipal, setInscricaoMunicipal] = useState("");
+  const [inscricaoSuframa, setInscricaoSuframa] = useState("");
+  const [situacaoFiscalEspecial, setSituacaoFiscalEspecial] = useState("Nenhuma");
+  const [cnaeFiscal, setCnaeFiscal] = useState("");
+  const [websiteCliente, setWebsiteCliente] = useState("");
+  // Dados de Venda
+  const [limiteCredito, setLimiteCredito] = useState("");
+  const [tabelaPrecos, setTabelaPrecos] = useState("");
+  // CRM / Relacionamento
+  const [regiao, setRegiao] = useState("");
+  const [perfil, setPerfil] = useState("");
+  const [formaPedido, setFormaPedido] = useState("");
+  const [produtosInteresse, setProdutosInteresse] = useState("");
+  const [probabilidadeNegocio, setProbabilidadeNegocio] = useState("");
+  const [tamanho, setTamanho] = useState("");
+  const [atencao, setAtencao] = useState("Normal");
+  // Cobrança
+  const [situacaoCobranca, setSituacaoCobranca] = useState("SEM PROTESTO");
   // Redespacho
   const [possuiRedespacho, setPossuiRedespacho] = useState(false);
   const [redespachoCnpj, setRedespachoCnpj] = useState("");
@@ -4016,6 +4131,25 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     setFormaCobranca(client.formaCobranca || "");
     setFornecedorAtual(client.fornecedorAtual || "");
     setObservacoesCliente(client.observacoes || "");
+    // Dados Fiscais extras
+    setInscricaoMunicipal(client.inscricaoMunicipal || "");
+    setInscricaoSuframa(client.inscricaoSuframa || "");
+    setSituacaoFiscalEspecial(client.situacaoFiscalEspecial || "Nenhuma");
+    setCnaeFiscal(client.cnaeFiscal || "");
+    setWebsiteCliente(client.website || "");
+    // Dados de Venda
+    setLimiteCredito(client.limiteCredito || "");
+    setTabelaPrecos(client.tabelaPrecos || "");
+    // CRM
+    setRegiao(client.regiao || "");
+    setPerfil(client.perfil || "");
+    setFormaPedido(client.formaPedido || "");
+    setProdutosInteresse(client.produtos || "");
+    setProbabilidadeNegocio(client.probabilidadeNegocio || "");
+    setTamanho(client.tamanho || "");
+    setAtencao(client.atencao || "Normal");
+    // Cobrança
+    setSituacaoCobranca(client.situacaoCobranca || "SEM PROTESTO");
     // Redespacho
     setPossuiRedespacho(!!client.possuiRedespacho);
     setRedespachoCnpj(client.redespachoCnpj || "");
@@ -4131,10 +4265,32 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
       telefone2: telefone2 || undefined,
       emailContato: emailContato || undefined,
       segmento: segmento || undefined,
+      nomeContato: nomeContato || undefined,
+      formaCobranca: formaCobranca || undefined,
+      fornecedorAtual: fornecedorAtual || undefined,
+      // Dados Fiscais extras
+      inscricaoMunicipal: inscricaoMunicipal || undefined,
+      inscricaoSuframa: inscricaoSuframa || undefined,
+      situacaoFiscalEspecial: situacaoFiscalEspecial !== "Nenhuma" ? situacaoFiscalEspecial : undefined,
+      cnaeFiscal: cnaeFiscal || undefined,
+      website: websiteCliente || undefined,
+      // Dados de Venda
+      limiteCredito: limiteCredito || undefined,
+      tabelaPrecos: tabelaPrecos || undefined,
       condicaoPagamento: condicaoPagamento || undefined,
       valorFrete: Number(valorFrete) || undefined,
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
+      // CRM / Relacionamento
+      regiao: regiao || undefined,
+      perfil: perfil || undefined,
+      formaPedido: formaPedido || undefined,
+      produtos: produtosInteresse || undefined,
+      probabilidadeNegocio: probabilidadeNegocio || undefined,
+      tamanho: tamanho || undefined,
+      atencao: atencao !== "Normal" ? atencao : undefined,
+      // Cobrança
+      situacaoCobranca: situacaoCobranca !== "SEM PROTESTO" ? situacaoCobranca : undefined,
       // Redespacho
       possuiRedespacho: possuiRedespacho || undefined,
       redespachoCnpj: possuiRedespacho ? (redespachoCnpj || undefined) : undefined,
@@ -4196,9 +4352,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     const headers = [
       "Pedido", "Data", "Vendedor", "CNPJ/CPF", "Razão Social", "Nome Fantasia",
       "Inscrição Estadual", "Tipo Contribuinte", "Regime Tributário",
+      "Inscrição Municipal", "Inscrição SUFRAMA", "Situação Fiscal Especial",
+      "CNAE Fiscal", "Email NFe", "Website",
       "CEP", "Endereço", "Número", "Complemento", "Bairro", "Município", "UF",
-      "Telefone 1", "Telefone 2", "Email", "Email NFe",
-      "Forma Cobrança", "Condição Pagamento", "Tipo Frete", "Valor Frete",
+      "Telefone 1", "Telefone 2", "Email", "Segmento",
+      "Limite Crédito", "Forma Cobrança", "Tabela Preços", "Condição Pagamento",
+      "Região", "Perfil", "Forma Pedido", "Produtos Interesse",
+      "Probabilidade Negócio", "Tamanho", "Atenção", "Fornecedor Atual",
+      "Situação Cobrança",
+      "Tipo Frete", "Valor Frete",
       "Possui Redespacho", "Redespacho CNPJ", "Redespacho Razão Social",
       "Redespacho CEP", "Redespacho Endereço", "Redespacho Número", "Redespacho Bairro",
       "Redespacho Cidade", "Redespacho UF", "Redespacho Telefone",
@@ -4215,9 +4377,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
         sellerName,
         cnpjCpf, razaoSocial, nomeFantasia,
         inscricaoEstadual, tipoContribuinte, regimeTributario,
+        inscricaoMunicipal, inscricaoSuframa, situacaoFiscalEspecial,
+        cnaeFiscal, emailNfe, websiteCliente,
         cep, endereco, numero, complemento, bairro, municipio, uf,
-        telefone1, telefone2, emailContato, emailNfe,
-        formaCobranca, condicaoPagamento, tipoFrete, String(valorFrete || "0"),
+        telefone1, telefone2, emailContato, segmento,
+        limiteCredito, formaCobranca, tabelaPrecos, condicaoPagamento,
+        regiao, perfil, formaPedido, produtosInteresse,
+        probabilidadeNegocio, tamanho, atencao, fornecedorAtual,
+        situacaoCobranca,
+        tipoFrete, String(valorFrete || "0"),
         possuiRedespacho ? "Sim" : "Não", redespachoCnpj, redespachoRazaoSocial,
         redespachoCep, redespachoLogradouro, redespachoNumero, redespachoBairro,
         redespachoCidade, redespachoUf, redespachoTelefone,
@@ -4419,6 +4587,142 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <OrderFormInput label="Telefone 1" value={telefone1} onChange={(v) => { setTelefone1(v); setShowClientValidationError(false); }} placeholder="(00) 00000-0000" required error={showClientValidationError} />
               <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error={showClientValidationError} />
               <OrderFormInput label="Segmento" value={segmento} onChange={setSegmento} placeholder="Indústria, Loja, Distribuidora..." />
+            </div>
+
+            {/* DADOS FISCAIS */}
+            <div className="mt-4 p-3 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-2">📋 DADOS FISCAIS</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Regime Tributário</label>
+                  <select value={regimeTributario} onChange={(e) => setRegimeTributario(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="Normal">Normal</option>
+                    <option value="Simples Nacional">Simples Nacional</option>
+                    <option value="Lucro Presumido">Lucro Presumido</option>
+                    <option value="Lucro Real">Lucro Real</option>
+                    <option value="MEI">MEI</option>
+                  </select>
+                </div>
+                <OrderFormInput label="Inscrição Municipal" value={inscricaoMunicipal} onChange={setInscricaoMunicipal} placeholder="IM" />
+                <OrderFormInput label="Inscrição SUFRAMA" value={inscricaoSuframa} onChange={setInscricaoSuframa} placeholder="SUFRAMA" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação Fiscal Especial</label>
+                  <select value={situacaoFiscalEspecial} onChange={(e) => setSituacaoFiscalEspecial(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="Nenhuma">Nenhuma</option>
+                    <option value="Zona Franca de Manaus">Zona Franca de Manaus</option>
+                    <option value="Área de Livre Comércio">Área de Livre Comércio</option>
+                  </select>
+                </div>
+                <OrderFormInput label="CNAE Fiscal" value={cnaeFiscal} onChange={setCnaeFiscal} placeholder="0000000" />
+                <OrderFormInput label="Email NF-e/NFC-e" value={emailNfe} onChange={setEmailNfe} placeholder="nfe@empresa.com" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                <OrderFormInput label="Website" value={websiteCliente} onChange={setWebsiteCliente} placeholder="www.empresa.com.br" />
+              </div>
+            </div>
+
+            {/* DADOS DE VENDA */}
+            <div className="mt-4 p-3 bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase mb-2">💰 DADOS DE VENDA</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <OrderFormInput label="Limite de Crédito (R$)" value={limiteCredito} onChange={setLimiteCredito} placeholder="999.999,99" />
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Cobrança (padrão)</label>
+                  <select value={formaCobranca} onChange={(e) => setFormaCobranca(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="">Selecione...</option>
+                    <option value="Boleto">Boleto</option>
+                    <option value="Depósito">Depósito</option>
+                    <option value="PIX">PIX</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                <OrderFormInput label="Tabela de Preços" value={tabelaPrecos} onChange={setTabelaPrecos} placeholder="Nome da tabela" />
+                <OrderFormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="30/60/90 dias" />
+              </div>
+            </div>
+
+            {/* DADOS DE RELACIONAMENTO (CRM) */}
+            <div className="mt-4 p-3 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg">
+              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase mb-2">🏢 DADOS DE RELACIONAMENTO (CRM)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <OrderFormInput label="Região" value={regiao} onChange={setRegiao} placeholder="Região" />
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Perfil</label>
+                  <select value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="">Selecione...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Pedido</label>
+                  <select value={formaPedido} onChange={(e) => setFormaPedido(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="">Selecione...</option>
+                    <option value="Telefone">Telefone</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Email">Email</option>
+                    <option value="Presencial">Presencial</option>
+                    <option value="App">App</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                <OrderFormInput label="Produtos de Interesse" value={produtosInteresse} onChange={setProdutosInteresse} placeholder="Produtos de interesse" />
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Probabilidade de Negócio</label>
+                  <select value={probabilidadeNegocio} onChange={(e) => setProbabilidadeNegocio(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="">Selecione...</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Média">Média</option>
+                    <option value="Baixa">Baixa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Tamanho</label>
+                  <select value={tamanho} onChange={(e) => setTamanho(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="">Selecione...</option>
+                    <option value="Pequeno">Pequeno</option>
+                    <option value="Médio">Médio</option>
+                    <option value="Grande">Grande</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Atenção</label>
+                  <select value={atencao} onChange={(e) => setAtencao(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="Normal">Normal</option>
+                    <option value="Urgente">Urgente</option>
+                    <option value="VIP">VIP</option>
+                  </select>
+                </div>
+                <OrderFormInput label="Fornecedor Atual" value={fornecedorAtual} onChange={setFornecedorAtual} placeholder="Concorrente atual" />
+              </div>
+            </div>
+
+            {/* COBRANÇA */}
+            <div className="mt-4 p-3 bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase mb-2">⚠️ COBRANÇA</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação</label>
+                  <select value={situacaoCobranca} onChange={(e) => setSituacaoCobranca(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="SEM PROTESTO">SEM PROTESTO</option>
+                    <option value="COM PROTESTO">COM PROTESTO</option>
+                    <option value="NEGATIVADO">NEGATIVADO</option>
+                    <option value="INADIMPLENTE">INADIMPLENTE</option>
+                  </select>
+                </div>
+                <OrderFormInput label="Observações" value={observacoesCliente} onChange={setObservacoesCliente} placeholder="Observações sobre o cliente (opcional)" />
+              </div>
             </div>
 
             {/* Redespacho toggle */}

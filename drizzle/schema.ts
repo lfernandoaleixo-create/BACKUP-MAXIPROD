@@ -2172,7 +2172,28 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   entregaTelefone: varchar("entrega_telefone", { length: 30 }),
   // Dados de venda
   segmento: varchar("segmento", { length: 100 }),
+  nomeContato: varchar("nome_contato", { length: 200 }),
+  formaCobranca: varchar("forma_cobranca", { length: 200 }),
+  fornecedorAtual: varchar("fornecedor_atual", { length: 200 }),
+  // Dados Fiscais extras
+  inscricaoMunicipal: varchar("inscricao_municipal", { length: 30 }),
+  inscricaoSuframa: varchar("inscricao_suframa", { length: 30 }),
+  situacaoFiscalEspecial: varchar("situacao_fiscal_especial", { length: 100 }),
+  website: varchar("website", { length: 300 }),
+  // Dados de Venda extras
+  limiteCredito: varchar("limite_credito", { length: 30 }),
+  tabelaPrecos: varchar("tabela_precos", { length: 200 }),
   condicaoPagamento: varchar("condicao_pagamento", { length: 200 }),
+  // CRM / Relacionamento
+  regiao: varchar("regiao", { length: 100 }),
+  perfil: varchar("perfil", { length: 100 }),
+  formaPedido: varchar("forma_pedido", { length: 100 }),
+  produtos: text("produtos"),
+  probabilidadeNegocio: varchar("probabilidade_negocio", { length: 50 }),
+  tamanho: varchar("tamanho", { length: 50 }),
+  atencao: varchar("atencao", { length: 50 }),
+  // Cobrança
+  situacaoCobranca: varchar("situacao_cobranca", { length: 30 }),
   valorFrete: decimal("valor_frete", { precision: 18, scale: 2 }),
   tipoFrete: varchar("tipo_frete", { length: 50 }), // CIF, FOB
   observacoes: text("observacoes"),

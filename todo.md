@@ -4982,3 +4982,11 @@
 - [x] Variação 00507 como filho do 00106 (fator 1.0: mesma embalagem 50x100)
 - [x] Variação 00089M já existia como filho do 00089 (fator 1.0)
 - [x] Variação 00546 como filho do 00547 (fator 1.0: espeto queijo coalho 3.9mm vs 4.0mm)
+## Cadastro Completo de Clientes - Cópia Fiel (08/07/2026)
+- [x] Formulário pedido de venda: adicionar TODOS os campos do cadastro (Dados Fiscais, Dados de Venda, Dados CRM, Cobrança)
+- [x] Campos faltantes: Inscrição Municipal, Inscrição SUFRAMA, Situação Fiscal Especial, CNAE Fiscal, Email NF-e, Website, Limite de Crédito, Forma de Cobrança, Tabela de Preços, Condição de Pagamento, Região, Perfil, Forma de Pedido, Produtos, Probabilidade de Negócio, Tamanho, Atenção, Fornecedor Atual, Situação Cobrança, Observações
+- [x] Card Clientes Cadastrados: exibir e salvar TODOS os campos preenchidos (incluindo os novos)
+- [x] Backend: adicionar campos faltantes na tabela vendor_clients e nos endpoints de save/update (já existiam)
+- [x] Garantir que createOrder e exportação CSV incluam todos os campos do cliente
+- [x] VitoriaOrders: exibir Dados Fiscais, Dados de Venda, CRM, Cobrança do pedido
+- [x] GestorAprovacoes: exibir campos relevantes do pedido (segmento, cobrança, região, perfil)
