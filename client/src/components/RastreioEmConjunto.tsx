@@ -142,18 +142,66 @@ function ContainerTracker({ container, onDataReadyRef }: {
 
       // Get vessel position and route from ONE Line data (if available)
       if (oneData) {
-        vesselPosition = oneData.vesselPosition || null;
         routeCoordinates = oneData.routeCoordinates || [];
         originPosition = oneData.origin ? { lat: oneData.origin.lat, lng: oneData.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
         destPosition = oneData.destination ? { lat: oneData.destination.lat, lng: oneData.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
+        
+        // INTERPOLATE vessel position along route using progress %
+        // Don't use oneData.vesselPosition as it often defaults to destination port
+        if (routeCoordinates.length > 1 && progress > 0 && progress < 100) {
+          const idx = Math.floor((progress / 100) * (routeCoordinates.length - 1));
+          const nextIdx = Math.min(idx + 1, routeCoordinates.length - 1);
+          const segFraction = ((progress / 100) * (routeCoordinates.length - 1)) - idx;
+          vesselPosition = {
+            lat: routeCoordinates[idx].lat + (routeCoordinates[nextIdx].lat - routeCoordinates[idx].lat) * segFraction,
+            lng: routeCoordinates[idx].lng + (routeCoordinates[nextIdx].lng - routeCoordinates[idx].lng) * segFraction,
+          };
+        } else if (progress >= 100 && destPosition) {
+          vesselPosition = destPosition;
+        } else if (progress <= 0 && originPosition) {
+          vesselPosition = originPosition;
+        } else {
+          vesselPosition = oneData.vesselPosition || null;
+        }
       } else {
-        // Fallback: use cached lat/lng from getActiveContainers
-        const cachedLat = container.vesselLat ? parseFloat(container.vesselLat) : null;
-        const cachedLng = container.vesselLng ? parseFloat(container.vesselLng) : null;
-        vesselPosition = (cachedLat && cachedLng) ? { lat: cachedLat, lng: cachedLng } : null;
-        routeCoordinates = [];
-        originPosition = null;
-        destPosition = null;
+        // No ONE Line data - interpolate along great circle from known ports
+        // Use well-known port coordinates for common routes
+        const portCoords: Record<string, { lat: number; lng: number }> = {
+          'DALIAN': { lat: 38.92, lng: 121.65 },
+          'SANTOS': { lat: -23.95, lng: -46.30 },
+          'SHANGHAI': { lat: 31.23, lng: 121.47 },
+          'NINGBO': { lat: 29.87, lng: 121.89 },
+          'BUSAN': { lat: 35.10, lng: 129.03 },
+          'PUSAN': { lat: 35.10, lng: 129.03 },
+          'SINGAPORE': { lat: 1.26, lng: 103.84 },
+          'PARANAGUA': { lat: -25.52, lng: -48.51 },
+          'ITAJAI': { lat: -26.91, lng: -48.67 },
+          'NAVEGANTES': { lat: -26.90, lng: -48.65 },
+        };
+        const originKey = (d.origin_port || '').toUpperCase();
+        const destKey = (d.destination_port || '').toUpperCase();
+        const originCoord = portCoords[originKey] || null;
+        const destCoord = portCoords[destKey] || null;
+        originPosition = originCoord;
+        destPosition = destCoord;
+        
+        if (originCoord && destCoord && progress > 0 && progress < 100) {
+          // Interpolate along a simplified great circle (linear for display)
+          const fraction = progress / 100;
+          vesselPosition = {
+            lat: originCoord.lat + (destCoord.lat - originCoord.lat) * fraction,
+            lng: originCoord.lng + (destCoord.lng - originCoord.lng) * fraction,
+          };
+        } else if (progress >= 100 && destCoord) {
+          vesselPosition = destCoord;
+        } else if (originCoord) {
+          vesselPosition = originCoord;
+        } else {
+          const cachedLat = container.vesselLat ? parseFloat(container.vesselLat) : null;
+          const cachedLng = container.vesselLng ? parseFloat(container.vesselLng) : null;
+          vesselPosition = (cachedLat && cachedLng) ? { lat: cachedLat, lng: cachedLng } : null;
+        }
+        routeCoordinates = (originCoord && destCoord) ? [originCoord, destCoord] : [];
       }
     } else if (isOneTracking) {
       const d = oneData;
