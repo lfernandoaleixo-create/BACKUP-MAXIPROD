@@ -1748,6 +1748,8 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
   const [trackingBl, setTrackingBl] = useState<string | null>(null);
   const [trackingContainer, setTrackingContainer] = useState<string | null>(null);
   const [trackingArmador, setTrackingArmador] = useState<string | null>(null);
+  const [trackingPoName, setTrackingPoName] = useState<string | null>(null);
+  const [trackingSupplierName, setTrackingSupplierName] = useState<string | null>(null);
   const [showRastreioModal, setShowRastreioModal] = useState(false);
 
   // Fetch tracking links for POs (from Importação data)
@@ -1951,6 +1953,9 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            // Set contextual info
+                            setTrackingPoName(po.referenciaPO || null);
+                            setTrackingSupplierName(tracking.supplierName || null);
                             // Priority: AI tracking (most up-to-date) > UUID > BL
                             if (tracking.rastreio && tracking.armador) {
                               setTrackingContainer(tracking.rastreio);
@@ -2051,7 +2056,9 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
           blNumber={trackingBl}
           containerNumber={trackingContainer}
           armador={trackingArmador}
-          onClose={() => { setTrackingUuid(null); setTrackingBl(null); setTrackingContainer(null); setTrackingArmador(null); }}
+          poNumber={trackingPoName}
+          supplierName={trackingSupplierName}
+          onClose={() => { setTrackingUuid(null); setTrackingBl(null); setTrackingContainer(null); setTrackingArmador(null); setTrackingPoName(null); setTrackingSupplierName(null); }}
         />
       )}
     </div>

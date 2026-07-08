@@ -105,6 +105,9 @@ function PagamentosFornecedores() {
   const [trackingBl, setTrackingBl] = useState<string | null>(null);
   const [trackingContainer, setTrackingContainer] = useState<string | null>(null);
   const [trackingArmador, setTrackingArmador] = useState<string | null>(null);
+  const [trackingSupplier, setTrackingSupplier] = useState<string | null>(null);
+  const [trackingPo, setTrackingPo] = useState<string | null>(null);
+  const [trackingProducts, setTrackingProducts] = useState<Array<{ description: string; quantidade?: number | null }> | null>(null);
 
   const handleExportPdf = async () => {
     setExportingPdf(true);
@@ -285,7 +288,7 @@ function PagamentosFornecedores() {
 
       {/* Supplier Sections */}
       {(fullData || []).map((supplier: any) => (
-        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} onTrackAi={(container, armador, bl) => { setTrackingContainer(container); setTrackingArmador(armador); if (bl) setTrackingBl(bl); }} />
+        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} onTrackAi={(container, armador, bl, supplierName, poNumber, products) => { setTrackingContainer(container); setTrackingArmador(armador); if (bl) setTrackingBl(bl); setTrackingSupplier(supplierName || null); setTrackingPo(poNumber || null); setTrackingProducts(products || null); }} />
       ))}
 
       {/* Add Supplier */}
@@ -344,7 +347,10 @@ function PagamentosFornecedores() {
           blNumber={trackingBl}
           containerNumber={trackingContainer}
           armador={trackingArmador}
-          onClose={() => { setTrackingUuid(null); setTrackingBl(null); setTrackingContainer(null); setTrackingArmador(null); }}
+          poNumber={trackingPo}
+          supplierName={trackingSupplier}
+          products={trackingProducts}
+          onClose={() => { setTrackingUuid(null); setTrackingBl(null); setTrackingContainer(null); setTrackingArmador(null); setTrackingSupplier(null); setTrackingPo(null); setTrackingProducts(null); }}
         />
       )}
     </div>
@@ -386,7 +392,7 @@ interface SupplierData {
   payments: PaymentData[];
 }
 
-function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null) => void }) {
+function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void }) {
   const effectiveRate = exchangeRate + 0.20;
   const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
@@ -753,7 +759,7 @@ function SectionTable({
   onRenameSection?: (oldTitle: string, newTitle: string) => void;
   onTrack?: (uuid: string) => void;
   onTrackBl?: (bl: string) => void;
-  onTrackAi?: (container: string, armador: string | null, bl?: string | null) => void;
+  onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void;
   isWinnie?: boolean;
 }) {
   const effectiveRate = exchangeRate + 0.20;
@@ -905,7 +911,7 @@ function SectionTable({
             editingId === payment.id ? (
               <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} onTrackAi={onTrackAi} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
+              <PaymentRow key={payment.id} payment={payment} supplierName={supplierName} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} onTrackAi={onTrackAi} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
             )
           ))}
           {payments.length === 0 && (
@@ -964,7 +970,7 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
+function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
   const SPREAD = 0.20;
   const effectiveRate = exchangeRate + SPREAD;
   const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
@@ -1046,7 +1052,7 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi,
         <div className="flex flex-col items-center gap-1">
           {payment.rastreio && payment.armador ? (
             <button
-              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador, payment.blNumber)}
+              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador, payment.blNumber, supplierName || null, payment.pedido || null, null)}
               className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-md text-purple-700 font-mono text-[10px] font-medium transition-colors"
               title="Rastrear via Logcomex AI (dados mais atualizados)"
             >
@@ -1070,7 +1076,7 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi,
             </button>
           ) : payment.rastreio ? (
             <button
-              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador, payment.blNumber)}
+              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador, payment.blNumber, supplierName || null, payment.pedido || null, null)}
               className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-md text-purple-700 font-mono text-[10px] font-medium transition-colors"
               title="Rastrear via Logcomex AI"
             >

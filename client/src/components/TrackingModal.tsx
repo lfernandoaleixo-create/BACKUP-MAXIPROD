@@ -28,10 +28,14 @@ interface TrackingModalProps {
   blNumber?: string | null;
   containerNumber?: string | null; // For Logcomex AI tracking
   armador?: string | null; // Pre-filled armador for Logcomex AI
+  // Contextual info from caller
+  poNumber?: string | null;
+  supplierName?: string | null;
+  products?: Array<{ description: string; quantidade?: number | null }> | null;
   onClose: () => void;
 }
 
-export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador: initialArmador, onClose }: TrackingModalProps) {
+export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador: initialArmador, poNumber, supplierName, products, onClose }: TrackingModalProps) {
   // State for Logcomex AI mode (when containerNumber is provided)
   const [selectedArmador, setSelectedArmador] = useState(initialArmador || "");
   const [aiTrackingStarted, setAiTrackingStarted] = useState(!!initialArmador);
@@ -137,6 +141,41 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
 
         {/* Content */}
         <div className="p-6 space-y-5">
+          {/* Contextual Info: PO, Supplier/Chinese contact, Products */}
+          {(poNumber || supplierName || (products && products.length > 0)) && (
+            <div className="bg-slate-800/60 rounded-xl border border-slate-700/50 p-4">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                {poNumber && (
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-amber-400" />
+                    <span className="text-slate-400">PO:</span>
+                    <span className="font-bold text-white">{poNumber}</span>
+                  </div>
+                )}
+                {supplierName && (
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-400" />
+                    <span className="text-slate-400">Fornecedor:</span>
+                    <span className="font-bold text-white">{supplierName}</span>
+                  </div>
+                )}
+              </div>
+              {products && products.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-700/50">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Produtos no Container</p>
+                  <div className="flex flex-wrap gap-2">
+                    {products.map((p, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 bg-slate-700/60 text-slate-200 text-xs px-2.5 py-1 rounded-md">
+                        {p.description}
+                        {p.quantidade ? <span className="text-slate-400 ml-1">({p.quantidade})</span> : null}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* AI Mode: Armador selector (if not pre-filled) */}
           {isAiMode && !aiTrackingStarted && (
             <ArmadorSelector
@@ -431,10 +470,23 @@ function normalizeTrackingData(raw: any, isOneTracking: boolean, isAiTracking: b
       vessel: e.vessel || undefined,
     }));
 
-    // Calculate progress from events
-    const totalEvents = events.length;
-    const occurredEvents = events.filter(e => e.hasOccurred).length;
-    const progress = totalEvents > 0 ? Math.round((occurredEvents / totalEvents) * 100) : 0;
+    // Calculate progress from ETD→ETA elapsed time (more accurate than event ratio)
+    let progress = 0;
+    if (raw.etd && raw.eta) {
+      const etdDate = new Date(raw.etd);
+      const etaDate = new Date(raw.eta);
+      const now = new Date();
+      const totalDuration = etaDate.getTime() - etdDate.getTime();
+      if (totalDuration > 0) {
+        const elapsed = now.getTime() - etdDate.getTime();
+        progress = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+      }
+    } else {
+      // Fallback to event ratio if no dates available
+      const totalEvents = events.length;
+      const occurredEvents = events.filter(e => e.hasOccurred).length;
+      progress = totalEvents > 0 ? Math.round((occurredEvents / totalEvents) * 100) : 0;
+    }
 
     return {
       shipment: raw.container || raw.bl_number || '',
@@ -709,19 +761,20 @@ function TrackingGoogleMap({ data }: { data: NormalizedTrackingData }) {
         bounds.extend({ lat: ts.lat, lng: ts.lng });
       });
 
-      // Vessel position marker
+      // Vessel position marker (ship icon)
       if (vesselPos) {
         new google.maps.Marker({
           position: vesselPos,
           map,
           icon: {
-            path: "M12 2L4 12l8 10 8-10L12 2z",
-            scale: 1.5,
+            path: "M4 19h2.1c.3 0 .5-.2.6-.5l.7-2.5h9.2l.7 2.5c.1.3.3.5.6.5H20v-1l-1.5-6.5H18V9c0-1.1-.9-2-2-2h-4V3.5C12 2.7 11.3 2 10.5 2S9 2.7 9 3.5V7H8c-1.1 0-2 .9-2 2v2.5H4.5L3 18v1h1z",
+            scale: 1.8,
             fillColor: "#6366f1",
             fillOpacity: 1,
             strokeColor: "#fff",
-            strokeWeight: 2,
+            strokeWeight: 1.5,
             anchor: new google.maps.Point(12, 12),
+            rotation: 0,
           },
           title: "Posição atual do navio",
         });

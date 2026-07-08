@@ -5025,3 +5025,11 @@
 - [x] TrackingModal enriquece dados AI com posição do navio da ONE Line (BL passado junto)
 - [x] RastreioEmConjunto combina AI (ETA/status) + ONE Line (posição no mapa)
 - [x] onTrackAi passa BL para enriquecimento de posição no modal
+
+## Melhorias Rastreio Logcomex (08/07/2026 - Parte 2)
+- [ ] Cron diário às 06:00 para consultar Logcomex AI e salvar cache de todos containers ativos
+- [ ] Trocar losango por ícone de navio no mapa (RastreioEmConjunto)
+- [ ] Mostrar número/nome da PO no painel de rastreio
+- [ ] Mostrar nome do chinês (Winnie, Hank, Betty) no painel de rastreio
+- [ ] Mostrar produtos contidos no container no painel de rastreio
+- [ ] Calcular porcentagem correta da viagem baseado em ETD→ETA reais

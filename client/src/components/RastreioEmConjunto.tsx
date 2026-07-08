@@ -116,10 +116,24 @@ function ContainerTracker({ container, onDataReadyRef }: {
     if (isAiTracking) {
       const d = aiData;
       // Logcomex AI tracking - field names are snake_case from the API
-      // Calculate progress from events
-      const events = d.events || [];
-      const occurred = events.filter((e: any) => e.has_occurred);
-      progress = events.length > 0 ? Math.round((occurred.length / events.length) * 100) : 0;
+      // Calculate progress from ETD→ETA elapsed time (more accurate)
+      if (d.etd && d.eta) {
+        const etdDate = new Date(d.etd);
+        const etaDate = new Date(d.eta);
+        const now = new Date();
+        const totalDuration = etaDate.getTime() - etdDate.getTime();
+        if (totalDuration > 0) {
+          const elapsed = now.getTime() - etdDate.getTime();
+          progress = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+        } else {
+          progress = 0;
+        }
+      } else {
+        // Fallback to event ratio
+        const events = d.events || [];
+        const occurred = events.filter((e: any) => e.has_occurred);
+        progress = events.length > 0 ? Math.round((occurred.length / events.length) * 100) : 0;
+      }
       originName = d.origin_port || '';
       destName = d.destination_port || '';
       vessel = d.vessel_name || '';

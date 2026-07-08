@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and, isNotNull, ne, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { importPayments, trackingCache } from "../drizzle/schema";
 import { fetchOneTracking } from "./oneTracking";
+import { fetchLogcomexAiTracking } from "./logcomexAiTracking";
 
 /**
  * Handler para atualização automática de rastreamento de navios.
@@ -22,15 +23,24 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
 
-    // Buscar todos os pagamentos com BL number ou tracking UUID
+    // Buscar todos os pagamentos com BL number, tracking UUID, ou rastreio (container number)
     const payments = await db.select({
       id: importPayments.id,
       blNumber: importPayments.blNumber,
       trackingUuid: importPayments.trackingUuid,
-    }).from(importPayments);
+      rastreio: importPayments.rastreio,
+      armador: importPayments.armador,
+      status: importPayments.status,
+    }).from(importPayments)
+      .where(or(
+        and(isNotNull(importPayments.blNumber), ne(importPayments.blNumber, '')),
+        and(isNotNull(importPayments.trackingUuid), ne(importPayments.trackingUuid, '')),
+        and(isNotNull(importPayments.rastreio), ne(importPayments.rastreio, ''))
+      ));
 
     const blPayments = payments.filter(p => p.blNumber);
     const uuidPayments = payments.filter(p => p.trackingUuid && !p.blNumber);
+    const aiPayments = payments.filter(p => p.rastreio && p.armador);
 
     let updatedCount = 0;
     let errorCount = 0;
@@ -124,11 +134,97 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
       }
     }
 
+    // 3. Atualizar containers via Logcomex AI (rastreio + armador)
+    const apiKey = process.env.LOGCOMEX_API_KEY;
+    if (apiKey && aiPayments.length > 0) {
+      console.log(`[Tracking Update] Processando ${aiPayments.length} containers via Logcomex AI...`);
+      for (const payment of aiPayments) {
+        // Skip containers already delivered
+        if (payment.status?.toLowerCase().includes('entregue')) continue;
+        try {
+          const aiData = await fetchLogcomexAiTracking(
+            payment.rastreio!,
+            payment.armador!,
+            apiKey,
+            90000 // 90s timeout per container
+          );
+          
+          // Calculate progress based on ETD→ETA
+          let progress: number | null = null;
+          if (aiData.etd && aiData.eta) {
+            const etdDate = new Date(aiData.etd);
+            const etaDate = new Date(aiData.eta);
+            const now = new Date();
+            const totalDuration = etaDate.getTime() - etdDate.getTime();
+            if (totalDuration > 0) {
+              const elapsed = now.getTime() - etdDate.getTime();
+              progress = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+            }
+          }
+
+          const cacheData = {
+            blNumber: payment.rastreio!.trim().toUpperCase(),
+            trackingSource: 'logcomex_ai',
+            status: aiData.current_status || null,
+            vesselName: aiData.vessel_name || null,
+            voyageNo: null,
+            origin: aiData.origin_port || null,
+            destination: aiData.destination_port || null,
+            etd: aiData.etd || null,
+            eta: aiData.eta || null,
+            progress,
+            vesselLat: null,
+            vesselLng: null,
+            rawData: JSON.stringify(aiData),
+          };
+
+          // Upsert by container number key
+          const containerKey = payment.rastreio!.trim().toUpperCase();
+          const existing = await db.select().from(trackingCache)
+            .where(eq(trackingCache.blNumber, containerKey))
+            .limit(1);
+
+          if (existing.length > 0) {
+            await db.update(trackingCache)
+              .set(cacheData)
+              .where(eq(trackingCache.id, existing[0].id));
+          } else {
+            await db.insert(trackingCache).values(cacheData);
+          }
+
+          // Also update BL cache entry if payment has BL
+          if (payment.blNumber) {
+            const blClean = payment.blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
+            const existingBl = await db.select().from(trackingCache)
+              .where(eq(trackingCache.blNumber, blClean))
+              .limit(1);
+            if (existingBl.length > 0) {
+              await db.update(trackingCache)
+                .set({ ...cacheData, blNumber: blClean })
+                .where(eq(trackingCache.id, existingBl[0].id));
+            }
+          }
+
+          updatedCount++;
+          console.log(`[Tracking Update] Container ${payment.rastreio} atualizado (Logcomex AI) - ETA: ${aiData.eta}`);
+          
+          // Small delay between AI requests to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (err: any) {
+          errorCount++;
+          console.error(`[Tracking Update] Erro ao atualizar container ${payment.rastreio} via AI:`, err.message);
+        }
+      }
+    } else if (!apiKey) {
+      console.warn('[Tracking Update] LOGCOMEX_API_KEY não configurada, pulando rastreio AI');
+    }
+
     const result = {
       ok: true,
       timestamp: new Date().toISOString(),
       totalBLs: blPayments.length,
       totalUUIDs: uuidPayments.length,
+      totalAI: aiPayments.length,
       updated: updatedCount,
       errors: errorCount,
     };
