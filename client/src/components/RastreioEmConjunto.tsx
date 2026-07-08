@@ -29,6 +29,7 @@ interface ContainerData {
   blNumber: string | null;
   trackingUuid: string | null;
   rastreio: string | null;
+  armador: string | null;
   status: string;
   products: Array<{ description: string; quantidade: number | null; valorUsd: string | null }>;
   vesselName: string | null;
@@ -63,9 +64,12 @@ function ContainerTracker({ container, onDataReadyRef }: {
   container: ContainerData;
   onDataReadyRef: React.MutableRefObject<(id: number, data: LiveData) => void>;
 }) {
+  // Determine which tracking source to use
+  const useAiTracking = !container.blNumber && !container.trackingUuid && !!container.rastreio;
+
   const logcomexQuery = trpc.import.fetchTracking.useQuery(
     { trackingUuid: container.trackingUuid || "" },
-    { enabled: !!container.trackingUuid && !container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
+    { enabled: !!container.trackingUuid && !container.blNumber && !useAiTracking, retry: 1, staleTime: 5 * 60 * 1000 }
   );
 
   const oneQuery = trpc.import.fetchOneTracking.useQuery(
@@ -73,8 +77,14 @@ function ContainerTracker({ container, onDataReadyRef }: {
     { enabled: !!container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
   );
 
-  const data = container.blNumber ? oneQuery.data : logcomexQuery.data;
+  const aiQuery = trpc.import.fetchLogcomexAiTracking.useQuery(
+    { container: container.rastreio || "", armador: container.armador || "" },
+    { enabled: useAiTracking, retry: 1, staleTime: 5 * 60 * 1000 }
+  );
+
+  const data = container.blNumber ? oneQuery.data : (useAiTracking ? aiQuery.data : logcomexQuery.data);
   const isOneTracking = !!container.blNumber;
+  const isAiTracking = useAiTracking;
 
   // Use a ref to track the last reported data to avoid infinite loops
   const lastReportedRef = useRef<string>("");
@@ -85,43 +95,50 @@ function ContainerTracker({ container, onDataReadyRef }: {
     const d = data as any;
     const vesselPosition = d.vesselPosition || null;
 
-    const progress = isOneTracking
-      ? d.progress || 0
-      : d.historic
+    let progress: number;
+    let routeCoordinates: Array<{ lat: number; lng: number }>;
+    let originName: string;
+    let originPosition: { lat: number; lng: number } | null;
+    let destName: string;
+    let destPosition: { lat: number; lng: number } | null;
+    let vessel: string;
+    let eta: string | null;
+    let currentStatus: string;
+
+    if (isAiTracking) {
+      // Logcomex AI tracking - no coordinates, but has vessel/port/status info
+      progress = d.progress || 0;
+      routeCoordinates = [];
+      originName = d.origin || '';
+      originPosition = null;
+      destName = d.destination || '';
+      destPosition = null;
+      vessel = d.vessel || '';
+      eta = d.eta || null;
+      currentStatus = d.currentStatus || d.translatedStatus || '';
+    } else if (isOneTracking) {
+      progress = d.progress || 0;
+      routeCoordinates = d.routeCoordinates || [];
+      originName = d.origin?.name || d.placeOfReceipt || '';
+      originPosition = d.origin ? { lat: d.origin.lat, lng: d.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
+      destName = d.destination?.name || d.placeOfDelivery || '';
+      destPosition = d.destination ? { lat: d.destination.lat, lng: d.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
+      vessel = d.sailingLegs?.[d.sailingLegs?.length - 1]?.vessel || '';
+      eta = d.podArrival || null;
+      currentStatus = d.currentStatus || '';
+    } else {
+      progress = d.historic
         ? Math.round((d.historic.filter((e: any) => e.hasOccurred).length / d.historic.length) * 100)
         : 0;
-
-    const routeCoordinates = isOneTracking
-      ? d.routeCoordinates || []
-      : d.vesselRouteCoordinates || [];
-
-    const originName = isOneTracking
-      ? d.origin?.name || d.placeOfReceipt || ''
-      : d.vesselRouteOrigin || d.origin || '';
-
-    const originPosition = isOneTracking
-      ? d.origin ? { lat: d.origin.lat, lng: d.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null)
-      : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
-
-    const destName = isOneTracking
-      ? d.destination?.name || d.placeOfDelivery || ''
-      : d.vesselRouteDestination || d.destination || '';
-
-    const destPosition = isOneTracking
-      ? d.destination ? { lat: d.destination.lat, lng: d.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null)
-      : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
-
-    const vessel = isOneTracking
-      ? d.sailingLegs?.[d.sailingLegs?.length - 1]?.vessel || ''
-      : d.vessel || '';
-
-    const eta = isOneTracking
-      ? d.podArrival || null
-      : d.eta || null;
-
-    const currentStatus = isOneTracking
-      ? d.currentStatus || ''
-      : d.currentStatus || d.translatedStatus || '';
+      routeCoordinates = d.vesselRouteCoordinates || [];
+      originName = d.vesselRouteOrigin || d.origin || '';
+      originPosition = routeCoordinates.length > 0 ? routeCoordinates[0] : null;
+      destName = d.vesselRouteDestination || d.destination || '';
+      destPosition = routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null;
+      vessel = d.vessel || '';
+      eta = d.eta || null;
+      currentStatus = d.currentStatus || d.translatedStatus || '';
+    }
 
     const liveData: LiveData = {
       vesselPosition,
@@ -150,7 +167,7 @@ function ContainerTracker({ container, onDataReadyRef }: {
       lastReportedRef.current = fingerprint;
       onDataReadyRef.current(container.id, liveData);
     }
-  }, [data, container.id, isOneTracking, onDataReadyRef]);
+  }, [data, container.id, isOneTracking, isAiTracking, onDataReadyRef]);
 
   return null;
 }
@@ -470,7 +487,7 @@ export function RastreioEmConjunto() {
         </div>
         <h3 className="text-lg font-semibold text-slate-700">Nenhum container em trânsito</h3>
         <p className="text-sm text-slate-500 mt-1 max-w-md">
-          Quando houver containers com BL ou UUID de rastreamento cadastrados nos pagamentos, eles aparecerão aqui no mapa.
+          Quando houver containers com BL, UUID ou número de container (rastreio AI) cadastrados nos pagamentos, eles aparecerão aqui.
         </p>
       </div>
     );
@@ -516,7 +533,7 @@ export function RastreioEmConjunto() {
         ))}
 
         {/* Hover/Selected Card Overlay */}
-        {activeContainer && activeLive && (
+        {activeContainer && (activeLive || activeContainer.vesselName || activeContainer.origin) && (
           <div className="absolute top-2 right-2 w-52 sm:top-4 sm:right-4 sm:w-72 max-h-[55%] overflow-y-auto bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl p-2.5 sm:p-4 z-50 pointer-events-auto">
             {/* Close button */}
             <button
@@ -540,38 +557,38 @@ export function RastreioEmConjunto() {
             {/* Progress bar */}
             <div className="mb-2 sm:mb-3">
               <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400 mb-1">
-                <span>{activeLive.originName || activeContainer.origin || '—'}</span>
-                <span>{activeLive.destName || activeContainer.destination || '—'}</span>
+                <span>{activeLive?.originName || activeContainer.origin || '—'}</span>
+                <span>{activeLive?.destName || activeContainer.destination || '—'}</span>
               </div>
               <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-500"
-                  style={{ width: `${activeLive.progress || 0}%` }}
+                  style={{ width: `${activeLive?.progress || activeContainer.progress || 0}%` }}
                 />
               </div>
               <div className="text-center mt-1">
-                <span className="text-xs font-bold text-indigo-300">{activeLive.progress || 0}%</span>
+                <span className="text-xs font-bold text-indigo-300">{activeLive?.progress || activeContainer.progress || 0}%</span>
               </div>
             </div>
 
             {/* Info grid */}
             <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[9px] sm:text-[10px]">
-              {activeLive.vessel && (
+              {(activeLive?.vessel || activeContainer.vesselName) && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">Navio</span>
-                  <p className="text-white font-medium mt-0.5 truncate">{activeLive.vessel}</p>
+                  <p className="text-white font-medium mt-0.5 truncate">{activeLive?.vessel || activeContainer.vesselName}</p>
                 </div>
               )}
-              {activeLive.eta && (
+              {(activeLive?.eta || activeContainer.eta) && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">ETA</span>
-                  <p className="text-white font-medium mt-0.5">{formatDate(activeLive.eta)}</p>
+                  <p className="text-white font-medium mt-0.5">{formatDate(activeLive?.eta || activeContainer.eta)}</p>
                 </div>
               )}
-              {activeLive.currentStatus && (
+              {(activeLive?.currentStatus || activeContainer.trackingStatus) && (
                 <div className="col-span-2 bg-slate-800/60 rounded-lg p-2">
                   <span className="text-slate-500 uppercase tracking-wider">Status</span>
-                  <p className="text-emerald-300 font-medium mt-0.5 truncate">{activeLive.currentStatus}</p>
+                  <p className="text-emerald-300 font-medium mt-0.5 truncate">{activeLive?.currentStatus || activeContainer.trackingStatus}</p>
                 </div>
               )}
             </div>
@@ -609,8 +626,8 @@ export function RastreioEmConjunto() {
           </div>
         )}
 
-        {/* Loading overlay for live tracking */}
-        {containers.length > 0 && liveTrackingData.size === 0 && !containers.some(c => c.vesselLat && c.vesselLng) && (
+        {/* Loading overlay for live tracking - only show if we have containers that COULD have positions */}
+        {containers.length > 0 && liveTrackingData.size === 0 && !containers.some(c => c.vesselLat && c.vesselLng) && containers.some(c => c.blNumber || c.trackingUuid) && (
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-40">
             <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
             <p className="mt-3 text-sm text-slate-300">Buscando posições dos navios...</p>

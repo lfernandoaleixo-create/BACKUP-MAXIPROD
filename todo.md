@@ -4997,3 +4997,17 @@
 
 ## Bug Fix - Dados do Cliente no Pedido de Venda (08/07/2026)
 - [x] Ao selecionar cliente cadastrado no pedido de venda, puxar TODOS os campos (incluindo situação cobrança, observações, dados fiscais, CRM, etc.) - corrigido searchClients para retornar todos os campos do vendor_clients e salesOrderRequests
+
+## Integração Logcomex AI - Rastreio de Contêiner (08/07/2026)
+- [x] Salvar API key Logcomex como secret
+- [x] Criar endpoint backend para rastreio via Logcomex AI (POST + polling async com cache)
+- [x] Criar helper server/logcomexAiTracking.ts com ARMADORES e fetchLogcomexAiTracking
+- [x] Adicionar coluna armador na tabela import_payments
+- [x] Adicionar campo armador nos formulários de criação/edição de pagamento
+- [x] Integrar rastreio individual na aba Importação (TrackingModal com modo AI)
+- [x] Botão roxo "Rastrear via AI" para containers com rastreio mas sem BL/UUID
+- [x] TrackingModal: executive summary, risco operacional, timeline de eventos, dados de booking/BL/vessel
+- [x] Integrar rastreio em conjunto na aba Importação (RastreioEmConjunto com AI)
+- [x] getActiveContainers: incluir containers com rastreio (sem BL/UUID) e campo armador
+- [x] ContainerTracker: terceira fonte de dados (aiQuery) para containers AI-only
+- [ ] Integrar rastreio no card de PO (Estoque)

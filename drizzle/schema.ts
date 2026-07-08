@@ -2520,6 +2520,7 @@ export const importPayments = mysqlTable("import_payments", {
   rastreio: varchar("rastreio", { length: 200 }), // código de rastreio do container
   trackingUuid: varchar("tracking_uuid", { length: 100 }), // UUID do workflow-item da Logcomex para rastreamento em tempo real
   blNumber: varchar("bl_number", { length: 100 }), // Número do Bill of Lading (ex: XMNG50123700) para rastreamento direto no armador
+  armador: varchar("armador", { length: 50 }), // Nome do armador/carrier para rastreamento via Logcomex AI (ex: ONE, MSC, MAERSK)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

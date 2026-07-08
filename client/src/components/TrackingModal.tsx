@@ -16,33 +16,69 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  Brain,
+  FileText,
+  Loader2,
 } from "lucide-react";
 
-// Support both Logcomex UUID and ONE Line BL tracking
+// Support Logcomex UUID, ONE Line BL, and Logcomex AI (container + armador)
 interface TrackingModalProps {
   trackingUuid?: string | null;
   blNumber?: string | null;
+  containerNumber?: string | null; // For Logcomex AI tracking
+  armador?: string | null; // Pre-filled armador for Logcomex AI
   onClose: () => void;
 }
 
-export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModalProps) {
-  // Determine which query to use
+export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador: initialArmador, onClose }: TrackingModalProps) {
+  // State for Logcomex AI mode (when containerNumber is provided)
+  const [selectedArmador, setSelectedArmador] = useState(initialArmador || "");
+  const [aiTrackingStarted, setAiTrackingStarted] = useState(!!initialArmador);
+
+  // Determine which mode we're in
+  const isAiMode = !!containerNumber && !trackingUuid && !blNumber;
+  const isOneMode = !!blNumber;
+  const isLogcomexMode = !!trackingUuid && !blNumber;
+
+  // Logcomex UUID query
   const logcomexQuery = trpc.import.fetchTracking.useQuery(
     { trackingUuid: trackingUuid || "" },
-    { enabled: !!trackingUuid && !blNumber, retry: 1 }
+    { enabled: isLogcomexMode, retry: 1 }
   );
 
+  // ONE Line query
   const oneQuery = trpc.import.fetchOneTracking.useQuery(
     { blNumber: blNumber || "" },
-    { enabled: !!blNumber, retry: 1 }
+    { enabled: isOneMode, retry: 1 }
   );
 
-  const isLoading = blNumber ? oneQuery.isLoading : logcomexQuery.isLoading;
-  const error = blNumber ? oneQuery.error : logcomexQuery.error;
-  const rawData = blNumber ? oneQuery.data : logcomexQuery.data;
+  // Logcomex AI query (only when armador is selected and tracking started)
+  const aiQuery = trpc.import.fetchLogcomexAiTracking.useQuery(
+    { container: containerNumber || "", armador: selectedArmador },
+    { 
+      enabled: isAiMode && aiTrackingStarted && !!selectedArmador,
+      retry: 0,
+      // Long timeout since API is async (can take 30-120s)
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  // Get armadores list
+  const armadoresQuery = trpc.import.getArmadores.useQuery(undefined, {
+    enabled: isAiMode,
+  });
+
+  // Determine loading/error/data based on mode
+  const isLoading = isAiMode ? aiQuery.isLoading : (isOneMode ? oneQuery.isLoading : logcomexQuery.isLoading);
+  const error = isAiMode ? aiQuery.error : (isOneMode ? oneQuery.error : logcomexQuery.error);
+  const rawData = isAiMode ? aiQuery.data : (isOneMode ? oneQuery.data : logcomexQuery.data);
 
   // Normalize data to a common shape for the UI
-  const data = rawData ? normalizeTrackingData(rawData, !!blNumber) : null;
+  const data = rawData ? normalizeTrackingData(rawData, isOneMode, isAiMode) : null;
+
+  // AI-specific data (executive summary, risk, etc.)
+  const aiData = isAiMode && rawData ? rawData as any : null;
 
   return (
     <div
@@ -56,17 +92,22 @@ export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModal
         {/* Header */}
         <div className="sticky top-0 z-10 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/50 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600/30 border border-indigo-500/50 rounded-xl flex items-center justify-center">
-              <Ship className="w-5 h-5 text-indigo-300" />
+            <div className={`w-10 h-10 ${isAiMode ? 'bg-purple-600/30 border-purple-500/50' : 'bg-indigo-600/30 border-indigo-500/50'} border rounded-xl flex items-center justify-center`}>
+              {isAiMode ? <Brain className="w-5 h-5 text-purple-300" /> : <Ship className="w-5 h-5 text-indigo-300" />}
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">
-                Rastreamento do Embarque
+                {isAiMode ? "Rastreamento Inteligente (AI)" : "Rastreamento do Embarque"}
               </h2>
               {data && (
                 <p className="text-sm text-slate-400">
                   {data.shipment} • {data.documentType} •{" "}
                   <span className="text-indigo-400">{data.carrier}</span>
+                </p>
+              )}
+              {isAiMode && !data && containerNumber && (
+                <p className="text-sm text-slate-400">
+                  Container: <span className="text-purple-400 font-mono">{containerNumber}</span>
                 </p>
               )}
             </div>
@@ -81,15 +122,35 @@ export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModal
 
         {/* Content */}
         <div className="p-6 space-y-5">
-          {isLoading && (
+          {/* AI Mode: Armador selector (if not pre-filled) */}
+          {isAiMode && !aiTrackingStarted && (
+            <ArmadorSelector
+              armadores={armadoresQuery.data || []}
+              selectedArmador={selectedArmador}
+              onSelect={setSelectedArmador}
+              onStart={() => setAiTrackingStarted(true)}
+              containerNumber={containerNumber || ""}
+            />
+          )}
+
+          {/* Loading state */}
+          {isLoading && (isAiMode ? aiTrackingStarted : true) && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-14 h-14 border-4 border-indigo-900 border-t-indigo-400 rounded-full animate-spin" />
               <p className="mt-4 text-slate-400">
-                Buscando dados de rastreamento...
+                {isAiMode 
+                  ? "Consultando Logcomex AI... (pode levar 30-120 segundos)"
+                  : "Buscando dados de rastreamento..."}
               </p>
+              {isAiMode && (
+                <p className="mt-2 text-xs text-slate-500">
+                  A API de inteligência artificial está analisando os dados do container em tempo real
+                </p>
+              )}
             </div>
           )}
 
+          {/* Error state */}
           {error && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-16 h-16 bg-red-900/30 border border-red-700/50 rounded-full flex items-center justify-center mb-4">
@@ -98,12 +159,26 @@ export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModal
               <p className="text-red-400 font-medium">
                 Erro ao buscar rastreamento
               </p>
-              <p className="text-slate-500 text-sm mt-1">{error.message}</p>
+              <p className="text-slate-500 text-sm mt-1 max-w-md text-center">{error.message}</p>
+              {isAiMode && (
+                <button
+                  onClick={() => { setAiTrackingStarted(false); }}
+                  className="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition"
+                >
+                  Tentar novamente
+                </button>
+              )}
             </div>
           )}
 
+          {/* Data display */}
           {data && (
             <>
+              {/* AI Executive Summary & Risk (only for AI mode) */}
+              {isAiMode && aiData && (
+                <AiInsightsPanel aiData={aiData} />
+              )}
+
               {/* Status + Route Info Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <StatusBanner data={data} />
@@ -131,7 +206,7 @@ export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModal
 
               {/* Footer */}
               <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-700/50">
-                {trackingUuid && !blNumber ? (
+                {isLogcomexMode ? (
                   <a
                     href={`https://logcomex.ai/public/workflow-item/${trackingUuid}`}
                     target="_blank"
@@ -140,15 +215,19 @@ export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModal
                   >
                     <ExternalLink className="w-3 h-3" /> Ver na Logcomex
                   </a>
-                ) : blNumber ? (
+                ) : isOneMode ? (
                   <a
-                    href={`https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?trakNoParam=${blNumber.replace(/^ONEY/i, '')}&trakNoTpCdParam=B`}
+                    href={`https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?trakNoParam=${(blNumber || '').replace(/^ONEY/i, '')}&trakNoTpCdParam=B`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition"
                   >
                     <ExternalLink className="w-3 h-3" /> Ver na ONE Line
                   </a>
+                ) : isAiMode ? (
+                  <span className="flex items-center gap-1 text-purple-400">
+                    <Brain className="w-3 h-3" /> Powered by Logcomex AI Agent
+                  </span>
                 ) : null}
                 <p>
                   Atualizado:{" "}
@@ -158,6 +237,129 @@ export function TrackingModal({ trackingUuid, blNumber, onClose }: TrackingModal
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== ARMADOR SELECTOR (AI Mode) =====
+
+function ArmadorSelector({ armadores, selectedArmador, onSelect, onStart, containerNumber }: {
+  armadores: readonly string[] | string[];
+  selectedArmador: string;
+  onSelect: (v: string) => void;
+  onStart: () => void;
+  containerNumber: string;
+}) {
+  return (
+    <div className="bg-gradient-to-br from-purple-900/20 to-slate-800/50 rounded-xl border border-purple-700/30 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 bg-purple-600/30 border border-purple-500/50 rounded-xl flex items-center justify-center">
+          <Brain className="w-5 h-5 text-purple-300" />
+        </div>
+        <div>
+          <h3 className="font-bold text-white">Rastreamento via Logcomex AI</h3>
+          <p className="text-xs text-slate-400">Selecione o armador para rastrear o container <span className="font-mono text-purple-400">{containerNumber}</span></p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-5">
+        {armadores.map((arm) => (
+          <button
+            key={arm}
+            onClick={() => onSelect(arm)}
+            className={`px-3 py-2.5 rounded-lg text-sm font-medium transition border ${
+              selectedArmador === arm
+                ? "bg-purple-600/40 border-purple-500 text-purple-200 shadow-lg shadow-purple-900/30"
+                : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-700/50 hover:border-slate-600"
+            }`}
+          >
+            {arm}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={onStart}
+        disabled={!selectedArmador}
+        className={`w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${
+          selectedArmador
+            ? "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/40"
+            : "bg-slate-700 text-slate-500 cursor-not-allowed"
+        }`}
+      >
+        <Ship className="w-4 h-4" />
+        Rastrear Container
+      </button>
+    </div>
+  );
+}
+
+// ===== AI INSIGHTS PANEL =====
+
+function AiInsightsPanel({ aiData }: { aiData: any }) {
+  const getRiskStyle = (risk: string) => {
+    const r = (risk || "").toLowerCase();
+    if (r.includes("alto") || r.includes("high") || r.includes("critical"))
+      return { bg: "bg-red-900/30 border-red-600/40", text: "text-red-300", icon: "🔴" };
+    if (r.includes("médio") || r.includes("medium") || r.includes("moderate"))
+      return { bg: "bg-amber-900/30 border-amber-600/40", text: "text-amber-300", icon: "🟡" };
+    if (r.includes("baixo") || r.includes("low"))
+      return { bg: "bg-emerald-900/30 border-emerald-600/40", text: "text-emerald-300", icon: "🟢" };
+    return { bg: "bg-slate-800/50 border-slate-600/40", text: "text-slate-300", icon: "⚪" };
+  };
+
+  const riskStyle = getRiskStyle(aiData.operational_risk || "");
+
+  return (
+    <div className="space-y-4">
+      {/* Executive Summary */}
+      {aiData.executive_summary && (
+        <div className="bg-gradient-to-br from-purple-900/20 to-slate-800/30 rounded-xl border border-purple-700/30 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="w-4 h-4 text-purple-400" />
+            <h3 className="font-bold text-white text-sm">Resumo Executivo (AI)</h3>
+          </div>
+          <p className="text-sm text-slate-300 leading-relaxed">{aiData.executive_summary}</p>
+        </div>
+      )}
+
+      {/* Risk + Key Data */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Operational Risk */}
+        {aiData.operational_risk && (
+          <div className={`rounded-xl border p-4 ${riskStyle.bg}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className={`w-4 h-4 ${riskStyle.text}`} />
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">Risco Operacional</span>
+            </div>
+            <p className={`font-bold text-lg ${riskStyle.text}`}>
+              {riskStyle.icon} {aiData.operational_risk}
+            </p>
+          </div>
+        )}
+
+        {/* Booking */}
+        {aiData.booking && (
+          <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Package className="w-4 h-4 text-indigo-400" />
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">Booking</span>
+            </div>
+            <p className="font-bold text-sm text-white font-mono">{aiData.booking}</p>
+          </div>
+        )}
+
+        {/* BL Number */}
+        {aiData.bl_number && (
+          <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <FileText className="w-4 h-4 text-indigo-400" />
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">Bill of Lading</span>
+            </div>
+            <p className="font-bold text-sm text-white font-mono">{aiData.bl_number}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -200,7 +402,54 @@ interface NormalizedEvent {
   vessel?: string;
 }
 
-function normalizeTrackingData(raw: any, isOneTracking: boolean): NormalizedTrackingData {
+function normalizeTrackingData(raw: any, isOneTracking: boolean, isAiTracking: boolean): NormalizedTrackingData {
+  if (isAiTracking) {
+    // Logcomex AI Agent data shape
+    const events: NormalizedEvent[] = (raw.events || []).map((e: any, i: number) => ({
+      id: i,
+      description: e.event || e.description || '',
+      eventSlug: (e.event || '').toLowerCase().replace(/\s+/g, '_'),
+      dateTime: e.date || '',
+      location: e.location || '',
+      hasOccurred: e.has_occurred !== false,
+      isCustoms: (e.event || '').toLowerCase().includes('customs') || (e.event || '').toLowerCase().includes('alfândega'),
+      vessel: e.vessel || undefined,
+    }));
+
+    // Calculate progress from events
+    const totalEvents = events.length;
+    const occurredEvents = events.filter(e => e.hasOccurred).length;
+    const progress = totalEvents > 0 ? Math.round((occurredEvents / totalEvents) * 100) : 0;
+
+    return {
+      shipment: raw.container || raw.bl_number || '',
+      documentType: raw.bl_number ? 'BL' : 'Container',
+      carrier: raw.carrier || '',
+      origin: raw.origin_port || '',
+      destination: raw.destination_port || '',
+      vessel: raw.vessel_name || '',
+      voyage: raw.voyage || '',
+      etd: raw.etd || null,
+      eta: raw.eta || null,
+      currentStatus: raw.current_status || raw.last_event || '',
+      currentStatusSlug: (raw.current_status || '').toLowerCase().replace(/\s+/g, '_'),
+      progress,
+      vesselPosition: null, // AI doesn't provide vessel position
+      routeCoordinates: [],
+      originName: raw.origin_port || 'Origem',
+      destName: raw.destination_port || 'Destino',
+      transshipments: [],
+      events,
+      containers: [],
+      containerInfo: raw.container ? {
+        number: raw.container,
+        type: '',
+        weight: '',
+      } : null,
+      sailingLegs: null,
+    };
+  }
+
   if (isOneTracking) {
     // ONE Line data shape
     return {
@@ -240,7 +489,7 @@ function normalizeTrackingData(raw: any, isOneTracking: boolean): NormalizedTrac
       sailingLegs: raw.sailingLegs || null,
     };
   } else {
-    // Logcomex data shape (existing)
+    // Logcomex data shape (existing UUID-based)
     return {
       shipment: raw.shipment || '',
       documentType: raw.documentType || 'BL',
@@ -370,134 +619,112 @@ function TrackingGoogleMap({ data }: { data: NormalizedTrackingData }) {
           { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
           { featureType: "road", stylers: [{ visibility: "off" }] },
           { featureType: "poi", stylers: [{ visibility: "off" }] },
-          { featureType: "transit", stylers: [{ visibility: "off" }] },
-          { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#334155" }] },
-          { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
         ],
-        disableDefaultUI: true,
-        zoomControl: true,
-        gestureHandling: "cooperative",
       });
 
-      if (routeCoords.length === 0) return;
+      if (!routeCoords.length && !vesselPos) return;
+
+      const bounds = new google.maps.LatLngBounds();
 
       // Draw route polyline
-      new google.maps.Polyline({
-        path: routeCoords,
-        map,
-        strokeColor: "#312e81",
-        strokeOpacity: 0.6,
-        strokeWeight: 4,
-        geodesic: true,
-      });
-
-      new google.maps.Polyline({
-        path: routeCoords,
-        map,
-        strokeColor: "#818cf8",
-        strokeOpacity: 1,
-        strokeWeight: 2,
-        geodesic: true,
-        icons: [
-          {
-            icon: { path: "M 0,-1 0,1", strokeOpacity: 1, strokeWeight: 2, scale: 3 },
-            offset: "0",
-            repeat: "15px",
-          },
-        ],
-      });
-
-      // Origin marker
-      const originEl = document.createElement("div");
-      originEl.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="background:#10b981;border:3px solid #34d399;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(16,185,129,0.5);">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/></svg>
-          </div>
-          <div style="margin-top:4px;background:#10b981;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">${originName}</div>
-        </div>
-      `;
-      new google.maps.marker.AdvancedMarkerElement({
-        map,
-        position: routeCoords[0],
-        content: originEl,
-      });
-
-      // Destination marker
-      const destEl = document.createElement("div");
-      destEl.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="background:#ef4444;border:3px solid #f87171;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(239,68,68,0.5);">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/></svg>
-          </div>
-          <div style="margin-top:4px;background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">${destName}</div>
-        </div>
-      `;
-      new google.maps.marker.AdvancedMarkerElement({
-        map,
-        position: routeCoords[routeCoords.length - 1],
-        content: destEl,
-      });
-
-      // Transshipment markers
-      if (data.transshipments && data.transshipments.length > 0) {
-        for (const ts of data.transshipments) {
-          const tsEl = document.createElement("div");
-          tsEl.innerHTML = `
-            <div style="display:flex;flex-direction:column;align-items:center;">
-              <div style="background:#f59e0b;border:3px solid #fbbf24;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(245,158,11,0.5);">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/></svg>
-              </div>
-              <div style="margin-top:3px;background:#f59e0b;color:white;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${ts.name}</div>
-            </div>
-          `;
-          new google.maps.marker.AdvancedMarkerElement({
-            map,
-            position: { lat: ts.lat, lng: ts.lng },
-            content: tsEl,
-          });
-        }
+      if (routeCoords.length > 1) {
+        const path = routeCoords.map((c) => ({ lat: c.lat, lng: c.lng }));
+        new google.maps.Polyline({
+          path,
+          geodesic: true,
+          strokeColor: "#6366f1",
+          strokeOpacity: 0.8,
+          strokeWeight: 3,
+          map,
+        });
+        path.forEach((p) => bounds.extend(p));
       }
 
-      // Vessel position marker (animated pulse)
-      if (vesselPos) {
-        const vesselEl = document.createElement("div");
-        vesselEl.innerHTML = `
-          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-            <div style="position:absolute;width:40px;height:40px;background:rgba(99,102,241,0.2);border-radius:50%;animation:vesselPulse 2s ease-in-out infinite;"></div>
-            <div style="position:absolute;width:28px;height:28px;background:rgba(99,102,241,0.3);border-radius:50%;animation:vesselPulse 2s ease-in-out infinite 0.5s;"></div>
-            <div style="position:relative;background:#4f46e5;border:3px solid #a5b4fc;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(79,70,229,0.6);">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z" fill="white"/></svg>
-            </div>
-          </div>
-          <style>
-            @keyframes vesselPulse {
-              0%, 100% { transform: scale(1); opacity: 0.6; }
-              50% { transform: scale(1.5); opacity: 0; }
-            }
-          </style>
-        `;
-        new google.maps.marker.AdvancedMarkerElement({
+      // Origin marker
+      if (routeCoords.length > 0) {
+        const origin = routeCoords[0];
+        new google.maps.Marker({
+          position: origin,
           map,
-          position: vesselPos,
-          content: vesselEl,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: "#10b981",
+            fillOpacity: 1,
+            strokeColor: "#fff",
+            strokeWeight: 2,
+          },
+          title: originName,
         });
       }
 
-      // Fit bounds to show entire route
-      const bounds = new google.maps.LatLngBounds();
-      routeCoords.forEach((coord) => bounds.extend(coord));
-      if (vesselPos) bounds.extend(vesselPos);
-      map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+      // Destination marker
+      if (routeCoords.length > 1) {
+        const dest = routeCoords[routeCoords.length - 1];
+        new google.maps.Marker({
+          position: dest,
+          map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: "#ef4444",
+            fillOpacity: 1,
+            strokeColor: "#fff",
+            strokeWeight: 2,
+          },
+          title: destName,
+        });
+      }
+
+      // Transshipment markers
+      data.transshipments.forEach((ts) => {
+        new google.maps.Marker({
+          position: { lat: ts.lat, lng: ts.lng },
+          map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 6,
+            fillColor: "#f59e0b",
+            fillOpacity: 1,
+            strokeColor: "#fff",
+            strokeWeight: 2,
+          },
+          title: ts.name,
+        });
+        bounds.extend({ lat: ts.lat, lng: ts.lng });
+      });
+
+      // Vessel position marker
+      if (vesselPos) {
+        new google.maps.Marker({
+          position: vesselPos,
+          map,
+          icon: {
+            path: "M12 2L4 12l8 10 8-10L12 2z",
+            scale: 1.5,
+            fillColor: "#6366f1",
+            fillOpacity: 1,
+            strokeColor: "#fff",
+            strokeWeight: 2,
+            anchor: new google.maps.Point(12, 12),
+          },
+          title: "Posição atual do navio",
+        });
+        bounds.extend(vesselPos);
+      }
+
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+      }
     },
     [routeCoords, vesselPos, originName, destName, data.transshipments]
   );
 
-  // If no route coordinates, show a simple progress bar fallback
-  if (routeCoords.length === 0) {
+  // If no route coordinates and no vessel position, show progress bar instead
+  if (!routeCoords.length && !vesselPos) {
     return (
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-5">
+        <div className="flex items-center gap-2 mb-3">
           <Globe className="w-4 h-4 text-indigo-400" />
           <h3 className="font-bold text-white text-sm">Progresso da Viagem</h3>
         </div>

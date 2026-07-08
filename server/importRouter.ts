@@ -5,6 +5,7 @@ import { importSuppliers, importPayments, trackingCache, importPos, importPoProd
 import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
+import { fetchLogcomexAiTracking, ARMADORES } from "./logcomexAiTracking";
 import { gql } from "./maxiprodGraphQL";
 
 // Cache de cotação USD/BRL em memória (TTL: 30 minutos)
@@ -89,6 +90,7 @@ export const importRouter = router({
       rastreio: z.string().optional(),
       trackingUuid: z.string().optional(),
       blNumber: z.string().optional(),
+      armador: z.string().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
     }))
@@ -114,6 +116,7 @@ export const importRouter = router({
         rastreio: input.rastreio || null,
         trackingUuid: input.trackingUuid || null,
         blNumber: input.blNumber || null,
+        armador: input.armador || null,
         arrivalDate: input.arrivalDate || null,
         alertDaysBefore: input.alertDaysBefore ?? null,
       });
@@ -139,6 +142,7 @@ export const importRouter = router({
       rastreio: z.string().optional(),
       trackingUuid: z.string().nullable().optional(),
       blNumber: z.string().nullable().optional(),
+      armador: z.string().nullable().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
     }))
@@ -164,6 +168,7 @@ export const importRouter = router({
       if (rawData.rastreio !== undefined) updateData.rastreio = rawData.rastreio || null;
       if (rawData.trackingUuid !== undefined) updateData.trackingUuid = rawData.trackingUuid || null;
       if (rawData.blNumber !== undefined) updateData.blNumber = rawData.blNumber || null;
+      if (rawData.armador !== undefined) updateData.armador = rawData.armador || null;
       if (rawData.arrivalDate !== undefined) updateData.arrivalDate = rawData.arrivalDate || null;
       if (rawData.alertDaysBefore !== undefined) updateData.alertDaysBefore = rawData.alertDaysBefore;
 
@@ -541,6 +546,52 @@ export const importRouter = router({
       } catch (e) { /* cache update is best-effort */ }
       return result;
     }),
+
+  // ===== LOGCOMEX AI TRACKING (Agent API) =====
+  fetchLogcomexAiTracking: publicProcedure
+    .input(z.object({ container: z.string().min(1), armador: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const apiKey = process.env.LOGCOMEX_API_KEY;
+      if (!apiKey) {
+        throw new Error('LOGCOMEX_API_KEY não configurada no servidor');
+      }
+      const result = await fetchLogcomexAiTracking(input.container, input.armador, apiKey);
+      // Update tracking cache with AI data
+      try {
+        const db = await getDb();
+        if (db && result.tracking_found) {
+          const cacheKey = input.container.trim().toUpperCase();
+          const existing = await db.select().from(trackingCache)
+            .where(eq(trackingCache.blNumber, cacheKey))
+            .limit(1);
+          const cacheData = {
+            blNumber: cacheKey,
+            trackingSource: 'logcomex_ai',
+            status: result.current_status || null,
+            vesselName: result.vessel_name || null,
+            voyageNo: result.voyage || null,
+            origin: result.origin_port || null,
+            destination: result.destination_port || null,
+            etd: result.etd || null,
+            eta: result.eta || null,
+            progress: null,
+            vesselLat: null,
+            vesselLng: null,
+            rawData: JSON.stringify(result),
+          };
+          if (existing.length > 0) {
+            await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existing[0].id));
+          } else {
+            await db.insert(trackingCache).values(cacheData);
+          }
+        }
+      } catch (e) { /* cache update is best-effort */ }
+      return result;
+    }),
+
+  getArmadores: publicProcedure.query(() => {
+    return ARMADORES;
+  }),
 
     // ===== FULL DATA (suppliers + payments grouped by section) =====
   getFullData: publicProcedure.query(async () => {
@@ -1843,7 +1894,8 @@ export const importRouter = router({
     const paymentsWithTracking = await db.select().from(importPayments)
       .where(or(
         and(isNotNull(importPayments.blNumber), ne(importPayments.blNumber, '')),
-        and(isNotNull(importPayments.trackingUuid), ne(importPayments.trackingUuid, ''))
+        and(isNotNull(importPayments.trackingUuid), ne(importPayments.trackingUuid, '')),
+        and(isNotNull(importPayments.rastreio), ne(importPayments.rastreio, ''))
       ));
 
     if (paymentsWithTracking.length === 0) return [];
@@ -1900,7 +1952,7 @@ export const importRouter = router({
     const cachedTracking = await db.select().from(trackingCache);
     const cacheByBl = new Map(cachedTracking.map(c => [c.blNumber, c]));
 
-    // Build result: group by unique container (blNumber or trackingUuid)
+    // Build result: group by unique container (blNumber or trackingUuid or rastreio)
     const containers: Array<{
       id: number;
       supplierName: string;
@@ -1910,6 +1962,7 @@ export const importRouter = router({
       blNumber: string | null;
       trackingUuid: string | null;
       rastreio: string | null;
+      armador: string | null;
       status: string;
       products: Array<{ description: string; quantidade: number | null; valorUsd: string | null }>;
       // Tracking cache data
@@ -1956,9 +2009,10 @@ export const importRouter = router({
       const isPoArrived = matchingPo?.navigationStatus === 'chegou_patio' || matchingPo?.navigationStatus === 'concluida' || matchingPo?.navigationStatus === 'recebida';
       if (isPoArrived && !isPaymentNavigating) continue;
 
-      // Get cached tracking data
+      // Get cached tracking data (check BL first, then rastreio/container number for AI cache)
       const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
-      const cached = blClean ? cacheByBl.get(blClean) : null;
+      const rastreioClean = payment.rastreio?.trim().toUpperCase() || '';
+      const cached = blClean ? cacheByBl.get(blClean) : (rastreioClean ? cacheByBl.get(rastreioClean) : null);
 
       // Get products from purchase_order_items (stock module)
       let poProducts = productsByPedido.get(payment.pedido) || [];
@@ -1982,6 +2036,7 @@ export const importRouter = router({
         blNumber: payment.blNumber || null,
         trackingUuid: payment.trackingUuid || null,
         rastreio: payment.rastreio || null,
+        armador: payment.armador || null,
         status: payment.status,
         products: poProducts.map((p: any) => ({
           description: p.descricao || p.description || '',
