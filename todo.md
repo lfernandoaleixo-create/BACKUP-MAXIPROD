@@ -5035,7 +5035,11 @@
 - [ ] Calcular porcentagem correta da viagem baseado em ETD→ETA reais
 
 ## Fix: Rastreio instantâneo (cache-first) - 08/07/2026
-- [ ] Criar endpoint getTrackingCache que retorna dados do cache instantaneamente
-- [ ] TrackingModal: usar cache-first (exibir dados do cache imediatamente)
-- [ ] Disparar refresh da Logcomex AI em background (fire-and-forget) sem bloquear UI
-- [ ] Remover dependência do fetchLogcomexAiTracking síncrono no modal
+- [x] Criar endpoint getTrackingCache que retorna dados do cache instantaneamente
+- [x] TrackingModal: usar cache-first (exibir dados do cache imediatamente)
+- [x] Disparar refresh da Logcomex AI em background (fire-and-forget) sem bloquear UI
+- [x] Remover dependência do fetchLogcomexAiTracking síncrono no modal
+
+## Bug Fix: Erro ao salvar cliente na Gestão Comercial (08/07/2026)
+- [x] Sanitizar limiteCredito: converter "R$ 20.000,00" para "20000.00" antes de salvar no DB (decimal)
+- [x] Corrigido em createVendorClient e updateVendorClient

@@ -3856,7 +3856,12 @@ export const salesRouter = router({
         cnaeFiscal: input.cnaeFiscal || null,
         emailNfe: input.emailNfe || null,
         website: input.website || null,
-        limiteCredito: input.limiteCredito || null,
+        limiteCredito: (() => {
+          if (!input.limiteCredito) return null;
+          const raw = input.limiteCredito.replace(/R\$\s*/gi, '').replace(/\./g, '').replace(',', '.').trim();
+          const parsed = parseFloat(raw);
+          return isNaN(parsed) ? null : parsed.toFixed(2);
+        })(),
         formaCobranca: input.formaCobranca || null,
         tabelaPrecos: input.tabelaPrecos || null,
         condicaoPagamento: input.condicaoPagamento || null,
@@ -3998,10 +4003,9 @@ export const salesRouter = router({
       entregaUf: z.string().max(2).optional(),
       entregaTelefone: z.string().max(30).optional(),
     }))
-    .mutation(async ({ input }) => {
+        .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       const { id, sellerName, possuiRedespacho, enderecoEntregaMesmo, ...updateData } = input;
       // Remove undefined fields - keep empty strings as empty strings (don't convert to null)
       // This prevents wiping existing data when a field is intentionally left empty vs not sent
@@ -4013,6 +4017,19 @@ export const salesRouter = router({
         }
       }
       
+      // Sanitize limiteCredito: convert formatted Brazilian currency to decimal
+      // e.g. "R$ 20.000,00" -> "20000.00", "20.000,00" -> "20000.00"
+      if (cleanData.limiteCredito && typeof cleanData.limiteCredito === 'string') {
+        const raw = cleanData.limiteCredito
+          .replace(/R\$\s*/gi, '') // Remove R$ prefix
+          .replace(/\./g, '')       // Remove thousand separators (dots)
+          .replace(',', '.')         // Convert decimal comma to dot
+          .trim();
+        // If it's a valid number, store it; otherwise store null
+        const parsed = parseFloat(raw);
+        cleanData.limiteCredito = isNaN(parsed) ? null : parsed.toFixed(2);
+      }
+      
       // Handle possuiRedespacho boolean -> tinyint
       if (possuiRedespacho !== undefined) {
         cleanData.possuiRedespacho = possuiRedespacho ? 1 : 0;
@@ -4021,16 +4038,13 @@ export const salesRouter = router({
       if (enderecoEntregaMesmo !== undefined) {
         cleanData.enderecoEntregaMesmo = enderecoEntregaMesmo ? 1 : 0;
       }
-      
       // Track who modified
       if (sellerName) {
         cleanData.lastModifiedBy = sellerName;
       }
-
       if (Object.keys(cleanData).length > 0) {
         await db.update(vendorClients).set(cleanData).where(eq(vendorClients.id, id));
       }
-
       return { success: true };
     }),
 
