@@ -4003,10 +4003,14 @@ export const salesRouter = router({
       if (!db) throw new Error("Database not available");
 
       const { id, sellerName, possuiRedespacho, enderecoEntregaMesmo, ...updateData } = input;
-      // Remove undefined fields
+      // Remove undefined fields - keep empty strings as empty strings (don't convert to null)
+      // This prevents wiping existing data when a field is intentionally left empty vs not sent
       const cleanData: Record<string, any> = {};
       for (const [key, value] of Object.entries(updateData)) {
-        if (value !== undefined) cleanData[key] = value || null;
+        if (value !== undefined) {
+          // Keep empty strings as empty strings, only convert null/undefined to null
+          cleanData[key] = value === '' ? '' : (value ?? null);
+        }
       }
       
       // Handle possuiRedespacho boolean -> tinyint
