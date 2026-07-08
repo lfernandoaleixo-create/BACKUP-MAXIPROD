@@ -4958,3 +4958,6 @@
 - [x] Simular Pedido: permitir Guilherme e Luis simular pedido de venda sem preencher cadastro de cliente
 - [x] Exportar Maxiprod: botão gera CSV compatível com importação de clientes do Maxiprod (dados do cliente cadastrado no pedido)
 - [x] Sincronizar dados completos de clientes do Maxiprod (CNPJ, IE, endereço, telefone, email) para vendor_clients, permitindo autocomplete no pedido de venda
+- [x] Cadastro cliente: CNPJ, Email e Telefone 1 obrigatórios (vermelho, bloqueiam avanço) - exceto para Guilherme
+- [x] Cadastro cliente: Redespacho "Sim" deve pedir também o CNPJ no card azul
+- [x] Cadastro cliente: Pergunta "Endereço de entrega é o mesmo do cadastro?" - Sim=não abre nada, Não=abre card para preencher endereço de entrega

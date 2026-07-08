@@ -3796,6 +3796,16 @@ export const salesRouter = router({
       redespachoCidade: z.string().max(200).optional(),
       redespachoUf: z.string().max(2).optional(),
       redespachoTelefone: z.string().max(30).optional(),
+      redespachoCnpj: z.string().max(20).optional(),
+      enderecoEntregaMesmo: z.boolean().optional(),
+      entregaCep: z.string().max(10).optional(),
+      entregaLogradouro: z.string().max(300).optional(),
+      entregaNumero: z.string().max(20).optional(),
+      entregaComplemento: z.string().max(200).optional(),
+      entregaBairro: z.string().max(200).optional(),
+      entregaCidade: z.string().max(200).optional(),
+      entregaUf: z.string().max(2).optional(),
+      entregaTelefone: z.string().max(30).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -3880,6 +3890,16 @@ export const salesRouter = router({
         redespachoCidade: input.redespachoCidade || null,
         redespachoUf: input.redespachoUf || null,
         redespachoTelefone: input.redespachoTelefone || null,
+        redespachoCnpj: input.redespachoCnpj || null,
+        enderecoEntregaMesmo: input.enderecoEntregaMesmo === false ? 0 : 1,
+        entregaCep: input.entregaCep || null,
+        entregaLogradouro: input.entregaLogradouro || null,
+        entregaNumero: input.entregaNumero || null,
+        entregaComplemento: input.entregaComplemento || null,
+        entregaBairro: input.entregaBairro || null,
+        entregaCidade: input.entregaCidade || null,
+        entregaUf: input.entregaUf || null,
+        entregaTelefone: input.entregaTelefone || null,
       });
 
       return { success: true, id: result[0].insertId };
@@ -3964,12 +3984,22 @@ export const salesRouter = router({
       redespachoCidade: z.string().max(200).optional(),
       redespachoUf: z.string().max(2).optional(),
       redespachoTelefone: z.string().max(30).optional(),
+      redespachoCnpj: z.string().max(20).optional(),
+      enderecoEntregaMesmo: z.boolean().optional(),
+      entregaCep: z.string().max(10).optional(),
+      entregaLogradouro: z.string().max(300).optional(),
+      entregaNumero: z.string().max(20).optional(),
+      entregaComplemento: z.string().max(200).optional(),
+      entregaBairro: z.string().max(200).optional(),
+      entregaCidade: z.string().max(200).optional(),
+      entregaUf: z.string().max(2).optional(),
+      entregaTelefone: z.string().max(30).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      const { id, sellerName, possuiRedespacho, ...updateData } = input;
+      const { id, sellerName, possuiRedespacho, enderecoEntregaMesmo, ...updateData } = input;
       // Remove undefined fields
       const cleanData: Record<string, any> = {};
       for (const [key, value] of Object.entries(updateData)) {
@@ -3979,6 +4009,10 @@ export const salesRouter = router({
       // Handle possuiRedespacho boolean -> tinyint
       if (possuiRedespacho !== undefined) {
         cleanData.possuiRedespacho = possuiRedespacho ? 1 : 0;
+      }
+      // Handle enderecoEntregaMesmo boolean -> tinyint
+      if (enderecoEntregaMesmo !== undefined) {
+        cleanData.enderecoEntregaMesmo = enderecoEntregaMesmo ? 1 : 0;
       }
       
       // Track who modified

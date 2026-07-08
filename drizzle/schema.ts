@@ -2308,6 +2308,18 @@ export const vendorClients = mysqlTable("vendor_clients", {
   redespachoCidade: varchar("redespacho_cidade", { length: 200 }),
   redespachoUf: varchar("redespacho_uf", { length: 2 }),
   redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
+  redespachoCnpj: varchar("redespacho_cnpj", { length: 20 }),
+  
+  // Endereço de entrega (quando diferente do cadastro)
+  enderecoEntregaMesmo: tinyint("endereco_entrega_mesmo").default(1), // 1=mesmo do cadastro, 0=diferente
+  entregaCep: varchar("entrega_cep", { length: 10 }),
+  entregaLogradouro: varchar("entrega_logradouro", { length: 300 }),
+  entregaNumero: varchar("entrega_numero", { length: 20 }),
+  entregaComplemento: varchar("entrega_complemento", { length: 200 }),
+  entregaBairro: varchar("entrega_bairro", { length: 200 }),
+  entregaCidade: varchar("entrega_cidade", { length: 200 }),
+  entregaUf: varchar("entrega_uf", { length: 2 }),
+  entregaTelefone: varchar("entrega_telefone", { length: 30 }),
   
   // Maxiprod sync
   maxiprodId: bigint("maxiprod_id", { mode: "number" }), // ID da empresa no Maxiprod (para dedup na sincronização)

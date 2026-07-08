@@ -2199,6 +2199,8 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const { operator } = useOperator();
+  const isGuilherme = operator?.name === "Guilherme";
   const [cnpjCpf, setCnpjCpf] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
@@ -2244,6 +2246,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [situacaoCobranca, setSituacaoCobranca] = useState("");
   // Redespacho
   const [possuiRedespacho, setPossuiRedespacho] = useState(false);
+  const [redespachoCnpj, setRedespachoCnpj] = useState("");
   const [redespachoCep, setRedespachoCep] = useState("");
   const [redespachoLogradouro, setRedespachoLogradouro] = useState("");
   const [redespachoNumero, setRedespachoNumero] = useState("");
@@ -2252,6 +2255,16 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [redespachoCidade, setRedespachoCidade] = useState("");
   const [redespachoUf, setRedespachoUf] = useState("");
   const [redespachoTelefone, setRedespachoTelefone] = useState("");
+  // Endereço de entrega
+  const [enderecoEntregaMesmo, setEnderecoEntregaMesmo] = useState(true);
+  const [entregaCep, setEntregaCep] = useState("");
+  const [entregaLogradouro, setEntregaLogradouro] = useState("");
+  const [entregaNumero, setEntregaNumero] = useState("");
+  const [entregaComplemento, setEntregaComplemento] = useState("");
+  const [entregaBairro, setEntregaBairro] = useState("");
+  const [entregaCidade, setEntregaCidade] = useState("");
+  const [entregaUf, setEntregaUf] = useState("");
+  const [entregaTelefone, setEntregaTelefone] = useState("");
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -2282,6 +2295,18 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   }, [isCnpj, inscricaoEstadual]);
 
   const handleSave = async () => {
+    // Campos obrigatórios que bloqueiam: CNPJ, Email, Telefone 1 (exceto Guilherme)
+    if (!isGuilherme) {
+      const strictMissing: string[] = [];
+      if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
+      if (!email.trim()) strictMissing.push("E-mail");
+      if (!telefone1.trim()) strictMissing.push("Telefone 1");
+      if (strictMissing.length > 0) {
+        setError(`Campos obrigatórios não preenchidos: ${strictMissing.join(", ")}`);
+        return;
+      }
+    }
+    // Validação informativa dos demais campos
     const missingFields: string[] = [];
     if (!cnpjCpf.trim()) missingFields.push("CNPJ/CPF");
     if (!inscricaoEstadual.trim()) missingFields.push("Inscrição Estadual");
@@ -2294,9 +2319,9 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
     if (!uf.trim()) missingFields.push("UF");
     if (!email.trim()) missingFields.push("E-mail");
     if (!telefone1.trim()) missingFields.push("Telefone 1");
-    if (missingFields.length > 0) {
-      setError(`Campos obrigatórios não preenchidos: ${missingFields.join(", ")}`);
-      return;
+    // Não bloqueia por campos informativos - apenas CNPJ/Email/Telefone1 bloqueiam (exceto Guilherme)
+    if (missingFields.length > 0 && !isGuilherme) {
+      // Já validou os obrigatórios acima, aqui só informa
     }
     setSaving(true);
     setError("");
@@ -2343,6 +2368,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         fornecedorAtual: fornecedorAtual.trim() || undefined,
         situacaoCobranca: situacaoCobranca || undefined,
         possuiRedespacho: possuiRedespacho || undefined,
+        redespachoCnpj: redespachoCnpj.trim() || undefined,
         redespachoCep: redespachoCep.trim() || undefined,
         redespachoLogradouro: redespachoLogradouro.trim() || undefined,
         redespachoNumero: redespachoNumero.trim() || undefined,
@@ -2351,6 +2377,15 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         redespachoCidade: redespachoCidade.trim() || undefined,
         redespachoUf: redespachoUf.trim() || undefined,
         redespachoTelefone: redespachoTelefone.trim() || undefined,
+        enderecoEntregaMesmo: enderecoEntregaMesmo,
+        entregaCep: !enderecoEntregaMesmo ? entregaCep.trim() || undefined : undefined,
+        entregaLogradouro: !enderecoEntregaMesmo ? entregaLogradouro.trim() || undefined : undefined,
+        entregaNumero: !enderecoEntregaMesmo ? entregaNumero.trim() || undefined : undefined,
+        entregaComplemento: !enderecoEntregaMesmo ? entregaComplemento.trim() || undefined : undefined,
+        entregaBairro: !enderecoEntregaMesmo ? entregaBairro.trim() || undefined : undefined,
+        entregaCidade: !enderecoEntregaMesmo ? entregaCidade.trim() || undefined : undefined,
+        entregaUf: !enderecoEntregaMesmo ? entregaUf.trim() || undefined : undefined,
+        entregaTelefone: !enderecoEntregaMesmo ? entregaTelefone.trim() || undefined : undefined,
       });
       onSuccess();
     } catch (e: any) {
@@ -2413,6 +2448,16 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             setRedespachoCidade(ec.redespachoCidade || "");
             setRedespachoUf(ec.redespachoUf || "");
             setRedespachoTelefone(ec.redespachoTelefone || "");
+            setRedespachoCnpj(ec.redespachoCnpj || "");
+            setEnderecoEntregaMesmo(ec.enderecoEntregaMesmo !== 0);
+            setEntregaCep(ec.entregaCep || "");
+            setEntregaLogradouro(ec.entregaLogradouro || "");
+            setEntregaNumero(ec.entregaNumero || "");
+            setEntregaComplemento(ec.entregaComplemento || "");
+            setEntregaBairro(ec.entregaBairro || "");
+            setEntregaCidade(ec.entregaCidade || "");
+            setEntregaUf(ec.entregaUf || "");
+            setEntregaTelefone(ec.entregaTelefone || "");
           }
           return;
         }
@@ -2471,6 +2516,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         fornecedorAtual: fornecedorAtual.trim() || undefined,
         situacaoCobranca: situacaoCobranca || undefined,
         possuiRedespacho: possuiRedespacho || undefined,
+        redespachoCnpj: redespachoCnpj.trim() || undefined,
         redespachoCep: redespachoCep.trim() || undefined,
         redespachoLogradouro: redespachoLogradouro.trim() || undefined,
         redespachoNumero: redespachoNumero.trim() || undefined,
@@ -2479,6 +2525,15 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         redespachoCidade: redespachoCidade.trim() || undefined,
         redespachoUf: redespachoUf.trim() || undefined,
         redespachoTelefone: redespachoTelefone.trim() || undefined,
+        enderecoEntregaMesmo: enderecoEntregaMesmo,
+        entregaCep: !enderecoEntregaMesmo ? entregaCep.trim() || undefined : undefined,
+        entregaLogradouro: !enderecoEntregaMesmo ? entregaLogradouro.trim() || undefined : undefined,
+        entregaNumero: !enderecoEntregaMesmo ? entregaNumero.trim() || undefined : undefined,
+        entregaComplemento: !enderecoEntregaMesmo ? entregaComplemento.trim() || undefined : undefined,
+        entregaBairro: !enderecoEntregaMesmo ? entregaBairro.trim() || undefined : undefined,
+        entregaCidade: !enderecoEntregaMesmo ? entregaCidade.trim() || undefined : undefined,
+        entregaUf: !enderecoEntregaMesmo ? entregaUf.trim() || undefined : undefined,
+        entregaTelefone: !enderecoEntregaMesmo ? entregaTelefone.trim() || undefined : undefined,
       });
       onSuccess();
     } catch (e: any) {
@@ -2653,6 +2708,9 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             <p className="text-[10px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-2 flex items-center gap-1">
               <Truck className="w-3 h-3" /> Endereço Redespacho
             </p>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <FormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <FormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
               <div className="col-span-2">
@@ -2668,6 +2726,52 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             <div className="grid grid-cols-4 gap-2 mt-2">
               <FormInput label="UF" value={redespachoUf} onChange={setRedespachoUf} placeholder="XX" />
               <FormInput label="Telefone" value={redespachoTelefone} onChange={setRedespachoTelefone} placeholder="(00) 00000-0000" />
+            </div>
+          </div>
+        )}
+
+        {/* Endereço de Entrega */}
+        <div className="mt-3 flex items-center gap-3">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Endereço de entrega é o mesmo do cadastro?</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setEnderecoEntregaMesmo(true)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${enderecoEntregaMesmo ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+            >
+              Sim
+            </button>
+            <button
+              type="button"
+              onClick={() => setEnderecoEntregaMesmo(false)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${!enderecoEntregaMesmo ? "bg-orange-600 text-white border-orange-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+            >
+              Não
+            </button>
+          </div>
+        </div>
+
+        {/* Endereço de Entrega diferente */}
+        {!enderecoEntregaMesmo && (
+          <div className="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl">
+            <p className="text-[10px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-2 flex items-center gap-1">
+              <MapPin className="w-3 h-3" /> Endereço de Entrega
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <FormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" />
+              <div className="col-span-2">
+                <FormInput label="Logradouro" value={entregaLogradouro} onChange={setEntregaLogradouro} placeholder="Rua/Av" />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              <FormInput label="Número" value={entregaNumero} onChange={setEntregaNumero} placeholder="Nº" />
+              <FormInput label="Complemento" value={entregaComplemento} onChange={setEntregaComplemento} placeholder="Sala, Bloco..." />
+              <FormInput label="Bairro" value={entregaBairro} onChange={setEntregaBairro} placeholder="Bairro" />
+              <FormInput label="Cidade" value={entregaCidade} onChange={setEntregaCidade} placeholder="Cidade" />
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              <FormInput label="UF" value={entregaUf} onChange={setEntregaUf} placeholder="XX" />
+              <FormInput label="Telefone" value={entregaTelefone} onChange={setEntregaTelefone} placeholder="(00) 00000-0000" />
             </div>
           </div>
         )}
@@ -3879,10 +3983,20 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const canProceedProdutos = items.length > 0 && items.every(i => i.quantidade > 0 && i.precoUnitario > 0);
 
   const handleProceedToProducts = async () => {
+    // Campos OBRIGATÓRIOS que bloqueiam: CNPJ, Email, Telefone 1 (exceto Guilherme)
+    if (!canSkipClient) {
+      const strictMissing: string[] = [];
+      if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
+      if (!emailContato.trim()) strictMissing.push("Email");
+      if (!telefone1.trim()) strictMissing.push("Telefone 1");
+      if (strictMissing.length > 0) {
+        setShowClientValidationError(true);
+        return; // Bloqueia avanço
+      }
+    }
     // Campos com asterisco continuam sinalizados, mas não bloqueiam o avanço
     if (!canProceedCliente) {
       setShowClientValidationError(true);
-      // Não bloqueia mais - permite avançar mesmo com campos faltando
     } else {
       setShowClientValidationError(false);
     }
@@ -4034,13 +4148,32 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             </div>
 
             {/* Validation error message */}
-            {showClientValidationError && clientMissingFields.length > 0 && (
-              <div className="mt-3 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
-                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Campos pendentes (não obrigatórios para avançar):</p>
-                <p className="text-xs text-amber-500 dark:text-amber-300">{clientMissingFields.join(", ")}</p>
-                <p className="text-[10px] text-amber-400 dark:text-amber-500 mt-1">Você pode avançar e preencher depois.</p>
-              </div>
-            )}
+            {showClientValidationError && (() => {
+              const strictMissing = ["CNPJ/CPF", "Email", "Telefone 1"].filter(f => {
+                if (f === "CNPJ/CPF") return !cnpjCpf.trim();
+                if (f === "Email") return !emailContato.trim();
+                if (f === "Telefone 1") return !telefone1.trim();
+                return false;
+              });
+              const hasStrictError = !canSkipClient && strictMissing.length > 0;
+              return (
+                <div className={`mt-3 px-3 py-2.5 ${hasStrictError ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700' : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700'} rounded-lg`}>
+                  {hasStrictError && (
+                    <>
+                      <p className="text-xs font-bold text-red-600 dark:text-red-400 mb-1">Campos obrigatórios (bloqueiam avanço):</p>
+                      <p className="text-xs text-red-500 dark:text-red-300">{strictMissing.join(", ")}</p>
+                    </>
+                  )}
+                  {clientMissingFields.length > 0 && !hasStrictError && (
+                    <>
+                      <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Campos pendentes (não obrigatórios para avançar):</p>
+                      <p className="text-xs text-amber-500 dark:text-amber-300">{clientMissingFields.join(", ")}</p>
+                      <p className="text-[10px] text-amber-400 dark:text-amber-500 mt-1">Você pode avançar e preencher depois.</p>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex justify-end pt-2">
               <button
