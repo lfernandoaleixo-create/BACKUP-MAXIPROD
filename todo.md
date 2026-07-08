@@ -4961,3 +4961,5 @@
 - [x] Cadastro cliente: CNPJ, Email e Telefone 1 obrigatórios (vermelho, bloqueiam avanço) - exceto para Guilherme
 - [x] Cadastro cliente: Redespacho "Sim" deve pedir também o CNPJ no card azul
 - [x] Cadastro cliente: Pergunta "Endereço de entrega é o mesmo do cadastro?" - Sim=não abre nada, Não=abre card para preencher endereço de entrega
+- [x] Cadastro cliente: Ajustar campos obrigatórios para apenas CNPJ, CEP, Telefone 1 e Email (remover Razão Social, IE, endereço)
+- [x] Vincular tabela de preços 008 (Rafael Londrina) ao gestor Juvenal e subgestor Renato - produtos visíveis no estoque + preços

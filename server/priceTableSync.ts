@@ -26,7 +26,16 @@ import { gql } from "./maxiprodGraphQL";
 const PRICE_TABLE_TO_SELLER: Record<string, string> = {
   "DANIEL DA CONCEIÇÃO TAVARES": "DANIEL TAVARES",
   "ROMERA REPRESENTACAO COMERCIAL DE PRODUTOS DESCARTAVEIS LTDA": "ROMERA REPRESENTACOES",
-  // Future mappings will be added as Juvenal creates more price tables
+  "RAFAEL LONDRINA": "RAFAEL",
+};
+
+/**
+ * Tabelas de preço que devem ser compartilhadas com gestores/subgestores.
+ * Quando a tabela 008 (RAFAEL LONDRINA) é sincronizada, os produtos também
+ * ficam visíveis para Juvenal (gestor) e Renato (subgestor).
+ */
+const PRICE_TABLE_SHARED_VISIBILITY: Record<string, string[]> = {
+  "RAFAEL LONDRINA": ["JUVENAL TEIXEIRA", "RENATO LEDESMA"],
 };
 
 /**
@@ -130,6 +139,17 @@ async function autoUpdateSellerVisibility(items: any[]): Promise<void> {
       const seller = sellers.find(s => s.sellerName === sellerName);
       if (!seller) continue;
       await syncVisibilityForSeller(db, seller.id, productCodes);
+    }
+
+    // Shared visibility: also sync products to gestores/subgestores
+    const sharedWith = PRICE_TABLE_SHARED_VISIBILITY[tableDesc];
+    if (sharedWith) {
+      for (const sharedName of sharedWith) {
+        const sharedSeller = sellers.find(s => s.sellerName === sharedName);
+        if (sharedSeller) {
+          await syncVisibilityForSeller(db, sharedSeller.id, productCodes);
+        }
+      }
     }
   }
 }
