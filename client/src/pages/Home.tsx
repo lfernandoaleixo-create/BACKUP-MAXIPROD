@@ -1746,6 +1746,8 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
   const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
   const [trackingBl, setTrackingBl] = useState<string | null>(null);
+  const [trackingContainer, setTrackingContainer] = useState<string | null>(null);
+  const [trackingArmador, setTrackingArmador] = useState<string | null>(null);
   const [showRastreioModal, setShowRastreioModal] = useState(false);
 
   // Fetch tracking links for POs (from Importação data)
@@ -1905,6 +1907,36 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                         {po.produtos.length} {po.produtos.length === 1 ? "produto" : "produtos"}
                       </span>
                     </div>
+                    {/* Cached tracking info from Logcomex */}
+                    {(() => {
+                      const t = trackingQuery.data?.trackingByPO?.[po.referenciaPO.toUpperCase()];
+                      if (!t || (!t.cachedVessel && !t.cachedEta && !t.cachedStatus)) return null;
+                      return (
+                        <div className="flex items-center gap-2 md:gap-3 mt-1 flex-wrap">
+                          {t.cachedVessel && (
+                            <span className="text-[10px] md:text-xs text-indigo-600 font-medium flex items-center gap-0.5">
+                              <Ship className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                              {t.cachedVessel}
+                            </span>
+                          )}
+                          {t.cachedOrigin && t.cachedDestination && (
+                            <span className="text-[10px] md:text-xs text-slate-500">
+                              {t.cachedOrigin} → {t.cachedDestination}
+                            </span>
+                          )}
+                          {t.cachedEta && (
+                            <span className="text-[10px] md:text-xs text-emerald-600 font-semibold flex items-center gap-0.5">
+                              ETA: {new Date(t.cachedEta).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                          {t.cachedStatus && (
+                            <span className="text-[10px] md:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                              {t.cachedStatus}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 shrink-0">
@@ -1923,6 +1955,9 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                               setTrackingUuid(tracking.trackingUuid);
                             } else if (tracking.blNumber) {
                               setTrackingBl(tracking.blNumber);
+                            } else if (tracking.rastreio && tracking.armador) {
+                              setTrackingContainer(tracking.rastreio);
+                              setTrackingArmador(tracking.armador);
                             }
                           }}
                           className="inline-flex items-center justify-center gap-1 w-full px-2 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 text-[10px] md:text-xs font-medium transition-colors"
@@ -2007,11 +2042,13 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
       )}
 
       {/* Tracking Modal */}
-      {(trackingUuid || trackingBl) && (
+      {(trackingUuid || trackingBl || trackingContainer) && (
         <TrackingModal
           trackingUuid={trackingUuid}
           blNumber={trackingBl}
-          onClose={() => { setTrackingUuid(null); setTrackingBl(null); }}
+          containerNumber={trackingContainer}
+          armador={trackingArmador}
+          onClose={() => { setTrackingUuid(null); setTrackingBl(null); setTrackingContainer(null); setTrackingArmador(null); }}
         />
       )}
     </div>

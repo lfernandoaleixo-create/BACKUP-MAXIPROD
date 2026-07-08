@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments, importSuppliers } from "../drizzle/schema";
+import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments, importSuppliers, trackingCache } from "../drizzle/schema";
 import { sql, desc, eq, and, gte, or } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
@@ -655,39 +655,89 @@ export const appRouter = router({
      */
     getPoTrackingLinks: publicProcedure.query(async () => {
       const db = await getDb();
-      if (!db) return { trackingByPO: {} as Record<string, { blNumber: string | null; trackingUuid: string | null; supplierName: string | null }> };
+      if (!db) return { trackingByPO: {} as Record<string, {
+        blNumber: string | null;
+        trackingUuid: string | null;
+        rastreio: string | null;
+        armador: string | null;
+        supplierName: string | null;
+        // Cached tracking data
+        cachedEta: string | null;
+        cachedStatus: string | null;
+        cachedVessel: string | null;
+        cachedOrigin: string | null;
+        cachedDestination: string | null;
+        cachedProgress: number | null;
+      }> };
 
       // Fetch all payments that have tracking info, joined with supplier name
       const payments = await db.select({
         pedido: importPayments.pedido,
         blNumber: importPayments.blNumber,
         trackingUuid: importPayments.trackingUuid,
+        rastreio: importPayments.rastreio,
+        armador: importPayments.armador,
         supplierName: importSuppliers.name,
       }).from(importPayments)
         .leftJoin(importSuppliers, eq(importPayments.supplierId, importSuppliers.id))
         .where(or(
-          sql`${importPayments.blNumber} IS NOT NULL`,
-          sql`${importPayments.trackingUuid} IS NOT NULL`
+          sql`${importPayments.blNumber} IS NOT NULL AND ${importPayments.blNumber} != ''`,
+          sql`${importPayments.trackingUuid} IS NOT NULL AND ${importPayments.trackingUuid} != ''`,
+          sql`${importPayments.rastreio} IS NOT NULL AND ${importPayments.rastreio} != ''`
         ));
 
+      // Fetch tracking cache
+      const cachedTracking = await db.select().from(trackingCache);
+      const cacheByKey = new Map(cachedTracking.map(c => [c.blNumber, c]));
+
       // Build a map keyed by normalized PO reference
-      // Payment pedido values like "PO062" need to match Estoque referenciaPO like "PO62"
-      const trackingByPO: Record<string, { blNumber: string | null; trackingUuid: string | null; supplierName: string | null }> = {};
+      const trackingByPO: Record<string, {
+        blNumber: string | null;
+        trackingUuid: string | null;
+        rastreio: string | null;
+        armador: string | null;
+        supplierName: string | null;
+        cachedEta: string | null;
+        cachedStatus: string | null;
+        cachedVessel: string | null;
+        cachedOrigin: string | null;
+        cachedDestination: string | null;
+        cachedProgress: number | null;
+      }> = {};
+
       for (const p of payments) {
+        // Look up cache by BL, rastreio, or trackingUuid
+        const blClean = p.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
+        const rastreioClean = p.rastreio?.trim().toUpperCase() || '';
+        const cached = blClean ? cacheByKey.get(blClean)
+          : (rastreioClean ? cacheByKey.get(rastreioClean)
+          : (p.trackingUuid ? cacheByKey.get(p.trackingUuid) : null));
+
         // Normalize: extract PO number, remove leading zeros after "PO"
         const raw = (p.pedido || "").trim().toUpperCase();
         const poMatch = raw.match(/^PO0*(\d+)$/);
         const normalizedKey = poMatch ? `PO${poMatch[1]}` : raw;
-        const entry = { blNumber: p.blNumber, trackingUuid: p.trackingUuid, supplierName: p.supplierName };
+        const entry = {
+          blNumber: p.blNumber,
+          trackingUuid: p.trackingUuid,
+          rastreio: p.rastreio,
+          armador: p.armador,
+          supplierName: p.supplierName,
+          cachedEta: cached?.eta || null,
+          cachedStatus: cached?.status || null,
+          cachedVessel: cached?.vesselName || null,
+          cachedOrigin: cached?.origin || null,
+          cachedDestination: cached?.destination || null,
+          cachedProgress: cached?.progress || null,
+        };
         // Store with normalized key
         trackingByPO[normalizedKey] = entry;
         if (normalizedKey !== raw) {
           trackingByPO[raw] = entry;
         }
-        // Also store numeric portion for ZY/ZYZ matching (e.g. "ZYZ2026-018" -> also store "2026-018")
+        // Also store numeric portion for ZY/ZYZ matching
         const numericMatch = raw.match(/(\d{4}-\d+)/);
         if (numericMatch) {
-          // Store with common prefixes to handle ZY vs ZYZ variations
           const numPart = numericMatch[1];
           trackingByPO[`ZY${numPart}`] = entry;
           trackingByPO[`ZYZ${numPart}`] = entry;

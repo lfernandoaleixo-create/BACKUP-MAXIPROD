@@ -443,7 +443,7 @@ export const importRouter = router({
         const occurredEvents = historic.filter((e: any) => e.hasOccurred);
         const lastEvent = occurredEvents[occurredEvents.length - 1];
 
-        return {
+        const result = {
           shipment: logmanagerData?.shipment || logmanagerData?.transportDocument || item.tracking_number || '',
           documentType: logmanagerData?.documentType || 'BL',
           modal: logmanagerData?.modal || 'Maritimo',
@@ -488,6 +488,52 @@ export const importRouter = router({
           rawStatus: item.status,
           updatedAt: item.updated_at,
         };
+
+        // Update tracking cache with Logcomex UUID data
+        try {
+          const cacheDb = await getDb();
+          if (cacheDb) {
+            // Find the payment that has this trackingUuid to get its BL or rastreio as cache key
+            const cachePayments = await cacheDb.select().from(importPayments)
+              .where(eq(importPayments.trackingUuid, input.trackingUuid))
+              .limit(1);
+            const payment = cachePayments[0];
+            // Use BL number or rastreio as cache key (same logic as getActiveContainers)
+            const cacheKey = payment?.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase()
+              || payment?.rastreio?.trim().toUpperCase()
+              || input.trackingUuid;
+            if (cacheKey) {
+              const existing = await cacheDb.select().from(trackingCache)
+                .where(eq(trackingCache.blNumber, cacheKey))
+                .limit(1);
+              const cacheOccurred = (logmanagerData?.historic || []).filter((e: any) => e.hasOccurred);
+              const cacheTotalEvents = (logmanagerData?.historic || []).length;
+              const cacheProgress = cacheTotalEvents > 0 ? Math.round((cacheOccurred.length / cacheTotalEvents) * 100) : null;
+              const cacheData = {
+                blNumber: cacheKey,
+                trackingSource: 'logcomex_uuid',
+                status: logmanagerData?.status || logmanagerData?.translatedStatus || (cacheOccurred[cacheOccurred.length - 1]?.description) || null,
+                vesselName: logmanagerData?.vessel || null,
+                voyageNo: logmanagerData?.voyage || null,
+                origin: logmanagerData?.loadingPortName || null,
+                destination: logmanagerData?.dischargePortName || null,
+                etd: logmanagerData?.etd || logmanagerData?.atd || null,
+                eta: logmanagerData?.eta || logmanagerData?.predictiveEta || null,
+                progress: cacheProgress,
+                vesselLat: vesselLat ? String(vesselLat) : null,
+                vesselLng: vesselLng ? String(vesselLng) : null,
+                rawData: JSON.stringify(result),
+              };
+              if (existing.length > 0) {
+                await cacheDb.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existing[0].id));
+              } else {
+                await cacheDb.insert(trackingCache).values(cacheData);
+              }
+            }
+          }
+        } catch (e) { /* cache update is best-effort */ }
+
+        return result;
       } catch (error: any) {
         throw new Error(`Erro ao buscar rastreamento: ${error.message}`);
       }
@@ -2009,10 +2055,12 @@ export const importRouter = router({
       const isPoArrived = matchingPo?.navigationStatus === 'chegou_patio' || matchingPo?.navigationStatus === 'concluida' || matchingPo?.navigationStatus === 'recebida';
       if (isPoArrived && !isPaymentNavigating) continue;
 
-      // Get cached tracking data (check BL first, then rastreio/container number for AI cache)
+      // Get cached tracking data (check BL first, then rastreio, then trackingUuid)
       const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
       const rastreioClean = payment.rastreio?.trim().toUpperCase() || '';
-      const cached = blClean ? cacheByBl.get(blClean) : (rastreioClean ? cacheByBl.get(rastreioClean) : null);
+      const cached = blClean ? cacheByBl.get(blClean)
+        : (rastreioClean ? cacheByBl.get(rastreioClean)
+        : (payment.trackingUuid ? cacheByBl.get(payment.trackingUuid) : null));
 
       // Get products from purchase_order_items (stock module)
       let poProducts = productsByPedido.get(payment.pedido) || [];

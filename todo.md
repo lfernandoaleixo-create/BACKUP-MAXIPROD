@@ -5011,3 +5011,12 @@
 - [x] getActiveContainers: incluir containers com rastreio (sem BL/UUID) e campo armador
 - [x] ContainerTracker: terceira fonte de dados (aiQuery) para containers AI-only
 - [ ] Integrar rastreio no card de PO (Estoque)
+
+## Logcomex - Exibir dados completos no painel de rastreio (08/07/2026)
+- [x] Garantir que ETA atualizada da Logcomex seja exibida no RastreioEmConjunto
+- [x] Garantir que status atual (ex: "Container vazio devolvido") apareça nos cards
+- [x] Garantir que navio e rota (origem → destino) apareçam corretamente
+- [x] Atualizar cache de tracking com dados frescos da Logcomex (ETA, status, navio)
+- [x] Exibir dados da Logcomex no card de PO (aba Estoque)
+- [x] getPoTrackingLinks retorna dados do cache (ETA, vessel, status, origin, destination, progress)
+- [x] Botão Rastrear no PO card funciona para containers com rastreio+armador (AI)
