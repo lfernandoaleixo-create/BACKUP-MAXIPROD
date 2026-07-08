@@ -3745,7 +3745,7 @@ export const salesRouter = router({
       sellerId: z.number(),
       sellerName: z.string(),
       cnpjCpf: z.string().min(11).max(18),
-      razaoSocial: z.string().min(2).max(300),
+      razaoSocial: z.string().max(300),
       nomeFantasia: z.string().max(300).optional(),
       inscricaoEstadual: z.string().max(30).optional(),
       cep: z.string().max(10).optional(),
@@ -3933,7 +3933,7 @@ export const salesRouter = router({
       id: z.number(),
       sellerName: z.string().optional(), // Quem está fazendo a alteração
       cnpjCpf: z.string().min(11).max(18).optional(),
-      razaoSocial: z.string().min(2).max(300).optional(),
+      razaoSocial: z.string().max(300).optional(),
       nomeFantasia: z.string().max(300).optional(),
       inscricaoEstadual: z.string().max(30).optional(),
       tipoContribuinte: z.string().max(30).optional(),

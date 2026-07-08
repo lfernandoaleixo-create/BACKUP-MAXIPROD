@@ -2279,21 +2279,9 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const createMutation = trpc.sales.createVendorClient.useMutation();
   const updateMutation = trpc.sales.updateVendorClient.useMutation();
 
-  // Auto-determinar tipoContribuinte com base na Inscrição Estadual
+  // Auto-determinar tipoContribuinte - DESATIVADO por enquanto (ajustar configurações primeiro)
   const isCnpj = cnpjCpf.replace(/\D/g, "").length >= 14;
-  useEffect(() => {
-    if (isCnpj) {
-      // Se IE preenchida → Contribuinte, senão → Não Contribuinte
-      const ieClean = inscricaoEstadual.replace(/\D/g, "").toUpperCase();
-      if (ieClean && ieClean !== "ISENTO" && ieClean.length > 0) {
-        setTipoContribuinte("Contribuinte");
-      } else {
-        setTipoContribuinte("Não Contribuinte");
-      }
-    } else {
-      setTipoContribuinte("");
-    }
-  }, [isCnpj, inscricaoEstadual]);
+  // useEffect removido temporariamente - contribuinte não será auto-determinado
 
   const handleSave = async () => {
     // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
@@ -2626,17 +2614,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
         </div>
 
-        {/* Contribuinte determinado automaticamente pela IE */}
-        {tipoContribuinte && isCnpj && (
-          <div className={`mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border ${tipoContribuinte === "Contribuinte" ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700" : "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-700"}`}>
-            <span className={`text-xs font-bold ${tipoContribuinte === "Contribuinte" ? "text-green-700 dark:text-green-300" : "text-orange-700 dark:text-orange-300"}`}>
-              {tipoContribuinte === "Contribuinte" ? "✓ Contribuinte de ICMS" : "✗ Não Contribuinte de ICMS"}
-            </span>
-            <span className="text-[10px] text-slate-500">
-              {tipoContribuinte === "Contribuinte" ? "(IE preenchida → cliente paga DIFAL)" : "(sem IE → Grupo Fox paga DIFAL)"}
-            </span>
-          </div>
-        )}
+        {/* Contribuinte determinado automaticamente pela IE - DESATIVADO temporariamente */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
           <FormInput label="Razão Social" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" />
           <FormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />
