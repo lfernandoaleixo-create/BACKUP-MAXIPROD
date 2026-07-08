@@ -574,6 +574,71 @@ export const salesOrderRouter = router({
         );
       }
 
+      // Upsert client into vendor_clients for Maxiprod export (skip for simulations without client data)
+      if (!input.isSimulation && input.cnpjCpf && input.cnpjCpf.trim()) {
+        try {
+          const cnpjLimpo = input.cnpjCpf.replace(/[^\d]/g, "");
+          if (cnpjLimpo.length >= 11) {
+            const [existingClient] = await db.select({ id: vendorClients.id }).from(vendorClients)
+              .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') = ${cnpjLimpo}`)
+              .limit(1);
+            if (!existingClient) {
+              // Create new vendor_client from order data
+              await db.insert(vendorClients).values({
+                sellerId: input.sellerId,
+                sellerName: seller.sellerName,
+                cnpjCpf: input.cnpjCpf,
+                razaoSocial: input.razaoSocial || "CLIENTE SEM NOME",
+                nomeFantasia: input.nomeFantasia || null,
+                inscricaoEstadual: input.inscricaoEstadual || null,
+                tipoContribuinte: input.tipoContribuinte || null,
+                regimeTributario: input.regimeTributario || null,
+                emailNfe: input.emailNfe || null,
+                cep: input.cep || null,
+                logradouro: input.endereco || null,
+                numero: input.numero || null,
+                complemento: input.complemento || null,
+                bairro: input.bairro || null,
+                cidade: input.municipio || null,
+                uf: input.uf || null,
+                telefone1: input.telefone1 || null,
+                telefone2: input.telefone2 || null,
+                email: input.emailContato || null,
+                segmento: input.segmento || null,
+                cnaeFiscal: input.cnaeFiscal || null,
+              });
+            } else {
+              // Update existing vendor_client with latest data from order
+              await db.update(vendorClients)
+                .set({
+                  razaoSocial: input.razaoSocial || undefined,
+                  nomeFantasia: input.nomeFantasia || undefined,
+                  inscricaoEstadual: input.inscricaoEstadual || undefined,
+                  tipoContribuinte: input.tipoContribuinte || undefined,
+                  regimeTributario: input.regimeTributario || undefined,
+                  emailNfe: input.emailNfe || undefined,
+                  cep: input.cep || undefined,
+                  logradouro: input.endereco || undefined,
+                  numero: input.numero || undefined,
+                  complemento: input.complemento || undefined,
+                  bairro: input.bairro || undefined,
+                  cidade: input.municipio || undefined,
+                  uf: input.uf || undefined,
+                  telefone1: input.telefone1 || undefined,
+                  telefone2: input.telefone2 || undefined,
+                  email: input.emailContato || undefined,
+                  segmento: input.segmento || undefined,
+                  lastModifiedBy: seller.sellerName,
+                  updatedAt: new Date(),
+                })
+                .where(eq(vendorClients.id, existingClient.id));
+            }
+          }
+        } catch (err) {
+          console.error("[SalesOrder] Failed to upsert vendor_client:", err);
+        }
+      }
+
       // Send notification to Juvenal and Vitória about new seller order (skip for simulations)
       if (!input.isSimulation) {
         try {
