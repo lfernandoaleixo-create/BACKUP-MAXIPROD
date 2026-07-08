@@ -606,12 +606,8 @@ export const importRouter = router({
       try {
         const db = await getDb();
         if (db && result.tracking_found) {
-          const cacheKey = input.container.trim().toUpperCase();
-          const existing = await db.select().from(trackingCache)
-            .where(eq(trackingCache.blNumber, cacheKey))
-            .limit(1);
+          const containerKey = input.container.trim().toUpperCase();
           const cacheData = {
-            blNumber: cacheKey,
             trackingSource: 'logcomex_ai',
             status: result.current_status || null,
             vesselName: result.vessel_name || null,
@@ -625,10 +621,35 @@ export const importRouter = router({
             vesselLng: null,
             rawData: JSON.stringify(result),
           };
-          if (existing.length > 0) {
-            await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existing[0].id));
+
+          // Update cache by container number key
+          const existingByContainer = await db.select().from(trackingCache)
+            .where(eq(trackingCache.blNumber, containerKey))
+            .limit(1);
+          if (existingByContainer.length > 0) {
+            await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existingByContainer[0].id));
           } else {
-            await db.insert(trackingCache).values(cacheData);
+            await db.insert(trackingCache).values({ ...cacheData, blNumber: containerKey });
+          }
+
+          // ALSO update cache by BL number if the payment has one
+          // This ensures the fresh Logcomex AI data overrides old ONE Line data
+          const payments = await db.select().from(importPayments)
+            .where(eq(importPayments.rastreio, input.container))
+            .limit(1);
+          const payment = payments[0];
+          if (payment?.blNumber) {
+            const blKey = payment.blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
+            if (blKey && blKey !== containerKey) {
+              const existingByBl = await db.select().from(trackingCache)
+                .where(eq(trackingCache.blNumber, blKey))
+                .limit(1);
+              if (existingByBl.length > 0) {
+                await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existingByBl[0].id));
+              } else {
+                await db.insert(trackingCache).values({ ...cacheData, blNumber: blKey });
+              }
+            }
           }
         }
       } catch (e) { /* cache update is best-effort */ }
@@ -2055,12 +2076,18 @@ export const importRouter = router({
       const isPoArrived = matchingPo?.navigationStatus === 'chegou_patio' || matchingPo?.navigationStatus === 'concluida' || matchingPo?.navigationStatus === 'recebida';
       if (isPoArrived && !isPaymentNavigating) continue;
 
-      // Get cached tracking data (check BL first, then rastreio, then trackingUuid)
+      // Get cached tracking data - check ALL possible keys and prefer most recently updated
       const blClean = payment.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
       const rastreioClean = payment.rastreio?.trim().toUpperCase() || '';
-      const cached = blClean ? cacheByBl.get(blClean)
-        : (rastreioClean ? cacheByBl.get(rastreioClean)
-        : (payment.trackingUuid ? cacheByBl.get(payment.trackingUuid) : null));
+      const candidates = [
+        blClean ? cacheByBl.get(blClean) : null,
+        rastreioClean ? cacheByBl.get(rastreioClean) : null,
+        payment.trackingUuid ? cacheByBl.get(payment.trackingUuid) : null,
+      ].filter(Boolean) as typeof cachedTracking;
+      // Prefer the most recently updated cache entry
+      const cached = candidates.length > 1
+        ? candidates.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())[0]
+        : candidates[0] || null;
 
       // Get products from purchase_order_items (stock module)
       let poProducts = productsByPedido.get(payment.pedido) || [];

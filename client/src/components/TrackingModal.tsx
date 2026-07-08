@@ -37,9 +37,10 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
   const [aiTrackingStarted, setAiTrackingStarted] = useState(!!initialArmador);
 
   // Determine which mode we're in
-  const isAiMode = !!containerNumber && !trackingUuid && !blNumber;
-  const isOneMode = !!blNumber;
-  const isLogcomexMode = !!trackingUuid && !blNumber;
+  // AI mode is primary when containerNumber is provided (even if BL exists)
+  const isAiMode = !!containerNumber;
+  const isOneMode = !!blNumber && !containerNumber;
+  const isLogcomexMode = !!trackingUuid && !blNumber && !containerNumber;
 
   // Logcomex UUID query
   const logcomexQuery = trpc.import.fetchTracking.useQuery(
@@ -47,10 +48,10 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
     { enabled: isLogcomexMode, retry: 1 }
   );
 
-  // ONE Line query
+  // ONE Line query - also fetch when in AI mode if BL is available (for vessel position)
   const oneQuery = trpc.import.fetchOneTracking.useQuery(
     { blNumber: blNumber || "" },
-    { enabled: isOneMode, retry: 1 }
+    { enabled: !!blNumber, retry: 1 }
   );
 
   // Logcomex AI query (only when armador is selected and tracking started)
@@ -75,7 +76,21 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
   const rawData = isAiMode ? aiQuery.data : (isOneMode ? oneQuery.data : logcomexQuery.data);
 
   // Normalize data to a common shape for the UI
-  const data = rawData ? normalizeTrackingData(rawData, isOneMode, isAiMode) : null;
+  let data = rawData ? normalizeTrackingData(rawData, isOneMode, isAiMode) : null;
+
+  // Enrich AI data with ONE Line vessel position/route (for map display)
+  if (data && isAiMode && oneQuery.data) {
+    const oneRaw = oneQuery.data as any;
+    if (oneRaw.vesselPosition) {
+      data = { ...data, vesselPosition: oneRaw.vesselPosition };
+    }
+    if (oneRaw.routeCoordinates?.length) {
+      data = { ...data, routeCoordinates: oneRaw.routeCoordinates };
+    }
+    if (oneRaw.origin && !data.vesselPosition) {
+      // Use origin/destination positions for map even without live vessel position
+    }
+  }
 
   // AI-specific data (executive summary, risk, etc.)
   const aiData = isAiMode && rawData ? rawData as any : null;
@@ -434,7 +449,7 @@ function normalizeTrackingData(raw: any, isOneTracking: boolean, isAiTracking: b
       currentStatus: raw.current_status || raw.last_event || '',
       currentStatusSlug: (raw.current_status || '').toLowerCase().replace(/\s+/g, '_'),
       progress,
-      vesselPosition: null, // AI doesn't provide vessel position
+      vesselPosition: null, // Will be enriched with ONE Line data below
       routeCoordinates: [],
       originName: raw.origin_port || 'Origem',
       destName: raw.destination_port || 'Destino',

@@ -5020,3 +5020,8 @@
 - [x] Exibir dados da Logcomex no card de PO (aba Estoque)
 - [x] getPoTrackingLinks retorna dados do cache (ETA, vessel, status, origin, destination, progress)
 - [x] Botão Rastrear no PO card funciona para containers com rastreio+armador (AI)
+- [x] AI tracking prioritário: quando container tem rastreio+armador, AI é usado em vez de BL/UUID
+- [x] Cache lookup prefere entrada mais recente (AI > ONE Line > UUID) em getPoTrackingLinks e getActiveContainers
+- [x] TrackingModal enriquece dados AI com posição do navio da ONE Line (BL passado junto)
+- [x] RastreioEmConjunto combina AI (ETA/status) + ONE Line (posição no mapa)
+- [x] onTrackAi passa BL para enriquecimento de posição no modal

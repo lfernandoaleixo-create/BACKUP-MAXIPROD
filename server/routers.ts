@@ -706,12 +706,17 @@ export const appRouter = router({
       }> = {};
 
       for (const p of payments) {
-        // Look up cache by BL, rastreio, or trackingUuid
+        // Look up cache - check ALL possible keys and prefer most recently updated
         const blClean = p.blNumber?.replace(/^ONEY/i, '').trim().toUpperCase() || '';
         const rastreioClean = p.rastreio?.trim().toUpperCase() || '';
-        const cached = blClean ? cacheByKey.get(blClean)
-          : (rastreioClean ? cacheByKey.get(rastreioClean)
-          : (p.trackingUuid ? cacheByKey.get(p.trackingUuid) : null));
+        const cacheCandidates = [
+          blClean ? cacheByKey.get(blClean) : null,
+          rastreioClean ? cacheByKey.get(rastreioClean) : null,
+          p.trackingUuid ? cacheByKey.get(p.trackingUuid) : null,
+        ].filter(Boolean) as typeof cachedTracking;
+        const cached = cacheCandidates.length > 1
+          ? cacheCandidates.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())[0]
+          : cacheCandidates[0] || null;
 
         // Normalize: extract PO number, remove leading zeros after "PO"
         const raw = (p.pedido || "").trim().toUpperCase();

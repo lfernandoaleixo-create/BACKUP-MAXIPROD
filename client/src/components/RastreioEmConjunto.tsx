@@ -64,36 +64,43 @@ function ContainerTracker({ container, onDataReadyRef }: {
   container: ContainerData;
   onDataReadyRef: React.MutableRefObject<(id: number, data: LiveData) => void>;
 }) {
-  // Determine which tracking source to use
-  const useAiTracking = !container.blNumber && !container.trackingUuid && !!container.rastreio;
+  // Determine which tracking sources to use
+  // Priority: AI tracking (most accurate ETA/status) + ONE Line (for vessel position on map)
+  const hasAiCapability = !!container.rastreio && !!container.armador;
+  const hasBlCapability = !!container.blNumber;
+  const hasUuidCapability = !!container.trackingUuid;
 
-  const logcomexQuery = trpc.import.fetchTracking.useQuery(
-    { trackingUuid: container.trackingUuid || "" },
-    { enabled: !!container.trackingUuid && !container.blNumber && !useAiTracking, retry: 1, staleTime: 5 * 60 * 1000 }
-  );
-
-  const oneQuery = trpc.import.fetchOneTracking.useQuery(
-    { blNumber: container.blNumber || "" },
-    { enabled: !!container.blNumber, retry: 1, staleTime: 5 * 60 * 1000 }
-  );
-
+  // Always fetch AI if we have rastreio+armador (best ETA/status data)
   const aiQuery = trpc.import.fetchLogcomexAiTracking.useQuery(
     { container: container.rastreio || "", armador: container.armador || "" },
-    { enabled: useAiTracking, retry: 1, staleTime: 5 * 60 * 1000 }
+    { enabled: hasAiCapability, retry: 1, staleTime: 5 * 60 * 1000 }
   );
 
-  const data = container.blNumber ? oneQuery.data : (useAiTracking ? aiQuery.data : logcomexQuery.data);
-  const isOneTracking = !!container.blNumber;
-  const isAiTracking = useAiTracking;
+  // Also fetch ONE Line if we have BL (for vessel position/coordinates)
+  const oneQuery = trpc.import.fetchOneTracking.useQuery(
+    { blNumber: container.blNumber || "" },
+    { enabled: hasBlCapability, retry: 1, staleTime: 5 * 60 * 1000 }
+  );
+
+  // Logcomex UUID tracking (legacy)
+  const logcomexQuery = trpc.import.fetchTracking.useQuery(
+    { trackingUuid: container.trackingUuid || "" },
+    { enabled: hasUuidCapability && !hasBlCapability && !hasAiCapability, retry: 1, staleTime: 5 * 60 * 1000 }
+  );
+
+  // Use AI data as primary (best ETA/status), ONE Line for position, UUID as fallback
+  const aiData = aiQuery.data as any;
+  const oneData = oneQuery.data as any;
+  const uuidData = logcomexQuery.data as any;
+  const primaryData = hasAiCapability ? aiData : (hasBlCapability ? oneData : uuidData);
+  const isAiTracking = hasAiCapability && !!aiData;
+  const isOneTracking = hasBlCapability && !!oneData && !isAiTracking;
 
   // Use a ref to track the last reported data to avoid infinite loops
   const lastReportedRef = useRef<string>("");
 
   useEffect(() => {
-    if (!data) return;
-
-    const d = data as any;
-    const vesselPosition = d.vesselPosition || null;
+    if (!primaryData) return;
 
     let progress: number;
     let routeCoordinates: Array<{ lat: number; lng: number }>;
@@ -104,19 +111,39 @@ function ContainerTracker({ container, onDataReadyRef }: {
     let vessel: string;
     let eta: string | null;
     let currentStatus: string;
+    let vesselPosition: { lat: number; lng: number } | null = null;
 
     if (isAiTracking) {
-      // Logcomex AI tracking - no coordinates, but has vessel/port/status info
-      progress = d.progress || 0;
-      routeCoordinates = [];
-      originName = d.origin || '';
-      originPosition = null;
-      destName = d.destination || '';
-      destPosition = null;
-      vessel = d.vessel || '';
+      const d = aiData;
+      // Logcomex AI tracking - field names are snake_case from the API
+      // Calculate progress from events
+      const events = d.events || [];
+      const occurred = events.filter((e: any) => e.has_occurred);
+      progress = events.length > 0 ? Math.round((occurred.length / events.length) * 100) : 0;
+      originName = d.origin_port || '';
+      destName = d.destination_port || '';
+      vessel = d.vessel_name || '';
       eta = d.eta || null;
-      currentStatus = d.currentStatus || d.translatedStatus || '';
+      currentStatus = d.current_status || '';
+
+      // Get vessel position and route from ONE Line data (if available)
+      if (oneData) {
+        vesselPosition = oneData.vesselPosition || null;
+        routeCoordinates = oneData.routeCoordinates || [];
+        originPosition = oneData.origin ? { lat: oneData.origin.lat, lng: oneData.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
+        destPosition = oneData.destination ? { lat: oneData.destination.lat, lng: oneData.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
+      } else {
+        // Fallback: use cached lat/lng from getActiveContainers
+        const cachedLat = container.vesselLat ? parseFloat(container.vesselLat) : null;
+        const cachedLng = container.vesselLng ? parseFloat(container.vesselLng) : null;
+        vesselPosition = (cachedLat && cachedLng) ? { lat: cachedLat, lng: cachedLng } : null;
+        routeCoordinates = [];
+        originPosition = null;
+        destPosition = null;
+      }
     } else if (isOneTracking) {
+      const d = oneData;
+      vesselPosition = d.vesselPosition || null;
       progress = d.progress || 0;
       routeCoordinates = d.routeCoordinates || [];
       originName = d.origin?.name || d.placeOfReceipt || '';
@@ -127,6 +154,8 @@ function ContainerTracker({ container, onDataReadyRef }: {
       eta = d.podArrival || null;
       currentStatus = d.currentStatus || '';
     } else {
+      const d = uuidData || primaryData;
+      vesselPosition = d.vesselPosition || null;
       progress = d.historic
         ? Math.round((d.historic.filter((e: any) => e.hasOccurred).length / d.historic.length) * 100)
         : 0;
@@ -167,7 +196,7 @@ function ContainerTracker({ container, onDataReadyRef }: {
       lastReportedRef.current = fingerprint;
       onDataReadyRef.current(container.id, liveData);
     }
-  }, [data, container.id, isOneTracking, isAiTracking, onDataReadyRef]);
+  }, [primaryData, aiData, oneData, uuidData, container.id, container.vesselLat, container.vesselLng, isOneTracking, isAiTracking, onDataReadyRef]);
 
   return null;
 }

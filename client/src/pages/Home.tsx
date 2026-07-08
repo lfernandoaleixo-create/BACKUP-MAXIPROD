@@ -1951,13 +1951,16 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (tracking.trackingUuid) {
+                            // Priority: AI tracking (most up-to-date) > UUID > BL
+                            if (tracking.rastreio && tracking.armador) {
+                              setTrackingContainer(tracking.rastreio);
+                              setTrackingArmador(tracking.armador);
+                              // Also pass BL for vessel position enrichment
+                              if (tracking.blNumber) setTrackingBl(tracking.blNumber);
+                            } else if (tracking.trackingUuid) {
                               setTrackingUuid(tracking.trackingUuid);
                             } else if (tracking.blNumber) {
                               setTrackingBl(tracking.blNumber);
-                            } else if (tracking.rastreio && tracking.armador) {
-                              setTrackingContainer(tracking.rastreio);
-                              setTrackingArmador(tracking.armador);
                             }
                           }}
                           className="inline-flex items-center justify-center gap-1 w-full px-2 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 text-[10px] md:text-xs font-medium transition-colors"

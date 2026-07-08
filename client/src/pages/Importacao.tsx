@@ -285,7 +285,7 @@ function PagamentosFornecedores() {
 
       {/* Supplier Sections */}
       {(fullData || []).map((supplier: any) => (
-        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} onTrackAi={(container, armador) => { setTrackingContainer(container); setTrackingArmador(armador); }} />
+        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} onTrackAi={(container, armador, bl) => { setTrackingContainer(container); setTrackingArmador(armador); if (bl) setTrackingBl(bl); }} />
       ))}
 
       {/* Add Supplier */}
@@ -386,7 +386,7 @@ interface SupplierData {
   payments: PaymentData[];
 }
 
-function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null) => void }) {
+function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null) => void }) {
   const effectiveRate = exchangeRate + 0.20;
   const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
@@ -753,7 +753,7 @@ function SectionTable({
   onRenameSection?: (oldTitle: string, newTitle: string) => void;
   onTrack?: (uuid: string) => void;
   onTrackBl?: (bl: string) => void;
-  onTrackAi?: (container: string, armador: string | null) => void;
+  onTrackAi?: (container: string, armador: string | null, bl?: string | null) => void;
   isWinnie?: boolean;
 }) {
   const effectiveRate = exchangeRate + 0.20;
@@ -964,7 +964,7 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
+function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
   const SPREAD = 0.20;
   const effectiveRate = exchangeRate + SPREAD;
   const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
@@ -1044,7 +1044,16 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi,
       <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtRed(payment.saldoDevedorTotal)}</td>
       <td className="px-2 py-2 text-center whitespace-nowrap">
         <div className="flex flex-col items-center gap-1">
-          {(payment.blNumber || payment.trackingUuid) ? (
+          {payment.rastreio && payment.armador ? (
+            <button
+              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador, payment.blNumber)}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-md text-purple-700 font-mono text-[10px] font-medium transition-colors"
+              title="Rastrear via Logcomex AI (dados mais atualizados)"
+            >
+              <Navigation className="w-3 h-3" />
+              {payment.rastreio}
+            </button>
+          ) : (payment.blNumber || payment.trackingUuid) ? (
             <button
               onClick={() => {
                 if (payment.trackingUuid) {
@@ -1061,7 +1070,7 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi,
             </button>
           ) : payment.rastreio ? (
             <button
-              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador)}
+              onClick={() => onTrackAi && onTrackAi(payment.rastreio!, payment.armador, payment.blNumber)}
               className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-md text-purple-700 font-mono text-[10px] font-medium transition-colors"
               title="Rastrear via Logcomex AI"
             >
