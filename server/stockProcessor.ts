@@ -917,7 +917,86 @@ export async function processStockData(): Promise<void> {
   }
   
   for (const [parentCode, children] of Array.from(variantsByParent.entries())) {
-    const parent = processedByCode.get(parentCode);
+    let parent = processedByCode.get(parentCode);
+    
+    // ─── Virtual Parent Support ───
+    // If parentCode doesn't exist in stock (e.g., 'ECOM'), create a synthetic parent
+    // that aggregates all its children. Used for grouping products like "Estoque E-commerce".
+    if (!parent && children.length > 0) {
+      // Get first child to inherit grupo/subgrupo
+      const firstChild = processedByCode.get(children[0].childCode);
+      if (!firstChild) continue;
+      
+      // Virtual parent names
+      const VIRTUAL_PARENT_NAMES: Record<string, string> = {
+        'ECOM': 'Estoque "E-commerce"',
+      };
+      const virtualName = VIRTUAL_PARENT_NAMES[parentCode] || `Agrupador ${parentCode}`;
+      
+      // Create synthetic parent with aggregated stock from children
+      let totalEstoqueUn = 0;
+      let totalPedidosUn = 0;
+      let maxUpb = 0;
+      for (const child of children) {
+        const childItem = processedByCode.get(child.childCode);
+        if (childItem) {
+          totalEstoqueUn += childItem.estoqueUn;
+          totalPedidosUn += childItem.pedidosUn;
+          if (childItem.unidadesPorCaixa && childItem.unidadesPorCaixa > maxUpb) {
+            maxUpb = childItem.unidadesPorCaixa;
+          }
+        }
+      }
+      const upb = maxUpb || 1;
+      const totalEstoqueCx = Math.floor(totalEstoqueUn / upb);
+      const totalPedidosCx = Math.ceil(totalPedidosUn / upb);
+      const disponivelUn = totalEstoqueUn - totalPedidosUn;
+      const disponivelCx = Math.floor(disponivelUn / upb);
+      
+      parent = {
+        codigoItem: parentCode,
+        descricaoItem: virtualName,
+        unidadeMedida: firstChild.unidadeMedida,
+        grupoCodigo: firstChild.grupoCodigo,
+        superGrupoCodigo: firstChild.superGrupoCodigo,
+        descricaoGrupo: firstChild.descricaoGrupo,
+        empresaDona: firstChild.empresaDona,
+        estoqueUn: totalEstoqueUn,
+        estoqueCx: totalEstoqueCx,
+        unidadesPorCaixa: upb,
+        pedidosUn: totalPedidosUn,
+        pedidosCx: totalPedidosCx,
+        pedidosPorCliente: [],
+        disponivelUn,
+        disponivelCx,
+        poCx: null,
+        poUn: 0,
+        poEntregas: [],
+        poFornecedores: [],
+        poLotes: [],
+        projetadoUn: disponivelUn,
+        projetadoCx: disponivelCx,
+        segmento: firstChild.segmento,
+        grupo: firstChild.grupo,
+        subgrupo: firstChild.subgrupo,
+        isKgProduct: false,
+        estadoConfiguravel: firstChild.estadoConfiguravel,
+        segmentosCRM: [],
+        isParent: true,
+        isChild: false,
+        parentCode: null,
+        variants: [],
+        variantConversionFactor: null,
+        pedidosCxProprio: 0,
+        pedidosUnProprio: 0,
+        pedidosPorClienteProprio: [],
+        ecommerceBreakdown: null,
+        unidadeVenda: firstChild.unidadeVenda,
+      };
+      processed.push(parent);
+      processedByCode.set(parentCode, parent);
+      console.log(`[Virtual Parent] Created '${virtualName}' (${parentCode}) with ${children.length} children, estoque=${totalEstoqueUn}un/${totalEstoqueCx}cx`);
+    }
     if (!parent) continue;
     
     let extraPedidosUn = 0; // pedidos das variações convertidos em unidades do pai

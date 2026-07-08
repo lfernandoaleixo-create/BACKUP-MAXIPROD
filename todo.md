@@ -4990,3 +4990,7 @@
 - [x] Garantir que createOrder e exportação CSV incluam todos os campos do cliente
 - [x] VitoriaOrders: exibir Dados Fiscais, Dados de Venda, CRM, Cobrança do pedido
 - [x] GestorAprovacoes: exibir campos relevantes do pedido (segmento, cobrança, região, perfil)
+
+## Produto-Mãe "Estoque E-commerce" (08/07/2026)
+- [x] Criar produto-mãe virtual "Estoque E-commerce" no sistema de variações (código ECOM, virtual parent no stockProcessor)
+- [x] Adicionar 11 variações: 00482, 00483, 00488, 00489, 00490, 00491, 00492, 00493, 00494, 00495, 00501
