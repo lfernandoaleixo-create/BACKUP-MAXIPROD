@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { MapView } from "@/components/Map";
 import {
@@ -58,16 +58,23 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
     { enabled: !!blNumber, retry: 1 }
   );
 
-  // Logcomex AI query (only when armador is selected and tracking started)
-  const aiQuery = trpc.import.fetchLogcomexAiTracking.useQuery(
-    { container: containerNumber || "", armador: selectedArmador },
-    { 
-      enabled: isAiMode && aiTrackingStarted && !!selectedArmador,
-      retry: 0,
-      // Long timeout since API is async (can take 30-120s)
-      staleTime: 5 * 60 * 1000,
-    }
+  // CACHE-FIRST: Get cached data instantly (no API call)
+  const cacheQuery = trpc.import.getTrackingFromCache.useQuery(
+    { container: containerNumber || "" },
+    { enabled: isAiMode && !!containerNumber, staleTime: 60_000 }
   );
+
+  // Background refresh mutation (fire-and-forget)
+  const refreshMutation = trpc.import.refreshLogcomexAi.useMutation();
+
+  // Trigger background refresh when modal opens (fire-and-forget, non-blocking)
+  const [refreshTriggered, setRefreshTriggered] = useState(false);
+  useEffect(() => {
+    if (isAiMode && aiTrackingStarted && selectedArmador && containerNumber && !refreshTriggered) {
+      setRefreshTriggered(true);
+      refreshMutation.mutate({ container: containerNumber, armador: selectedArmador });
+    }
+  }, [isAiMode, aiTrackingStarted, selectedArmador, containerNumber, refreshTriggered]);
 
   // Get armadores list
   const armadoresQuery = trpc.import.getArmadores.useQuery(undefined, {
@@ -75,9 +82,16 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
   });
 
   // Determine loading/error/data based on mode
-  const isLoading = isAiMode ? aiQuery.isLoading : (isOneMode ? oneQuery.isLoading : logcomexQuery.isLoading);
-  const error = isAiMode ? aiQuery.error : (isOneMode ? oneQuery.error : logcomexQuery.error);
-  const rawData = isAiMode ? aiQuery.data : (isOneMode ? oneQuery.data : logcomexQuery.data);
+  // For AI mode: use cache data (instant), never block on slow API
+  const isLoading = isAiMode 
+    ? cacheQuery.isLoading 
+    : (isOneMode ? oneQuery.isLoading : logcomexQuery.isLoading);
+  const error = isAiMode 
+    ? (cacheQuery.error && !cacheQuery.data ? cacheQuery.error : null)
+    : (isOneMode ? oneQuery.error : logcomexQuery.error);
+  const rawData = isAiMode 
+    ? (cacheQuery.data || null)
+    : (isOneMode ? oneQuery.data : logcomexQuery.data);
 
   // Normalize data to a common shape for the UI
   let data = rawData ? normalizeTrackingData(rawData, isOneMode, isAiMode) : null;
@@ -90,9 +104,6 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
     }
     if (oneRaw.routeCoordinates?.length) {
       data = { ...data, routeCoordinates: oneRaw.routeCoordinates };
-    }
-    if (oneRaw.origin && !data.vesselPosition) {
-      // Use origin/destination positions for map even without live vessel position
     }
   }
 
@@ -192,13 +203,11 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-14 h-14 border-4 border-indigo-900 border-t-indigo-400 rounded-full animate-spin" />
               <p className="mt-4 text-slate-400">
-                {isAiMode 
-                  ? "Consultando Logcomex AI... (pode levar 30-120 segundos)"
-                  : "Buscando dados de rastreamento..."}
+                {"Carregando dados de rastreamento..."}
               </p>
               {isAiMode && (
                 <p className="mt-2 text-xs text-slate-500">
-                  A API de inteligência artificial está analisando os dados do container em tempo real
+                  Buscando dados do cache...
                 </p>
               )}
             </div>
@@ -222,6 +231,20 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
                   Tentar novamente
                 </button>
               )}
+            </div>
+          )}
+
+          {/* No cache data yet for AI mode */}
+          {isAiMode && !isLoading && !error && !data && aiTrackingStarted && (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 bg-amber-900/30 border border-amber-700/50 rounded-full flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-amber-400" />
+              </div>
+              <p className="text-amber-400 font-medium">Dados ainda não disponíveis no cache</p>
+              <p className="text-slate-500 text-sm mt-1 max-w-md text-center">
+                O rastreamento foi solicitado em background. Os dados estarão disponíveis em breve (atualização automática diária às 06:00).
+              </p>
+              <p className="text-xs text-slate-600 mt-3">Refresh em background: {refreshMutation.isSuccess ? '✓ Iniciado' : refreshMutation.isPending ? 'Processando...' : 'Aguardando...'}</p>
             </div>
           )}
 

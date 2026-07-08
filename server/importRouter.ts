@@ -660,6 +660,109 @@ export const importRouter = router({
     return ARMADORES;
   }),
 
+  // Cache-first: return tracking data from cache instantly (no API call)
+  getTrackingFromCache: publicProcedure
+    .input(z.object({ container: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const containerKey = input.container.trim().toUpperCase();
+      // Look up cache by container number
+      const rows = await db.select().from(trackingCache)
+        .where(eq(trackingCache.blNumber, containerKey))
+        .limit(1);
+      if (rows.length > 0 && rows[0].rawData) {
+        try {
+          const parsed = JSON.parse(rows[0].rawData);
+          return {
+            ...parsed,
+            _cached: true,
+            _lastUpdated: rows[0].lastUpdated?.toISOString() || null,
+          };
+        } catch { return null; }
+      }
+      // Also try by BL if payment has one
+      const payments = await db.select().from(importPayments)
+        .where(eq(importPayments.rastreio, input.container))
+        .limit(1);
+      if (payments[0]?.blNumber) {
+        const blKey = payments[0].blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
+        const blRows = await db.select().from(trackingCache)
+          .where(eq(trackingCache.blNumber, blKey))
+          .limit(1);
+        if (blRows.length > 0 && blRows[0].rawData) {
+          try {
+            const parsed = JSON.parse(blRows[0].rawData);
+            return {
+              ...parsed,
+              _cached: true,
+              _lastUpdated: blRows[0].lastUpdated?.toISOString() || null,
+            };
+          } catch { return null; }
+        }
+      }
+      return null;
+    }),
+
+  // Fire-and-forget: refresh Logcomex AI data in background (mutation, no blocking)
+  refreshLogcomexAi: publicProcedure
+    .input(z.object({ container: z.string().min(1), armador: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      const apiKey = process.env.LOGCOMEX_API_KEY;
+      if (!apiKey) return { started: false, reason: 'no_api_key' };
+      // Fire and forget - don't await the full result
+      fetchLogcomexAiTracking(input.container, input.armador, apiKey)
+        .then(async (result) => {
+          try {
+            const db = await getDb();
+            if (db && result.tracking_found) {
+              const containerKey = input.container.trim().toUpperCase();
+              const cacheData = {
+                trackingSource: 'logcomex_ai',
+                status: result.current_status || null,
+                vesselName: result.vessel_name || null,
+                voyageNo: result.voyage || null,
+                origin: result.origin_port || null,
+                destination: result.destination_port || null,
+                etd: result.etd || null,
+                eta: result.eta || null,
+                progress: null,
+                vesselLat: null,
+                vesselLng: null,
+                rawData: JSON.stringify(result),
+              };
+              const existing = await db.select().from(trackingCache)
+                .where(eq(trackingCache.blNumber, containerKey))
+                .limit(1);
+              if (existing.length > 0) {
+                await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existing[0].id));
+              } else {
+                await db.insert(trackingCache).values({ ...cacheData, blNumber: containerKey });
+              }
+              // Also update BL key
+              const payments = await db.select().from(importPayments)
+                .where(eq(importPayments.rastreio, input.container))
+                .limit(1);
+              if (payments[0]?.blNumber) {
+                const blKey = payments[0].blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
+                if (blKey && blKey !== containerKey) {
+                  const existingBl = await db.select().from(trackingCache)
+                    .where(eq(trackingCache.blNumber, blKey))
+                    .limit(1);
+                  if (existingBl.length > 0) {
+                    await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existingBl[0].id));
+                  } else {
+                    await db.insert(trackingCache).values({ ...cacheData, blNumber: blKey });
+                  }
+                }
+              }
+            }
+          } catch (e) { /* best effort */ }
+        })
+        .catch(() => { /* ignore background errors */ });
+      return { started: true };
+    }),
+
     // ===== FULL DATA (suppliers + payments grouped by section) =====
   getFullData: publicProcedure.query(async () => {
     const db = await getDb();

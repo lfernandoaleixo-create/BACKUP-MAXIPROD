@@ -5033,3 +5033,9 @@
 - [ ] Mostrar nome do chinês (Winnie, Hank, Betty) no painel de rastreio
 - [ ] Mostrar produtos contidos no container no painel de rastreio
 - [ ] Calcular porcentagem correta da viagem baseado em ETD→ETA reais
+
+## Fix: Rastreio instantâneo (cache-first) - 08/07/2026
+- [ ] Criar endpoint getTrackingCache que retorna dados do cache instantaneamente
+- [ ] TrackingModal: usar cache-first (exibir dados do cache imediatamente)
+- [ ] Disparar refresh da Logcomex AI em background (fire-and-forget) sem bloquear UI
+- [ ] Remover dependência do fetchLogcomexAiTracking síncrono no modal

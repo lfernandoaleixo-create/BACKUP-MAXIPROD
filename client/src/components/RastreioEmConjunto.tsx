@@ -70,10 +70,10 @@ function ContainerTracker({ container, onDataReadyRef }: {
   const hasBlCapability = !!container.blNumber;
   const hasUuidCapability = !!container.trackingUuid;
 
-  // Always fetch AI if we have rastreio+armador (best ETA/status data)
-  const aiQuery = trpc.import.fetchLogcomexAiTracking.useQuery(
-    { container: container.rastreio || "", armador: container.armador || "" },
-    { enabled: hasAiCapability, retry: 1, staleTime: 5 * 60 * 1000 }
+  // CACHE-FIRST: Get AI data from cache instantly (no slow API call)
+  const aiQuery = trpc.import.getTrackingFromCache.useQuery(
+    { container: container.rastreio || "" },
+    { enabled: hasAiCapability, retry: 0, staleTime: 60_000 }
   );
 
   // Also fetch ONE Line if we have BL (for vessel position/coordinates)
