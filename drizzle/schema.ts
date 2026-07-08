@@ -2309,6 +2309,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   redespachoUf: varchar("redespacho_uf", { length: 2 }),
   redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
   redespachoCnpj: varchar("redespacho_cnpj", { length: 20 }),
+  redespachoRazaoSocial: varchar("redespacho_razao_social", { length: 200 }),
   
   // Endereço de entrega (quando diferente do cadastro)
   enderecoEntregaMesmo: tinyint("endereco_entrega_mesmo").default(1), // 1=mesmo do cadastro, 0=diferente

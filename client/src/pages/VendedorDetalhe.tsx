@@ -2247,6 +2247,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   // Redespacho
   const [possuiRedespacho, setPossuiRedespacho] = useState(false);
   const [redespachoCnpj, setRedespachoCnpj] = useState("");
+  const [redespachoRazaoSocial, setRedespachoRazaoSocial] = useState("");
   const [redespachoCep, setRedespachoCep] = useState("");
   const [redespachoLogradouro, setRedespachoLogradouro] = useState("");
   const [redespachoNumero, setRedespachoNumero] = useState("");
@@ -2302,6 +2303,16 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
       if (!cep.trim()) strictMissing.push("CEP");
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
       if (!email.trim()) strictMissing.push("E-mail");
+      // Redespacho: CNPJ e Razão Social obrigatórios
+      if (possuiRedespacho) {
+        if (!redespachoCnpj.trim()) strictMissing.push("CNPJ do Redespacho");
+        if (!redespachoRazaoSocial.trim()) strictMissing.push("Razão Social do Redespacho");
+      }
+      // Endereço de entrega diferente: CEP e Telefone obrigatórios
+      if (!enderecoEntregaMesmo) {
+        if (!entregaCep.trim()) strictMissing.push("CEP da Entrega");
+        if (!entregaTelefone.trim()) strictMissing.push("Telefone da Entrega");
+      }
       if (strictMissing.length > 0) {
         setError(`Campos obrigatórios não preenchidos: ${strictMissing.join(", ")}`);
         return;
@@ -2353,6 +2364,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         situacaoCobranca: situacaoCobranca || undefined,
         possuiRedespacho: possuiRedespacho || undefined,
         redespachoCnpj: redespachoCnpj.trim() || undefined,
+        redespachoRazaoSocial: redespachoRazaoSocial.trim() || undefined,
         redespachoCep: redespachoCep.trim() || undefined,
         redespachoLogradouro: redespachoLogradouro.trim() || undefined,
         redespachoNumero: redespachoNumero.trim() || undefined,
@@ -2433,6 +2445,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             setRedespachoUf(ec.redespachoUf || "");
             setRedespachoTelefone(ec.redespachoTelefone || "");
             setRedespachoCnpj(ec.redespachoCnpj || "");
+            setRedespachoRazaoSocial(ec.redespachoRazaoSocial || "");
             setEnderecoEntregaMesmo(ec.enderecoEntregaMesmo !== 0);
             setEntregaCep(ec.entregaCep || "");
             setEntregaLogradouro(ec.entregaLogradouro || "");
@@ -2501,6 +2514,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         situacaoCobranca: situacaoCobranca || undefined,
         possuiRedespacho: possuiRedespacho || undefined,
         redespachoCnpj: redespachoCnpj.trim() || undefined,
+        redespachoRazaoSocial: redespachoRazaoSocial.trim() || undefined,
         redespachoCep: redespachoCep.trim() || undefined,
         redespachoLogradouro: redespachoLogradouro.trim() || undefined,
         redespachoNumero: redespachoNumero.trim() || undefined,
@@ -2694,6 +2708,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             </p>
             <div className="grid grid-cols-2 gap-2 mb-2">
               <FormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+              <FormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão social do redespacho" required />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <FormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
@@ -2742,7 +2757,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
               <MapPin className="w-3 h-3" /> Endereço de Entrega
             </p>
             <div className="grid grid-cols-3 gap-2">
-              <FormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" />
+              <FormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" required />
               <div className="col-span-2">
                 <FormInput label="Logradouro" value={entregaLogradouro} onChange={setEntregaLogradouro} placeholder="Rua/Av" />
               </div>
@@ -2755,7 +2770,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
             </div>
             <div className="grid grid-cols-4 gap-2 mt-2">
               <FormInput label="UF" value={entregaUf} onChange={setEntregaUf} placeholder="XX" />
-              <FormInput label="Telefone" value={entregaTelefone} onChange={setEntregaTelefone} placeholder="(00) 00000-0000" />
+              <FormInput label="Telefone" value={entregaTelefone} onChange={setEntregaTelefone} placeholder="(00) 00000-0000" required />
             </div>
           </div>
         )}

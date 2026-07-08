@@ -4963,3 +4963,5 @@
 - [x] Cadastro cliente: Pergunta "Endereço de entrega é o mesmo do cadastro?" - Sim=não abre nada, Não=abre card para preencher endereço de entrega
 - [x] Cadastro cliente: Ajustar campos obrigatórios para apenas CNPJ, CEP, Telefone 1 e Email (remover Razão Social, IE, endereço)
 - [x] Vincular tabela de preços 008 (Rafael Londrina) ao gestor Juvenal e subgestor Renato - produtos visíveis no estoque + preços
+- [x] Cadastro cliente: Redespacho exige Razão Social obrigatória além do CNPJ
+- [x] Cadastro cliente: Endereço de entrega diferente exige CEP e Telefone obrigatórios
