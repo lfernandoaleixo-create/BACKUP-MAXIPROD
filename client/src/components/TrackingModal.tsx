@@ -61,7 +61,7 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
   // CACHE-FIRST: Get cached data instantly (no API call)
   const cacheQuery = trpc.import.getTrackingFromCache.useQuery(
     { container: containerNumber || "" },
-    { enabled: isAiMode && !!containerNumber, staleTime: 60_000 }
+    { enabled: isAiMode && !!containerNumber, staleTime: 3 * 60 * 60 * 1000 }
   );
 
   // Background refresh mutation (fire-and-forget)
@@ -786,20 +786,17 @@ function TrackingGoogleMap({ data }: { data: NormalizedTrackingData }) {
 
       // Vessel position marker (ship icon)
       if (vesselPos) {
+        // Use a custom ship marker with label
         new google.maps.Marker({
           position: vesselPos,
           map,
           icon: {
-            path: "M4 19h2.1c.3 0 .5-.2.6-.5l.7-2.5h9.2l.7 2.5c.1.3.3.5.6.5H20v-1l-1.5-6.5H18V9c0-1.1-.9-2-2-2h-4V3.5C12 2.7 11.3 2 10.5 2S9 2.7 9 3.5V7H8c-1.1 0-2 .9-2 2v2.5H4.5L3 18v1h1z",
-            scale: 1.8,
-            fillColor: "#6366f1",
-            fillOpacity: 1,
-            strokeColor: "#fff",
-            strokeWeight: 1.5,
-            anchor: new google.maps.Point(12, 12),
-            rotation: 0,
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#4f46e5" stroke="white" stroke-width="2"/><text x="24" y="30" text-anchor="middle" font-size="22">🚢</text></svg>`),
+            scaledSize: new google.maps.Size(48, 48),
+            anchor: new google.maps.Point(24, 24),
           },
           title: "Posição atual do navio",
+          zIndex: 999,
         });
         bounds.extend(vesselPos);
       }

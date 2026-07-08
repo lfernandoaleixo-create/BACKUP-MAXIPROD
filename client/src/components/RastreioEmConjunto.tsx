@@ -79,13 +79,13 @@ function ContainerTracker({ container, onDataReadyRef }: {
   // Also fetch ONE Line if we have BL (for vessel position/coordinates)
   const oneQuery = trpc.import.fetchOneTracking.useQuery(
     { blNumber: container.blNumber || "" },
-    { enabled: hasBlCapability, retry: 1, staleTime: 5 * 60 * 1000 }
+    { enabled: hasBlCapability, retry: 1, staleTime: 3 * 60 * 60 * 1000 }
   );
 
   // Logcomex UUID tracking (legacy)
   const logcomexQuery = trpc.import.fetchTracking.useQuery(
     { trackingUuid: container.trackingUuid || "" },
-    { enabled: hasUuidCapability && !hasBlCapability && !hasAiCapability, retry: 1, staleTime: 5 * 60 * 1000 }
+    { enabled: hasUuidCapability && !hasBlCapability && !hasAiCapability, retry: 1, staleTime: 3 * 60 * 60 * 1000 }
   );
 
   // Use AI data as primary (best ETA/status), ONE Line for position, UUID as fallback
@@ -218,7 +218,7 @@ function ContainerTracker({ container, onDataReadyRef }: {
 export function RastreioEmConjunto() {
   const { data: containers, isLoading, error, refetch } = trpc.import.getActiveContainers.useQuery(
     undefined,
-    { staleTime: 60 * 1000 }
+    { staleTime: 3 * 60 * 60 * 1000 }
   );
 
   const [liveTrackingData, setLiveTrackingData] = useState<Map<number, LiveData>>(new Map());
@@ -380,15 +380,15 @@ export function RastreioEmConjunto() {
             </div>
           `;
         } else {
-          // In transit: ship icon with color
+          // In transit: ship emoji with color
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:36px;height:36px;background:${color}33;border-radius:50%;"></div>
-              <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px ${color}88;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/></svg>
+              <div style="position:absolute;width:40px;height:40px;background:${color}22;border-radius:50%;animation:pulse 2s infinite;"></div>
+              <div style="position:relative;background:${color};border:2.5px solid white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px ${color}99;">
+                <span style="font-size:18px;line-height:1;">\u{1F6A2}</span>
               </div>
               <div style="margin-top:4px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
-                ${container.supplierName} • ${progress || 0}%
+                ${container.supplierName} \u2022 ${progress || 0}%
               </div>
             </div>
           `;
