@@ -2295,33 +2295,17 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   }, [isCnpj, inscricaoEstadual]);
 
   const handleSave = async () => {
-    // Campos obrigatórios que bloqueiam: CNPJ, Email, Telefone 1 (exceto Guilherme)
+    // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
     if (!isGuilherme) {
       const strictMissing: string[] = [];
       if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
-      if (!email.trim()) strictMissing.push("E-mail");
+      if (!cep.trim()) strictMissing.push("CEP");
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
+      if (!email.trim()) strictMissing.push("E-mail");
       if (strictMissing.length > 0) {
         setError(`Campos obrigatórios não preenchidos: ${strictMissing.join(", ")}`);
         return;
       }
-    }
-    // Validação informativa dos demais campos
-    const missingFields: string[] = [];
-    if (!cnpjCpf.trim()) missingFields.push("CNPJ/CPF");
-    if (!inscricaoEstadual.trim()) missingFields.push("Inscrição Estadual");
-    if (!razaoSocial.trim()) missingFields.push("Razão Social");
-    if (!cep.trim()) missingFields.push("CEP");
-    if (!logradouro.trim()) missingFields.push("Logradouro");
-    if (!numero.trim()) missingFields.push("Número");
-    if (!bairro.trim()) missingFields.push("Bairro");
-    if (!cidade.trim()) missingFields.push("Cidade");
-    if (!uf.trim()) missingFields.push("UF");
-    if (!email.trim()) missingFields.push("E-mail");
-    if (!telefone1.trim()) missingFields.push("Telefone 1");
-    // Não bloqueia por campos informativos - apenas CNPJ/Email/Telefone1 bloqueiam (exceto Guilherme)
-    if (missingFields.length > 0 && !isGuilherme) {
-      // Já validou os obrigatórios acima, aqui só informa
     }
     setSaving(true);
     setError("");
@@ -2622,7 +2606,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" required />
-          <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" required />
+          <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
         </div>
 
         {/* Contribuinte determinado automaticamente pela IE */}
@@ -2637,7 +2621,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <FormInput label="Razão Social" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" required />
+          <FormInput label="Razão Social" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" />
           <FormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
@@ -2665,17 +2649,17 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         <div className="grid grid-cols-3 gap-2">
           <FormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" required />
           <div className="col-span-2">
-            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" required />
+            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" />
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2 mt-2">
-          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" required />
+          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" />
           <FormInput label="Complemento" value={complemento} onChange={setComplemento} placeholder="Sala, Bloco..." />
-          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" required />
-          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" required />
+          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" />
+          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" />
         </div>
         <div className="grid grid-cols-4 gap-2 mt-2">
-          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" required />
+          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" />
           <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" required />
           <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
           <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" required />
@@ -3966,16 +3950,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const getClientMissingFields = () => {
     const missing: string[] = [];
     if (!cnpjCpf.trim()) missing.push("CNPJ/CPF");
-    if (!inscricaoEstadual.trim()) missing.push("Inscrição Estadual");
-    if (!razaoSocial.trim()) missing.push("Razão Social");
     if (!cep.trim()) missing.push("CEP");
-    if (!endereco.trim()) missing.push("Endereço");
-    if (!numero.trim()) missing.push("Número");
-    if (!bairro.trim()) missing.push("Bairro");
-    if (!municipio.trim()) missing.push("Município");
-    if (!uf.trim()) missing.push("UF");
-    if (!emailContato.trim()) missing.push("Email");
     if (!telefone1.trim()) missing.push("Telefone 1");
+    if (!emailContato.trim()) missing.push("Email");
     return missing;
   };
   const clientMissingFields = getClientMissingFields();
@@ -3983,12 +3960,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const canProceedProdutos = items.length > 0 && items.every(i => i.quantidade > 0 && i.precoUnitario > 0);
 
   const handleProceedToProducts = async () => {
-    // Campos OBRIGATÓRIOS que bloqueiam: CNPJ, Email, Telefone 1 (exceto Guilherme)
+    // Campos OBRIGATÓRIOS que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
     if (!canSkipClient) {
       const strictMissing: string[] = [];
       if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
-      if (!emailContato.trim()) strictMissing.push("Email");
+      if (!cep.trim()) strictMissing.push("CEP");
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
+      if (!emailContato.trim()) strictMissing.push("Email");
       if (strictMissing.length > 0) {
         setShowClientValidationError(true);
         return; // Bloqueia avanço
@@ -4133,15 +4111,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={(v) => { setCnpjCpf(v); setShowClientValidationError(false); }} placeholder="00.000.000/0001-00" required error={showClientValidationError} />
-              <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" required error={showClientValidationError} />
+              <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" />
               <OrderFormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia" />
-              <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" required error={showClientValidationError} />
+              <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" />
               <OrderFormInput label="CEP" value={cep} onChange={(v) => { setCep(v); setShowClientValidationError(false); }} placeholder="00000-000" required error={showClientValidationError} />
-              <OrderFormInput label="Endereço" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" required error={showClientValidationError} />
-              <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" required error={showClientValidationError} />
-              <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" required error={showClientValidationError} />
-              <OrderFormInput label="Município" value={municipio} onChange={(v) => { setMunicipio(v); setShowClientValidationError(false); }} placeholder="Cidade" required error={showClientValidationError} />
-              <OrderFormInput label="UF" value={uf} onChange={(v) => { setUf(v); setShowClientValidationError(false); }} placeholder="UF" required error={showClientValidationError} />
+              <OrderFormInput label="Endereço" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" />
+              <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" />
+              <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" />
+              <OrderFormInput label="Município" value={municipio} onChange={(v) => { setMunicipio(v); setShowClientValidationError(false); }} placeholder="Cidade" />
+              <OrderFormInput label="UF" value={uf} onChange={(v) => { setUf(v); setShowClientValidationError(false); }} placeholder="UF" />
               <OrderFormInput label="Telefone 1" value={telefone1} onChange={(v) => { setTelefone1(v); setShowClientValidationError(false); }} placeholder="(00) 00000-0000" required error={showClientValidationError} />
               <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error={showClientValidationError} />
               <OrderFormInput label="Segmento" value={segmento} onChange={setSegmento} placeholder="Indústria, Loja, Distribuidora..." />
@@ -4149,10 +4127,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
             {/* Validation error message */}
             {showClientValidationError && (() => {
-              const strictMissing = ["CNPJ/CPF", "Email", "Telefone 1"].filter(f => {
+              const strictMissing = ["CNPJ/CPF", "CEP", "Telefone 1", "Email"].filter(f => {
                 if (f === "CNPJ/CPF") return !cnpjCpf.trim();
-                if (f === "Email") return !emailContato.trim();
+                if (f === "CEP") return !cep.trim();
                 if (f === "Telefone 1") return !telefone1.trim();
+                if (f === "Email") return !emailContato.trim();
                 return false;
               });
               const hasStrictError = !canSkipClient && strictMissing.length > 0;
