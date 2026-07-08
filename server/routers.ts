@@ -32,6 +32,7 @@ import { importRouter } from "./importRouter";
 import { salesVisitRouter } from "./salesVisitRouter";
 import { checklistRouter } from "./checklistRouter";
 import { stockWithdrawalRouter } from "./stockWithdrawalRouter";
+import { syncClientsFromMaxiprod } from "./clientSyncMaxiprod";
 
 export const appRouter = router({
   system: systemRouter,
@@ -177,11 +178,24 @@ export const appRouter = router({
     }),
 
     /**
+     * Force sync all clients from Maxiprod into vendor_clients
+     */
+    syncClients: publicProcedure.mutation(async () => {
+      const result = await syncClientsFromMaxiprod();
+      return {
+        success: true,
+        message: `Clientes sincronizados: ${result.synced} de ${result.total} (${result.errors} erros)`,
+        ...result,
+      };
+    }),
+
+    /**
      * Test GraphQL API connection
      */
     testConnection: publicProcedure.query(async () => {
       return await testGraphQLConnection();
     }),
+
 
     /**
      * Sync bank balances from accounting ledger (balancete contábil)

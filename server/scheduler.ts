@@ -14,6 +14,7 @@ import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./payme
 import { syncCobrancaPlanilhaAuto } from "./cobrancaPlanilhaSync";
 import { syncPriceTables } from "./priceTableSync";
 import { syncPrevisaoEntregaFromMaxiprod } from "./previsaoEntregaSync";
+import { syncClientsFromMaxiprod } from "./clientSyncMaxiprod";
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
@@ -98,6 +99,13 @@ export function startScheduler(): void {
             console.log(`[Scheduler] Previsão de entrega synced: ${previsaoResult.updated} POs atualizadas`);
           } catch (prevErr: any) {
             console.error(`[Scheduler] Previsão de entrega sync failed: ${prevErr.message}`);
+          }
+          // Sync clients from Maxiprod (once per hour)
+          try {
+            const clientResult = await syncClientsFromMaxiprod();
+            console.log(`[Scheduler] Client sync: ${clientResult.synced} synced, ${clientResult.errors} errors, ${clientResult.total} total`);
+          } catch (clientErr: any) {
+            console.error(`[Scheduler] Client sync failed: ${clientErr.message}`);
           }
         }
       } else {

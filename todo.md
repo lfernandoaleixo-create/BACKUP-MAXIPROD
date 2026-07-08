@@ -4957,3 +4957,4 @@
 - [x] Vincular tabela de preços 007 (B.S.B. Representações) ao vendedor Wellington Branco como Preço Mostrado
 - [x] Simular Pedido: permitir Guilherme e Luis simular pedido de venda sem preencher cadastro de cliente
 - [x] Exportar Maxiprod: botão gera CSV compatível com importação de clientes do Maxiprod (dados do cliente cadastrado no pedido)
+- [x] Sincronizar dados completos de clientes do Maxiprod (CNPJ, IE, endereço, telefone, email) para vendor_clients, permitindo autocomplete no pedido de venda

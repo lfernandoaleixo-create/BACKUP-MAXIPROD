@@ -4444,7 +4444,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                               {/* Price per box */}
                               <div className="flex flex-col items-center">
-                                <span className="text-[8px] sm:text-[9px] text-blue-600 dark:text-blue-400 font-bold mb-0.5 whitespace-nowrap uppercase">Preço Mostrado</span>
+
                                 <span className="text-xs sm:text-sm font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2 py-1 rounded-lg whitespace-nowrap">
                                   {formatCurrencySales(precoBase)}
                                 </span>

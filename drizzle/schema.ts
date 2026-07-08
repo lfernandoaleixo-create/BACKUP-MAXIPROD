@@ -2309,6 +2309,9 @@ export const vendorClients = mysqlTable("vendor_clients", {
   redespachoUf: varchar("redespacho_uf", { length: 2 }),
   redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
   
+  // Maxiprod sync
+  maxiprodId: bigint("maxiprod_id", { mode: "number" }), // ID da empresa no Maxiprod (para dedup na sincronização)
+  source: varchar("source", { length: 20 }).default("manual"), // 'manual' | 'maxiprod' | 'pedido'
   // Rastreamento de modificação
   lastModifiedBy: varchar("last_modified_by", { length: 200 }), // Nome do vendedor que fez a última alteração
   
