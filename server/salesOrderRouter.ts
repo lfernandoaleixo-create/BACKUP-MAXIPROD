@@ -39,6 +39,15 @@ export const salesOrderRouter = router({
         emailNfe: string; cnaeFiscal: string; cep: string; endereco: string;
         numero: string; complemento: string; bairro: string; municipio: string;
         uf: string; telefone1: string; telefone2: string; emailContato: string; segmento: string;
+        nomeContato: string; formaCobranca: string; condicaoPagamento: string;
+        fornecedorAtual: string; observacoes: string;
+        possuiRedespacho: boolean; redespachoCnpj: string; redespachoRazaoSocial: string;
+        redespachoCep: string; redespachoLogradouro: string; redespachoNumero: string;
+        redespachoComplemento: string; redespachoBairro: string; redespachoCidade: string;
+        redespachoUf: string; redespachoTelefone: string;
+        enderecoEntregaMesmo: boolean; entregaCep: string; entregaLogradouro: string;
+        entregaNumero: string; entregaComplemento: string; entregaBairro: string;
+        entregaCidade: string; entregaUf: string; entregaTelefone: string;
       }> = [];
       try {
         const qL = q.toLowerCase();
@@ -76,6 +85,31 @@ export const salesOrderRouter = router({
           telefone2: vc.telefone2 || "",
           emailContato: vc.email || "",
           segmento: vc.segmento || "",
+          nomeContato: vc.nomeContato || "",
+          formaCobranca: vc.formaCobranca || "",
+          condicaoPagamento: vc.condicaoPagamento || "",
+          fornecedorAtual: vc.fornecedorAtual || "",
+          observacoes: vc.observacoes || "",
+          possuiRedespacho: vc.possuiRedespacho === 1,
+          redespachoCnpj: vc.redespachoCnpj || "",
+          redespachoRazaoSocial: vc.redespachoRazaoSocial || "",
+          redespachoCep: vc.redespachoCep || "",
+          redespachoLogradouro: vc.redespachoLogradouro || "",
+          redespachoNumero: vc.redespachoNumero || "",
+          redespachoComplemento: vc.redespachoComplemento || "",
+          redespachoBairro: vc.redespachoBairro || "",
+          redespachoCidade: vc.redespachoCidade || "",
+          redespachoUf: vc.redespachoUf || "",
+          redespachoTelefone: vc.redespachoTelefone || "",
+          enderecoEntregaMesmo: vc.enderecoEntregaMesmo === 1,
+          entregaCep: vc.entregaCep || "",
+          entregaLogradouro: vc.entregaLogradouro || "",
+          entregaNumero: vc.entregaNumero || "",
+          entregaComplemento: vc.entregaComplemento || "",
+          entregaBairro: vc.entregaBairro || "",
+          entregaCidade: vc.entregaCidade || "",
+          entregaUf: vc.entregaUf || "",
+          entregaTelefone: vc.entregaTelefone || "",
         }));
       } catch (e) {
         // Silently continue if vendor_clients lookup fails

@@ -4967,3 +4967,5 @@
 - [x] Cadastro cliente: Endereço de entrega diferente exige CEP e Telefone obrigatórios
 - [x] Card de cliente cadastrado: mostrar TODAS as informações (razão social, CNPJ, IE, CEP, endereço, telefone, email, contato, segmento, regime, cobrança, pagamento, fornecedor, obs, redespacho, entrega)
 - [x] Card de cliente cadastrado: botão de lápis (Editar) para abrir formulário em modo edição
+- [x] Pedido de venda: ao selecionar cliente (novo ou Maxiprod), puxar 100% das informações (redespacho, endereço entrega, todos os campos)
+- [x] Pedido de venda: gerar exportação CSV/XLS no formato Maxiprod para importação com todas as informações do cliente e pedido

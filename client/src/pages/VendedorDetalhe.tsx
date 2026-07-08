@@ -59,6 +59,7 @@ import {
   AlertTriangle,
   Truck,
   Pencil,
+  Download,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -3877,6 +3878,32 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const [telefone2, setTelefone2] = useState("");
   const [emailContato, setEmailContato] = useState("");
   const [segmento, setSegmento] = useState("");
+  const [nomeContato, setNomeContato] = useState("");
+  const [formaCobranca, setFormaCobranca] = useState("");
+  const [fornecedorAtual, setFornecedorAtual] = useState("");
+  const [observacoesCliente, setObservacoesCliente] = useState("");
+  // Redespacho
+  const [possuiRedespacho, setPossuiRedespacho] = useState(false);
+  const [redespachoCnpj, setRedespachoCnpj] = useState("");
+  const [redespachoRazaoSocial, setRedespachoRazaoSocial] = useState("");
+  const [redespachoCep, setRedespachoCep] = useState("");
+  const [redespachoLogradouro, setRedespachoLogradouro] = useState("");
+  const [redespachoNumero, setRedespachoNumero] = useState("");
+  const [redespachoComplemento, setRedespachoComplemento] = useState("");
+  const [redespachoBairro, setRedespachoBairro] = useState("");
+  const [redespachoCidade, setRedespachoCidade] = useState("");
+  const [redespachoUf, setRedespachoUf] = useState("");
+  const [redespachoTelefone, setRedespachoTelefone] = useState("");
+  // Endereço de entrega
+  const [enderecoEntregaMesmo, setEnderecoEntregaMesmo] = useState(true);
+  const [entregaCep, setEntregaCep] = useState("");
+  const [entregaLogradouro, setEntregaLogradouro] = useState("");
+  const [entregaNumero, setEntregaNumero] = useState("");
+  const [entregaComplemento, setEntregaComplemento] = useState("");
+  const [entregaBairro, setEntregaBairro] = useState("");
+  const [entregaCidade, setEntregaCidade] = useState("");
+  const [entregaUf, setEntregaUf] = useState("");
+  const [entregaTelefone, setEntregaTelefone] = useState("");
 
   // Products
   interface OrderItem {
@@ -3981,6 +4008,36 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     setTelefone2(client.telefone2 || "");
     setEmailContato(client.emailContato || "");
     setSegmento(client.segmento || "");
+    setNomeContato(client.nomeContato || "");
+    setFormaCobranca(client.formaCobranca || "");
+    setFornecedorAtual(client.fornecedorAtual || "");
+    setObservacoesCliente(client.observacoes || "");
+    // Redespacho
+    setPossuiRedespacho(!!client.possuiRedespacho);
+    setRedespachoCnpj(client.redespachoCnpj || "");
+    setRedespachoRazaoSocial(client.redespachoRazaoSocial || "");
+    setRedespachoCep(client.redespachoCep || "");
+    setRedespachoLogradouro(client.redespachoLogradouro || "");
+    setRedespachoNumero(client.redespachoNumero || "");
+    setRedespachoComplemento(client.redespachoComplemento || "");
+    setRedespachoBairro(client.redespachoBairro || "");
+    setRedespachoCidade(client.redespachoCidade || "");
+    setRedespachoUf(client.redespachoUf || "");
+    setRedespachoTelefone(client.redespachoTelefone || "");
+    // Endereço de entrega
+    setEnderecoEntregaMesmo(client.enderecoEntregaMesmo !== false);
+    setEntregaCep(client.entregaCep || "");
+    setEntregaLogradouro(client.entregaLogradouro || "");
+    setEntregaNumero(client.entregaNumero || "");
+    setEntregaComplemento(client.entregaComplemento || "");
+    setEntregaBairro(client.entregaBairro || "");
+    setEntregaCidade(client.entregaCidade || "");
+    setEntregaUf(client.entregaUf || "");
+    setEntregaTelefone(client.entregaTelefone || "");
+    // Cond. pagamento do cliente (preenche automaticamente)
+    if (client.condicaoPagamento && !condicaoPagamento) {
+      setCondicaoPagamento(client.condicaoPagamento);
+    }
     setVendorClientId(client.vendorClientId || null);
     setShowClientDropdown(false);
     setClientSearch("");
@@ -4103,6 +4160,60 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     } else {
       doSubmitOrder(false);
     }
+  };
+
+  // Export CSV for Maxiprod import
+  const handleExportCSV = () => {
+    const separator = ";";
+    const today = new Date().toLocaleDateString("pt-BR");
+    // Header row
+    const headers = [
+      "Pedido", "Data", "Vendedor", "CNPJ/CPF", "Razão Social", "Nome Fantasia",
+      "Inscrição Estadual", "Tipo Contribuinte", "Regime Tributário",
+      "CEP", "Endereço", "Número", "Complemento", "Bairro", "Município", "UF",
+      "Telefone 1", "Telefone 2", "Email", "Email NFe",
+      "Forma Cobrança", "Condição Pagamento", "Tipo Frete", "Valor Frete",
+      "Possui Redespacho", "Redespacho CNPJ", "Redespacho Razão Social",
+      "Redespacho CEP", "Redespacho Endereço", "Redespacho Número", "Redespacho Bairro",
+      "Redespacho Cidade", "Redespacho UF", "Redespacho Telefone",
+      "Endereço Entrega Mesmo", "Entrega CEP", "Entrega Endereço", "Entrega Número",
+      "Entrega Bairro", "Entrega Cidade", "Entrega UF", "Entrega Telefone",
+      "Código Produto", "Descrição Produto", "Quantidade", "Unidade", "Preço Unitário", "Total Item",
+      "Observações"
+    ];
+    const rows: string[][] = [];
+    items.forEach((item) => {
+      rows.push([
+        String(submittedOrderNumber || submittedOrderId || ""),
+        today,
+        sellerName,
+        cnpjCpf, razaoSocial, nomeFantasia,
+        inscricaoEstadual, tipoContribuinte, regimeTributario,
+        cep, endereco, numero, complemento, bairro, municipio, uf,
+        telefone1, telefone2, emailContato, emailNfe,
+        formaCobranca, condicaoPagamento, tipoFrete, String(valorFrete || "0"),
+        possuiRedespacho ? "Sim" : "Não", redespachoCnpj, redespachoRazaoSocial,
+        redespachoCep, redespachoLogradouro, redespachoNumero, redespachoBairro,
+        redespachoCidade, redespachoUf, redespachoTelefone,
+        enderecoEntregaMesmo ? "Sim" : "Não", entregaCep, entregaLogradouro, entregaNumero,
+        entregaBairro, entregaCidade, entregaUf, entregaTelefone,
+        item.codigoItem, item.descricaoItem, String(item.quantidade), item.unidadeMedida,
+        item.precoUnitario.toFixed(2).replace(".", ","),
+        (item.quantidade * item.precoUnitario).toFixed(2).replace(".", ","),
+        observacoes || ""
+      ]);
+    });
+    const csvContent = [headers.join(separator), ...rows.map(r => r.map(v => `"${(v || "").replace(/"/g, '""')}"`).join(separator))].join("\n");
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pedido_${submittedOrderNumber || submittedOrderId}_maxiprod.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Required fields for client (same as new client registration)
@@ -5050,6 +5161,62 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                       <span className="text-slate-700 dark:text-slate-200">{municipio}/{uf}</span>
                     </div>
                   )}
+                  {telefone1 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Telefone:</span>
+                      <span className="text-slate-700 dark:text-slate-200">{telefone1}</span>
+                    </div>
+                  )}
+                  {emailContato && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Email:</span>
+                      <span className="text-slate-700 dark:text-slate-200">{emailContato}</span>
+                    </div>
+                  )}
+                  {possuiRedespacho && (
+                    <div className="border-t border-blue-200 dark:border-blue-700 pt-1.5 mt-1.5">
+                      <p className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">Redespacho</p>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500">CNPJ:</span>
+                        <span className="text-slate-700 dark:text-slate-200">{redespachoCnpj}</span>
+                      </div>
+                      {redespachoRazaoSocial && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Razão Social:</span>
+                          <span className="text-slate-700 dark:text-slate-200">{redespachoRazaoSocial}</span>
+                        </div>
+                      )}
+                      {redespachoCep && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Endereço:</span>
+                          <span className="text-slate-700 dark:text-slate-200">{redespachoLogradouro}{redespachoNumero ? `, ${redespachoNumero}` : ''} - {redespachoBairro} - {redespachoCidade}/{redespachoUf} - CEP {redespachoCep}</span>
+                        </div>
+                      )}
+                      {redespachoTelefone && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Telefone:</span>
+                          <span className="text-slate-700 dark:text-slate-200">{redespachoTelefone}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!enderecoEntregaMesmo && (
+                    <div className="border-t border-orange-200 dark:border-orange-700 pt-1.5 mt-1.5">
+                      <p className="text-[10px] font-bold text-orange-600 uppercase mb-0.5">Endereço de Entrega (diferente)</p>
+                      {entregaCep && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Endereço:</span>
+                          <span className="text-slate-700 dark:text-slate-200">{entregaLogradouro}{entregaNumero ? `, ${entregaNumero}` : ''} - {entregaBairro} - {entregaCidade}/{entregaUf} - CEP {entregaCep}</span>
+                        </div>
+                      )}
+                      {entregaTelefone && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Telefone:</span>
+                          <span className="text-slate-700 dark:text-slate-200">{entregaTelefone}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
               {isSimulation && (
@@ -5138,7 +5305,32 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               {municipio && <div><span className="text-slate-400">Local:</span> <span className="text-slate-700 dark:text-slate-200">{municipio}/{uf}</span></div>}
               {condicaoPagamento && <div><span className="text-slate-400">Pagamento:</span> <span className="text-slate-700 dark:text-slate-200">{condicaoPagamento}</span></div>}
               {tipoFrete && <div><span className="text-slate-400">Frete:</span> <span className="text-slate-700 dark:text-slate-200">{tipoFrete}</span></div>}
+              {telefone1 && <div><span className="text-slate-400">Telefone:</span> <span className="text-slate-700 dark:text-slate-200">{telefone1}</span></div>}
+              {emailContato && <div><span className="text-slate-400">Email:</span> <span className="text-slate-700 dark:text-slate-200">{emailContato}</span></div>}
+              {cep && <div><span className="text-slate-400">CEP:</span> <span className="text-slate-700 dark:text-slate-200">{cep}</span></div>}
+              {endereco && <div className="col-span-2"><span className="text-slate-400">Endereço:</span> <span className="text-slate-700 dark:text-slate-200">{endereco}{numero ? `, ${numero}` : ''}{complemento ? ` - ${complemento}` : ''} - {bairro} - {municipio}/{uf}</span></div>}
             </div>
+            {possuiRedespacho && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2 mt-2">
+                <p className="text-[10px] font-bold text-blue-600 uppercase">Redespacho</p>
+                <div className="grid grid-cols-2 gap-1 text-xs mt-1">
+                  <div><span className="text-slate-400">CNPJ:</span> <span className="text-slate-700 dark:text-slate-200">{redespachoCnpj}</span></div>
+                  {redespachoRazaoSocial && <div><span className="text-slate-400">Razão:</span> <span className="text-slate-700 dark:text-slate-200">{redespachoRazaoSocial}</span></div>}
+                  {redespachoCep && <div className="col-span-2"><span className="text-slate-400">End:</span> <span className="text-slate-700 dark:text-slate-200">{redespachoLogradouro}{redespachoNumero ? `, ${redespachoNumero}` : ''} - {redespachoBairro} - {redespachoCidade}/{redespachoUf} CEP {redespachoCep}</span></div>}
+                  {redespachoTelefone && <div><span className="text-slate-400">Tel:</span> <span className="text-slate-700 dark:text-slate-200">{redespachoTelefone}</span></div>}
+                </div>
+              </div>
+            )}
+            {!enderecoEntregaMesmo && (
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-2 mt-2">
+                <p className="text-[10px] font-bold text-orange-600 uppercase">Endereço de Entrega (diferente)</p>
+                <div className="grid grid-cols-2 gap-1 text-xs mt-1">
+                  {entregaCep && <div><span className="text-slate-400">CEP:</span> <span className="text-slate-700 dark:text-slate-200">{entregaCep}</span></div>}
+                  {entregaLogradouro && <div className="col-span-2"><span className="text-slate-400">End:</span> <span className="text-slate-700 dark:text-slate-200">{entregaLogradouro}{entregaNumero ? `, ${entregaNumero}` : ''} - {entregaBairro} - {entregaCidade}/{entregaUf}</span></div>}
+                  {entregaTelefone && <div><span className="text-slate-400">Tel:</span> <span className="text-slate-700 dark:text-slate-200">{entregaTelefone}</span></div>}
+                </div>
+              </div>
+            )}
             {/* Items */}
             <div className="border-t border-slate-200 dark:border-slate-600 pt-3 mt-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Itens do Pedido ({items.length})</p>
@@ -5218,7 +5410,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">{observacoes}</p>
             </div>
           )}
-          <div className="flex justify-center gap-3 pt-2">
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <button
+              onClick={() => handleExportCSV()}
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-4 h-4" /> Exportar CSV (Maxiprod)
+            </button>
             <button
               onClick={() => {
                 if (submittedOrderId && confirm("Tem certeza que deseja APAGAR este pedido? Esta ação não pode ser desfeita.")) {
