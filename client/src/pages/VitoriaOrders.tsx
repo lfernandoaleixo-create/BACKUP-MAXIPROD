@@ -447,26 +447,7 @@ export default function VitoriaOrders() {
                                 <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.cnpjCpf}</p>
                               </div>
                             )}
-                            {order.inscricaoEstadual && (
-                              <div>
-                                <span className="text-slate-400 font-semibold">Inscrição Estadual</span>
-                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.inscricaoEstadual}</p>
-                              </div>
-                            )}
-                            {order.tipoContribuinte && (
-                              <div>
-                                <span className="text-slate-400 font-semibold">Contribuinte ICMS</span>
-                                <p>
-                                  <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                                    order.tipoContribuinte === "Contribuinte"
-                                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                      : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                                  }`}>
-                                    {order.tipoContribuinte}
-                                  </span>
-                                </p>
-                              </div>
-                            )}
+
                             {order.regimeTributario && (
                               <div>
                                 <span className="text-slate-400 font-semibold">Regime Tributário</span>
@@ -586,6 +567,76 @@ export default function VitoriaOrders() {
                             </div>
                           </div>
                         )}
+
+                        {/* Section: Redespacho */}
+                        <div className={`rounded-lg p-3 border ${order.possuiRedespacho ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`}>
+                          <p className={`text-[10px] font-bold uppercase flex items-center gap-1 mb-1 ${order.possuiRedespacho ? "text-blue-600 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+                            🚚 Possui Redespacho: <span className="ml-1 font-bold">{order.possuiRedespacho ? "Sim" : "Não"}</span>
+                          </p>
+                          {order.possuiRedespacho && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px] mt-1">
+                              {order.redespachoCnpj && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CNPJ</span>
+                                  <p className="text-slate-800 dark:text-slate-100 font-mono">{order.redespachoCnpj}</p>
+                                </div>
+                              )}
+                              {order.redespachoRazaoSocial && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Razão Social</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.redespachoRazaoSocial}</p>
+                                </div>
+                              )}
+                              {order.redespachoCep && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.redespachoCep}</p>
+                                </div>
+                              )}
+                              {(order.redespachoLogradouro || order.redespachoNumero || order.redespachoBairro) && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{[order.redespachoLogradouro, order.redespachoNumero, order.redespachoBairro, order.redespachoCidade, order.redespachoUf].filter(Boolean).join(", ")}</p>
+                                </div>
+                              )}
+                              {order.redespachoTelefone && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.redespachoTelefone}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Section: Endereço de Entrega */}
+                        <div className={`rounded-lg p-3 border ${!order.enderecoEntregaMesmo ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`}>
+                          <p className={`text-[10px] font-bold uppercase flex items-center gap-1 mb-1 ${!order.enderecoEntregaMesmo ? "text-orange-600 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>
+                            📦 Endereço de entrega é o mesmo do cadastro: <span className="ml-1 font-bold">{order.enderecoEntregaMesmo ? "Sim" : "Não"}</span>
+                          </p>
+                          {!order.enderecoEntregaMesmo && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px] mt-1">
+                              {order.entregaCep && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.entregaCep}</p>
+                                </div>
+                              )}
+                              {(order.entregaLogradouro || order.entregaNumero || order.entregaBairro) && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{[order.entregaLogradouro, order.entregaNumero, order.entregaBairro, order.entregaCidade, order.entregaUf].filter(Boolean).join(", ")}</p>
+                                </div>
+                              )}
+                              {order.entregaTelefone && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.entregaTelefone}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* ACTION BUTTONS - Status flow */}

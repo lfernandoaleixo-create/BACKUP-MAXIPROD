@@ -4755,6 +4755,16 @@ export const salesRouter = router({
 
       return { success: true, id: result[0].insertId };
     }),
+
+  deleteSellerPermission: publicProcedure
+    .input(z.object({ sellerId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.delete(sellerPermissions).where(eq(sellerPermissions.id, input.sellerId));
+      return { success: true };
+    }),
+
   /**
    * Get period evolution data (annual, semester, quarter)
    * Returns monthly totals for all time, grouped by fixed periods

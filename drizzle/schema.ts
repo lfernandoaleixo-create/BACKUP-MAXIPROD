@@ -2148,6 +2148,28 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   telefone2: varchar("telefone2", { length: 20 }),
   emailContato: varchar("email_contato", { length: 300 }),
   
+  // Redespacho
+  possuiRedespacho: boolean("possui_redespacho").default(false),
+  redespachoCnpj: varchar("redespacho_cnpj", { length: 20 }),
+  redespachoRazaoSocial: varchar("redespacho_razao_social", { length: 300 }),
+  redespachoCep: varchar("redespacho_cep", { length: 10 }),
+  redespachoLogradouro: varchar("redespacho_logradouro", { length: 300 }),
+  redespachoNumero: varchar("redespacho_numero", { length: 20 }),
+  redespachoComplemento: varchar("redespacho_complemento", { length: 200 }),
+  redespachoBairro: varchar("redespacho_bairro", { length: 200 }),
+  redespachoCidade: varchar("redespacho_cidade", { length: 200 }),
+  redespachoUf: varchar("redespacho_uf", { length: 2 }),
+  redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
+  // Endereço de entrega
+  enderecoEntregaMesmo: boolean("endereco_entrega_mesmo").default(true),
+  entregaCep: varchar("entrega_cep", { length: 10 }),
+  entregaLogradouro: varchar("entrega_logradouro", { length: 300 }),
+  entregaNumero: varchar("entrega_numero", { length: 20 }),
+  entregaComplemento: varchar("entrega_complemento", { length: 200 }),
+  entregaBairro: varchar("entrega_bairro", { length: 200 }),
+  entregaCidade: varchar("entrega_cidade", { length: 200 }),
+  entregaUf: varchar("entrega_uf", { length: 2 }),
+  entregaTelefone: varchar("entrega_telefone", { length: 30 }),
   // Dados de venda
   segmento: varchar("segmento", { length: 100 }),
   condicaoPagamento: varchar("condicao_pagamento", { length: 200 }),

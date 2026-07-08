@@ -773,6 +773,16 @@ interface VendedoresTabProps {
 
 function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: VendedoresTabProps) {
   const [, navigate] = useLocation();
+  const deleteMutation = trpc.sales.deleteSellerPermission.useMutation();
+  const utils = trpc.useUtils();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  const handleDeleteSeller = (sellerId: number) => {
+    deleteMutation.mutate(
+      { sellerId },
+      { onSuccess: () => { utils.sales.listSellerPermissions.invalidate(); setConfirmDeleteId(null); } }
+    );
+  };
 
   // Build list of ALL vendedores including gestores themselves
   const allVendedores = useMemo(() => {
@@ -791,7 +801,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
       });
     }
 
-    // Add regular vendedores
+    // Add regular vendedores from Maxiprod
     for (const gc of GESTOR_CARDS) {
       if (gc.role === "Sub-gestor") continue; // Sub-gestor doesn't have vendedores yet
       const vendedores = getVendedoresForGestor(gc.name);
@@ -803,6 +813,18 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
         );
         result.push({ name: v, gestor: gc.name, permission: perm, isGestor: false });
       }
+    }
+
+    // Also include sellers from seller_permissions that aren't already in the list
+    // (e.g. manually added sellers not in Maxiprod representantes)
+    const addedNames = new Set(result.map(r => r.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()));
+    for (const perm of permissions) {
+      const normName = perm.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      if (addedNames.has(normName)) continue;
+      // Skip gestores that are already in the list
+      if (GESTOR_CARDS.some(g => g.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normName)) continue;
+      result.push({ name: perm.sellerName, gestor: perm.gestorName, permission: perm, isGestor: false });
+      addedNames.add(normName);
     }
 
     return result.sort((a, b) => {
@@ -880,6 +902,33 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
                           <div className="w-2 h-2 rounded-full bg-emerald-500" title="Autorizado" />
                         ) : (
                           <div className="w-2 h-2 rounded-full bg-red-400" title="Bloqueado" />
+                        )}
+                        {/* Delete button for sellers with passwords (not gestores) */}
+                        {v.permission && !v.isGestor && (
+                          confirmDeleteId === v.permission.id ? (
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteSeller(v.permission!.id); }}
+                                className="px-2 py-0.5 text-[10px] font-medium bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                                className="px-2 py-0.5 text-[10px] font-medium bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(v.permission!.id); }}
+                              className="p-1 rounded text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                              title="Excluir vendedor"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )
                         )}
                         <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-500" />
                       </div>
@@ -1351,7 +1400,7 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
                   <span className="text-[10px] text-slate-400">%</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-slate-500">M-Alto:</span>
+                  <span className="text-[10px] text-slate-500">Médio-Alto:</span>
                   <input type="number" min="0" max="100" step="0.5" value={tierValues.medioAlto}
                     onChange={(e) => setTierValues(v => ({ ...v, medioAlto: Number(e.target.value) }))}
                     className="w-14 text-xs px-1.5 py-1 rounded border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-amber-400" />

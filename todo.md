@@ -4969,3 +4969,12 @@
 - [x] Card de cliente cadastrado: botão de lápis (Editar) para abrir formulário em modo edição
 - [x] Pedido de venda: ao selecionar cliente (novo ou Maxiprod), puxar 100% das informações (redespacho, endereço entrega, todos os campos)
 - [x] Pedido de venda: gerar exportação CSV/XLS no formato Maxiprod para importação com todas as informações do cliente e pedido
+- [ ] Pedido de venda (detalhe gestor): mostrar se possui redespacho (Sim/Não) + dados do redespacho
+- [ ] Pedido de venda (detalhe gestor): mostrar se endereço entrega é o mesmo (Sim/Não) + endereço alternativo
+- [ ] Pedido de venda (detalhe gestor): remover Contribuinte ICMS e IE da visualização
+- [ ] Card Clientes Cadastrados: mostrar redespacho (Sim/Não + dados) e endereço de entrega (Mesmo/Diferente + dados)
+- [ ] Pedido de Venda (puxar cliente): mostrar perguntas redespacho e endereço de entrega com botões Sim/Não (mesmo layout do cadastro novo)
+- [x] Corrigir label "M-ALTO" para "MÉDIO-ALTO" no painel de estoque
+- [x] Vendedor Rafael não aparece no Painel dos Vendedores - corrigir (incluir sellers de seller_permissions que não estão no Maxiprod)
+- [x] Adicionar lixeira (excluir) ao lado dos vendedores criados com senhas (com confirmação)
+- [x] Pedido de venda: enviar dados de redespacho e endereço de entrega ao backend (createOrder mutation)

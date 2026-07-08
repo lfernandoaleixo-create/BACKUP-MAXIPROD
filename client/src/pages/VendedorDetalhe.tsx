@@ -3228,9 +3228,11 @@ function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted
             )}
           </div>
           {/* Redespacho info */}
-          {client.possuiRedespacho === 1 && (
-            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-              <p className="text-[9px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Redespacho</p>
+          <div className={`mt-2 p-2 rounded-lg border ${client.possuiRedespacho === 1 ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`}>
+            <p className={`text-[9px] font-bold uppercase mb-1 ${client.possuiRedespacho === 1 ? "text-blue-600 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Possui Redespacho: <span className={`${client.possuiRedespacho === 1 ? "text-blue-700" : "text-slate-600"}`}>{client.possuiRedespacho === 1 ? "Sim" : "Não"}</span>
+            </p>
+            {client.possuiRedespacho === 1 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
                 {client.redespachoCnpj && <span className="text-slate-600 dark:text-slate-300">CNPJ: {client.redespachoCnpj}</span>}
                 {client.redespachoRazaoSocial && <span className="text-slate-600 dark:text-slate-300">Razão: {client.redespachoRazaoSocial}</span>}
@@ -3238,19 +3240,21 @@ function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted
                 {enderecoRedespacho && <span className="text-slate-600 dark:text-slate-300">{enderecoRedespacho}</span>}
                 {client.redespachoTelefone && <span className="text-slate-600 dark:text-slate-300">Tel: {client.redespachoTelefone}</span>}
               </div>
-            </div>
-          )}
-          {/* Endereço de entrega diferente */}
-          {client.enderecoEntregaMesmo === 0 && (
-            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
-              <p className="text-[9px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-1">Endereço de Entrega</p>
+            )}
+          </div>
+          {/* Endereço de entrega */}
+          <div className={`mt-2 p-2 rounded-lg border ${client.enderecoEntregaMesmo === 0 ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`}>
+            <p className={`text-[9px] font-bold uppercase mb-1 ${client.enderecoEntregaMesmo === 0 ? "text-orange-600 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Endereço de entrega é o mesmo do cadastro: <span className={`${client.enderecoEntregaMesmo === 0 ? "text-orange-700" : "text-slate-600"}`}>{client.enderecoEntregaMesmo === 0 ? "Não" : "Sim"}</span>
+            </p>
+            {client.enderecoEntregaMesmo === 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
                 {client.entregaCep && <span className="text-slate-600 dark:text-slate-300">CEP: {client.entregaCep}</span>}
                 {enderecoEntrega && <span className="text-slate-600 dark:text-slate-300">{enderecoEntrega}</span>}
                 {client.entregaTelefone && <span className="text-slate-600 dark:text-slate-300">Tel: {client.entregaTelefone}</span>}
               </div>
-            </div>
-          )}
+            )}
+          </div>
           {/* Edit and Delete buttons */}
           <div className="mt-3 flex items-center gap-2">
             {onEdit && (
@@ -4131,6 +4135,28 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
       valorFrete: Number(valorFrete) || undefined,
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
+      // Redespacho
+      possuiRedespacho: possuiRedespacho || undefined,
+      redespachoCnpj: possuiRedespacho ? (redespachoCnpj || undefined) : undefined,
+      redespachoRazaoSocial: possuiRedespacho ? (redespachoRazaoSocial || undefined) : undefined,
+      redespachoCep: possuiRedespacho ? (redespachoCep || undefined) : undefined,
+      redespachoLogradouro: possuiRedespacho ? (redespachoLogradouro || undefined) : undefined,
+      redespachoNumero: possuiRedespacho ? (redespachoNumero || undefined) : undefined,
+      redespachoComplemento: possuiRedespacho ? (redespachoComplemento || undefined) : undefined,
+      redespachoBairro: possuiRedespacho ? (redespachoBairro || undefined) : undefined,
+      redespachoCidade: possuiRedespacho ? (redespachoCidade || undefined) : undefined,
+      redespachoUf: possuiRedespacho ? (redespachoUf || undefined) : undefined,
+      redespachoTelefone: possuiRedespacho ? (redespachoTelefone || undefined) : undefined,
+      // Endereço de entrega
+      enderecoEntregaMesmo: enderecoEntregaMesmo,
+      entregaCep: !enderecoEntregaMesmo ? (entregaCep || undefined) : undefined,
+      entregaLogradouro: !enderecoEntregaMesmo ? (entregaLogradouro || undefined) : undefined,
+      entregaNumero: !enderecoEntregaMesmo ? (entregaNumero || undefined) : undefined,
+      entregaComplemento: !enderecoEntregaMesmo ? (entregaComplemento || undefined) : undefined,
+      entregaBairro: !enderecoEntregaMesmo ? (entregaBairro || undefined) : undefined,
+      entregaCidade: !enderecoEntregaMesmo ? (entregaCidade || undefined) : undefined,
+      entregaUf: !enderecoEntregaMesmo ? (entregaUf || undefined) : undefined,
+      entregaTelefone: !enderecoEntregaMesmo ? (entregaTelefone || undefined) : undefined,
       forceSubmitBelowMin: forceSubmitBelowMin || false,
       items: items.map(item => ({
         codigoItem: item.codigoItem,
@@ -4394,6 +4420,68 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error={showClientValidationError} />
               <OrderFormInput label="Segmento" value={segmento} onChange={setSegmento} placeholder="Indústria, Loja, Distribuidora..." />
             </div>
+
+            {/* Redespacho toggle */}
+            <div className="mt-4 flex items-center gap-3">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Possui redespacho? <span className="text-red-500">*</span></p>
+              <button
+                type="button"
+                onClick={() => setPossuiRedespacho(true)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho === true ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+              >Sim</button>
+              <button
+                type="button"
+                onClick={() => setPossuiRedespacho(false)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho === false ? "bg-slate-600 text-white border-slate-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+              >Não</button>
+            </div>
+            {possuiRedespacho === true && (
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                <p className="text-[10px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-2">🚚 ENDEREÇO REDESPACHO</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <OrderFormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+                  <OrderFormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão Social do Redespacho" required />
+                  <OrderFormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
+                  <OrderFormInput label="Logradouro" value={redespachoLogradouro} onChange={setRedespachoLogradouro} placeholder="Rua/Av" />
+                  <OrderFormInput label="Número" value={redespachoNumero} onChange={setRedespachoNumero} placeholder="Nº" />
+                  <OrderFormInput label="Complemento" value={redespachoComplemento} onChange={setRedespachoComplemento} placeholder="Sala, Bloco..." />
+                  <OrderFormInput label="Bairro" value={redespachoBairro} onChange={setRedespachoBairro} placeholder="Bairro" />
+                  <OrderFormInput label="Cidade" value={redespachoCidade} onChange={setRedespachoCidade} placeholder="Cidade" />
+                  <OrderFormInput label="UF" value={redespachoUf} onChange={setRedespachoUf} placeholder="XX" />
+                  <OrderFormInput label="Telefone" value={redespachoTelefone} onChange={setRedespachoTelefone} placeholder="(00) 00000-0000" />
+                </div>
+              </div>
+            )}
+
+            {/* Endereço de entrega toggle */}
+            <div className="mt-4 flex items-center gap-3">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Endereço de entrega é o mesmo do cadastro? <span className="text-red-500">*</span></p>
+              <button
+                type="button"
+                onClick={() => setEnderecoEntregaMesmo(true)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${enderecoEntregaMesmo === true ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+              >Sim</button>
+              <button
+                type="button"
+                onClick={() => setEnderecoEntregaMesmo(false)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${enderecoEntregaMesmo === false ? "bg-orange-600 text-white border-orange-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+              >Não</button>
+            </div>
+            {enderecoEntregaMesmo === false && (
+              <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
+                <p className="text-[10px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-2">📦 ENDEREÇO DE ENTREGA</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <OrderFormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" required />
+                  <OrderFormInput label="Logradouro" value={entregaLogradouro} onChange={setEntregaLogradouro} placeholder="Rua/Av" />
+                  <OrderFormInput label="Número" value={entregaNumero} onChange={setEntregaNumero} placeholder="Nº" />
+                  <OrderFormInput label="Complemento" value={entregaComplemento} onChange={setEntregaComplemento} placeholder="Sala, Bloco..." />
+                  <OrderFormInput label="Bairro" value={entregaBairro} onChange={setEntregaBairro} placeholder="Bairro" />
+                  <OrderFormInput label="Cidade" value={entregaCidade} onChange={setEntregaCidade} placeholder="Cidade" />
+                  <OrderFormInput label="UF" value={entregaUf} onChange={setEntregaUf} placeholder="XX" />
+                  <OrderFormInput label="Telefone" value={entregaTelefone} onChange={setEntregaTelefone} placeholder="(00) 00000-0000" required />
+                </div>
+              </div>
+            )}
 
             {/* Validation error message */}
             {showClientValidationError && (() => {
@@ -5939,7 +6027,7 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
               <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Produto</th>
               <th className="w-[110px] px-3 py-3 text-right text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Preço Mostrado</th>
               <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Alto ({tiers.alto}%)</th>
-              <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">M-Alto ({tiers.medioAlto}%)</th>
+              <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Médio-Alto ({tiers.medioAlto}%)</th>
               <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Médio ({tiers.medio}%)</th>
               <th className="w-[100px] px-3 py-3 text-right text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Baixo ({tiers.baixo}%)</th>
             </tr>
