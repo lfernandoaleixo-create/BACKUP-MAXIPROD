@@ -41,6 +41,16 @@ export const salesOrderRouter = router({
         uf: string; telefone1: string; telefone2: string; emailContato: string; segmento: string;
         nomeContato: string; formaCobranca: string; condicaoPagamento: string;
         fornecedorAtual: string; observacoes: string;
+        // Dados Fiscais extras
+        inscricaoMunicipal: string; inscricaoSuframa: string; situacaoFiscalEspecial: string;
+        website: string;
+        // Dados de Venda
+        limiteCredito: string; tabelaPrecos: string;
+        // CRM
+        regiao: string; perfil: string; formaPedido: string; produtos: string;
+        probabilidadeNegocio: string; tamanho: string; atencao: string;
+        // Cobrança
+        situacaoCobranca: string;
         possuiRedespacho: boolean; redespachoCnpj: string; redespachoRazaoSocial: string;
         redespachoCep: string; redespachoLogradouro: string; redespachoNumero: string;
         redespachoComplemento: string; redespachoBairro: string; redespachoCidade: string;
@@ -90,6 +100,24 @@ export const salesOrderRouter = router({
           condicaoPagamento: vc.condicaoPagamento || "",
           fornecedorAtual: vc.fornecedorAtual || "",
           observacoes: vc.observacoes || "",
+          // Dados Fiscais extras
+          inscricaoMunicipal: vc.inscricaoMunicipal || "",
+          inscricaoSuframa: vc.inscricaoSuframa || "",
+          situacaoFiscalEspecial: vc.situacaoFiscalEspecial || "Nenhuma",
+          website: vc.website || "",
+          // Dados de Venda
+          limiteCredito: vc.limiteCredito || "",
+          tabelaPrecos: vc.tabelaPrecos || "",
+          // CRM
+          regiao: vc.regiao || "",
+          perfil: vc.perfil || "",
+          formaPedido: vc.formaPedido || "",
+          produtos: vc.produtos || "",
+          probabilidadeNegocio: vc.probabilidadeNegocio || "",
+          tamanho: vc.tamanho || "",
+          atencao: vc.atencao || "Normal",
+          // Cobrança
+          situacaoCobranca: vc.situacaoCobranca || "SEM PROTESTO",
           possuiRedespacho: vc.possuiRedespacho === 1,
           redespachoCnpj: vc.redespachoCnpj || "",
           redespachoRazaoSocial: vc.redespachoRazaoSocial || "",
@@ -139,6 +167,25 @@ export const salesOrderRouter = router({
         telefone2: salesOrderRequests.telefone2,
         emailContato: salesOrderRequests.emailContato,
         segmento: salesOrderRequests.segmento,
+        nomeContato: salesOrderRequests.nomeContato,
+        formaCobranca: salesOrderRequests.formaCobranca,
+        condicaoPagamento: salesOrderRequests.condicaoPagamento,
+        fornecedorAtual: salesOrderRequests.fornecedorAtual,
+        observacoes: salesOrderRequests.observacoes,
+        inscricaoMunicipal: salesOrderRequests.inscricaoMunicipal,
+        inscricaoSuframa: salesOrderRequests.inscricaoSuframa,
+        situacaoFiscalEspecial: salesOrderRequests.situacaoFiscalEspecial,
+        website: salesOrderRequests.website,
+        limiteCredito: salesOrderRequests.limiteCredito,
+        tabelaPrecos: salesOrderRequests.tabelaPrecos,
+        regiao: salesOrderRequests.regiao,
+        perfil: salesOrderRequests.perfil,
+        formaPedido: salesOrderRequests.formaPedido,
+        produtos: salesOrderRequests.produtos,
+        probabilidadeNegocio: salesOrderRequests.probabilidadeNegocio,
+        tamanho: salesOrderRequests.tamanho,
+        atencao: salesOrderRequests.atencao,
+        situacaoCobranca: salesOrderRequests.situacaoCobranca,
         possuiRedespacho: salesOrderRequests.possuiRedespacho,
         redespachoCnpj: salesOrderRequests.redespachoCnpj,
         redespachoRazaoSocial: salesOrderRequests.redespachoRazaoSocial,

@@ -4994,3 +4994,6 @@
 ## Produto-Mãe "Estoque E-commerce" (08/07/2026)
 - [x] Criar produto-mãe virtual "Estoque E-commerce" no sistema de variações (código ECOM, virtual parent no stockProcessor)
 - [x] Adicionar 11 variações: 00482, 00483, 00488, 00489, 00490, 00491, 00492, 00493, 00494, 00495, 00501
+
+## Bug Fix - Dados do Cliente no Pedido de Venda (08/07/2026)
+- [x] Ao selecionar cliente cadastrado no pedido de venda, puxar TODOS os campos (incluindo situação cobrança, observações, dados fiscais, CRM, etc.) - corrigido searchClients para retornar todos os campos do vendor_clients e salesOrderRequests
