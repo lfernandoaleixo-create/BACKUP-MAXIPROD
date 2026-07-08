@@ -4978,3 +4978,7 @@
 - [x] Vendedor Rafael não aparece no Painel dos Vendedores - corrigir (incluir sellers de seller_permissions que não estão no Maxiprod)
 - [x] Adicionar lixeira (excluir) ao lado dos vendedores criados com senhas (com confirmação)
 - [x] Pedido de venda: enviar dados de redespacho e endereço de entrega ao backend (createOrder mutation)
+- [x] Variação 00511 como filho do 00112 (fator 1.0: mesma embalagem 5.000 un)
+- [x] Variação 00507 como filho do 00106 (fator 1.0: mesma embalagem 50x100)
+- [x] Variação 00089M já existia como filho do 00089 (fator 1.0)
+- [x] Variação 00546 como filho do 00547 (fator 1.0: espeto queijo coalho 3.9mm vs 4.0mm)
