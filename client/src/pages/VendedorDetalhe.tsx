@@ -2245,7 +2245,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   // Cobrança
   const [situacaoCobranca, setSituacaoCobranca] = useState("");
   // Redespacho
-  const [possuiRedespacho, setPossuiRedespacho] = useState(false);
+  const [possuiRedespacho, setPossuiRedespacho] = useState<boolean | null>(null);
   const [redespachoCnpj, setRedespachoCnpj] = useState("");
   const [redespachoRazaoSocial, setRedespachoRazaoSocial] = useState("");
   const [redespachoCep, setRedespachoCep] = useState("");
@@ -2257,7 +2257,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
   const [redespachoUf, setRedespachoUf] = useState("");
   const [redespachoTelefone, setRedespachoTelefone] = useState("");
   // Endereço de entrega
-  const [enderecoEntregaMesmo, setEnderecoEntregaMesmo] = useState(true);
+  const [enderecoEntregaMesmo, setEnderecoEntregaMesmo] = useState<boolean | null>(null);
   const [entregaCep, setEntregaCep] = useState("");
   const [entregaLogradouro, setEntregaLogradouro] = useState("");
   const [entregaNumero, setEntregaNumero] = useState("");
@@ -2303,13 +2303,16 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
       if (!cep.trim()) strictMissing.push("CEP");
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
       if (!email.trim()) strictMissing.push("E-mail");
+      // Perguntas obrigatórias: devem ser respondidas (Sim ou Não)
+      if (possuiRedespacho === null) strictMissing.push("Possui redespacho? (selecione Sim ou Não)");
+      if (enderecoEntregaMesmo === null) strictMissing.push("Endereço de entrega (selecione Sim ou Não)");
       // Redespacho: CNPJ e Razão Social obrigatórios
-      if (possuiRedespacho) {
+      if (possuiRedespacho === true) {
         if (!redespachoCnpj.trim()) strictMissing.push("CNPJ do Redespacho");
         if (!redespachoRazaoSocial.trim()) strictMissing.push("Razão Social do Redespacho");
       }
       // Endereço de entrega diferente: CEP e Telefone obrigatórios
-      if (!enderecoEntregaMesmo) {
+      if (enderecoEntregaMesmo === false) {
         if (!entregaCep.trim()) strictMissing.push("CEP da Entrega");
         if (!entregaTelefone.trim()) strictMissing.push("Telefone da Entrega");
       }
@@ -2362,7 +2365,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         atencao: atencao || undefined,
         fornecedorAtual: fornecedorAtual.trim() || undefined,
         situacaoCobranca: situacaoCobranca || undefined,
-        possuiRedespacho: possuiRedespacho || undefined,
+        possuiRedespacho: possuiRedespacho === true ? true : undefined,
         redespachoCnpj: redespachoCnpj.trim() || undefined,
         redespachoRazaoSocial: redespachoRazaoSocial.trim() || undefined,
         redespachoCep: redespachoCep.trim() || undefined,
@@ -2373,7 +2376,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         redespachoCidade: redespachoCidade.trim() || undefined,
         redespachoUf: redespachoUf.trim() || undefined,
         redespachoTelefone: redespachoTelefone.trim() || undefined,
-        enderecoEntregaMesmo: enderecoEntregaMesmo,
+        enderecoEntregaMesmo: enderecoEntregaMesmo ?? true,
         entregaCep: !enderecoEntregaMesmo ? entregaCep.trim() || undefined : undefined,
         entregaLogradouro: !enderecoEntregaMesmo ? entregaLogradouro.trim() || undefined : undefined,
         entregaNumero: !enderecoEntregaMesmo ? entregaNumero.trim() || undefined : undefined,
@@ -2512,7 +2515,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         atencao: atencao || undefined,
         fornecedorAtual: fornecedorAtual.trim() || undefined,
         situacaoCobranca: situacaoCobranca || undefined,
-        possuiRedespacho: possuiRedespacho || undefined,
+        possuiRedespacho: possuiRedespacho === true ? true : undefined,
         redespachoCnpj: redespachoCnpj.trim() || undefined,
         redespachoRazaoSocial: redespachoRazaoSocial.trim() || undefined,
         redespachoCep: redespachoCep.trim() || undefined,
@@ -2523,7 +2526,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         redespachoCidade: redespachoCidade.trim() || undefined,
         redespachoUf: redespachoUf.trim() || undefined,
         redespachoTelefone: redespachoTelefone.trim() || undefined,
-        enderecoEntregaMesmo: enderecoEntregaMesmo,
+        enderecoEntregaMesmo: enderecoEntregaMesmo ?? true,
         entregaCep: !enderecoEntregaMesmo ? entregaCep.trim() || undefined : undefined,
         entregaLogradouro: !enderecoEntregaMesmo ? entregaLogradouro.trim() || undefined : undefined,
         entregaNumero: !enderecoEntregaMesmo ? entregaNumero.trim() || undefined : undefined,
@@ -2681,19 +2684,19 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
 
         {/* Possui Redespacho? */}
         <div className="mt-3 flex items-center gap-3">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Possui redespacho?</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Possui redespacho? <span className="text-red-500">*</span></label>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setPossuiRedespacho(true)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho === true ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
             >
               Sim
             </button>
             <button
               type="button"
               onClick={() => setPossuiRedespacho(false)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${!possuiRedespacho ? "bg-slate-600 text-white border-slate-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${possuiRedespacho === false ? "bg-slate-600 text-white border-slate-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
             >
               Não
             </button>
@@ -2701,7 +2704,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         </div>
 
         {/* Endereço Redespacho */}
-        {possuiRedespacho && (
+        {possuiRedespacho === true && (
           <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
             <p className="text-[10px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-2 flex items-center gap-1">
               <Truck className="w-3 h-3" /> Endereço Redespacho
@@ -2731,19 +2734,19 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
 
         {/* Endereço de Entrega */}
         <div className="mt-3 flex items-center gap-3">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Endereço de entrega é o mesmo do cadastro?</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Endereço de entrega é o mesmo do cadastro? <span className="text-red-500">*</span></label>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setEnderecoEntregaMesmo(true)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${enderecoEntregaMesmo ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${enderecoEntregaMesmo === true ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-300 hover:border-teal-400"}`}
             >
               Sim
             </button>
             <button
               type="button"
               onClick={() => setEnderecoEntregaMesmo(false)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${!enderecoEntregaMesmo ? "bg-orange-600 text-white border-orange-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${enderecoEntregaMesmo === false ? "bg-orange-600 text-white border-orange-600" : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"}`}
             >
               Não
             </button>
@@ -2751,7 +2754,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
         </div>
 
         {/* Endereço de Entrega diferente */}
-        {!enderecoEntregaMesmo && (
+        {enderecoEntregaMesmo === false && (
           <div className="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl">
             <p className="text-[10px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-2 flex items-center gap-1">
               <MapPin className="w-3 h-3" /> Endereço de Entrega
