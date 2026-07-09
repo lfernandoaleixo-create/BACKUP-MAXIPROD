@@ -5162,3 +5162,21 @@
 ## Fix Layout Cobrança - Cards Sobrepostos
 - [x] Corrigir layout dos cards na planilha de cobrança: textos cortados, sobrepostos e encavalados
 - [x] Garantir que nome do cliente, CNPJ, valor, vencimento, vendedor e dias fiquem todos visíveis sem sobreposição
+
+## Custo de Importação - Produtos sem Preço
+- [x] Buscar custos dos produtos 00051, 00406, 00407, 00408 nas POs de importação
+- [x] Atualizar custo real/projetado no sistema para gestão comercial
+
+## Fix Product Codes nas POs
+- [x] Setar product_code='00406' no item id=90008 da PO57
+- [x] Setar product_code='00407' no item id=90009 da PO57
+- [x] Setar product_code='00408' no item id=90010 da PO57
+- [x] Corrigir items PONTA/CHANFRO 5,0x140 nas PO22/PO29/PO34 de '00037' para '00051'
+
+## Fix Recálculo Dinâmico no Pedido de Venda
+- [ ] Frete, comissão e impostos devem recalcular ao mudar quantidade de caixas no pedido de venda
+- [ ] Valores não podem ficar fixos quando a quantidade muda
+
+## Diário de Cobrança - Ajustes
+- [x] Remover aba "Nova Entrada" do Diário de Cobrança (entradas devem ser automáticas)
+- [ ] Gerar snapshot manual agora com dados de hoje para validação

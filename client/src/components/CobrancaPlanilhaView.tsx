@@ -2666,14 +2666,10 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid w-full grid-cols-3 mb-3">
+        <TabsList className="grid w-full grid-cols-2 mb-3">
           <TabsTrigger value="historico" className="text-xs">
             <History className="w-3.5 h-3.5 mr-1.5" />
             Histórico
-          </TabsTrigger>
-          <TabsTrigger value="nova-entrada" className="text-xs">
-            <Plus className="w-3.5 h-3.5 mr-1.5" />
-            Nova Entrada
           </TabsTrigger>
           <TabsTrigger value="snapshots" className="text-xs">
             <Database className="w-3.5 h-3.5 mr-1.5" />
@@ -2739,7 +2735,7 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
               <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                 <BookOpen className="w-10 h-10 mb-2 opacity-50" />
                 <p className="text-sm font-medium">Nenhuma entrada no diário</p>
-                <p className="text-xs mt-1">Adicione registros de negociação na aba "Nova Entrada"</p>
+                <p className="text-xs mt-1">As entradas são geradas automaticamente a partir do histórico de cobrança</p>
               </div>
             ) : (
               entries.map((entry) => (
@@ -2795,138 +2791,6 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
           )}
         </TabsContent>
 
-        {/* ========== TAB: NOVA ENTRADA ========== */}
-        <TabsContent value="nova-entrada" className="flex-1 overflow-y-auto mt-0">
-          <div className="space-y-3 p-1">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <p className="text-xs text-amber-800 font-medium">Registre aqui cada interação de cobrança com o cliente.</p>
-              <p className="text-[10px] text-amber-600 mt-0.5">O backup automático é salvo diariamente às 17:15.</p>
-            </div>
-
-            {/* Cliente */}
-            <div>
-              <label className="text-xs font-medium text-slate-700 mb-1 block">
-                Cliente <span className="text-red-500">*</span>
-              </label>
-              <Input
-                list="diary-clientes-list"
-                placeholder="Digite ou selecione o cliente..."
-                value={formCliente}
-                onChange={(e) => setFormCliente(e.target.value)}
-                className="h-9 text-sm"
-              />
-              <datalist id="diary-clientes-list">
-                {clienteNames.sort().map(name => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
-            </div>
-
-            {/* Etapa + Tipo Contato */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-slate-700 mb-1 block">
-                  Etapa Atual <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formEtapa}
-                  onChange={(e) => setFormEtapa(e.target.value)}
-                  className="w-full h-9 px-3 text-sm border border-slate-200 rounded-md bg-white"
-                >
-                  <option value="">Selecione...</option>
-                  {DIARY_ETAPAS.map(e => (
-                    <option key={e.value} value={e.value}>{e.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-700 mb-1 block">Tipo de Contato</label>
-                <select
-                  value={formTipoContato}
-                  onChange={(e) => setFormTipoContato(e.target.value)}
-                  className="w-full h-9 px-3 text-sm border border-slate-200 rounded-md bg-white"
-                >
-                  <option value="">Selecione...</option>
-                  {DIARY_CONTATO_TIPOS.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Resumo */}
-            <div>
-              <label className="text-xs font-medium text-slate-700 mb-1 block">
-                Resumo da Interação <span className="text-red-500">*</span>
-              </label>
-              <Textarea
-                placeholder="Descreva o que foi conversado, acordado ou decidido..."
-                value={formResumo}
-                onChange={(e) => setFormResumo(e.target.value)}
-                className="text-sm min-h-[80px]"
-              />
-            </div>
-
-            {/* Observações */}
-            <div>
-              <label className="text-xs font-medium text-slate-700 mb-1 block">Observações Adicionais</label>
-              <Textarea
-                placeholder="Informações extras, contexto, detalhes..."
-                value={formObs}
-                onChange={(e) => setFormObs(e.target.value)}
-                className="text-sm min-h-[60px]"
-              />
-            </div>
-
-            {/* Valor + Próxima Ação */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-slate-700 mb-1 block">Valor Negociado (R$)</label>
-                <Input
-                  placeholder="0,00"
-                  value={formValor}
-                  onChange={(e) => setFormValor(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-700 mb-1 block">Data Próxima Ação</label>
-                <Input
-                  type="date"
-                  value={formProximaData}
-                  onChange={(e) => setFormProximaData(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-slate-700 mb-1 block">Próxima Ação</label>
-              <Input
-                placeholder="Ex: Ligar novamente, Enviar boleto, Aguardar retorno..."
-                value={formProximaAcao}
-                onChange={(e) => setFormProximaAcao(e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-
-            {/* Operador info + Submit */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-              <p className="text-[10px] text-slate-400">
-                <User className="w-3 h-3 inline mr-1" />Operador: <span className="font-medium">{operatorName}</span>
-              </p>
-              <Button
-                onClick={handleSubmitEntry}
-                disabled={addEntry.isPending}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-                size="sm"
-              >
-                {addEntry.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
-                Registrar no Diário
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
 
         {/* ========== TAB: SNAPSHOTS/BACKUPS ========== */}
         <TabsContent value="snapshots" className="flex-1 overflow-hidden flex flex-col mt-0">
