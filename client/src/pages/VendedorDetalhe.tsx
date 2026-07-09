@@ -5442,9 +5442,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                               
                               // Interpolação linear inversa baseada nos pontos de referência
                               // desconto → margem (relação inversa linear)
-                              // Pontos: (0, 38), (20, 29), (23, 25), (27, 20), (32, 15), (37, 10), (42, 5), (47, 0)
+                              // Pontos de referência (regra de 3 inversa):
+                              // 20% desc → 29% lucro (referência base)
+                              // 0% desc → 29% / 0.80 = 36.25% lucro
+                              // 23% desc → 25%, 27% desc → 20%, 32% desc → 15%
                               const pontos = [
-                                { desc: 0, marg: 38 },
+                                { desc: 0, marg: 36.25 },
                                 { desc: 20, marg: 29 },
                                 { desc: 23, marg: 25 },
                                 { desc: 27, marg: 20 },
