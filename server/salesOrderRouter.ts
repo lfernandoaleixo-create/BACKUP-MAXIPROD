@@ -2,7 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts } from "../drizzle/schema";
-import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
+import { sql, and, eq, desc, like, or, inArray, isNull } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
@@ -1162,15 +1162,55 @@ export const salesOrderRouter = router({
       return { success: true };
     }),
 
-  /** Count pending orders for Vitória (approved but not yet lançado) */
+  /** Get new vendor clients (registered without order) for Vitória to export */
+  getNewClientsForOperator: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    // Get vendor_clients that have no maxiprodId (not yet in Maxiprod)
+    // and were created manually (source = 'manual') or from a pedido but not yet exported
+    const clients = await db.select().from(vendorClients)
+      .where(and(
+        isNull(vendorClients.maxiprodId),
+        eq(vendorClients.source, "manual")
+      ))
+      .orderBy(desc(vendorClients.createdAt))
+      .limit(100);
+
+    return clients;
+  }),
+
+  /** Mark a vendor client as exported to Maxiprod (set a placeholder maxiprodId) */
+  markClientExported: publicProcedure
+    .input(z.object({ clientId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Set maxiprodId to -1 as a "exported manually" marker
+      await db.update(vendorClients)
+        .set({ maxiprodId: -1 })
+        .where(eq(vendorClients.id, input.clientId));
+      return { success: true };
+    }),
+
+  /** Count pending orders for Vit\u00f3ria (approved but not yet lan\u00e7ado) */
   countPendingVitoria: publicProcedure.query(async () => {
     const db = await getDb();
-    if (!db) return { pending: 0, naoRecebido: 0, recebidoNaoLancado: 0 };
+    if (!db) return { pending: 0, naoRecebido: 0, recebidoNaoLancado: 0, newClients: 0 };
     const approved = await db.select().from(salesOrderRequests)
       .where(eq(salesOrderRequests.status, "aprovado"));
     const naoRecebido = approved.filter(o => !o.vitoriaRecebido).length;
     const recebidoNaoLancado = approved.filter(o => o.vitoriaRecebido && !o.vitoriaLancado).length;
-    return { pending: approved.length, naoRecebido, recebidoNaoLancado };
+
+    // Count new clients not yet exported
+    const newClientsResult = await db.select({ count: sql<number>`COUNT(*)` }).from(vendorClients)
+      .where(and(
+        isNull(vendorClients.maxiprodId),
+        eq(vendorClients.source, "manual")
+      ));
+    const newClients = Number(newClientsResult[0]?.count || 0);
+
+    return { pending: approved.length + newClients, naoRecebido, recebidoNaoLancado, newClients };
   }),
 
   /** Export client data in Maxiprod Excel format for a specific order */

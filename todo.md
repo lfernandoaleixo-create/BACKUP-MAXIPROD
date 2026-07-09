@@ -5112,3 +5112,6 @@
 ## Exportar Cliente Maxiprod direto da lista de clientes
 - [x] Adicionar botão "Exportar Maxiprod (Planilha Empresas .xlsx)" na visualização de detalhes de cada cliente cadastrado pelo vendedor
 - [x] Permitir exportação mesmo sem pedido de venda associado (cliente apenas cadastrado)
+- [x] Exibir clientes cadastrados (sem pedido) na tela da Vitória com opção de exportar
+- [x] Marcar cliente como exportado após download da planilha (some da lista da Vitória)
+- [x] Incluir contagem de novos clientes no badge de pendentes da Vitória

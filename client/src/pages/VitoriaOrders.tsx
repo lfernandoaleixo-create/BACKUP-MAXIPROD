@@ -9,7 +9,7 @@ import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
   Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2,
-  FileSpreadsheet, AlertTriangle, Download
+  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -44,6 +44,15 @@ export default function VitoriaOrders() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [exportingOrderId, setExportingOrderId] = useState<number | null>(null);
   const [exportingPedidoId, setExportingPedidoId] = useState<number | null>(null);
+
+  // New clients registered without orders
+  const { data: newClients, refetch: refetchClients } = trpc.salesOrders.getNewClientsForOperator.useQuery(
+    undefined,
+    { staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
+  );
+  const exportVendorClientMutation = trpc.salesOrders.exportVendorClientMaxiprod.useMutation();
+  const markExportedMutation = trpc.salesOrders.markClientExported.useMutation();
+  const [exportingClientId, setExportingClientId] = useState<number | null>(null);
 
   // Get modification info for all visible orders
   const orderIds = useMemo(() => (orders || []).map((o: any) => o.id), [orders]);
@@ -236,6 +245,80 @@ export default function VitoriaOrders() {
           </div>
         </div>
 
+        {/* New Clients Section - Clients registered without orders */}
+        {newClients && newClients.length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-700">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Clientes Cadastrados (sem pedido)</h3>
+                <span className="ml-auto px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold rounded-full">{newClients.length}</span>
+              </div>
+              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Clientes cadastrados pelos vendedores que precisam ser exportados para o Maxiprod</p>
+            </div>
+            <div className="divide-y divide-emerald-100 dark:divide-emerald-800">
+              {newClients.map((client: any) => (
+                <div key={client.id} className="px-4 py-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{client.razaoSocial}</p>
+                      <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
+                        <span>{client.cnpjCpf}</span>
+                        <span className="flex items-center gap-1"><User className="w-3 h-3" />{client.sellerName}</span>
+                        {client.cidade && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{client.cidade}/{client.uf}</span>}
+                        <span>{new Date(client.createdAt).toLocaleDateString("pt-BR")}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={async () => {
+                          setExportingClientId(client.id);
+                          try {
+                            const result = await exportVendorClientMutation.mutateAsync({ clientId: client.id });
+                            const byteCharacters = atob(result.base64);
+                            const byteNumbers = new Array(byteCharacters.length);
+                            for (let i = 0; i < byteCharacters.length; i++) {
+                              byteNumbers[i] = byteCharacters.charCodeAt(i);
+                            }
+                            const byteArray = new Uint8Array(byteNumbers);
+                            const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = result.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            toast.success(`Planilha exportada: ${result.clientName}`);
+                            // Mark as exported and refresh
+                            await markExportedMutation.mutateAsync({ clientId: client.id });
+                            refetchClients();
+                            utils.salesOrders.countPendingVitoria.invalidate();
+                          } catch (err: any) {
+                            toast.error(err.message || "Erro ao exportar");
+                          } finally {
+                            setExportingClientId(null);
+                          }
+                        }}
+                        disabled={exportingClientId === client.id}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-100 dark:bg-emerald-800/50 text-emerald-700 dark:text-emerald-300 rounded-lg text-[10px] font-bold hover:bg-emerald-200 dark:hover:bg-emerald-700/50 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {exportingClientId === client.id ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <FileSpreadsheet className="w-3.5 h-3.5" />
+                        )}
+                        Exportar Maxiprod
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Filter tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
           {([
@@ -296,7 +379,7 @@ export default function VitoriaOrders() {
                   className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden ${borderClass}`}
                 >
                   {/* Order Header */}
-                  <button
+                  <div
                     onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                     className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
                   >
@@ -364,7 +447,7 @@ export default function VitoriaOrders() {
                     </div>
 
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </button>
+                  </div>
 
                   {/* Expanded Details */}
                   {isExpanded && (
