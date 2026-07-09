@@ -5185,3 +5185,9 @@
 - [x] Tornar barra de progresso mais grossa
 - [x] Trocar indicador de bolinha para setinha
 - [x] Aumentar tamanho das porcentagens
+
+## Diário de Cobrança - Correções Visuais
+- [x] Remover sobreposição de informações no layout do diário
+- [x] Filtrar para mostrar apenas a partir de 08/07/2026 (não puxar histórico antigo)
+- [x] Cards de etapas sempre abaixo do nome do cliente
+- [x] Corrigir erros de português nos nomes das etapas (semAcao → Sem Ação, segundaCobranca → 2ª Cobrança, etc.)

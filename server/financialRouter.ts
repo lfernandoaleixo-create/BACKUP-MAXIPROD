@@ -7803,6 +7803,9 @@ ${acoesTexto}
       }
       if (input?.fromDate) {
         conditions.push(gte(cobrancaEtapaObs.createdAt, new Date(input.fromDate + "T00:00:00")));
+      } else {
+        // Default: only show entries from 08/07/2026 onwards
+        conditions.push(gte(cobrancaEtapaObs.createdAt, new Date("2026-07-08T00:00:00")));
       }
       if (input?.toDate) {
         conditions.push(lte(cobrancaEtapaObs.createdAt, new Date(input.toDate + "T23:59:59")));

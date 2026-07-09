@@ -2558,10 +2558,17 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
 
 /** ==================== DIÁRIO DE COBRANÇA - Componente Interno ==================== */
 const DIARY_ETAPAS = [
-  { value: "Contatado", label: "Contatado", color: "bg-blue-100 text-blue-700 border-blue-300" },
-  { value: "Em negociação", label: "Em Negociação", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "primeiraCobranca", label: "1\u00aa Cobran\u00e7a", color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { value: "segundaCobranca", label: "2\u00aa Cobran\u00e7a", color: "bg-indigo-100 text-indigo-700 border-indigo-300" },
+  { value: "terceiraCobranca", label: "3\u00aa Cobran\u00e7a", color: "bg-purple-100 text-purple-700 border-purple-300" },
+  { value: "semAcao1", label: "Sem A\u00e7\u00e3o (1/2)", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "semAcao2", label: "Sem A\u00e7\u00e3o (2/2)", color: "bg-orange-100 text-orange-700 border-orange-300" },
+  { value: "semAcao3", label: "Sem A\u00e7\u00e3o (3/3)", color: "bg-red-100 text-red-700 border-red-300" },
+  { value: "acaoFinal", label: "A\u00e7\u00e3o Final", color: "bg-red-200 text-red-800 border-red-400" },
+  { value: "Contatado", label: "Contatado", color: "bg-teal-100 text-teal-700 border-teal-300" },
+  { value: "Em negocia\u00e7\u00e3o", label: "Em Negocia\u00e7\u00e3o", color: "bg-amber-100 text-amber-700 border-amber-300" },
   { value: "Promessa de Pgto", label: "Promessa de Pgto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-  { value: "Especial s/ cobrança", label: "Especial s/ Cobrança", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
+  { value: "Especial s/ cobran\u00e7a", label: "Especial s/ Cobran\u00e7a", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
   { value: "Protestado", label: "Protestado", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: "Fundo Perdido", label: "Fundo Perdido", color: "bg-stone-100 text-stone-700 border-stone-400" },
   { value: "Pago/Resolvido", label: "Pago/Resolvido", color: "bg-green-100 text-green-700 border-green-300" },
@@ -2680,8 +2687,8 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
         {/* ========== TAB: HISTÓRICO ========== */}
         <TabsContent value="historico" className="flex-1 overflow-hidden flex flex-col mt-0">
           {/* Filtros */}
-          <div className="flex flex-wrap gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
-            <div className="flex-1 min-w-[140px]">
+          <div className="flex flex-wrap items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="flex-1 min-w-[120px]">
               <Input
                 placeholder="Buscar cliente..."
                 value={filterCliente}
@@ -2699,20 +2706,24 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
                 <option key={e.value} value={e.value}>{e.label}</option>
               ))}
             </select>
-            <Input
-              type="date"
-              value={filterFromDate}
-              onChange={(e) => setFilterFromDate(e.target.value)}
-              className="h-8 text-xs w-[130px]"
-              placeholder="De"
-            />
-            <Input
-              type="date"
-              value={filterToDate}
-              onChange={(e) => setFilterToDate(e.target.value)}
-              className="h-8 text-xs w-[130px]"
-              placeholder="Até"
-            />
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-slate-500">De:</span>
+              <Input
+                type="date"
+                value={filterFromDate}
+                onChange={(e) => setFilterFromDate(e.target.value)}
+                className="h-8 text-xs w-[130px]"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-slate-500">At\u00e9:</span>
+              <Input
+                type="date"
+                value={filterToDate}
+                onChange={(e) => setFilterToDate(e.target.value)}
+                className="h-8 text-xs w-[130px]"
+              />
+            </div>
             {(filterCliente || filterEtapa || filterFromDate || filterToDate) && (
               <Button
                 variant="ghost"
@@ -2740,31 +2751,34 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
             ) : (
               entries.map((entry) => (
                 <div key={entry.id} className="border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm text-slate-800 truncate">{entry.clienteName}</span>
-                        {getEtapaBadge(entry.etapaAtual)}
-                        {(entry as any).documento && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-200">
-                            {(entry as any).documento}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-700 mt-1 leading-relaxed whitespace-pre-wrap">{entry.resumo}</p>
-                    </div>
+                  {/* Linha 1: Nome do cliente + data/operador */}
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="font-semibold text-sm text-slate-800 break-words">{entry.clienteName}</span>
                     <div className="text-right shrink-0">
                       <p className="text-[10px] text-slate-400">
-                        {new Date(entry.createdAt).toLocaleDateString("pt-BR")}
-                      </p>
-                      <p className="text-[10px] text-slate-400">
+                        {new Date(entry.createdAt).toLocaleDateString("pt-BR")}{" "}
                         {new Date(entry.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                       </p>
-                      <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                      <p className="text-[10px] text-slate-500 font-medium">
                         <User className="w-2.5 h-2.5 inline mr-0.5" />{entry.operadorName}
                       </p>
                     </div>
                   </div>
+                  {/* Linha 2: Badges (etapa + documento) */}
+                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                    {getEtapaBadge(entry.etapaAtual)}
+                    {(entry as any).documento && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-200">
+                        {(entry as any).documento}
+                      </span>
+                    )}
+                  </div>
+                  {/* Linha 3: Observação/resumo */}
+                  {entry.resumo && (
+                    <p className="text-xs text-slate-700 mt-2 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded p-2 border border-slate-100">
+                      {entry.resumo}
+                    </p>
+                  )}
                 </div>
               ))
             )}
