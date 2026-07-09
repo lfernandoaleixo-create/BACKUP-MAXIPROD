@@ -4293,6 +4293,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
       alert("Selecione a Forma de Pagamento antes de finalizar o pedido.");
       return;
     }
+    if (formaPagamento === "A prazo" && !condicaoPagamento) {
+      alert("Preencha a Condição de Pagamento (ex: 21/35 ou 30/60/90) para pagamentos a prazo.");
+      return;
+    }
     createOrderMutation.mutate({
       sellerId,
       cnpjCpf: isSimulation ? (cnpjCpf || "SIMULACAO") : cnpjCpf,

@@ -720,14 +720,18 @@ export default function CustosDeVendaStep({
         <p className="text-[10px] font-bold text-slate-400 uppercase">Condições do Pedido</p>
         <div className="grid grid-cols-1 gap-2">
           <div>
-            <label className="text-[9px] text-slate-500 font-medium">Condição de Pagamento</label>
+            <label className="text-[9px] text-slate-500 font-medium">
+              Condição de Pagamento {formaPagamento === "A prazo" && <span className="text-red-500">*</span>}
+            </label>
             <input
               type="text"
               value={condicaoPagamento}
               onChange={(e) => setCondicaoPagamento(e.target.value)}
               placeholder="Ex: 21/35 ou 30/60/90"
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 ${formaPagamento === "A prazo" && !condicaoPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
+              required={formaPagamento === "A prazo"}
             />
+            {formaPagamento === "A prazo" && !condicaoPagamento && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório para pagamento a prazo</p>}
           </div>
           <div>
             <label className="text-[9px] text-slate-500 font-medium">Observações</label>

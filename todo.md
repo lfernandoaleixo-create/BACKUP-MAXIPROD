@@ -5115,3 +5115,8 @@
 - [x] Exibir clientes cadastrados (sem pedido) na tela da Vitória com opção de exportar
 - [x] Marcar cliente como exportado após download da planilha (some da lista da Vitória)
 - [x] Incluir contagem de novos clientes no badge de pendentes da Vitória
+
+## Condição de Pagamento obrigatória quando Forma = Boleto/Cheque
+- [x] Quando forma de pagamento for "A prazo" (boleto/cheque), tornar campo "Condição de Pagamento" obrigatório
+- [x] Exibir indicação visual (borda vermelha + mensagem) quando campo obrigatório não preenchido
+- [x] Bloquear submit do pedido se condição de pagamento estiver vazia nesse cenário
