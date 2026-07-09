@@ -1019,9 +1019,6 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 toast.success(`Planilha exportada: ${result.clientName}`);
-                await markExportedMutation.mutateAsync({ clientId: client.id });
-                refetchClients();
-                utils.salesOrders.countPendingVitoria.invalidate();
               } catch (err: any) {
                 toast.error(err.message || "Erro ao exportar");
               } finally {

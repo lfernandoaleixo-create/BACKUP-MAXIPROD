@@ -5194,3 +5194,4 @@
 
 ## CSV Export Maxiprod - Representante/Vendedor
 - [x] Fix: campo Representante/Vendedor no CSV de exportação Maxiprod deixado em branco (Maxiprod rejeita se valor não bater exatamente com cadastro)
+- [x] Fix: cliente não deve sumir da lista ao clicar "Exportar Maxiprod" (removido markExported automático)
