@@ -6,7 +6,7 @@
  * Shows alongside the interpolation bar for comparison.
  * Includes detailed tax breakdown per product.
  */
-import { useState } from "react";
+
 
 interface TaxBreakdown {
   icms: number;
@@ -27,6 +27,7 @@ interface RealCostMarginBarProps {
   fretePerc: number;        // frete % (editable)
   comissaoPerc: number;     // comissão % (editable)
   custosAdicionaisPerc: number; // custos adicionais % (editable)
+  quantidade?: number;      // quantity of boxes (for dynamic total calculation)
 }
 
 export function RealCostMarginBar({
@@ -38,20 +39,31 @@ export function RealCostMarginBar({
   fretePerc,
   comissaoPerc,
   custosAdicionaisPerc,
+  quantidade = 1,
 }: RealCostMarginBarProps) {
-  const [showDetails, setShowDetails] = useState(false);
+  // Details are always visible now (no toggle needed)
 
   // Calculate real margin
   const custoPerc = precoVenda > 0 ? (custoBox / precoVenda) * 100 : 0;
   const totalDeducoes = custoPerc + taxBreakdown.total + fretePerc + comissaoPerc + custosAdicionaisPerc;
   const margin = 100 - totalDeducoes;
 
-  // Values in R$
+  // Values in R$ per unit
   const impostosValor = precoVenda * (taxBreakdown.total / 100);
   const freteValor = precoVenda * (fretePerc / 100);
   const comissaoValor = precoVenda * (comissaoPerc / 100);
   const custosAdValor = precoVenda * (custosAdicionaisPerc / 100);
   const lucro = precoVenda - custoBox - impostosValor - freteValor - comissaoValor - custosAdValor;
+
+  // Total values (dynamic with quantity)
+  const qty = Math.max(1, quantidade);
+  const totalVenda = precoVenda * qty;
+  const totalCusto = custoBox * qty;
+  const totalImpostos = impostosValor * qty;
+  const totalFrete = freteValor * qty;
+  const totalComissao = comissaoValor * qty;
+  const totalCustosAd = custosAdValor * qty;
+  const totalLucro = lucro * qty;
 
   // Display
   const displayMin = -5;
@@ -79,12 +91,7 @@ export function RealCostMarginBar({
         <span className="text-[9px] text-slate-500 font-medium">
           {tipoProduto === "importado" ? "🌍 Importado" : "🏭 Industrializado"}
         </span>
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          className="text-[9px] text-indigo-600 hover:text-indigo-800 font-bold underline"
-        >
-          {showDetails ? "Ocultar" : "Ver impostos"}
-        </button>
+
       </div>
       {/* Bar - thicker */}
       <div className="relative h-5 rounded-full overflow-visible bg-slate-100 border border-slate-200">
@@ -104,67 +111,72 @@ export function RealCostMarginBar({
           <div className="w-0.5 flex-1 bg-slate-900" />
         </div>
       </div>
-      {/* Tax details */}
-      {showDetails && (
-        <div className={`mt-1 p-1.5 rounded border text-[8px] ${color.bg} border-slate-200`}>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+      {/* Details - always visible, showing totals that update with quantity */}
+      <div className={`mt-1.5 p-2 rounded-lg border text-[9px] ${color.bg} border-slate-200`}>
+        {/* Header with quantity indicator */}
+        {qty > 1 && (
+          <div className="mb-1.5 pb-1 border-b border-slate-300 flex items-center gap-2">
+            <span className="text-[10px] font-bold text-slate-700">📦 {qty} caixas</span>
+            <span className="text-[10px] font-bold text-slate-800">Total Venda: R$ {totalVenda.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Preço Venda{qty > 1 ? ` (${qty}cx)` : ""}:</span>
+            <span className="font-bold text-slate-800">R$ {totalVenda.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Custo ({fonte}):</span>
+            <span className="font-bold text-red-600">-R$ {totalCusto.toFixed(2)} ({custoPerc.toFixed(1)}%)</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">ICMS ({taxBreakdown.icms.toFixed(2)}%):</span>
+            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.icms / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">PIS ({taxBreakdown.pis.toFixed(3)}%):</span>
+            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.pis / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">COFINS ({taxBreakdown.cofins.toFixed(2)}%):</span>
+            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.cofins / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">IRPJ ({taxBreakdown.irpj.toFixed(2)}%):</span>
+            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.irpj / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">CSLL ({taxBreakdown.csll.toFixed(2)}%):</span>
+            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.csll / 100).toFixed(2)}</span>
+          </div>
+          {taxBreakdown.difal > 0 && (
             <div className="flex justify-between">
-              <span className="text-slate-600">Preço Venda:</span>
-              <span className="font-bold text-slate-800">R$ {precoVenda.toFixed(2)}</span>
+              <span className="text-slate-600">DIFAL ({taxBreakdown.difal.toFixed(2)}%):</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.difal / 100).toFixed(2)}</span>
             </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-slate-600">Frete ({fretePerc}%):</span>
+            <span className="font-bold text-red-600">-R$ {totalFrete.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Comissão ({comissaoPerc}%):</span>
+            <span className="font-bold text-red-600">-R$ {totalComissao.toFixed(2)}</span>
+          </div>
+          {custosAdicionaisPerc > 0 && (
             <div className="flex justify-between">
-              <span className="text-slate-600">Custo ({fonte}):</span>
-              <span className="font-bold text-red-600">-R$ {custoBox.toFixed(2)} ({custoPerc.toFixed(1)}%)</span>
+              <span className="text-slate-600">Custos Adic. ({custosAdicionaisPerc}%):</span>
+              <span className="font-bold text-red-600">-R$ {totalCustosAd.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">ICMS ({taxBreakdown.icms.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(precoVenda * taxBreakdown.icms / 100).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">PIS ({taxBreakdown.pis.toFixed(3)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(precoVenda * taxBreakdown.pis / 100).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">COFINS ({taxBreakdown.cofins.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(precoVenda * taxBreakdown.cofins / 100).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">IRPJ ({taxBreakdown.irpj.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(precoVenda * taxBreakdown.irpj / 100).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">CSLL ({taxBreakdown.csll.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(precoVenda * taxBreakdown.csll / 100).toFixed(2)}</span>
-            </div>
-            {taxBreakdown.difal > 0 && (
-              <div className="flex justify-between">
-                <span className="text-slate-600">DIFAL ({taxBreakdown.difal.toFixed(2)}%):</span>
-                <span className="font-bold text-red-600">-R$ {(precoVenda * taxBreakdown.difal / 100).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-slate-600">Frete ({fretePerc}%):</span>
-              <span className="font-bold text-red-600">-R$ {freteValor.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Comissão ({comissaoPerc}%):</span>
-              <span className="font-bold text-red-600">-R$ {comissaoValor.toFixed(2)}</span>
-            </div>
-            {custosAdicionaisPerc > 0 && (
-              <div className="flex justify-between">
-                <span className="text-slate-600">Custos Adic. ({custosAdicionaisPerc}%):</span>
-                <span className="font-bold text-red-600">-R$ {custosAdValor.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="col-span-2 border-t border-slate-300 pt-0.5 flex justify-between">
-              <span className="text-slate-700 font-bold">Lucro Líquido:</span>
-              <span className={`font-black ${lucro >= 0 ? "text-green-700" : "text-red-700"}`}>
-                R$ {lucro.toFixed(2)} ({margin.toFixed(1)}%)
-              </span>
-            </div>
+          )}
+          <div className="col-span-2 border-t border-slate-300 pt-1 mt-0.5 flex justify-between">
+            <span className="text-[10px] text-slate-700 font-bold">Lucro Líquido{qty > 1 ? ` (${qty}cx)` : ""}:</span>
+            <span className={`text-[11px] font-black ${totalLucro >= 0 ? "text-green-700" : "text-red-700"}`}>
+              R$ {totalLucro.toFixed(2)} ({margin.toFixed(1)}%)
+            </span>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -5174,8 +5174,8 @@
 - [x] Corrigir items PONTA/CHANFRO 5,0x140 nas PO22/PO29/PO34 de '00037' para '00051'
 
 ## Fix Recálculo Dinâmico no Pedido de Venda
-- [ ] Frete, comissão e impostos devem recalcular ao mudar quantidade de caixas no pedido de venda
-- [ ] Valores não podem ficar fixos quando a quantidade muda
+- [x] Frete, comissão e impostos devem recalcular ao mudar quantidade de caixas no pedido de venda
+- [x] Valores não podem ficar fixos quando a quantidade muda
 
 ## Diário de Cobrança - Ajustes
 - [x] Remover aba "Nova Entrada" do Diário de Cobrança (entradas devem ser automáticas)

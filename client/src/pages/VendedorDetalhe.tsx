@@ -5533,6 +5533,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                                       fretePerc={marginFrete}
                                       comissaoPerc={marginComissao}
                                       custosAdicionaisPerc={marginCustosAdicionais}
+                                      quantidade={calc.quantity}
                                     />
                                   )}
                                 </div>
