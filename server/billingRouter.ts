@@ -341,19 +341,20 @@ export const billingRouter = router({
           order.estadoItem = "Faturado parcial";
         }
         // Conversão para caixas — PRIORIDADE: quantidade lançada no Maxiprod
-        // Só usa observações quando há conversão de unidades (ex: kg → caixas)
+        // Usa observações quando há conversão de unidades explícita (ex: kg → caixas, MIL → caixas)
         const codigoItemVal = item.codigoItem || "";
         const unidadeVal = (item.unidadeMedidaCodigo || "").toLowerCase();
         let qtdExibicao = qtdEfetiva;
         let qtdOriginalExibicao = qtdOriginal;
         let unidadeExibicao = item.unidadeMedidaCodigo || "";
         const obs = (item.observacoes || "");
-        // Só usar obs para conversão quando a unidade do Maxiprod é KG (conversão real)
-        // e a obs menciona caixas — isso indica conversão de unidade
+        // Usar obs para conversão quando a unidade NÃO é CX/UN (ou seja, KG, MIL, etc.)
+        // e a obs menciona caixas — isso indica conversão de unidade explícita
         const isKgUnit = unidadeVal === 'kg';
-        const caixasConversaoMatch = isKgUnit ? obs.match(/(\d+)\s*caixas?/i) : null;
+        const isNonStandardUnit = unidadeVal !== 'cx' && unidadeVal !== 'un' && unidadeVal !== '';
+        const caixasConversaoMatch = isNonStandardUnit ? obs.match(/(\d+)\s*caixas?/i) : null;
         if (caixasConversaoMatch) {
-          // Conversão de unidade via observação (kg → caixas)
+          // Conversão de unidade via observação (kg/MIL/etc → caixas)
           qtdExibicao = parseInt(caixasConversaoMatch[1], 10);
           qtdOriginalExibicao = parseInt(caixasConversaoMatch[1], 10);
           unidadeExibicao = "cx";
@@ -441,16 +442,17 @@ export const billingRouter = router({
         const vt = parseFloat(String(item.valorTotal || 0));
         order.valorTotal += vt;
         // Conversão para caixas (faturados) — PRIORIDADE: quantidade lançada no Maxiprod
-        // Só usa observações quando há conversão de unidades (ex: kg → caixas)
+        // Usa observações quando há conversão de unidades explícita (ex: kg → caixas, MIL → caixas)
         const billedCodigoItem = item.codigoItem || "";
         const billedUnidade = (item.unidadeMedidaCodigo || "").toLowerCase();
         let billedQtd = parseFloat(String(item.quantidade || 0));
         let billedUnidadeExibicao = item.unidadeMedidaCodigo || "";
         const billedObs = (item.observacoes || "");
         const billedIsKg = billedUnidade === 'kg';
-        const billedCaixasConversaoMatch = billedIsKg ? billedObs.match(/(\d+)\s*caixas?/i) : null;
+        const billedIsNonStandard = billedUnidade !== 'cx' && billedUnidade !== 'un' && billedUnidade !== '';
+        const billedCaixasConversaoMatch = billedIsNonStandard ? billedObs.match(/(\d+)\s*caixas?/i) : null;
         if (billedCaixasConversaoMatch) {
-          // Conversão de unidade via observação (kg → caixas)
+          // Conversão de unidade via observação (kg/MIL/etc → caixas)
           billedQtd = parseInt(billedCaixasConversaoMatch[1], 10);
           billedUnidadeExibicao = "cx";
         } else if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedIsKg) {
