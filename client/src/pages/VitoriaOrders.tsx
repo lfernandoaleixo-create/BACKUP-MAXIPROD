@@ -258,62 +258,7 @@ export default function VitoriaOrders() {
             </div>
             <div className="divide-y divide-emerald-100 dark:divide-emerald-800">
               {newClients.map((client: any) => (
-                <div key={client.id} className="px-4 py-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{client.razaoSocial}</p>
-                      <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
-                        <span>{client.cnpjCpf}</span>
-                        <span className="flex items-center gap-1"><User className="w-3 h-3" />{client.sellerName}</span>
-                        {client.cidade && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{client.cidade}/{client.uf}</span>}
-                        <span>{new Date(client.createdAt).toLocaleDateString("pt-BR")}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={async () => {
-                          setExportingClientId(client.id);
-                          try {
-                            const result = await exportVendorClientMutation.mutateAsync({ clientId: client.id });
-                            const byteCharacters = atob(result.base64);
-                            const byteNumbers = new Array(byteCharacters.length);
-                            for (let i = 0; i < byteCharacters.length; i++) {
-                              byteNumbers[i] = byteCharacters.charCodeAt(i);
-                            }
-                            const byteArray = new Uint8Array(byteNumbers);
-                            const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = result.filename;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                            toast.success(`Planilha exportada: ${result.clientName}`);
-                            // Mark as exported and refresh
-                            await markExportedMutation.mutateAsync({ clientId: client.id });
-                            refetchClients();
-                            utils.salesOrders.countPendingVitoria.invalidate();
-                          } catch (err: any) {
-                            toast.error(err.message || "Erro ao exportar");
-                          } finally {
-                            setExportingClientId(null);
-                          }
-                        }}
-                        disabled={exportingClientId === client.id}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-100 dark:bg-emerald-800/50 text-emerald-700 dark:text-emerald-300 rounded-lg text-[10px] font-bold hover:bg-emerald-200 dark:hover:bg-emerald-700/50 transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        {exportingClientId === client.id ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <FileSpreadsheet className="w-3.5 h-3.5" />
-                        )}
-                        Exportar Maxiprod
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <NewClientExpandableRow key={client.id} client={client} exportingClientId={exportingClientId} setExportingClientId={setExportingClientId} exportVendorClientMutation={exportVendorClientMutation} markExportedMutation={markExportedMutation} refetchClients={refetchClients} utils={utils} />
               ))}
             </div>
           </div>
@@ -901,6 +846,200 @@ export default function VitoriaOrders() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+
+function NewClientExpandableRow({ client, exportingClientId, setExportingClientId, exportVendorClientMutation, markExportedMutation, refetchClients, utils }: any) {
+  const [expanded, setExpanded] = useState(false);
+
+  const endereco = [client.logradouro, client.numero, client.bairro, client.cidade, client.uf]
+    .filter(Boolean).join(", ");
+  const enderecoEntrega = [client.entregaLogradouro, client.entregaNumero, client.entregaBairro, client.entregaCidade, client.entregaUf]
+    .filter(Boolean).join(", ");
+  const enderecoRedespacho = [client.redespachoLogradouro, client.redespachoNumero, client.redespachoBairro, client.redespachoCidade, client.redespachoUf]
+    .filter(Boolean).join(", ");
+
+  return (
+    <div className="group">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-4 py-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors text-left cursor-pointer"
+      >
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{client.razaoSocial}</p>
+            <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500 flex-wrap">
+              <span>{client.cnpjCpf}</span>
+              <span className="flex items-center gap-1"><User className="w-3 h-3" />{client.sellerName}</span>
+              {client.cidade && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{client.cidade}/{client.uf}</span>}
+              <span>{new Date(client.createdAt).toLocaleDateString("pt-BR")}</span>
+            </div>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${expanded ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 border-l-4 border-emerald-300 dark:border-emerald-700 ml-4 bg-emerald-50/30 dark:bg-emerald-900/10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-2">
+            {client.razaoSocial && (
+              <div><span className="text-slate-400 font-medium">Razão Social:</span> <span className="text-slate-700 dark:text-slate-200">{client.razaoSocial}</span></div>
+            )}
+            {client.nomeFantasia && (
+              <div><span className="text-slate-400 font-medium">Nome Fantasia:</span> <span className="text-slate-700 dark:text-slate-200">{client.nomeFantasia}</span></div>
+            )}
+            {client.cnpjCpf && (
+              <div><span className="text-slate-400 font-medium">CNPJ/CPF:</span> <span className="text-slate-700 dark:text-slate-200 font-mono">{client.cnpjCpf}</span></div>
+            )}
+            {client.inscricaoEstadual && (
+              <div><span className="text-slate-400 font-medium">IE:</span> <span className="text-slate-700 dark:text-slate-200">{client.inscricaoEstadual}</span></div>
+            )}
+            {client.inscricaoMunicipal && (
+              <div><span className="text-slate-400 font-medium">IM:</span> <span className="text-slate-700 dark:text-slate-200">{client.inscricaoMunicipal}</span></div>
+            )}
+            {client.inscricaoSuframa && (
+              <div><span className="text-slate-400 font-medium">SUFRAMA:</span> <span className="text-slate-700 dark:text-slate-200">{client.inscricaoSuframa}</span></div>
+            )}
+            {client.cep && (
+              <div><span className="text-slate-400 font-medium">CEP:</span> <span className="text-slate-700 dark:text-slate-200">{client.cep}</span></div>
+            )}
+            {endereco && (
+              <div className="sm:col-span-2"><span className="text-slate-400 font-medium">Endereço:</span> <span className="text-slate-700 dark:text-slate-200">{endereco}</span></div>
+            )}
+            {client.telefone1 && (
+              <div><span className="text-slate-400 font-medium">Telefone:</span> <span className="text-slate-700 dark:text-slate-200">{client.telefone1}{client.telefone2 ? ` / ${client.telefone2}` : ""}</span></div>
+            )}
+            {client.email && (
+              <div><span className="text-slate-400 font-medium">Email:</span> <span className="text-slate-700 dark:text-slate-200">{client.email}</span></div>
+            )}
+            {client.emailNfe && (
+              <div><span className="text-slate-400 font-medium">Email NFe:</span> <span className="text-slate-700 dark:text-slate-200">{client.emailNfe}</span></div>
+            )}
+            {client.nomeContato && (
+              <div><span className="text-slate-400 font-medium">Contato:</span> <span className="text-slate-700 dark:text-slate-200">{client.nomeContato}</span></div>
+            )}
+            {client.segmento && (
+              <div><span className="text-slate-400 font-medium">Segmento:</span> <span className="text-slate-700 dark:text-slate-200">{client.segmento}</span></div>
+            )}
+            {client.regimeTributario && (
+              <div><span className="text-slate-400 font-medium">Regime Tributário:</span> <span className="text-slate-700 dark:text-slate-200">{client.regimeTributario}</span></div>
+            )}
+            {client.situacaoFiscalEspecial && client.situacaoFiscalEspecial !== "Nenhuma" && (
+              <div><span className="text-slate-400 font-medium">Sit. Fiscal:</span> <span className="text-slate-700 dark:text-slate-200">{client.situacaoFiscalEspecial}</span></div>
+            )}
+            {client.cnaeFiscal && (
+              <div><span className="text-slate-400 font-medium">CNAE:</span> <span className="text-slate-700 dark:text-slate-200">{client.cnaeFiscal}</span></div>
+            )}
+            {client.limiteCredito && (
+              <div><span className="text-slate-400 font-medium">Limite Crédito:</span> <span className="text-slate-700 dark:text-slate-200">R$ {client.limiteCredito}</span></div>
+            )}
+            {client.formaCobranca && (
+              <div><span className="text-slate-400 font-medium">Forma Cobrança:</span> <span className="text-slate-700 dark:text-slate-200">{client.formaCobranca}</span></div>
+            )}
+            {client.tabelaPrecos && (
+              <div><span className="text-slate-400 font-medium">Tabela Preços:</span> <span className="text-slate-700 dark:text-slate-200">{client.tabelaPrecos}</span></div>
+            )}
+            {client.condicaoPagamento && (
+              <div><span className="text-slate-400 font-medium">Cond. Pagamento:</span> <span className="text-slate-700 dark:text-slate-200">{client.condicaoPagamento}</span></div>
+            )}
+            {client.regiao && (
+              <div><span className="text-slate-400 font-medium">Região:</span> <span className="text-slate-700 dark:text-slate-200">{client.regiao}</span></div>
+            )}
+            {client.perfil && (
+              <div><span className="text-slate-400 font-medium">Perfil:</span> <span className="text-slate-700 dark:text-slate-200">{client.perfil}</span></div>
+            )}
+            {client.produtos && (
+              <div className="sm:col-span-2"><span className="text-slate-400 font-medium">Produtos:</span> <span className="text-slate-700 dark:text-slate-200">{client.produtos}</span></div>
+            )}
+            {client.probabilidadeNegocio && (
+              <div><span className="text-slate-400 font-medium">Probabilidade:</span> <span className="text-slate-700 dark:text-slate-200">{client.probabilidadeNegocio}</span></div>
+            )}
+            {client.tamanho && (
+              <div><span className="text-slate-400 font-medium">Tamanho:</span> <span className="text-slate-700 dark:text-slate-200">{client.tamanho}</span></div>
+            )}
+            {client.fornecedorAtual && (
+              <div><span className="text-slate-400 font-medium">Fornecedor Atual:</span> <span className="text-slate-700 dark:text-slate-200">{client.fornecedorAtual}</span></div>
+            )}
+            {client.website && (
+              <div><span className="text-slate-400 font-medium">Website:</span> <span className="text-slate-700 dark:text-slate-200">{client.website}</span></div>
+            )}
+            {client.observacoes && (
+              <div className="sm:col-span-2"><span className="text-slate-400 font-medium">Obs:</span> <span className="text-slate-700 dark:text-slate-200">{client.observacoes}</span></div>
+            )}
+          </div>
+
+          {/* Redespacho */}
+          {client.possuiRedespacho === 1 && (
+            <div className="mt-3 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
+              <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Redespacho</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                {client.redespachoCnpj && <span className="text-slate-600 dark:text-slate-300">CNPJ: {client.redespachoCnpj}</span>}
+                {client.redespachoRazaoSocial && <span className="text-slate-600 dark:text-slate-300">Razão: {client.redespachoRazaoSocial}</span>}
+                {client.redespachoCep && <span className="text-slate-600 dark:text-slate-300">CEP: {client.redespachoCep}</span>}
+                {enderecoRedespacho && <span className="text-slate-600 dark:text-slate-300">{enderecoRedespacho}</span>}
+                {client.redespachoTelefone && <span className="text-slate-600 dark:text-slate-300">Tel: {client.redespachoTelefone}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Endereço de entrega diferente */}
+          {client.enderecoEntregaMesmo === 0 && (
+            <div className="mt-2 p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700">
+              <p className="text-[10px] font-bold text-orange-600 uppercase mb-1">Endereço de Entrega (diferente)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                {client.entregaCep && <span className="text-slate-600 dark:text-slate-300">CEP: {client.entregaCep}</span>}
+                {enderecoEntrega && <span className="text-slate-600 dark:text-slate-300">{enderecoEntrega}</span>}
+                {client.entregaTelefone && <span className="text-slate-600 dark:text-slate-300">Tel: {client.entregaTelefone}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Export button */}
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              setExportingClientId(client.id);
+              try {
+                const result = await exportVendorClientMutation.mutateAsync({ clientId: client.id });
+                const byteCharacters = atob(result.base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = result.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast.success(`Planilha exportada: ${result.clientName}`);
+                await markExportedMutation.mutateAsync({ clientId: client.id });
+                refetchClients();
+                utils.salesOrders.countPendingVitoria.invalidate();
+              } catch (err: any) {
+                toast.error(err.message || "Erro ao exportar");
+              } finally {
+                setExportingClientId(null);
+              }
+            }}
+            disabled={exportingClientId === client.id}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-lg hover:bg-emerald-200 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {exportingClientId === client.id ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4" />
+            )}
+            {exportingClientId === client.id ? "Exportando..." : "Exportar Maxiprod"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
