@@ -5108,3 +5108,7 @@
 - [ ] Garantir que gestores consigam puxar clientes cadastrados na busca ao fazer pedido
 - [x] Tornar "Forma de pagamento" campo obrigatório no pedido de venda
 - [x] Remover opção "Cartão" das formas de pagamento
+
+## Exportar Cliente Maxiprod direto da lista de clientes
+- [x] Adicionar botão "Exportar Maxiprod (Planilha Empresas .xlsx)" na visualização de detalhes de cada cliente cadastrado pelo vendedor
+- [x] Permitir exportação mesmo sem pedido de venda associado (cliente apenas cadastrado)

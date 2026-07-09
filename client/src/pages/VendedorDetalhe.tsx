@@ -60,6 +60,7 @@ import {
   Truck,
   Pencil,
   Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -3075,7 +3076,9 @@ function FormInput({ label, value, onChange, placeholder, type = "text", require
 function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted: () => void; onEdit?: (client: any) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [exportingClient, setExportingClient] = useState(false);
   const deleteMutation = trpc.sales.deleteVendorClient.useMutation();
+  const exportClientMutation = trpc.salesOrders.exportVendorClientMaxiprod.useMutation();
 
   const handleDelete = async () => {
     await deleteMutation.mutateAsync({ id: client.id });
@@ -3351,6 +3354,41 @@ function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted
               </div>
             )}
           </div>
+          {/* Export Maxiprod button */}
+          <button
+            onClick={async () => {
+              setExportingClient(true);
+              try {
+                const result = await exportClientMutation.mutateAsync({ clientId: client.id });
+                const byteCharacters = atob(result.base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = result.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } catch (err: any) {
+                alert(err.message || "Erro ao exportar cliente");
+              } finally {
+                setExportingClient(false);
+              }
+            }}
+            disabled={exportingClient}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            {exportingClient ? "Exportando..." : "Exportar Maxiprod"}
+            <span className="text-[10px] text-green-500">(Planilha Empresas .xlsx)</span>
+          </button>
+
           {/* Edit and Delete buttons */}
           <div className="mt-3 flex items-center gap-2">
             {onEdit && (

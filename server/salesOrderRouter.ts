@@ -1208,6 +1208,24 @@ export const salesOrderRouter = router({
       return { base64, filename, clientName: client.razaoSocial };
     }),
 
+  /** Export a vendor client directly by clientId (no order needed) */
+  exportVendorClientMaxiprod: publicProcedure
+    .input(z.object({ clientId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      const [client] = await db.select().from(vendorClients)
+        .where(eq(vendorClients.id, input.clientId));
+      if (!client) throw new Error("Cliente não encontrado");
+
+      const { generateMaxiprodExcel } = await import("./maxiprodExcelExport");
+      const buffer = await generateMaxiprodExcel([client.id]);
+      const base64 = buffer.toString("base64");
+      const filename = `Maxiprod_${(client.razaoSocial || "Cliente").replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      return { base64, filename, clientName: client.razaoSocial };
+    }),
+
   /** Export order as Maxiprod Pedido de Venda XLS */
   exportOrderMaxiprod: publicProcedure
     .input(z.object({ orderId: z.number() }))
