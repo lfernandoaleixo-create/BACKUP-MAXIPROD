@@ -4086,6 +4086,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const [observacoes, setObservacoes] = useState("");
   // Campos Maxiprod
   const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
+  const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
   const [estadoConfiguravel, setEstadoConfiguravel] = useState("MADEIRA");
   const [formaPagamento, setFormaPagamento] = useState("A prazo");
   const [dataEntregaPedido, setDataEntregaPedido] = useState("");
@@ -4289,6 +4290,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
       observacoes: observacoes || undefined,
       // Campos Maxiprod
       operacaoFiscal: operacaoFiscal || undefined,
+      naturezaOperacao: naturezaOperacao || undefined,
       estadoConfiguravel: estadoConfiguravel || undefined,
       formaPagamento: formaPagamento || undefined,
       dataEntrega: dataEntregaPedido || undefined,
@@ -5502,6 +5504,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             setObservacoes={setObservacoes}
             operacaoFiscal={operacaoFiscal}
             setOperacaoFiscal={setOperacaoFiscal}
+            naturezaOperacao={naturezaOperacao}
+            setNaturezaOperacao={setNaturezaOperacao}
             estadoConfiguravel={estadoConfiguravel}
             setEstadoConfiguravel={setEstadoConfiguravel}
             formaPagamento={formaPagamento}

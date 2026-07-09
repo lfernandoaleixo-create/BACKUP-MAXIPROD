@@ -1170,6 +1170,13 @@
       "when": 1783598990109,
       "tag": "0166_little_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "5",
+      "when": 1783603340333,
+      "tag": "0167_mighty_silverclaw",
+      "breakpoints": true
     }
   ]
 }

@@ -47,6 +47,8 @@ interface CustosDeVendaStepProps {
   // Campos Maxiprod
   operacaoFiscal: string;
   setOperacaoFiscal: (v: string) => void;
+  naturezaOperacao: string;
+  setNaturezaOperacao: (v: string) => void;
   estadoConfiguravel: string;
   setEstadoConfiguravel: (v: string) => void;
   formaPagamento: string;
@@ -140,6 +142,8 @@ export default function CustosDeVendaStep({
   setObservacoes,
   operacaoFiscal,
   setOperacaoFiscal,
+  naturezaOperacao,
+  setNaturezaOperacao,
   estadoConfiguravel,
   setEstadoConfiguravel,
   formaPagamento,
@@ -756,6 +760,22 @@ export default function CustosDeVendaStep({
               <option value="6108 - Fora do Estado - Consumidor Final">6108 - Fora do Estado - Consumidor Final</option>
               <option value="5102 - Dentro do Estado - Revenda">5102 - Dentro do Estado - Revenda</option>
               <option value="6102 - Fora do Estado - Revenda">6102 - Fora do Estado - Revenda</option>
+            </select>
+          </div>
+          <div className="col-span-2">
+            <label className="text-[9px] text-slate-500 font-medium">Natureza da Operação</label>
+            <select
+              value={naturezaOperacao}
+              onChange={(e) => setNaturezaOperacao(e.target.value)}
+              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            >
+              <option value="Venda de produção do estabelecimento">Venda de produção do estabelecimento</option>
+              <option value="Venda de mercadoria adquirida">Venda de mercadoria adquirida</option>
+              <option value="Transferência de produção do estabelecimento">Transferência de produção do estabelecimento</option>
+              <option value="Devolução de compra">Devolução de compra</option>
+              <option value="Remessa para industrialização">Remessa para industrialização</option>
+              <option value="Remessa para conserto">Remessa para conserto</option>
+              <option value="Venda para entrega futura">Venda para entrega futura</option>
             </select>
           </div>
           <div>

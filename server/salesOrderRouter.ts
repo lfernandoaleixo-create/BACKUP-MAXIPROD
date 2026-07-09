@@ -602,6 +602,7 @@ export const salesOrderRouter = router({
       observacoes: z.string().optional(),
       // Campos Maxiprod
       operacaoFiscal: z.string().optional(),
+      naturezaOperacao: z.string().optional(),
       estadoConfiguravel: z.string().optional(),
       formaPagamento: z.string().optional(),
       dataEntrega: z.string().optional(),
@@ -717,6 +718,7 @@ export const salesOrderRouter = router({
         tipoFrete: input.tipoFrete || null,
         observacoes: input.observacoes || null,
         operacaoFiscal: input.operacaoFiscal || null,
+        naturezaOperacao: input.naturezaOperacao || null,
         estadoConfiguravel: input.estadoConfiguravel || null,
         formaPagamento: input.formaPagamento || null,
         dataEntrega: input.dataEntrega || null,

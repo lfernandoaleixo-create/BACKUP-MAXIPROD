@@ -5084,3 +5084,16 @@
 - [x] Botão de lixeira ao lado de cada vendedor na lista de senhas (PasswordManagerView)
 - [x] Confirmação "Sim, excluir / Cancelar" antes de deletar
 - [x] Removido RAFAEL duplicado (id 430000) da tabela seller_permissions - mantido RAFAEL LEONEL PEREIRA (id 460000)
+
+## Feature: Natureza da Operação no Pedido de Venda
+- [x] Adicionar campo naturezaOperacao à interface CustosDeVendaStepProps
+- [x] Adicionar campo naturezaOperacao ao function destructuring
+- [x] Adicionar dropdown Natureza da Operação no formulário (Venda de produção do estabelecimento, Venda de mercadoria adquirida, etc.)
+- [x] Adicionar state naturezaOperacao em VendedorDetalhe.tsx
+- [x] Passar naturezaOperacao como prop ao CustosDeVendaStep
+- [x] Adicionar naturezaOperacao ao payload do createOrder mutation
+- [x] Adicionar naturezaOperacao ao input schema do createOrder (salesOrderRouter.ts)
+- [x] Adicionar naturezaOperacao ao DB insert
+- [x] Adicionar coluna natureza_operacao ao schema (drizzle/schema.ts)
+- [x] Executar migration (ALTER TABLE)
+- [x] Testes passando (2/2)

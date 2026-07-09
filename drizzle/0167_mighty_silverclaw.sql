@@ -1,0 +1,1 @@
+ALTER TABLE `sales_order_requests` ADD `natureza_operacao` varchar(100);
