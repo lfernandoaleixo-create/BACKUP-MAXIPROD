@@ -5065,3 +5065,17 @@
 
 - [x] Corrigir bug de timezone: `new Date(cachedEta).toLocaleDateString('pt-BR')` em BRT (UTC-3) converte midnight UTC para dia anterior
 - [x] Usar regex para extrair data diretamente da string (DD/MM/YYYY) sem passar por Date object
+
+## Ajuste: Rastreio automático 2x ao dia (09/07/2026)
+
+- [x] Alterar frequência do cron de rastreamento de 1x/dia para 2x/dia (06:00 e 18:00 Brasília)
+- [x] Economizar créditos Logcomex: não rastrear toda hora, apenas 2 vezes ao dia
+
+## Feature: Pedido de Venda com exportação Maxiprod (09/07/2026)
+
+- [x] Adicionar campos Maxiprod ao formulário (Operação Fiscal, Estado Configurável, Forma Pagamento, Data Entrega, Previsão Entrega)
+- [x] Criar server/maxiprodOrderExport.ts com geração de XLS no formato exato da planilha modelo Maxiprod (29 colunas)
+- [x] Adicionar endpoint exportOrderMaxiprod no salesOrderRouter
+- [x] Atualizar schema com novos campos (operacao_fiscal, estado_configuravel, forma_pagamento, data_entrega_pedido, previsao_entrega_pedido)
+- [x] Atualizar botão de exportação de CSV para XLS Maxiprod
+- [x] Testes unitários passando (2 testes)

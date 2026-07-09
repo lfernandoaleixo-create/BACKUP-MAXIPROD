@@ -7,7 +7,7 @@ import { fetchLogcomexAiTracking } from "./logcomexAiTracking";
 
 /**
  * Handler para atualização automática de rastreamento de navios.
- * Chamado via Heartbeat (cron) diariamente às 06:00 AM Brasília (09:00 UTC).
+ * Chamado via Heartbeat (cron) 2x ao dia: 06:00 e 18:00 Brasília (09:00 e 21:00 UTC).
  * 
  * Busca todos os BLs cadastrados na tabela import_payments e atualiza
  * o cache de rastreamento com dados frescos.

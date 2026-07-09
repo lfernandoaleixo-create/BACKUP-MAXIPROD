@@ -600,6 +600,12 @@ export const salesOrderRouter = router({
       valorFrete: z.number().optional(),
       tipoFrete: z.string().optional(),
       observacoes: z.string().optional(),
+      // Campos Maxiprod
+      operacaoFiscal: z.string().optional(),
+      estadoConfiguravel: z.string().optional(),
+      formaPagamento: z.string().optional(),
+      dataEntrega: z.string().optional(),
+      previsaoEntrega: z.string().optional(),
       // Items
       items: z.array(z.object({
         codigoItem: z.string(),
@@ -710,6 +716,11 @@ export const salesOrderRouter = router({
         valorFrete: valorFrete.toFixed(2),
         tipoFrete: input.tipoFrete || null,
         observacoes: input.observacoes || null,
+        operacaoFiscal: input.operacaoFiscal || null,
+        estadoConfiguravel: input.estadoConfiguravel || null,
+        formaPagamento: input.formaPagamento || null,
+        dataEntrega: input.dataEntrega || null,
+        previsaoEntrega: input.previsaoEntrega || null,
         possuiRedespacho: input.possuiRedespacho || false,
         redespachoCnpj: input.redespachoCnpj || null,
         redespachoRazaoSocial: input.redespachoRazaoSocial || null,
@@ -1193,6 +1204,16 @@ export const salesOrderRouter = router({
       const filename = `Maxiprod_${client.razaoSocial.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
       return { base64, filename, clientName: client.razaoSocial };
+    }),
+
+  /** Export order as Maxiprod Pedido de Venda XLS */
+  exportOrderMaxiprod: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .mutation(async ({ input }) => {
+      const { generateMaxiprodOrderExcelFromDb } = await import("./maxiprodOrderExport");
+      const { buffer, filename } = await generateMaxiprodOrderExcelFromDb(input.orderId);
+      const base64 = buffer.toString("base64");
+      return { base64, filename };
     }),
 
   /** Get modification info for clients in orders (for Vit\u00f3ria's banner) */

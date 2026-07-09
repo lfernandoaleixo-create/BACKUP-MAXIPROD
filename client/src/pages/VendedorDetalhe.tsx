@@ -4084,6 +4084,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const [valorFrete, setValorFrete] = useState("");
   const [tipoFrete, setTipoFrete] = useState("CIF");
   const [observacoes, setObservacoes] = useState("");
+  // Campos Maxiprod
+  const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
+  const [estadoConfiguravel, setEstadoConfiguravel] = useState("MADEIRA");
+  const [formaPagamento, setFormaPagamento] = useState("A prazo");
+  const [dataEntregaPedido, setDataEntregaPedido] = useState("");
+  const [previsaoEntregaPedido, setPrevisaoEntregaPedido] = useState("");
 
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(
@@ -4281,6 +4287,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
       valorFrete: Number(valorFrete) || undefined,
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
+      // Campos Maxiprod
+      operacaoFiscal: operacaoFiscal || undefined,
+      estadoConfiguravel: estadoConfiguravel || undefined,
+      formaPagamento: formaPagamento || undefined,
+      dataEntrega: dataEntregaPedido || undefined,
+      previsaoEntrega: previsaoEntregaPedido || undefined,
       // CRM / Relacionamento
       regiao: regiao || undefined,
       perfil: perfil || undefined,
@@ -4344,70 +4356,36 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     }
   };
 
-  // Export CSV for Maxiprod import
+  // Export XLS for Maxiprod import (Pedido de Venda format)
+  const exportOrderMaxiprodMutation = trpc.salesOrders.exportOrderMaxiprod.useMutation();
   const handleExportCSV = () => {
-    const separator = ";";
-    const today = new Date().toLocaleDateString("pt-BR");
-    // Header row
-    const headers = [
-      "Pedido", "Data", "Vendedor", "CNPJ/CPF", "Razão Social", "Nome Fantasia",
-      "Inscrição Estadual", "Tipo Contribuinte", "Regime Tributário",
-      "Inscrição Municipal", "Inscrição SUFRAMA", "Situação Fiscal Especial",
-      "CNAE Fiscal", "Email NFe", "Website",
-      "CEP", "Endereço", "Número", "Complemento", "Bairro", "Município", "UF",
-      "Telefone 1", "Telefone 2", "Email", "Segmento",
-      "Limite Crédito", "Forma Cobrança", "Tabela Preços", "Condição Pagamento",
-      "Região", "Perfil", "Forma Pedido", "Produtos Interesse",
-      "Probabilidade Negócio", "Tamanho", "Atenção", "Fornecedor Atual",
-      "Situação Cobrança",
-      "Tipo Frete", "Valor Frete",
-      "Possui Redespacho", "Redespacho CNPJ", "Redespacho Razão Social",
-      "Redespacho CEP", "Redespacho Endereço", "Redespacho Número", "Redespacho Bairro",
-      "Redespacho Cidade", "Redespacho UF", "Redespacho Telefone",
-      "Endereço Entrega Mesmo", "Entrega CEP", "Entrega Endereço", "Entrega Número",
-      "Entrega Bairro", "Entrega Cidade", "Entrega UF", "Entrega Telefone",
-      "Código Produto", "Descrição Produto", "Quantidade", "Unidade", "Preço Unitário", "Total Item",
-      "Observações"
-    ];
-    const rows: string[][] = [];
-    items.forEach((item) => {
-      rows.push([
-        String(submittedOrderNumber || submittedOrderId || ""),
-        today,
-        sellerName,
-        cnpjCpf, razaoSocial, nomeFantasia,
-        inscricaoEstadual, tipoContribuinte, regimeTributario,
-        inscricaoMunicipal, inscricaoSuframa, situacaoFiscalEspecial,
-        cnaeFiscal, emailNfe, websiteCliente,
-        cep, endereco, numero, complemento, bairro, municipio, uf,
-        telefone1, telefone2, emailContato, segmento,
-        limiteCredito, formaCobranca, tabelaPrecos, condicaoPagamento,
-        regiao, perfil, formaPedido, produtosInteresse,
-        probabilidadeNegocio, tamanho, atencao, fornecedorAtual,
-        situacaoCobranca,
-        tipoFrete, String(valorFrete || "0"),
-        possuiRedespacho ? "Sim" : "Não", redespachoCnpj, redespachoRazaoSocial,
-        redespachoCep, redespachoLogradouro, redespachoNumero, redespachoBairro,
-        redespachoCidade, redespachoUf, redespachoTelefone,
-        enderecoEntregaMesmo ? "Sim" : "Não", entregaCep, entregaLogradouro, entregaNumero,
-        entregaBairro, entregaCidade, entregaUf, entregaTelefone,
-        item.codigoItem, item.descricaoItem, String(item.quantidade), item.unidadeMedida,
-        item.precoUnitario.toFixed(2).replace(".", ","),
-        (item.quantidade * item.precoUnitario).toFixed(2).replace(".", ","),
-        observacoes || ""
-      ]);
-    });
-    const csvContent = [headers.join(separator), ...rows.map(r => r.map(v => `"${(v || "").replace(/"/g, '""')}"`).join(separator))].join("\n");
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `pedido_${submittedOrderNumber || submittedOrderId}_maxiprod.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!submittedOrderId) return;
+    exportOrderMaxiprodMutation.mutate(
+      { orderId: submittedOrderId },
+      {
+        onSuccess: (data) => {
+          const byteCharacters = atob(data.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          alert("Planilha Maxiprod exportada com sucesso!");
+        },
+        onError: (err) => {
+          alert(err.message || "Erro ao exportar planilha Maxiprod");
+        },
+      }
+    );
   };
 
   // Required fields for client (same as new client registration)
@@ -5522,6 +5500,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             setTipoFrete={setTipoFrete}
             observacoes={observacoes}
             setObservacoes={setObservacoes}
+            operacaoFiscal={operacaoFiscal}
+            setOperacaoFiscal={setOperacaoFiscal}
+            estadoConfiguravel={estadoConfiguravel}
+            setEstadoConfiguravel={setEstadoConfiguravel}
+            formaPagamento={formaPagamento}
+            setFormaPagamento={setFormaPagamento}
+            dataEntregaPedido={dataEntregaPedido}
+            setDataEntregaPedido={setDataEntregaPedido}
+            previsaoEntregaPedido={previsaoEntregaPedido}
+            setPrevisaoEntregaPedido={setPrevisaoEntregaPedido}
             onBack={() => setStep("produtos")}
             onNext={() => setStep("revisao")}
           />
@@ -5807,7 +5795,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               onClick={() => handleExportCSV()}
               className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5"
             >
-              <Download className="w-4 h-4" /> Exportar CSV (Maxiprod)
+              <Download className="w-4 h-4" /> Exportar Pedido Maxiprod (.xlsx)
             </button>
             <button
               onClick={() => {

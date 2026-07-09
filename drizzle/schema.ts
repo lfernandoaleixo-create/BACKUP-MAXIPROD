@@ -2170,6 +2170,13 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   entregaCidade: varchar("entrega_cidade", { length: 200 }),
   entregaUf: varchar("entrega_uf", { length: 2 }),
   entregaTelefone: varchar("entrega_telefone", { length: 30 }),
+  // Dados do pedido Maxiprod
+  operacaoFiscal: varchar("operacao_fiscal", { length: 50 }),
+  estadoConfiguravel: varchar("estado_configuravel", { length: 50 }),
+  formaPagamento: varchar("forma_pagamento", { length: 50 }), // À vista, A prazo, Outros
+  dataEntrega: varchar("data_entrega_pedido", { length: 20 }),
+  previsaoEntrega: varchar("previsao_entrega_pedido", { length: 20 }),
+  
   // Dados de venda
   segmento: varchar("segmento", { length: 100 }),
   nomeContato: varchar("nome_contato", { length: 200 }),

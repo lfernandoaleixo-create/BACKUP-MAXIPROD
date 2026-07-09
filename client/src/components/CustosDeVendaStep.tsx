@@ -44,6 +44,17 @@ interface CustosDeVendaStepProps {
   setTipoFrete: (v: string) => void;
   observacoes: string;
   setObservacoes: (v: string) => void;
+  // Campos Maxiprod
+  operacaoFiscal: string;
+  setOperacaoFiscal: (v: string) => void;
+  estadoConfiguravel: string;
+  setEstadoConfiguravel: (v: string) => void;
+  formaPagamento: string;
+  setFormaPagamento: (v: string) => void;
+  dataEntregaPedido: string;
+  setDataEntregaPedido: (v: string) => void;
+  previsaoEntregaPedido: string;
+  setPrevisaoEntregaPedido: (v: string) => void;
   onBack: () => void;
   onNext: () => void;
 }
@@ -127,6 +138,16 @@ export default function CustosDeVendaStep({
   setTipoFrete,
   observacoes,
   setObservacoes,
+  operacaoFiscal,
+  setOperacaoFiscal,
+  estadoConfiguravel,
+  setEstadoConfiguravel,
+  formaPagamento,
+  setFormaPagamento,
+  dataEntregaPedido,
+  setDataEntregaPedido,
+  previsaoEntregaPedido,
+  setPrevisaoEntregaPedido,
   onBack,
   onNext,
 }: CustosDeVendaStepProps) {
@@ -700,7 +721,7 @@ export default function CustosDeVendaStep({
               type="text"
               value={condicaoPagamento}
               onChange={(e) => setCondicaoPagamento(e.target.value)}
-              placeholder="Ex: 30/60/90 dias"
+              placeholder="Ex: 21/35 ou 30/60/90"
               className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400"
             />
           </div>
@@ -715,6 +736,72 @@ export default function CustosDeVendaStep({
             />
           </div>
         </div>
+      </div>
+
+      {/* ===== DADOS PARA MAXIPROD ===== */}
+      <div className="border-t border-slate-200 dark:border-slate-600 pt-3 space-y-2">
+        <p className="text-[10px] font-bold text-amber-600 uppercase">Dados para Maxiprod (Pedido de Venda)</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2">
+            <label className="text-[9px] text-slate-500 font-medium">Operação Fiscal *</label>
+            <select
+              value={operacaoFiscal}
+              onChange={(e) => setOperacaoFiscal(e.target.value)}
+              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            >
+              <option value="6101 - Fora do Estado - Madeira">6101 - Fora do Estado - Madeira</option>
+              <option value="6101 - Fora do Estado - Aromas">6101 - Fora do Estado - Aromas</option>
+              <option value="5101 - Dentro do Estado - Madeira">5101 - Dentro do Estado - Madeira</option>
+              <option value="5101 - Dentro do Estado - Aromas">5101 - Dentro do Estado - Aromas</option>
+              <option value="6108 - Fora do Estado - Consumidor Final">6108 - Fora do Estado - Consumidor Final</option>
+              <option value="5102 - Dentro do Estado - Revenda">5102 - Dentro do Estado - Revenda</option>
+              <option value="6102 - Fora do Estado - Revenda">6102 - Fora do Estado - Revenda</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[9px] text-slate-500 font-medium">Estado Configurável</label>
+            <select
+              value={estadoConfiguravel}
+              onChange={(e) => setEstadoConfiguravel(e.target.value)}
+              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            >
+              <option value="MADEIRA">MADEIRA</option>
+              <option value="AROMAS">AROMAS</option>
+              <option value="ESPETOS">ESPETOS</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[9px] text-slate-500 font-medium">Forma de Pagamento</label>
+            <select
+              value={formaPagamento}
+              onChange={(e) => setFormaPagamento(e.target.value)}
+              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            >
+              <option value="A prazo">A prazo</option>
+              <option value="À vista">À vista</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[9px] text-slate-500 font-medium">Data de Entrega</label>
+            <input
+              type="date"
+              value={dataEntregaPedido}
+              onChange={(e) => setDataEntregaPedido(e.target.value)}
+              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] text-slate-500 font-medium">Previsão de Entrega</label>
+            <input
+              type="date"
+              value={previsaoEntregaPedido}
+              onChange={(e) => setPrevisaoEntregaPedido(e.target.value)}
+              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            />
+          </div>
+        </div>
+        <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
       </div>
 
       {/* Navigation */}
