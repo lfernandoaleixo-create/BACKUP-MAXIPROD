@@ -5130,3 +5130,12 @@
 - [x] Parâmetros editáveis: comissão (5,85%) e frete (13%)
 - [x] Exibir barra somente para Guilherme (inicialmente)
 - [x] Barra aparece ao ticar/selecionar cada produto na lista
+
+## Barra de Margem Comparativa (Custo Real)
+- [x] Criar segunda barra de margem (método custo real) ao lado da barra de interpolação existente
+- [x] Calcular: Preço vendido - Custo projetado - Impostos - Frete - Comissão - Custos adicionais
+- [x] Mostrar detalhes dos impostos por produto (PIS, COFINS, ICMS, IRPJ, CSLL)
+- [x] Indicar se produto é industrializado ou importado
+- [x] Seletor de estado de destino para simular impostos
+- [x] Custos adicionais editáveis (pode zerar)
+- [x] Exibir as duas barras lado a lado para comparação

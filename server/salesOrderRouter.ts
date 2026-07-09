@@ -2218,7 +2218,7 @@ export const salesOrderRouter = router({
     }))
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return { costMap: {} as Record<string, { cost: number; fonte: string }>, taxPercent: 0 };
+      if (!db) return { costMap: {} as Record<string, { cost: number; fonte: string; tipoProduto: string }>, taxBreakdownImportado: null as any, taxBreakdownIndustrializado: null as any };
 
       // Get real-time costs
       const { importRouter } = await import("./importRouter");
@@ -2227,8 +2227,24 @@ export const salesOrderRouter = router({
       const importCaller = createCaller({ user: null, req: {} as any, res: {} as any });
       const realTimeCosts = await importCaller.getRealTimeCosts();
 
-      // Build cost map
-      const costMap: Record<string, { cost: number; fonte: string }> = {};
+      // Get product type info from stock_items
+      const stockTypeRows = await db.select({
+        codigoItem: stockItems.codigoItem,
+        grupoCodigo: stockItems.grupoCodigo,
+        superGrupoCodigo: stockItems.superGrupoCodigo,
+      }).from(stockItems);
+      const productTypeMap: Record<string, string> = {};
+      for (const row of stockTypeRows) {
+        const sgc = row.superGrupoCodigo || "";
+        const gc = row.grupoCodigo || "";
+        if (sgc === "12") productTypeMap[row.codigoItem] = "importado";
+        else if (sgc === "05") productTypeMap[row.codigoItem] = "industrializado";
+        else if (sgc === "16" && (gc === "18" || gc === "19")) productTypeMap[row.codigoItem] = "industrializado";
+        else productTypeMap[row.codigoItem] = "importado"; // default
+      }
+
+      // Build cost map with tipoProduto
+      const costMap: Record<string, { cost: number; fonte: string; tipoProduto: string }> = {};
       for (const item of realTimeCosts) {
         let cost = 0;
         let fonte = "Sem custo";
@@ -2243,23 +2259,46 @@ export const salesOrderRouter = router({
           fonte = "Estimativa";
         }
         if (cost > 0) {
-          costMap[item.codigoItem] = { cost, fonte };
+          costMap[item.codigoItem] = { cost, fonte, tipoProduto: productTypeMap[item.codigoItem] || "importado" };
         }
       }
 
-      // Calculate total tax percentage for the given UF/contribuinte
-      // Using a reference value of 1000 to get the effective percentage
-      const impostos = calcularImpostos({
+      // Calculate tax breakdowns for BOTH product types at this UF
+      const taxBreakdownImportado = calcularImpostos({
         valorVenda: 1000,
         ufDestino: input.ufDestino,
         tipoProduto: "importado",
         tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
         faturamentoTrimestral: 0,
       });
+      const taxBreakdownIndustrializado = calcularImpostos({
+        valorVenda: 1000,
+        ufDestino: input.ufDestino,
+        tipoProduto: "industrializado",
+        tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
+        faturamentoTrimestral: 0,
+      });
 
       return {
         costMap,
-        taxPercent: impostos.totalImpostosPerc,
+        taxBreakdownImportado: {
+          icms: taxBreakdownImportado.icmsEfetivo,
+          pis: taxBreakdownImportado.pisEfetivo,
+          cofins: taxBreakdownImportado.cofinsEfetiva,
+          irpj: taxBreakdownImportado.irpjEfetivo,
+          csll: taxBreakdownImportado.csllEfetiva,
+          difal: taxBreakdownImportado.difalEfetivo,
+          total: taxBreakdownImportado.totalImpostosPerc,
+        },
+        taxBreakdownIndustrializado: {
+          icms: taxBreakdownIndustrializado.icmsEfetivo,
+          pis: taxBreakdownIndustrializado.pisEfetivo,
+          cofins: taxBreakdownIndustrializado.cofinsEfetiva,
+          irpj: taxBreakdownIndustrializado.irpjEfetivo,
+          csll: taxBreakdownIndustrializado.csllEfetiva,
+          difal: taxBreakdownIndustrializado.difalEfetivo,
+          total: taxBreakdownIndustrializado.totalImpostosPerc,
+        },
       };
     }),
 });

@@ -66,6 +66,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { TrackingModal } from "@/components/TrackingModal";
 import CustosDeVendaStep from "@/components/CustosDeVendaStep";
 import { ProductMarginBar, MarginParamsEditor } from "@/components/ProductMarginBar";
+import { RealCostMarginBar, MarginSimulationParams } from "@/components/RealCostMarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
@@ -4146,9 +4147,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const showMarginBar = marginOperator?.name === "Guilherme";
   const [marginComissao, setMarginComissao] = useState(5.85);
   const [marginFrete, setMarginFrete] = useState(13);
+  const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
+  const [marginUfSimulacao, setMarginUfSimulacao] = useState(uf || "MG");
   // Fetch product costs for margin calculation
+  const validTipoContrib = ["Contribuinte", "Não contribuinte", "Isento"].includes(tipoContribuinte || "") 
+    ? (tipoContribuinte as "Contribuinte" | "Não contribuinte" | "Isento") 
+    : "Contribuinte";
   const productMarginsQuery = trpc.salesOrders.getProductMargins.useQuery(
-    { ufDestino: uf || "MG", tipoContribuinte: (tipoContribuinte as "Contribuinte" | "N\u00e3o contribuinte" | "Isento") || "Contribuinte" },
+    { ufDestino: marginUfSimulacao || "MG", tipoContribuinte: validTipoContrib },
     { enabled: showMarginBar, staleTime: 60 * 1000 }
   );
 
@@ -5075,12 +5081,24 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             </div>
             {/* Margin params editor (Guilherme only) */}
             {showMarginBar && (
-              <MarginParamsEditor
-                comissao={marginComissao}
-                frete={marginFrete}
-                onComissaoChange={setMarginComissao}
-                onFreteChange={setMarginFrete}
-              />
+              <div className="space-y-1">
+                <MarginParamsEditor
+                  comissao={marginComissao}
+                  frete={marginFrete}
+                  onComissaoChange={setMarginComissao}
+                  onFreteChange={setMarginFrete}
+                />
+                <MarginSimulationParams
+                  comissao={marginComissao}
+                  frete={marginFrete}
+                  custosAdicionais={marginCustosAdicionais}
+                  ufDestino={marginUfSimulacao}
+                  onComissaoChange={setMarginComissao}
+                  onFreteChange={setMarginFrete}
+                  onCustosAdicionaisChange={setMarginCustosAdicionais}
+                  onUfDestinoChange={setMarginUfSimulacao}
+                />
+              </div>
             )}
             {/* Product search */}
             <div className="relative">
@@ -5493,14 +5511,31 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                               margem = margem - comissaoDiff - freteDiff;
                               
                               const costData = productMarginsQuery.data?.costMap[p.codigoItem];
+                              const taxBd = costData?.tipoProduto === "industrializado"
+                                ? productMarginsQuery.data?.taxBreakdownIndustrializado
+                                : productMarginsQuery.data?.taxBreakdownImportado;
                               return (
-                                <ProductMarginBar
-                                  margin={margem}
-                                  custoBox={costData?.cost || 0}
-                                  precoVenda={effectivePrice}
-                                  fonte={costData?.fonte}
-                                  desconto={descontoDado}
-                                />
+                                <div>
+                                  <ProductMarginBar
+                                    margin={margem}
+                                    custoBox={costData?.cost || 0}
+                                    precoVenda={effectivePrice}
+                                    fonte={costData?.fonte}
+                                    desconto={descontoDado}
+                                  />
+                                  {costData && taxBd && (
+                                    <RealCostMarginBar
+                                      precoVenda={effectivePrice}
+                                      custoBox={costData.cost}
+                                      fonte={costData.fonte}
+                                      tipoProduto={costData.tipoProduto}
+                                      taxBreakdown={taxBd}
+                                      fretePerc={marginFrete}
+                                      comissaoPerc={marginComissao}
+                                      custosAdicionaisPerc={marginCustosAdicionais}
+                                    />
+                                  )}
+                                </div>
                               );
                             })()}
                         </div>
