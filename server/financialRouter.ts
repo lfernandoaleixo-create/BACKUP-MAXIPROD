@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks, deferredPaymentNotes } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks, deferredPaymentNotes, collectionDiaryEntries, collectionDiarySnapshots } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull, or } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -7743,5 +7743,228 @@ ${acoesTexto}
       }
 
       return { success: true };
+    }),
+
+  // ===== DIÁRIO DE COBRANÇA =====
+
+  /**
+   * Adicionar entrada no diário de cobrança
+   */
+  addDiaryEntry: publicProcedure
+    .input(z.object({
+      clienteName: z.string(),
+      receivableId: z.number().optional(),
+      etapaAtual: z.string(),
+      tipoContato: z.string().optional(),
+      resumo: z.string(),
+      observacoes: z.string().optional(),
+      valorNegociado: z.number().optional(),
+      proximaAcao: z.string().optional(),
+      proximaAcaoData: z.string().optional(),
+      operadorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      await db.insert(collectionDiaryEntries).values({
+        clienteName: input.clienteName,
+        receivableId: input.receivableId || null,
+        etapaAtual: input.etapaAtual,
+        tipoContato: input.tipoContato || null,
+        resumo: input.resumo,
+        observacoes: input.observacoes || null,
+        valorNegociado: input.valorNegociado ? String(input.valorNegociado) : null,
+        proximaAcao: input.proximaAcao || null,
+        proximaAcaoData: input.proximaAcaoData || null,
+        operadorName: input.operadorName,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Listar entradas do diário com filtros
+   */
+  getDiaryEntries: publicProcedure
+    .input(z.object({
+      clienteName: z.string().optional(),
+      fromDate: z.string().optional(), // YYYY-MM-DD
+      toDate: z.string().optional(), // YYYY-MM-DD
+      etapa: z.string().optional(),
+      limit: z.number().default(100),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const conditions: any[] = [];
+      if (input?.clienteName) {
+        conditions.push(sql`${collectionDiaryEntries.clienteName} LIKE ${`%${input.clienteName}%`}`);
+      }
+      if (input?.fromDate) {
+        conditions.push(gte(collectionDiaryEntries.createdAt, new Date(input.fromDate + "T00:00:00")));
+      }
+      if (input?.toDate) {
+        conditions.push(lte(collectionDiaryEntries.createdAt, new Date(input.toDate + "T23:59:59")));
+      }
+      if (input?.etapa) {
+        conditions.push(eq(collectionDiaryEntries.etapaAtual, input.etapa));
+      }
+      const entries = await db
+        .select()
+        .from(collectionDiaryEntries)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(collectionDiaryEntries.createdAt))
+        .limit(input?.limit || 100);
+      return entries;
+    }),
+
+  /**
+   * Buscar entradas do diário de um cliente específico
+   */
+  getDiaryByClient: publicProcedure
+    .input(z.object({ clienteName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const entries = await db
+        .select()
+        .from(collectionDiaryEntries)
+        .where(eq(collectionDiaryEntries.clienteName, input.clienteName))
+        .orderBy(desc(collectionDiaryEntries.createdAt));
+      return entries;
+    }),
+
+  /**
+   * Gerar snapshot diário (backup) - chamado pelo heartbeat às 17:15
+   */
+  generateDiarySnapshot: publicProcedure
+    .input(z.object({ date: z.string().optional() }).optional())
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+
+      const today = input?.date || new Date().toISOString().slice(0, 10);
+
+      // Buscar todos os títulos vencidos (inadimplentes)
+      const allReceivables = await db
+        .select()
+        .from(accountsReceivable)
+        .where(
+          and(
+            eq(accountsReceivable.estado, "EMITIDO"),
+            lte(accountsReceivable.vencimentoData, today)
+          )
+        );
+
+      // Buscar todas as ações de cobrança
+      const allActions = await db.select().from(collectionActions);
+      const actionMap = new Map(allActions.map(a => [a.receivableId, a]));
+
+      // Buscar entradas do diário de hoje
+      const todayEntries = await db
+        .select()
+        .from(collectionDiaryEntries)
+        .where(
+          and(
+            gte(collectionDiaryEntries.createdAt, new Date(today + "T00:00:00")),
+            lte(collectionDiaryEntries.createdAt, new Date(today + "T23:59:59"))
+          )
+        );
+
+      // Agrupar por cliente
+      const clienteMap = new Map<string, {
+        titulos: typeof allReceivables;
+        etapa: string;
+        entriesDoDia: typeof todayEntries;
+      }>();
+
+      for (const rec of allReceivables) {
+        const nome = rec.cliente || "Desconhecido";
+        if (!clienteMap.has(nome)) {
+          clienteMap.set(nome, { titulos: [], etapa: "pendente", entriesDoDia: [] });
+        }
+        clienteMap.get(nome)!.titulos.push(rec);
+        const action = actionMap.get(rec.id);
+        if (action) {
+          clienteMap.get(nome)!.etapa = action.status;
+        }
+      }
+
+      // Associar entradas do dia aos clientes
+      for (const entry of todayEntries) {
+        const clientData = clienteMap.get(entry.clienteName);
+        if (clientData) {
+          clientData.entriesDoDia.push(entry);
+          clientData.etapa = entry.etapaAtual; // Usar a etapa mais recente
+        }
+      }
+
+      // Montar snapshot
+      const snapshotData = Array.from(clienteMap.entries()).map(([nome, data]) => ({
+        clienteName: nome,
+        etapa: data.etapa,
+        titulosCount: data.titulos.length,
+        valorDevido: data.titulos.reduce((sum, t) => sum + Number(t.valorOriginal || 0), 0),
+        ultimaAcao: data.entriesDoDia.length > 0 ? data.entriesDoDia[0].resumo : undefined,
+        entriesDoDia: data.entriesDoDia.map(e => ({
+          resumo: e.resumo,
+          tipoContato: e.tipoContato || undefined,
+          operador: e.operadorName,
+          hora: new Date(e.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        })),
+      }));
+
+      // Salvar snapshot
+      await db.insert(collectionDiarySnapshots).values({
+        snapshotDate: today,
+        totalClientes: clienteMap.size,
+        totalTitulos: allReceivables.length,
+        valorTotal: String(allReceivables.reduce((sum, t) => sum + Number(t.valorOriginal || 0), 0)),
+        entriesCount: todayEntries.length,
+        snapshotData,
+      });
+
+      return { success: true, date: today, clientes: clienteMap.size, titulos: allReceivables.length, entries: todayEntries.length };
+    }),
+
+  /**
+   * Listar snapshots disponíveis do diário
+   */
+  getDiarySnapshots: publicProcedure
+    .input(z.object({
+      limit: z.number().default(30),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const snapshots = await db
+        .select({
+          id: collectionDiarySnapshots.id,
+          snapshotDate: collectionDiarySnapshots.snapshotDate,
+          totalClientes: collectionDiarySnapshots.totalClientes,
+          totalTitulos: collectionDiarySnapshots.totalTitulos,
+          valorTotal: collectionDiarySnapshots.valorTotal,
+          entriesCount: collectionDiarySnapshots.entriesCount,
+          createdAt: collectionDiarySnapshots.createdAt,
+        })
+        .from(collectionDiarySnapshots)
+        .orderBy(desc(collectionDiarySnapshots.snapshotDate))
+        .limit(input?.limit || 30);
+      return snapshots;
+    }),
+
+  /**
+   * Buscar dados de um snapshot específico
+   */
+  getDiarySnapshotDetail: publicProcedure
+    .input(z.object({ snapshotDate: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const [snapshot] = await db
+        .select()
+        .from(collectionDiarySnapshots)
+        .where(eq(collectionDiarySnapshots.snapshotDate, input.snapshotDate))
+        .limit(1);
+      return snapshot || null;
     }),
 });

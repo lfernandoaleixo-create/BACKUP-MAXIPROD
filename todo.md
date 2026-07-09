@@ -5139,3 +5139,18 @@
 - [x] Seletor de estado de destino para simular impostos
 - [x] Custos adicionais editáveis (pode zerar)
 - [x] Exibir as duas barras lado a lado para comparação
+
+## Diário de Cobrança (Inadimplência)
+- [ ] Criar tabelas no banco: collection_diary_entries (histórico diário), collection_stage_history (etapas)
+- [ ] Criar endpoint para registrar entrada no diário (observações, mudanças de etapa)
+- [ ] Criar endpoint para listar histórico por cliente com filtros (data, etapa)
+- [ ] Criar endpoint para backup diário (snapshot do estado atual)
+- [ ] Implementar job automático às 17:15 para salvar snapshot diário
+- [ ] Criar interface do Diário de Cobrança (timeline por cliente, filtros)
+- [ ] Adicionar botão "Diário de Cobrança" na tela de Inadimplência
+- [ ] Permitir visualizar snapshots/backups anteriores por data
+
+## Fix Caixas/Volumes na Aba Faturamento
+- [x] Corrigir lógica de conversão: prioridade é quantidade lançada no Maxiprod
+- [x] Só usar observações para conversão quando unidade é KG (conversão real de unidade)
+- [x] Aplicar correção tanto para pedidos abertos quanto faturados

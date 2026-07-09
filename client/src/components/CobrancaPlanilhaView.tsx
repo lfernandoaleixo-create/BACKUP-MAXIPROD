@@ -6,7 +6,7 @@ import {
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
   History, Plus, Paperclip, Pencil, Trash2, Check, FileDown, User, CreditCard,
-  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers
+  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers, BookOpen
 } from "lucide-react";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import { generateDecisionPdf, type DecisionPdfInput } from "@/lib/decisionPdfExport";

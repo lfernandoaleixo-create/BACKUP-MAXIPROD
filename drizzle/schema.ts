@@ -2896,3 +2896,57 @@ export const commissionMatrix = mysqlTable("commission_matrix", {
 
 export type CommissionMatrix = typeof commissionMatrix.$inferSelect;
 export type InsertCommissionMatrix = typeof commissionMatrix.$inferInsert;
+
+
+/**
+ * Diário de Cobrança - Entradas de histórico diário.
+ * Cada registro = 1 anotação/atualização sobre a negociação de um cliente inadimplente.
+ * Registrado manualmente pelo operador durante o expediente.
+ */
+export const collectionDiaryEntries = mysqlTable("collection_diary_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  clienteName: varchar("cliente_name", { length: 300 }).notNull(),
+  receivableId: int("receivable_id"), // FK opcional para accounts_receivable.id (pode ser sobre o cliente em geral)
+  etapaAtual: varchar("etapa_atual", { length: 50 }).notNull(), // contatado | em_negociacao | promessa | protestado | especial_sem_cobranca | fundo_perdido | resolvido
+  tipoContato: varchar("tipo_contato", { length: 30 }), // ligacao | whatsapp | email | presencial | outro
+  resumo: text("resumo").notNull(), // Resumo da interação/negociação
+  observacoes: text("observacoes"), // Observações adicionais
+  valorNegociado: decimal("valor_negociado", { precision: 18, scale: 2 }), // Valor negociado (se houver)
+  proximaAcao: varchar("proxima_acao", { length: 200 }), // O que fazer no próximo contato
+  proximaAcaoData: varchar("proxima_acao_data", { length: 10 }), // YYYY-MM-DD
+  operadorName: varchar("operador_name", { length: 200 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type CollectionDiaryEntry = typeof collectionDiaryEntries.$inferSelect;
+export type InsertCollectionDiaryEntry = typeof collectionDiaryEntries.$inferInsert;
+
+/**
+ * Diário de Cobrança - Snapshots diários (backup automático às 17:15).
+ * Cada registro = 1 snapshot do estado completo de todos os clientes inadimplentes naquele dia.
+ * Armazena JSON com o estado de cada cliente, suas etapas, e as entradas do dia.
+ */
+export const collectionDiarySnapshots = mysqlTable("collection_diary_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  snapshotDate: varchar("snapshot_date", { length: 10 }).notNull(), // YYYY-MM-DD
+  totalClientes: int("total_clientes").notNull(),
+  totalTitulos: int("total_titulos").notNull(),
+  valorTotal: decimal("valor_total", { precision: 18, scale: 2 }).notNull(),
+  entriesCount: int("entries_count").notNull(), // Quantas entradas de diário foram feitas nesse dia
+  // JSON com o estado completo: [{cliente, etapa, titulos, valorDevido, ultimaAcao, entriesDoDia}]
+  snapshotData: json("snapshot_data").$type<Array<{
+    clienteName: string;
+    etapa: string;
+    titulosCount: number;
+    valorDevido: number;
+    ultimaAcao?: string;
+    entriesDoDia: Array<{
+      resumo: string;
+      tipoContato?: string;
+      operador: string;
+      hora: string;
+    }>;
+  }>>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type CollectionDiarySnapshot = typeof collectionDiarySnapshots.$inferSelect;
+export type InsertCollectionDiarySnapshot = typeof collectionDiarySnapshots.$inferInsert;

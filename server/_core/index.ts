@@ -11,6 +11,7 @@ import { startScraper } from "../maxiprodScraper";
 import { startScheduler } from "../scheduler";
 import { inadimplenciaBackupCronHandler } from "../inadimplenciaBackupHandler";
 import { trackingUpdateCronHandler } from "../trackingUpdateHandler";
+import { diarySnapshotCronHandler } from "../diarySnapshotHandler";
 import { importPdfExportHandler } from "../importPdfExport";
 import { custoPdfExportHandler } from "../custoPdfExport";
 import { registerStorageProxy } from "./storageProxy";
@@ -47,6 +48,7 @@ async function startServer() {
   // Scheduled endpoints (Heartbeat cron)
   app.post("/api/scheduled/inadimplencia-backup", inadimplenciaBackupCronHandler);
   app.post("/api/scheduled/tracking-update", trackingUpdateCronHandler);
+  app.post("/api/scheduled/diary-snapshot", diarySnapshotCronHandler);
   // PDF export endpoints
   app.get("/api/import/export-pdf", importPdfExportHandler);
   app.get("/api/import/export-custo-pdf", custoPdfExportHandler);

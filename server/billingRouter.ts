@@ -340,20 +340,24 @@ export const billingRouter = router({
         if (item.estadoItem === "Faturado parcial") {
           order.estadoItem = "Faturado parcial";
         }
-        // Conversão para caixas — prioriza OBS do pedido, depois fallback kg→cx
+        // Conversão para caixas — PRIORIDADE: quantidade lançada no Maxiprod
+        // Só usa observações quando há conversão de unidades (ex: kg → caixas)
         const codigoItemVal = item.codigoItem || "";
         const unidadeVal = (item.unidadeMedidaCodigo || "").toLowerCase();
         let qtdExibicao = qtdEfetiva;
         let qtdOriginalExibicao = qtdOriginal;
         let unidadeExibicao = item.unidadeMedidaCodigo || "";
-        // REGRA GERAL: Se observações do pedido mencionam quantidade de caixas, usar esse valor
         const obs = (item.observacoes || "");
-        const caixasMatch = obs.match(/(\d+)\s*caixas?/i);
-        if (caixasMatch) {
-          qtdExibicao = parseInt(caixasMatch[1], 10);
-          qtdOriginalExibicao = parseInt(caixasMatch[1], 10);
+        // Só usar obs para conversão quando a unidade do Maxiprod é KG (conversão real)
+        // e a obs menciona caixas — isso indica conversão de unidade
+        const isKgUnit = unidadeVal === 'kg';
+        const caixasConversaoMatch = isKgUnit ? obs.match(/(\d+)\s*caixas?/i) : null;
+        if (caixasConversaoMatch) {
+          // Conversão de unidade via observação (kg → caixas)
+          qtdExibicao = parseInt(caixasConversaoMatch[1], 10);
+          qtdOriginalExibicao = parseInt(caixasConversaoMatch[1], 10);
           unidadeExibicao = "cx";
-        } else if (KG_TO_CAIXA_CONVERSION[codigoItemVal] && unidadeVal === 'kg') {
+        } else if (KG_TO_CAIXA_CONVERSION[codigoItemVal] && isKgUnit) {
           // Fallback: conversão matemática kg → caixa para produtos mapeados
           const pesoCx = KG_TO_CAIXA_CONVERSION[codigoItemVal];
           qtdExibicao = Math.round(qtdEfetiva / pesoCx);
@@ -436,18 +440,20 @@ export const billingRouter = router({
         const order = billedMap.get(key)!;
         const vt = parseFloat(String(item.valorTotal || 0));
         order.valorTotal += vt;
-        // Conversão para caixas (faturados) — prioriza OBS, depois fallback kg→cx
+        // Conversão para caixas (faturados) — PRIORIDADE: quantidade lançada no Maxiprod
+        // Só usa observações quando há conversão de unidades (ex: kg → caixas)
         const billedCodigoItem = item.codigoItem || "";
         const billedUnidade = (item.unidadeMedidaCodigo || "").toLowerCase();
         let billedQtd = parseFloat(String(item.quantidade || 0));
         let billedUnidadeExibicao = item.unidadeMedidaCodigo || "";
-        // REGRA GERAL: Se observações do pedido mencionam quantidade de caixas, usar esse valor
         const billedObs = (item.observacoes || "");
-        const billedCaixasMatch = billedObs.match(/(\d+)\s*caixas?/i);
-        if (billedCaixasMatch) {
-          billedQtd = parseInt(billedCaixasMatch[1], 10);
+        const billedIsKg = billedUnidade === 'kg';
+        const billedCaixasConversaoMatch = billedIsKg ? billedObs.match(/(\d+)\s*caixas?/i) : null;
+        if (billedCaixasConversaoMatch) {
+          // Conversão de unidade via observação (kg → caixas)
+          billedQtd = parseInt(billedCaixasConversaoMatch[1], 10);
           billedUnidadeExibicao = "cx";
-        } else if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedUnidade === 'kg') {
+        } else if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedIsKg) {
           // Fallback: conversão matemática kg → caixa para produtos mapeados
           const pesoCx = KG_TO_CAIXA_CONVERSION[billedCodigoItem];
           billedQtd = Math.round(billedQtd / pesoCx);
