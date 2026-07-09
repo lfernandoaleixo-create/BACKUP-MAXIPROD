@@ -1928,7 +1928,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                           )}
                           {t.cachedEta && (
                             <span className="text-[10px] md:text-xs text-emerald-600 font-semibold flex items-center gap-0.5">
-                              ETA: {new Date(t.cachedEta).toLocaleDateString('pt-BR')}
+                              ETA: {(() => { const m = t.cachedEta.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : new Date(t.cachedEta).toLocaleDateString('pt-BR'); })()}
                             </span>
                           )}
                           {t.cachedStatus && (

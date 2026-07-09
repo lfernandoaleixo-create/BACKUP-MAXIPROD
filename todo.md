@@ -5060,3 +5060,8 @@
 
 - [x] Usar vesselPosition calculada pelo backend ONE Line (interpolação temporal) ao invés de re-interpolar no frontend
 - [x] Garantir consistência entre TrackingModal e RastreioEmConjunto (ambos usam mesma posição do backend)
+
+## Fix: ETA mostrando 10/07 em vez de 11/07 no card da Home (09/07/2026)
+
+- [x] Corrigir bug de timezone: `new Date(cachedEta).toLocaleDateString('pt-BR')` em BRT (UTC-3) converte midnight UTC para dia anterior
+- [x] Usar regex para extrair data diretamente da string (DD/MM/YYYY) sem passar por Date object
