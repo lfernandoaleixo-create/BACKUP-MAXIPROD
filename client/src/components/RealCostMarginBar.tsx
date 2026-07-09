@@ -72,34 +72,36 @@ export function RealCostMarginBar({
 
   return (
     <div className="w-full mt-1 px-1">
-      <div className="flex items-center gap-2 mb-0.5">
-        <span className={`text-[9px] font-black ${color.text}`}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`text-[11px] font-black ${color.text}`}>
           📊 Custo Real: {margin.toFixed(1)}% ({color.label})
         </span>
-        <span className="text-[8px] text-slate-500 font-medium">
+        <span className="text-[9px] text-slate-500 font-medium">
           {tipoProduto === "importado" ? "🌍 Importado" : "🏭 Industrializado"}
         </span>
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="text-[8px] text-indigo-600 hover:text-indigo-800 font-bold underline"
+          className="text-[9px] text-indigo-600 hover:text-indigo-800 font-bold underline"
         >
           {showDetails ? "Ocultar" : "Ver impostos"}
         </button>
       </div>
-      {/* Bar */}
-      <div className="relative h-2.5 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
-        <div className="absolute inset-0 flex">
+      {/* Bar - thicker */}
+      <div className="relative h-5 rounded-full overflow-visible bg-slate-100 border border-slate-200">
+        <div className="absolute inset-0 rounded-full overflow-hidden flex">
           <div className="h-full bg-gradient-to-r from-red-700 via-red-500 to-red-400" style={{ width: "44.4%" }} />
           <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: "11.1%" }} />
           <div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: "11.1%" }} />
           <div className="h-full bg-gradient-to-r from-green-400 to-green-500" style={{ width: "8.9%" }} />
           <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" style={{ width: "24.5%" }} />
         </div>
+        {/* Arrow indicator */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-slate-900 transition-all duration-300"
-          style={{ left: `${position}%` }}
+          className="absolute top-0 bottom-0 flex flex-col items-center transition-all duration-300"
+          style={{ left: `${position}%`, transform: "translateX(-50%)" }}
         >
-          <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rounded-full border border-white shadow-md" />
+          <div className="-mt-1.5 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 drop-shadow-sm" />
+          <div className="w-0.5 flex-1 bg-slate-900" />
         </div>
       </div>
       {/* Tax details */}

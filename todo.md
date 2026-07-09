@@ -5180,3 +5180,8 @@
 ## Diário de Cobrança - Ajustes
 - [x] Remover aba "Nova Entrada" do Diário de Cobrança (entradas devem ser automáticas)
 - [ ] Gerar snapshot manual agora com dados de hoje para validação
+
+## Gestão Comercial - Barras de Progresso
+- [x] Tornar barra de progresso mais grossa
+- [x] Trocar indicador de bolinha para setinha
+- [x] Aumentar tamanho das porcentagens

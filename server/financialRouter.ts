@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks, deferredPaymentNotes, collectionDiaryEntries, collectionDiarySnapshots } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks, deferredPaymentNotes, collectionDiaryEntries, collectionDiarySnapshots, cobrancaEtapaObs, cobrancaPlanilha } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull, or } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -7790,31 +7790,52 @@ ${acoesTexto}
       fromDate: z.string().optional(), // YYYY-MM-DD
       toDate: z.string().optional(), // YYYY-MM-DD
       etapa: z.string().optional(),
-      limit: z.number().default(100),
+      limit: z.number().default(200),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
+      // Puxar dados reais de cobranca_etapa_obs (observações registradas nas etapas)
+      // Joined com cobranca_planilha para obter o nome do cliente
       const conditions: any[] = [];
       if (input?.clienteName) {
-        conditions.push(sql`${collectionDiaryEntries.clienteName} LIKE ${`%${input.clienteName}%`}`);
+        conditions.push(sql`${cobrancaPlanilha.empresa} LIKE ${`%${input.clienteName}%`}`);
       }
       if (input?.fromDate) {
-        conditions.push(gte(collectionDiaryEntries.createdAt, new Date(input.fromDate + "T00:00:00")));
+        conditions.push(gte(cobrancaEtapaObs.createdAt, new Date(input.fromDate + "T00:00:00")));
       }
       if (input?.toDate) {
-        conditions.push(lte(collectionDiaryEntries.createdAt, new Date(input.toDate + "T23:59:59")));
+        conditions.push(lte(cobrancaEtapaObs.createdAt, new Date(input.toDate + "T23:59:59")));
       }
       if (input?.etapa) {
-        conditions.push(eq(collectionDiaryEntries.etapaAtual, input.etapa));
+        conditions.push(eq(cobrancaEtapaObs.etapa, input.etapa));
       }
       const entries = await db
-        .select()
-        .from(collectionDiaryEntries)
+        .select({
+          id: cobrancaEtapaObs.id,
+          planilhaId: cobrancaEtapaObs.planilhaId,
+          etapaAtual: cobrancaEtapaObs.etapa,
+          observacao: cobrancaEtapaObs.observacao,
+          operadorName: cobrancaEtapaObs.registradoPor,
+          createdAt: cobrancaEtapaObs.createdAt,
+          clienteName: cobrancaPlanilha.empresa,
+          documento: cobrancaPlanilha.documento,
+        })
+        .from(cobrancaEtapaObs)
+        .leftJoin(cobrancaPlanilha, eq(cobrancaEtapaObs.planilhaId, cobrancaPlanilha.id))
         .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(collectionDiaryEntries.createdAt))
-        .limit(input?.limit || 100);
-      return entries;
+        .orderBy(desc(cobrancaEtapaObs.createdAt))
+        .limit(input?.limit || 200);
+      return entries.map(e => ({
+        id: e.id,
+        clienteName: e.clienteName || "Desconhecido",
+        etapaAtual: e.etapaAtual,
+        resumo: e.observacao,
+        tipoContato: null,
+        operadorName: e.operadorName,
+        createdAt: e.createdAt,
+        documento: e.documento,
+      }));
     }),
 
   /**
@@ -7826,11 +7847,30 @@ ${acoesTexto}
       const db = await getDb();
       if (!db) return [];
       const entries = await db
-        .select()
-        .from(collectionDiaryEntries)
-        .where(eq(collectionDiaryEntries.clienteName, input.clienteName))
-        .orderBy(desc(collectionDiaryEntries.createdAt));
-      return entries;
+        .select({
+          id: cobrancaEtapaObs.id,
+          planilhaId: cobrancaEtapaObs.planilhaId,
+          etapaAtual: cobrancaEtapaObs.etapa,
+          observacao: cobrancaEtapaObs.observacao,
+          operadorName: cobrancaEtapaObs.registradoPor,
+          createdAt: cobrancaEtapaObs.createdAt,
+          clienteName: cobrancaPlanilha.empresa,
+          documento: cobrancaPlanilha.documento,
+        })
+        .from(cobrancaEtapaObs)
+        .leftJoin(cobrancaPlanilha, eq(cobrancaEtapaObs.planilhaId, cobrancaPlanilha.id))
+        .where(sql`${cobrancaPlanilha.empresa} LIKE ${`%${input.clienteName}%`}`)
+        .orderBy(desc(cobrancaEtapaObs.createdAt));
+      return entries.map(e => ({
+        id: e.id,
+        clienteName: e.clienteName || "Desconhecido",
+        etapaAtual: e.etapaAtual,
+        resumo: e.observacao,
+        tipoContato: null,
+        operadorName: e.operadorName,
+        createdAt: e.createdAt,
+        documento: e.documento,
+      }));
     }),
 
   /**

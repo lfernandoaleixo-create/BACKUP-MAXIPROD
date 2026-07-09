@@ -2745,28 +2745,13 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-sm text-slate-800 truncate">{entry.clienteName}</span>
                         {getEtapaBadge(entry.etapaAtual)}
-                        {entry.tipoContato && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">
-                            {getContatoLabel(entry.tipoContato)}
+                        {(entry as any).documento && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-200">
+                            {(entry as any).documento}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-700 mt-1 leading-relaxed">{entry.resumo}</p>
-                      {entry.observacoes && (
-                        <p className="text-[11px] text-slate-500 mt-1 italic">Obs: {entry.observacoes}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        {entry.valorNegociado && (
-                          <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            R$ {Number(entry.valorNegociado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </span>
-                        )}
-                        {entry.proximaAcao && (
-                          <span className="text-[10px] text-blue-600">
-                            Próx: {entry.proximaAcao}{entry.proximaAcaoData ? ` (${entry.proximaAcaoData.split("-").reverse().join("/")})` : ""}
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-xs text-slate-700 mt-1 leading-relaxed whitespace-pre-wrap">{entry.resumo}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[10px] text-slate-400">

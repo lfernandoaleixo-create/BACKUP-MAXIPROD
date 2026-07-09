@@ -40,25 +40,25 @@ export function ProductMarginBar({ margin, custoBox, precoVenda, fonte, desconto
 
   return (
     <div className="w-full mt-1.5 px-1">
-      <div className="flex items-center gap-2 mb-0.5">
-        <span className={`text-[9px] font-black ${color.text}`}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`text-[11px] font-black ${color.text}`}>
           Margem: {margin.toFixed(1)}% ({color.label})
         </span>
         {desconto !== undefined && desconto > 0 && (
-          <span className="text-[8px] text-slate-500 dark:text-slate-400 font-medium">
+          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium">
             Desc: {desconto.toFixed(1)}%
           </span>
         )}
         {fonte && custoBox > 0 && (
-          <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">
+          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
             Custo {fonte}: R$ {custoBox.toFixed(2)}/cx
           </span>
         )}
       </div>
-      {/* Bar container */}
-      <div className="relative h-3 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
+      {/* Bar container - thicker bar */}
+      <div className="relative h-5 rounded-full overflow-visible bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
         {/* Color segments */}
-        <div className="absolute inset-0 flex">
+        <div className="absolute inset-0 rounded-full overflow-hidden flex">
           {/* Red: -5% to 15% → occupies (15-(-5))/(40-(-5)) = 20/45 = 44.4% of bar */}
           <div className="h-full bg-gradient-to-r from-red-700 via-red-500 to-red-400" style={{ width: "44.4%" }} />
           {/* Orange: 15% to 20% → 5/45 = 11.1% */}
@@ -70,26 +70,29 @@ export function ProductMarginBar({ margin, custoBox, precoVenda, fonte, desconto
           {/* Blue: 29% to 40% → 11/45 = 24.4% */}
           <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" style={{ width: "24.5%" }} />
         </div>
-        {/* Indicator marker */}
+        {/* Arrow indicator marker */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-slate-900 dark:bg-white transition-all duration-300"
-          style={{ left: `${position}%` }}
+          className="absolute top-0 bottom-0 flex flex-col items-center transition-all duration-300"
+          style={{ left: `${position}%`, transform: "translateX(-50%)" }}
         >
-          <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-slate-900 dark:bg-white rounded-full border-2 border-white dark:border-slate-900 shadow-md" />
+          {/* Arrow pointing down */}
+          <div className="-mt-1.5 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white drop-shadow-sm" />
+          {/* Vertical line */}
+          <div className="w-0.5 flex-1 bg-slate-900 dark:bg-white" />
         </div>
       </div>
       {/* Scale labels - positioned exactly at color boundaries */}
-      <div className="relative mt-0.5 h-3">
+      <div className="relative mt-1 h-4">
         {/* 0% at left edge: position = (0-(-5))/(40-(-5)) = 5/45 = 11.1% */}
-        <span className="absolute text-[7px] text-red-500 font-bold -translate-x-1/2" style={{ left: "11.1%" }}>0%</span>
+        <span className="absolute text-[9px] text-red-500 font-bold -translate-x-1/2" style={{ left: "11.1%" }}>0%</span>
         {/* 15% at red/orange boundary: (15-(-5))/45 = 44.4% */}
-        <span className="absolute text-[7px] text-orange-500 font-bold -translate-x-1/2" style={{ left: "44.4%" }}>15%</span>
+        <span className="absolute text-[9px] text-orange-500 font-bold -translate-x-1/2" style={{ left: "44.4%" }}>15%</span>
         {/* 20% at orange/yellow boundary: (20-(-5))/45 = 55.6% */}
-        <span className="absolute text-[7px] text-yellow-600 font-bold -translate-x-1/2" style={{ left: "55.6%" }}>20%</span>
+        <span className="absolute text-[9px] text-yellow-600 font-bold -translate-x-1/2" style={{ left: "55.6%" }}>20%</span>
         {/* 25% at yellow/green boundary: (25-(-5))/45 = 66.7% */}
-        <span className="absolute text-[7px] text-green-500 font-bold -translate-x-1/2" style={{ left: "66.7%" }}>25%</span>
+        <span className="absolute text-[9px] text-green-500 font-bold -translate-x-1/2" style={{ left: "66.7%" }}>25%</span>
         {/* 29% at green/blue boundary: (29-(-5))/45 = 75.6% */}
-        <span className="absolute text-[7px] text-blue-500 font-bold -translate-x-1/2" style={{ left: "75.6%" }}>29%</span>
+        <span className="absolute text-[9px] text-blue-500 font-bold -translate-x-1/2" style={{ left: "75.6%" }}>29%</span>
       </div>
     </div>
   );
