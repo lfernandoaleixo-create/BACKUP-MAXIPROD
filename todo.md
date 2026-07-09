@@ -5097,3 +5097,9 @@
 - [x] Adicionar coluna natureza_operacao ao schema (drizzle/schema.ts)
 - [x] Executar migration (ALTER TABLE)
 - [x] Testes passando (2/2)
+
+## Feature: Botões separados na tela da Vitória
+- [x] Separar botão "Exportar Maxiprod" em dois: "Exportar Cliente" (verde) e "Exportar Pedido" (azul)
+- [x] Botão "Exportar Cliente" gera planilha Empresas .xlsx (cadastro do cliente)
+- [x] Botão "Exportar Pedido" gera planilha Pedido de Venda .xlsx (modelo importação Maxiprod)
+- [x] Ambos os botões com loading state independente

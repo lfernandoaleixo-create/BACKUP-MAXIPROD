@@ -39,9 +39,11 @@ export default function VitoriaOrders() {
   const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const exportMaxiprodMutation = trpc.salesOrders.exportClientMaxiprod.useMutation();
+  const exportOrderMutation = trpc.salesOrders.exportOrderMaxiprod.useMutation();
   const utils = trpc.useUtils();
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [exportingOrderId, setExportingOrderId] = useState<number | null>(null);
+  const [exportingPedidoId, setExportingPedidoId] = useState<number | null>(null);
 
   // Get modification info for all visible orders
   const orderIds = useMemo(() => (orders || []).map((o: any) => o.id), [orders]);
@@ -56,14 +58,13 @@ export default function VitoriaOrders() {
     return modificationInfo.find((m: any) => m.orderId === orderId) || null;
   };
 
-  // Handle Maxiprod export download
+  // Handle Maxiprod CLIENT export download
   const handleExportMaxiprod = (orderId: number) => {
     setExportingOrderId(orderId);
     exportMaxiprodMutation.mutate(
       { orderId },
       {
         onSuccess: (data) => {
-          // Convert base64 to blob and download
           const byteCharacters = atob(data.base64);
           const byteNumbers = new Array(byteCharacters.length);
           for (let i = 0; i < byteCharacters.length; i++) {
@@ -79,12 +80,45 @@ export default function VitoriaOrders() {
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          toast.success(`Planilha Maxiprod exportada: ${data.clientName}`);
+          toast.success(`Planilha Cliente exportada: ${data.clientName}`);
           setExportingOrderId(null);
         },
         onError: (err) => {
-          toast.error(err.message || "Erro ao exportar planilha Maxiprod");
+          toast.error(err.message || "Erro ao exportar planilha de cliente");
           setExportingOrderId(null);
+        },
+      }
+    );
+  };
+
+  // Handle Maxiprod ORDER export download
+  const handleExportPedido = (orderId: number) => {
+    setExportingPedidoId(orderId);
+    exportOrderMutation.mutate(
+      { orderId },
+      {
+        onSuccess: (data) => {
+          const byteCharacters = atob(data.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success(`Planilha Pedido de Venda exportada!`);
+          setExportingPedidoId(null);
+        },
+        onError: (err) => {
+          toast.error(err.message || "Erro ao exportar pedido de venda");
+          setExportingPedidoId(null);
         },
       }
     );
@@ -398,26 +432,47 @@ export default function VitoriaOrders() {
                                   </p>
                                 </div>
                               )}
-                              {/* Exportar Maxiprod button */}
-                              {modInfo?.hasVendorClient && (
+                              {/* Exportar Maxiprod buttons */}
+                              <div className="flex flex-wrap gap-2">
+                                {/* Exportar Cliente */}
+                                {modInfo?.hasVendorClient && (
+                                  <button
+                                    onClick={() => handleExportMaxiprod(order.id)}
+                                    disabled={exportingOrderId === order.id}
+                                    className="flex items-center gap-2 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50"
+                                  >
+                                    {exportingOrderId === order.id ? (
+                                      <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
+                                    ) : (
+                                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                    )}
+                                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                                      {exportingOrderId === order.id ? "Gerando..." : "Exportar Cliente"}
+                                    </span>
+                                    <span className="text-[9px] text-emerald-500 dark:text-emerald-400">
+                                      (Planilha Empresas .xlsx)
+                                    </span>
+                                  </button>
+                                )}
+                                {/* Exportar Pedido de Venda */}
                                 <button
-                                  onClick={() => handleExportMaxiprod(order.id)}
-                                  disabled={exportingOrderId === order.id}
-                                  className="flex items-center gap-2 px-3 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50"
+                                  onClick={() => handleExportPedido(order.id)}
+                                  disabled={exportingPedidoId === order.id}
+                                  className="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer disabled:opacity-50"
                                 >
-                                  {exportingOrderId === order.id ? (
-                                    <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
+                                  {exportingPedidoId === order.id ? (
+                                    <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
                                   ) : (
-                                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
                                   )}
-                                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                                    {exportingOrderId === order.id ? "Gerando..." : "Exportar Maxiprod"}
+                                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">
+                                    {exportingPedidoId === order.id ? "Gerando..." : "Exportar Pedido"}
                                   </span>
-                                  <span className="text-[9px] text-emerald-500 dark:text-emerald-400">
-                                    (Planilha Empresas .xlsx)
+                                  <span className="text-[9px] text-blue-500 dark:text-blue-400">
+                                    (Pedido de Venda .xlsx)
                                   </span>
                                 </button>
-                              )}
+                              </div>
                             </div>
                           );
                         })()}
