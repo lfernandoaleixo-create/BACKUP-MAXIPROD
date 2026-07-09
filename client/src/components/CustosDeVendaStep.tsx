@@ -791,16 +791,20 @@ export default function CustosDeVendaStep({
             </select>
           </div>
           <div>
-            <label className="text-[9px] text-slate-500 font-medium">Forma de Pagamento</label>
+            <label className="text-[9px] text-slate-500 font-medium">Forma de Pagamento <span className="text-red-500">*</span></label>
             <select
               value={formaPagamento}
               onChange={(e) => setFormaPagamento(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+              className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!formaPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
+              required
             >
+              <option value="">Selecione...</option>
               <option value="A prazo">A prazo</option>
               <option value="À vista">À vista</option>
+              <option value="Sem pagamento">Sem pagamento</option>
               <option value="Outros">Outros</option>
             </select>
+            {!formaPagamento && <p className="text-[8px] text-red-500 mt-0.5">Campo obrigatório</p>}
           </div>
           <div>
             <label className="text-[9px] text-slate-500 font-medium">Data de Entrega</label>

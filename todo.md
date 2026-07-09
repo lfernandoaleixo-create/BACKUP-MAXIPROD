@@ -5103,3 +5103,8 @@
 - [x] Botão "Exportar Cliente" gera planilha Empresas .xlsx (cadastro do cliente)
 - [x] Botão "Exportar Pedido" gera planilha Pedido de Venda .xlsx (modelo importação Maxiprod)
 - [x] Ambos os botões com loading state independente
+
+## Fix: Pedido de Venda - Gestores e Forma de Pagamento
+- [ ] Garantir que gestores consigam puxar clientes cadastrados na busca ao fazer pedido
+- [x] Tornar "Forma de pagamento" campo obrigatório no pedido de venda
+- [x] Remover opção "Cartão" das formas de pagamento

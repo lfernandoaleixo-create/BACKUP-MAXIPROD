@@ -4088,7 +4088,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
   const [estadoConfiguravel, setEstadoConfiguravel] = useState("MADEIRA");
-  const [formaPagamento, setFormaPagamento] = useState("A prazo");
+  const [formaPagamento, setFormaPagamento] = useState("");
   const [dataEntregaPedido, setDataEntregaPedido] = useState("");
   const [previsaoEntregaPedido, setPrevisaoEntregaPedido] = useState("");
 
@@ -4251,6 +4251,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const itemsBelowMin = items.filter(item => item.precoMinimo !== null && item.precoUnitario < item.precoMinimo);
 
   const doSubmitOrder = (forceSubmitBelowMin?: boolean) => {
+    if (!formaPagamento) {
+      alert("Selecione a Forma de Pagamento antes de finalizar o pedido.");
+      return;
+    }
     createOrderMutation.mutate({
       sellerId,
       cnpjCpf: isSimulation ? (cnpjCpf || "SIMULACAO") : cnpjCpf,
