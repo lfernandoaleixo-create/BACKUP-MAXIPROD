@@ -146,9 +146,12 @@ function ContainerTracker({ container, onDataReadyRef }: {
         originPosition = oneData.origin ? { lat: oneData.origin.lat, lng: oneData.origin.lng } : (routeCoordinates.length > 0 ? routeCoordinates[0] : null);
         destPosition = oneData.destination ? { lat: oneData.destination.lat, lng: oneData.destination.lng } : (routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : null);
         
-        // INTERPOLATE vessel position along route using progress %
-        // Don't use oneData.vesselPosition as it often defaults to destination port
-        if (routeCoordinates.length > 1 && progress > 0 && progress < 100) {
+        // Use the backend-calculated vessel position (time-based interpolation from ONE Line)
+        // This is more accurate as it uses actual departure/arrival timestamps
+        if (oneData.vesselPosition) {
+          vesselPosition = oneData.vesselPosition;
+        } else if (routeCoordinates.length > 1 && progress > 0 && progress < 100) {
+          // Fallback: interpolate along route using progress %
           const idx = Math.floor((progress / 100) * (routeCoordinates.length - 1));
           const nextIdx = Math.min(idx + 1, routeCoordinates.length - 1);
           const segFraction = ((progress / 100) * (routeCoordinates.length - 1)) - idx;
@@ -160,8 +163,6 @@ function ContainerTracker({ container, onDataReadyRef }: {
           vesselPosition = destPosition;
         } else if (progress <= 0 && originPosition) {
           vesselPosition = originPosition;
-        } else {
-          vesselPosition = oneData.vesselPosition || null;
         }
       } else {
         // No ONE Line data - interpolate along great circle from known ports

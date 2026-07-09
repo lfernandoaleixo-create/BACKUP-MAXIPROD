@@ -5055,3 +5055,8 @@
 - [x] Incluir nome do contato junto com o telefone (ex: "Roberio - COMPRAS: 88992540638")
 - [x] Atualizar sync da planilha de cobrança para incluir endereço principal + contatos (Ocultar Contatos)
 - [x] Deduplicar contatos repetidos na resposta
+
+## Fix: Posição do navio no RastreioEmConjunto (09/07/2026)
+
+- [x] Usar vesselPosition calculada pelo backend ONE Line (interpolação temporal) ao invés de re-interpolar no frontend
+- [x] Garantir consistência entre TrackingModal e RastreioEmConjunto (ambos usam mesma posição do backend)

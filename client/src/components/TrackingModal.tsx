@@ -97,30 +97,34 @@ export function TrackingModal({ trackingUuid, blNumber, containerNumber, armador
   let data = rawData ? normalizeTrackingData(rawData, isOneMode, isAiMode) : null;
 
   // Enrich AI data with ONE Line route (for map display)
-  // INTERPOLATE vessel position along route using progress % instead of using ONE Line's position
-  // (which often defaults to the destination port)
+  // Use the backend-calculated vessel position (time-based interpolation) for accuracy
   if (data && isAiMode && oneQuery.data) {
     const oneRaw = oneQuery.data as any;
     const routeCoords = oneRaw.routeCoordinates || [];
     if (routeCoords.length > 1) {
       data = { ...data, routeCoordinates: routeCoords };
-      // Interpolate vessel position along route
-      const prog = data.progress;
-      if (prog > 0 && prog < 100) {
-        const idx = Math.floor((prog / 100) * (routeCoords.length - 1));
-        const nextIdx = Math.min(idx + 1, routeCoords.length - 1);
-        const segFraction = ((prog / 100) * (routeCoords.length - 1)) - idx;
-        data = {
-          ...data,
-          vesselPosition: {
-            lat: routeCoords[idx].lat + (routeCoords[nextIdx].lat - routeCoords[idx].lat) * segFraction,
-            lng: routeCoords[idx].lng + (routeCoords[nextIdx].lng - routeCoords[idx].lng) * segFraction,
-          },
-        };
-      } else if (prog >= 100) {
-        data = { ...data, vesselPosition: routeCoords[routeCoords.length - 1] };
+      // Use backend's time-based vessel position (more accurate than progress-based interpolation)
+      if (oneRaw.vesselPosition) {
+        data = { ...data, vesselPosition: oneRaw.vesselPosition };
       } else {
-        data = { ...data, vesselPosition: routeCoords[0] };
+        // Fallback: interpolate vessel position along route using progress %
+        const prog = data.progress;
+        if (prog > 0 && prog < 100) {
+          const idx = Math.floor((prog / 100) * (routeCoords.length - 1));
+          const nextIdx = Math.min(idx + 1, routeCoords.length - 1);
+          const segFraction = ((prog / 100) * (routeCoords.length - 1)) - idx;
+          data = {
+            ...data,
+            vesselPosition: {
+              lat: routeCoords[idx].lat + (routeCoords[nextIdx].lat - routeCoords[idx].lat) * segFraction,
+              lng: routeCoords[idx].lng + (routeCoords[nextIdx].lng - routeCoords[idx].lng) * segFraction,
+            },
+          };
+        } else if (prog >= 100) {
+          data = { ...data, vesselPosition: routeCoords[routeCoords.length - 1] };
+        } else {
+          data = { ...data, vesselPosition: routeCoords[0] };
+        }
       }
     } else if (oneRaw.vesselPosition) {
       data = { ...data, vesselPosition: oneRaw.vesselPosition };
