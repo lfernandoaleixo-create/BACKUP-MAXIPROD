@@ -2750,32 +2750,32 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
               </div>
             ) : (
               entries.map((entry) => (
-                <div key={entry.id} className="border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition-colors">
-                  {/* Linha 1: Nome do cliente + data/operador */}
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="font-semibold text-sm text-slate-800 break-words">{entry.clienteName}</span>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] text-slate-400">
-                        {new Date(entry.createdAt).toLocaleDateString("pt-BR")}{" "}
-                        {new Date(entry.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-medium">
-                        <User className="w-2.5 h-2.5 inline mr-0.5" />{entry.operadorName}
-                      </p>
-                    </div>
-                  </div>
+                <div key={entry.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors space-y-2">
+                  {/* Linha 1: Nome do cliente (bloco inteiro, sem nada ao lado) */}
+                  <p className="font-semibold text-sm text-slate-800 leading-tight">
+                    {entry.clienteName}
+                  </p>
+
                   {/* Linha 2: Badges (etapa + documento) */}
-                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {getEtapaBadge(entry.etapaAtual)}
                     {(entry as any).documento && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-200">
                         {(entry as any).documento}
                       </span>
                     )}
+                    <span className="ml-auto text-[10px] text-slate-400">
+                      {new Date(entry.createdAt).toLocaleDateString("pt-BR")}{" "}
+                      {new Date(entry.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium">
+                      <User className="w-2.5 h-2.5 inline mr-0.5" />{entry.operadorName}
+                    </span>
                   </div>
+
                   {/* Linha 3: Observação/resumo */}
                   {entry.resumo && (
-                    <p className="text-xs text-slate-700 mt-2 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded p-2 border border-slate-100">
+                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded p-2 border border-slate-100">
                       {entry.resumo}
                     </p>
                   )}
