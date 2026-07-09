@@ -2686,8 +2686,8 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
 
         {/* ========== TAB: HISTÓRICO ========== */}
         <TabsContent value="historico" className="flex-1 overflow-hidden flex flex-col mt-0">
-          {/* Filtros */}
-          <div className="flex flex-wrap items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+          {/* Filtros - sticky no topo com z-index para não ser sobreposto pelo scroll */}
+          <div className="flex flex-wrap items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200 relative z-10 shrink-0">
             <div className="flex-1 min-w-[120px]">
               <Input
                 placeholder="Buscar cliente..."
@@ -2736,8 +2736,8 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
             )}
           </div>
 
-          {/* Lista de entradas */}
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+          {/* Lista de entradas - scroll independente abaixo dos filtros */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1 relative z-0">
             {loadingEntries ? (
               <div className="flex items-center justify-center py-12 text-slate-400">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando histórico...
