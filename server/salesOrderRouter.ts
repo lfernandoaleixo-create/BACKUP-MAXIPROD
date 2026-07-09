@@ -2209,4 +2209,57 @@ export const salesOrderRouter = router({
         },
       };
     }),
+
+  // Per-product margin calculation for the margin bar indicator
+  getProductMargins: publicProcedure
+    .input(z.object({
+      ufDestino: z.string().default("MG"),
+      tipoContribuinte: z.enum(["Contribuinte", "Não contribuinte", "Isento"]).default("Contribuinte"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { costMap: {} as Record<string, { cost: number; fonte: string }>, taxPercent: 0 };
+
+      // Get real-time costs
+      const { importRouter } = await import("./importRouter");
+      const { createCallerFactory } = await import("./_core/trpc");
+      const createCaller = createCallerFactory(importRouter);
+      const importCaller = createCaller({ user: null, req: {} as any, res: {} as any });
+      const realTimeCosts = await importCaller.getRealTimeCosts();
+
+      // Build cost map
+      const costMap: Record<string, { cost: number; fonte: string }> = {};
+      for (const item of realTimeCosts) {
+        let cost = 0;
+        let fonte = "Sem custo";
+        if (item.custoProjetado > 0 && item.temPatio) {
+          cost = item.custoProjetado;
+          fonte = "Projetado";
+        } else if (item.custoReal > 0) {
+          cost = item.custoReal;
+          fonte = "Real";
+        } else if (item.custoEstimativa > 0 && item.temNavegando) {
+          cost = item.custoEstimativa;
+          fonte = "Estimativa";
+        }
+        if (cost > 0) {
+          costMap[item.codigoItem] = { cost, fonte };
+        }
+      }
+
+      // Calculate total tax percentage for the given UF/contribuinte
+      // Using a reference value of 1000 to get the effective percentage
+      const impostos = calcularImpostos({
+        valorVenda: 1000,
+        ufDestino: input.ufDestino,
+        tipoProduto: "importado",
+        tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
+        faturamentoTrimestral: 0,
+      });
+
+      return {
+        costMap,
+        taxPercent: impostos.totalImpostosPerc,
+      };
+    }),
 });

@@ -5120,3 +5120,13 @@
 - [x] Quando forma de pagamento for "A prazo" (boleto/cheque), tornar campo "Condição de Pagamento" obrigatório
 - [x] Exibir indicação visual (borda vermelha + mensagem) quando campo obrigatório não preenchido
 - [x] Bloquear submit do pedido se condição de pagamento estiver vazia nesse cenário
+
+## Barra de Margem de Lucro por Produto (Seleção de Itens)
+- [x] Calcular margem de lucro por produto: preço vendido - custo projetado - impostos - frete(13%) - comissão(5,85%)
+- [x] Buscar custo projetado em tempo real da aba importação
+- [x] Calcular impostos sobre cada produto (ICMS, PIS, COFINS conforme regras já implementadas)
+- [x] Criar componente visual barra de cores com indicador de margem
+- [x] Faixas: vermelho (0-14,99%), laranja (15-19,99%), amarelo (20-24,99%), verde (25-28,99%), azul (29%+)
+- [x] Parâmetros editáveis: comissão (5,85%) e frete (13%)
+- [x] Exibir barra somente para Guilherme (inicialmente)
+- [x] Barra aparece ao ticar/selecionar cada produto na lista

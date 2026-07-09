@@ -65,6 +65,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
 import CustosDeVendaStep from "@/components/CustosDeVendaStep";
+import { ProductMarginBar, MarginParamsEditor } from "@/components/ProductMarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
@@ -4140,6 +4141,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const utils = trpc.useUtils();
 
+  // Margin bar state (only for Guilherme)
+  const { operator: marginOperator } = useOperator();
+  const showMarginBar = marginOperator?.name === "Guilherme";
+  const [marginComissao, setMarginComissao] = useState(5.85);
+  const [marginFrete, setMarginFrete] = useState(13);
+  // Fetch product costs for margin calculation
+  const productMarginsQuery = trpc.salesOrders.getProductMargins.useQuery(
+    { ufDestino: uf || "MG", tipoContribuinte: (tipoContribuinte as "Contribuinte" | "N\u00e3o contribuinte" | "Isento") || "Contribuinte" },
+    { enabled: showMarginBar, staleTime: 60 * 1000 }
+  );
+
   const [selectedClientName, setSelectedClientName] = useState("");
   const [clientInfoExpanded, setClientInfoExpanded] = useState(false);
   const [vendorClientId, setVendorClientId] = useState<number | null>(null);
@@ -5061,6 +5073,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <p className="text-xs font-semibold text-slate-500 uppercase">2. Produtos do Estoque</p>
               <span className="text-[10px] text-slate-400">{productsQuery.data?.length || 0} produtos disponíveis</span>
             </div>
+            {/* Margin params editor (Guilherme only) */}
+            {showMarginBar && (
+              <MarginParamsEditor
+                comissao={marginComissao}
+                frete={marginFrete}
+                onComissaoChange={setMarginComissao}
+                onFreteChange={setMarginFrete}
+              />
+            )}
             {/* Product search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -5405,6 +5426,27 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                                 )}
                               </div>
                             )}
+                            {/* Margin Bar - only for Guilherme */}
+                            {showMarginBar && effectivePrice > 0 && productMarginsQuery.data && (() => {
+                              const costData = productMarginsQuery.data.costMap[p.codigoItem];
+                              if (!costData || costData.cost <= 0) return null;
+                              const precoVenda = effectivePrice;
+                              const custoBox = costData.cost;
+                              const taxPerc = productMarginsQuery.data.taxPercent;
+                              const impostosValor = precoVenda * (taxPerc / 100);
+                              const freteValor = precoVenda * (marginFrete / 100);
+                              const comissaoValor = precoVenda * (marginComissao / 100);
+                              const lucro = precoVenda - custoBox - impostosValor - freteValor - comissaoValor;
+                              const margem = precoVenda > 0 ? (lucro / precoVenda) * 100 : 0;
+                              return (
+                                <ProductMarginBar
+                                  margin={margem}
+                                  custoBox={custoBox}
+                                  precoVenda={precoVenda}
+                                  fonte={costData.fonte}
+                                />
+                              );
+                            })()}
                         </div>
                       )}
                       {/* If no price, just show cart button */}
