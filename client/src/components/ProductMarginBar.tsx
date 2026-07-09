@@ -78,13 +78,18 @@ export function ProductMarginBar({ margin, custoBox, precoVenda, fonte, desconto
           <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-slate-900 dark:bg-white rounded-full border-2 border-white dark:border-slate-900 shadow-md" />
         </div>
       </div>
-      {/* Scale labels */}
-      <div className="flex justify-between mt-0.5 px-0.5">
-        <span className="text-[7px] text-red-500 font-bold">0%</span>
-        <span className="text-[7px] text-orange-500 font-bold">15%</span>
-        <span className="text-[7px] text-yellow-600 font-bold">20%</span>
-        <span className="text-[7px] text-green-500 font-bold">25%</span>
-        <span className="text-[7px] text-blue-500 font-bold">29%+</span>
+      {/* Scale labels - positioned exactly at color boundaries */}
+      <div className="relative mt-0.5 h-3">
+        {/* 0% at left edge: position = (0-(-5))/(40-(-5)) = 5/45 = 11.1% */}
+        <span className="absolute text-[7px] text-red-500 font-bold -translate-x-1/2" style={{ left: "11.1%" }}>0%</span>
+        {/* 15% at red/orange boundary: (15-(-5))/45 = 44.4% */}
+        <span className="absolute text-[7px] text-orange-500 font-bold -translate-x-1/2" style={{ left: "44.4%" }}>15%</span>
+        {/* 20% at orange/yellow boundary: (20-(-5))/45 = 55.6% */}
+        <span className="absolute text-[7px] text-yellow-600 font-bold -translate-x-1/2" style={{ left: "55.6%" }}>20%</span>
+        {/* 25% at yellow/green boundary: (25-(-5))/45 = 66.7% */}
+        <span className="absolute text-[7px] text-green-500 font-bold -translate-x-1/2" style={{ left: "66.7%" }}>25%</span>
+        {/* 29% at green/blue boundary: (29-(-5))/45 = 75.6% */}
+        <span className="absolute text-[7px] text-blue-500 font-bold -translate-x-1/2" style={{ left: "75.6%" }}>29%</span>
       </div>
     </div>
   );
