@@ -5114,11 +5114,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                       else if (descItem >= pts[pts.length-1].desc) m = pts[pts.length-1].marg;
                       else { for (let i=0;i<pts.length-1;i++) { if (descItem>=pts[i].desc&&descItem<=pts[i+1].desc) { const t=(descItem-pts[i].desc)/(pts[i+1].desc-pts[i].desc); m=pts[i].marg+t*(pts[i+1].marg-pts[i].marg); break; } } }
                       m = m - (marginComissao - 5.85) - (marginFrete - 13);
-                      if (m >= 29) return 'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-900/20';
-                      if (m >= 25) return 'border-green-300 dark:border-green-700 bg-green-50/40 dark:bg-green-900/20';
-                      if (m >= 20) return 'border-yellow-300 dark:border-yellow-700 bg-yellow-50/40 dark:bg-yellow-900/20';
-                      if (m >= 15) return 'border-orange-300 dark:border-orange-700 bg-orange-50/40 dark:bg-orange-900/20';
-                      return 'border-red-300 dark:border-red-700 bg-red-50/40 dark:bg-red-900/20';
+                      if (m >= 29) return 'border-2 border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-900/40';
+                      if (m >= 25) return 'border-2 border-green-400 dark:border-green-500 bg-green-100 dark:bg-green-900/40';
+                      if (m >= 20) return 'border-2 border-yellow-400 dark:border-yellow-500 bg-yellow-100 dark:bg-yellow-900/40';
+                      if (m >= 15) return 'border-2 border-orange-400 dark:border-orange-500 bg-orange-100 dark:bg-orange-900/40';
+                      return 'border-2 border-red-400 dark:border-red-500 bg-red-100 dark:bg-red-900/40';
                     })() : 'border-emerald-100 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>
                       {editingCartIdx === idx ? (
                         /* Editing mode - redirect to original */
