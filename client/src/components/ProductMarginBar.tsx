@@ -16,9 +16,10 @@ interface ProductMarginBarProps {
   custoBox: number; // cost per box in R$
   precoVenda: number; // selling price per box in R$
   fonte?: string; // cost source (Projetado, Real, Estimativa)
+  desconto?: number; // discount percentage given
 }
 
-export function ProductMarginBar({ margin, custoBox, precoVenda, fonte }: ProductMarginBarProps) {
+export function ProductMarginBar({ margin, custoBox, precoVenda, fonte, desconto }: ProductMarginBarProps) {
   // Clamp margin for display purposes (show from -5% to 40%)
   const displayMin = -5;
   const displayMax = 40;
@@ -43,6 +44,11 @@ export function ProductMarginBar({ margin, custoBox, precoVenda, fonte }: Produc
         <span className={`text-[9px] font-black ${color.text}`}>
           Margem: {margin.toFixed(1)}% ({color.label})
         </span>
+        {desconto !== undefined && desconto > 0 && (
+          <span className="text-[8px] text-slate-500 dark:text-slate-400 font-medium">
+            Desc: {desconto.toFixed(1)}%
+          </span>
+        )}
         {fonte && custoBox > 0 && (
           <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">
             Custo {fonte}: R$ {custoBox.toFixed(2)}/cx

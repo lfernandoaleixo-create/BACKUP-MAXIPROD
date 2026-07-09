@@ -5427,23 +5427,63 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                               </div>
                             )}
                             {/* Margin Bar - only for Guilherme */}
-                            {showMarginBar && effectivePrice > 0 && productMarginsQuery.data && (() => {
-                              const costData = productMarginsQuery.data.costMap[p.codigoItem];
-                              if (!costData || costData.cost <= 0) return null;
-                              const precoVenda = effectivePrice;
-                              const custoBox = costData.cost;
-                              const taxPerc = productMarginsQuery.data.taxPercent;
-                              const impostosValor = precoVenda * (taxPerc / 100);
-                              const freteValor = precoVenda * (marginFrete / 100);
-                              const comissaoValor = precoVenda * (marginComissao / 100);
-                              const lucro = precoVenda - custoBox - impostosValor - freteValor - comissaoValor;
-                              const margem = precoVenda > 0 ? (lucro / precoVenda) * 100 : 0;
+                            {showMarginBar && precoBase > 0 && (() => {
+                              // Margem baseada no desconto dado (relação inversa)
+                              // Pontos de referência do Fernando:
+                              // 0% desconto → lucro > 29% (azul)
+                              // 20% desconto → lucro ~29%
+                              // 23% desconto → lucro ~25%
+                              // 27% desconto → lucro ~20%
+                              // 32% desconto → lucro ~15%
+                              // Fórmula: desconto% = (1 - effectivePrice/precoBase) * 100
+                              const descontoDado = precoBase > 0 && effectivePrice > 0 
+                                ? ((precoBase - effectivePrice) / precoBase) * 100 
+                                : 0;
+                              
+                              // Interpolação linear inversa baseada nos pontos de referência
+                              // desconto → margem (relação inversa linear)
+                              // Pontos: (0, 38), (20, 29), (23, 25), (27, 20), (32, 15), (37, 10), (42, 5), (47, 0)
+                              const pontos = [
+                                { desc: 0, marg: 38 },
+                                { desc: 20, marg: 29 },
+                                { desc: 23, marg: 25 },
+                                { desc: 27, marg: 20 },
+                                { desc: 32, marg: 15 },
+                                { desc: 37, marg: 10 },
+                                { desc: 42, marg: 5 },
+                                { desc: 50, marg: 0 },
+                              ];
+                              
+                              let margem = 0;
+                              if (descontoDado <= pontos[0].desc) {
+                                margem = pontos[0].marg;
+                              } else if (descontoDado >= pontos[pontos.length - 1].desc) {
+                                margem = pontos[pontos.length - 1].marg;
+                              } else {
+                                for (let i = 0; i < pontos.length - 1; i++) {
+                                  if (descontoDado >= pontos[i].desc && descontoDado <= pontos[i + 1].desc) {
+                                    const t = (descontoDado - pontos[i].desc) / (pontos[i + 1].desc - pontos[i].desc);
+                                    margem = pontos[i].marg + t * (pontos[i + 1].marg - pontos[i].marg);
+                                    break;
+                                  }
+                                }
+                              }
+                              
+                              // Ajustar margem pelos parâmetros editáveis (diferença do padrão)
+                              // Se comissão > 5.85, reduz margem; se < 5.85, aumenta
+                              // Se frete > 13, reduz margem; se < 13, aumenta
+                              const comissaoDiff = marginComissao - 5.85;
+                              const freteDiff = marginFrete - 13;
+                              margem = margem - comissaoDiff - freteDiff;
+                              
+                              const costData = productMarginsQuery.data?.costMap[p.codigoItem];
                               return (
                                 <ProductMarginBar
                                   margin={margem}
-                                  custoBox={custoBox}
-                                  precoVenda={precoVenda}
-                                  fonte={costData.fonte}
+                                  custoBox={costData?.cost || 0}
+                                  precoVenda={effectivePrice}
+                                  fonte={costData?.fonte}
+                                  desconto={descontoDado}
                                 />
                               );
                             })()}
