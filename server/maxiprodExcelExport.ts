@@ -178,8 +178,8 @@ function mapClientToMaxiprodRow(client: any): string[] {
   row[36] = "Não";
   // Col 38: E-mail
   row[37] = client.email || "";
-  // Col 39: Representante/Vendedor
-  row[38] = client.sellerName || "";
+  // Col 39: Representante/Vendedor (deixar em branco - Maxiprod rejeita se não bater exatamente com cadastro)
+  row[38] = "";
   // Col 40-41: Representante/Vendedor 2, 3
   row[39] = "";
   row[40] = "";

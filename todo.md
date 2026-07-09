@@ -5191,3 +5191,6 @@
 - [x] Filtrar para mostrar apenas a partir de 08/07/2026 (não puxar histórico antigo)
 - [x] Cards de etapas sempre abaixo do nome do cliente
 - [x] Corrigir erros de português nos nomes das etapas (semAcao → Sem Ação, segundaCobranca → 2ª Cobrança, etc.)
+
+## CSV Export Maxiprod - Representante/Vendedor
+- [x] Fix: campo Representante/Vendedor no CSV de exportação Maxiprod deixado em branco (Maxiprod rejeita se valor não bater exatamente com cadastro)
