@@ -150,8 +150,8 @@ function mapClientToMaxiprodRow(client: any): string[] {
   row[22] = client.perfil || "";
   // Col 24: Segmento do cliente
   row[23] = client.segmento || "";
-  // Col 25: Forma de pedido do cliente
-  row[24] = client.formaPedido || "";
+  // Col 25: Forma de pedido do cliente (deixar vazio - valores inventados causam erro no Maxiprod)
+  row[24] = "";
   // Col 26: Fone 1
   row[25] = client.telefone1 || "";
   // Col 27: Fone 2

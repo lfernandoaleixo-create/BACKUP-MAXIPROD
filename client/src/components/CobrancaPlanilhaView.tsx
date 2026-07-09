@@ -2716,7 +2716,7 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
               />
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-500">At\u00e9:</span>
+              <span className="text-[10px] text-slate-500">Até:</span>
               <Input
                 type="date"
                 value={filterToDate}
