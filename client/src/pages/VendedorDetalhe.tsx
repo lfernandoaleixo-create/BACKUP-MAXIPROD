@@ -5106,7 +5106,20 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                 </div>
                 <div className="max-h-[200px] overflow-y-auto px-2 pt-2 space-y-1.5">
                   {items.map((item, idx) => (
-                    <div key={idx} className="rounded-lg border border-emerald-100 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/10">
+                    <div key={idx} className={`rounded-lg border ${showMarginBar && item.precoVendedor && item.precoVendedor > 0 ? (() => {
+                      const descItem = item.precoVendedor > 0 ? ((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100 : 0;
+                      const pts = [{desc:0,marg:36.25},{desc:20,marg:29},{desc:23,marg:25},{desc:27,marg:20},{desc:32,marg:15},{desc:37,marg:10},{desc:42,marg:5},{desc:50,marg:0}];
+                      let m = 0;
+                      if (descItem <= pts[0].desc) m = pts[0].marg;
+                      else if (descItem >= pts[pts.length-1].desc) m = pts[pts.length-1].marg;
+                      else { for (let i=0;i<pts.length-1;i++) { if (descItem>=pts[i].desc&&descItem<=pts[i+1].desc) { const t=(descItem-pts[i].desc)/(pts[i+1].desc-pts[i].desc); m=pts[i].marg+t*(pts[i+1].marg-pts[i].marg); break; } } }
+                      m = m - (marginComissao - 5.85) - (marginFrete - 13);
+                      if (m >= 29) return 'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-900/20';
+                      if (m >= 25) return 'border-green-300 dark:border-green-700 bg-green-50/40 dark:bg-green-900/20';
+                      if (m >= 20) return 'border-yellow-300 dark:border-yellow-700 bg-yellow-50/40 dark:bg-yellow-900/20';
+                      if (m >= 15) return 'border-orange-300 dark:border-orange-700 bg-orange-50/40 dark:bg-orange-900/20';
+                      return 'border-red-300 dark:border-red-700 bg-red-50/40 dark:bg-red-900/20';
+                    })() : 'border-emerald-100 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>
                       {editingCartIdx === idx ? (
                         /* Editing mode - redirect to original */
                         <div className="p-2.5">
