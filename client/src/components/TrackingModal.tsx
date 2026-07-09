@@ -665,9 +665,17 @@ function StatusBanner({ data }: { data: NormalizedTrackingData }) {
 function RouteInfoCards({ data }: { data: NormalizedTrackingData }) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
+    // Parse date string directly to avoid timezone shift (UTC midnight → previous day in BRT)
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return `${match[3]}/${match[2]}/${match[1]}`;
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   return (

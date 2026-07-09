@@ -541,9 +541,18 @@ export function RastreioEmConjunto() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
+    // Parse date string directly to avoid timezone conversion issues
+    // Dates like '2026-07-11' are UTC midnight, which shifts to previous day in BRT (UTC-3)
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return `${match[3]}/${match[2]}/${match[1]}`;
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   // Find the container data for hover/selected card

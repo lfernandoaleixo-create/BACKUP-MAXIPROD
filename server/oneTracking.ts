@@ -346,10 +346,10 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       { date: '2026-05-25', location: 'BUSAN, SOUTH KOREA', terminal: 'DONGWON GLOBAL TERMINAL BUSAN', description: 'Entrada no terminal de embarque', hasOccurred: true },
       { date: '2026-06-01', location: 'BUSAN, SOUTH KOREA', terminal: 'DONGWON GLOBAL TERMINAL BUSAN', description: 'Carregado no navio', vessel: 'HMM JAKARTA', hasOccurred: true },
       { date: '2026-06-01', location: 'BUSAN, SOUTH KOREA', terminal: 'DONGWON GLOBAL TERMINAL BUSAN', description: 'Partida do transbordo', vessel: 'HMM JAKARTA', hasOccurred: true },
-      { date: '2026-07-04', location: 'SANTOS, BRAZIL', terminal: 'EMBRAPORT - DP WORLD', description: 'Chegada no porto de destino', vessel: 'HMM JAKARTA', hasOccurred: false },
-      { date: '2026-07-04', location: 'SANTOS, BRAZIL', terminal: 'EMBRAPORT - DP WORLD', description: 'Descarregado no destino', vessel: 'HMM JAKARTA', hasOccurred: false },
-      { date: '2026-07-04', location: 'SANTOS, BRAZIL', terminal: 'EMBRAPORT - DP WORLD', description: 'Liberado para entrega', hasOccurred: false },
-      { date: '2026-07-04', location: 'SANTOS, BRAZIL', terminal: 'VIRTUAL DEPOT', description: 'Container vazio devolvido', hasOccurred: false },
+      { date: '2026-07-11', location: 'SANTOS, BRAZIL', terminal: 'EMBRAPORT - DP WORLD', description: 'Chegada no porto de destino', vessel: 'HMM JAKARTA', hasOccurred: false },
+      { date: '2026-07-11', location: 'SANTOS, BRAZIL', terminal: 'EMBRAPORT - DP WORLD', description: 'Descarregado no destino', vessel: 'HMM JAKARTA', hasOccurred: false },
+      { date: '2026-07-11', location: 'SANTOS, BRAZIL', terminal: 'EMBRAPORT - DP WORLD', description: 'Liberado para entrega', hasOccurred: false },
+      { date: '2026-07-11', location: 'SANTOS, BRAZIL', terminal: 'VIRTUAL DEPOT', description: 'Container vazio devolvido', hasOccurred: false },
     ];
 
     for (const event of allEvents) {
@@ -357,10 +357,10 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       event.hasOccurred = now >= eventDate;
     }
 
-    // Vessel position: HMM JAKARTA departed Busan 2026-06-01, ETA Santos 2026-07-04
+    // Vessel position: HMM JAKARTA departed Busan 2026-06-01, ETA Santos 2026-07-11
     const vesselPosition = calculateVesselPosition(
       '2026-06-01T00:00:00Z',
-      '2026-07-04T00:00:00Z',
+      '2026-07-11T00:00:00Z',
       ROUTE_BUSAN_SANTOS
     );
 
@@ -383,7 +383,7 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       placeOfDelivery: 'SANTOS, BRAZIL',
       latestEvent: currentStatus,
       latestEventTime: lastOccurred?.date || '',
-      podArrival: '2026-07-04',
+      podArrival: '2026-07-11',
       sailingLegs: [
         {
           vessel: 'ACX DIAMOND',
@@ -399,12 +399,12 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
           portOfLoading: 'BUSAN, SOUTH KOREA',
           departureDate: '2026-06-01',
           portOfDischarging: 'SANTOS, BRAZIL',
-          arrivalTime: '2026-07-04',
+          arrivalTime: '2026-07-11',
         },
       ],
       events: allEvents,
       currentStatus,
-      progress: calculateVoyageProgress('2026-05-19T00:00:00Z', '2026-07-04T00:00:00Z', vesselPosition, fullRoute),
+      progress: calculateVoyageProgress('2026-05-19T00:00:00Z', '2026-07-11T00:00:00Z', vesselPosition, fullRoute),
       vesselPosition,
       routeCoordinates: fullRoute,
       origin: { lat: 38.92, lng: 121.63, name: 'DALIAN' },

@@ -2905,7 +2905,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                     >
                       <CalendarDays className="w-3 h-3 text-indigo-500" />
                       <span className="text-[10px] font-medium text-indigo-700">
-                        {new Date(po.previsaoEntrega).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        {(() => { const m = String(po.previsaoEntrega || '').match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1].slice(2)}` : new Date(po.previsaoEntrega).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); })()}
                       </span>
                     </button>
                   ) : (
