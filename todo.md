@@ -5154,3 +5154,7 @@
 - [x] Corrigir lógica de conversão: prioridade é quantidade lançada no Maxiprod
 - [x] Só usar observações para conversão quando unidade é KG (conversão real de unidade)
 - [x] Aplicar correção tanto para pedidos abertos quanto faturados
+
+## Limpeza de Títulos Quitados (Especial s/ Cobrança)
+- [x] Identificar clientes "Especial s/ cobrança" cujos títulos já foram pagos (saíram da inadimplência)
+- [x] Remover/desativar esses títulos da planilha de cobrança automaticamente

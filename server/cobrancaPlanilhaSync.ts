@@ -192,11 +192,12 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   let deactivated = 0;
   const arIdsToResolve: number[] = [];
   for (const item of activePlanilha) {
-    // PROTEÇÃO: Nunca desativar itens com status "Fundo Perdido" ou "Especial s/ cobrança"
+    // PROTEÇÃO: Nunca desativar itens com status "Fundo Perdido"
     // Fundo Perdido vem de contas a PAGAR (conta 571), não de contas a receber
-    if (item.status === "Fundo Perdido" || item.status === "Especial s/ cobrança") continue;
+    if (item.status === "Fundo Perdido") continue;
     if (item.arId && !validOverdueArIds.has(item.arId)) {
       // The underlying title is no longer EMITIDO or no longer overdue → deactivate
+      // Isso inclui clientes "Especial s/ cobrança" que pagaram e saíram da inadimplência
       await db.update(cobrancaPlanilha)
         .set({ ativo: false, updatedBy: "Auto-sync (título pago/resolvido)" })
         .where(eq(cobrancaPlanilha.id, item.id));
