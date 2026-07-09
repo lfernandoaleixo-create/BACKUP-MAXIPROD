@@ -1988,6 +1988,9 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
       setAddError("");
     },
   });
+  const deleteMutation = trpc.sales.deleteSellerPermission.useMutation({
+    onSuccess: () => passwordsQuery.refetch(),
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [showPasswords, setShowPasswords] = useState<Set<number>>(new Set());
@@ -1996,6 +1999,7 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
   const [newSellerPassword, setNewSellerPassword] = useState("");
   const [newSellerAuthorized, setNewSellerAuthorized] = useState(true);
   const [addError, setAddError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   if (passwordsQuery.isLoading) {
     return (
@@ -2212,6 +2216,31 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
                   >
                     Editar
                   </button>
+                  {/* Delete button */}
+                  {confirmDeleteId === seller.id ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => { deleteMutation.mutate({ sellerId: seller.id }); setConfirmDeleteId(null); }}
+                        className="px-2 py-1 text-[10px] font-medium bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                      >
+                        Sim, excluir
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-2 py-1 text-[10px] font-medium bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(seller.id)}
+                      className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                      title="Excluir vendedor"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>

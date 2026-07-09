@@ -5079,3 +5079,8 @@
 - [x] Atualizar schema com novos campos (operacao_fiscal, estado_configuravel, forma_pagamento, data_entrega_pedido, previsao_entrega_pedido)
 - [x] Atualizar botão de exportação de CSV para XLS Maxiprod
 - [x] Testes unitários passando (2 testes)
+
+## Fix: Lixeira para excluir vendedores + RAFAEL duplicado na tabela de preços
+- [x] Botão de lixeira ao lado de cada vendedor na lista de senhas (PasswordManagerView)
+- [x] Confirmação "Sim, excluir / Cancelar" antes de deletar
+- [x] Removido RAFAEL duplicado (id 430000) da tabela seller_permissions - mantido RAFAEL LEONEL PEREIRA (id 460000)
