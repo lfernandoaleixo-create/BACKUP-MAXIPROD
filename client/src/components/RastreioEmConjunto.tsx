@@ -418,11 +418,11 @@ export function RastreioEmConjunto() {
           // Delivered: anchor icon, green color, 'Em Santos' label
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:36px;height:36px;background:#16a34a33;border-radius:50%;"></div>
-              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px #16a34a88;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zm-4 2V9H5c-1.1 0-2 .9-2 2v10l4-4h6c1.1 0 2-.9 2-2z" fill="none" stroke="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <div style="position:absolute;width:24px;height:24px;background:#16a34a33;border-radius:50%;"></div>
+              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px #16a34a88;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zm-4 2V9H5c-1.1 0-2 .9-2 2v10l4-4h6c1.1 0 2-.9 2-2z" fill="none" stroke="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
-              <div style="margin-top:4px;background:#16a34a;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:160px;overflow:hidden;text-overflow:ellipsis;">
+              <div style="margin-top:2px;background:#16a34a;color:white;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
                 ${container.supplierName} • Em Santos
               </div>
             </div>
@@ -431,11 +431,11 @@ export function RastreioEmConjunto() {
           // In transit: ship emoji with color
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:40px;height:40px;background:${color}22;border-radius:50%;animation:pulse 2s infinite;"></div>
-              <div style="position:relative;background:${color};border:2.5px solid white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px ${color}99;">
-                <span style="font-size:18px;line-height:1;">\u{1F6A2}</span>
+              <div style="position:absolute;width:26px;height:26px;background:${color}22;border-radius:50%;animation:pulse 2s infinite;"></div>
+              <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px ${color}99;">
+                <span style="font-size:11px;line-height:1;">\u{1F6A2}</span>
               </div>
-              <div style="margin-top:4px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
+              <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
                 ${container.supplierName} \u2022 ${progress || 0}%
               </div>
             </div>

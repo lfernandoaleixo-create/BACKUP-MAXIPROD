@@ -5043,3 +5043,8 @@
 ## Bug Fix: Erro ao salvar cliente na Gestão Comercial (08/07/2026)
 - [x] Sanitizar limiteCredito: converter "R$ 20.000,00" para "20000.00" antes de salvar no DB (decimal)
 - [x] Corrigido em createVendorClient e updateVendorClient
+
+## Ícone do navio menor no mapa (09/07/2026)
+- [x] Reduzir tamanho do marcador do navio em RastreioEmConjunto (36→20px circle, 40→26px pulse)
+- [x] Reduzir tamanho do marcador do navio em TrackingModal (48→28px)
+- [x] Reduzir labels de texto abaixo do navio (font-size 9→8px, max-width 140→120px)

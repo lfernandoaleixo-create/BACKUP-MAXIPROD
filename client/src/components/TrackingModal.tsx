@@ -811,9 +811,9 @@ function TrackingGoogleMap({ data }: { data: NormalizedTrackingData }) {
           position: vesselPos,
           map,
           icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#4f46e5" stroke="white" stroke-width="2"/><text x="24" y="30" text-anchor="middle" font-size="22">🚢</text></svg>`),
-            scaledSize: new google.maps.Size(48, 48),
-            anchor: new google.maps.Point(24, 24),
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#4f46e5" stroke="white" stroke-width="1.5"/><text x="14" y="19" text-anchor="middle" font-size="13">🚢</text></svg>`),
+            scaledSize: new google.maps.Size(28, 28),
+            anchor: new google.maps.Point(14, 14),
           },
           title: "Posição atual do navio",
           zIndex: 999,
