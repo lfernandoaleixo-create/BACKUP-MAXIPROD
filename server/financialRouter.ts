@@ -58,6 +58,11 @@ let cobrancaDecisionCacheMap: Record<string, string> = {};
 let cobrancaDecisionCacheTimestamp = 0;
 const COBRANCA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
+// Cache para telefones dos clientes (endereço + contatos)
+let clientPhonesCacheMap: Record<string, { phones: string[]; contacts: Array<{ nome: string; cargo: string | null; telefones: string[] }> }> = {};
+let clientPhonesCacheTimestamp = 0;
+const CLIENT_PHONES_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 // Editoras que NÃO são vendedoras (apenas editam pedidos no Maxiprod)
 const EDITORES_NAO_VENDEDORES = ["BRENDA", "LARISSA"];
 
@@ -3322,6 +3327,124 @@ export const financialRouter = router({
         titles,
         stats: { total: totalValue, count: titles.length, byStatus },
       };
+    }),
+
+  /**
+   * Buscar todos os telefones de todos os clientes (endereço + contatos do Maxiprod)
+   * Para exibir na aba de inadimplência
+   */
+  getClientPhones: publicProcedure
+    .query(async () => {
+      const now = Date.now();
+      if (now - clientPhonesCacheTimestamp < CLIENT_PHONES_CACHE_TTL && Object.keys(clientPhonesCacheMap).length > 0) {
+        return clientPhonesCacheMap;
+      }
+      const result: Record<string, { phones: string[]; contacts: Array<{ nome: string; cargo: string | null; telefones: string[] }> }> = {};
+      function normN(name: string): string {
+        return name.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
+      function addPhone(clientKey: string, phone: string) {
+        if (!result[clientKey]) result[clientKey] = { phones: [], contacts: [] };
+        const cleaned = phone.replace(/[^0-9]/g, '');
+        if (cleaned.length >= 8 && !result[clientKey].phones.includes(phone.trim())) {
+          result[clientKey].phones.push(phone.trim());
+        }
+      }
+      try {
+        // Step 1: Fetch all empresas with their endereco phones
+        const PAGE_SIZE = 200;
+        let skip = 0;
+        let total = 0;
+        do {
+          const resp = await gql<any>(`{
+            empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
+              totalCount
+              items {
+                nomeFantasia
+                razaoSocial
+                apelido
+                endereco { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeEntrega { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeFaturamento { telefone1 telefone2 telefone3 telefone4 }
+              }
+            }
+          }`);
+          if (!resp?.empresas) break;
+          total = resp.empresas.totalCount;
+          for (const emp of resp.empresas.items) {
+            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+            const keys = names.map((n: string) => normN(n));
+            const addrs = [emp.endereco, emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
+            for (const addr of addrs) {
+              if (!addr) continue;
+              for (const fKey of ['telefone1', 'telefone2', 'telefone3', 'telefone4']) {
+                const tel = (addr[fKey] || "").trim();
+                if (tel && tel.length >= 8 && tel !== '(  )    -') {
+                  for (const k of keys) addPhone(k, tel);
+                }
+              }
+            }
+          }
+          skip += PAGE_SIZE;
+        } while (skip < total);
+        // Step 2: Fetch all contatos ("Ocultar Contatos" section in Maxiprod)
+        let cSkip = 0;
+        let cTotal = 0;
+        do {
+          const resp = await gql<any>(`{
+            contatos(skip: ${cSkip}, take: ${PAGE_SIZE}) {
+              totalCount
+              items {
+                nome
+                cargo
+                telefone1
+                telefone2
+                telefone3
+                empresa { nomeFantasia razaoSocial apelido }
+              }
+            }
+          }`);
+          if (!resp?.contatos) break;
+          cTotal = resp.contatos.totalCount;
+          for (const contato of resp.contatos.items) {
+            if (!contato.empresa) continue;
+            const emp = contato.empresa;
+            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+            const keys = names.map((n: string) => normN(n));
+            const telefones: string[] = [];
+            for (const fKey of ['telefone1', 'telefone2', 'telefone3']) {
+              const tel = ((contato as any)[fKey] || "").trim();
+              if (tel && tel.length >= 8) telefones.push(tel);
+            }
+            if (telefones.length > 0 || contato.nome) {
+              for (const k of keys) {
+                if (!result[k]) result[k] = { phones: [], contacts: [] };
+                // Deduplicate contacts by nome+cargo
+                const dedupKey = `${(contato.nome || "").toLowerCase()}_${(contato.cargo || "").toLowerCase()}`;
+                const alreadyExists = result[k].contacts.some(c => 
+                  `${c.nome.toLowerCase()}_${(c.cargo || "").toLowerCase()}` === dedupKey
+                );
+                if (!alreadyExists) {
+                  result[k].contacts.push({
+                    nome: contato.nome || "",
+                    cargo: contato.cargo || null,
+                    telefones,
+                  });
+                }
+                for (const tel of telefones) addPhone(k, tel);
+              }
+            }
+          }
+          cSkip += PAGE_SIZE;
+        } while (cSkip < cTotal);
+        console.log(`[ClientPhones] Refreshed: ${Object.keys(result).length} clientes, ${total} empresas, ${cTotal} contatos`);
+      } catch (e) {
+        console.error("[getClientPhones] Erro ao buscar telefones:", e);
+      }
+      clientPhonesCacheMap = result;
+      clientPhonesCacheTimestamp = now;
+      return result;
     }),
 
   /**

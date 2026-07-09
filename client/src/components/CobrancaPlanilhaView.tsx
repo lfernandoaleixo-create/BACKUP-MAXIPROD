@@ -211,6 +211,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const { data: items, isLoading, refetch } = trpc.cobrancaPlanilha.getAll.useQuery();
   const { data: summary } = trpc.cobrancaPlanilha.getSummary.useQuery();
   const { data: liveStats } = trpc.cobrancaPlanilha.getLiveInadimplenciaStats.useQuery();
+  const { data: clientPhonesMap } = trpc.financial.getClientPhones.useQuery();
   const updateField = trpc.cobrancaPlanilha.updateField.useMutation({
     onSuccess: () => { refetch(); toast.success("Atualizado!"); },
     onError: (err) => toast.error(err.message),
@@ -1761,20 +1762,80 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                     </a>
                                   </div>
                                 )}
-                                {/* Contatos adicionais do Maxiprod */}
+                                {/* Contatos adicionais do Maxiprod (endereços) */}
                                 {(() => {
                                   const extras = (item.contatosAdicionais as string[] | null) || [];
-                                  if (extras.length === 0) {
-                                    return <p className="text-slate-400 italic text-[10px]">Nenhum contato adicional encontrado no Maxiprod.</p>;
+                                  if (extras.length > 0) {
+                                    return extras.map((tel, i) => (
+                                      <div key={`extra-${i}`} className="flex items-center gap-1.5">
+                                        <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                        <a href={`tel:${tel}`} className="text-blue-600 hover:underline">
+                                          {tel}
+                                        </a>
+                                      </div>
+                                    ));
                                   }
-                                  return extras.map((tel, i) => (
-                                    <div key={i} className="flex items-center gap-1.5">
-                                      <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                                      <a href={`tel:${tel}`} className="text-blue-600 hover:underline">
-                                        {tel}
-                                      </a>
+                                  return null;
+                                })()}
+                                {/* Contatos nomeados (seção "Ocultar Contatos" do Maxiprod) */}
+                                {(() => {
+                                  if (!clientPhonesMap) return null;
+                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                  const phoneData = clientPhonesMap[normKey];
+                                  if (!phoneData?.contacts || phoneData.contacts.length === 0) return null;
+                                  return (
+                                    <div className="mt-1.5 pt-1.5 border-t border-slate-100">
+                                      <span className="text-[9px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">CONTATOS</span>
+                                      {phoneData.contacts.map((c, i) => (
+                                        <div key={`contact-${i}`} className="flex items-center gap-1.5 mt-1">
+                                          <User className="w-3 h-3 text-violet-400 shrink-0" />
+                                          <span className="text-slate-700 font-medium">{c.nome}</span>
+                                          {c.cargo && <span className="text-[9px] text-slate-400">({c.cargo})</span>}
+                                          {c.telefones.map((tel, j) => (
+                                            <a key={j} href={`tel:${tel}`} className="text-blue-600 hover:underline ml-1">
+                                              {tel}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      ))}
                                     </div>
-                                  ));
+                                  );
+                                })()}
+                                {/* Telefones extras do GraphQL (não presentes nos anteriores) */}
+                                {(() => {
+                                  if (!clientPhonesMap) return null;
+                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                  const phoneData = clientPhonesMap[normKey];
+                                  const extras = (item.contatosAdicionais as string[] | null) || [];
+                                  const principal = (item as any).contato || "";
+                                  const shown = new Set([...extras, principal].filter(Boolean));
+                                  // Show phones from GraphQL that aren't already shown
+                                  const newPhones = (phoneData?.phones || []).filter(p => !shown.has(p));
+                                  if (newPhones.length === 0) return null;
+                                  return (
+                                    <div className="mt-1">
+                                      {newPhones.map((tel, i) => (
+                                        <div key={`gql-${i}`} className="flex items-center gap-1.5">
+                                          <Phone className="w-3 h-3 text-green-400 shrink-0" />
+                                          <a href={`tel:${tel}`} className="text-blue-600 hover:underline">
+                                            {tel}
+                                          </a>
+                                          <span className="text-[8px] text-slate-300">(Maxiprod)</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+                                {/* Mensagem se nenhum telefone encontrado */}
+                                {(() => {
+                                  const extras = (item.contatosAdicionais as string[] | null) || [];
+                                  const principal = (item as any).contato || "";
+                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                  const phoneData = clientPhonesMap?.[normKey];
+                                  if (!principal && extras.length === 0 && (!phoneData || phoneData.phones.length === 0)) {
+                                    return <p className="text-slate-400 italic text-[10px]">Nenhum telefone encontrado no Maxiprod.</p>;
+                                  }
+                                  return null;
                                 })()}
                               </div>
                             </div>

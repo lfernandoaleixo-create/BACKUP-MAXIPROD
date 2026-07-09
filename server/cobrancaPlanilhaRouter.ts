@@ -816,6 +816,7 @@ export const cobrancaPlanilhaRouter = router({
                 nomeFantasia
                 razaoSocial
                 apelido
+                endereco { telefone1 telefone2 telefone3 telefone4 email }
                 enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 email }
                 enderecoDeEntrega { telefone1 telefone2 telefone3 telefone4 email }
                 enderecoDeFaturamento { telefone1 telefone2 telefone3 telefone4 email }
@@ -827,7 +828,7 @@ export const cobrancaPlanilhaRouter = router({
           for (const emp of resp.empresas.items) {
             const phones = new Set<string>();
             const emails = new Set<string>();
-            const addrs = [emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
+            const addrs = [emp.endereco, emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
             for (const addr of addrs) {
               if (!addr) continue;
               for (const key of ['telefone1', 'telefone2', 'telefone3', 'telefone4']) {
@@ -857,7 +858,50 @@ export const cobrancaPlanilhaRouter = router({
           skip += PAGE_SIZE;
         } while (skip < total);
       } catch (e) {
-        console.error("[Sync] Erro ao buscar contatos extras:", e);
+        console.error("[Sync] Erro ao buscar contatos extras (empresas):", e);
+      }
+      // 4d2. Buscar contatos da seção "Ocultar Contatos" (root query contatos)
+      try {
+        const PAGE_SIZE = 200;
+        let cSkip = 0;
+        let cTotal = 0;
+        do {
+          const resp = await gql<any>(`{
+            contatos(skip: ${cSkip}, take: ${PAGE_SIZE}) {
+              totalCount
+              items {
+                nome
+                cargo
+                telefone1
+                telefone2
+                telefone3
+                empresa { nomeFantasia razaoSocial apelido }
+              }
+            }
+          }`);
+          if (!resp?.contatos) break;
+          cTotal = resp.contatos.totalCount;
+          for (const contato of resp.contatos.items) {
+            if (!contato.empresa) continue;
+            const emp = contato.empresa;
+            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+            for (const fKey of ['telefone1', 'telefone2', 'telefone3']) {
+              const tel = ((contato as any)[fKey] || "").trim();
+              if (tel && tel.length >= 8) {
+                for (const name of names) {
+                  const normName = normalizeName(name);
+                  if (!contatosExtrasMap[normName]) contatosExtrasMap[normName] = [];
+                  if (!contatosExtrasMap[normName].includes(tel)) {
+                    contatosExtrasMap[normName].push(tel);
+                  }
+                }
+              }
+            }
+          }
+          cSkip += PAGE_SIZE;
+        } while (cSkip < cTotal);
+      } catch (e) {
+        console.error("[Sync] Erro ao buscar contatos (Ocultar Contatos):", e);
       }
 
       // 4e. Mapear forma de cobrança por arId

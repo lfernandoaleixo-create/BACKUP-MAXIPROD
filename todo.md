@@ -5048,3 +5048,10 @@
 - [x] Reduzir tamanho do marcador do navio em RastreioEmConjunto (36→20px circle, 40→26px pulse)
 - [x] Reduzir tamanho do marcador do navio em TrackingModal (48→28px)
 - [x] Reduzir labels de texto abaixo do navio (font-size 9→8px, max-width 140→120px)
+
+## Inadimplência: Puxar telefones dos clientes (09/07/2026)
+- [x] Buscar telefones do cliente via API GraphQL do Maxiprod (Telefone 1-4 do endereço + Fone 1-3 dos contatos)
+- [x] Exibir telefones na interface de inadimplência para cada cliente
+- [x] Incluir nome do contato junto com o telefone (ex: "Roberio - COMPRAS: 88992540638")
+- [x] Atualizar sync da planilha de cobrança para incluir endereço principal + contatos (Ocultar Contatos)
+- [x] Deduplicar contatos repetidos na resposta
