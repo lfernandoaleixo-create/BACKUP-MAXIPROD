@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -260,6 +262,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showBackupInfo, setShowBackupInfo] = useState(false);
+  const [showDiary, setShowDiary] = useState(false);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
   const [showDecisionPdfHistory, setShowDecisionPdfHistory] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
@@ -939,6 +942,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           >
             <Database className="w-3.5 h-3.5" />
             {backups && backups.length > 0 ? `${backups.length} backup${backups.length !== 1 ? "s" : ""}` : "Backups"}
+          </button>
+          <button
+            onClick={() => setShowDiary(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition-colors shadow-sm"
+            title="Abrir Diário de Cobrança - histórico de negociações e etapas"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Diário de Cobrança
           </button>
           <button
             onClick={handleCreateBackup}
@@ -2287,6 +2298,24 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ==================== DIÁRIO DE COBRANÇA MODAL ==================== */}
+      {showDiary && (
+        <Dialog open={showDiary} onOpenChange={setShowDiary}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-700">
+                <BookOpen className="w-5 h-5" />
+                Diário de Cobrança
+              </DialogTitle>
+            </DialogHeader>
+            <DiaryPanelContent
+              operatorName={operator?.name || "Operador"}
+              clienteNames={[...new Set((items || []).map(i => i.empresa).filter(Boolean))]}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -2535,5 +2564,514 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** ==================== DIÁRIO DE COBRANÇA - Componente Interno ==================== */
+const DIARY_ETAPAS = [
+  { value: "Contatado", label: "Contatado", color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { value: "Em negociação", label: "Em Negociação", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "Promessa de Pgto", label: "Promessa de Pgto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  { value: "Especial s/ cobrança", label: "Especial s/ Cobrança", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
+  { value: "Protestado", label: "Protestado", color: "bg-orange-100 text-orange-700 border-orange-300" },
+  { value: "Fundo Perdido", label: "Fundo Perdido", color: "bg-stone-100 text-stone-700 border-stone-400" },
+  { value: "Pago/Resolvido", label: "Pago/Resolvido", color: "bg-green-100 text-green-700 border-green-300" },
+];
+
+const DIARY_CONTATO_TIPOS = [
+  { value: "ligacao", label: "Ligação" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "email", label: "E-mail" },
+  { value: "presencial", label: "Presencial" },
+  { value: "outro", label: "Outro" },
+];
+
+function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: string; clienteNames: string[] }) {
+  const [activeTab, setActiveTab] = useState<string>("historico");
+  const [filterCliente, setFilterCliente] = useState("");
+  const [filterEtapa, setFilterEtapa] = useState("");
+  const [filterFromDate, setFilterFromDate] = useState("");
+  const [filterToDate, setFilterToDate] = useState("");
+  const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
+
+  // Form state for new entry
+  const [formCliente, setFormCliente] = useState("");
+  const [formEtapa, setFormEtapa] = useState("");
+  const [formTipoContato, setFormTipoContato] = useState("");
+  const [formResumo, setFormResumo] = useState("");
+  const [formObs, setFormObs] = useState("");
+  const [formValor, setFormValor] = useState("");
+  const [formProximaAcao, setFormProximaAcao] = useState("");
+  const [formProximaData, setFormProximaData] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  const utils = trpc.useUtils();
+
+  // Queries
+  const { data: entries, isLoading: loadingEntries } = trpc.financial.getDiaryEntries.useQuery({
+    clienteName: filterCliente || undefined,
+    fromDate: filterFromDate || undefined,
+    toDate: filterToDate || undefined,
+    etapa: filterEtapa || undefined,
+    limit: 200,
+  });
+
+  const { data: snapshots, isLoading: loadingSnapshots } = trpc.financial.getDiarySnapshots.useQuery({ limit: 60 });
+
+  const { data: snapshotDetail, isLoading: loadingDetail } = trpc.financial.getDiarySnapshotDetail.useQuery(
+    { snapshotDate: selectedSnapshot! },
+    { enabled: !!selectedSnapshot }
+  );
+
+  // Mutations
+  const addEntry = trpc.financial.addDiaryEntry.useMutation({
+    onSuccess: () => {
+      toast.success("Entrada adicionada ao diário!");
+      utils.financial.getDiaryEntries.invalidate();
+      resetForm();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  function resetForm() {
+    setFormCliente("");
+    setFormEtapa("");
+    setFormTipoContato("");
+    setFormResumo("");
+    setFormObs("");
+    setFormValor("");
+    setFormProximaAcao("");
+    setFormProximaData("");
+    setShowForm(false);
+  }
+
+  function handleSubmitEntry() {
+    if (!formCliente.trim()) { toast.error("Selecione o cliente"); return; }
+    if (!formEtapa) { toast.error("Selecione a etapa"); return; }
+    if (!formResumo.trim()) { toast.error("Preencha o resumo da interação"); return; }
+    addEntry.mutate({
+      clienteName: formCliente.trim(),
+      etapaAtual: formEtapa,
+      tipoContato: formTipoContato || undefined,
+      resumo: formResumo.trim(),
+      observacoes: formObs.trim() || undefined,
+      valorNegociado: formValor ? parseFloat(formValor.replace(",", ".")) : undefined,
+      proximaAcao: formProximaAcao.trim() || undefined,
+      proximaAcaoData: formProximaData || undefined,
+      operadorName: operatorName,
+    });
+  }
+
+  function getEtapaBadge(etapa: string) {
+    const found = DIARY_ETAPAS.find(e => e.value === etapa);
+    if (!found) return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-300">{etapa}</span>;
+    return <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${found.color}`}>{found.label}</span>;
+  }
+
+  function getContatoLabel(tipo: string | null) {
+    if (!tipo) return null;
+    const found = DIARY_CONTATO_TIPOS.find(c => c.value === tipo);
+    return found?.label || tipo;
+  }
+
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid w-full grid-cols-3 mb-3">
+          <TabsTrigger value="historico" className="text-xs">
+            <History className="w-3.5 h-3.5 mr-1.5" />
+            Histórico
+          </TabsTrigger>
+          <TabsTrigger value="nova-entrada" className="text-xs">
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            Nova Entrada
+          </TabsTrigger>
+          <TabsTrigger value="snapshots" className="text-xs">
+            <Database className="w-3.5 h-3.5 mr-1.5" />
+            Backups/Snapshots
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ========== TAB: HISTÓRICO ========== */}
+        <TabsContent value="historico" className="flex-1 overflow-hidden flex flex-col mt-0">
+          {/* Filtros */}
+          <div className="flex flex-wrap gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="flex-1 min-w-[140px]">
+              <Input
+                placeholder="Buscar cliente..."
+                value={filterCliente}
+                onChange={(e) => setFilterCliente(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <select
+              value={filterEtapa}
+              onChange={(e) => setFilterEtapa(e.target.value)}
+              className="h-8 px-2 text-xs border border-slate-200 rounded-md bg-white"
+            >
+              <option value="">Todas etapas</option>
+              {DIARY_ETAPAS.map(e => (
+                <option key={e.value} value={e.value}>{e.label}</option>
+              ))}
+            </select>
+            <Input
+              type="date"
+              value={filterFromDate}
+              onChange={(e) => setFilterFromDate(e.target.value)}
+              className="h-8 text-xs w-[130px]"
+              placeholder="De"
+            />
+            <Input
+              type="date"
+              value={filterToDate}
+              onChange={(e) => setFilterToDate(e.target.value)}
+              className="h-8 text-xs w-[130px]"
+              placeholder="Até"
+            />
+            {(filterCliente || filterEtapa || filterFromDate || filterToDate) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-slate-500"
+                onClick={() => { setFilterCliente(""); setFilterEtapa(""); setFilterFromDate(""); setFilterToDate(""); }}
+              >
+                <X className="w-3 h-3 mr-1" /> Limpar
+              </Button>
+            )}
+          </div>
+
+          {/* Lista de entradas */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {loadingEntries ? (
+              <div className="flex items-center justify-center py-12 text-slate-400">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando histórico...
+              </div>
+            ) : !entries || entries.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <BookOpen className="w-10 h-10 mb-2 opacity-50" />
+                <p className="text-sm font-medium">Nenhuma entrada no diário</p>
+                <p className="text-xs mt-1">Adicione registros de negociação na aba "Nova Entrada"</p>
+              </div>
+            ) : (
+              entries.map((entry) => (
+                <div key={entry.id} className="border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-slate-800 truncate">{entry.clienteName}</span>
+                        {getEtapaBadge(entry.etapaAtual)}
+                        {entry.tipoContato && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">
+                            {getContatoLabel(entry.tipoContato)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-700 mt-1 leading-relaxed">{entry.resumo}</p>
+                      {entry.observacoes && (
+                        <p className="text-[11px] text-slate-500 mt-1 italic">Obs: {entry.observacoes}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {entry.valorNegociado && (
+                          <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            R$ {Number(entry.valorNegociado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                        {entry.proximaAcao && (
+                          <span className="text-[10px] text-blue-600">
+                            Próx: {entry.proximaAcao}{entry.proximaAcaoData ? ` (${entry.proximaAcaoData.split("-").reverse().join("/")})` : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] text-slate-400">
+                        {new Date(entry.createdAt).toLocaleDateString("pt-BR")}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {new Date(entry.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                        <User className="w-2.5 h-2.5 inline mr-0.5" />{entry.operadorName}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {entries && entries.length > 0 && (
+            <div className="pt-2 border-t border-slate-100 mt-2">
+              <p className="text-[10px] text-slate-400 text-center">{entries.length} entrada(s) encontrada(s)</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ========== TAB: NOVA ENTRADA ========== */}
+        <TabsContent value="nova-entrada" className="flex-1 overflow-y-auto mt-0">
+          <div className="space-y-3 p-1">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800 font-medium">Registre aqui cada interação de cobrança com o cliente.</p>
+              <p className="text-[10px] text-amber-600 mt-0.5">O backup automático é salvo diariamente às 17:15.</p>
+            </div>
+
+            {/* Cliente */}
+            <div>
+              <label className="text-xs font-medium text-slate-700 mb-1 block">
+                Cliente <span className="text-red-500">*</span>
+              </label>
+              <Input
+                list="diary-clientes-list"
+                placeholder="Digite ou selecione o cliente..."
+                value={formCliente}
+                onChange={(e) => setFormCliente(e.target.value)}
+                className="h-9 text-sm"
+              />
+              <datalist id="diary-clientes-list">
+                {clienteNames.sort().map(name => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            </div>
+
+            {/* Etapa + Tipo Contato */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">
+                  Etapa Atual <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formEtapa}
+                  onChange={(e) => setFormEtapa(e.target.value)}
+                  className="w-full h-9 px-3 text-sm border border-slate-200 rounded-md bg-white"
+                >
+                  <option value="">Selecione...</option>
+                  {DIARY_ETAPAS.map(e => (
+                    <option key={e.value} value={e.value}>{e.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">Tipo de Contato</label>
+                <select
+                  value={formTipoContato}
+                  onChange={(e) => setFormTipoContato(e.target.value)}
+                  className="w-full h-9 px-3 text-sm border border-slate-200 rounded-md bg-white"
+                >
+                  <option value="">Selecione...</option>
+                  {DIARY_CONTATO_TIPOS.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Resumo */}
+            <div>
+              <label className="text-xs font-medium text-slate-700 mb-1 block">
+                Resumo da Interação <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                placeholder="Descreva o que foi conversado, acordado ou decidido..."
+                value={formResumo}
+                onChange={(e) => setFormResumo(e.target.value)}
+                className="text-sm min-h-[80px]"
+              />
+            </div>
+
+            {/* Observações */}
+            <div>
+              <label className="text-xs font-medium text-slate-700 mb-1 block">Observações Adicionais</label>
+              <Textarea
+                placeholder="Informações extras, contexto, detalhes..."
+                value={formObs}
+                onChange={(e) => setFormObs(e.target.value)}
+                className="text-sm min-h-[60px]"
+              />
+            </div>
+
+            {/* Valor + Próxima Ação */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">Valor Negociado (R$)</label>
+                <Input
+                  placeholder="0,00"
+                  value={formValor}
+                  onChange={(e) => setFormValor(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">Data Próxima Ação</label>
+                <Input
+                  type="date"
+                  value={formProximaData}
+                  onChange={(e) => setFormProximaData(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-700 mb-1 block">Próxima Ação</label>
+              <Input
+                placeholder="Ex: Ligar novamente, Enviar boleto, Aguardar retorno..."
+                value={formProximaAcao}
+                onChange={(e) => setFormProximaAcao(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+
+            {/* Operador info + Submit */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <p className="text-[10px] text-slate-400">
+                <User className="w-3 h-3 inline mr-1" />Operador: <span className="font-medium">{operatorName}</span>
+              </p>
+              <Button
+                onClick={handleSubmitEntry}
+                disabled={addEntry.isPending}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+                size="sm"
+              >
+                {addEntry.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                Registrar no Diário
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ========== TAB: SNAPSHOTS/BACKUPS ========== */}
+        <TabsContent value="snapshots" className="flex-1 overflow-hidden flex flex-col mt-0">
+          {!selectedSnapshot ? (
+            <>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <p className="text-xs text-blue-800 font-medium">Backups automáticos salvos diariamente às 17:15</p>
+                <p className="text-[10px] text-blue-600 mt-0.5">Cada snapshot contém o estado completo de todos os clientes inadimplentes naquele dia.</p>
+              </div>
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {loadingSnapshots ? (
+                  <div className="flex items-center justify-center py-12 text-slate-400">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando snapshots...
+                  </div>
+                ) : !snapshots || snapshots.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <Database className="w-10 h-10 mb-2 opacity-50" />
+                    <p className="text-sm font-medium">Nenhum snapshot salvo ainda</p>
+                    <p className="text-xs mt-1">O primeiro backup será gerado automaticamente às 17:15</p>
+                  </div>
+                ) : (
+                  snapshots.map((snap) => (
+                    <button
+                      key={snap.id}
+                      onClick={() => setSelectedSnapshot(snap.snapshotDate)}
+                      className="w-full text-left border border-slate-200 rounded-lg p-3 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            {snap.snapshotDate.split("-").reverse().join("/")}
+                          </p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {snap.totalClientes} clientes | {snap.totalTitulos} títulos | {snap.entriesCount} entradas no dia
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-slate-700">
+                            R$ {Number(snap.valorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {new Date(snap.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            /* Detalhe do snapshot selecionado */
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedSnapshot(null)}
+                  className="text-xs"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Voltar
+                </Button>
+                <h3 className="text-sm font-bold text-slate-800">
+                  Snapshot de {selectedSnapshot.split("-").reverse().join("/")}
+                </h3>
+              </div>
+
+              {loadingDetail ? (
+                <div className="flex items-center justify-center py-12 text-slate-400">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando detalhes...
+                </div>
+              ) : !snapshotDetail ? (
+                <p className="text-sm text-slate-500 text-center py-8">Snapshot não encontrado.</p>
+              ) : (
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {/* Resumo do snapshot */}
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+                      <p className="text-lg font-bold text-slate-800">{snapshotDetail.totalClientes}</p>
+                      <p className="text-[10px] text-slate-500">Clientes</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+                      <p className="text-lg font-bold text-slate-800">{snapshotDetail.totalTitulos}</p>
+                      <p className="text-[10px] text-slate-500">Títulos</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+                      <p className="text-lg font-bold text-emerald-700">R$ {Number(snapshotDetail.valorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[10px] text-slate-500">Valor Total</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+                      <p className="text-lg font-bold text-amber-700">{snapshotDetail.entriesCount}</p>
+                      <p className="text-[10px] text-slate-500">Entradas no Dia</p>
+                    </div>
+                  </div>
+
+                  {/* Lista de clientes do snapshot */}
+                  {(snapshotDetail.snapshotData as any[])?.map((client: any, idx: number) => (
+                    <div key={idx} className="border border-slate-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm text-slate-800">{client.clienteName}</span>
+                          {getEtapaBadge(client.etapa)}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-medium text-slate-700">
+                            {client.titulosCount} título(s) | R$ {Number(client.valorDevido || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      </div>
+                      {client.ultimaAcao && (
+                        <p className="text-[11px] text-slate-600 mt-1.5 pl-2 border-l-2 border-amber-300">
+                          Última ação: {client.ultimaAcao}
+                        </p>
+                      )}
+                      {client.entriesDoDia && client.entriesDoDia.length > 0 && (
+                        <div className="mt-2 space-y-1 pl-2 border-l-2 border-blue-200">
+                          {client.entriesDoDia.map((e: any, eIdx: number) => (
+                            <div key={eIdx} className="text-[10px] text-slate-600">
+                              <span className="font-medium text-blue-600">{e.hora}</span>
+                              {e.tipoContato && <span className="ml-1 text-slate-400">({getContatoLabel(e.tipoContato)})</span>}
+                              <span className="ml-1">{e.resumo}</span>
+                              <span className="ml-1 text-slate-400">— {e.operador}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
