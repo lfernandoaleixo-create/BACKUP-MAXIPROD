@@ -5158,3 +5158,7 @@
 ## Limpeza de Títulos Quitados (Especial s/ Cobrança)
 - [x] Identificar clientes "Especial s/ cobrança" cujos títulos já foram pagos (saíram da inadimplência)
 - [x] Remover/desativar esses títulos da planilha de cobrança automaticamente
+
+## Fix Layout Cobrança - Cards Sobrepostos
+- [x] Corrigir layout dos cards na planilha de cobrança: textos cortados, sobrepostos e encavalados
+- [x] Garantir que nome do cliente, CNPJ, valor, vencimento, vendedor e dias fiquem todos visíveis sem sobreposição

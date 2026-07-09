@@ -1209,45 +1209,42 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             <div className="border-t border-red-300 divide-y divide-red-200 max-h-[400px] overflow-y-auto">
               {protestadoItems.map((item) => {
                 return (
-                  <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-1.5 h-10 rounded-full bg-red-500 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
-                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          {item.descricao && <span className="truncate max-w-[200px]">{item.descricao}</span>}
-                          {item.vendedor && <span>• {item.vendedor}</span>}
+                  <div key={item.id} className="px-4 py-3 hover:bg-white/60 transition-colors space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-full min-h-[40px] rounded-full bg-red-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-800 truncate flex-1">{item.empresa}</p>
+                          <span className={`inline-flex items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                            (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                            (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                            "bg-blue-100 text-blue-700"
+                          }`}>
+                            {item.diasVencidos || 0}d
+                          </span>
+                        </div>
+                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600">({(item as any).apelido})</p>}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 mt-0.5">
+                          <span className="font-bold text-red-800 text-xs">{formatCurrency(parseFloat(String(item.valor || 0)))}</span>
+                          <span>Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</span>
+                          {item.vendedor && <span className="text-slate-600">{item.vendedor}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-red-800">{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
-                        <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
-                          (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
-                          "bg-blue-100 text-blue-700"
-                        }`}>
-                          {item.diasVencidos || 0}d
-                        </span>
-                      </div>
-                      {canEdit && (
+                    {canEdit && (
+                      <div className="pl-4">
                         <select
                           value={item.status}
                           onChange={e => handleStatusChange(item.id, e.target.value)}
                           onClick={e => e.stopPropagation()}
-                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-red-50 text-red-700 border-red-400 cursor-pointer focus:ring-2 focus:ring-blue-400"
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-red-50 text-red-700 border-red-400 cursor-pointer focus:ring-2 focus:ring-blue-400 w-full max-w-[180px]"
                         >
                           {ALL_STATUSES.map(s => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1280,47 +1277,43 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           {showFundoPerdido && fundoPerdidoItems.length > 0 && (
             <div className="border-t border-stone-300 divide-y divide-stone-200 max-h-[400px] overflow-y-auto">
               {fundoPerdidoItems.map((item) => {
-                const cfg = getStatusConfig(item.status);
                 return (
-                  <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-1.5 h-10 rounded-full bg-stone-500 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
-                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          {item.descricao && <span className="truncate max-w-[200px]">{item.descricao}</span>}
-                          {item.vendedor && <span>• {item.vendedor}</span>}
+                  <div key={item.id} className="px-4 py-3 hover:bg-white/60 transition-colors space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-full min-h-[40px] rounded-full bg-stone-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-800 truncate flex-1">{item.empresa}</p>
+                          <span className={`inline-flex items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                            (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                            (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                            "bg-blue-100 text-blue-700"
+                          }`}>
+                            {item.diasVencidos || 0}d
+                          </span>
+                        </div>
+                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600">({(item as any).apelido})</p>}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 mt-0.5">
+                          <span className="font-bold text-stone-800 text-xs">{formatCurrency(parseFloat(String(item.valor || 0)))}</span>
+                          <span>Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</span>
+                          {item.vendedor && <span className="text-slate-600">{item.vendedor}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-stone-800">{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
-                        <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
-                          (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
-                          "bg-blue-100 text-blue-700"
-                        }`}>
-                          {item.diasVencidos || 0}d
-                        </span>
-                      </div>
-                      {canEdit && (
+                    {canEdit && (
+                      <div className="pl-4">
                         <select
                           value={item.status}
                           onChange={e => handleStatusChange(item.id, e.target.value)}
                           onClick={e => e.stopPropagation()}
-                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-stone-50 text-stone-700 border-stone-400 cursor-pointer focus:ring-2 focus:ring-blue-400"
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-stone-50 text-stone-700 border-stone-400 cursor-pointer focus:ring-2 focus:ring-blue-400 w-full max-w-[180px]"
                         >
                           {ALL_STATUSES.map(s => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1353,47 +1346,43 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           {showEspecialSemCobranca && especialItems.length > 0 && (
             <div className="border-t border-cyan-200 divide-y divide-cyan-100 max-h-[400px] overflow-y-auto">
               {especialItems.map((item) => {
-                const cfg = getStatusConfig(item.status);
                 return (
-                  <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-1.5 h-10 rounded-full bg-cyan-500 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
-                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          {item.descricao && <span className="truncate max-w-[200px]">{item.descricao}</span>}
-                          {item.vendedor && <span>• {item.vendedor}</span>}
+                  <div key={item.id} className="px-4 py-3 hover:bg-white/60 transition-colors space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-full min-h-[40px] rounded-full bg-cyan-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-800 truncate flex-1">{item.empresa}</p>
+                          <span className={`inline-flex items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                            (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                            (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                            "bg-blue-100 text-blue-700"
+                          }`}>
+                            {item.diasVencidos || 0}d
+                          </span>
+                        </div>
+                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600">({(item as any).apelido})</p>}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 mt-0.5">
+                          <span className="font-bold text-cyan-800 text-xs">{formatCurrency(parseFloat(String(item.valor || 0)))}</span>
+                          <span>Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</span>
+                          {item.vendedor && <span className="text-slate-600">{item.vendedor}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-cyan-800">{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
-                        <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
-                          (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
-                          "bg-blue-100 text-blue-700"
-                        }`}>
-                          {item.diasVencidos || 0}d
-                        </span>
-                      </div>
-                      {canEdit && (
+                    {canEdit && (
+                      <div className="pl-4">
                         <select
                           value={item.status}
                           onChange={e => handleStatusChange(item.id, e.target.value)}
                           onClick={e => e.stopPropagation()}
-                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-cyan-50 text-cyan-700 border-cyan-300 cursor-pointer focus:ring-2 focus:ring-blue-400"
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-cyan-50 text-cyan-700 border-cyan-300 cursor-pointer focus:ring-2 focus:ring-blue-400 w-full max-w-[180px]"
                         >
                           {ALL_STATUSES.map(s => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
