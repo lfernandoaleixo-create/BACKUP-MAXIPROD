@@ -5382,40 +5382,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                   return (
                     <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-1">
-                      {/* Row 1: Product name | margin bars (right side) | code/dims/weight */}
-                      <div className="flex items-start justify-between gap-2">
+                      {/* Row 1: Product name | code/dims/weight */}
+                      <div className="flex items-center justify-between gap-2">
                         <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
-
-                        {/* Margin bars inline to the right of product name */}
-                        {precoBase > 0 && (showMarginBar || showRealCostBar) && (() => {
-                          const descontoDado = precoBase > 0 && effectivePrice > 0 
-                            ? ((precoBase - effectivePrice) / precoBase) * 100 
-                            : 0;
-                          const costData = productMarginsQuery.data?.costMap[p.codigoItem];
-                          const taxBd = costData?.tipoProduto === "industrializado"
-                            ? productMarginsQuery.data?.taxBreakdownIndustrializado
-                            : productMarginsQuery.data?.taxBreakdownImportado;
-                          return (
-                            <div className="flex flex-col items-start gap-1 shrink-0">
-                              {showMarginBar && (
-                                <ProductMarginBar desconto={descontoDado} showValues={showMarginValues} />
-                              )}
-                              {showRealCostBar && costData && taxBd && (
-                                <RealCostMarginBar
-                                  precoVenda={effectivePrice}
-                                  custoBox={costData.cost}
-                                  fonte={costData.fonte}
-                                  tipoProduto={costData.tipoProduto}
-                                  taxBreakdown={taxBd}
-                                  fretePerc={marginFrete}
-                                  comissaoPerc={marginComissao}
-                                  custosAdicionaisPerc={marginCustosAdicionais}
-                                  quantidade={calc.quantity}
-                                />
-                              )}
-                            </div>
-                          );
-                        })()}
 
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                           <div className="flex flex-col items-center">
@@ -5440,11 +5409,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                         </div>
                       </div>
 
-                      {/* Row 3: ALL PRICING IN ONE LINE with labels above */}
+                      {/* Row 2: Pricing controls + margin bars on the right */}
                       {precoBase > 0 && (
                         <div className="mt-0">
-                            {/* Single unified layout - same structure whether locked or not */}
-                            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+                            <div className="flex items-end gap-2 sm:gap-3">
+                            {/* Left: pricing controls */}
+                            <div className="flex flex-wrap items-end gap-2 sm:gap-3 flex-1">
                               {/* Stock */}
                               <div className="flex flex-col items-center">
                                 <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-medium mb-0.5 whitespace-nowrap">Caixas disponíveis</span>
@@ -5602,6 +5572,38 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                               {isBelowMin && (
                                 <span className="text-[9px] text-red-500 font-bold self-end pb-1.5">⚠️ Abaixo mín.</span>
                               )}
+                            </div>
+
+                            {/* Margin bars on the right side of pricing row */}
+                            {(showMarginBar || showRealCostBar) && (() => {
+                              const descontoDado = precoBase > 0 && effectivePrice > 0 
+                                ? ((precoBase - effectivePrice) / precoBase) * 100 
+                                : 0;
+                              const costData = productMarginsQuery.data?.costMap[p.codigoItem];
+                              const taxBd = costData?.tipoProduto === "industrializado"
+                                ? productMarginsQuery.data?.taxBreakdownIndustrializado
+                                : productMarginsQuery.data?.taxBreakdownImportado;
+                              return (
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  {showMarginBar && (
+                                    <ProductMarginBar desconto={descontoDado} showValues={showMarginValues} />
+                                  )}
+                                  {showRealCostBar && costData && taxBd && (
+                                    <RealCostMarginBar
+                                      precoVenda={effectivePrice}
+                                      custoBox={costData.cost}
+                                      fonte={costData.fonte}
+                                      tipoProduto={costData.tipoProduto}
+                                      taxBreakdown={taxBd}
+                                      fretePerc={marginFrete}
+                                      comissaoPerc={marginComissao}
+                                      custosAdicionaisPerc={marginCustosAdicionais}
+                                      quantidade={calc.quantity}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })()}
                             </div>
                             {/* Highlighted totals row when locked + quantity selected */}
                             {calc.locked && calc.quantity > 0 && (p.pesoBruto || dims) && (
