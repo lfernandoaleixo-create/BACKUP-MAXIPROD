@@ -50,29 +50,34 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
   // Red: 32-40 = 8/40 = 20%
 
   return (
-    <div className="flex items-center gap-2 min-w-0">
-      {/* Compact color bar */}
-      <div className="relative w-24 sm:w-28 h-3 rounded-full overflow-visible flex-shrink-0 border border-slate-200 dark:border-slate-600">
+    <div className="flex items-center gap-2.5 min-w-0">
+      {/* Wide color bar with dividers */}
+      <div className="relative w-36 sm:w-44 h-5 rounded-full overflow-visible flex-shrink-0 border-2 border-slate-300 dark:border-slate-500 shadow-sm">
         {/* Solid color segments */}
         <div className="absolute inset-0 rounded-full overflow-hidden flex">
           <div className="h-full bg-blue-500" style={{ width: "50%" }} />
           <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
-          <div className="h-full bg-yellow-500" style={{ width: "10%" }} />
+          <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
           <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
           <div className="h-full bg-red-500" style={{ width: "20%" }} />
         </div>
-        {/* Indicator arrow */}
+        {/* Divider lines between color zones */}
+        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "50%" }} />
+        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "57.5%" }} />
+        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "67.5%" }} />
+        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "80%" }} />
+        {/* Indicator arrow - bigger and more visible */}
         <div
-          className="absolute top-0 bottom-0 flex flex-col items-center"
-          style={{ left: `${position}%`, transform: "translateX(-50%)" }}
+          className="absolute flex flex-col items-center"
+          style={{ left: `${position}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
         >
-          <div className="-mt-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-slate-900 dark:border-t-white" />
-          <div className="w-0.5 flex-1 bg-slate-900 dark:bg-white" />
+          <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white" />
+          <div className="w-[2.5px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
         </div>
       </div>
       {/* Numeric values - only shown if allowed */}
       {showValues && (
-        <span className={`text-sm font-black tabular-nums whitespace-nowrap ${zone.textColor}`}>
+        <span className={`text-base font-black tabular-nums whitespace-nowrap ${zone.textColor}`}>
           {desconto.toFixed(1)}%
         </span>
       )}
