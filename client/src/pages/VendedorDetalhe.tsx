@@ -5376,7 +5376,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                     <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-0.5">
                       {/* Row 1: Product name | code/dims/weight */}
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-tight flex-1 min-w-0">{p.descricaoItem}</p>
 
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                           <div className="flex flex-col items-center">
@@ -5403,7 +5403,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                       {/* Row 2: Pricing controls + margin bars on the right */}
                       {precoBase > 0 && (
-                        <div className="-mt-0.5">
+                        <div className="-mt-2">
                             <div className="flex items-end gap-2 sm:gap-3">
                             {/* Left: pricing controls */}
                             <div className="flex flex-wrap items-end gap-2 sm:gap-3 flex-1">
