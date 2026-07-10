@@ -112,7 +112,7 @@ export function RealCostMarginBar({
           )}
         </div>
         {/* Bar - same style as ProductMarginBar */}
-        <div className="relative w-full">
+        <div className="relative w-40 sm:w-48">
           <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
             {/* Solid color segments */}
             <div className="absolute inset-0 rounded-full overflow-hidden flex">
