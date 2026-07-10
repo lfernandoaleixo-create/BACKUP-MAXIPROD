@@ -5379,11 +5379,41 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                   return (
                     <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-4">
-                      {/* Row 1: Product name with code/dims/weight to the right */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug min-w-0">{p.descricaoItem}</p>
-                        </div>
+                      {/* Row 1: Product name | margin bars (right side) | code/dims/weight */}
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
+
+                        {/* Margin bars inline to the right of product name */}
+                        {precoBase > 0 && (showMarginBar || showRealCostBar) && (() => {
+                          const descontoDado = precoBase > 0 && effectivePrice > 0 
+                            ? ((precoBase - effectivePrice) / precoBase) * 100 
+                            : 0;
+                          const costData = productMarginsQuery.data?.costMap[p.codigoItem];
+                          const taxBd = costData?.tipoProduto === "industrializado"
+                            ? productMarginsQuery.data?.taxBreakdownIndustrializado
+                            : productMarginsQuery.data?.taxBreakdownImportado;
+                          return (
+                            <div className="flex flex-col items-start gap-1 shrink-0">
+                              {showMarginBar && (
+                                <ProductMarginBar desconto={descontoDado} showValues={showMarginValues} />
+                              )}
+                              {showRealCostBar && costData && taxBd && (
+                                <RealCostMarginBar
+                                  precoVenda={effectivePrice}
+                                  custoBox={costData.cost}
+                                  fonte={costData.fonte}
+                                  tipoProduto={costData.tipoProduto}
+                                  taxBreakdown={taxBd}
+                                  fretePerc={marginFrete}
+                                  comissaoPerc={marginComissao}
+                                  custosAdicionaisPerc={marginCustosAdicionais}
+                                  quantidade={calc.quantity}
+                                />
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                           <div className="flex flex-col items-center">
                             <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium tracking-wide">Código do Produto</span>
@@ -5406,37 +5436,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                           )}
                         </div>
                       </div>
-
-                      {/* Row 2: Margin bars stacked and aligned */}
-                      {precoBase > 0 && (showMarginBar || showRealCostBar) && (() => {
-                        const descontoDado = precoBase > 0 && effectivePrice > 0 
-                          ? ((precoBase - effectivePrice) / precoBase) * 100 
-                          : 0;
-                        const costData = productMarginsQuery.data?.costMap[p.codigoItem];
-                        const taxBd = costData?.tipoProduto === "industrializado"
-                          ? productMarginsQuery.data?.taxBreakdownIndustrializado
-                          : productMarginsQuery.data?.taxBreakdownImportado;
-                        return (
-                          <div className="mt-2 flex flex-col items-start gap-1">
-                            {showMarginBar && (
-                              <ProductMarginBar desconto={descontoDado} showValues={showMarginValues} />
-                            )}
-                            {showRealCostBar && costData && taxBd && (
-                              <RealCostMarginBar
-                                precoVenda={effectivePrice}
-                                custoBox={costData.cost}
-                                fonte={costData.fonte}
-                                tipoProduto={costData.tipoProduto}
-                                taxBreakdown={taxBd}
-                                fretePerc={marginFrete}
-                                comissaoPerc={marginComissao}
-                                custosAdicionaisPerc={marginCustosAdicionais}
-                                quantidade={calc.quantity}
-                              />
-                            )}
-                          </div>
-                        );
-                      })()}
 
                       {/* Row 3: ALL PRICING IN ONE LINE with labels above */}
                       {precoBase > 0 && (
