@@ -5133,8 +5133,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                 {showMarginBar && items.length > 0 && (() => {
                   let runningBalance = 0;
                   const balances = items.map(item => {
-                    const precoAlto = item.precoVendedor || 0;
-                    if (precoAlto <= 0) return { diff: 0, balance: runningBalance };
+                    const precoMostrado = item.precoVendedor || 0;
+                    if (precoMostrado <= 0) return { diff: 0, balance: runningBalance };
+                    // Preço Alto = preço mostrado com 20% de desconto (ponto zero do D/C)
+                    const precoAlto = precoMostrado * 0.80;
                     const diff = (item.precoUnitario - precoAlto) * item.quantidade;
                     runningBalance += diff;
                     return { diff, balance: runningBalance };
@@ -5287,8 +5289,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                                 let balance = 0;
                                 for (let i = 0; i <= idx; i++) {
                                   const it = items[i];
-                                  const pa = it.precoVendedor || 0;
-                                  if (pa > 0) balance += (it.precoUnitario - pa) * it.quantidade;
+                                  const precoMostrado = it.precoVendedor || 0;
+                                  // Preço Alto = preço mostrado com 20% de desconto (ponto zero)
+                                  if (precoMostrado > 0) balance += (it.precoUnitario - precoMostrado * 0.80) * it.quantidade;
                                 }
                                 return (
                                   <span className={`ml-1.5 font-black text-[10px] tabular-nums ${
