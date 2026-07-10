@@ -5086,26 +5086,18 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <p className="text-xs font-semibold text-slate-500 uppercase">2. Produtos do Estoque</p>
               <span className="text-[10px] text-slate-400">{productsQuery.data?.length || 0} produtos disponíveis</span>
             </div>
-            {/* Margin params editor (Fernando/Guilherme only) */}
+            {/* Margin simulation params (Fernando/Guilherme only) */}
             {showRealCostBar && (
-              <div className="space-y-1">
-                <MarginParamsEditor
-                  comissao={marginComissao}
-                  frete={marginFrete}
-                  onComissaoChange={setMarginComissao}
-                  onFreteChange={setMarginFrete}
-                />
-                <MarginSimulationParams
-                  comissao={marginComissao}
-                  frete={marginFrete}
-                  custosAdicionais={marginCustosAdicionais}
-                  ufDestino={marginUfSimulacao}
-                  onComissaoChange={setMarginComissao}
-                  onFreteChange={setMarginFrete}
-                  onCustosAdicionaisChange={setMarginCustosAdicionais}
-                  onUfDestinoChange={setMarginUfSimulacao}
-                />
-              </div>
+              <MarginSimulationParams
+                comissao={marginComissao}
+                frete={marginFrete}
+                custosAdicionais={marginCustosAdicionais}
+                ufDestino={marginUfSimulacao}
+                onComissaoChange={setMarginComissao}
+                onFreteChange={setMarginFrete}
+                onCustosAdicionaisChange={setMarginCustosAdicionais}
+                onUfDestinoChange={setMarginUfSimulacao}
+              />
             )}
             {/* Product search */}
             <div className="relative">
