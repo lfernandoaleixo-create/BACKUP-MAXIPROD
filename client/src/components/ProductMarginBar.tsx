@@ -52,30 +52,41 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       {/* Wide color bar with dividers */}
-      <div className="relative w-36 sm:w-44 h-5 rounded-full overflow-visible flex-shrink-0 border-2 border-slate-300 dark:border-slate-500 shadow-sm">
-        {/* Solid color segments */}
-        <div className="absolute inset-0 rounded-full overflow-hidden flex">
-          <div className="h-full bg-blue-500" style={{ width: "50%" }} />
-          <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
-          <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
-          <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
-          <div className="h-full bg-red-500" style={{ width: "20%" }} />
+      <div className="relative w-40 sm:w-48 flex-shrink-0">
+        <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
+          {/* Solid color segments */}
+          <div className="absolute inset-0 rounded-full overflow-hidden flex">
+            <div className="h-full bg-blue-500" style={{ width: "50%" }} />
+            <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
+            <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
+            <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
+            <div className="h-full bg-red-500" style={{ width: "20%" }} />
+          </div>
+          {/* Divider lines between color zones */}
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "50%" }} />
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "57.5%" }} />
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "67.5%" }} />
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "80%" }} />
+          {/* Indicator arrow - bigger and more visible */}
+          <div
+            className="absolute flex flex-col items-center"
+            style={{ left: `${position}%`, transform: "translateX(-50%)", top: "-7px", bottom: "-3px" }}
+          >
+            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900 dark:border-t-white" />
+            <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+          </div>
         </div>
-        {/* Divider lines between color zones */}
-        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "50%" }} />
-        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "57.5%" }} />
-        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "67.5%" }} />
-        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80 dark:bg-slate-900/60" style={{ left: "80%" }} />
-        {/* Indicator arrow - bigger and more visible */}
-        <div
-          className="absolute flex flex-col items-center"
-          style={{ left: `${position}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
-        >
-          <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white" />
-          <div className="w-[2.5px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
-        </div>
+        {/* Discount numbers at dividers - only shown if allowed */}
+        {showValues && (
+          <div className="relative w-full h-3 mt-0.5">
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
+          </div>
+        )}
       </div>
-      {/* Numeric values - only shown if allowed */}
+      {/* Current discount value - only shown if allowed */}
       {showValues && (
         <span className={`text-base font-black tabular-nums whitespace-nowrap ${zone.textColor}`}>
           {desconto.toFixed(1)}%

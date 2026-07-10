@@ -3,10 +3,14 @@
  * 
  * Formula: margem = (precoVenda - custo - impostos - frete - comissao - custosAdicionais) / precoVenda * 100
  * 
- * Shows alongside the interpolation bar for comparison.
- * Includes detailed tax breakdown per product.
+ * Same visual style as ProductMarginBar (solid colors, divider lines, h-7).
+ * Details are inside a collapsible card.
+ * 
+ * Colors: <15% red, 15-20% orange, 20-25% yellow, 25-29% green, >29% blue
  */
 
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface TaxBreakdown {
   icms: number;
@@ -41,7 +45,7 @@ export function RealCostMarginBar({
   custosAdicionaisPerc,
   quantidade = 1,
 }: RealCostMarginBarProps) {
-  // Details are always visible now (no toggle needed)
+  const [expanded, setExpanded] = useState(false);
 
   // Calculate real margin
   const custoPerc = precoVenda > 0 ? (custoBox / precoVenda) * 100 : 0;
@@ -59,124 +63,157 @@ export function RealCostMarginBar({
   const qty = Math.max(1, quantidade);
   const totalVenda = precoVenda * qty;
   const totalCusto = custoBox * qty;
-  const totalImpostos = impostosValor * qty;
   const totalFrete = freteValor * qty;
   const totalComissao = comissaoValor * qty;
   const totalCustosAd = custosAdValor * qty;
   const totalLucro = lucro * qty;
 
-  // Display
+  // Bar position: range -5% to 40%
   const displayMin = -5;
   const displayMax = 40;
   const clampedMargin = Math.max(displayMin, Math.min(displayMax, margin));
   const position = ((clampedMargin - displayMin) / (displayMax - displayMin)) * 100;
 
+  // Segment widths for -5 to 40 range (total 45):
+  // Red: -5 to 15 = 20/45 = 44.4%
+  // Orange: 15 to 20 = 5/45 = 11.1%
+  // Yellow: 20 to 25 = 5/45 = 11.1%
+  // Green: 25 to 29 = 4/45 = 8.9%
+  // Blue: 29 to 40 = 11/45 = 24.5%
+
   const getMarginColor = (m: number) => {
-    if (m < 0) return { text: "text-red-800", bg: "bg-red-100", label: "Prejuízo" };
-    if (m < 15) return { text: "text-red-600", bg: "bg-red-50", label: "Crítico" };
-    if (m < 20) return { text: "text-orange-600", bg: "bg-orange-50", label: "Baixo" };
-    if (m < 25) return { text: "text-yellow-600", bg: "bg-yellow-50", label: "Médio" };
-    if (m < 29) return { text: "text-green-600", bg: "bg-green-50", label: "Bom" };
-    return { text: "text-blue-600", bg: "bg-blue-50", label: "Ótimo" };
+    if (m < 15) return { text: "text-red-700 dark:text-red-300", label: "Crítico" };
+    if (m < 20) return { text: "text-orange-700 dark:text-orange-300", label: "Baixo" };
+    if (m < 25) return { text: "text-yellow-700 dark:text-yellow-300", label: "Médio" };
+    if (m < 29) return { text: "text-green-700 dark:text-green-300", label: "Bom" };
+    return { text: "text-blue-700 dark:text-blue-300", label: "Ótimo" };
   };
 
   const color = getMarginColor(margin);
 
   return (
-    <div className="w-full mt-1 px-1">
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`text-[11px] font-black ${color.text}`}>
-          📊 Custo Real: {margin.toFixed(1)}% ({color.label})
-        </span>
-        <span className="text-[9px] text-slate-500 font-medium">
-          {tipoProduto === "importado" ? "🌍 Importado" : "🏭 Industrializado"}
-        </span>
+    <div className="w-full mt-1.5">
+      {/* Clickable header with bar */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left"
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`text-[11px] font-black ${color.text}`}>
+            📊 {margin.toFixed(1)}% ({color.label})
+          </span>
+          <span className="text-[9px] text-slate-500 font-medium">
+            {tipoProduto === "importado" ? "🌍" : "🏭"}
+          </span>
+          {expanded ? (
+            <ChevronUp className="w-3 h-3 text-slate-400 ml-auto" />
+          ) : (
+            <ChevronDown className="w-3 h-3 text-slate-400 ml-auto" />
+          )}
+        </div>
+        {/* Bar - same style as ProductMarginBar */}
+        <div className="relative w-full">
+          <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
+            {/* Solid color segments */}
+            <div className="absolute inset-0 rounded-full overflow-hidden flex">
+              <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+              <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+              <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+              <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+              <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+            </div>
+            {/* Divider lines */}
+            <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "44.4%" }} />
+            <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "55.5%" }} />
+            <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "66.6%" }} />
+            <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "75.5%" }} />
+            {/* Indicator arrow */}
+            <div
+              className="absolute flex flex-col items-center"
+              style={{ left: `${position}%`, transform: "translateX(-50%)", top: "-7px", bottom: "-3px" }}
+            >
+              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900 dark:border-t-white" />
+              <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+            </div>
+          </div>
+          {/* Margin numbers at dividers */}
+          <div className="relative w-full h-3 mt-0.5">
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
+            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
+          </div>
+        </div>
+      </button>
 
-      </div>
-      {/* Bar - thicker */}
-      <div className="relative h-5 rounded-full overflow-visible bg-slate-100 border border-slate-200">
-        <div className="absolute inset-0 rounded-full overflow-hidden flex">
-          <div className="h-full bg-gradient-to-r from-red-700 via-red-500 to-red-400" style={{ width: "44.4%" }} />
-          <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: "11.1%" }} />
-          <div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: "11.1%" }} />
-          <div className="h-full bg-gradient-to-r from-green-400 to-green-500" style={{ width: "8.9%" }} />
-          <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" style={{ width: "24.5%" }} />
-        </div>
-        {/* Arrow indicator */}
-        <div
-          className="absolute top-0 bottom-0 flex flex-col items-center transition-all duration-300"
-          style={{ left: `${position}%`, transform: "translateX(-50%)" }}
-        >
-          <div className="-mt-1.5 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 drop-shadow-sm" />
-          <div className="w-0.5 flex-1 bg-slate-900" />
-        </div>
-      </div>
-      {/* Details - always visible, showing totals that update with quantity */}
-      <div className={`mt-1.5 p-2 rounded-lg border text-[9px] ${color.bg} border-slate-200`}>
-        {/* Header with quantity indicator */}
-        {qty > 1 && (
-          <div className="mb-1.5 pb-1 border-b border-slate-300 flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-700">📦 {qty} caixas</span>
-            <span className="text-[10px] font-bold text-slate-800">Total Venda: R$ {totalVenda.toFixed(2)}</span>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-          <div className="flex justify-between">
-            <span className="text-slate-600">Preço Venda{qty > 1 ? ` (${qty}cx)` : ""}:</span>
-            <span className="font-bold text-slate-800">R$ {totalVenda.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Custo ({fonte}):</span>
-            <span className="font-bold text-red-600">-R$ {totalCusto.toFixed(2)} ({custoPerc.toFixed(1)}%)</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">ICMS ({taxBreakdown.icms.toFixed(2)}%):</span>
-            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.icms / 100).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">PIS ({taxBreakdown.pis.toFixed(3)}%):</span>
-            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.pis / 100).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">COFINS ({taxBreakdown.cofins.toFixed(2)}%):</span>
-            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.cofins / 100).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">IRPJ ({taxBreakdown.irpj.toFixed(2)}%):</span>
-            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.irpj / 100).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">CSLL ({taxBreakdown.csll.toFixed(2)}%):</span>
-            <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.csll / 100).toFixed(2)}</span>
-          </div>
-          {taxBreakdown.difal > 0 && (
-            <div className="flex justify-between">
-              <span className="text-slate-600">DIFAL ({taxBreakdown.difal.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.difal / 100).toFixed(2)}</span>
+      {/* Collapsible details card */}
+      {expanded && (
+        <div className="mt-1.5 p-2 rounded-lg border text-[9px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 animate-in slide-in-from-top-1">
+          {/* Header with quantity indicator */}
+          {qty > 1 && (
+            <div className="mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600 flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">📦 {qty} caixas</span>
+              <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200">Total Venda: R$ {totalVenda.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span className="text-slate-600">Frete ({fretePerc}%):</span>
-            <span className="font-bold text-red-600">-R$ {totalFrete.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Comissão ({comissaoPerc}%):</span>
-            <span className="font-bold text-red-600">-R$ {totalComissao.toFixed(2)}</span>
-          </div>
-          {custosAdicionaisPerc > 0 && (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             <div className="flex justify-between">
-              <span className="text-slate-600">Custos Adic. ({custosAdicionaisPerc}%):</span>
-              <span className="font-bold text-red-600">-R$ {totalCustosAd.toFixed(2)}</span>
+              <span className="text-slate-600 dark:text-slate-400">Preço Venda{qty > 1 ? ` (${qty}cx)` : ""}:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">R$ {totalVenda.toFixed(2)}</span>
             </div>
-          )}
-          <div className="col-span-2 border-t border-slate-300 pt-1 mt-0.5 flex justify-between">
-            <span className="text-[10px] text-slate-700 font-bold">Lucro Líquido{qty > 1 ? ` (${qty}cx)` : ""}:</span>
-            <span className={`text-[11px] font-black ${totalLucro >= 0 ? "text-green-700" : "text-red-700"}`}>
-              R$ {totalLucro.toFixed(2)} ({margin.toFixed(1)}%)
-            </span>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">Custo ({fonte}):</span>
+              <span className="font-bold text-red-600">-R$ {totalCusto.toFixed(2)} ({custoPerc.toFixed(1)}%)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">ICMS ({taxBreakdown.icms.toFixed(2)}%):</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.icms / 100).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">PIS ({taxBreakdown.pis.toFixed(3)}%):</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.pis / 100).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">COFINS ({taxBreakdown.cofins.toFixed(2)}%):</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.cofins / 100).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">IRPJ ({taxBreakdown.irpj.toFixed(2)}%):</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.irpj / 100).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">CSLL ({taxBreakdown.csll.toFixed(2)}%):</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.csll / 100).toFixed(2)}</span>
+            </div>
+            {taxBreakdown.difal > 0 && (
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">DIFAL ({taxBreakdown.difal.toFixed(2)}%):</span>
+                <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.difal / 100).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">Frete ({fretePerc}%):</span>
+              <span className="font-bold text-red-600">-R$ {totalFrete.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600 dark:text-slate-400">Comissão ({comissaoPerc}%):</span>
+              <span className="font-bold text-red-600">-R$ {totalComissao.toFixed(2)}</span>
+            </div>
+            {custosAdicionaisPerc > 0 && (
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">Custos Adic. ({custosAdicionaisPerc}%):</span>
+                <span className="font-bold text-red-600">-R$ {totalCustosAd.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="col-span-2 border-t border-slate-300 dark:border-slate-600 pt-1 mt-0.5 flex justify-between">
+              <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold">Lucro Líquido{qty > 1 ? ` (${qty}cx)` : ""}:</span>
+              <span className={`text-[11px] font-black ${totalLucro >= 0 ? "text-green-700" : "text-red-700"}`}>
+                R$ {totalLucro.toFixed(2)} ({margin.toFixed(1)}%)
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

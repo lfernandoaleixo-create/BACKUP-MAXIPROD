@@ -5197,26 +5197,35 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                           {weightedMargin.toFixed(1)}% ({repColor.label})
                         </span>
                       </div>
-                      <div className="relative w-full h-5 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
-                        <div className="absolute inset-0 rounded-full overflow-hidden flex">
-                          <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
-                          <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
-                          <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
-                          <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
-                          <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                      <div className="relative w-full">
+                        <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
+                          <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                            <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                            <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                            <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                            <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                          </div>
+                          {/* Divider lines */}
+                          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "44.4%" }} />
+                          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "55.5%" }} />
+                          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "66.6%" }} />
+                          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "75.5%" }} />
+                          {/* Indicator */}
+                          <div
+                            className="absolute flex flex-col items-center"
+                            style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-7px", bottom: "-3px" }}
+                          >
+                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900 dark:border-t-white" />
+                            <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+                          </div>
                         </div>
-                        {/* Divider lines */}
-                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "44.4%" }} />
-                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "55.5%" }} />
-                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "66.6%" }} />
-                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "75.5%" }} />
-                        {/* Indicator */}
-                        <div
-                          className="absolute flex flex-col items-center"
-                          style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
-                        >
-                          <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white" />
-                          <div className="w-[2.5px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+                        {/* Margin numbers at dividers */}
+                        <div className="relative w-full h-3 mt-0.5">
+                          <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
+                          <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
+                          <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
+                          <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
                         </div>
                       </div>
                     </div>
