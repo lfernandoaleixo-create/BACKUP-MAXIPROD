@@ -19,6 +19,19 @@ import { quoteAllRodonavesCnpjs, RODONAVES_CNPJS } from "./rodonavesApi";
  * - Mark as processed (Vitória)
  * - Manage minimum prices
  */
+/**
+ * Normalizes tipoContribuinte from any format (Maxiprod: CONTRIBUINTE, NAO_CONTRIBUINTE)
+ * to the format expected by taxCalculation: "Contribuinte" | "Não contribuinte" | "Isento" | null
+ */
+function normalizeTipoContribuinte(value: string | null | undefined): TipoContribuinte {
+  if (!value) return "Contribuinte";
+  const upper = value.toUpperCase().trim();
+  if (upper === "ISENTO" || upper === "ISENTA") return "Isento";
+  if (upper.includes("NAO") || upper.includes("NÃO") || upper === "NAO_CONTRIBUINTE" || upper === "N\u00C3O CONTRIBUINTE") return "Não contribuinte";
+  // Default: any variant of "contribuinte" or unknown → Contribuinte
+  return "Contribuinte";
+}
+
 export const salesOrderRouter = router({
 
   // ===== CLIENT SEARCH (AUTOCOMPLETE) =====
@@ -1663,7 +1676,7 @@ export const salesOrderRouter = router({
 
       const valorVenda = Number(order.totalPedido || 0);
       const ufDestino = (order.uf || "MG").toUpperCase();
-      const tipoContribuinte = (order.tipoContribuinte || "Contribuinte") as TipoContribuinte;
+      const tipoContribuinte = normalizeTipoContribuinte(order.tipoContribuinte);
 
       // 2. Get quarterly revenue for IRPJ calculation
       const now = new Date();
@@ -1924,7 +1937,7 @@ export const salesOrderRouter = router({
       altura: z.number().default(0.5),
       largura: z.number().default(0.5),
       comprimento: z.number().default(0.5),
-      tipoContribuinte: z.enum(["Contribuinte", "Não Contribuinte"]).default("Contribuinte"),
+      tipoContribuinte: z.string().default("Contribuinte"),
     }))
     .mutation(async ({ input }) => {
       // Quote from all 4 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves
@@ -1957,7 +1970,7 @@ export const salesOrderRouter = router({
           peso: input.peso,
           volume: input.metroCubico,
           cnpjDestinatario: input.cnpjDestinatario,
-          destContribuinte: input.tipoContribuinte === "Contribuinte" ? "S" : "N",
+          destContribuinte: normalizeTipoContribuinte(input.tipoContribuinte) === "Contribuinte" ? "S" : "N",
         }),
         quoteAllRodonavesCnpjs({
           cepOrigem: input.cepOrigem,
@@ -2081,7 +2094,7 @@ export const salesOrderRouter = router({
         precoUnitario: z.number(),
       })),
       ufDestino: z.string().default("MG"),
-      tipoContribuinte: z.enum(["Contribuinte", "Não contribuinte", "Isento"]).default("Contribuinte"),
+      tipoContribuinte: z.string().default("Contribuinte"),
       tipoProduto: z.enum(["importado", "industrializado"]).default("importado"),
       comissaoPercentual: z.number().min(0).max(100).default(0),
       freteValor: z.number().min(0).default(0),
@@ -2182,7 +2195,7 @@ export const salesOrderRouter = router({
         valorVenda,
         ufDestino: input.ufDestino,
         tipoProduto: input.tipoProduto as TipoProduto,
-        tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
+        tipoContribuinte: normalizeTipoContribuinte(input.tipoContribuinte),
         faturamentoTrimestral,
       });
 
@@ -2225,7 +2238,7 @@ export const salesOrderRouter = router({
   getProductMargins: publicProcedure
     .input(z.object({
       ufDestino: z.string().default("MG"),
-      tipoContribuinte: z.enum(["Contribuinte", "Não contribuinte", "Isento"]).default("Contribuinte"),
+      tipoContribuinte: z.string().default("Contribuinte"),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -2279,14 +2292,14 @@ export const salesOrderRouter = router({
         valorVenda: 1000,
         ufDestino: input.ufDestino,
         tipoProduto: "importado",
-        tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
+        tipoContribuinte: normalizeTipoContribuinte(input.tipoContribuinte),
         faturamentoTrimestral: 0,
       });
       const taxBreakdownIndustrializado = calcularImpostos({
         valorVenda: 1000,
         ufDestino: input.ufDestino,
         tipoProduto: "industrializado",
-        tipoContribuinte: input.tipoContribuinte as TipoContribuinte,
+        tipoContribuinte: normalizeTipoContribuinte(input.tipoContribuinte),
         faturamentoTrimestral: 0,
       });
 
