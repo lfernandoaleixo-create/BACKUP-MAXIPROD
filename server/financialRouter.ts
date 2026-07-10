@@ -7799,7 +7799,7 @@ ${acoesTexto}
       // Joined com cobranca_planilha para obter o nome do cliente
       const conditions: any[] = [];
       if (input?.clienteName) {
-        conditions.push(sql`${cobrancaPlanilha.empresa} LIKE ${`%${input.clienteName}%`}`);
+        conditions.push(sql`UPPER(${cobrancaPlanilha.empresa}) LIKE UPPER(${`%${input.clienteName}%`})`);
       }
       if (input?.fromDate) {
         conditions.push(gte(cobrancaEtapaObs.createdAt, new Date(input.fromDate + "T00:00:00")));

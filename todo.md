@@ -5195,3 +5195,7 @@
 ## CSV Export Maxiprod - Representante/Vendedor
 - [x] Fix: campo Representante/Vendedor no CSV de exportação Maxiprod deixado em branco (Maxiprod rejeita se valor não bater exatamente com cadastro)
 - [x] Fix: cliente não deve sumir da lista ao clicar "Exportar Maxiprod" (removido markExported automático)
+
+## Diário de Cobrança - Busca e Layout
+- [x] Fix: busca por cliente no Diário de Cobrança agora é case-insensitive (UPPER/LIKE)
+- [x] Fix: campos "De" e "Até" agora ficam na mesma linha (segunda linha dos filtros)

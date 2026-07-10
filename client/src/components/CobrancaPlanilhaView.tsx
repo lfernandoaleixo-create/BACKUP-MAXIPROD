@@ -2687,53 +2687,59 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
         {/* ========== TAB: HISTÓRICO ========== */}
         <TabsContent value="historico" className="flex-1 overflow-hidden flex flex-col mt-0">
           {/* Filtros - sticky no topo com z-index para não ser sobreposto pelo scroll */}
-          <div className="flex flex-wrap items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200 relative z-10 shrink-0">
-            <div className="flex-1 min-w-[120px]">
-              <Input
-                placeholder="Buscar cliente..."
-                value={filterCliente}
-                onChange={(e) => setFilterCliente(e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            <select
-              value={filterEtapa}
-              onChange={(e) => setFilterEtapa(e.target.value)}
-              className="h-8 px-2 text-xs border border-slate-200 rounded-md bg-white"
-            >
-              <option value="">Todas etapas</option>
-              {DIARY_ETAPAS.map(e => (
-                <option key={e.value} value={e.value}>{e.label}</option>
-              ))}
-            </select>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-500">De:</span>
-              <Input
-                type="date"
-                value={filterFromDate}
-                onChange={(e) => setFilterFromDate(e.target.value)}
-                className="h-8 text-xs w-[130px]"
-              />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-500">Até:</span>
-              <Input
-                type="date"
-                value={filterToDate}
-                onChange={(e) => setFilterToDate(e.target.value)}
-                className="h-8 text-xs w-[130px]"
-              />
-            </div>
-            {(filterCliente || filterEtapa || filterFromDate || filterToDate) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs text-slate-500"
-                onClick={() => { setFilterCliente(""); setFilterEtapa(""); setFilterFromDate(""); setFilterToDate(""); }}
+          <div className="flex flex-col gap-2 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200 relative z-10 shrink-0">
+            {/* Linha 1: Busca cliente + Etapa */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-[120px]">
+                <Input
+                  placeholder="Buscar cliente..."
+                  value={filterCliente}
+                  onChange={(e) => setFilterCliente(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <select
+                value={filterEtapa}
+                onChange={(e) => setFilterEtapa(e.target.value)}
+                className="h-8 px-2 text-xs border border-slate-200 rounded-md bg-white"
               >
-                <X className="w-3 h-3 mr-1" /> Limpar
-              </Button>
-            )}
+                <option value="">Todas etapas</option>
+                {DIARY_ETAPAS.map(e => (
+                  <option key={e.value} value={e.value}>{e.label}</option>
+                ))}
+              </select>
+            </div>
+            {/* Linha 2: Datas De e Até na mesma linha + botão Limpar */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500">De:</span>
+                <Input
+                  type="date"
+                  value={filterFromDate}
+                  onChange={(e) => setFilterFromDate(e.target.value)}
+                  className="h-8 text-xs w-[130px]"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500">Até:</span>
+                <Input
+                  type="date"
+                  value={filterToDate}
+                  onChange={(e) => setFilterToDate(e.target.value)}
+                  className="h-8 text-xs w-[130px]"
+                />
+              </div>
+              {(filterCliente || filterEtapa || filterFromDate || filterToDate) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs text-slate-500"
+                  onClick={() => { setFilterCliente(""); setFilterEtapa(""); setFilterFromDate(""); setFilterToDate(""); }}
+                >
+                  <X className="w-3 h-3 mr-1" /> Limpar
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Lista de entradas - scroll independente abaixo dos filtros */}
