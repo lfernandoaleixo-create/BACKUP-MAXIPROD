@@ -4150,6 +4150,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   );
   const showMarginBar = currentSellerPerm?.showMarginBar !== false; // default true
   const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
+  // Real cost bar (reputação) - only visible for Fernando and Guilherme
+  const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando";
   const [marginComissao, setMarginComissao] = useState(5.85);
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
@@ -4160,7 +4162,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     : "Contribuinte";
   const productMarginsQuery = trpc.salesOrders.getProductMargins.useQuery(
     { ufDestino: marginUfSimulacao || "MG", tipoContribuinte: validTipoContrib },
-    { enabled: showMarginBar, staleTime: 60 * 1000 }
+    { enabled: showRealCostBar, staleTime: 60 * 1000 }
   );
 
   const [selectedClientName, setSelectedClientName] = useState("");
@@ -5084,8 +5086,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <p className="text-xs font-semibold text-slate-500 uppercase">2. Produtos do Estoque</p>
               <span className="text-[10px] text-slate-400">{productsQuery.data?.length || 0} produtos disponíveis</span>
             </div>
-            {/* Margin params editor (Guilherme only) */}
-            {showMarginBar && (
+            {/* Margin params editor (Fernando/Guilherme only) */}
+            {showRealCostBar && (
               <div className="space-y-1">
                 <MarginParamsEditor
                   comissao={marginComissao}
@@ -5148,6 +5150,75 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                       <span className="text-sm tabular-nums">
                         {totalBalance >= 0 ? '+' : ''}{formatCurrencySales(totalBalance)}
                       </span>
+                    </div>
+                  );
+                })()}
+                {/* Order Reputation Bar - weighted average margin (Fernando/Guilherme only) */}
+                {showRealCostBar && items.length > 0 && productMarginsQuery.data && (() => {
+                  // Calculate weighted average margin for the entire order
+                  let sumPVxMargin = 0;
+                  let sumPV = 0;
+                  items.forEach(item => {
+                    const costData = productMarginsQuery.data?.costMap[item.codigoItem];
+                    if (!costData) return;
+                    const pv = item.precoUnitario;
+                    if (pv <= 0) return;
+                    const custoPerc = (costData.cost / pv) * 100;
+                    const taxBd = costData.tipoProduto === "industrializado"
+                      ? productMarginsQuery.data?.taxBreakdownIndustrializado
+                      : productMarginsQuery.data?.taxBreakdownImportado;
+                    const totalDeducoes = custoPerc + (taxBd?.total || 0) + marginFrete + marginComissao + marginCustosAdicionais;
+                    const itemMargin = 100 - totalDeducoes;
+                    const totalPV = pv * item.quantidade;
+                    sumPVxMargin += totalPV * itemMargin;
+                    sumPV += totalPV;
+                  });
+                  if (sumPV <= 0) return null;
+                  const weightedMargin = sumPVxMargin / sumPV;
+                  // Colors: <15% red, 15-20% orange, 20-25% yellow, 25-29% green, >29% blue
+                  const getRepColor = (m: number) => {
+                    if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
+                    if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Baixo' };
+                    if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Médio' };
+                    if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Bom' };
+                    return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Ótimo' };
+                  };
+                  const repColor = getRepColor(weightedMargin);
+                  // Bar position: range -5% to 40%
+                  const barMin = -5;
+                  const barMax = 40;
+                  const clamped = Math.max(barMin, Math.min(barMax, weightedMargin));
+                  const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+                  return (
+                    <div className="px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-t border-indigo-200 dark:border-indigo-700">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300">🏆 Reputação do Pedido</span>
+                        <span className={`text-sm font-black tabular-nums ${repColor.text}`}>
+                          {weightedMargin.toFixed(1)}% ({repColor.label})
+                        </span>
+                      </div>
+                      <div className="relative w-full h-5 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
+                        <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                          <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                          <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                          <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                          <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                          <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                        </div>
+                        {/* Divider lines */}
+                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "44.4%" }} />
+                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "55.5%" }} />
+                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "66.6%" }} />
+                        <div className="absolute top-0 bottom-0 w-[2px] bg-white/80" style={{ left: "75.5%" }} />
+                        {/* Indicator */}
+                        <div
+                          className="absolute flex flex-col items-center"
+                          style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
+                        >
+                          <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white" />
+                          <div className="w-[2.5px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+                        </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -5512,8 +5583,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                                 )}
                               </div>
                             )}
-                            {/* RealCostMarginBar - only for Guilherme (barra de baixo - frete/impostos) */}
-                            {showMarginBar && precoBase > 0 && (() => {
+                            {/* RealCostMarginBar - only for Fernando/Guilherme (barra de baixo - frete/impostos) */}
+                            {showRealCostBar && precoBase > 0 && (() => {
                               const descontoDado = precoBase > 0 && effectivePrice > 0 
                                 ? ((precoBase - effectivePrice) / precoBase) * 100 
                                 : 0;

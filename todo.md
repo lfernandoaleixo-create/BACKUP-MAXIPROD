@@ -5211,3 +5211,10 @@
 - [x] Sistema débito/crédito acumulado: cada produto calcula diferença (preço venda - preço alto) × quantidade
 - [x] Coluna de saldo acumulado em tempo real ao lado de cada produto no pedido
 - [x] Crédito acumula de produto em produto (se vendeu acima do preço alto, sobra para compensar próximo)
+
+## Barra de Reputação do PEDIDO (RealCostMarginBar)
+- [x] Barra do PEDIDO com média ponderada das margens reais (PV×Margem / soma PVs)
+- [x] Cores: vermelho(<15%), laranja(15-20%), amarelo(20-25%), verde(25-29%), azul(>29%)
+- [x] Visível apenas para Fernando e Guilherme (oculta dos vendedores)
+- [x] Barra individual por produto simbólica (oculta dos vendedores, só serve pro cálculo)
+- [x] Fórmula margem: (Lucro ÷ Preço de Venda) × 100, onde Lucro = PV - Custo - Impostos - Frete - Comissão - Gastos Adicionais
