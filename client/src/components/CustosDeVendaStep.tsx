@@ -183,11 +183,20 @@ export default function CustosDeVendaStep({
   );
 
   // Calculate sales costs query
+  // Normalize tipoContribuinte to match backend enum
+  const normalizedTipoContribuinte = (() => {
+    const val = (tipoContribuinte || "").toUpperCase().trim();
+    if (val === "CONTRIBUINTE" || val === "Contribuinte".toUpperCase()) return "Contribuinte" as const;
+    if (val.includes("NAO") || val.includes("NÃO") || val.includes("N\u00C3O")) return "Não contribuinte" as const;
+    if (val === "ISENTO" || val === "Isento".toUpperCase()) return "Isento" as const;
+    return "Contribuinte" as const;
+  })();
+
   const { data: costsData, isLoading: costsLoading, isError: costsError } = trpc.salesOrders.calculateSalesCosts.useQuery(
     {
       items: queryItems,
       ufDestino: uf || "MG",
-      tipoContribuinte: tipoContribuinte as "Contribuinte" | "Não contribuinte" | "Isento",
+      tipoContribuinte: normalizedTipoContribuinte,
       tipoProduto,
       comissaoPercentual: comissaoPerc,
       freteValor: Number(valorFrete) || 0,
