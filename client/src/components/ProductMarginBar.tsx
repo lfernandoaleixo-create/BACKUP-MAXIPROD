@@ -77,15 +77,13 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
             <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
           </div>
         </div>
-        {/* Discount numbers below the bar at divider positions - always visible */}
-        {showValues && (
-          <div className="relative w-full h-4 mt-0.5">
-            <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
-            <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
-            <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
-            <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
-          </div>
-        )}
+        {/* Discount numbers below the bar at divider positions - always visible for everyone */}
+        <div className="relative w-full h-4 mt-0.5">
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
+        </div>
       </div>
       {/* Current discount value - only shown if allowed */}
       {showValues && (

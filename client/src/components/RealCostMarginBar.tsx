@@ -111,10 +111,10 @@ export function RealCostMarginBar({
             <ChevronDown className="w-3 h-3 text-slate-400 ml-auto" />
           )}
         </div>
-        {/* Bar - same style as ProductMarginBar */}
+        {/* Bar - same style as ProductMarginBar, centered */}
         <div className="relative w-40 sm:w-48">
           <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
-            {/* Solid color segments */}
+            {/* Solid color segments: -5→15(red), 15→20(orange), 20→25(yellow), 25→29(green), 29→40(blue) */}
             <div className="absolute inset-0 rounded-full overflow-hidden flex">
               <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
               <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
@@ -122,7 +122,7 @@ export function RealCostMarginBar({
               <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
               <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
             </div>
-            {/* Divider lines */}
+            {/* Divider lines at 15%, 20%, 25%, 29% boundaries */}
             <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "44.4%" }} />
             <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "55.5%" }} />
             <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "66.6%" }} />
@@ -136,12 +136,12 @@ export function RealCostMarginBar({
               <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
             </div>
           </div>
-          {/* Margin numbers at dividers */}
-          <div className="relative w-full h-3 mt-0.5">
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
+          {/* Margin numbers at dividers - well spaced */}
+          <div className="flex justify-between w-full mt-1 px-1">
+            <span className="text-[8px] font-black text-slate-600 dark:text-slate-300" style={{ marginLeft: "36%" }}>15%</span>
+            <span className="text-[8px] font-black text-slate-600 dark:text-slate-300">20%</span>
+            <span className="text-[8px] font-black text-slate-600 dark:text-slate-300">25%</span>
+            <span className="text-[8px] font-black text-slate-600 dark:text-slate-300" style={{ marginRight: "12%" }}>29%</span>
           </div>
         </div>
       </button>
