@@ -5199,3 +5199,15 @@
 ## Diário de Cobrança - Busca e Layout
 - [x] Fix: busca por cliente no Diário de Cobrança agora é case-insensitive (UPPER/LIKE)
 - [x] Fix: campos "De" e "Até" agora ficam na mesma linha (segunda linha dos filtros)
+- [x] Fix: backup do Diário de Cobrança não estava sendo gerado - heartbeat job não existia, criado "diary-snapshot-daily" (20:15 UTC = 17:15 BRT)
+
+## Refatoração ProductMarginBar
+- [x] Cores sólidas (sem degradê) - vermelho, laranja, amarelo, verde, azul
+- [x] Barra menor (mais compacta em altura)
+- [x] Barra ao lado do nome do produto (não embaixo)
+- [x] Números maiores
+- [x] Lógica de desconto: 32%=vermelho/laranja, 27%=laranja/amarelo, 23%=amarelo/verde, 20%=verde/azul, <20%=azul proporcional
+- [x] Opção de ocultar valores numéricos por vendedor (gestor controla quem vê)
+- [x] Sistema débito/crédito acumulado: cada produto calcula diferença (preço venda - preço alto) × quantidade
+- [x] Coluna de saldo acumulado em tempo real ao lado de cada produto no pedido
+- [x] Crédito acumula de produto em produto (se vendeu acima do preço alto, sobra para compensar próximo)

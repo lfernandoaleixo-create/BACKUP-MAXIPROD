@@ -3411,6 +3411,29 @@ export const salesRouter = router({
     }),
 
   /**
+   * Alterar visibilidade da barra de margem e valores para um vendedor
+   */
+  toggleSellerMarginVisibility: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      showMarginBar: z.boolean().optional(),
+      showMarginValues: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const updates: Record<string, boolean> = {};
+      if (input.showMarginBar !== undefined) updates.showMarginBar = input.showMarginBar;
+      if (input.showMarginValues !== undefined) updates.showMarginValues = input.showMarginValues;
+      if (Object.keys(updates).length > 0) {
+        await db.update(sellerPermissions)
+          .set(updates)
+          .where(eq(sellerPermissions.id, input.sellerId));
+      }
+      return { success: true };
+    }),
+
+  /**
    * Listar produtos visíveis de um vendedor
    */
   getSellerProducts: publicProcedure

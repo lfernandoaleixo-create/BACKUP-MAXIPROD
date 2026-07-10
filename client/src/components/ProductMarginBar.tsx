@@ -1,99 +1,81 @@
 /**
- * ProductMarginBar - Inline margin indicator per product during order creation
+ * ProductMarginBar - Barra de margem inline por produto
  * 
- * Shows a colored gradient bar with indicator showing where the product's margin falls:
- * - Red: 0% to 14.99%
- * - Orange: 15% to 19.99%
- * - Yellow: 20% to 24.99%
- * - Green: 25% to 28.99%
- * - Blue: 29%+
+ * Lógica baseada no DESCONTO dado a partir do preço mostrado:
+ * - Azul: desconto < 20% (gordura/crédito - vendeu acima do Preço Alto)
+ * - Verde: desconto 20% a 23% (Preço Alto = ponto zero)
+ * - Amarelo: desconto 23% a 27%
+ * - Laranja: desconto 27% a 32%
+ * - Vermelho: desconto > 32% (prejuízo pesado)
  * 
- * Calculation: margin = (precoVenda - custo - impostos - frete - comissao) / precoVenda * 100
+ * Fronteiras:
+ * - 20% desc = verde/azul (Preço Alto = ZERO, nem ganhou nem perdeu)
+ * - 23% desc = amarelo/verde
+ * - 27% desc = laranja/amarelo
+ * - 32% desc = vermelho/laranja
+ * 
+ * Preço Alto = preço modelo. Vender nele = zero. Acima = crédito. Abaixo = débito.
  */
 
 interface ProductMarginBarProps {
-  margin: number; // percentage (e.g., 25.5 means 25.5%)
-  custoBox: number; // cost per box in R$
-  precoVenda: number; // selling price per box in R$
-  fonte?: string; // cost source (Projetado, Real, Estimativa)
-  desconto?: number; // discount percentage given
+  desconto: number; // discount percentage given (e.g., 25.5 means 25.5%)
+  showValues?: boolean; // whether to show numeric values (controlled per seller)
 }
 
-export function ProductMarginBar({ margin, custoBox, precoVenda, fonte, desconto }: ProductMarginBarProps) {
-  // Clamp margin for display purposes (show from -5% to 40%)
-  const displayMin = -5;
-  const displayMax = 40;
-  const clampedMargin = Math.max(displayMin, Math.min(displayMax, margin));
-  const position = ((clampedMargin - displayMin) / (displayMax - displayMin)) * 100;
-
-  // Determine color based on margin
-  const getMarginColor = (m: number) => {
-    if (m < 0) return { text: "text-red-800 dark:text-red-300", label: "Prejuízo" };
-    if (m < 15) return { text: "text-red-600 dark:text-red-400", label: "Crítico" };
-    if (m < 20) return { text: "text-orange-600 dark:text-orange-400", label: "Baixo" };
-    if (m < 25) return { text: "text-yellow-600 dark:text-yellow-400", label: "Médio" };
-    if (m < 29) return { text: "text-green-600 dark:text-green-400", label: "Bom" };
-    return { text: "text-blue-600 dark:text-blue-400", label: "Ótimo" };
+export function ProductMarginBar({ desconto, showValues = true }: ProductMarginBarProps) {
+  // Determine which color zone the discount falls into
+  const getZone = (d: number): { color: string; bg: string; label: string; textColor: string } => {
+    if (d >= 32) return { color: "bg-red-500", bg: "bg-red-100 dark:bg-red-900/30", label: "Crítico", textColor: "text-red-700 dark:text-red-300" };
+    if (d >= 27) return { color: "bg-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30", label: "Baixo", textColor: "text-orange-700 dark:text-orange-300" };
+    if (d >= 23) return { color: "bg-yellow-500", bg: "bg-yellow-100 dark:bg-yellow-900/30", label: "Médio", textColor: "text-yellow-700 dark:text-yellow-300" };
+    if (d >= 20) return { color: "bg-green-500", bg: "bg-green-100 dark:bg-green-900/30", label: "Zero", textColor: "text-green-700 dark:text-green-300" };
+    return { color: "bg-blue-500", bg: "bg-blue-100 dark:bg-blue-900/30", label: "Gordura", textColor: "text-blue-700 dark:text-blue-300" };
   };
 
-  const color = getMarginColor(margin);
+  const zone = getZone(desconto);
+
+  // Calculate indicator position on the bar
+  // Bar represents 0% to 40% discount range
+  // Segments: Blue(0-20) | Green(20-23) | Yellow(23-27) | Orange(27-32) | Red(32-40)
+  const barMin = 0;
+  const barMax = 40;
+  const clampedDesc = Math.max(barMin, Math.min(barMax, desconto));
+  const position = (clampedDesc / barMax) * 100;
+
+  // Segment widths (proportional to their discount range within 0-40):
+  // Blue: 0-20 = 20/40 = 50%
+  // Green: 20-23 = 3/40 = 7.5%
+  // Yellow: 23-27 = 4/40 = 10%
+  // Orange: 27-32 = 5/40 = 12.5%
+  // Red: 32-40 = 8/40 = 20%
 
   return (
-    <div className="w-full mt-1.5 px-1">
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`text-[11px] font-black ${color.text}`}>
-          Margem: {margin.toFixed(1)}% ({color.label})
-        </span>
-        {desconto !== undefined && desconto > 0 && (
-          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium">
-            Desc: {desconto.toFixed(1)}%
-          </span>
-        )}
-        {fonte && custoBox > 0 && (
-          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
-            Custo {fonte}: R$ {custoBox.toFixed(2)}/cx
-          </span>
-        )}
-      </div>
-      {/* Bar container - thicker bar */}
-      <div className="relative h-5 rounded-full overflow-visible bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
-        {/* Color segments */}
+    <div className="flex items-center gap-2 min-w-0">
+      {/* Compact color bar */}
+      <div className="relative w-24 sm:w-28 h-3 rounded-full overflow-visible flex-shrink-0 border border-slate-200 dark:border-slate-600">
+        {/* Solid color segments */}
         <div className="absolute inset-0 rounded-full overflow-hidden flex">
-          {/* Red: -5% to 15% → occupies (15-(-5))/(40-(-5)) = 20/45 = 44.4% of bar */}
-          <div className="h-full bg-gradient-to-r from-red-700 via-red-500 to-red-400" style={{ width: "44.4%" }} />
-          {/* Orange: 15% to 20% → 5/45 = 11.1% */}
-          <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: "11.1%" }} />
-          {/* Yellow: 20% to 25% → 5/45 = 11.1% */}
-          <div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: "11.1%" }} />
-          {/* Green: 25% to 29% → 4/45 = 8.9% */}
-          <div className="h-full bg-gradient-to-r from-green-400 to-green-500" style={{ width: "8.9%" }} />
-          {/* Blue: 29% to 40% → 11/45 = 24.4% */}
-          <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" style={{ width: "24.5%" }} />
+          <div className="h-full bg-blue-500" style={{ width: "50%" }} />
+          <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
+          <div className="h-full bg-yellow-500" style={{ width: "10%" }} />
+          <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
+          <div className="h-full bg-red-500" style={{ width: "20%" }} />
         </div>
-        {/* Arrow indicator marker */}
+        {/* Indicator arrow */}
         <div
-          className="absolute top-0 bottom-0 flex flex-col items-center transition-all duration-300"
+          className="absolute top-0 bottom-0 flex flex-col items-center"
           style={{ left: `${position}%`, transform: "translateX(-50%)" }}
         >
-          {/* Arrow pointing down */}
-          <div className="-mt-1.5 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white drop-shadow-sm" />
-          {/* Vertical line */}
+          <div className="-mt-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-slate-900 dark:border-t-white" />
           <div className="w-0.5 flex-1 bg-slate-900 dark:bg-white" />
         </div>
       </div>
-      {/* Scale labels - positioned exactly at color boundaries */}
-      <div className="relative mt-1 h-4">
-        {/* 0% at left edge: position = (0-(-5))/(40-(-5)) = 5/45 = 11.1% */}
-        <span className="absolute text-[9px] text-red-500 font-bold -translate-x-1/2" style={{ left: "11.1%" }}>0%</span>
-        {/* 15% at red/orange boundary: (15-(-5))/45 = 44.4% */}
-        <span className="absolute text-[9px] text-orange-500 font-bold -translate-x-1/2" style={{ left: "44.4%" }}>15%</span>
-        {/* 20% at orange/yellow boundary: (20-(-5))/45 = 55.6% */}
-        <span className="absolute text-[9px] text-yellow-600 font-bold -translate-x-1/2" style={{ left: "55.6%" }}>20%</span>
-        {/* 25% at yellow/green boundary: (25-(-5))/45 = 66.7% */}
-        <span className="absolute text-[9px] text-green-500 font-bold -translate-x-1/2" style={{ left: "66.7%" }}>25%</span>
-        {/* 29% at green/blue boundary: (29-(-5))/45 = 75.6% */}
-        <span className="absolute text-[9px] text-blue-500 font-bold -translate-x-1/2" style={{ left: "75.6%" }}>29%</span>
-      </div>
+      {/* Numeric values - only shown if allowed */}
+      {showValues && (
+        <span className={`text-sm font-black tabular-nums whitespace-nowrap ${zone.textColor}`}>
+          {desconto.toFixed(1)}%
+        </span>
+      )}
     </div>
   );
 }

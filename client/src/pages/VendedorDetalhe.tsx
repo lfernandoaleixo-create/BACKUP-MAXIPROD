@@ -4142,9 +4142,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const utils = trpc.useUtils();
 
-  // Margin bar state (only for Guilherme)
+  // Margin bar state - controlled per seller via seller_permissions table
   const { operator: marginOperator } = useOperator();
-  const showMarginBar = marginOperator?.name === "Guilherme";
+  const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
+  const currentSellerPerm = sellerPermsQuery.data?.find(
+    (p: any) => p.sellerName.toLowerCase() === sellerName.toLowerCase()
+  );
+  const showMarginBar = currentSellerPerm?.showMarginBar !== false; // default true
+  const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
   const [marginComissao, setMarginComissao] = useState(5.85);
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
@@ -5122,6 +5127,30 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                     {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
                   </p>
                 </div>
+                {/* Cumulative Debit/Credit Summary */}
+                {showMarginBar && items.length > 0 && (() => {
+                  let runningBalance = 0;
+                  const balances = items.map(item => {
+                    const precoAlto = item.precoVendedor || 0;
+                    if (precoAlto <= 0) return { diff: 0, balance: runningBalance };
+                    const diff = (item.precoUnitario - precoAlto) * item.quantidade;
+                    runningBalance += diff;
+                    return { diff, balance: runningBalance };
+                  });
+                  const totalBalance = balances[balances.length - 1]?.balance || 0;
+                  return (
+                    <div className={`flex items-center justify-between px-3 py-1.5 text-xs font-bold ${
+                      totalBalance > 0 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' :
+                      totalBalance < 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' :
+                      'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}>
+                      <span>Saldo D/C:</span>
+                      <span className="text-sm tabular-nums">
+                        {totalBalance >= 0 ? '+' : ''}{formatCurrencySales(totalBalance)}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="max-h-[200px] overflow-y-auto px-2 pt-2 space-y-1.5">
                   {items.map((item, idx) => (
                     <div key={idx} className={`rounded-lg border ${showMarginBar && item.precoVendedor && item.precoVendedor > 0 ? (() => {
@@ -5173,6 +5202,24 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                               {item.precoVendedor && item.precoUnitario < item.precoVendedor && (
                                 <span className="text-orange-500 ml-1">({(((item.precoVendedor - item.precoUnitario) / item.precoVendedor) * 100).toFixed(1)}% desc.)</span>
                               )}
+                              {/* Cumulative balance per item */}
+                              {showMarginBar && item.precoVendedor && item.precoVendedor > 0 && (() => {
+                                let balance = 0;
+                                for (let i = 0; i <= idx; i++) {
+                                  const it = items[i];
+                                  const pa = it.precoVendedor || 0;
+                                  if (pa > 0) balance += (it.precoUnitario - pa) * it.quantidade;
+                                }
+                                return (
+                                  <span className={`ml-1.5 font-black text-[10px] tabular-nums ${
+                                    balance > 0 ? 'text-blue-600 dark:text-blue-400' :
+                                    balance < 0 ? 'text-red-600 dark:text-red-400' :
+                                    'text-slate-500'
+                                  }`}>
+                                    [{balance >= 0 ? '+' : ''}{formatCurrencySales(balance)}]
+                                  </span>
+                                );
+                              })()}
                             </p>
                             {/* Weight + Volume in saved cart item - with large visible labels */}
                             {(item.pesoBrutoCaixa || item.dimsStr) && (
@@ -5252,9 +5299,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                   return (
                     <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-4">
-                      {/* Row 1: Product name (big + bold) with code/dims/weight to the right */}
+                      {/* Row 1: Product name + margin bar inline, with code/dims/weight to the right */}
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug min-w-0">{p.descricaoItem}</p>
+                          {showMarginBar && precoBase > 0 && (() => {
+                            const descontoDado = precoBase > 0 && effectivePrice > 0 
+                              ? ((precoBase - effectivePrice) / precoBase) * 100 
+                              : 0;
+                            return <ProductMarginBar desconto={descontoDado} showValues={showMarginValues} />;
+                          })()}
+                        </div>
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                           <div className="flex flex-col items-center">
                             <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium tracking-wide">Código do Produto</span>
@@ -5457,86 +5512,28 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                                 )}
                               </div>
                             )}
-                            {/* Margin Bar - only for Guilherme */}
+                            {/* RealCostMarginBar - only for Guilherme (barra de baixo - frete/impostos) */}
                             {showMarginBar && precoBase > 0 && (() => {
-                              // Margem baseada no desconto dado (relação inversa)
-                              // Pontos de referência do Fernando:
-                              // 0% desconto → lucro > 29% (azul)
-                              // 20% desconto → lucro ~29%
-                              // 23% desconto → lucro ~25%
-                              // 27% desconto → lucro ~20%
-                              // 32% desconto → lucro ~15%
-                              // Fórmula: desconto% = (1 - effectivePrice/precoBase) * 100
                               const descontoDado = precoBase > 0 && effectivePrice > 0 
                                 ? ((precoBase - effectivePrice) / precoBase) * 100 
                                 : 0;
-                              
-                              // Interpolação linear inversa baseada nos pontos de referência
-                              // desconto → margem (relação inversa linear)
-                              // Pontos de referência (regra de 3 inversa):
-                              // 20% desc → 29% lucro (referência base)
-                              // 0% desc → 29% / 0.80 = 36.25% lucro
-                              // 23% desc → 25%, 27% desc → 20%, 32% desc → 15%
-                              const pontos = [
-                                { desc: 0, marg: 36.25 },
-                                { desc: 20, marg: 29 },
-                                { desc: 23, marg: 25 },
-                                { desc: 27, marg: 20 },
-                                { desc: 32, marg: 15 },
-                                { desc: 37, marg: 10 },
-                                { desc: 42, marg: 5 },
-                                { desc: 50, marg: 0 },
-                              ];
-                              
-                              let margem = 0;
-                              if (descontoDado <= pontos[0].desc) {
-                                margem = pontos[0].marg;
-                              } else if (descontoDado >= pontos[pontos.length - 1].desc) {
-                                margem = pontos[pontos.length - 1].marg;
-                              } else {
-                                for (let i = 0; i < pontos.length - 1; i++) {
-                                  if (descontoDado >= pontos[i].desc && descontoDado <= pontos[i + 1].desc) {
-                                    const t = (descontoDado - pontos[i].desc) / (pontos[i + 1].desc - pontos[i].desc);
-                                    margem = pontos[i].marg + t * (pontos[i + 1].marg - pontos[i].marg);
-                                    break;
-                                  }
-                                }
-                              }
-                              
-                              // Ajustar margem pelos parâmetros editáveis (diferença do padrão)
-                              // Se comissão > 5.85, reduz margem; se < 5.85, aumenta
-                              // Se frete > 13, reduz margem; se < 13, aumenta
-                              const comissaoDiff = marginComissao - 5.85;
-                              const freteDiff = marginFrete - 13;
-                              margem = margem - comissaoDiff - freteDiff;
-                              
                               const costData = productMarginsQuery.data?.costMap[p.codigoItem];
                               const taxBd = costData?.tipoProduto === "industrializado"
                                 ? productMarginsQuery.data?.taxBreakdownIndustrializado
                                 : productMarginsQuery.data?.taxBreakdownImportado;
+                              if (!costData || !taxBd) return null;
                               return (
-                                <div>
-                                  <ProductMarginBar
-                                    margin={margem}
-                                    custoBox={costData?.cost || 0}
-                                    precoVenda={effectivePrice}
-                                    fonte={costData?.fonte}
-                                    desconto={descontoDado}
-                                  />
-                                  {costData && taxBd && (
-                                    <RealCostMarginBar
-                                      precoVenda={effectivePrice}
-                                      custoBox={costData.cost}
-                                      fonte={costData.fonte}
-                                      tipoProduto={costData.tipoProduto}
-                                      taxBreakdown={taxBd}
-                                      fretePerc={marginFrete}
-                                      comissaoPerc={marginComissao}
-                                      custosAdicionaisPerc={marginCustosAdicionais}
-                                      quantidade={calc.quantity}
-                                    />
-                                  )}
-                                </div>
+                                <RealCostMarginBar
+                                  precoVenda={effectivePrice}
+                                  custoBox={costData.cost}
+                                  fonte={costData.fonte}
+                                  tipoProduto={costData.tipoProduto}
+                                  taxBreakdown={taxBd}
+                                  fretePerc={marginFrete}
+                                  comissaoPerc={marginComissao}
+                                  custosAdicionaisPerc={marginCustosAdicionais}
+                                  quantidade={calc.quantity}
+                                />
                               );
                             })()}
                         </div>
