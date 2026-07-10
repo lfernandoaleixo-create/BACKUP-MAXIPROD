@@ -2110,7 +2110,18 @@ export const salesOrderRouter = router({
       const { createCallerFactory } = await import("./_core/trpc");
       const createCaller = createCallerFactory(importRouter);
       const importCaller = createCaller({ user: null, req: {} as any, res: {} as any });
-      const realTimeCosts = await importCaller.getRealTimeCosts();
+      
+      // Timeout wrapper: if getRealTimeCosts takes > 15s, return empty array
+      let realTimeCosts: any[] = [];
+      try {
+        realTimeCosts = await Promise.race([
+          importCaller.getRealTimeCosts(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('getRealTimeCosts timeout')), 15000))
+        ]);
+      } catch (e) {
+        console.warn('[calculateSalesCosts] getRealTimeCosts timed out or failed, proceeding without costs');
+        realTimeCosts = [];
+      }
 
       // Build a map: codigoItem -> best cost (R$/caixa)
       // Priority: custoProjetado (includes patio) > custoReal > custoEstimativa

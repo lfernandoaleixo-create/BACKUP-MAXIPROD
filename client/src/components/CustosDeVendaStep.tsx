@@ -183,7 +183,7 @@ export default function CustosDeVendaStep({
   );
 
   // Calculate sales costs query
-  const { data: costsData, isLoading: costsLoading } = trpc.salesOrders.calculateSalesCosts.useQuery(
+  const { data: costsData, isLoading: costsLoading, isError: costsError } = trpc.salesOrders.calculateSalesCosts.useQuery(
     {
       items: queryItems,
       ufDestino: uf || "MG",
@@ -193,7 +193,7 @@ export default function CustosDeVendaStep({
       freteValor: Number(valorFrete) || 0,
       gastosAdicionais,
     },
-    { enabled: items.length > 0, staleTime: 30 * 1000 }
+    { enabled: items.length > 0, staleTime: 60 * 1000, retry: 1, retryDelay: 2000 }
   );
 
   // Freight quote mutation
@@ -344,6 +344,12 @@ export default function CustosDeVendaStep({
             <Loader2 className="w-4 h-4 text-teal-500 animate-spin" />
             <span className="text-xs text-slate-500">Calculando custos de venda...</span>
           </div>
+        </div>
+      )}
+
+      {costsError && items.length > 0 && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+          <span className="text-xs text-red-600 dark:text-red-400">Erro ao calcular custos. Os valores de impostos e custo da mercadoria podem estar indisponíveis. Tente novamente.</span>
         </div>
       )}
 

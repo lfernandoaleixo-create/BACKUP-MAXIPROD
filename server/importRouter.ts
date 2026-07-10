@@ -11,6 +11,10 @@ import { gql } from "./maxiprodGraphQL";
 // Cache de cotação USD/BRL em memória (TTL: 30 minutos)
 let exchangeRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
 
+// Cache de getRealTimeCosts em memória (TTL: 60 segundos) para evitar recálculo pesado a cada chamada
+let realTimeCostsCache: { data: any; timestamp: number } | null = null;
+const REAL_TIME_COSTS_TTL = 60 * 1000; // 60 seconds
+
 export const importRouter = router({
   // ===== SUPPLIERS =====
   getSuppliers: publicProcedure.query(async () => {
@@ -1356,6 +1360,11 @@ export const importRouter = router({
 
   // ===== CUSTO EM TEMPO REAL =====
   getRealTimeCosts: publicProcedure.query(async () => {
+    // Return cached result if still fresh (60s TTL)
+    if (realTimeCostsCache && (Date.now() - realTimeCostsCache.timestamp) < REAL_TIME_COSTS_TTL) {
+      return realTimeCostsCache.data;
+    }
+
     const db = await getDb();
     if (!db) return [];
 
@@ -2013,6 +2022,9 @@ export const importRouter = router({
 
     // Sort by product code
     results.sort((a, b) => a.codigoItem.localeCompare(b.codigoItem, undefined, { numeric: true }));
+
+    // Save to cache
+    realTimeCostsCache = { data: results, timestamp: Date.now() };
     return results;
   }),
 
