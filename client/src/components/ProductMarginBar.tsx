@@ -62,11 +62,20 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
             <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
             <div className="h-full bg-red-500" style={{ width: "20%" }} />
           </div>
-          {/* Divider lines between color zones */}
+          {/* Divider lines with numbers inside */}
           <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "50%" }} />
           <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "57.5%" }} />
           <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "67.5%" }} />
           <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "80%" }} />
+          {/* Numbers inside the bar at dividers */}
+          {showValues && (
+            <>
+              <span className="absolute top-1/2 -translate-y-1/2 text-[7px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]" style={{ left: "50%", transform: "translateX(-50%) translateY(-50%)" }}>20</span>
+              <span className="absolute top-1/2 -translate-y-1/2 text-[7px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]" style={{ left: "57.5%", transform: "translateX(-50%) translateY(-50%)" }}>23</span>
+              <span className="absolute top-1/2 -translate-y-1/2 text-[7px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]" style={{ left: "67.5%", transform: "translateX(-50%) translateY(-50%)" }}>27</span>
+              <span className="absolute top-1/2 -translate-y-1/2 text-[7px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]" style={{ left: "80%", transform: "translateX(-50%) translateY(-50%)" }}>32</span>
+            </>
+          )}
           {/* Indicator arrow - bigger and more visible */}
           <div
             className="absolute flex flex-col items-center"
@@ -76,15 +85,7 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
             <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
           </div>
         </div>
-        {/* Discount numbers at dividers - only shown if allowed */}
-        {showValues && (
-          <div className="relative w-full h-3 mt-0.5">
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
-            <span className="absolute text-[8px] font-bold text-slate-500 dark:text-slate-400" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
-          </div>
-        )}
+
       </div>
       {/* Current discount value - only shown if allowed */}
       {showValues && (
