@@ -1211,8 +1211,8 @@ export const cobrancaPlanilhaRouter = router({
             vencimento: inad.vencimento,
             diasVencidos: inad.diasVencidos,
             tipo: inad.tipo,
-            // HERDAR status manual se existir item da mesma empresa com status definido
-            status: existingOfSameEmpresa?.status || inad.status,
+            // Cada título entra com status Pendente (tratamento individual por título)
+            status: inad.status,
             contato: contatoGqlMap[normEmpNew] || clienteData.contato || null,
             email: (() => {
               const nfe = emailNfeMap[normEmpNew] || "";

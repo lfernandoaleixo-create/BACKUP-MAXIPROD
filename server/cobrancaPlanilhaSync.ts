@@ -284,8 +284,10 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       // 1. Se a empresa já tem títulos ativos com status "Especial s/ cobrança" → herda "Especial s/ cobrança"
       // 2. Se existe registro inativo com mesma empresa+vencimento e status não-Pendente → herda esse status
       //    (caso de arId que mudou no Maxiprod mas é o mesmo título)
-      // 3. Se a empresa tem outros títulos ativos com status não-Pendente → herda o status mais recente
-      // 4. Caso contrário → entra como Pendente
+      // 3. Caso contrário → entra como Pendente (cada título é tratado individualmente)
+      //
+      // NOTA: Removida a regra que herdava status de outros títulos ativos do mesmo cliente.
+      // Cada título deve ter seu próprio ciclo de cobrança independente.
       const empresaUpper = title.empresa.toUpperCase().trim();
       const especialMatch = allPlanilhaRecords.find(
         r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper && r.status === "Especial s/ cobrança"
@@ -301,17 +303,8 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         if (sameEmpVenc) {
           statusPlanilha = sameEmpVenc.status!;
         } else {
-          // Check for same empresa with active non-Pendente status
-          const activeOther = allPlanilhaRecords.find(
-            r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
-              && r.status && r.status !== "Pendente"
-          );
-          if (activeOther) {
-            statusPlanilha = activeOther.status!;
-          } else {
-            // Genuinely new → Pendente
-            statusPlanilha = "Pendente";
-          }
+          // Cada título novo entra como Pendente — tratamento individual
+          statusPlanilha = "Pendente";
         }
       }
 

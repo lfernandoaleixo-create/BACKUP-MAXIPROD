@@ -5218,3 +5218,5 @@
 - [x] Visível apenas para Fernando e Guilherme (oculta dos vendedores)
 - [x] Barra individual por produto simbólica (oculta dos vendedores, só serve pro cálculo)
 - [x] Fórmula margem: (Lucro ÷ Preço de Venda) × 100, onde Lucro = PV - Custo - Impostos - Frete - Comissão - Gastos Adicionais
+- [x] Fix: inadimplência status inheritance bug - novos títulos não devem herdar status de outros títulos do mesmo cliente
+- [x] Fix: reset Mogilandi NF 2457 (3/4) para Pendente (não foi contatado sobre esse título)
