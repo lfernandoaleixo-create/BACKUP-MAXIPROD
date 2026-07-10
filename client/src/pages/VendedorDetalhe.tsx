@@ -5381,7 +5381,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                   };
 
                   return (
-                    <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-2">
+                    <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-1">
                       {/* Row 1: Product name | margin bars (right side) | code/dims/weight */}
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-snug flex-1 min-w-0">{p.descricaoItem}</p>
@@ -5442,7 +5442,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
 
                       {/* Row 3: ALL PRICING IN ONE LINE with labels above */}
                       {precoBase > 0 && (
-                        <div className="mt-1">
+                        <div className="mt-0">
                             {/* Single unified layout - same structure whether locked or not */}
                             <div className="flex flex-wrap items-end gap-2 sm:gap-3">
                               {/* Stock */}
