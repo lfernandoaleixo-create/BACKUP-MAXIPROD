@@ -5400,10 +5400,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                           )}
                         </div>
                       </div>
-
                       {/* Row 2: Pricing controls + margin bars on the right */}
                       {precoBase > 0 && (
-                        <div className="-mt-2">
+                        <div>
                             <div className="flex items-end gap-2 sm:gap-3">
                             {/* Left: pricing controls */}
                             <div className="flex flex-wrap items-end gap-2 sm:gap-3 flex-1">
