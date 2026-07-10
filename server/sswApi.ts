@@ -34,8 +34,9 @@ interface SSWQuoteResult {
 
 function buildSoapEnvelope(params: SSWQuoteParams): string {
   const domain = process.env.SSW_DOMAIN || "RCS";
-  const login = process.env.SSW_USER || "foxp";
-  const senha = process.env.SSW_PASSWORD || "2010";
+  const login = process.env.SSW_USER || "foxapi";
+  const senha = process.env.SSW_PASSWORD || "14lt27ca";
+  const senhaPagador = process.env.SSW_SENHA_PAGADOR || "251038";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="urn:sswinfaboraboraaliaborabora">
@@ -44,6 +45,7 @@ function buildSoapEnvelope(params: SSWQuoteParams): string {
       <dominio>${domain}</dominio>
       <login>${login}</login>
       <senha>${senha}</senha>
+      <senhaPagador>${senhaPagador}</senhaPagador>
       <cnpjPagador>${params.cnpjPagador}</cnpjPagador>
       <cepOrigem>${params.cepOrigem}</cepOrigem>
       <cepDestino>${params.cepDestino}</cepDestino>
@@ -109,7 +111,7 @@ export async function quoteSswFreight(params: SSWQuoteParams): Promise<SSWQuoteR
     throw new Error(`SSW Login error: ${result.mensagem}`);
   }
   if (result.erro === -1) {
-    throw new Error(`SSW Simulation error: ${result.mensagem}`);
+    throw new Error(`SSW error: ${result.mensagem}`);
   }
 
   return result;

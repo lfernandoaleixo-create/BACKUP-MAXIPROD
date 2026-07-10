@@ -75,6 +75,7 @@ async function getCityIdFromCep(cep: string): Promise<RodonavesCityResponse> {
     `https://dne-api.rte.com.br/api/cities/byzipcode?zipCode=${cleanCep}`,
     {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(15000),
     }
   );
 
@@ -113,6 +114,7 @@ async function getQuotationToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -154,6 +156,7 @@ async function getDeliveryTimeToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -232,6 +235,7 @@ export async function quoteRodonavesFreight(params: {
     "https://quotation-apigateway.rte.com.br/api/v1/gera-cotacao",
     {
       method: "POST",
+      signal: AbortSignal.timeout(20000),
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

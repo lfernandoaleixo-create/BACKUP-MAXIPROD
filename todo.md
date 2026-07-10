@@ -5220,3 +5220,7 @@
 - [x] Fórmula margem: (Lucro ÷ Preço de Venda) × 100, onde Lucro = PV - Custo - Impostos - Frete - Comissão - Gastos Adicionais
 - [x] Fix: inadimplência status inheritance bug - novos títulos não devem herdar status de outros títulos do mesmo cliente
 - [x] Fix: reset Mogilandi NF 2457 (3/4) para Pendente (não foi contatado sobre esse título)
+- [x] Atualizar credenciais SSW/Camilo dos Santos (foxapi/14lt27ca + senhaPagador 251038)
+- [x] Adicionar campo senhaPagador ao SOAP da SSW
+- [x] Adicionar timeouts (AbortSignal.timeout) nas chamadas fetch da Rodonaves
+- [ ] SSW: "Cliente não possui tabela de frete negociada" - problema comercial com a Camilo dos Santos
