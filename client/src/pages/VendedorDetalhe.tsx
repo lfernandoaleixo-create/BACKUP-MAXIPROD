@@ -5375,10 +5375,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                   return (
                     <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-0.5">
                       {/* Row 1: Product name | code/dims/weight */}
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-tight flex-1 min-w-0">{p.descricaoItem}</p>
+                      <div className="flex items-center flex-wrap gap-x-2 gap-y-0">
+                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-tight">{p.descricaoItem}</p>
 
-                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <div className="flex flex-col items-center">
                             <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium tracking-wide">Código do Produto</span>
                             <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
