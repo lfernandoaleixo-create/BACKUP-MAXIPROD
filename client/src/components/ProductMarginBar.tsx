@@ -52,7 +52,7 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       {/* Wide color bar with dividers */}
-      <div className="relative w-40 sm:w-48 flex-shrink-0">
+      <div className="relative w-52 sm:w-64 flex-shrink-0">
         <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
           {/* Solid color segments */}
           <div className="absolute inset-0 rounded-full overflow-hidden flex">
