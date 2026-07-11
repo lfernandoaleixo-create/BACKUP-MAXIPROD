@@ -36,6 +36,7 @@ interface CustosDeVendaStepProps {
   tipoContribuinte: string;
   uf: string;
   items: OrderItem[];
+  sellerId?: number;
   condicaoPagamento: string;
   setCondicaoPagamento: (v: string) => void;
   valorFrete: string;
@@ -154,8 +155,9 @@ export default function CustosDeVendaStep({
   setPrevisaoEntregaPedido,
   onBack,
   onNext,
+  sellerId,
 }: CustosDeVendaStepProps) {
-  const [comissaoPerc, setComissaoPerc] = useState(0);
+  const [comissaoPercOverride, setComissaoPercOverride] = useState<number | null>(null);
   const [gastosAdicionais, setGastosAdicionais] = useState(0);
   const [tipoProduto, setTipoProduto] = useState<"importado" | "industrializado">("importado");
   const [showFreight, setShowFreight] = useState(false);
@@ -198,7 +200,8 @@ export default function CustosDeVendaStep({
       ufDestino: uf || "MG",
       tipoContribuinte: normalizedTipoContribuinte,
       tipoProduto,
-      comissaoPercentual: comissaoPerc,
+      ...(comissaoPercOverride !== null && comissaoPercOverride > 0 ? { comissaoPercentual: comissaoPercOverride } : {}),
+      ...(sellerId ? { sellerId } : {}),
       freteValor: Number(valorFrete) || 0,
       gastosAdicionais,
     },
@@ -511,25 +514,50 @@ export default function CustosDeVendaStep({
             <Percent className="w-3.5 h-3.5 text-blue-600" />
             <span>3. Comissão do Vendedor</span>
             {costsData && (
-              <span className="text-blue-700 font-black">{formatCurrency(costsData.comissao.valor)} ({comissaoPerc}%)</span>
+              <span className="text-blue-700 font-black">{formatCurrency(costsData.comissao.valor)} ({costsData.comissao.percentual.toFixed(1)}%)</span>
             )}
           </div>
           {expandedSection === "comissao" ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
         {expandedSection === "comissao" && (
           <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+            {/* Auto commission info */}
+            {costsData && (costsData.comissao as any).fonte !== "manual" && (costsData.comissao as any).autoPercentual > 0 && (
+              <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+                <p className="text-[10px] text-blue-700 dark:text-blue-300 font-medium">
+                  Comissão automática: <strong>{(costsData.comissao as any).autoPercentual}%</strong>
+                  {" "}(Faixa: {(costsData.comissao as any).tier === "mostrado_alto" ? "Projetado (≥29%)" : (costsData.comissao as any).tier === "medio_alto" ? "Médio-Alto (25-29%)" : (costsData.comissao as any).tier === "medio" ? "Médio (20-25%)" : "Baixo (<20%)"}
+                  {" "}| Margem s/ comissão: {((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%
+                  {" "}| Meta: 120%)
+                </p>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <label className="text-[9px] text-slate-400 uppercase font-bold block mb-1">Comissão (%)</label>
+                <label className="text-[9px] text-slate-400 uppercase font-bold block mb-1">
+                  Comissão (%) {costsData && (costsData.comissao as any).fonte !== "manual" ? "— Auto" : ""}
+                </label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   step="0.5"
-                  value={comissaoPerc}
-                  onChange={(e) => setComissaoPerc(Number(e.target.value))}
+                  value={comissaoPercOverride !== null ? comissaoPercOverride : (costsData?.comissao.percentual ?? 0)}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setComissaoPercOverride(v > 0 ? v : null);
+                  }}
                   className="w-full text-xs bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-2 py-1.5"
+                  placeholder="Auto"
                 />
+                {comissaoPercOverride !== null && comissaoPercOverride > 0 && (
+                  <button
+                    onClick={() => setComissaoPercOverride(null)}
+                    className="text-[9px] text-blue-600 hover:underline mt-0.5"
+                  >
+                    Usar automático
+                  </button>
+                )}
               </div>
               <div className="flex-1">
                 <label className="text-[9px] text-slate-400 uppercase font-bold block mb-1">Valor da Comissão</label>

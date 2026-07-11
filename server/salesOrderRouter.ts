@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -2096,7 +2096,8 @@ export const salesOrderRouter = router({
       ufDestino: z.string().default("MG"),
       tipoContribuinte: z.string().default("Contribuinte"),
       tipoProduto: z.enum(["importado", "industrializado"]).default("importado"),
-      comissaoPercentual: z.number().min(0).max(100).default(0),
+      comissaoPercentual: z.number().min(0).max(100).optional(),
+      sellerId: z.number().optional(),
       freteValor: z.number().min(0).default(0),
       gastosAdicionais: z.number().min(0).default(0),
     }))
@@ -2199,8 +2200,56 @@ export const salesOrderRouter = router({
         faturamentoTrimestral,
       });
 
-      // Calculate commission
-      const comissaoValor = valorVenda * (input.comissaoPercentual / 100);
+      // === AUTO COMMISSION CALCULATION ===
+      // Step 1: Calculate margin WITHOUT commission to determine the price tier
+      const custosSemComissao = custoMercadoriaTotal + input.freteValor + impostos.totalImpostosValor + input.gastosAdicionais;
+      const lucroSemComissao = valorVenda - custosSemComissao;
+      const margemSemComissao = valorVenda > 0 ? (lucroSemComissao / valorVenda) * 100 : 0;
+
+      // Step 2: Determine price tier based on margin thresholds
+      let autoTier: "baixo" | "medio" | "medio_alto" | "mostrado_alto" = "baixo";
+      if (margemSemComissao >= 29) autoTier = "mostrado_alto";
+      else if (margemSemComissao >= 25) autoTier = "medio_alto";
+      else if (margemSemComissao >= 20) autoTier = "medio";
+      else autoTier = "baixo";
+
+      // Step 3: Look up commission % from the matrix (always 120% meta for now)
+      let autoComissaoPercentual = 0;
+      let comissaoFonte = "manual";
+      if (input.sellerId) {
+        const sellerMatrixRow = await db.select().from(commissionMatrix)
+          .where(and(
+            eq(commissionMatrix.sellerId, input.sellerId),
+            eq(commissionMatrix.metaPercent, 120),
+            eq(commissionMatrix.priceTier, autoTier),
+          )).limit(1);
+        if (sellerMatrixRow.length > 0) {
+          autoComissaoPercentual = Number(sellerMatrixRow[0].commissionPercent);
+          comissaoFonte = "matriz_vendedor";
+        } else {
+          const sellerPerm = await db.select().from(sellerPermissions)
+            .where(eq(sellerPermissions.id, input.sellerId)).limit(1);
+          if (sellerPerm.length > 0) {
+            const gestorMatrix = await db.select().from(commissionMatrix)
+              .where(and(
+                eq(commissionMatrix.gestorName, sellerPerm[0].gestorName),
+                eq(commissionMatrix.metaPercent, 120),
+                eq(commissionMatrix.priceTier, autoTier),
+              )).limit(1);
+            if (gestorMatrix.length > 0) {
+              autoComissaoPercentual = Number(gestorMatrix[0].commissionPercent);
+              comissaoFonte = "matriz_gestor";
+            }
+          }
+        }
+      }
+
+      // Step 4: Use auto commission (manual override only if explicitly > 0)
+      const comissaoPercentualFinal = (input.comissaoPercentual !== undefined && input.comissaoPercentual !== null && input.comissaoPercentual > 0)
+        ? input.comissaoPercentual
+        : autoComissaoPercentual;
+
+      const comissaoValor = valorVenda * (comissaoPercentualFinal / 100);
 
       // Calculate margin (including gastos adicionais)
       const totalCustos = custoMercadoriaTotal + input.freteValor + comissaoValor + impostos.totalImpostosValor + input.gastosAdicionais;
@@ -2217,8 +2266,12 @@ export const salesOrderRouter = router({
         },
         frete: input.freteValor,
         comissao: {
-          percentual: input.comissaoPercentual,
+          percentual: comissaoPercentualFinal,
           valor: comissaoValor,
+          autoPercentual: autoComissaoPercentual,
+          tier: autoTier,
+          fonte: comissaoFonte,
+          margemSemComissao,
         },
         gastosAdicionais: input.gastosAdicionais,
         margem: {

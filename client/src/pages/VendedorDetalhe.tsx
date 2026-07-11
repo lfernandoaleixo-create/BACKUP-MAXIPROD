@@ -5748,6 +5748,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             tipoContribuinte={tipoContribuinte}
             uf={uf}
             items={items}
+            sellerId={sellerId}
             condicaoPagamento={condicaoPagamento}
             setCondicaoPagamento={setCondicaoPagamento}
             valorFrete={valorFrete}

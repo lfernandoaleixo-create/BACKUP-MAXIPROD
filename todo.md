@@ -5224,3 +5224,8 @@
 - [x] Adicionar campo senhaPagador ao SOAP da SSW
 - [x] Adicionar timeouts (AbortSignal.timeout) nas chamadas fetch da Rodonaves
 - [ ] SSW: "Cliente não possui tabela de frete negociada" - problema comercial com a Camilo dos Santos
+- [x] Implementar comissão automática baseada na margem de lucro do pedido (faixas: <20% baixo, 20-25% médio, 25-29% médio-alto, >=29% projetado)
+- [x] Usar sempre 120% da meta para calcular comissão até novo comando
+- [x] Mostrar detalhes da comissão automática no frontend (faixa, margem sem comissão, tier)
+- [x] Permitir override manual da comissão com botão "Usar automático" para voltar
+- [x] Passar sellerId do VendedorDetalhe para CustosDeVendaStep
