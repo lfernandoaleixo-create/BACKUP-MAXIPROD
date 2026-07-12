@@ -4193,6 +4193,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     setBairro(client.bairro || "");
     setMunicipio(client.municipio || "");
     setUf(client.uf || "");
+    // Auto-sync UF to margin simulation bar (step 2)
+    if (client.uf) setMarginUfSimulacao(client.uf);
     setTelefone1(client.telefone1 || "");
     setTelefone2(client.telefone2 || "");
     setEmailContato(client.emailContato || "");

@@ -522,13 +522,18 @@ export default function CustosDeVendaStep({
         {expandedSection === "comissao" && (
           <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
             {/* Auto commission info */}
-            {costsData && (costsData.comissao as any).fonte !== "manual" && (costsData.comissao as any).autoPercentual > 0 && (
-              <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
-                <p className="text-[10px] text-blue-700 dark:text-blue-300 font-medium">
-                  Comissão automática: <strong>{(costsData.comissao as any).autoPercentual}%</strong>
-                  {" "}(Faixa: {(costsData.comissao as any).tier === "mostrado_alto" ? "Projetado (≥29%)" : (costsData.comissao as any).tier === "medio_alto" ? "Médio-Alto (25-29%)" : (costsData.comissao as any).tier === "medio" ? "Médio (20-25%)" : "Baixo (<20%)"}
-                  {" "}| Margem s/ comissão: {((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%
-                  {" "}| Meta: 120%)
+            {costsData && (costsData.comissao as any).fonte !== "manual" && (
+              <div className={`mb-2 p-2 rounded border ${(costsData.comissao as any).critico ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'}`}>
+                <p className={`text-[10px] font-medium ${(costsData.comissao as any).critico ? 'text-red-700 dark:text-red-300' : 'text-blue-700 dark:text-blue-300'}`}>
+                  {(costsData.comissao as any).critico ? (
+                    <>Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — Comissão zerada automaticamente</>
+                  ) : (
+                    <>Comissão automática: <strong>{(costsData.comissao as any).autoPercentual}%</strong>
+                    {" "}(Faixa: {(costsData.comissao as any).tier === "mostrado_alto" ? "Projetado (≥29%)" : (costsData.comissao as any).tier === "medio_alto" ? "Médio-Alto (25-29%)" : (costsData.comissao as any).tier === "medio" ? "Médio (20-25%)" : "Baixo (15-20%)"}
+                    {" "}| Margem s/ comissão: {((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%
+                    {" "}| Meta: 120%)
+                    </>
+                  )}
                 </p>
               </div>
             )}

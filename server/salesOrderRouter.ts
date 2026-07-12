@@ -2207,16 +2207,23 @@ export const salesOrderRouter = router({
       const margemSemComissao = valorVenda > 0 ? (lucroSemComissao / valorVenda) * 100 : 0;
 
       // Step 2: Determine price tier based on margin thresholds
+      // Faixas: <15% = crítico (sem comissão), 15-20% = baixo, 20-25% = médio, 25-29% = médio-alto, >=29% = projetado
       let autoTier: "baixo" | "medio" | "medio_alto" | "mostrado_alto" = "baixo";
+      let margemCritica = false; // below 15% = no commission
       if (margemSemComissao >= 29) autoTier = "mostrado_alto";
       else if (margemSemComissao >= 25) autoTier = "medio_alto";
       else if (margemSemComissao >= 20) autoTier = "medio";
-      else autoTier = "baixo";
+      else if (margemSemComissao >= 15) autoTier = "baixo";
+      else { autoTier = "baixo"; margemCritica = true; }
 
       // Step 3: Look up commission % from the matrix (always 120% meta for now)
       let autoComissaoPercentual = 0;
       let comissaoFonte = "manual";
-      if (input.sellerId) {
+      if (margemCritica) {
+        // Below 15% margin = critical, no commission
+        autoComissaoPercentual = 0;
+        comissaoFonte = "critico";
+      } else if (input.sellerId) {
         const sellerMatrixRow = await db.select().from(commissionMatrix)
           .where(and(
             eq(commissionMatrix.sellerId, input.sellerId),
@@ -2272,6 +2279,7 @@ export const salesOrderRouter = router({
           tier: autoTier,
           fonte: comissaoFonte,
           margemSemComissao,
+          critico: margemCritica,
         },
         gastosAdicionais: input.gastosAdicionais,
         margem: {

@@ -5229,3 +5229,6 @@
 - [x] Mostrar detalhes da comissão automática no frontend (faixa, margem sem comissão, tier)
 - [x] Permitir override manual da comissão com botão "Usar automático" para voltar
 - [x] Passar sellerId do VendedorDetalhe para CustosDeVendaStep
+- [x] Corrigir faixas de comissão: Baixo = 15-20%, Médio = 20-25%, Médio-Alto = 25-29%, Projetado >= 29%
+- [x] Debug: comissão mostrando 0 no frontend (sellerId não chegando ou tabela sem dados)
+- [x] Auto-detectar UF do cliente selecionado e preencher automaticamente no pedido
