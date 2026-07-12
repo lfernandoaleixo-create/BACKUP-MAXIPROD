@@ -4142,6 +4142,21 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
+  // Monthly weighted-average margin query (Level 3 commission)
+  const monthlyMarginInput = useMemo(() => ({
+    sellerId,
+    pendingOrder: items.length > 0 ? {
+      items: items.map(i => ({ codigoItem: i.codigoItem, quantidade: i.quantidade, precoUnitario: i.precoUnitario })),
+      ufDestino: uf || "MG",
+      tipoContribuinte: tipoContribuinte || "Contribuinte",
+      freteValor: Number(valorFrete) || 0,
+      gastosAdicionais: 0,
+    } : undefined,
+  }), [sellerId, items, uf, tipoContribuinte, valorFrete]);
+  const monthlyMarginQuery = trpc.salesOrders.getSellerMonthlyMargin.useQuery(
+    monthlyMarginInput,
+    { enabled: !isSimulation && items.length > 0, staleTime: 30 * 1000 }
+  );
   const utils = trpc.useUtils();
 
   // Margin bar state - controlled per seller via seller_permissions table
@@ -5947,21 +5962,112 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                 </p>
               </div>
             )}
+            {/* Monthly Reputation Bar - Level 3 Commission */}
+            {!isSimulation && monthlyMarginQuery.data && (() => {
+              const md = monthlyMarginQuery.data;
+              const margin = md.projectedMonthlyMargin ?? md.currentMonthlyMargin ?? 0;
+              const hasOrders = md.totalOrders > 0 || md.projectedMonthlyMargin !== null;
+              if (!hasOrders) return null;
+              const getMonthColor = (m: number) => {
+                if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
+                if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Baixo' };
+                if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Médio' };
+                if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Médio-Alto' };
+                return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Projetado' };
+              };
+              const mColor = getMonthColor(margin);
+              const barMin = -5;
+              const barMax = 40;
+              const clamped = Math.max(barMin, Math.min(barMax, margin));
+              const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+              return (
+                <div className={`rounded-lg p-3 border-2 ${md.canCloseOrder ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700' : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'}`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase">Reputação do Mês ({md.month})</span>
+                    </div>
+                    <span className={`text-sm font-black tabular-nums ${mColor.text}`}>
+                      {margin.toFixed(1)}% ({mColor.label})
+                    </span>
+                  </div>
+                  <div className="relative w-full">
+                    <div className="relative h-6 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
+                      <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                        <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                        <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                        <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                        <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                        <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                      </div>
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "44.4%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "55.5%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "66.6%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "75.5%" }} />
+                      <div
+                        className="absolute flex flex-col items-center"
+                        style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
+                      >
+                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white" />
+                        <div className="w-[2px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+                      </div>
+                    </div>
+                    <div className="relative w-full h-3 mt-0.5">
+                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
+                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
+                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
+                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-500">{md.totalOrders} pedido{md.totalOrders !== 1 ? 's' : ''} no mês</span>
+                      {md.currentMonthlyMargin !== null && md.projectedMonthlyMargin !== null && (
+                        <span className="text-slate-400">Atual: {md.currentMonthlyMargin.toFixed(1)}% → Projetado: {md.projectedMonthlyMargin.toFixed(1)}%</span>
+                      )}
+                    </div>
+                    {md.monthlyComissaoPercentual > 0 && (
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">Comissão Mensal: {md.monthlyComissaoPercentual}%</span>
+                    )}
+                  </div>
+                  {!md.canCloseOrder && (
+                    <div className="mt-2 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-md p-2 flex items-start gap-2">
+                      <Lock className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[11px] font-bold text-red-700 dark:text-red-300">Pedido Bloqueado</p>
+                        <p className="text-[10px] text-red-600 dark:text-red-400">
+                          Com este pedido, sua média ponderada mensal cairia para {md.projectedMonthlyMargin?.toFixed(1)}% (abaixo dos 15% mínimos).
+                          Ajuste os preços ou remova itens para manter a média acima de 15%.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            {!isSimulation && monthlyMarginQuery.isLoading && items.length > 0 && (
+              <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                Calculando reputação mensal...
+              </div>
+            )}
             <div className="flex justify-between pt-2">
               <button onClick={() => setStep("pagamento")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={createOrderMutation.isPending}
-                className={`px-5 py-2 ${isSimulation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5`}
+                disabled={createOrderMutation.isPending || (!isSimulation && monthlyMarginQuery.data?.canCloseOrder === false)}
+                className={`px-5 py-2 ${isSimulation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5`}
               >
                 {createOrderMutation.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (!isSimulation && monthlyMarginQuery.data?.canCloseOrder === false) ? (
+                  <Lock className="w-3.5 h-3.5" />
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                {isSimulation ? 'Concluir Simulação' : 'Pedido Concluído'}
+                {isSimulation ? 'Concluir Simulação' : (!isSimulation && monthlyMarginQuery.data?.canCloseOrder === false) ? 'Bloqueado (Margem Mensal)' : 'Pedido Concluído'}
               </button>
             </div>
           </div>
@@ -6193,13 +6299,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               </button>
               <button
                 onClick={() => doSubmitOrder(true)}
-                disabled={createOrderMutation.isPending}
-                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                disabled={createOrderMutation.isPending || (!isSimulation && monthlyMarginQuery.data?.canCloseOrder === false)}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
                 {createOrderMutation.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (!isSimulation && monthlyMarginQuery.data?.canCloseOrder === false) ? (
+                  <Lock className="w-3.5 h-3.5" />
                 ) : null}
-                Sim, Enviar Mesmo Assim
+                {(!isSimulation && monthlyMarginQuery.data?.canCloseOrder === false) ? 'Bloqueado (Margem Mensal)' : 'Sim, Enviar Mesmo Assim'}
               </button>
             </div>
           </div>

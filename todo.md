@@ -5237,3 +5237,9 @@
 - [x] Vendedor continua vendo a barra com valores fixos (5.85% comissão, 13% frete) por padrão
 - [x] Botão "Restaurar Simulação" para voltar aos valores fixos (5.85% / 13%)
 - [x] CustosDeVendaStep emite dados reais (comissão %, frete %, margem %) via callback onRealCostsCalculated
+- [x] Backend: procedure getSellerMonthlyMargin - calcula média ponderada (valor × margem) de todos os pedidos do vendedor no mês
+- [x] Backend: verificar se incluindo o novo pedido a média ponderada mensal cai abaixo de 15% (bloqueio)
+- [x] Backend: determinar faixa de comissão mensal (Nível 3) baseada na média ponderada mensal do vendedor (tabela 120% meta)
+- [x] Frontend: barra "Reputação do Mês" mostrando a média ponderada mensal do vendedor
+- [x] Frontend: bloqueio de fechamento do pedido quando média ponderada mensal < 15% com o novo pedido incluído
+- [x] Frontend: mostrar comissão mensal (Nível 3) como a definitiva para pagamento

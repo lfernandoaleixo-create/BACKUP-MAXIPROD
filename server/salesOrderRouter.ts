@@ -2386,4 +2386,268 @@ export const salesOrderRouter = router({
         },
       };
     }),
+
+  /**
+   * Level 3 Commission: Monthly Weighted-Average Margin
+   * Calculates the seller's month-to-date weighted average margin across all orders.
+   * Used to:
+   * 1. Determine if a new order can be closed (monthly avg must stay >= 15%)
+   * 2. Determine the definitive monthly commission tier
+   * 
+   * Logic: For each order in the month, recalculate margin using real-time costs,
+   * then compute weighted average = sum(orderValue * orderMargin) / sum(orderValue)
+   */
+  getSellerMonthlyMargin: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      // Optional: include a "pending" order to simulate what happens if it's added
+      pendingOrder: z.object({
+        items: z.array(z.object({
+          codigoItem: z.string(),
+          quantidade: z.number(),
+          precoUnitario: z.number(),
+        })),
+        ufDestino: z.string().default("MG"),
+        tipoContribuinte: z.string().default("Contribuinte"),
+        freteValor: z.number().default(0),
+        gastosAdicionais: z.number().default(0),
+      }).optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Get seller info
+      const [seller] = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.id, input.sellerId));
+      if (!seller) throw new Error("Vendedor não encontrado");
+
+      // Get current month range (São Paulo timezone)
+      const now = new Date();
+      const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const monthStart = new Date(spNow.getFullYear(), spNow.getMonth(), 1);
+      const monthStartStr = monthStart.toISOString().split("T")[0];
+
+      // Get all non-simulation orders for this seller in the current month
+      const orders = await db.select({
+        id: salesOrderRequests.id,
+        totalProdutos: salesOrderRequests.totalProdutos,
+        totalPedido: salesOrderRequests.totalPedido,
+        valorFrete: salesOrderRequests.valorFrete,
+        uf: salesOrderRequests.uf,
+        tipoContribuinte: salesOrderRequests.tipoContribuinte,
+        status: salesOrderRequests.status,
+        createdAt: salesOrderRequests.createdAt,
+      }).from(salesOrderRequests)
+        .where(and(
+          eq(salesOrderRequests.sellerId, input.sellerId),
+          sql`${salesOrderRequests.status} != 'simulacao'`,
+          sql`${salesOrderRequests.createdAt} >= ${monthStartStr}`,
+        ));
+
+      // Get real-time costs (same as calculateSalesCosts)
+      const { importRouter } = await import("./importRouter");
+      const { createCallerFactory } = await import("./_core/trpc");
+      const createCaller = createCallerFactory(importRouter);
+      const importCaller = createCaller({ user: null, req: {} as any, res: {} as any });
+      
+      let realTimeCosts: any[] = [];
+      try {
+        realTimeCosts = await Promise.race([
+          importCaller.getRealTimeCosts(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+        ]);
+      } catch (e) {
+        console.warn('[getSellerMonthlyMargin] getRealTimeCosts timed out');
+      }
+
+      // Build cost map
+      const costMap = new Map<string, { cost: number; tipoProduto: string }>();
+      // Get product type info
+      const stockTypeRows = await db.select({
+        codigoItem: stockItems.codigoItem,
+        superGrupoCodigo: stockItems.superGrupoCodigo,
+        grupoCodigo: stockItems.grupoCodigo,
+      }).from(stockItems);
+      const productTypeMap: Record<string, string> = {};
+      for (const row of stockTypeRows) {
+        const sgc = row.superGrupoCodigo || "";
+        const gc = row.grupoCodigo || "";
+        if (sgc === "12") productTypeMap[row.codigoItem] = "importado";
+        else if (sgc === "05") productTypeMap[row.codigoItem] = "industrializado";
+        else if (sgc === "16" && (gc === "18" || gc === "19")) productTypeMap[row.codigoItem] = "industrializado";
+        else productTypeMap[row.codigoItem] = "importado";
+      }
+      for (const item of realTimeCosts) {
+        let cost = 0;
+        if (item.custoProjetado > 0 && item.temPatio) cost = item.custoProjetado;
+        else if (item.custoReal > 0) cost = item.custoReal;
+        else if (item.custoEstimativa > 0 && item.temNavegando) cost = item.custoEstimativa;
+        if (cost > 0) {
+          costMap.set(item.codigoItem, { cost, tipoProduto: productTypeMap[item.codigoItem] || "importado" });
+        }
+      }
+
+      // Get quarterly revenue for IRPJ
+      const quarterStart = new Date(spNow.getFullYear(), Math.floor(spNow.getMonth() / 3) * 3, 1);
+      const quarterStartStr = quarterStart.toISOString().split("T")[0];
+      const [revenueRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${salesOrders.valorTotalPedido} AS DECIMAL(15,2))), 0)`,
+      }).from(salesOrders)
+        .where(sql`${salesOrders.dataEmissao} >= ${quarterStartStr}`);
+      const faturamentoTrimestral = Number(revenueRow?.total || 0);
+
+      // Calculate margin for each order
+      const orderMargins: Array<{ orderId: number; valorPedido: number; margemPercentual: number }> = [];
+
+      for (const order of orders) {
+        // Get items for this order
+        const orderItems = await db.select().from(salesOrderRequestItems)
+          .where(eq(salesOrderRequestItems.orderId, order.id));
+        
+        if (orderItems.length === 0) continue;
+
+        const valorVenda = orderItems.reduce((sum, item) => sum + Number(item.precoUnitario) * Number(item.quantidade), 0);
+        if (valorVenda <= 0) continue;
+
+        // Calculate cost of goods
+        let custoMercadoria = 0;
+        for (const item of orderItems) {
+          const costData = costMap.get(item.codigoItem);
+          if (costData && costData.cost > 0) {
+            custoMercadoria += costData.cost * Number(item.quantidade);
+          }
+        }
+
+        // Calculate taxes
+        const ufDest = order.uf || "MG";
+        // Determine predominant product type for this order
+        const importCount = orderItems.filter(i => (costMap.get(i.codigoItem)?.tipoProduto || "importado") === "importado").length;
+        const tipoProduto = importCount >= orderItems.length / 2 ? "importado" : "industrializado";
+        
+        const impostos = calcularImpostos({
+          valorVenda,
+          ufDestino: ufDest,
+          tipoProduto: tipoProduto as TipoProduto,
+          tipoContribuinte: normalizeTipoContribuinte(order.tipoContribuinte),
+          faturamentoTrimestral,
+        });
+
+        const frete = Number(order.valorFrete || 0);
+        // For monthly margin, we DON'T include commission in the cost (margin sem comissão)
+        // because the commission itself depends on this monthly margin
+        const totalCustos = custoMercadoria + frete + impostos.totalImpostosValor;
+        const lucro = valorVenda - totalCustos;
+        const margem = (lucro / valorVenda) * 100;
+
+        orderMargins.push({
+          orderId: order.id,
+          valorPedido: valorVenda,
+          margemPercentual: margem,
+        });
+      }
+
+      // Calculate weighted average of existing orders
+      let sumValueXMargin = orderMargins.reduce((sum, o) => sum + o.valorPedido * o.margemPercentual, 0);
+      let sumValue = orderMargins.reduce((sum, o) => sum + o.valorPedido, 0);
+      const currentMonthlyMargin = sumValue > 0 ? sumValueXMargin / sumValue : null;
+
+      // If there's a pending order, simulate what happens if we add it
+      let projectedMonthlyMargin: number | null = null;
+      let pendingOrderMargin: number | null = null;
+      let canCloseOrder = true;
+
+      if (input.pendingOrder) {
+        const po = input.pendingOrder;
+        const valorVendaPending = po.items.reduce((sum, item) => sum + item.precoUnitario * item.quantidade, 0);
+        
+        if (valorVendaPending > 0) {
+          // Calculate pending order margin
+          let custoMercPending = 0;
+          for (const item of po.items) {
+            const costData = costMap.get(item.codigoItem);
+            if (costData && costData.cost > 0) {
+              custoMercPending += costData.cost * item.quantidade;
+            }
+          }
+
+          const importCountPending = po.items.filter(i => (costMap.get(i.codigoItem)?.tipoProduto || "importado") === "importado").length;
+          const tipoProdutoPending = importCountPending >= po.items.length / 2 ? "importado" : "industrializado";
+
+          const impostosPending = calcularImpostos({
+            valorVenda: valorVendaPending,
+            ufDestino: po.ufDestino,
+            tipoProduto: tipoProdutoPending as TipoProduto,
+            tipoContribuinte: normalizeTipoContribuinte(po.tipoContribuinte),
+            faturamentoTrimestral,
+          });
+
+          const totalCustosPending = custoMercPending + po.freteValor + impostosPending.totalImpostosValor + po.gastosAdicionais;
+          const lucroPending = valorVendaPending - totalCustosPending;
+          pendingOrderMargin = (lucroPending / valorVendaPending) * 100;
+
+          // Project monthly margin including this order
+          const newSumValueXMargin = sumValueXMargin + valorVendaPending * pendingOrderMargin;
+          const newSumValue = sumValue + valorVendaPending;
+          projectedMonthlyMargin = newSumValue > 0 ? newSumValueXMargin / newSumValue : pendingOrderMargin;
+
+          // Block if projected monthly margin < 15%
+          canCloseOrder = projectedMonthlyMargin >= 15;
+        }
+      }
+
+      // Determine monthly commission tier based on current (or projected) margin
+      const marginForTier = projectedMonthlyMargin ?? currentMonthlyMargin ?? 0;
+      let monthlyTier: "baixo" | "medio" | "medio_alto" | "mostrado_alto" = "baixo";
+      let monthlyMargemCritica = false;
+      if (marginForTier >= 29) monthlyTier = "mostrado_alto";
+      else if (marginForTier >= 25) monthlyTier = "medio_alto";
+      else if (marginForTier >= 20) monthlyTier = "medio";
+      else if (marginForTier >= 15) monthlyTier = "baixo";
+      else { monthlyTier = "baixo"; monthlyMargemCritica = true; }
+
+      // Look up commission from matrix (same logic as calculateSalesCosts)
+      let monthlyComissaoPercentual = 0;
+      if (!monthlyMargemCritica) {
+        const sellerMatrixRow = await db.select().from(commissionMatrix)
+          .where(and(
+            eq(commissionMatrix.sellerId, input.sellerId),
+            eq(commissionMatrix.metaPercent, 120),
+            eq(commissionMatrix.priceTier, monthlyTier),
+          )).limit(1);
+        if (sellerMatrixRow.length > 0) {
+          monthlyComissaoPercentual = Number(sellerMatrixRow[0].commissionPercent);
+        } else {
+          const gestorMatrix = await db.select().from(commissionMatrix)
+            .where(and(
+              eq(commissionMatrix.gestorName, seller.gestorName || ""),
+              eq(commissionMatrix.metaPercent, 120),
+              eq(commissionMatrix.priceTier, monthlyTier),
+            )).limit(1);
+          if (gestorMatrix.length > 0) {
+            monthlyComissaoPercentual = Number(gestorMatrix[0].commissionPercent);
+          }
+        }
+      }
+
+      return {
+        sellerId: input.sellerId,
+        sellerName: seller.sellerName,
+        month: `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, '0')}`,
+        totalOrders: orderMargins.length,
+        totalValue: sumValue,
+        currentMonthlyMargin, // null if no orders yet
+        projectedMonthlyMargin, // null if no pending order provided
+        pendingOrderMargin, // margin of the pending order alone
+        canCloseOrder,
+        monthlyTier,
+        monthlyComissaoPercentual,
+        monthlyMargemCritica,
+        orderBreakdown: orderMargins.map(o => ({
+          orderId: o.orderId,
+          valor: o.valorPedido,
+          margem: o.margemPercentual,
+        })),
+      };
+    }),
 });
