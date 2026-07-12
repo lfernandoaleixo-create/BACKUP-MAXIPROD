@@ -61,6 +61,8 @@ import {
   Pencil,
   Download,
   FileSpreadsheet,
+  Calculator,
+  RotateCcw,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -4143,7 +4145,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const utils = trpc.useUtils();
 
   // Margin bar state - controlled per seller via seller_permissions table
-  const { operator: marginOperator } = useOperator();
+  const { operator: marginOperator, hasAccess: marginHasAccess } = useOperator();
+  // Real costs from CustosDeVendaStep (step 3)
+  const [realComissaoPerc, setRealComissaoPerc] = useState<number | null>(null);
+  const [realFretePerc, setRealFretePerc] = useState<number | null>(null);
+  const [realMargemPerc, setRealMargemPerc] = useState<number | null>(null);
+  const [marginRecalculated, setMarginRecalculated] = useState(false);
   const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
   const currentSellerPerm = sellerPermsQuery.data?.find(
     (p: any) => p.sellerName.toLowerCase() === sellerName.toLowerCase()
@@ -5227,6 +5234,42 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
                     </div>
                   );
                 })()}
+                {/* Gestor-only: Recalcular Margem Real button */}
+                {showRealCostBar && realComissaoPerc !== null && (
+                  <div className="px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 border-t border-violet-200 dark:border-violet-700 flex items-center justify-between gap-2">
+                    {!marginRecalculated ? (
+                      <button
+                        onClick={() => {
+                          if (realComissaoPerc !== null) setMarginComissao(realComissaoPerc);
+                          if (realFretePerc !== null) setMarginFrete(realFretePerc);
+                          setMarginRecalculated(true);
+                        }}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-bold rounded-md transition-colors cursor-pointer"
+                      >
+                        <Calculator className="w-3 h-3" />
+                        Recalcular Margem Real
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setMarginComissao(5.85);
+                          setMarginFrete(13);
+                          setMarginRecalculated(false);
+                        }}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-500 hover:bg-slate-600 text-white text-[10px] font-bold rounded-md transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Restaurar Simulação (5.85% / 13%)
+                      </button>
+                    )}
+                    <span className="text-[9px] text-violet-600 dark:text-violet-300 font-medium">
+                      {marginRecalculated
+                        ? `Real: ${realComissaoPerc?.toFixed(1)}% com. / ${realFretePerc?.toFixed(1)}% frete`
+                        : `Custos reais disponíveis: ${realComissaoPerc?.toFixed(1)}% com. / ${realFretePerc?.toFixed(1)}% frete`
+                      }
+                    </span>
+                  </div>
+                )}
                 <div className="max-h-[200px] overflow-y-auto px-2 pt-2 space-y-1.5">
                   {items.map((item, idx) => (
                     <div key={idx} className={`rounded-lg border ${showMarginBar && item.precoVendedor && item.precoVendedor > 0 ? (() => {
@@ -5773,6 +5816,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
             setPrevisaoEntregaPedido={setPrevisaoEntregaPedido}
             onBack={() => setStep("produtos")}
             onNext={() => setStep("revisao")}
+            onRealCostsCalculated={(data) => {
+              setRealComissaoPerc(data.comissaoPerc);
+              setRealFretePerc(data.fretePerc);
+              setRealMargemPerc(data.margemReal);
+            }}
           />
         )}
 

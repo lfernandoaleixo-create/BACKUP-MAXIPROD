@@ -7,7 +7,7 @@
  * 4. Transportadora / Frete (simulação com 3 APIs)
  * 5. Gastos Adicionais (campo manual)
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Truck, Loader2, AlertCircle, CheckCircle2, Package,
@@ -60,6 +60,7 @@ interface CustosDeVendaStepProps {
   setPrevisaoEntregaPedido: (v: string) => void;
   onBack: () => void;
   onNext: () => void;
+  onRealCostsCalculated?: (data: { comissaoPerc: number; fretePerc: number; margemReal: number }) => void;
 }
 
 function formatCurrency(value: number) {
@@ -156,6 +157,7 @@ export default function CustosDeVendaStep({
   onBack,
   onNext,
   sellerId,
+  onRealCostsCalculated,
 }: CustosDeVendaStepProps) {
   const [comissaoPercOverride, setComissaoPercOverride] = useState<number | null>(null);
   const [gastosAdicionais, setGastosAdicionais] = useState(0);
@@ -207,6 +209,20 @@ export default function CustosDeVendaStep({
     },
     { enabled: items.length > 0, staleTime: 60 * 1000, retry: 1, retryDelay: 2000 }
   );
+
+  // Emit real costs to parent when costsData changes
+  const onRealCostsRef = useRef(onRealCostsCalculated);
+  onRealCostsRef.current = onRealCostsCalculated;
+  useEffect(() => {
+    if (costsData && onRealCostsRef.current) {
+      const freteVal = Number(valorFrete) || 0;
+      const valorVenda = costsData.margem.valorVenda;
+      const fretePerc = valorVenda > 0 ? (freteVal / valorVenda) * 100 : 0;
+      const comissaoPerc = costsData.comissao.percentual;
+      const margemReal = costsData.margem.margemPercentual;
+      onRealCostsRef.current({ comissaoPerc, fretePerc, margemReal });
+    }
+  }, [costsData, valorFrete]);
 
   // Freight quote mutation
   const quoteAllMutation = trpc.salesOrders.quoteAllCarriers.useMutation({

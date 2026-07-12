@@ -5232,3 +5232,8 @@
 - [x] Corrigir faixas de comissão: Baixo = 15-20%, Médio = 20-25%, Médio-Alto = 25-29%, Projetado >= 29%
 - [x] Debug: comissão mostrando 0 no frontend (sellerId não chegando ou tabela sem dados)
 - [x] Auto-detectar UF do cliente selecionado e preencher automaticamente no pedido
+- [x] Botão "Recalcular Margem Real" visível apenas para gestores (Guilherme, Fernando) no step 2
+- [x] Quando clicado, atualiza a barra de Reputação do Pedido com comissão real (da tabela) e frete real (cotado)
+- [x] Vendedor continua vendo a barra com valores fixos (5.85% comissão, 13% frete) por padrão
+- [x] Botão "Restaurar Simulação" para voltar aos valores fixos (5.85% / 13%)
+- [x] CustosDeVendaStep emite dados reais (comissão %, frete %, margem %) via callback onRealCostsCalculated
