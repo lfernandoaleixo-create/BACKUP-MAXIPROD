@@ -5302,3 +5302,8 @@
   Causa: getProductsForSeller usava apenas seller_product_visibility para filtrar.
   Vendedores sem overrides manuais mostravam TODOS os itens do estoque (incluindo os sem preço na tabela).
   Fix: Agora filtra também pela tabela de preços do vendedor. Só mostra produtos que têm preço configurado.
+
+## Feature: Botão baixar PDF do cadastro do cliente
+- [x] Adicionar botão "Baixar PDF" na seção "Clientes Cadastrados (sem pedido)" para Vitória, Juvenal e Guilherme
+- [x] PDF deve conter todas as informações do cliente (razão social, fantasia, CNPJ, CEP, endereço, telefone, email, contato, segmento, regime tributário, forma cobrança, cond. pagamento, região, perfil, produtos, probabilidade, tamanho, fornecedor atual, redespacho)
+  Implementado via window.print() com layout HTML formatado. Botão azul "Baixar PDF" ao lado do "Exportar Maxiprod".

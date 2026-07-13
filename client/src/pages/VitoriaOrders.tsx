@@ -996,45 +996,163 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
             </div>
           )}
 
-          {/* Export button */}
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              setExportingClientId(client.id);
-              try {
-                const result = await exportVendorClientMutation.mutateAsync({ clientId: client.id });
-                const byteCharacters = atob(result.base64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+          {/* Action buttons */}
+          <div className="mt-3 flex gap-2">
+            {/* PDF Download button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Generate PDF client-side
+                const lines: string[] = [];
+                lines.push("CADASTRO DE CLIENTE");
+                lines.push("=".repeat(50));
+                lines.push("");
+                if (client.razaoSocial) lines.push(`Razão Social: ${client.razaoSocial}`);
+                if (client.nomeFantasia) lines.push(`Nome Fantasia: ${client.nomeFantasia}`);
+                if (client.cnpjCpf) lines.push(`CNPJ/CPF: ${client.cnpjCpf}`);
+                if (client.inscricaoEstadual) lines.push(`Inscrição Estadual: ${client.inscricaoEstadual}`);
+                if (client.inscricaoMunicipal) lines.push(`Inscrição Municipal: ${client.inscricaoMunicipal}`);
+                if (client.inscricaoSuframa) lines.push(`SUFRAMA: ${client.inscricaoSuframa}`);
+                if (client.cnaeFiscal) lines.push(`CNAE: ${client.cnaeFiscal}`);
+                lines.push("");
+                lines.push("--- ENDEREÇO ---");
+                if (client.cep) lines.push(`CEP: ${client.cep}`);
+                if (endereco) lines.push(`Endereço: ${endereco}`);
+                lines.push("");
+                lines.push("--- CONTATO ---");
+                if (client.telefone1) lines.push(`Telefone: ${client.telefone1}${client.telefone2 ? " / " + client.telefone2 : ""}`);
+                if (client.email) lines.push(`Email: ${client.email}`);
+                if (client.emailNfe) lines.push(`Email NFe: ${client.emailNfe}`);
+                if (client.nomeContato) lines.push(`Contato: ${client.nomeContato}`);
+                if (client.website) lines.push(`Website: ${client.website}`);
+                lines.push("");
+                lines.push("--- COMERCIAL ---");
+                if (client.segmento) lines.push(`Segmento: ${client.segmento}`);
+                if (client.regimeTributario) lines.push(`Regime Tributário: ${client.regimeTributario}`);
+                if (client.situacaoFiscalEspecial && client.situacaoFiscalEspecial !== "Nenhuma") lines.push(`Sit. Fiscal Especial: ${client.situacaoFiscalEspecial}`);
+                if (client.formaCobranca) lines.push(`Forma Cobrança: ${client.formaCobranca}`);
+                if (client.condicaoPagamento) lines.push(`Cond. Pagamento: ${client.condicaoPagamento}`);
+                if (client.tabelaPrecos) lines.push(`Tabela Preços: ${client.tabelaPrecos}`);
+                if (client.limiteCredito) lines.push(`Limite Crédito: R$ ${client.limiteCredito}`);
+                if (client.regiao) lines.push(`Região: ${client.regiao}`);
+                if (client.perfil) lines.push(`Perfil: ${client.perfil}`);
+                if (client.produtos) lines.push(`Produtos: ${client.produtos}`);
+                if (client.probabilidadeNegocio) lines.push(`Probabilidade: ${client.probabilidadeNegocio}`);
+                if (client.tamanho) lines.push(`Tamanho: ${client.tamanho}`);
+                if (client.fornecedorAtual) lines.push(`Fornecedor Atual: ${client.fornecedorAtual}`);
+                if (client.observacoes) { lines.push(""); lines.push(`Observações: ${client.observacoes}`); }
+                if (client.possuiRedespacho === 1) {
+                  lines.push("");
+                  lines.push("--- REDESPACHO ---");
+                  if (client.redespachoCnpj) lines.push(`CNPJ: ${client.redespachoCnpj}`);
+                  if (client.redespachoRazaoSocial) lines.push(`Razão: ${client.redespachoRazaoSocial}`);
+                  if (client.redespachoCep) lines.push(`CEP: ${client.redespachoCep}`);
+                  if (enderecoRedespacho) lines.push(`Endereço: ${enderecoRedespacho}`);
+                  if (client.redespachoTelefone) lines.push(`Tel: ${client.redespachoTelefone}`);
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = result.filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                toast.success(`Planilha exportada: ${result.clientName}`);
-              } catch (err: any) {
-                toast.error(err.message || "Erro ao exportar");
-              } finally {
-                setExportingClientId(null);
-              }
-            }}
-            disabled={exportingClientId === client.id}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-lg hover:bg-emerald-200 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {exportingClientId === client.id ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="w-4 h-4" />
-            )}
-            {exportingClientId === client.id ? "Exportando..." : "Exportar Maxiprod"}
-          </button>
+                if (client.enderecoEntregaMesmo === 0) {
+                  lines.push("");
+                  lines.push("--- ENDEREÇO DE ENTREGA ---");
+                  if (client.entregaCep) lines.push(`CEP: ${client.entregaCep}`);
+                  if (enderecoEntrega) lines.push(`Endereço: ${enderecoEntrega}`);
+                  if (client.entregaTelefone) lines.push(`Tel: ${client.entregaTelefone}`);
+                }
+                lines.push("");
+                lines.push(`Vendedor: ${client.sellerName || "N/A"}`);
+                lines.push(`Data Cadastro: ${new Date(client.createdAt).toLocaleDateString("pt-BR")}`);
+                
+                // Create a printable HTML and trigger print as PDF
+                const printWindow = window.open("", "_blank");
+                if (printWindow) {
+                  printWindow.document.write(`
+                    <html><head><title>Cadastro - ${client.razaoSocial}</title>
+                    <style>
+                      body { font-family: Arial, sans-serif; padding: 40px; font-size: 12px; line-height: 1.6; }
+                      h1 { font-size: 16px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+                      h2 { font-size: 13px; color: #555; margin-top: 20px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                      .field { margin: 4px 0; }
+                      .label { font-weight: bold; color: #333; }
+                      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+                    </style></head><body>
+                    <h1>CADASTRO DE CLIENTE</h1>
+                    <div class="grid">
+                    ${client.razaoSocial ? '<div class="field"><span class="label">Razão Social:</span> ' + client.razaoSocial + '</div>' : ''}
+                    ${client.nomeFantasia ? '<div class="field"><span class="label">Nome Fantasia:</span> ' + client.nomeFantasia + '</div>' : ''}
+                    ${client.cnpjCpf ? '<div class="field"><span class="label">CNPJ/CPF:</span> ' + client.cnpjCpf + '</div>' : ''}
+                    ${client.inscricaoEstadual ? '<div class="field"><span class="label">IE:</span> ' + client.inscricaoEstadual + '</div>' : ''}
+                    ${client.cep ? '<div class="field"><span class="label">CEP:</span> ' + client.cep + '</div>' : ''}
+                    ${endereco ? '<div class="field" style="grid-column:span 2"><span class="label">Endereço:</span> ' + endereco + '</div>' : ''}
+                    ${client.telefone1 ? '<div class="field"><span class="label">Telefone:</span> ' + client.telefone1 + (client.telefone2 ? ' / ' + client.telefone2 : '') + '</div>' : ''}
+                    ${client.email ? '<div class="field"><span class="label">Email:</span> ' + client.email + '</div>' : ''}
+                    ${client.nomeContato ? '<div class="field"><span class="label">Contato:</span> ' + client.nomeContato + '</div>' : ''}
+                    ${client.segmento ? '<div class="field"><span class="label">Segmento:</span> ' + client.segmento + '</div>' : ''}
+                    ${client.regimeTributario ? '<div class="field"><span class="label">Regime Tributário:</span> ' + client.regimeTributario + '</div>' : ''}
+                    ${client.formaCobranca ? '<div class="field"><span class="label">Forma Cobrança:</span> ' + client.formaCobranca + '</div>' : ''}
+                    ${client.condicaoPagamento ? '<div class="field"><span class="label">Cond. Pagamento:</span> ' + client.condicaoPagamento + '</div>' : ''}
+                    ${client.regiao ? '<div class="field"><span class="label">Região:</span> ' + client.regiao + '</div>' : ''}
+                    ${client.perfil ? '<div class="field"><span class="label">Perfil:</span> ' + client.perfil + '</div>' : ''}
+                    ${client.produtos ? '<div class="field" style="grid-column:span 2"><span class="label">Produtos:</span> ' + client.produtos + '</div>' : ''}
+                    ${client.probabilidadeNegocio ? '<div class="field"><span class="label">Probabilidade:</span> ' + client.probabilidadeNegocio + '</div>' : ''}
+                    ${client.tamanho ? '<div class="field"><span class="label">Tamanho:</span> ' + client.tamanho + '</div>' : ''}
+                    ${client.fornecedorAtual ? '<div class="field"><span class="label">Fornecedor Atual:</span> ' + client.fornecedorAtual + '</div>' : ''}
+                    </div>
+                    ${client.possuiRedespacho === 1 ? '<h2>REDESPACHO</h2><div class="grid">' + (client.redespachoCnpj ? '<div class="field"><span class="label">CNPJ:</span> ' + client.redespachoCnpj + '</div>' : '') + (client.redespachoRazaoSocial ? '<div class="field"><span class="label">Razão:</span> ' + client.redespachoRazaoSocial + '</div>' : '') + (client.redespachoCep ? '<div class="field"><span class="label">CEP:</span> ' + client.redespachoCep + '</div>' : '') + (enderecoRedespacho ? '<div class="field" style="grid-column:span 2"><span class="label">Endereço:</span> ' + enderecoRedespacho + '</div>' : '') + (client.redespachoTelefone ? '<div class="field"><span class="label">Tel:</span> ' + client.redespachoTelefone + '</div>' : '') + '</div>' : ''}
+                    ${client.enderecoEntregaMesmo === 0 ? '<h2>ENDEREÇO DE ENTREGA</h2><div class="grid">' + (client.entregaCep ? '<div class="field"><span class="label">CEP:</span> ' + client.entregaCep + '</div>' : '') + (enderecoEntrega ? '<div class="field" style="grid-column:span 2"><span class="label">Endereço:</span> ' + enderecoEntrega + '</div>' : '') + (client.entregaTelefone ? '<div class="field"><span class="label">Tel:</span> ' + client.entregaTelefone + '</div>' : '') + '</div>' : ''}
+                    ${client.observacoes ? '<h2>OBSERVAÇÕES</h2><p>' + client.observacoes + '</p>' : ''}
+                    <hr style="margin-top:20px">
+                    <p style="color:#888;font-size:10px">Vendedor: ${client.sellerName || 'N/A'} | Cadastrado em: ${new Date(client.createdAt).toLocaleDateString('pt-BR')}</p>
+                    </body></html>
+                  `);
+                  printWindow.document.close();
+                  setTimeout(() => { printWindow.print(); }, 300);
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 rounded-lg hover:bg-blue-200 transition-colors cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Baixar PDF
+            </button>
+
+            {/* Export Maxiprod button */}
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                setExportingClientId(client.id);
+                try {
+                  const result = await exportVendorClientMutation.mutateAsync({ clientId: client.id });
+                  const byteCharacters = atob(result.base64);
+                  const byteNumbers = new Array(byteCharacters.length);
+                  for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                  }
+                  const byteArray = new Uint8Array(byteNumbers);
+                  const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = result.filename;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                  toast.success(`Planilha exportada: ${result.clientName}`);
+                } catch (err: any) {
+                  toast.error(err.message || "Erro ao exportar");
+                } finally {
+                  setExportingClientId(null);
+                }
+              }}
+              disabled={exportingClientId === client.id}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-lg hover:bg-emerald-200 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {exportingClientId === client.id ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4" />
+              )}
+              {exportingClientId === client.id ? "Exportando..." : "Exportar Maxiprod"}
+            </button>
+          </div>
         </div>
       )}
     </div>
