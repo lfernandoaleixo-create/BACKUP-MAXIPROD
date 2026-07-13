@@ -65,6 +65,7 @@ import {
   Calculator,
   RotateCcw,
   Eye,
+  ClipboardCheck,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -73,7 +74,7 @@ import { ProductMarginBar, MarginParamsEditor } from "@/components/ProductMargin
 import { RealCostMarginBar, MarginSimulationParams } from "@/components/RealCostMarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
 
-type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
+type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes" | "aprovacoes";
 
 interface DashboardItem {
   codigoItem: string;
@@ -114,7 +115,7 @@ export interface VendedorDetalheProps {
 }
 
 export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
-  const { sellerMode = false, externalSellerId, onLogout } = props;
+  const { sellerMode = false, externalSellerId, onLogout, gestorSelfMode = false, gestorName: gestorNameProp } = props;
   const params = useParams<{ sellerId: string }>();
   const [, setLocation] = useLocation();
   const sellerId = externalSellerId || parseInt(params.sellerId || "0", 10);
@@ -122,8 +123,9 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
   const urlParams = new URLSearchParams(window.location.search);
   const urlTab = urlParams.get("tab") as TabType | null;
   const urlSection = urlParams.get("section") as string | null;
-  const validTabs: TabType[] = ["estoque", "clientes", "tabela_precos", "catalogos", "pedidos", "vendas", "configuracoes"];
-  const [activeTab, setActiveTab] = useState<TabType>(urlTab && validTabs.includes(urlTab) ? urlTab : "estoque");
+  const validTabs: TabType[] = ["estoque", "clientes", "tabela_precos", "catalogos", "pedidos", "vendas", "configuracoes", "aprovacoes"];
+  const defaultTab: TabType = gestorSelfMode ? "estoque" : (urlTab && validTabs.includes(urlTab) ? urlTab : "estoque");
+  const [activeTab, setActiveTab] = useState<TabType>(urlTab && validTabs.includes(urlTab) ? urlTab : defaultTab);
   // Section filter for configuracoes tab: shows only the relevant sub-section
   const [configSection] = useState<string | null>(urlSection);
 
@@ -166,26 +168,34 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
     );
   }
 
-  const allTabs: { id: TabType; label: string; icon: typeof Package }[] = [
-    { id: "estoque", label: "Estoque", icon: Package },
-    { id: "clientes", label: "Cadastro de Cliente", icon: UserPlus },
-    { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
-    { id: "catalogos", label: "Catálogos", icon: FolderOpen },
-    { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
-    { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
-  ];
+  const allTabs: { id: TabType; label: string; icon: typeof Package }[] = gestorSelfMode
+    ? [
+        { id: "estoque", label: "Estoque", icon: Package },
+        { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
+        { id: "catalogos", label: "Catálogos", icon: FolderOpen },
+        { id: "vendas", label: "Comissão/Vendas", icon: BarChart3 },
+        { id: "aprovacoes", label: "Aprovações", icon: ClipboardCheck },
+      ]
+    : [
+        { id: "estoque", label: "Estoque", icon: Package },
+        { id: "clientes", label: "Cadastro de Cliente", icon: UserPlus },
+        { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
+        { id: "catalogos", label: "Catálogos", icon: FolderOpen },
+        { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
+        { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
+      ];
 
   const tabs = allTabs;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-      {!sellerMode && <TopNav />}
+      {!sellerMode && !gestorSelfMode && <TopNav />}
 
       <main className="container py-4 md:py-6 space-y-4 pb-20 md:pb-6">
         {/* Header com botão voltar e info do vendedor */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
           <div className="flex items-center gap-3">
-            {!sellerMode ? (
+            {!sellerMode && !gestorSelfMode ? (
               <button
                 onClick={() => setLocation("/gestao-comercial")}
                 className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors"
@@ -235,14 +245,14 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
                 <span className="text-[10px] font-bold leading-tight">Atualizar</span>
               </button>
             )}
-            {sellerMode && onLogout && (
+            {(sellerMode || gestorSelfMode) && onLogout && (
               <button
                 onClick={onLogout}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors ml-1 shadow-sm"
-                title="Sair do aplicativo"
+                title={gestorSelfMode ? "Voltar ao Hub" : "Sair do aplicativo"}
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span className="text-[10px] font-bold leading-tight">Sair</span>
+                <span className="text-[10px] font-bold leading-tight">{gestorSelfMode ? "Voltar" : "Sair"}</span>
               </button>
             )}
           </div>
@@ -296,6 +306,9 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           <SellerSalesView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
         )}
 
+        {activeTab === "aprovacoes" && gestorSelfMode && (
+          <GestorAprovacoesMini gestorName={gestorNameProp || seller.gestorName} />
+        )}
 
       </main>
     </div>
@@ -315,6 +328,233 @@ function PlaceholderTab({ title, description }: { title: string; description: st
         <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">{title}</h3>
         <p className="text-sm text-slate-400 dark:text-slate-500 max-w-sm">{description}</p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * ============================================================
+ * ABA APROVAÇÕES - Mini painel de aprovação de pedidos (para gestorSelfMode)
+ * Mostra pedidos dos vendedores subordinados filtrados por gestorName
+ * ============================================================
+ */
+function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
+  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado">("pendente");
+  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
+    { status: filter === "todos" ? "todos" : filter, gestorName },
+    { staleTime: 30 * 1000 }
+  );
+
+  const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
+    { orderId: expandedOrder! },
+    { enabled: expandedOrder !== null }
+  );
+
+  const approveMutation = trpc.salesOrders.approveOrder.useMutation();
+  const rejectMutation = trpc.salesOrders.rejectOrder.useMutation();
+  const utils = trpc.useUtils();
+
+  const handleApprove = (orderId: number) => {
+    approveMutation.mutate(
+      { orderId, aprovadoPor: gestorName },
+      {
+        onSuccess: () => {
+          utils.salesOrders.listOrders.invalidate();
+        },
+      }
+    );
+  };
+
+  const handleReject = (orderId: number) => {
+    if (!rejectReason.trim()) return;
+    rejectMutation.mutate(
+      { orderId, aprovadoPor: gestorName, motivoRejeicao: rejectReason.trim() },
+      {
+        onSuccess: () => {
+          utils.salesOrders.listOrders.invalidate();
+          setRejectingOrder(null);
+          setRejectReason("");
+        },
+      }
+    );
+  };
+
+  const stats = {
+    pendentes: orders?.filter((o: any) => o.status === "pendente").length || 0,
+    aprovados: orders?.filter((o: any) => o.status === "aprovado").length || 0,
+    rejeitados: orders?.filter((o: any) => o.status === "rejeitado").length || 0,
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+          <p className="text-lg font-bold text-amber-700">{stats.pendentes}</p>
+          <p className="text-[10px] text-amber-600">Pendentes</p>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
+          <p className="text-lg font-bold text-emerald-700">{stats.aprovados}</p>
+          <p className="text-[10px] text-emerald-600">Aprovados</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+          <p className="text-lg font-bold text-red-700">{stats.rejeitados}</p>
+          <p className="text-[10px] text-red-600">Rejeitados</p>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2">
+        {(["pendente", "aprovado", "rejeitado", "todos"] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              filter === f ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {f === "pendente" ? "Pendentes" : f === "aprovado" ? "Aprovados" : f === "rejeitado" ? "Rejeitados" : "Todos"}
+          </button>
+        ))}
+        <button onClick={() => refetch()} className="ml-auto p-1.5 text-slate-400 hover:text-teal-600 rounded-lg cursor-pointer">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Orders list */}
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <RefreshCw className="w-5 h-5 text-teal-500 animate-spin" />
+        </div>
+      ) : !orders || orders.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+          <ClipboardCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">Nenhum pedido {filter !== "todos" ? filter : ""} encontrado</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {orders.map((order: any) => (
+            <div key={order.id} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${
+              order.status === "pendente" && order.temPrecoAbaixoMinimo
+                ? "border-red-200"
+                : order.status === "pendente"
+                ? "border-amber-200"
+                : order.status === "aprovado"
+                ? "border-emerald-200"
+                : "border-red-200"
+            }`}>
+              <div
+                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                className="p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-slate-400">#{order.orderNumber || order.id}</span>
+                      <span className="text-sm font-bold text-slate-800 truncate">{order.razaoSocial}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-slate-500">{order.sellerName}</span>
+                      {order.municipio && <span className="text-[10px] text-slate-400">{order.municipio}/{order.uf}</span>}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-slate-800">
+                      {Number(order.totalPedido).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                      order.status === "pendente" ? "bg-amber-100 text-amber-700"
+                      : order.status === "aprovado" ? "bg-emerald-100 text-emerald-700"
+                      : "bg-red-100 text-red-700"
+                    }`}>
+                      {order.status === "pendente" ? "AGUARDANDO" : order.status === "aprovado" ? "APROVADO" : "REJEITADO"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expanded details */}
+              {expandedOrder === order.id && orderDetails && (
+                <div className="border-t border-slate-100 p-4 bg-slate-50">
+                  <div className="space-y-2 mb-3">
+                    {orderDetails.items.map((item: any) => (
+                      <div key={item.id} className={`flex items-center justify-between text-xs p-2 rounded-lg ${
+                        item.abaixoDoMinimo ? "bg-red-50 border border-red-100" : "bg-white border border-slate-100"
+                      }`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-700 truncate">{item.descricaoItem}</p>
+                          <p className="text-[10px] text-slate-400">{item.quantidade} {item.unidadeMedida || "un"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{Number(item.precoUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                          {item.abaixoDoMinimo && item.precoMinimo && (
+                            <p className="text-[10px] text-red-500">Mín: {Number(item.precoMinimo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Action buttons for pending orders */}
+                  {order.status === "pendente" && (
+                    <div className="flex gap-2 mt-3">
+                      {rejectingOrder === order.id ? (
+                        <div className="flex-1 space-y-2">
+                          <input
+                            type="text"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="Motivo da rejeição..."
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleReject(order.id)}
+                              disabled={!rejectReason.trim()}
+                              className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-medium disabled:opacity-50 cursor-pointer"
+                            >
+                              Confirmar Rejeição
+                            </button>
+                            <button
+                              onClick={() => { setRejectingOrder(null); setRejectReason(""); }}
+                              className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleApprove(order.id)}
+                            disabled={approveMutation.isPending}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            Aprovar
+                          </button>
+                          <button
+                            onClick={() => setRejectingOrder(order.id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                            Rejeitar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

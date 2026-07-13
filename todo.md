@@ -5384,3 +5384,8 @@
 - [x] No painel de vendedor, link direto para /vendedor (app de vendedor deles próprios)
 - [x] Renato precisa aprovar pedidos do Rafael (e outros vendedores dele) - filtro por gestorName implementado
 - [x] Backend listOrders agora aceita filtro gestorName para filtrar pedidos por gestor
+
+## Feature: Hub de seleção para Renato/Juvenal no app de vendedor
+- [x] Quando Renato ou Juvenal logam no /vendedor, mostrar hub com 2 cards: "Painel do Gestor" e "Painel do Vendedor"
+- [x] "Painel do Gestor" abre configuração dos vendedores (estoque, tabela, catálogos, comissão) + pedidos para aprovação
+- [x] "Painel do Vendedor" abre o app de vendedor normal deles (para vender)
