@@ -204,6 +204,13 @@ export default function GestaoComercial() {
     return names;
   }, [representantesQuery.data]);
 
+    // Query pending orders count for gestores
+  const pendingOrdersQuery = trpc.salesOrders.listOrders.useQuery(
+    { status: "pendente", gestorName: isRenato ? "RENATO LEDESMA" : isJuvenal ? "JUVENAL TEIXEIRA" : undefined },
+    { staleTime: 30 * 1000, enabled: showNavigationHub && (isRenato || isJuvenal), refetchInterval: 60 * 1000 }
+  );
+  const pendingCount = pendingOrdersQuery.data?.length || 0;
+
   // If Vitória, show nothing (redirect will happen)
   if (shouldRedirectToPedidos) return null;
 
@@ -272,14 +279,29 @@ export default function GestaoComercial() {
             {/* Aprovações de Pedidos - para Renato/Juvenal que precisam aprovar pedidos dos seus vendedores */}
             {isGestorVendedor && gestorNameForHub && (
               <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(gestorNameForHub)}`}>
-                <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-sm p-6 hover:shadow-lg hover:border-orange-400 transition-all cursor-pointer group">
+                <div className={`bg-white dark:bg-slate-800 rounded-xl border-2 shadow-sm p-6 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden ${
+                  pendingCount > 0
+                    ? "border-red-400 dark:border-red-500 animate-pulse shadow-red-100 dark:shadow-red-900/20"
+                    : "border-orange-200 dark:border-orange-700 hover:border-orange-400"
+                }`}>
+                  {pendingCount > 0 && (
+                    <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
+                      {pendingCount}
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50 transition-colors">
-                      <ClipboardCheck className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                      pendingCount > 0
+                        ? "bg-red-50 dark:bg-red-900/30 group-hover:bg-red-100 dark:group-hover:bg-red-900/50"
+                        : "bg-orange-50 dark:bg-orange-900/30 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50"
+                    }`}>
+                      <ClipboardCheck className={`w-6 h-6 ${pendingCount > 0 ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`} />
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Aprovações de Pedidos</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Pedidos dos meus vendedores aguardando aprovação</p>
+                      <p className={`text-xs ${pendingCount > 0 ? "text-red-500 dark:text-red-400 font-semibold" : "text-slate-500 dark:text-slate-400"}`}>
+                        {pendingCount > 0 ? `${pendingCount} pedido${pendingCount > 1 ? 's' : ''} aguardando aprovação!` : "Nenhum pedido pendente"}
+                      </p>
                     </div>
                   </div>
                 </div>

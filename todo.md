@@ -5425,3 +5425,6 @@
 - [x] Guilherme, Fernando e Bruno devem ver TODOS os vendedores no Painel dos Vendedores (não apenas os de seu gestor)
 - [x] Ao clicar em qualquer vendedor, devem ver todas as informações completas
 - [x] Remover a aba "Vendedores" de dentro do Painel dos Gestores (cada painel separado)
+
+## Card "Aprovações de Pedidos" piscar quando há pendentes
+- [x] Card de Aprovações de Pedidos deve piscar/alertar quando há pedidos pendentes para o gestor
