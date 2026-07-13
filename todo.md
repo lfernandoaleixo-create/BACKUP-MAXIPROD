@@ -5325,3 +5325,7 @@
 - [x] Fix 404 no "Painel dos Vendedores" (link /vendedor-gestor não funciona como rota wouter) - corrigido usando <a> em vez de <Link> para forçar navegação full-page
 - [x] Mover aba "Vendedores" (lista de vendedores com configurações) do Painel dos Gestores para o Painel dos Vendedores - mantido no GestaoComercialFull com abas Gestores/Vendedores
 - [x] Mostrar hub de 4 painéis também para Bruno e Fernando (não apenas Juvenal e Guilherme) - adicionado isBruno e isFernando ao showNavigationHub
+
+## Feature: Baixar pedido de venda em PDF quando concluído
+- [x] Adicionar botão de download PDF no pedido de venda concluído (similar ao PDF de cadastro de cliente)
+- [x] Gerar PDF com dados do pedido: cliente, itens, quantidades, valores, data, vendedor

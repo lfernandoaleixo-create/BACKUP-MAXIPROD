@@ -794,16 +794,95 @@ export default function VitoriaOrders() {
                       )}
 
                       {isLancado && (
-                        <div className="mt-3 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                          <p className="text-[10px] text-green-700 dark:text-green-400 flex items-center gap-1">
-                            <CheckCheck className="w-3 h-3" />
-                            Lançado no Maxiprod em {order.vitoriaLancadoAt ? new Date(order.vitoriaLancadoAt).toLocaleString("pt-BR") : "—"}
-                          </p>
-                          {order.vitoriaRecebidoAt && (
-                            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
-                              Recebido em {new Date(order.vitoriaRecebidoAt).toLocaleString("pt-BR")}
+                        <div className="mt-3">
+                          <div className="p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <p className="text-[10px] text-green-700 dark:text-green-400 flex items-center gap-1">
+                              <CheckCheck className="w-3 h-3" />
+                              Lançado no Maxiprod em {order.vitoriaLancadoAt ? new Date(order.vitoriaLancadoAt).toLocaleString("pt-BR") : "—"}
                             </p>
-                          )}
+                            {order.vitoriaRecebidoAt && (
+                              <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+                                Recebido em {new Date(order.vitoriaRecebidoAt).toLocaleString("pt-BR")}
+                              </p>
+                            )}
+                          </div>
+                          {/* PDF Download button for completed orders */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const items = orderDetails && orderDetails.order.id === order.id ? orderDetails.items : [];
+                              const printWindow = window.open("", "_blank");
+                              if (printWindow) {
+                                printWindow.document.write(`
+                                  <html><head><title>Pedido #${order.orderNumber || order.id} - ${order.razaoSocial || order.nomeFantasia}</title>
+                                  <style>
+                                    body { font-family: Arial, sans-serif; padding: 30px; font-size: 11px; line-height: 1.5; color: #333; }
+                                    h1 { font-size: 18px; color: #1a5c3a; border-bottom: 2px solid #1a5c3a; padding-bottom: 8px; margin-bottom: 20px; }
+                                    h2 { font-size: 13px; color: #555; margin-top: 18px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                                    .header-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
+                                    .header-info div { font-size: 11px; }
+                                    .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 16px; }
+                                    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+                                    .field { margin: 3px 0; }
+                                    .label { font-weight: bold; color: #555; font-size: 10px; }
+                                    .value { color: #111; }
+                                    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10px; }
+                                    th { background: #f0f9f4; color: #1a5c3a; padding: 6px 8px; text-align: left; border: 1px solid #ddd; font-size: 10px; }
+                                    td { padding: 5px 8px; border: 1px solid #eee; }
+                                    tr:nth-child(even) { background: #fafafa; }
+                                    .total-row { font-weight: bold; background: #f0f9f4 !important; }
+                                    .total-row td { border-top: 2px solid #1a5c3a; }
+                                    .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888; }
+                                    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; background: #dcfce7; color: #166534; }
+                                  </style></head><body>
+                                  <h1>PEDIDO DE VENDA #${order.orderNumber || order.id}</h1>
+                                  <div class="header-info">
+                                    <div>
+                                      <strong>Cliente:</strong> ${order.razaoSocial || order.nomeFantasia || "—"}<br/>
+                                      ${order.cnpjCpf ? '<strong>CNPJ/CPF:</strong> ' + order.cnpjCpf + '<br/>' : ''}
+                                      ${order.municipio ? '<strong>Cidade:</strong> ' + order.municipio + (order.uf ? '/' + order.uf : '') + '<br/>' : ''}
+                                      ${order.telefone1 ? '<strong>Telefone:</strong> ' + order.telefone1 + '<br/>' : ''}
+                                    </div>
+                                    <div style="text-align:right">
+                                      <strong>Vendedor:</strong> ${order.sellerName || "—"}<br/>
+                                      <strong>Data:</strong> ${order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR") : "—"}<br/>
+                                      <span class="status-badge">LANÇADO</span>
+                                    </div>
+                                  </div>
+
+                                  <h2>ITENS DO PEDIDO</h2>
+                                  <table>
+                                    <thead>
+                                      <tr><th>Produto</th><th style="text-align:center">Qtd</th><th style="text-align:center">Un</th><th style="text-align:right">Preço Unit.</th><th style="text-align:right">Total</th></tr>
+                                    </thead>
+                                    <tbody>
+                                      ${items.map((item: any) => '<tr><td>' + (item.descricaoItem || '—') + '</td><td style="text-align:center">' + Number(item.quantidade).toFixed(0) + '</td><td style="text-align:center">' + (item.unidadeMedida || 'un') + '</td><td style="text-align:right">' + formatCurrency(Number(item.precoUnitario)) + '</td><td style="text-align:right">' + formatCurrency(Number(item.totalItem)) + '</td></tr>').join('')}
+                                      <tr class="total-row"><td colspan="4" style="text-align:right">TOTAL DO PEDIDO</td><td style="text-align:right">${formatCurrency(order.totalPedido)}</td></tr>
+                                    </tbody>
+                                  </table>
+
+                                  ${order.condicaoPagamento || order.formaCobranca || order.tabelaPrecos ? '<h2>CONDIÇÕES COMERCIAIS</h2><div class="grid">' + (order.condicaoPagamento ? '<div class="field"><span class="label">Cond. Pagamento:</span> <span class="value">' + order.condicaoPagamento + '</span></div>' : '') + (order.formaCobranca ? '<div class="field"><span class="label">Forma Cobrança:</span> <span class="value">' + order.formaCobranca + '</span></div>' : '') + (order.tabelaPrecos ? '<div class="field"><span class="label">Tabela Preços:</span> <span class="value">' + order.tabelaPrecos + '</span></div>' : '') + '</div>' : ''}
+
+                                  ${order.observacoes ? '<h2>OBSERVAÇÕES</h2><p>' + order.observacoes + '</p>' : ''}
+
+                                  ${order.possuiRedespacho ? '<h2>REDESPACHO</h2><div class="grid">' + (order.redespachoCnpj ? '<div class="field"><span class="label">CNPJ:</span> ' + order.redespachoCnpj + '</div>' : '') + (order.redespachoRazaoSocial ? '<div class="field"><span class="label">Razão Social:</span> ' + order.redespachoRazaoSocial + '</div>' : '') + (order.redespachoLogradouro ? '<div class="field"><span class="label">Endereço:</span> ' + [order.redespachoLogradouro, order.redespachoNumero, order.redespachoBairro, order.redespachoCidade, order.redespachoUf].filter(Boolean).join(', ') + '</div>' : '') + (order.redespachoTelefone ? '<div class="field"><span class="label">Telefone:</span> ' + order.redespachoTelefone + '</div>' : '') + '</div>' : ''}
+
+                                  ${!order.enderecoEntregaMesmo ? '<h2>ENDEREÇO DE ENTREGA (DIFERENTE)</h2><div class="grid">' + (order.entregaCep ? '<div class="field"><span class="label">CEP:</span> ' + order.entregaCep + '</div>' : '') + (order.entregaLogradouro ? '<div class="field"><span class="label">Endereço:</span> ' + [order.entregaLogradouro, order.entregaNumero, order.entregaBairro, order.entregaCidade, order.entregaUf].filter(Boolean).join(', ') + '</div>' : '') + (order.entregaTelefone ? '<div class="field"><span class="label">Telefone:</span> ' + order.entregaTelefone + '</div>' : '') + '</div>' : ''}
+
+                                  <div class="footer">
+                                    <p>Pedido gerado em ${order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR") : "—"} | Lançado em ${order.vitoriaLancadoAt ? new Date(order.vitoriaLancadoAt).toLocaleDateString("pt-BR") : "—"} | Grupo Fox</p>
+                                  </div>
+                                  </body></html>
+                                `);
+                                printWindow.document.close();
+                                setTimeout(() => { printWindow.print(); }, 300);
+                              }
+                            }}
+                            className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer"
+                          >
+                            <Download className="w-4 h-4" />
+                            Baixar Pedido em PDF
+                          </button>
                         </div>
                       )}
 
