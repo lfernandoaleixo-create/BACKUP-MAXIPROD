@@ -151,9 +151,10 @@ export default function GestaoComercial() {
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
   const isJuvenal = operator?.name === "Juvenal";
   const isGuilherme = operator?.name === "Guilherme";
-  const shouldRedirectToPedidos = isVitoria || isJuvenal || isGuilherme;
+  const shouldRedirectToPedidos = isVitoria; // Only Vitória auto-redirects
+  const showNavigationHub = isJuvenal || isGuilherme; // Juvenal/Guilherme see navigation hub
 
-  // Auto-redirect Vitória, Juvenal and Guilherme to Pedidos page
+  // Auto-redirect Vitória to Pedidos page
   useEffect(() => {
     if (shouldRedirectToPedidos) {
       setLocation("/gestao-comercial/pedidos-operador");
@@ -163,12 +164,12 @@ export default function GestaoComercial() {
   // Fetch seller list from Maxiprod
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
-    enabled: !shouldRedirectToPedidos,
+    enabled: !shouldRedirectToPedidos && !showNavigationHub,
   });
 
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
-    enabled: !shouldRedirectToPedidos,
+    enabled: !shouldRedirectToPedidos && !showNavigationHub,
   });
 
   // Get vendedores for a specific gestor from Maxiprod data
@@ -200,8 +201,84 @@ export default function GestaoComercial() {
     return names;
   }, [representantesQuery.data]);
 
-  // If Vitória/Juvenal/Guilherme, show nothing (redirect will happen)
+  // If Vitória, show nothing (redirect will happen)
   if (shouldRedirectToPedidos) return null;
+
+  // Juvenal/Guilherme see a navigation hub with 4 panels
+  if (showNavigationHub) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+        <TopNav />
+        <main className="container py-6 md:py-10 space-y-6">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Gestão Comercial</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Selecione o painel que deseja acessar</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+            {/* Painel dos Gestores */}
+            <Link href="/gestao-comercial/painel-gestores">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-200 dark:border-teal-700 shadow-sm p-6 hover:shadow-lg hover:border-teal-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 transition-colors">
+                    <Crown className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Painel dos Gestores</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Configurações, senhas e tabelas de preço</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* Painel dos Vendedores */}
+            <Link href="/vendedor-gestor">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-sm p-6 hover:shadow-lg hover:border-blue-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Painel dos Vendedores</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">App de vendas, estoque e pedidos</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* Painel de Cadastro de Clientes */}
+            <Link href="/gestao-comercial/pedidos-operador">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 shadow-sm p-6 hover:shadow-lg hover:border-emerald-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
+                    <UserPlus className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Cadastro de Clientes</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Clientes cadastrados pelos vendedores</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* Painel de Pedidos de Vendas */}
+            <Link href="/gestao-comercial/pedidos-operador">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-amber-200 dark:border-amber-700 shadow-sm p-6 hover:shadow-lg hover:border-amber-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
+                    <ShoppingCart className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Pedidos de Vendas</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Pedidos aprovados para processamento</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -2577,6 +2654,106 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// GESTAO COMERCIAL FULL - For Juvenal/Guilherme accessing via navigation hub
+// Renders the full GestaoComercial page without the hub/redirect logic
+// ============================================================
+export function GestaoComercialFull() {
+  const [view, setView] = useState<GestaoView>("gestores");
+
+  // Fetch seller list from Maxiprod
+  const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
+    staleTime: 30 * 1000,
+  });
+
+  // Get vendedores for a specific gestor from Maxiprod data
+  const getVendedoresForGestor = (gestorName: string): string[] => {
+    if (!representantesQuery.data) return [];
+    const gestores = representantesQuery.data.gestores as GestorGroup[];
+    const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
+    const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
+    if (grupo) return grupo.vendedores;
+    const normalized = maxiprodName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const grupoNorm = gestores.find(g => 
+      g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
+    );
+    return grupoNorm?.vendedores || [];
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <TopNav />
+
+      <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
+        {/* Back button + Sub-navigation tabs */}
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
+          <Link href="/gestao-comercial">
+            <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          </Link>
+          <button
+            onClick={() => setView("gestores")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+              view === "gestores"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            }`}
+          >
+            <Crown className="w-4 h-4" />
+            Gestores
+          </button>
+          <button
+            onClick={() => setView("vendedores")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+              view === "vendedores"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Vendedores
+          </button>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Exportar Maxiprod button */}
+          <ExportMaxiprodButton />
+        </div>
+
+        {/* Content */}
+        {view === "gestores" && (
+          <GestoresTab
+            getVendedoresForGestor={getVendedoresForGestor}
+            permissions={permissionsQuery.data || []}
+            isLoading={representantesQuery.isLoading}
+            isError={representantesQuery.isError}
+            errorMessage={representantesQuery.error?.message}
+            onRefresh={() => {
+              representantesQuery.refetch();
+              permissionsQuery.refetch();
+            }}
+            isFetching={representantesQuery.isFetching}
+          />
+        )}
+        {view === "vendedores" && (
+          <VendedoresTab
+            getVendedoresForGestor={getVendedoresForGestor}
+            permissions={permissionsQuery.data || []}
+            isLoading={representantesQuery.isLoading}
+          />
+        )}
+
+      </main>
     </div>
   );
 }

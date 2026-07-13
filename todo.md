@@ -5311,4 +5311,12 @@
 ## Feature: Painel de clientes cadastrados e pedidos de venda para Juvenal e Guilherme
 - [x] Dar acesso ao Juvenal e Guilherme ao mesmo painel que a Vitória tem (clientes cadastrados sem pedido + pedidos de venda)
 - [x] Permitir que Juvenal e Guilherme vejam e acompanhem o andamento dos pedidos e cadastros
-  Implementado: GestaoComercial.tsx auto-redireciona Juvenal e Guilherme para /gestao-comercial/pedidos-operador (mesmo painel da Vitória). Botão "Voltar" aponta para / para evitar loop de redirecionamento.
+  REVISADO: Em vez de auto-redirecionar, criar tela com 4 painéis de navegação.
+
+## Feature: Tela de navegação com 4 painéis para Juvenal e Guilherme
+- [x] Reverter auto-redirect do GestaoComercial.tsx para Juvenal e Guilherme
+- [x] Criar tela com 4 cards de navegação: Painel dos Gestores, Painel dos Vendedores, Painel de Cadastro de Clientes, Painel de Pedidos de Vendas
+- [x] Painel dos Gestores: link para /gestao-comercial/painel-gestores (gestão comercial completa com botão voltar)
+- [x] Painel dos Vendedores: link para /vendedor-gestor (app de vendas completo)
+- [x] Painel de Cadastro de Clientes: link para /gestao-comercial/pedidos-operador
+- [x] Painel de Pedidos de Vendas: link para /gestao-comercial/pedidos-operador

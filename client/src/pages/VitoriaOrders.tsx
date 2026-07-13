@@ -195,7 +195,7 @@ export default function VitoriaOrders() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/">
+            <Link href="/gestao-comercial">
               <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer">
                 <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
               </button>

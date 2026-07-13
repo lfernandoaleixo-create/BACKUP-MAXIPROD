@@ -17,7 +17,7 @@ import Financial from "./pages/Financial";
 import Production from "./pages/Production";
 import SettingsPage from "./pages/SettingsPage";
 import SellerApp from "./pages/SellerApp";
-import GestaoComercial from "./pages/GestaoComercial";
+import GestaoComercial, { GestaoComercialFull } from "./pages/GestaoComercial";
 import VendedorDetalhe from "./pages/VendedorDetalhe";
 import Importacao from "./pages/Importacao";
 import GestorAprovacoes from "./pages/GestorAprovacoes";
@@ -30,6 +30,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/vendas"} component={Sales} />
       <Route path={"/gestao-comercial"} component={GestaoComercial} />
+      <Route path={"/gestao-comercial/painel-gestores"} component={GestaoComercialFull} />
       <Route path={"/gestao-comercial/vendedor/:sellerId"} component={VendedorDetalhe} />
       <Route path={"/gestao-comercial/aprovacoes"} component={GestorAprovacoes} />
       <Route path={"/gestao-comercial/pedidos-operador"} component={VitoriaOrders} />
