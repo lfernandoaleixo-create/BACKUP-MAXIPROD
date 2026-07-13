@@ -3441,9 +3441,66 @@ export const salesRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      const products = await db.select().from(sellerProductVisibility)
+      // 1. Get manual overrides from seller_product_visibility
+      const manualProducts = await db.select().from(sellerProductVisibility)
         .where(eq(sellerProductVisibility.sellerId, input.sellerId));
-      return products;
+      const manualCodes = new Set(manualProducts.map(p => p.productCode));
+
+      // 2. Also get products from the seller's price table (same logic as getEstoqueMatrix)
+      const seller = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.id, input.sellerId))
+        .limit(1);
+      if (seller.length > 0) {
+        const allTables = await db.select().from(priceTables);
+        // Match price table: direct code or name fallback
+        let matchedTable = seller[0].priceTableCode
+          ? allTables.find(t => t.codigo === seller[0].priceTableCode)
+          : null;
+        if (!matchedTable) {
+          const nameParts = seller[0].sellerName.toUpperCase().split(' ');
+          matchedTable = allTables.find(t => {
+            const desc = t.descricao.toUpperCase();
+            return nameParts.some(part => part.length > 3 && desc.includes(part));
+          });
+        }
+        if (matchedTable) {
+          // Get all items from this price table
+          const tableItems = await db.select({
+            itemCodigo: priceTableItems.itemCodigo,
+          }).from(priceTableItems)
+            .where(eq(priceTableItems.priceTableId, matchedTable.id));
+
+          // Get stock products to filter (only madeira + bambu)
+          const dashData = await db.select().from(dashboardData).limit(1);
+          const stockCodes = new Set<string>();
+          if (dashData.length > 0) {
+            try {
+              const items = JSON.parse(dashData[0].dataJson as string);
+              for (const item of items) {
+                if (item.isChild === true) continue;
+                if ((item.grupo === "industrializacao" && item.subgrupo === "madeira") ||
+                    (item.grupo === "importacao_revenda" && item.subgrupo === "bambu")) {
+                  stockCodes.add(item.codigoItem);
+                }
+              }
+            } catch {}
+          }
+
+          // Add price table products that are in stock and not already in manual overrides
+          for (const ti of tableItems) {
+            if (stockCodes.has(ti.itemCodigo) && !manualCodes.has(ti.itemCodigo)) {
+              manualProducts.push({
+                id: 0,
+                sellerId: input.sellerId,
+                productCode: ti.itemCodigo,
+                visible: true,
+                createdAt: new Date(),
+              } as any);
+            }
+          }
+        }
+      }
+      return manualProducts;
     }),
 
   /**
@@ -3536,9 +3593,48 @@ export const salesRouter = router({
         return { success: false, error: "Acesso não autorizado. Aguarde liberação do gestor." };
       }
 
-      // Buscar produtos visíveis
+      // Buscar produtos visíveis (manual overrides + price table)
       const products = await db.select().from(sellerProductVisibility)
         .where(eq(sellerProductVisibility.sellerId, seller.id));
+      const manualCodes = new Set(products.map(p => p.productCode));
+
+      // Also include products from seller's price table
+      const allTables = await db.select().from(priceTables);
+      let matchedTable = seller.priceTableCode
+        ? allTables.find(t => t.codigo === seller.priceTableCode)
+        : null;
+      if (!matchedTable) {
+        const nameParts = seller.sellerName.toUpperCase().split(' ');
+        matchedTable = allTables.find(t => {
+          const desc = t.descricao.toUpperCase();
+          return nameParts.some(part => part.length > 3 && desc.includes(part));
+        });
+      }
+      let priceTableCodes: string[] = [];
+      if (matchedTable) {
+        const ptItems = await db.select({ itemCodigo: priceTableItems.itemCodigo })
+          .from(priceTableItems)
+          .where(eq(priceTableItems.priceTableId, matchedTable.id));
+        // Get stock codes to filter
+        const dashData = await db.select().from(dashboardData).limit(1);
+        const stockCodes = new Set<string>();
+        if (dashData.length > 0) {
+          try {
+            const items = JSON.parse(dashData[0].dataJson as string);
+            for (const item of items) {
+              if (item.isChild === true) continue;
+              if ((item.grupo === "industrializacao" && item.subgrupo === "madeira") ||
+                  (item.grupo === "importacao_revenda" && item.subgrupo === "bambu")) {
+                stockCodes.add(item.codigoItem);
+              }
+            }
+          } catch {}
+        }
+        priceTableCodes = ptItems
+          .filter(ti => stockCodes.has(ti.itemCodigo) && !manualCodes.has(ti.itemCodigo))
+          .map(ti => ti.itemCodigo);
+      }
+      const allVisibleCodes = [...manualCodes, ...priceTableCodes];
 
       // Buscar catálogos visíveis
       const visibleCatalogs = await db.select().from(sellerCatalogVisibility)
@@ -3557,7 +3653,7 @@ export const salesRouter = router({
           name: seller.sellerName,
           gestor: seller.gestorName,
         },
-        visibleProducts: products.map(p => p.productCode),
+        visibleProducts: allVisibleCodes,
         catalogs: sellerCatalogs.map(c => ({ id: c.id, name: c.name, folder: c.folder, url: c.url })),
       };
     }),

@@ -5268,3 +5268,9 @@
 - [x] Barra de margem/cores (ProductMarginBar) + cálculo de custos (CustosDeVendaStep) visível APENAS para Guilherme, Fernando e Juvenal
 - [x] Vendedores veem apenas botão "Concluir Pedido" sem barras de margem e sem step de custos
 - [x] Notificar imediatamente Vitória, Juvenal e Guilherme quando um pedido for concluído por vendedor
+
+## Bug: Estoque do Rafael não aparece quando ele loga com a senha dele
+- [x] Investigar e corrigir por que o estoque não carrega na view do vendedor quando ele loga
+  Causa: getSellerProducts e sellerLogin só consultavam seller_product_visibility (manual overrides).
+  Rafael não tinha overrides manuais - seus 38 produtos vinham da tabela de preços.
+  Fix: ambos endpoints agora incluem produtos da tabela de preços do vendedor (mesma lógica do getEstoqueMatrix).
