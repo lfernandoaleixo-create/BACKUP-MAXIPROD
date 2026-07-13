@@ -5411,3 +5411,9 @@
 - [x] Pedidos do Rafael não aparecem na tela de aprovações do Renato (fix: GestorAprovacoes inline rendering - remover TopNav/min-h-screen wrapper quando usado como componente)
 - [x] Mostrar descrição COMPLETA dos pedidos nas aprovações (cadastro do cliente + todos os detalhes do pedido)
 - [x] Vitória também precisa ver todas as informações completas após aprovação do gestor
+
+## Fix: Remover aprovação automática de pedidos
+- [x] Pedidos NÃO devem ser aprovados automaticamente (mesmo com preço OK)
+- [x] Todos os pedidos devem ficar como "pendente" até aprovação manual do gestor
+- [x] Gestor deve ter opção de Aprovar ou Recusar (com campo de motivo na recusa)
+- [x] Mostrar código do item (codigoItem) ao lado da descrição nos itens do pedido

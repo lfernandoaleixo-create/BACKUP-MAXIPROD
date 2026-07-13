@@ -305,11 +305,13 @@ export default function GestorAprovacoes(props: any = {}) {
               const isRed = order.temPrecoAbaixoMinimo;
               const borderColor = isPending && isRed
                 ? "border-l-4 border-l-red-500"
+                : isPending
+                ? "border-l-4 border-l-amber-400"
                 : order.status === "aprovado"
                 ? "border-l-4 border-l-green-500"
                 : order.status === "rejeitado"
                 ? "border-l-4 border-l-slate-400"
-                : "border-l-4 border-l-green-400";
+                : "border-l-4 border-l-blue-400";
 
               return (
                 <div
@@ -324,18 +326,21 @@ export default function GestorAprovacoes(props: any = {}) {
                     {/* Status Icon */}
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isPending && isRed ? "bg-red-100 dark:bg-red-900/30" :
+                      isPending ? "bg-amber-100 dark:bg-amber-900/30" :
                       order.status === "aprovado" ? "bg-green-100 dark:bg-green-900/30" :
                       order.status === "rejeitado" ? "bg-slate-100 dark:bg-slate-700" :
-                      "bg-green-50 dark:bg-green-900/20"
+                      "bg-blue-50 dark:bg-blue-900/20"
                     }`}>
                       {isPending && isRed ? (
                         <AlertTriangle className="w-4.5 h-4.5 text-red-600" />
+                      ) : isPending ? (
+                        <Clock className="w-4.5 h-4.5 text-amber-600" />
                       ) : order.status === "aprovado" ? (
                         <CheckCircle2 className="w-4.5 h-4.5 text-green-600" />
                       ) : order.status === "rejeitado" ? (
                         <XCircle className="w-4.5 h-4.5 text-slate-500" />
                       ) : (
-                        <CheckCircle2 className="w-4.5 h-4.5 text-green-500" />
+                        <CheckCircle2 className="w-4.5 h-4.5 text-blue-500" />
                       )}
                     </div>
 
@@ -349,13 +354,13 @@ export default function GestorAprovacoes(props: any = {}) {
                         {/* Status Badge */}
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           isPending && isRed ? "bg-red-100 text-red-700" :
-                          isPending ? "bg-green-100 text-green-700" :
+                          isPending ? "bg-amber-100 text-amber-700" :
                           order.status === "aprovado" ? "bg-green-50 text-green-600" :
                           order.status === "rejeitado" ? "bg-red-50 text-red-600" :
                           "bg-blue-50 text-blue-600"
                         }`}>
-                          {isPending && isRed ? "PREÇO ABAIXO - AGUARDANDO" :
-                           isPending ? "OK - APROVADO AUTO" :
+                          {isPending && isRed ? "PREÇO ABAIXO - PENDENTE" :
+                           isPending ? "PENDENTE" :
                            order.status === "aprovado" ? "APROVADO" :
                            order.status === "rejeitado" ? "RECUSADO" :
                            "PROCESSADO"}
@@ -433,7 +438,7 @@ export default function GestorAprovacoes(props: any = {}) {
                                 <p className={`text-[11px] font-medium truncate ${
                                   item.abaixoDoMinimo ? "text-red-800 dark:text-red-200" : "text-slate-700 dark:text-slate-200"
                                 }`}>
-                                  {item.descricaoItem}
+                                  <span className="text-slate-400 dark:text-slate-500 font-mono">{item.codigoItem}</span>{" "}{item.descricaoItem}
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[10px] text-slate-400">
@@ -710,7 +715,7 @@ export default function GestorAprovacoes(props: any = {}) {
                       </div>
 
                       {/* Actions for pending orders */}
-                      {order.status === "pendente" && order.temPrecoAbaixoMinimo && (
+                      {order.status === "pendente" && (
                         <div className="mt-4 flex gap-3">
                           {rejectingOrder === order.id ? (
                             <div className="flex-1 space-y-2">
