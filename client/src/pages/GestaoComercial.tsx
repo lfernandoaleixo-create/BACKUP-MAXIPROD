@@ -1974,6 +1974,7 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
 // PASSWORD MANAGER VIEW - Senhas dos vendedores (gestor)
 // ============================================================
 function PasswordManagerView({ gestorName }: { gestorName: string }) {
+  const utils = trpc.useUtils();
   const passwordsQuery = trpc.sales.getSellerPasswords.useQuery({ gestorName });
   const updateMutation = trpc.sales.updateSellerPassword.useMutation({
     onSuccess: () => passwordsQuery.refetch(),
@@ -1981,6 +1982,7 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
   const addSellerMutation = trpc.sales.addSellerWithPassword.useMutation({
     onSuccess: () => {
       passwordsQuery.refetch();
+      utils.sales.listSellerPermissions.invalidate();
       setShowAddForm(false);
       setNewSellerName("");
       setNewSellerPassword("");
@@ -1989,7 +1991,7 @@ function PasswordManagerView({ gestorName }: { gestorName: string }) {
     },
   });
   const deleteMutation = trpc.sales.deleteSellerPermission.useMutation({
-    onSuccess: () => passwordsQuery.refetch(),
+    onSuccess: () => { passwordsQuery.refetch(); utils.sales.listSellerPermissions.invalidate(); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");

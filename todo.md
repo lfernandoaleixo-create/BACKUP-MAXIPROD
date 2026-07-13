@@ -5248,3 +5248,6 @@
 - [x] Painel de Reputação do Mês na tela inicial do vendedor (sem precisar abrir pedido)
 - [x] Aprovação por senha do gerente para liberar fechamento de pedido quando média ponderada < 15%
 - [x] Botão de detalhes na barra de Reputação do Mês que abre modal com lista de pedidos que compõem a média ponderada
+
+## Bug Fix - Acesso ao Aplicativo
+- [x] Vendedor criado via "Configurar Senhas" pelo sub-gestor deve aparecer na aba "Acesso ao Aplicativo" desse sub-gestor
