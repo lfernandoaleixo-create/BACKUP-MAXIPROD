@@ -27,7 +27,7 @@ const FATURAMENTO_ONLY_TYPES = ["novo_pedido", "pedido_modificado", "observacao_
 const FATURAMENTO_ONLY_OPERATORS = ["Maria", "Erica", "Danubia"];
 
 // Operadores que veem notificações de pedidos de vendedores (apenas esses recebem)
-const PEDIDO_VENDEDOR_OPERATORS = ["Juvenal", "Vitória", "Vitoria", "Guilherme"];
+const PEDIDO_VENDEDOR_OPERATORS = ["Juvenal", "Vitória", "Vitoria", "Guilherme", "Renato"];
 
 /** Retorna os tipos de notificação permitidos para o operador */
 function getAllowedTypes(operatorName?: string): string[] {

@@ -153,8 +153,9 @@ export default function GestaoComercial() {
   const isGuilherme = operator?.name === "Guilherme";
   const isBruno = operator?.name === "Bruno";
   const isFernando = operator?.name === "Fernando";
+  const isRenato = operator?.name === "Renato";
   const shouldRedirectToPedidos = isVitoria; // Only Vitória auto-redirects
-  const showNavigationHub = isJuvenal || isGuilherme || isBruno || isFernando; // These operators see navigation hub
+  const showNavigationHub = isJuvenal || isGuilherme || isBruno || isFernando || isRenato; // These operators see navigation hub
 
   // Auto-redirect Vitória to Pedidos page
   useEffect(() => {

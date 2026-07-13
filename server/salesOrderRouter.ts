@@ -2764,4 +2764,225 @@ export const salesOrderRouter = router({
       }
       return { success: false, operatorName: null };
     }),
+
+  /** Update a pending order (seller can edit while awaiting gestor approval) */
+  updateOrder: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      cnpjCpf: z.string(),
+      razaoSocial: z.string(),
+      nomeFantasia: z.string().optional(),
+      inscricaoEstadual: z.string().optional(),
+      tipoContribuinte: z.string().optional(),
+      regimeTributario: z.string().optional(),
+      emailNfe: z.string().optional(),
+      cep: z.string().optional(),
+      endereco: z.string().optional(),
+      numero: z.string().optional(),
+      complemento: z.string().optional(),
+      bairro: z.string().optional(),
+      municipio: z.string().optional(),
+      uf: z.string().optional(),
+      telefone1: z.string().optional(),
+      telefone2: z.string().optional(),
+      emailContato: z.string().optional(),
+      segmento: z.string().optional(),
+      nomeContato: z.string().optional(),
+      formaCobranca: z.string().optional(),
+      fornecedorAtual: z.string().optional(),
+      inscricaoMunicipal: z.string().optional(),
+      inscricaoSuframa: z.string().optional(),
+      situacaoFiscalEspecial: z.string().optional(),
+      cnaeFiscal: z.string().optional(),
+      website: z.string().optional(),
+      limiteCredito: z.string().optional(),
+      tabelaPrecos: z.string().optional(),
+      condicaoPagamento: z.string().optional(),
+      valorFrete: z.number().optional(),
+      tipoFrete: z.string().optional(),
+      observacoes: z.string().optional(),
+      operacaoFiscal: z.string().optional(),
+      naturezaOperacao: z.string().optional(),
+      estadoConfiguravel: z.string().optional(),
+      formaPagamento: z.string().optional(),
+      dataEntrega: z.string().optional(),
+      previsaoEntrega: z.string().optional(),
+      regiao: z.string().optional(),
+      perfil: z.string().optional(),
+      formaPedido: z.string().optional(),
+      produtos: z.string().optional(),
+      probabilidadeNegocio: z.string().optional(),
+      tamanho: z.string().optional(),
+      atencao: z.string().optional(),
+      situacaoCobranca: z.string().optional(),
+      possuiRedespacho: z.boolean().optional(),
+      redespachoCnpj: z.string().optional(),
+      redespachoRazaoSocial: z.string().optional(),
+      redespachoCep: z.string().optional(),
+      redespachoLogradouro: z.string().optional(),
+      redespachoNumero: z.string().optional(),
+      redespachoComplemento: z.string().optional(),
+      redespachoBairro: z.string().optional(),
+      redespachoCidade: z.string().optional(),
+      redespachoUf: z.string().optional(),
+      redespachoTelefone: z.string().optional(),
+      enderecoEntregaMesmo: z.boolean().optional(),
+      entregaCep: z.string().optional(),
+      entregaLogradouro: z.string().optional(),
+      entregaNumero: z.string().optional(),
+      entregaComplemento: z.string().optional(),
+      entregaBairro: z.string().optional(),
+      entregaCidade: z.string().optional(),
+      entregaUf: z.string().optional(),
+      entregaTelefone: z.string().optional(),
+      items: z.array(z.object({
+        codigoItem: z.string(),
+        descricaoItem: z.string(),
+        quantidade: z.number(),
+        unidadeMedida: z.string(),
+        precoUnitario: z.number(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Verify order exists and is still pending
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido não encontrado");
+      if (order.status !== "pendente" && order.status !== "rejeitado") {
+        throw new Error("Pedido já foi aprovado e não pode ser editado");
+      }
+
+      // Calculate totals and price validation
+      const itemsWithValidation = await Promise.all(input.items.map(async (item) => {
+        const totalItem = item.quantidade * item.precoUnitario;
+        // Check minimum price
+        const minPriceRows = await db.select().from(productMinPrices)
+          .where(eq(productMinPrices.codigoItem, item.codigoItem))
+          .limit(1);
+        const precoMinimo = minPriceRows.length > 0 ? Number(minPriceRows[0].precoMinimo) : null;
+        const abaixoDoMinimo = precoMinimo !== null && item.precoUnitario < precoMinimo;
+        return { ...item, totalItem, precoMinimo, abaixoDoMinimo };
+      }));
+
+      const totalProdutos = itemsWithValidation.reduce((sum, i) => sum + i.totalItem, 0);
+      const valorFrete = input.valorFrete || 0;
+      const totalPedido = totalProdutos + valorFrete;
+      const temPrecoAbaixoMinimo = itemsWithValidation.some(i => i.abaixoDoMinimo);
+
+      // Update order fields
+      await db.update(salesOrderRequests)
+        .set({
+          cnpjCpf: input.cnpjCpf,
+          razaoSocial: input.razaoSocial,
+          nomeFantasia: input.nomeFantasia || null,
+          inscricaoEstadual: input.inscricaoEstadual || null,
+          tipoContribuinte: input.tipoContribuinte || null,
+          regimeTributario: input.regimeTributario || null,
+          emailNfe: input.emailNfe || null,
+          cep: input.cep || null,
+          endereco: input.endereco || null,
+          numero: input.numero || null,
+          complemento: input.complemento || null,
+          bairro: input.bairro || null,
+          municipio: input.municipio || null,
+          uf: input.uf || null,
+          telefone1: input.telefone1 || null,
+          telefone2: input.telefone2 || null,
+          emailContato: input.emailContato || null,
+          segmento: input.segmento || null,
+          nomeContato: input.nomeContato || null,
+          formaCobranca: input.formaCobranca || null,
+          fornecedorAtual: input.fornecedorAtual || null,
+          inscricaoMunicipal: input.inscricaoMunicipal || null,
+          inscricaoSuframa: input.inscricaoSuframa || null,
+          situacaoFiscalEspecial: input.situacaoFiscalEspecial || null,
+          cnaeFiscal: input.cnaeFiscal || null,
+          website: input.website || null,
+          limiteCredito: input.limiteCredito || null,
+          tabelaPrecos: input.tabelaPrecos || null,
+          condicaoPagamento: input.condicaoPagamento || null,
+          valorFrete: String(valorFrete),
+          tipoFrete: input.tipoFrete || null,
+          observacoes: input.observacoes || null,
+          operacaoFiscal: input.operacaoFiscal || null,
+          naturezaOperacao: input.naturezaOperacao || null,
+          estadoConfiguravel: input.estadoConfiguravel || null,
+          formaPagamento: input.formaPagamento || null,
+          dataEntrega: input.dataEntrega || null,
+          previsaoEntrega: input.previsaoEntrega || null,
+          regiao: input.regiao || null,
+          perfil: input.perfil || null,
+          formaPedido: input.formaPedido || null,
+          produtos: input.produtos || null,
+          probabilidadeNegocio: input.probabilidadeNegocio || null,
+          tamanho: input.tamanho || null,
+          atencao: input.atencao || null,
+          situacaoCobranca: input.situacaoCobranca || null,
+          possuiRedespacho: input.possuiRedespacho || false,
+          redespachoCnpj: input.redespachoCnpj || null,
+          redespachoRazaoSocial: input.redespachoRazaoSocial || null,
+          redespachoCep: input.redespachoCep || null,
+          redespachoLogradouro: input.redespachoLogradouro || null,
+          redespachoNumero: input.redespachoNumero || null,
+          redespachoComplemento: input.redespachoComplemento || null,
+          redespachoBairro: input.redespachoBairro || null,
+          redespachoCidade: input.redespachoCidade || null,
+          redespachoUf: input.redespachoUf || null,
+          redespachoTelefone: input.redespachoTelefone || null,
+          enderecoEntregaMesmo: input.enderecoEntregaMesmo ?? true,
+          entregaCep: input.entregaCep || null,
+          entregaLogradouro: input.entregaLogradouro || null,
+          entregaNumero: input.entregaNumero || null,
+          entregaComplemento: input.entregaComplemento || null,
+          entregaBairro: input.entregaBairro || null,
+          entregaCidade: input.entregaCidade || null,
+          entregaUf: input.entregaUf || null,
+          entregaTelefone: input.entregaTelefone || null,
+          totalProdutos: String(totalProdutos),
+          totalPedido: String(totalPedido),
+          temPrecoAbaixoMinimo,
+          motivoAlerta: temPrecoAbaixoMinimo ? itemsWithValidation.filter(i => i.abaixoDoMinimo).map(i => `${i.descricaoItem}: R$ ${i.precoUnitario.toFixed(2)} (mín: R$ ${i.precoMinimo?.toFixed(2)})`).join("; ") : null,
+          // Reset status to pendente if it was rejected (re-edited)
+          status: "pendente",
+          motivoRejeicao: null,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+
+      // Delete old items and insert new ones
+      await db.delete(salesOrderRequestItems)
+        .where(eq(salesOrderRequestItems.orderId, input.orderId));
+
+      for (const item of itemsWithValidation) {
+        await db.insert(salesOrderRequestItems).values({
+          orderId: input.orderId,
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem,
+          quantidade: String(item.quantidade),
+          unidadeMedida: item.unidadeMedida || null,
+          precoUnitario: String(item.precoUnitario),
+          precoMinimo: item.precoMinimo !== null ? String(item.precoMinimo) : null,
+          totalItem: String(item.totalItem),
+          abaixoDoMinimo: item.abaixoDoMinimo,
+        });
+      }
+
+      // Update notification
+      try {
+        const { createNotification } = await import("./notificationRouter");
+        await createNotification({
+          type: "pedido_vendedor",
+          title: `Pedido #${order.orderNumber} Editado - ${order.sellerName}`,
+          message: `Pedido #${order.orderNumber} foi editado pelo vendedor ${order.sellerName}. Total: R$ ${totalPedido.toFixed(2)} (${input.items.length} itens)`,
+          severity: temPrecoAbaixoMinimo ? "warning" : "info",
+          metadata: { orderId: input.orderId, sellerName: order.sellerName, gestorName: order.gestorName, clientName: input.razaoSocial, totalPedido, status: "pendente", orderNumber: order.orderNumber },
+        });
+      } catch (err) {
+        console.error("[SalesOrder] Failed to create edit notification:", err);
+      }
+
+      return { success: true, orderId: input.orderId, orderNumber: order.orderNumber };
+    }),
 });

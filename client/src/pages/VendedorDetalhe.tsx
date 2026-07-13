@@ -3531,6 +3531,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showNewOrder, setShowNewOrder] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
   const { startDate, endDate } = useMemo(() => getOrderDateRange(period, customMonth), [period, customMonth]);
@@ -3891,7 +3892,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 
       {/* Novo Pedido de Venda Form */}
       {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} onClose={() => setShowNewOrder(false)} />
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); }} />
       )}
 
       {/* Pedidos manuais (via App) */}
@@ -3946,6 +3947,15 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                     <p className="text-xs font-bold text-green-700 dark:text-green-400">
                       {formatCurrencySales(Number(pm.totalPedido || pm.totalProdutos || 0))}
                     </p>
+                    {pm.status === "pendente" && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingOrderId(pm.id); setShowNewOrder(true); }}
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+                        title="Editar pedido"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <OrderDeleteButton orderId={pm.id} onDeleted={() => utils.salesOrders.getSellerOrders.invalidate()} />
                   </div>
                 </div>
@@ -4115,12 +4125,14 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
  * NewOrderInline - Formulário inline para criar novo pedido de venda
  * Puxa produtos do estoque visível do vendedor com especificações
  */
-function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; onClose: () => void }) {
+function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; onClose: () => void }) {
+  const isEditMode = editOrderId !== null;
   const [isSimulation, setIsSimulation] = useState(false);
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
   const [submittedOrderNumber, setSubmittedOrderNumber] = useState<number | null>(null);
+  const [editDataLoaded, setEditDataLoaded] = useState(false);
   
   // Client fields
   const [clientSearch, setClientSearch] = useState("");
@@ -4273,7 +4285,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   );
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
+  const updateOrderMutation = trpc.salesOrders.updateOrder.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
+  // Load existing order data for edit mode
+  const editOrderQuery = trpc.salesOrders.getOrderDetails.useQuery(
+    { orderId: editOrderId! },
+    { enabled: isEditMode && !editDataLoaded }
+  );
   // Monthly weighted-average margin query (Level 3 commission)
   const monthlyMarginInput = useMemo(() => ({
     sellerId,
@@ -4291,6 +4309,99 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   );
   const utils = trpc.useUtils();
 
+  // Prefill form when editing an existing order
+  useEffect(() => {
+    if (isEditMode && editOrderQuery.data && !editDataLoaded) {
+      const { order, items: orderItems } = editOrderQuery.data;
+      // Client fields
+      setCnpjCpf(order.cnpjCpf || "");
+      setRazaoSocial(order.razaoSocial || "");
+      setNomeFantasia(order.nomeFantasia || "");
+      setInscricaoEstadual(order.inscricaoEstadual || "");
+      setTipoContribuinte(order.tipoContribuinte || "");
+      setRegimeTributario(order.regimeTributario || "");
+      setEmailNfe(order.emailNfe || "");
+      setCep(order.cep || "");
+      setEndereco(order.endereco || "");
+      setNumero(order.numero || "");
+      setComplemento(order.complemento || "");
+      setBairro(order.bairro || "");
+      setMunicipio(order.municipio || "");
+      setUf(order.uf || "");
+      setTelefone1(order.telefone1 || "");
+      setTelefone2(order.telefone2 || "");
+      setEmailContato(order.emailContato || "");
+      setSegmento(order.segmento || "");
+      setNomeContato(order.nomeContato || "");
+      setFormaCobranca(order.formaCobranca || "");
+      setFornecedorAtual(order.fornecedorAtual || "");
+      setInscricaoMunicipal(order.inscricaoMunicipal || "");
+      setInscricaoSuframa(order.inscricaoSuframa || "");
+      setSituacaoFiscalEspecial(order.situacaoFiscalEspecial || "Nenhuma");
+      setCnaeFiscal(order.cnaeFiscal || "");
+      setWebsiteCliente(order.website || "");
+      setLimiteCredito(order.limiteCredito || "");
+      setTabelaPrecos(order.tabelaPrecos || "");
+      // Payment fields
+      setCondicaoPagamento(order.condicaoPagamento || "");
+      setValorFrete(order.valorFrete || "");
+      setTipoFrete(order.tipoFrete || "CIF");
+      setObservacoes(order.observacoes || "");
+      setOperacaoFiscal(order.operacaoFiscal || "6101 - Fora do Estado - Madeira");
+      setNaturezaOperacao(order.naturezaOperacao || "Venda de produção do estabelecimento");
+      setEstadoConfiguravel(order.estadoConfiguravel || "MADEIRA");
+      setFormaPagamento(order.formaPagamento || "");
+      setDataEntregaPedido(order.dataEntrega || "");
+      setPrevisaoEntregaPedido(order.previsaoEntrega || "");
+      // CRM fields
+      setRegiao(order.regiao || "");
+      setPerfil(order.perfil || "");
+      setFormaPedido(order.formaPedido || "");
+      setProdutosInteresse(order.produtos || "");
+      setProbabilidadeNegocio(order.probabilidadeNegocio || "");
+      setTamanho(order.tamanho || "");
+      setAtencao(order.atencao || "Normal");
+      setSituacaoCobranca(order.situacaoCobranca || "SEM PROTESTO");
+      // Redespacho
+      setPossuiRedespacho(order.possuiRedespacho || false);
+      setRedespachoCnpj(order.redespachoCnpj || "");
+      setRedespachoRazaoSocial(order.redespachoRazaoSocial || "");
+      setRedespachoCep(order.redespachoCep || "");
+      setRedespachoLogradouro(order.redespachoLogradouro || "");
+      setRedespachoNumero(order.redespachoNumero || "");
+      setRedespachoComplemento(order.redespachoComplemento || "");
+      setRedespachoBairro(order.redespachoBairro || "");
+      setRedespachoCidade(order.redespachoCidade || "");
+      setRedespachoUf(order.redespachoUf || "");
+      setRedespachoTelefone(order.redespachoTelefone || "");
+      // Entrega
+      setEnderecoEntregaMesmo(order.enderecoEntregaMesmo ?? true);
+      setEntregaCep(order.entregaCep || "");
+      setEntregaLogradouro(order.entregaLogradouro || "");
+      setEntregaNumero(order.entregaNumero || "");
+      setEntregaComplemento(order.entregaComplemento || "");
+      setEntregaBairro(order.entregaBairro || "");
+      setEntregaCidade(order.entregaCidade || "");
+      setEntregaUf(order.entregaUf || "");
+      setEntregaTelefone(order.entregaTelefone || "");
+      // Items
+      setItems(orderItems.map((item: any) => ({
+        codigoItem: item.codigoItem,
+        descricaoItem: item.descricaoItem,
+        quantidade: Number(item.quantidade),
+        unidadeMedida: item.unidadeMedida || "CX",
+        precoUnitario: Number(item.precoUnitario),
+        precoMinimo: item.precoMinimo ? Number(item.precoMinimo) : null,
+        precoVendedor: null,
+        grupo: "",
+        disponivel: "",
+      })));
+      setIsSimulation(order.isSimulation || false);
+      setStep("produtos");
+      setEditDataLoaded(true);
+    }
+  }, [isEditMode, editOrderQuery.data, editDataLoaded]);
+
   // Margin bar state - controlled per seller via seller_permissions table
   const { operator: marginOperator, hasAccess: marginHasAccess } = useOperator();
   // Real costs from CustosDeVendaStep (step 3)
@@ -4306,8 +4417,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const isGestorMode = !!marginOperator;
   const showMarginBar = isGestorMode && currentSellerPerm?.showMarginBar !== false; // default true for gestores only
   const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
-  // Real cost bar (reputação) - only visible for Fernando, Guilherme and Juvenal
-  const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal" || marginOperator?.name === "Bruno";
+  // Real cost bar (reputação) - only visible for Fernando, Guilherme, Juvenal, Bruno and Renato
+  const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal" || marginOperator?.name === "Bruno" || marginOperator?.name === "Renato";
   const [marginComissao, setMarginComissao] = useState(5.85);
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
@@ -4487,6 +4598,97 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     }
     if (formaPagamento === "A prazo" && !condicaoPagamento) {
       alert("Preencha a Condição de Pagamento (ex: 21/35 ou 30/60/90) para pagamentos a prazo.");
+      return;
+    }
+    if (isEditMode && editOrderId) {
+      // Update existing order
+      updateOrderMutation.mutate({
+        orderId: editOrderId,
+        cnpjCpf: isSimulation ? (cnpjCpf || "SIMULACAO") : cnpjCpf,
+        razaoSocial: isSimulation ? (razaoSocial || "SIMULAÇÃO - " + sellerName) : razaoSocial,
+        nomeFantasia: nomeFantasia || undefined,
+        inscricaoEstadual: inscricaoEstadual || undefined,
+        tipoContribuinte: tipoContribuinte || undefined,
+        regimeTributario: regimeTributario || undefined,
+        emailNfe: emailNfe || undefined,
+        cep: cep || undefined,
+        endereco: endereco || undefined,
+        numero: numero || undefined,
+        complemento: complemento || undefined,
+        bairro: bairro || undefined,
+        municipio: municipio || undefined,
+        uf: uf || undefined,
+        telefone1: telefone1 || undefined,
+        telefone2: telefone2 || undefined,
+        emailContato: emailContato || undefined,
+        segmento: segmento || undefined,
+        nomeContato: nomeContato || undefined,
+        formaCobranca: formaCobranca || undefined,
+        fornecedorAtual: fornecedorAtual || undefined,
+        inscricaoMunicipal: inscricaoMunicipal || undefined,
+        inscricaoSuframa: inscricaoSuframa || undefined,
+        situacaoFiscalEspecial: situacaoFiscalEspecial !== "Nenhuma" ? situacaoFiscalEspecial : undefined,
+        cnaeFiscal: cnaeFiscal || undefined,
+        website: websiteCliente || undefined,
+        limiteCredito: limiteCredito || undefined,
+        tabelaPrecos: tabelaPrecos || undefined,
+        condicaoPagamento: condicaoPagamento || undefined,
+        valorFrete: Number(valorFrete) || undefined,
+        tipoFrete: tipoFrete || undefined,
+        observacoes: observacoes || undefined,
+        operacaoFiscal: operacaoFiscal || undefined,
+        naturezaOperacao: naturezaOperacao || undefined,
+        estadoConfiguravel: estadoConfiguravel || undefined,
+        formaPagamento: formaPagamento || undefined,
+        dataEntrega: dataEntregaPedido || undefined,
+        previsaoEntrega: previsaoEntregaPedido || undefined,
+        regiao: regiao || undefined,
+        perfil: perfil || undefined,
+        formaPedido: formaPedido || undefined,
+        produtos: produtosInteresse || undefined,
+        probabilidadeNegocio: probabilidadeNegocio || undefined,
+        tamanho: tamanho || undefined,
+        atencao: atencao !== "Normal" ? atencao : undefined,
+        situacaoCobranca: situacaoCobranca !== "SEM PROTESTO" ? situacaoCobranca : undefined,
+        possuiRedespacho: possuiRedespacho || undefined,
+        redespachoCnpj: possuiRedespacho ? (redespachoCnpj || undefined) : undefined,
+        redespachoRazaoSocial: possuiRedespacho ? (redespachoRazaoSocial || undefined) : undefined,
+        redespachoCep: possuiRedespacho ? (redespachoCep || undefined) : undefined,
+        redespachoLogradouro: possuiRedespacho ? (redespachoLogradouro || undefined) : undefined,
+        redespachoNumero: possuiRedespacho ? (redespachoNumero || undefined) : undefined,
+        redespachoComplemento: possuiRedespacho ? (redespachoComplemento || undefined) : undefined,
+        redespachoBairro: possuiRedespacho ? (redespachoBairro || undefined) : undefined,
+        redespachoCidade: possuiRedespacho ? (redespachoCidade || undefined) : undefined,
+        redespachoUf: possuiRedespacho ? (redespachoUf || undefined) : undefined,
+        redespachoTelefone: possuiRedespacho ? (redespachoTelefone || undefined) : undefined,
+        enderecoEntregaMesmo: enderecoEntregaMesmo,
+        entregaCep: !enderecoEntregaMesmo ? (entregaCep || undefined) : undefined,
+        entregaLogradouro: !enderecoEntregaMesmo ? (entregaLogradouro || undefined) : undefined,
+        entregaNumero: !enderecoEntregaMesmo ? (entregaNumero || undefined) : undefined,
+        entregaComplemento: !enderecoEntregaMesmo ? (entregaComplemento || undefined) : undefined,
+        entregaBairro: !enderecoEntregaMesmo ? (entregaBairro || undefined) : undefined,
+        entregaCidade: !enderecoEntregaMesmo ? (entregaCidade || undefined) : undefined,
+        entregaUf: !enderecoEntregaMesmo ? (entregaUf || undefined) : undefined,
+        entregaTelefone: !enderecoEntregaMesmo ? (entregaTelefone || undefined) : undefined,
+        items: items.map(item => ({
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem,
+          quantidade: item.quantidade,
+          unidadeMedida: item.unidadeMedida,
+          precoUnitario: item.precoUnitario,
+        })),
+      }, {
+        onSuccess: (result) => {
+          if (result.success) {
+            utils.salesOrders.getSellerOrders.invalidate();
+            setShowBelowMinConfirm(false);
+            setOrderSubmitted(true);
+            setSubmittedOrderId(result.orderId);
+            setSubmittedOrderNumber(result.orderNumber);
+            setStep("resumo_final");
+          }
+        },
+      });
       return;
     }
     createOrderMutation.mutate({

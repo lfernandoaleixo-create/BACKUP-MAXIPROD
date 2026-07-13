@@ -5354,3 +5354,21 @@
 - [x] Não perder nenhuma informação existente
   Implementado: createOrder sempre seta 'pendente', getOrdersForOperator filtra por viewer, VitoriaOrders mostra botão Aprovar para Guilherme/Juvenal, barra de progresso com 4 etapas (Pendente→Aprovado→Recebido→Lançado)
 
+
+## Feature: Edição de pedido pendente pelo vendedor
+- [x] Vendedor pode editar pedido enquanto status = "pendente" (aguardando gestor)
+- [x] Após aprovação do gestor, edição bloqueada
+- [x] Botão de editar visível na lista de pedidos do vendedor para pedidos pendentes
+
+## Feature: Notificação ao gestor quando chega pedido de vendedor
+- [x] Ao criar pedido real (não simulação), notificar o gestor responsável
+- [x] Notificação deve informar: vendedor, cliente, valor do pedido
+- [x] Renato adicionado a PEDIDO_VENDEDOR_OPERATORS para receber notificações
+
+## Feature: Renato e Juvenal com acesso a painel de gestor + vendedor
+- [x] Renato precisa ter acesso ao painel de gestor E ao painel de vendedor (ele também vende)
+- [x] Juvenal precisa ter acesso ao painel de gestor E ao painel de vendedor (ele também vende)
+- [x] Ajustar navegação/hub para mostrar ambos os painéis quando logado como Renato ou Juvenal
+- [x] Renato adicionado a hasAccess('gestao-comercial') em OperatorContext.tsx
+- [x] Renato adicionado ao showNavigationHub em GestaoComercial.tsx
+- [x] Renato adicionado ao showRealCostBar em VendedorDetalhe.tsx
