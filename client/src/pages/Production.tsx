@@ -1612,7 +1612,7 @@ function ExpandableMachineRow({
                           className={`w-full text-center text-base font-bold border-2 border-orange-200 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-orange-50/40 text-slate-900'}`}
                         />
                         {!isNaN(cxpNum) && cxpNum > 0 && (
-                          <span className="text-[10px] text-orange-500 font-semibold">{`\u2248 ${Math.round(cxpConverted)} sacos`}</span>
+                          <span className="text-[10px] text-orange-500 font-semibold">{`≈ ${Math.round(cxpConverted)} sacos`}</span>
                         )}
                       </div>
                       {/* Caixa Grande */}
@@ -1624,7 +1624,7 @@ function ExpandableMachineRow({
                           className={`w-full text-center text-base font-bold border-2 border-amber-200 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/40 text-slate-900'}`}
                         />
                         {!isNaN(cxgNum) && cxgNum > 0 && (
-                          <span className="text-[10px] text-amber-600 font-semibold">{`\u2248 ${Math.round(cxgConverted)} sacos`}</span>
+                          <span className="text-[10px] text-amber-600 font-semibold">{`≈ ${Math.round(cxgConverted)} sacos`}</span>
                         )}
                       </div>
                       {/* Saco */}
@@ -2792,9 +2792,9 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
               const Icon = getSectorIcon(sector.ordem);
               const isDual = isDualUnitSector(sector.ordem);
               // History always shows integers (no decimals) except m³
-              const decimals = sector.unidadeMedida === "m\u00b3" ? 3 : 0;
+              const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
               const rawWeekTotal = weekDays.reduce((sum, day) => sum + (matrix[sector.id]?.[day] || 0), 0);
-              const weekTotal = sector.unidadeMedida === "m\u00b3" ? rawWeekTotal : Math.floor(rawWeekTotal);
+              const weekTotal = sector.unidadeMedida === "m³" ? rawWeekTotal : Math.floor(rawWeekTotal);
               return (
                 <tr key={sector.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50">
                   <td className="px-4 py-2.5 border-r border-slate-200">
@@ -2816,7 +2816,7 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
                     return (
                       <td key={day} className={`text-center px-2 py-2.5 tabular-nums border-r border-slate-200 last:border-r-0 ${isSelected ? "bg-teal-50/50" : isWeekend ? "bg-slate-50/50" : ""}`}>
                         <span className={`text-xs font-medium ${val > 0 ? "text-slate-700" : "text-slate-300"}`}>
-                          {val > 0 ? fmtNum(sector.unidadeMedida === "m\u00b3" ? val : Math.floor(val), decimals) : "—"}
+                          {val > 0 ? fmtNum(sector.unidadeMedida === "m³" ? val : Math.floor(val), decimals) : "—"}
                         </span>
                       </td>
                     );

@@ -249,13 +249,13 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
   if (doneSteps.length > 0) {
     // Build observações lookup from planilhaCobranca
     const HIST_ETAPA_LABELS: Record<string, string> = {
-      primeiraCobranca: "1\u00aa Cobran\u00e7a",
-      semAcao1: "Sem A\u00e7\u00e3o 1",
-      segundaCobranca: "2\u00aa Cobran\u00e7a",
-      semAcao2: "Sem A\u00e7\u00e3o 2",
-      terceiraCobranca: "3\u00aa Cobran\u00e7a",
-      semAcao3: "Sem A\u00e7\u00e3o 3",
-      acaoFinal: "A\u00e7\u00e3o Final",
+      primeiraCobranca: "1ª Cobrança",
+      semAcao1: "Sem Ação 1",
+      segundaCobranca: "2ª Cobrança",
+      semAcao2: "Sem Ação 2",
+      terceiraCobranca: "3ª Cobrança",
+      semAcao3: "Sem Ação 3",
+      acaoFinal: "Ação Final",
     };
     // Map step labels back to etapa keys for observation lookup
     const labelToKey: Record<string, string> = {};
@@ -269,7 +269,7 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
       // Find matching observações for this step
       const etapaKey = labelToKey[step.label] || Object.entries(HIST_ETAPA_LABELS).find(([, v]) => v === step.label)?.[0] || "";
       const obsForStep = input.planilhaCobranca?.observacoes?.filter(o => o.etapa === etapaKey) || [];
-      const obsText = obsForStep.length > 0 ? obsForStep.map(o => o.observacao).join("; ") : "\u2014";
+      const obsText = obsForStep.length > 0 ? obsForStep.map(o => o.observacao).join("; ") : "—";
       return [
         String(idx + 1),
         step.label,
@@ -280,7 +280,7 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
 
     autoTable(doc, {
       startY: y,
-      head: [["#", "Etapa", "Data", "Observa\u00e7\u00e3o"]],
+      head: [["#", "Etapa", "Data", "Observação"]],
       body: tableBody,
       margin: { left: margin, right: margin },
       styles: {
@@ -312,7 +312,7 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.mediumSlate);
-    doc.text("Nenhuma a\u00e7\u00e3o de cobran\u00e7a registrada at\u00e9 o momento.", margin + 4, y + 4);
+    doc.text("Nenhuma ação de cobrança registrada até o momento.", margin + 4, y + 4);
     y += 10;
   }
 
@@ -373,13 +373,13 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
   let obsText = "";
   if (input.planilhaCobranca?.observacoes && input.planilhaCobranca.observacoes.length > 0) {
     const ETAPA_LABELS_OBS: Record<string, string> = {
-      primeiraCobranca: "1\u00aa Cobran\u00e7a",
+      primeiraCobranca: "1ª Cobrança",
       semAcao1: "Intervalo 1",
-      segundaCobranca: "2\u00aa Cobran\u00e7a",
+      segundaCobranca: "2ª Cobrança",
       semAcao2: "Intervalo 2",
-      terceiraCobranca: "3\u00aa Cobran\u00e7a",
+      terceiraCobranca: "3ª Cobrança",
       semAcao3: "Intervalo 3",
-      acaoFinal: "A\u00e7\u00e3o Final",
+      acaoFinal: "Ação Final",
     };
     obsText = input.planilhaCobranca.observacoes
       .map(o => `[${ETAPA_LABELS_OBS[o.etapa] || o.etapa}] ${o.observacao}`)
@@ -401,7 +401,7 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.amber);
-    doc.text("OBSERVA\u00c7\u00d5ES", margin + 4, y + 5);
+    doc.text("OBSERVAÇÕES", margin + 4, y + 5);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.darkSlate);

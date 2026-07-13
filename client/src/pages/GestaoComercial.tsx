@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
+import GestorAprovacoes from "./GestorAprovacoes";
 
 type GestaoView = "gestores" | "vendedores" | "metricas";
 
@@ -185,9 +186,9 @@ export default function GestaoComercial() {
     const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
     // Try without accents
-    const normalized = maxiprodName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const normalized = maxiprodName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
     const grupoNorm = gestores.find(g => 
-      g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
+      g.gestor.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normalized
     );
     return grupoNorm?.vendedores || [];
   };
@@ -420,14 +421,14 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
 
   const getPermission = (sellerName: string, gestorName: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() &&
-             p.gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      (p) => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() &&
+             p.gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
   };
 
   const getPermissionByName = (sellerName: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      (p) => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
   };
 
@@ -459,7 +460,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     if (card.role === "Sub-gestor") {
       // Sub-gestor gets vendedores from seller_permissions (manually added via "Adicionar Vendedor")
       const permsForGestor = permissions.filter(
-        p => p.gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+        p => p.gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
       );
       return permsForGestor.map(p => p.sellerName);
     }
@@ -501,7 +502,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
 
         {/* Single gestor card, already expanded */}
         {!isLoading && GESTOR_CARDS.filter(card => {
-          return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+          return card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
         }).map((card) => {
           const vendedoresBase = getVendedoresForCard(card);
           const vendedores = card.role === "Sub-gestor" 
@@ -539,7 +540,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                     </div>
                     <p className="text-[11px] text-slate-400 dark:text-slate-500">
                       {vendedorCount} vendedor{vendedorCount !== 1 ? "es" : ""}
-                      {isSubGestor && card.parentGestor && ` \u00b7 subordinado a ${card.parentGestor}`}
+                      {isSubGestor && card.parentGestor && ` · subordinado a ${card.parentGestor}`}
                     </p>
                   </div>
                 </div>
@@ -609,14 +610,14 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       </button>
                       <span className="text-xs text-slate-400">/</span>
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                        {activeConfig === "estoque" && "Configura\u00e7\u00e3o de Estoque"}
-                        {activeConfig === "tabela_preco" && "Configurar Tabela de Pre\u00e7o"}
-                        {activeConfig === "catalogos" && "Documentos/Cat\u00e1logos"}
+                        {activeConfig === "estoque" && "Configuração de Estoque"}
+                        {activeConfig === "tabela_preco" && "Configurar Tabela de Preço"}
+                        {activeConfig === "catalogos" && "Documentos/Catálogos"}
                         {activeConfig === "senha" && "Configurar Senhas"}
-                        {activeConfig === "pedidos" && "Aprova\u00e7\u00f5es de Pedidos"}
-                        {activeConfig === "metricas" && "M\u00e9tricas de Venda"}
+                        {activeConfig === "pedidos" && "Aprovações de Pedidos"}
+                        {activeConfig === "metricas" && "Métricas de Venda"}
                         {activeConfig === "acesso" && "Acesso ao Aplicativo"}
-                        {activeConfig === "comissao" && "Comiss\u00e3o dos Vendedores"}
+                        {activeConfig === "comissao" && "Comissão dos Vendedores"}
                       </span>
                     </div>
                     {activeConfig === "estoque" ? (
@@ -632,44 +633,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                     ) : activeConfig === "acesso" ? (
                       <AcessoAppView gestorName={card.name} vendedores={vendedores} permissions={permissions} onToggleAuth={handleToggleAuth} />
                     ) : activeConfig === "pedidos" ? (
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(card.name)}`} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            Ver Aprova\u00e7\u00f5es
-                          </Link>
-                        </div>
-                        {vendedores.length === 0 && (
-                          <div className="text-center py-6">
-                            <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                            <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
-                          </div>
-                        )}
-                        {vendedores.map((vendedor) => {
-                          const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
-                          const navUrl = `/gestao-comercial/vendedor/${perm?.id}?tab=pedidos`;
-                          return (
-                            <div
-                              key={vendedor}
-                              onClick={() => { if (perm) navigate(navUrl); }}
-                              className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
-                                {vendedor.charAt(0).toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {perm && (
-                                  <span className={`w-2 h-2 rounded-full ${perm.authorized ? "bg-emerald-500" : "bg-red-400"}`} />
-                                )}
-                                <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <GestorAprovacoes gestorName={card.name} />
                     ) : activeConfig === "comissao" ? (
                       <ComissaoView gestorName={card.name} />
                     ) : null}
@@ -699,7 +663,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             <div className="text-left">
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Gestores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores \u00b7 1 sub-gestor \u00b7 {totalVendedores} vendedores
+                {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores · 1 sub-gestor · {totalVendedores} vendedores
               </p>
             </div>
           </div>
@@ -743,7 +707,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             {/* Gestor Cards (filtered if filterGestorName is set) */}
             {!isLoading && GESTOR_CARDS.filter(card => {
               if (!filterGestorName) return true;
-              return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              return card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
             }).map((card) => {
         const isExpanded = expandedGestor === card.name;
         const vendedoresBase = getVendedoresForCard(card);
@@ -1040,7 +1004,7 @@ function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: Ac
 
   const getPermForVendedor = (vendedor: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === vendedor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      (p) => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === vendedor.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
   };
 
@@ -1155,7 +1119,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
     // Add gestores as vendedores (they sell too)
     for (const gc of GESTOR_CARDS) {
       const perm = permissions.find(
-        p => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === gc.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+        p => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gc.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
       );
       result.push({ 
         name: gc.name, 
@@ -1173,7 +1137,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
         // Skip if already added as gestor
         if (GESTOR_CARDS.some(g => g.name.toUpperCase() === v.toUpperCase())) continue;
         const perm = permissions.find(
-          p => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+          p => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
         );
         result.push({ name: v, gestor: gc.name, permission: perm, isGestor: false });
       }
@@ -1181,12 +1145,12 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
 
     // Also include sellers from seller_permissions that aren't already in the list
     // (e.g. manually added sellers not in Maxiprod representantes)
-    const addedNames = new Set(result.map(r => r.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()));
+    const addedNames = new Set(result.map(r => r.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()));
     for (const perm of permissions) {
-      const normName = perm.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      const normName = perm.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
       if (addedNames.has(normName)) continue;
       // Skip gestores that are already in the list
-      if (GESTOR_CARDS.some(g => g.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normName)) continue;
+      if (GESTOR_CARDS.some(g => g.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normName)) continue;
       result.push({ name: perm.sellerName, gestor: perm.gestorName, permission: perm, isGestor: false });
       addedNames.add(normName);
     }
@@ -1258,7 +1222,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
                         <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
                         {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                          {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor \u00b7 Gestor: ${v.gestor}`}
+                          {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -1369,7 +1333,7 @@ function VendedoresCollapsible({ allVendedores, isLoading, navigate }: { allVend
                       <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
                       {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                        {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor \u00b7 Gestor: ${v.gestor}`}
+                        {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -2937,9 +2901,9 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
     const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
     const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
-    const normalized = maxiprodName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const normalized = maxiprodName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
     const grupoNorm = gestores.find(g => 
-      g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
+      g.gestor.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normalized
     );
     return grupoNorm?.vendedores || [];
   };
@@ -2983,9 +2947,9 @@ export function GestaoComercialFull() {
     const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
     const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
-    const normalized = maxiprodName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const normalized = maxiprodName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
     const grupoNorm = gestores.find(g => 
-      g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
+      g.gestor.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normalized
     );
     return grupoNorm?.vendedores || [];
   };

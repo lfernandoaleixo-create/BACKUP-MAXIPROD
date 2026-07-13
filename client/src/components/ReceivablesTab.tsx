@@ -2761,7 +2761,7 @@ export default function ReceivablesTab() {
                                     const emis = cheque.emissaoData ? new Date(cheque.emissaoData).toLocaleDateString("pt-BR") : "-";
                                     const isVencido = cheque.vencimentoData && new Date(cheque.vencimentoData) < new Date();
                                     // Extract short forma name (after "Cheque ")
-                                    const formaShort = (cheque.formaPagamento || "").replace(/^Cheque\s*/i, "").replace(/\u00c0/g, "A").replace(/\u00e0/g, "a").trim() || cheque.formaPagamento;
+                                    const formaShort = (cheque.formaPagamento || "").replace(/^Cheque\s*/i, "").replace(/À/g, "A").replace(/à/g, "a").trim() || cheque.formaPagamento;
                                     // Color badge for estado
                                     const estadoColors: Record<string, string> = {
                                       DISPONIVEL: "bg-emerald-100 text-emerald-700",

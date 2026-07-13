@@ -892,7 +892,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                     />
                   )}
                   <span className={`text-[11px] md:text-[13px] font-medium truncate min-w-0 ${isTicked ? 'text-amber-800' : 'text-slate-700'}`} style={{ flex: '1 1 0' }}>
-                    {item.fornecedor || item.referenteA || "\u2014"}
+                    {item.fornecedor || item.referenteA || "—"}
                   </span>
                   <span
                     className={`text-[10px] md:text-[11px] whitespace-nowrap text-right shrink-0 ${isTicked ? 'text-amber-600' : 'text-slate-400'}`}

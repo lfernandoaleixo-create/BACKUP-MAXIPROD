@@ -170,26 +170,27 @@ export default function GestorAprovacoes(props: any = {}) {
     };
   }, [orders]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-      <TopNav />
-
-      <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
+  const isInline = !!gestorNameProp; // When used inline (as component), skip page wrapper
+  
+  const content = (
+    <div className={isInline ? "space-y-4" : "container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6"}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/gestao-comercial">
-              <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer">
-                <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-              </button>
-            </Link>
+            {!isInline && (
+              <Link href="/gestao-comercial">
+                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer">
+                  <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                </button>
+              </Link>
+            )}
             <div>
-              <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">Aprovação de Pedidos</h1>
+              <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">{isInline ? "Aprovações de Pedidos" : "Aprovação de Pedidos"}</h1>
               <p className="text-xs text-slate-500">{gestorName ? `Pedidos dos vendedores de ${gestorName}` : "Gerencie os pedidos dos vendedores de rua"}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!showResetConfirm ? (
+            {!isInline && !showResetConfirm && (
               <button
                 onClick={() => setShowResetConfirm(true)}
                 className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
@@ -198,7 +199,8 @@ export default function GestorAprovacoes(props: any = {}) {
                 <RotateCcw className="w-3.5 h-3.5" />
                 Resetar Pedidos
               </button>
-            ) : (
+            )}
+            {!isInline && showResetConfirm && (
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] text-red-600 font-medium">Apagar TODOS os pedidos?</span>
                 <button
@@ -784,7 +786,6 @@ export default function GestorAprovacoes(props: any = {}) {
             })}
           </div>
         )}
-      </main>
 
       {/* Delete Confirmation Modal */}
       {confirmDeleteId !== null && (
@@ -826,6 +827,19 @@ export default function GestorAprovacoes(props: any = {}) {
           </div>
         </div>
       )}
+    </div>
+  );
+
+  if (isInline) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <TopNav />
+      <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
+        {content}
+      </main>
     </div>
   );
 }

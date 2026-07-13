@@ -226,7 +226,7 @@ function PagamentosFornecedores() {
             <span className="text-xs text-slate-500 uppercase font-medium">Total Pedidos ({currencyLabel})</span>
           </div>
           <p className="text-xl font-bold text-slate-800 whitespace-nowrap">
-            {currencySymbol}{"\u00A0"}{convertValue(grandTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {currencySymbol}{" "}{convertValue(grandTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -235,7 +235,7 @@ function PagamentosFornecedores() {
             <span className="text-xs text-slate-500 uppercase font-medium">Total Pago ({currencyLabel})</span>
           </div>
           <p className="text-xl font-bold text-green-700 whitespace-nowrap">
-            {currencySymbol}{"\u00A0"}{convertValue(grandTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {currencySymbol}{" "}{convertValue(grandTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -244,7 +244,7 @@ function PagamentosFornecedores() {
             <span className="text-xs text-slate-500 uppercase font-medium">Saldo Devedor ({currencyLabel})</span>
           </div>
           <p className="text-xl font-bold text-red-700 whitespace-nowrap">
-            {currencySymbol}{"\u00A0"}{convertValue(grandTotals.saldoTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {currencySymbol}{" "}{convertValue(grandTotals.saldoTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
@@ -556,15 +556,15 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack,
           <div className="hidden sm:flex items-center gap-0 text-xs">
             <div className="text-right w-[140px]">
               <span className="text-slate-400">Total</span>
-              <p className="font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{" "}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="text-right w-[120px]">
               <span className="text-slate-400">Pago</span>
-              <p className="font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{" "}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="text-right w-[140px]">
               <span className="text-slate-400">Saldo Devedor</span>
-              <p className="font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{" "}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
           {expanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
@@ -576,15 +576,15 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack,
         <div className="sm:hidden grid grid-cols-3 gap-2 px-4 pb-3">
           <div className="text-center bg-slate-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Total</span>
-            <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{" "}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="text-center bg-green-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Pago</span>
-            <p className="text-xs font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{" "}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="text-center bg-red-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Devedor</span>
-            <p className="text-xs font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{" "}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       )}
@@ -788,7 +788,7 @@ function SectionTable({
     <div className="border-b border-slate-100 last:border-b-0">
       {/* Section title bar - only show if it's a different sub-section from the main supplier */}
       {sectionTitle && (() => {
-        const parts = sectionTitle.split(/ [\u2013\u002D] /);
+        const parts = sectionTitle.split(/ [–-] /);
         const title = parts[0];
         const subtitle = parts.length > 1 ? parts.slice(1).join(" - ") : null;
         // Hide if there's only a single section (no need for sub-section header when there's only one)
@@ -936,15 +936,15 @@ function SectionTable({
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
               <td className="px-2 py-2 text-slate-700" colSpan={isWinnie ? 4 : 3}>TOTAIS</td>
-              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalBrasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalBrasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalParaguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalParaguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.brasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.brasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.paraguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.paraguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.totalPago ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
-              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorBrasil || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
-              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorParaguai || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
-              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{`${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorTotal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalUsd ? `${currencySymbol} ${convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalBrasilUsd ? `${currencySymbol} ${convertValue(sectionTotals.totalBrasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalParaguaiUsd ? `${currencySymbol} ${convertValue(sectionTotals.totalParaguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.brasilUsd ? `${currencySymbol} ${convertValue(sectionTotals.brasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.paraguaiUsd ? `${currencySymbol} ${convertValue(sectionTotals.paraguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.totalPago ? `${currencySymbol} ${convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol} ${convertValue(sectionTotals.saldoDevedorBrasil || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol} ${convertValue(sectionTotals.saldoDevedorParaguai || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
+              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{`${currencySymbol} ${convertValue(sectionTotals.saldoDevedorTotal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
               <td className="px-2 py-2"></td>
               <td className="px-1 py-2"></td>
             </tr>
@@ -994,7 +994,7 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
     const n = parseFloat(String(v || "0"));
     if (n === 0) return null;
     const converted = convertValue(n);
-    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{" "}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
   // Green section: show "-" when empty/zero
@@ -1002,14 +1002,14 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
     const n = parseFloat(String(v || "0"));
     if (n === 0) return <span className="text-slate-300">-</span>;
     const converted = convertValue(n);
-    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{" "}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
   // Red section: show "$ 0,00" when empty/zero
   const fmtRed = (v: string | null) => {
     const n = parseFloat(String(v || "0"));
     const converted = convertValue(n);
-    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{" "}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
   const saldoColor = (v: string) => {
@@ -4175,7 +4175,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   {/* Col 3: Diferença (automático) */}
                   <td className="px-2 py-2 text-center bg-orange-50/30 whitespace-nowrap">
                     <span className={`font-mono font-medium ${diferenca > 0 ? 'text-orange-600' : diferenca < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$\u00A0${(Math.round(diferenca * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate) * 100) / 100).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(diferenca * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate) * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 4: Quantidade de Caixas (sempre editável) */}

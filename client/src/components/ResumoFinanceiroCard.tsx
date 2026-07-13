@@ -1951,7 +1951,7 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Buscar fornecedor, descri\u00e7\u00e3o ou documento..."
+            placeholder="Buscar fornecedor, descrição ou documento..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             className="w-full h-7 pl-7 pr-3 text-[11px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 text-slate-700 placeholder:text-slate-400"
@@ -1969,9 +1969,9 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
             <thead className="bg-red-50 sticky top-0 z-10">
               <tr>
                 <SortHeader label="Fornecedor" field="fornecedor" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
-                <SortHeader label="Descri\u00e7\u00e3o" field="descricao" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
+                <SortHeader label="Descrição" field="descricao" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
                 <SortHeader label="Vencimento" field="vencimentoData" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-red-700" />
-                <SortHeader label="Liquida\u00e7\u00e3o" field="liquidacaoData" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-red-700" />
+                <SortHeader label="Liquidação" field="liquidacaoData" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-red-700" />
                 <SortHeader label="Valor Pago" field="valorPagoLiquido" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-red-700" />
                 <th className="px-2 py-1.5 text-red-700 text-[10px] font-semibold w-8"></th>
               </tr>
@@ -2037,13 +2037,13 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
                           )}
                           {item.observacoes && (
                             <div className="col-span-2">
-                              <span className="text-slate-400 block">Observa\u00e7\u00f5es</span>
+                              <span className="text-slate-400 block">Observações</span>
                               <span className="text-slate-700">{item.observacoes}</span>
                             </div>
                           )}
                           {item.anotacoes && (
                             <div className="col-span-2">
-                              <span className="text-slate-400 block">Anota\u00e7\u00f5es</span>
+                              <span className="text-slate-400 block">Anotações</span>
                               <span className="text-slate-700">{item.anotacoes}</span>
                             </div>
                           )}

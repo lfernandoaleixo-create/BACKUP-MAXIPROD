@@ -241,7 +241,7 @@ function exportInadimplenciaPDF(
   });
 
   // ── Table (without Protesto column) ──
-  // Build NF/Parcela column: "NF 206 \u2022 Parcela 2/3" or "NF 206" or "Parcela 2/3" or "—"
+  // Build NF/Parcela column: "NF 206 • Parcela 2/3" or "NF 206" or "Parcela 2/3" or "—"
   const tableData = sorted.map(t => {
     const status = t.cobranca?.status || "pendente";
     const statusLabel = STATUS_LABELS[status] || status;
@@ -249,24 +249,24 @@ function exportInadimplenciaPDF(
     const docParts: string[] = [];
     if (t.documento) docParts.push(`NF ${t.documento}`);
     if (t.parcela) docParts.push(`Parcela ${t.parcela}`);
-    const docLabel = docParts.length > 0 ? docParts.join(" \u2022 ") : "\u2014";
+    const docLabel = docParts.length > 0 ? docParts.join(" • ") : "—";
     return [
       t.cliente,
       docLabel,
-      t.vendedor || "\u2014",
-      t.formaCobranca || "\u2014",
-      getDecisaoLabel(t.decisaoCobranca) || "\u2014",
+      t.vendedor || "—",
+      t.formaCobranca || "—",
+      getDecisaoLabel(t.decisaoCobranca) || "—",
       formatCurrency(t.valorAReceber),
       formatDate(t.vencimento),
       `${t.diasAtraso}d`,
       statusLabel,
-      t.empresa || "\u2014",
+      t.empresa || "—",
     ];
   });
 
   autoTable(doc, {
     startY: y1 + 16,
-    head: [["CLIENTE", "NF / PARCELA", "VENDEDOR", "FORMA DE COBRAN\u00c7A", "DECIS\u00c3O DE COBRAN\u00c7A", "VALOR", "VENCIMENTO", "ATRASO", "STATUS", "EMPRESA"]],
+    head: [["CLIENTE", "NF / PARCELA", "VENDEDOR", "FORMA DE COBRANÇA", "DECISÃO DE COBRANÇA", "VALOR", "VENCIMENTO", "ATRASO", "STATUS", "EMPRESA"]],
     body: tableData,
     theme: "grid",
     rowPageBreak: "avoid",
@@ -355,11 +355,11 @@ function exportInadimplenciaPDF(
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
-        doc.text("GRUPO FOX \u2014 Inadimpl\u00eancia", 6, 9);
+        doc.text("GRUPO FOX — Inadimplência", 6, 9);
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(200, 180, 180);
-        doc.text(`${sorted.length} t\u00edtulos  |  ${formatCurrency(stats.total)}`, 6, 14.5);
+        doc.text(`${sorted.length} títulos  |  ${formatCurrency(stats.total)}`, 6, 14.5);
         doc.text(`Página ${data.pageNumber}`, pageW - 6, 9, { align: "right" });
       }
 
@@ -368,7 +368,7 @@ function exportInadimplenciaPDF(
       doc.setFontSize(6.5);
       doc.setTextColor(160, 160, 160);
       doc.text(
-        `Página ${data.pageNumber} de ${pageCount}  |  GRUPO FOX \u2014 Gestão de Inadimplência  |  ${new Date().toLocaleDateString("pt-BR")}`,
+        `Página ${data.pageNumber} de ${pageCount}  |  GRUPO FOX — Gestão de Inadimplência  |  ${new Date().toLocaleDateString("pt-BR")}`,
         pageW / 2,
         pageH - 5,
         { align: "center" }
@@ -390,7 +390,7 @@ function getFormaCobrancaCategory(desc: string): string {
   if (d.startsWith("PIX")) return "PIX";
   if (d.startsWith("BOLETO")) return "Boleto";
   if (d.startsWith("CHEQUE")) return "Cheque";
-  if (d.startsWith("DEP\u00d3SITO") || d.startsWith("DEPOSITO")) return "Dep\u00f3sito";
+  if (d.startsWith("DEPÓSITO") || d.startsWith("DEPOSITO")) return "Depósito";
   if (d.startsWith("DINHEIRO")) return "Dinheiro";
   if (desc.trim()) {
     const first = desc.trim().split(" ")[0];
@@ -403,7 +403,7 @@ function getFormaCobrancaCategory(desc: string): string {
 function getDecisaoLabel(raw: string): string {
   if (!raw) return "";
   const u = raw.toUpperCase().trim();
-  if (u === "COM PROTESTO") return "Com Protesto (Cart\u00f3rio)";
+  if (u === "COM PROTESTO") return "Com Protesto (Cartório)";
   if (u === "SEM PROTESTO") return "Sem Protesto";
   return raw.trim();
 }
@@ -1978,7 +1978,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
             if (d.startsWith("PIX")) { label = "PIX"; color = "text-emerald-600"; }
             else if (d.startsWith("BOLETO")) { label = "Boleto"; color = "text-blue-600"; }
             else if (d.startsWith("CHEQUE")) { label = "Cheque"; color = "text-amber-600"; }
-            else if (d.startsWith("DEP\u00d3SITO") || d.startsWith("DEPOSITO")) { label = "Dep\u00f3sito"; color = "text-purple-600"; }
+            else if (d.startsWith("DEPÓSITO") || d.startsWith("DEPOSITO")) { label = "Depósito"; color = "text-purple-600"; }
             else if (d.startsWith("DINHEIRO")) { label = "Dinheiro"; color = "text-green-700"; }
             else if (fc) { const first = fc.split(" ")[0]; label = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase(); color = "text-slate-600"; }
             return label ? (
@@ -2368,7 +2368,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             if (d.startsWith("PIX")) { label = "PIX"; color = "text-emerald-600"; }
             else if (d.startsWith("BOLETO")) { label = "Boleto"; color = "text-blue-600"; }
             else if (d.startsWith("CHEQUE")) { label = "Cheque"; color = "text-amber-600"; }
-            else if (d.startsWith("DEP\u00d3SITO") || d.startsWith("DEPOSITO")) { label = "Dep\u00f3sito"; color = "text-purple-600"; }
+            else if (d.startsWith("DEPÓSITO") || d.startsWith("DEPOSITO")) { label = "Depósito"; color = "text-purple-600"; }
             else if (d.startsWith("DINHEIRO")) { label = "Dinheiro"; color = "text-green-700"; }
             else if (fc) { const first = fc.split(" ")[0]; label = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase(); color = "text-slate-600"; }
             return label ? (

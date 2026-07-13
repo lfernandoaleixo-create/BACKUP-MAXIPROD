@@ -432,7 +432,7 @@ function drawWeekCard(
   doc.setFontSize(4);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(`Dias ${week.startDay}\u2013${week.endDay}`, x + w - 2, y + 4.5, { align: "right" });
+  doc.text(`Dias ${week.startDay}–${week.endDay}`, x + w - 2, y + 4.5, { align: "right" });
 
   // Row 2: Big value (y + 10.5)
   if (week.total > 0) {
@@ -444,7 +444,7 @@ function drawWeekCard(
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C.slate400);
-    doc.text("\u2014", x + 2, y + 10.5);
+    doc.text("—", x + 2, y + 10.5);
   }
 
   // Row 3: média/dia (y + 14.5)

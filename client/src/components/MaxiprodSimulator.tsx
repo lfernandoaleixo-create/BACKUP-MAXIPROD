@@ -438,12 +438,12 @@ export function getMonthlyReceberSteps(monthLabel: string, from: string, to: str
     { screen: "Tela de Login do Maxiprod", action: "Preencher e-mail de acesso", actionType: "type", fieldLabel: "E-mail", typedValue: "lfernandoaleixo@gmail.com" },
     { screen: "Tela de Login do Maxiprod", action: "Preencher senha", actionType: "type", fieldLabel: "Senha", typedValue: "Luizfernando7008*" },
     { screen: "Entrando no sistema...\nLogin realizado com sucesso!", action: "Clicar em Entrar", actionType: "click" },
-    { screen: "Menu Principal\n\u2192 Financeiro \u2192 Contas a Receber", action: "Navegar para Financeiro \u2192 Contas a Receber", actionType: "navigate" },
+    { screen: "Menu Principal\n→ Financeiro → Contas a Receber", action: "Navegar para Financeiro → Contas a Receber", actionType: "navigate" },
     { screen: "Filtros de Contas a Receber\nEstado: A receber (em aberto)", action: 'Selecionar Estado: apenas "A receber"', actionType: "select" },
-    { screen: `Filtros\nAplicando per\u00edodo de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange },
-    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodap\u00e9 da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
-    { screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodap\u00e9 da tabela", actionType: "verify" },
-    { screen: `A Receber \u2014 ${monthLabel}\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true },
+    { screen: `Filtros\nAplicando período de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange },
+    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodapé da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
+    { screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodapé da tabela", actionType: "verify" },
+    { screen: `A Receber — ${monthLabel}\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true },
   ];
 }
 
@@ -459,12 +459,12 @@ export function getMonthlyPagarSteps(monthLabel: string, from: string, to: strin
     { screen: "Tela de Login do Maxiprod", action: "Preencher e-mail de acesso", actionType: "type", fieldLabel: "E-mail", typedValue: "lfernandoaleixo@gmail.com" },
     { screen: "Tela de Login do Maxiprod", action: "Preencher senha", actionType: "type", fieldLabel: "Senha", typedValue: "Luizfernando7008*" },
     { screen: "Entrando no sistema...\nLogin realizado com sucesso!", action: "Clicar em Entrar", actionType: "click" },
-    { screen: "Menu Principal\n\u2192 Financeiro \u2192 Contas a Pagar", action: "Navegar para Financeiro \u2192 Contas a Pagar", actionType: "navigate" },
+    { screen: "Menu Principal\n→ Financeiro → Contas a Pagar", action: "Navegar para Financeiro → Contas a Pagar", actionType: "navigate" },
     { screen: "Filtros de Contas a Pagar\nEstado: A pagar (em aberto)", action: 'Selecionar Estado: apenas "A pagar"', actionType: "select" },
-    { screen: `Filtros\nAplicando per\u00edodo de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange },
-    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodap\u00e9 da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
-    { screen: "Resultado da pesquisa\nSomando valor total a pagar...", action: "Verificar total no rodap\u00e9 da tabela", actionType: "verify" },
-    { screen: `A Pagar \u2014 ${monthLabel}\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true },
+    { screen: `Filtros\nAplicando período de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange },
+    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodapé da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
+    { screen: "Resultado da pesquisa\nSomando valor total a pagar...", action: "Verificar total no rodapé da tabela", actionType: "verify" },
+    { screen: `A Pagar — ${monthLabel}\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true },
   ];
 }
 
@@ -476,11 +476,11 @@ export function getTotalReceberSteps(valorManus?: number): SimulatorStep[] {
     { screen: "Tela de Login do Maxiprod", action: "Preencher e-mail de acesso", actionType: "type", fieldLabel: "E-mail", typedValue: "lfernandoaleixo@gmail.com" },
     { screen: "Tela de Login do Maxiprod", action: "Preencher senha", actionType: "type", fieldLabel: "Senha", typedValue: "Luizfernando7008*" },
     { screen: "Entrando no sistema...\nLogin realizado com sucesso!", action: "Clicar em Entrar", actionType: "click" },
-    { screen: "Menu Principal\n\u2192 Financeiro \u2192 Contas a Receber", action: "Navegar para Financeiro \u2192 Contas a Receber", actionType: "navigate" },
+    { screen: "Menu Principal\n→ Financeiro → Contas a Receber", action: "Navegar para Financeiro → Contas a Receber", actionType: "navigate" },
     { screen: "Filtros de Contas a Receber\nEstado: A receber (em aberto)", action: 'Selecionar Estado: apenas "A receber"', actionType: "select" },
-    { screen: "IMPORTANTE!\nN\u00e3o aplicar filtro de data\npara ver TODAS as contas em aberto", action: "Deixar filtro de data em branco (todas as datas)", actionType: "select", highlight: true },
-    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodap\u00e9 da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
-    { screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodap\u00e9 da tabela", actionType: "verify" },
+    { screen: "IMPORTANTE!\nNão aplicar filtro de data\npara ver TODAS as contas em aberto", action: "Deixar filtro de data em branco (todas as datas)", actionType: "select", highlight: true },
+    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodapé da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
+    { screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodapé da tabela", actionType: "verify" },
     { screen: `Total Geral A Receber\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true },
   ];
 }
@@ -493,11 +493,11 @@ export function getTotalPagarSteps(valorManus?: number): SimulatorStep[] {
     { screen: "Tela de Login do Maxiprod", action: "Preencher e-mail de acesso", actionType: "type", fieldLabel: "E-mail", typedValue: "lfernandoaleixo@gmail.com" },
     { screen: "Tela de Login do Maxiprod", action: "Preencher senha", actionType: "type", fieldLabel: "Senha", typedValue: "Luizfernando7008*" },
     { screen: "Entrando no sistema...\nLogin realizado com sucesso!", action: "Clicar em Entrar", actionType: "click" },
-    { screen: "Menu Principal\n\u2192 Financeiro \u2192 Contas a Pagar", action: "Navegar para Financeiro \u2192 Contas a Pagar", actionType: "navigate" },
+    { screen: "Menu Principal\n→ Financeiro → Contas a Pagar", action: "Navegar para Financeiro → Contas a Pagar", actionType: "navigate" },
     { screen: "Filtros de Contas a Pagar\nEstado: A pagar (em aberto)", action: 'Selecionar Estado: apenas "A pagar"', actionType: "select" },
-    { screen: "IMPORTANTE!\nN\u00e3o aplicar filtro de data\npara ver TODAS as contas em aberto", action: "Deixar filtro de data em branco (todas as datas)", actionType: "select", highlight: true },
-    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodap\u00e9 da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
-    { screen: "Resultado da pesquisa\nSomando valor total a pagar...", action: "Verificar total no rodap\u00e9 da tabela", actionType: "verify" },
+    { screen: "IMPORTANTE!\nNão aplicar filtro de data\npara ver TODAS as contas em aberto", action: "Deixar filtro de data em branco (todas as datas)", actionType: "select", highlight: true },
+    { screen: 'Clique em "Ocultar filtros"\npara ver o total no rodapé da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" },
+    { screen: "Resultado da pesquisa\nSomando valor total a pagar...", action: "Verificar total no rodapé da tabela", actionType: "verify" },
     { screen: `Total Geral A Pagar\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true },
   ];
 }
@@ -519,14 +519,14 @@ export function getReceivablesSteps(context: {
 
   const steps: SimulatorStep[] = [...loginSteps];
 
-  steps.push({ screen: "Menu Principal\n\u2192 Financeiro \u2192 Contas a Receber", action: "Navegar para Financeiro \u2192 Contas a Receber", actionType: "navigate" });
+  steps.push({ screen: "Menu Principal\n→ Financeiro → Contas a Receber", action: "Navegar para Financeiro → Contas a Receber", actionType: "navigate" });
   steps.push({ screen: "Filtros de Contas a Receber\nEstado: A receber", action: 'Selecionar Estado: apenas "A receber"', actionType: "select" });
 
   if (context.mes) {
     const [y, m] = context.mes.split("-");
     const lastDay = new Date(Number(y), Number(m), 0).getDate();
     const dateRange = `01/${m}/${y} a ${lastDay}/${m}/${y}`;
-    steps.push({ screen: `Filtros\nAplicando per\u00edodo de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange });
+    steps.push({ screen: `Filtros\nAplicando período de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange });
   }
 
   if (context.empresa) {
@@ -534,7 +534,7 @@ export function getReceivablesSteps(context: {
   }
 
   if (context.formaCobranca && context.formaCobranca !== "TODOS") {
-    steps.push({ screen: `Filtros\nForma de cobran\u00e7a: ${context.formaCobranca}`, action: `Filtrar por forma de cobran\u00e7a: "${context.formaCobranca}"`, actionType: "select" });
+    steps.push({ screen: `Filtros\nForma de cobrança: ${context.formaCobranca}`, action: `Filtrar por forma de cobrança: "${context.formaCobranca}"`, actionType: "select" });
   }
 
   if (context.contaLabel) {
@@ -544,8 +544,8 @@ export function getReceivablesSteps(context: {
     }
   }
 
-  steps.push({ screen: 'Clique em "Ocultar filtros"\npara ver o total no rodap\u00e9 da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" });
-  steps.push({ screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodap\u00e9 da tabela", actionType: "verify" });
+  steps.push({ screen: 'Clique em "Ocultar filtros"\npara ver o total no rodapé da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" });
+  steps.push({ screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodapé da tabela", actionType: "verify" });
 
   const valorText = context.valorManus != null ? formatCurrency(context.valorManus) : "R$ ---";
   steps.push({ screen: `Total Contas a Receber\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true });

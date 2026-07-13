@@ -25,7 +25,7 @@ const GESTOR_VENDEDOR_NAMES = ["RENATO LEDESMA", "JUVENAL TEIXEIRA"];
 
 function isGestorVendedor(name: string): boolean {
   return GESTOR_VENDEDOR_NAMES.some(
-    gv => gv.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    gv => gv.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
   );
 }
 

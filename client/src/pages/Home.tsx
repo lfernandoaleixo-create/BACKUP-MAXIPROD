@@ -1556,7 +1556,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
               <p className="text-slate-700 text-sm leading-relaxed">Mostra a <strong>quantidade total vendida (faturada)</strong> de cada produto nos últimos 3 meses. Os valores são em <strong>caixas (cx)</strong> e representam NFs de saída emitidas no período. Quanto maior o número, mais aquele produto vendeu naquele mês.</p>
             </div>
 
-            {/* M\u00e9dia 3 Meses */}
+            {/* Média 3 Meses */}
             <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-indigo-100 rounded-lg"><Eye className="w-4 h-4 text-indigo-600" /></div>
@@ -1580,7 +1580,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
               <p className="text-slate-700 text-sm leading-relaxed">É o <strong>Estoque Regulador sugerido pelo sistema</strong>, calculado como: <strong>Média 3 Meses x 2,33</strong> (cobertura de ~70 dias). Esse valor indica a quantidade mínima ideal que deveria ter em estoque para não faltar produto. Se o estoque atual estiver abaixo desse número, é sinal de que precisa repor.</p>
             </div>
 
-            {/* Vendas M\u00eas Atual */}
+            {/* Vendas Mês Atual */}
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-emerald-100 rounded-lg"><Eye className="w-4 h-4 text-emerald-600" /></div>

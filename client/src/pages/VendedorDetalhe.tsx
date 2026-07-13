@@ -3289,7 +3289,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           ) : (
             <Save className="w-3.5 h-3.5" />
           )}
-          {saving ? "Salvando..." : editMode ? "Salvar Altera\u00e7\u00f5es" : "Salvar Cliente"}
+          {saving ? "Salvando..." : editMode ? "Salvar Alterações" : "Salvar Cliente"}
         </button>
       </div>
     </div>
@@ -3760,7 +3760,7 @@ function OrderDeleteButton({ orderId, onDeleted }: { orderId: number; onDeleted:
 function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const utils = trpc.useUtils();
   const { operator } = useOperator();
-  const canSkipClient = operator?.name === "Guilherme" || operator?.name === "Lu\u00eds Eduardo";
+  const canSkipClient = operator?.name === "Guilherme" || operator?.name === "Luís Eduardo";
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);

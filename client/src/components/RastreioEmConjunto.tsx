@@ -437,7 +437,7 @@ export function RastreioEmConjunto() {
                 <span style="font-size:11px;line-height:1;">\u{1F6A2}</span>
               </div>
               <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
-                ${container.supplierName} \u2022 ${progress || 0}%
+                ${container.supplierName} • ${progress || 0}%
               </div>
             </div>
           `;

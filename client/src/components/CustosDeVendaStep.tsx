@@ -191,7 +191,7 @@ export default function CustosDeVendaStep({
   const normalizedTipoContribuinte = (() => {
     const val = (tipoContribuinte || "").toUpperCase().trim();
     if (val === "CONTRIBUINTE" || val === "Contribuinte".toUpperCase()) return "Contribuinte" as const;
-    if (val.includes("NAO") || val.includes("NÃO") || val.includes("N\u00C3O")) return "Não contribuinte" as const;
+    if (val.includes("NAO") || val.includes("NÃO") || val.includes("NÃO")) return "Não contribuinte" as const;
     if (val === "ISENTO" || val === "Isento".toUpperCase()) return "Isento" as const;
     return "Contribuinte" as const;
   })();

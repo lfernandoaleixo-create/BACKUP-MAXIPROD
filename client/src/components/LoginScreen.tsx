@@ -95,7 +95,7 @@ function WaveText({ text, isDark }: { text: string; isDark: boolean }) {
             textShadow: isDark ? "0 0 12px rgba(255,215,0,0.6), 0 2px 4px rgba(184,134,11,0.4)" : "none",
           }}
         >
-          {char === " " ? "\u00A0" : char}
+          {char === " " ? " " : char}
         </span>
       ))}
     </span>

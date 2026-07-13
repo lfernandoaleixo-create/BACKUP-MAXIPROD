@@ -5405,3 +5405,9 @@
 - [x] Renato vê apenas o card "RENATO LEDESMA" já expandido (sem Jordão, Ana Paula, Juvenal)
 - [x] Juvenal vê apenas o card "JUVENAL TEIXEIRA" já expandido
 - [x] Aprovações de Pedidos deve filtrar por gestorName do gestor logado (Renato vê pedidos do Rafael)
+
+## Fix: Bugs no Painel do Gestor (Renato)
+- [x] Corrigir erro de português: "Ver Aprova\u00e7\u00f5es" mostrando unicode escapado em vez de "Ver Aprovações"
+- [x] Pedidos do Rafael não aparecem na tela de aprovações do Renato (fix: GestorAprovacoes inline rendering - remover TopNav/min-h-screen wrapper quando usado como componente)
+- [x] Mostrar descrição COMPLETA dos pedidos nas aprovações (cadastro do cliente + todos os detalhes do pedido)
+- [x] Vitória também precisa ver todas as informações completas após aprovação do gestor

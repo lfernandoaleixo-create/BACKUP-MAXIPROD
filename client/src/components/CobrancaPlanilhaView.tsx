@@ -615,7 +615,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       doc.text("GRUPO FOX", 14, 12);
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text("Planilha de Cobran\u00E7a \u2014 Inadimpl\u00EAncia", 14, 20);
+      doc.text("Planilha de Cobrança — Inadimplência", 14, 20);
       doc.setFontSize(8);
       doc.setTextColor(180, 180, 180);
       doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 27);
@@ -637,7 +637,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         doc.setFont("helvetica", "bold");
         doc.text("FILTROS APLICADOS:", 18, y + 5);
         doc.setFont("helvetica", "normal");
-        doc.text(activeFilters.join("  \u2022  "), 18, y + 10);
+        doc.text(activeFilters.join("  •  "), 18, y + 10);
         y += 16;
       }
 
@@ -661,7 +661,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
-      doc.text("T\u00CDTULOS", 18 + boxW + gap, y + 5);
+      doc.text("TÍTULOS", 18 + boxW + gap, y + 5);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.text(String(filteredItems.length), 18 + boxW + gap, y + 13);
@@ -682,9 +682,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
       // Main table
       const ETAPA_SHORT: Record<string, string> = {
-        primeiraCobranca: "1\u00AA Cob",
-        segundaCobranca: "2\u00AA Cob",
-        terceiraCobranca: "3\u00AA Cob",
+        primeiraCobranca: "1ª Cob",
+        segundaCobranca: "2ª Cob",
+        terceiraCobranca: "3ª Cob",
         acaoFinal: "Final",
       };
 
@@ -762,13 +762,13 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             } else if (val === "Contatado") {
               data.cell.styles.textColor = [29, 78, 216];
               data.cell.styles.fontStyle = "bold";
-            } else if (val === "Em negocia\u00E7\u00E3o") {
+            } else if (val === "Em negociação") {
               data.cell.styles.textColor = [180, 120, 20];
               data.cell.styles.fontStyle = "bold";
             } else if (val === "Promessa de Pgto") {
               data.cell.styles.textColor = [21, 128, 61];
               data.cell.styles.fontStyle = "bold";
-            } else if (val === "Protestado" || val === "Jur\u00EDdico") {
+            } else if (val === "Protestado" || val === "Jurídico") {
               data.cell.styles.textColor = [185, 28, 28];
               data.cell.styles.fontStyle = "bold";
             }
@@ -807,8 +807,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         doc.line(14, pageH - 12, pageW - 14, pageH - 12);
         doc.setTextColor(148, 163, 184);
         doc.setFontSize(6.5);
-        doc.text("Grupo Fox \u2014 Planilha de Cobran\u00E7a", 14, pageH - 7);
-        doc.text(`P\u00E1gina ${p} de ${totalPages}`, pageW - 14 - doc.getTextWidth(`P\u00E1gina ${p} de ${totalPages}`), pageH - 7);
+        doc.text("Grupo Fox — Planilha de Cobrança", 14, pageH - 7);
+        doc.text(`Página ${p} de ${totalPages}`, pageW - 14 - doc.getTextWidth(`Página ${p} de ${totalPages}`), pageH - 7);
       }
 
       const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -915,7 +915,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           <button
             onClick={handleExportPdf}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors shadow-sm"
-            title="Exportar planilha de cobran\u00E7a como PDF"
+            title="Exportar planilha de cobrança como PDF"
           >
             <FileDown className="w-3.5 h-3.5" />
             Exportar PDF
@@ -1780,7 +1780,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                 {/* Contatos nomeados (seção "Ocultar Contatos" do Maxiprod) */}
                                 {(() => {
                                   if (!clientPhonesMap) return null;
-                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
                                   const phoneData = clientPhonesMap[normKey];
                                   if (!phoneData?.contacts || phoneData.contacts.length === 0) return null;
                                   return (
@@ -1804,7 +1804,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                 {/* Telefones extras do GraphQL (não presentes nos anteriores) */}
                                 {(() => {
                                   if (!clientPhonesMap) return null;
-                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
                                   const phoneData = clientPhonesMap[normKey];
                                   const extras = (item.contatosAdicionais as string[] | null) || [];
                                   const principal = (item as any).contato || "";
@@ -1830,7 +1830,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                 {(() => {
                                   const extras = (item.contatosAdicionais as string[] | null) || [];
                                   const principal = (item as any).contato || "";
-                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                  const normKey = (item.empresa || "").toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
                                   const phoneData = clientPhonesMap?.[normKey];
                                   if (!principal && extras.length === 0 && (!phoneData || phoneData.phones.length === 0)) {
                                     return <p className="text-slate-400 italic text-[10px]">Nenhum telefone encontrado no Maxiprod.</p>;
@@ -1848,9 +1848,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                 {(item as any).etapasHerdadasDeDoc && (
                                   <span
                                     className="ml-1 text-[9px] font-normal text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 cursor-help"
-                                    title={`Etapas herdadas do t\u00edtulo: ${(item as any).etapasHerdadasDeDoc} (ID #${(item as any).etapasHerdadasDeId})`}
+                                    title={`Etapas herdadas do título: ${(item as any).etapasHerdadasDeDoc} (ID #${(item as any).etapasHerdadasDeId})`}
                                   >
-                                    \u21e2 Herdado de: {(item as any).etapasHerdadasDeDoc}
+                                    ⇢ Herdado de: {(item as any).etapasHerdadasDeDoc}
                                   </span>
                                 )}
                               </h4>
@@ -2558,17 +2558,17 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
 
 /** ==================== DIÁRIO DE COBRANÇA - Componente Interno ==================== */
 const DIARY_ETAPAS = [
-  { value: "primeiraCobranca", label: "1\u00aa Cobran\u00e7a", color: "bg-blue-100 text-blue-700 border-blue-300" },
-  { value: "segundaCobranca", label: "2\u00aa Cobran\u00e7a", color: "bg-indigo-100 text-indigo-700 border-indigo-300" },
-  { value: "terceiraCobranca", label: "3\u00aa Cobran\u00e7a", color: "bg-purple-100 text-purple-700 border-purple-300" },
-  { value: "semAcao1", label: "Sem A\u00e7\u00e3o (1/2)", color: "bg-amber-100 text-amber-700 border-amber-300" },
-  { value: "semAcao2", label: "Sem A\u00e7\u00e3o (2/2)", color: "bg-orange-100 text-orange-700 border-orange-300" },
-  { value: "semAcao3", label: "Sem A\u00e7\u00e3o (3/3)", color: "bg-red-100 text-red-700 border-red-300" },
-  { value: "acaoFinal", label: "A\u00e7\u00e3o Final", color: "bg-red-200 text-red-800 border-red-400" },
+  { value: "primeiraCobranca", label: "1ª Cobrança", color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { value: "segundaCobranca", label: "2ª Cobrança", color: "bg-indigo-100 text-indigo-700 border-indigo-300" },
+  { value: "terceiraCobranca", label: "3ª Cobrança", color: "bg-purple-100 text-purple-700 border-purple-300" },
+  { value: "semAcao1", label: "Sem Ação (1/2)", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "semAcao2", label: "Sem Ação (2/2)", color: "bg-orange-100 text-orange-700 border-orange-300" },
+  { value: "semAcao3", label: "Sem Ação (3/3)", color: "bg-red-100 text-red-700 border-red-300" },
+  { value: "acaoFinal", label: "Ação Final", color: "bg-red-200 text-red-800 border-red-400" },
   { value: "Contatado", label: "Contatado", color: "bg-teal-100 text-teal-700 border-teal-300" },
-  { value: "Em negocia\u00e7\u00e3o", label: "Em Negocia\u00e7\u00e3o", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "Em negociação", label: "Em Negociação", color: "bg-amber-100 text-amber-700 border-amber-300" },
   { value: "Promessa de Pgto", label: "Promessa de Pgto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-  { value: "Especial s/ cobran\u00e7a", label: "Especial s/ Cobran\u00e7a", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
+  { value: "Especial s/ cobrança", label: "Especial s/ Cobrança", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
   { value: "Protestado", label: "Protestado", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: "Fundo Perdido", label: "Fundo Perdido", color: "bg-stone-100 text-stone-700 border-stone-400" },
   { value: "Pago/Resolvido", label: "Pago/Resolvido", color: "bg-green-100 text-green-700 border-green-300" },

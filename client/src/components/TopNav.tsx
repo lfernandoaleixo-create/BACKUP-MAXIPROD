@@ -65,7 +65,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
 
   // Blink Gestão Comercial tab for gestores (pending approval) and Vitória (pending processing)
   const isGestor = operator?.name === "Juvenal" || operator?.name === "Fernando" || operator?.name === "Guilherme";
-  const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vit\u00f3ria";
+  const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
   const { data: pendingGestorData } = trpc.salesOrders.countPendingGestor.useQuery(undefined, {
     enabled: isGestor,
     refetchInterval: 20000,
