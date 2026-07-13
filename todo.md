@@ -5254,3 +5254,6 @@
 
 ## Tabela de Preço - Ordenação
 - [x] Ordenar itens da tabela de preço por código em ordem crescente (igual Maxiprod)
+
+## Bug Fix - Botão Autorizar
+- [x] Patrick Lucio e Renato Aleixo estão sem botão de autorizar na aba Acesso ao Aplicativo

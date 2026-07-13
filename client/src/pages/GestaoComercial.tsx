@@ -694,10 +694,29 @@ interface AcessoAppViewProps {
 }
 
 function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: AcessoAppViewProps) {
+  const utils = trpc.useUtils();
+  const addSellerMutation = trpc.sales.addSellerWithPassword.useMutation({
+    onSuccess: () => {
+      utils.sales.listSellerPermissions.invalidate();
+    },
+  });
+
   const getPermForVendedor = (vendedor: string): SellerPermission | undefined => {
     return permissions.find(
       (p) => p.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === vendedor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
     );
+  };
+
+  const handleAuthorizeNew = (vendedor: string) => {
+    // Create permission record with authorized=true and a default password (first name capitalized)
+    const firstName = vendedor.split(" ")[0];
+    const password = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+    addSellerMutation.mutate({
+      gestorName,
+      sellerName: vendedor,
+      password,
+      authorized: true,
+    });
   };
 
   const authorizedCount = vendedores.filter(v => getPermForVendedor(v)?.authorized).length;
@@ -742,7 +761,7 @@ function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: Ac
                   {isAuthorized ? "Autorizado" : "Bloqueado"}
                 </p>
               </div>
-              {perm && (
+              {perm ? (
                 <button
                   onClick={() => onToggleAuth(perm.id, isAuthorized)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
@@ -752,6 +771,14 @@ function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: Ac
                   }`}
                 >
                   {isAuthorized ? "Bloquear" : "Autorizar"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleAuthorizeNew(vendedor)}
+                  disabled={addSellerMutation.isPending}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50"
+                >
+                  {addSellerMutation.isPending ? "..." : "Autorizar"}
                 </button>
               )}
             </div>
