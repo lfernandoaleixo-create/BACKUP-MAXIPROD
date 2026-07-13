@@ -12,6 +12,7 @@ import React, { useState } from "react";
 import { Package, Lock, AlertCircle, Crown, ShoppingCart, ArrowLeft, Settings, ClipboardCheck, RefreshCw } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import VendedorDetalhe from "./VendedorDetalhe";
+import { GestaoComercialFullInline } from "./GestaoComercial";
 
 interface SellerSession {
   id: number;
@@ -100,13 +101,34 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
     return <GestorVendedorHub session={session} onChoice={setHubChoice} onLogout={handleLogout} />;
   }
 
-  // Se escolheu "gestor", redireciona para a Gestão Comercial (mesmo painel dos gestores)
+  // Se escolheu "gestor", renderiza o painel de gestão comercial inline (sem redirecionar)
   if (hubChoice === "gestor") {
-    // Navigate to gestao-comercial with gestor filter
-    window.location.href = `/gestao-comercial?autoExpand=${encodeURIComponent(session.name)}`;
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <RefreshCw className="w-6 h-6 text-teal-500 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        {/* Header with back button */}
+        <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setHubChoice(null)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors text-xs font-medium cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Voltar
+            </button>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Painel do Gestor</p>
+              <p className="text-[10px] text-slate-500">{session.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors text-xs font-medium cursor-pointer"
+          >
+            Sair
+          </button>
+        </div>
+        {/* Render the full gestor panel inline */}
+        <GestaoComercialFullInline autoExpandName={session.name} />
       </div>
     );
   }

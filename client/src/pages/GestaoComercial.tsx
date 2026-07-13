@@ -2706,6 +2706,93 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
 // GESTAO COMERCIAL FULL - For Juvenal/Guilherme accessing via navigation hub
 // Renders the full GestaoComercial page without the hub/redirect logic
 // ============================================================
+// Inline version for SellerApp (no TopNav, no back link to /gestao-comercial)
+export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?: string }) {
+  const [view, setView] = useState<GestaoView>("gestores");
+
+  // Fetch seller list from Maxiprod
+  const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
+    staleTime: 30 * 1000,
+  });
+
+  // Get vendedores for a specific gestor from Maxiprod data
+  const getVendedoresForGestor = (gestorName: string): string[] => {
+    if (!representantesQuery.data) return [];
+    const gestores = representantesQuery.data.gestores as GestorGroup[];
+    const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
+    const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
+    if (grupo) return grupo.vendedores;
+    const normalized = maxiprodName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const grupoNorm = gestores.find(g => 
+      g.gestor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === normalized
+    );
+    return grupoNorm?.vendedores || [];
+  };
+
+  return (
+    <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
+      {/* Tab buttons */}
+      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
+        <button
+          onClick={() => setView("gestores")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+            view === "gestores"
+              ? "bg-teal-600 text-white shadow-sm"
+              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+          }`}
+        >
+          <Crown className="w-4 h-4" />
+          Gestores
+        </button>
+        <button
+          onClick={() => setView("vendedores")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+            view === "vendedores"
+              ? "bg-teal-600 text-white shadow-sm"
+              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Vendedores
+        </button>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Exportar Maxiprod button */}
+        <ExportMaxiprodButton />
+      </div>
+
+      {/* Content */}
+      {view === "gestores" && (
+        <GestoresTab
+          getVendedoresForGestor={getVendedoresForGestor}
+          permissions={permissionsQuery.data || []}
+          isLoading={representantesQuery.isLoading}
+          isError={representantesQuery.isError}
+          errorMessage={representantesQuery.error?.message}
+          onRefresh={() => {
+            representantesQuery.refetch();
+            permissionsQuery.refetch();
+          }}
+          isFetching={representantesQuery.isFetching}
+        />
+      )}
+      {view === "vendedores" && (
+        <VendedoresTab
+          getVendedoresForGestor={getVendedoresForGestor}
+          permissions={permissionsQuery.data || []}
+          isLoading={representantesQuery.isLoading}
+        />
+      )}
+    </main>
+  );
+}
+
 export function GestaoComercialFull() {
   const [view, setView] = useState<GestaoView>("gestores");
 
