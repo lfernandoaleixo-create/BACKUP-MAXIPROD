@@ -5263,3 +5263,8 @@
 
 ## Bug Fix: React error #310 em SellerOrdersView (Vendedor login crash)
 - [x] Fix React error #310 "Rendered more hooks than during the previous render" in SellerOrdersView — monthlyRepQuery useQuery hook was declared AFTER the `if (isLoading) return ...` early return, violating React Rules of Hooks. Moved hook declaration to before the early return.
+
+## Simplificação do Fluxo de Pedido para Vendedores + Notificação
+- [x] Barra de margem/cores (ProductMarginBar) + cálculo de custos (CustosDeVendaStep) visível APENAS para Guilherme, Fernando e Juvenal
+- [x] Vendedores veem apenas botão "Concluir Pedido" sem barras de margem e sem step de custos
+- [x] Notificar imediatamente Vitória, Juvenal e Guilherme quando um pedido for concluído por vendedor

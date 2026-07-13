@@ -846,7 +846,7 @@ export const salesOrderRouter = router({
         }
       }
 
-      // Send notification to Juvenal and Vitória about new seller order (skip for simulations)
+      // Send notification to Vitória, Juvenal and Guilherme about new seller order (skip for simulations)
       if (!input.isSimulation) {
         try {
           const { createNotification } = await import("./notificationRouter");

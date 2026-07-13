@@ -26,15 +26,18 @@ const FATURAMENTO_ONLY_TYPES = ["novo_pedido", "pedido_modificado", "observacao_
 // Operadores que só devem ver notificações de faturamento (NÃO cobrança/inadimplência)
 const FATURAMENTO_ONLY_OPERATORS = ["Maria", "Erica", "Danubia"];
 
-// Operadores que veem notificações de pedidos de vendedores
-const PEDIDO_VENDEDOR_OPERATORS = ["Juvenal", "Vitória", "Vitoria", "Fernando", "Guilherme"];
+// Operadores que veem notificações de pedidos de vendedores (apenas esses recebem)
+const PEDIDO_VENDEDOR_OPERATORS = ["Juvenal", "Vitória", "Vitoria", "Guilherme"];
 
 /** Retorna os tipos de notificação permitidos para o operador */
 function getAllowedTypes(operatorName?: string): string[] {
   if (operatorName && FATURAMENTO_ONLY_OPERATORS.includes(operatorName)) {
     return FATURAMENTO_ONLY_TYPES;
   }
-  // Pedido vendedor é visível para todos que estão em ALL_NOTIFICATION_TYPES
+  // Pedido vendedor é visível APENAS para Vitória, Juvenal e Guilherme
+  if (operatorName && !PEDIDO_VENDEDOR_OPERATORS.includes(operatorName)) {
+    return ALL_NOTIFICATION_TYPES.filter(t => t !== "pedido_vendedor");
+  }
   return ALL_NOTIFICATION_TYPES;
 }
 
