@@ -53,15 +53,20 @@ type OrderWithItems = {
   }>;
 };
 
-export default function GestorAprovacoes() {
+export default function GestorAprovacoes(props: any = {}) {
+  const gestorNameProp = props?.gestorName as string | undefined;
+  // Read gestorName from URL search params if not passed as prop
+  const urlParams = new URLSearchParams(window.location.search);
+  const gestorName = gestorNameProp || urlParams.get("gestor") || undefined;
+
   const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado">("todos");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  // Fetch all orders (gestor sees all)
+  // Fetch orders - filtered by gestorName if provided (for Renato/Juvenal individual view)
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
-    { status: filter === "todos" ? "todos" : filter },
+    { status: filter === "todos" ? "todos" : filter, ...(gestorName ? { gestorName } : {}) },
     { staleTime: 30 * 1000 }
   );
 
@@ -131,7 +136,7 @@ export default function GestorAprovacoes() {
             </Link>
             <div>
               <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">Aprovação de Pedidos</h1>
-              <p className="text-xs text-slate-500">Gerencie os pedidos dos vendedores de rua</p>
+              <p className="text-xs text-slate-500">{gestorName ? `Pedidos dos vendedores de ${gestorName}` : "Gerencie os pedidos dos vendedores de rua"}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

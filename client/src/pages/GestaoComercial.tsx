@@ -207,8 +207,12 @@ export default function GestaoComercial() {
   // If Vitória, show nothing (redirect will happen)
   if (shouldRedirectToPedidos) return null;
 
-  // Juvenal/Guilherme see a navigation hub with 4 panels
+  // Juvenal/Guilherme see a navigation hub with panels
   if (showNavigationHub) {
+    // Determine the gestor name for Renato/Juvenal (used for filtering their own orders)
+    const gestorNameForHub = isRenato ? "RENATO LEDESMA" : isJuvenal ? "JUVENAL TEIXEIRA" : null;
+    const isGestorVendedor = isRenato || isJuvenal; // These operators are both gestors AND sellers
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
         <TopNav />
@@ -233,7 +237,7 @@ export default function GestaoComercial() {
               </div>
             </Link>
 
-            {/* Painel dos Vendedores */}
+            {/* Painel dos Vendedores (visão geral - para gestores que administram vendedores) */}
             <a href="/vendedor-gestor">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-sm p-6 hover:shadow-lg hover:border-blue-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
@@ -247,6 +251,40 @@ export default function GestaoComercial() {
                 </div>
               </div>
             </a>
+
+            {/* Meu Painel de Vendedor - para Renato/Juvenal que também vendem */}
+            {isGestorVendedor && (
+              <a href="/vendedor">
+                <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-sm p-6 hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer group">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
+                      <ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Meu Painel de Vendedor</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Meus pedidos, estoque e clientes (como vendedor)</p>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            )}
+
+            {/* Aprovações de Pedidos - para Renato/Juvenal que precisam aprovar pedidos dos seus vendedores */}
+            {isGestorVendedor && gestorNameForHub && (
+              <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(gestorNameForHub)}`}>
+                <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-sm p-6 hover:shadow-lg hover:border-orange-400 transition-all cursor-pointer group">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50 transition-colors">
+                      <ClipboardCheck className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Aprovações de Pedidos</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Pedidos dos meus vendedores aguardando aprovação</p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )}
 
             {/* Painel de Cadastro de Clientes */}
             <Link href="/gestao-comercial/cadastro-clientes">
@@ -268,7 +306,7 @@ export default function GestaoComercial() {
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-amber-200 dark:border-amber-700 shadow-sm p-6 hover:shadow-lg hover:border-amber-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
-                    <ShoppingCart className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    <Package className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Pedidos de Vendas</h3>

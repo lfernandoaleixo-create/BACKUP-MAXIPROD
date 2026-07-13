@@ -990,6 +990,7 @@ export const salesOrderRouter = router({
     .input(z.object({
       status: z.enum(["pendente", "aprovado", "rejeitado", "processado", "todos"]).optional(),
       sellerId: z.number().optional(),
+      gestorName: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -1001,6 +1002,9 @@ export const salesOrderRouter = router({
       }
       if (input?.sellerId) {
         conditions.push(eq(salesOrderRequests.sellerId, input.sellerId));
+      }
+      if (input?.gestorName) {
+        conditions.push(eq(salesOrderRequests.gestorName, input.gestorName));
       }
 
       const orders = await db.select().from(salesOrderRequests)

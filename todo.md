@@ -5377,3 +5377,10 @@
 - [x] Remover seção "Clientes Cadastrados (sem pedido)" da tela de Pedidos para Processamento (VitoriaOrders.tsx)
 - [x] Garantir que o painel "Cadastro de Clientes" no hub mostra APENAS clientes cadastrados sem pedido
 - [x] Garantir que o painel "Pedidos de Vendas" mostra APENAS pedidos de venda (sem lista de clientes)
+
+## Feature: Painel duplo para Renato e Juvenal (gestor + vendedor)
+- [x] Renato e Juvenal devem ver no hub: Painel de Gestor (com aprovações pendentes dos vendedores deles) + Painel de Vendedor (deles próprios)
+- [x] No painel de gestor, "Aprovações de Pedidos" filtra por gestorName para mostrar apenas os pedidos dos vendedores subordinados
+- [x] No painel de vendedor, link direto para /vendedor (app de vendedor deles próprios)
+- [x] Renato precisa aprovar pedidos do Rafael (e outros vendedores dele) - filtro por gestorName implementado
+- [x] Backend listOrders agora aceita filtro gestorName para filtrar pedidos por gestor
