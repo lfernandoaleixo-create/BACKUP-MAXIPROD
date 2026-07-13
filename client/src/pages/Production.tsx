@@ -25,6 +25,7 @@ import { generateAnnotationPdf } from "@/lib/annotationPdfExport";
 import ProductionCharts from "@/components/ProductionCharts";
 import { ChecklistDesperdicio } from "@/pages/ChecklistDesperdicio";
 import StockWithdrawal from "@/pages/StockWithdrawal";
+import LotControl from "@/components/LotControl";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, Legend as RechartsLegend,
@@ -280,7 +281,7 @@ export default function Production() {
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos" | "checklist" | "movimentacao">("lancamento");
+  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos" | "checklist" | "movimentacao" | "lotes">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [showConversionModal, setShowConversionModal] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
@@ -909,9 +910,14 @@ export default function Production() {
             <button onClick={() => setViewMode("checklist")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "checklist" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>
-            {["Bruno", "Fernando", "Guilherme"].includes(operator?.name || "") && (
+            {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
             <button onClick={() => setViewMode("movimentacao")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "movimentacao" ? "bg-violet-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <Package className="w-4 h-4" /> Movimentação de Estoque
+            </button>
+            )}
+            {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
+            <button onClick={() => setViewMode("lotes")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lotes" ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <Layers className="w-4 h-4" /> Controle de Lotes
             </button>
             )}
 
@@ -1252,6 +1258,8 @@ export default function Production() {
           <ChecklistDesperdicio />
         ) : viewMode === "movimentacao" ? (
           <StockWithdrawal />
+        ) : viewMode === "lotes" ? (
+          <LotControl />
         ) : (
           <PirografiaHistoryView />
         )}
@@ -2896,7 +2904,7 @@ function PirografiaHistoryView() {
               <Flame className="w-5 h-5 text-orange-500" />
               Histórico de Pirografia
             </h2>
-            <p className="text-sm text-slate-500 mt-0.5">Ranking de nomes e produtos mais pirografados</p>
+            <p className="text-sm text-slate-500 mt-0.5">Clientes e produtos pirografados no período</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={() => setPreset(7)} className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">7 dias</button>
@@ -2976,104 +2984,84 @@ function PirografiaHistoryView() {
         </div>
       )}
 
-      {/* Rankings Grid */}
+      {/* Tables Grid */}
       {data && !isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Nomes */}
+          {/* Tabela Clientes Pirografados */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Type className="w-4 h-4 text-orange-500" />
-                Top Nomes Pirografados
-              </h3>
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Clientes Pirografados</h3>
             </div>
             {data.topNomes.length === 0 ? (
               <div className="text-center py-8 text-sm text-slate-400">Nenhum registro no período</div>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                {data.topNomes.map((item, idx) => {
-                  const maxQty = data.topNomes[0]?.quantidade || 1;
-                  const pct = (item.quantidade / maxQty) * 100;
-                  return (
-                    <div key={item.nome} className="px-5 py-3 hover:bg-slate-50/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                          idx === 0 ? 'bg-orange-100 text-orange-700' :
-                          idx === 1 ? 'bg-amber-100 text-amber-700' :
-                          idx === 2 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-slate-100 text-slate-500'
-                        }`}>
-                          {idx + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-slate-700 truncate">{item.nome}</div>
-                          <div className="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 ml-2">
-                          <div className="text-sm font-bold text-slate-700 tabular-nums">{formatQty(item.quantidade)} cx</div>
-                          <div className="text-[10px] text-slate-400">{item.registros} reg.</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase">Cliente</th>
+                      <th className="text-right px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase">Caixas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {data.topNomes.map((item) => (
+                      <tr key={item.nome} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-2.5 text-slate-700 font-medium">{item.nome}</td>
+                        <td className="px-5 py-2.5 text-right text-slate-700 tabular-nums font-medium">{formatQty(item.quantidade)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 dark:border-slate-600 bg-slate-50/50">
+                      <td className="px-5 py-2.5 font-bold text-slate-800 uppercase text-xs">Total</td>
+                      <td className="px-5 py-2.5 text-right font-bold text-slate-800 tabular-nums">{formatQty(data.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
           </div>
 
-          {/* Top Produtos */}
+          {/* Tabela Produtos Utilizados */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Package className="w-4 h-4 text-teal-500" />
-                Top Produtos Pirografados
-              </h3>
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Produtos Utilizados</h3>
             </div>
             {data.topProdutos.length === 0 ? (
               <div className="text-center py-8 text-sm text-slate-400">Nenhum registro no período</div>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                {data.topProdutos.map((item, idx) => {
-                  const maxQty = data.topProdutos[0]?.quantidade || 1;
-                  const pct = (item.quantidade / maxQty) * 100;
-                  const matColor = item.materialOrigem === "bambu" ? "emerald" : "amber";
-                  return (
-                    <div key={`${item.codigoItem}-${item.materialOrigem}`} className="px-5 py-3 hover:bg-slate-50/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                          idx === 0 ? 'bg-teal-100 text-teal-700' :
-                          idx === 1 ? 'bg-cyan-100 text-cyan-700' :
-                          idx === 2 ? 'bg-sky-100 text-sky-700' :
-                          'bg-slate-100 text-slate-500'
-                        }`}>
-                          {idx + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-slate-700 truncate">{item.descricaoItem}</span>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-                              matColor === "emerald" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                            }`}>
-                              {item.materialOrigem === "bambu" ? "BAMBU" : "MADEIRA"}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Cód: {item.codigoItem}</div>
-                          <div className="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all duration-500 ${
-                              matColor === "emerald" ? "bg-gradient-to-r from-emerald-400 to-teal-400" : "bg-gradient-to-r from-amber-400 to-yellow-400"
-                            }`} style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 ml-2">
-                          <div className="text-sm font-bold text-slate-700 tabular-nums">{formatQty(item.quantidade)} cx</div>
-                          <div className="text-[10px] text-slate-400">{item.registros} reg.</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase">Produto</th>
+                      <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase">Tipo</th>
+                      <th className="text-right px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase">Caixas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {data.topProdutos.map((item) => (
+                      <tr key={`${item.codigoItem}-${item.materialOrigem}`} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-2.5 text-slate-700 font-medium">{item.descricaoItem}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            item.materialOrigem === "bambu" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {item.materialOrigem === "bambu" ? "Bambu" : "Madeira"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-2.5 text-right text-slate-700 tabular-nums font-medium">{formatQty(item.quantidade)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 dark:border-slate-600 bg-slate-50/50">
+                      <td className="px-5 py-2.5 font-bold text-slate-800 uppercase text-xs">Total</td>
+                      <td></td>
+                      <td className="px-5 py-2.5 text-right font-bold text-slate-800 tabular-nums">{formatQty(data.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
           </div>

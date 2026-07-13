@@ -2952,3 +2952,43 @@ export const collectionDiarySnapshots = mysqlTable("collection_diary_snapshots",
 });
 export type CollectionDiarySnapshot = typeof collectionDiarySnapshots.$inferSelect;
 export type InsertCollectionDiarySnapshot = typeof collectionDiarySnapshots.$inferInsert;
+
+
+/**
+ * Controle de Lotes de Produção
+ * Cada lote = uma carga de produção de um SKU específico
+ * Código gerado: SKU-DDMMAA-NOTA
+ */
+export const productionLots = mysqlTable("production_lots", {
+  id: int("id").autoincrement().primaryKey(),
+  codigo: varchar("codigo", { length: 100 }).notNull().unique(), // SKU-DDMMAA-NOTA
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(), // SKU do produto
+  descricaoItem: text("descricaoItem").notNull(), // Descrição do produto
+  notaCarga: varchar("notaCarga", { length: 50 }).notNull(), // Nota da carga
+  dataProducao: varchar("dataProducao", { length: 10 }).notNull(), // YYYY-MM-DD
+  qtdProduzida: decimal("qtdProduzida", { precision: 18, scale: 2 }).notNull(), // Caixas produzidas
+  saldoAtual: decimal("saldoAtual", { precision: 18, scale: 2 }).notNull(), // Saldo disponível
+  lancadoPor: varchar("lancadoPor", { length: 200 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductionLot = typeof productionLots.$inferSelect;
+export type InsertProductionLot = typeof productionLots.$inferInsert;
+
+/**
+ * Movimentações de lote (saídas vinculadas a pedidos/clientes)
+ */
+export const lotMovements = mysqlTable("lot_movements", {
+  id: int("id").autoincrement().primaryKey(),
+  lotId: int("lotId").notNull(), // FK para production_lots
+  codigoLote: varchar("codigoLote", { length: 100 }).notNull(), // Código do lote (desnormalizado)
+  pedido: varchar("pedido", { length: 50 }), // Número do pedido
+  cliente: varchar("cliente", { length: 300 }).notNull(), // Nome do cliente
+  qtdEnviada: decimal("qtdEnviada", { precision: 18, scale: 2 }).notNull(), // Caixas enviadas
+  dataEnvio: varchar("dataEnvio", { length: 10 }).notNull(), // YYYY-MM-DD
+  observacoes: text("observacoes"),
+  lancadoPor: varchar("lancadoPor", { length: 200 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type LotMovement = typeof lotMovements.$inferSelect;
+export type InsertLotMovement = typeof lotMovements.$inferInsert;

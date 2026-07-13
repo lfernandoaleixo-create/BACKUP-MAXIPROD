@@ -1,0 +1,99 @@
+Tarefas B.I. — Reformulação da Aba de
+Pirografia
+
+O que tirar
+   Remover todas as barras (laranjas e verdes) dos dois rankings
+   Remover a numeração de posição (1, 2, 3...) ao lado dos nomes
+   Remover a informação de "registros" (ex: "5 reg.", "3 reg.")
+   Remover o formato visual de ranking/competição
+
+O que manter
+   Os 3 números resumo no topo: Total de Caixas Pirografadas / Nomes Diferentes /
+   Produtos Usados
+   O filtro de período (7 dias, 30 dias, 90 dias, 1 ano)
+   O botão "Exportar PDF"
+   O filtro de data personalizado (De / Até)
+
+O que criar no lugar
+Duas tabelas simples lado a lado, sem barras, sem numeração, sem cores proporcionais.
+Tabela 1 — Clientes Pirografados (lado esquerdo)
+Tabela com 2 colunas apenas. Ordenada do maior para o menor automaticamente.
+Exemplo visual:
+  Plain Text
+  ┌──────────────────────────────────────────────────┐
+  │ CLIENTES PIROGRAFADOS                            │
+  ├──────────────────────────────────┬───────────────┤
+  │ Cliente                          │ Caixas        │
+  ├──────────────────────────────────┼───────────────┤
+  │ Pasa Espetinhos                  │    45         │
+  │ Genuíno                          │    33         │
+  │ Serjão Loja de Carnes            │    30         │
+  │ Vale da Pedra                    │    30         │
+  │ Só Espetos                       │    20         │
+  │ Cantinho do Espeto PB            │    20         │
+  │ Gosto do Chef                    │    20         │
+  │ Sr. Espetin                      │    14         │
+  │ Clebian Espeto e Petiscaria      │    13         │
+  │ Espetinhos D'avenida             │    12         │
+  │ Espetinho D'avenida              │    12         │
+  │ Godam                            │    11         │
+  │ Bendita Brasa                    │     8         │
+  │ Fábrica de Espetos               │     7         │
+  │ Terneiro Carnes                  │     7         │
+  │ Marmoreio                        │     6         │
+  │ Clebian Espeto e Petiscaria      │     2         │
+  │ Queijos Dourado                  │     2         │
+  ├──────────────────────────────────┼───────────────┤
+  │ TOTAL                            │   292         │
+  └──────────────────────────────────┴───────────────┘
+
+
+Regras:
+ • Sem barra, sem cor, sem numeração de posição
+ • Ordenação automática: quem tem mais caixas aparece primeiro
+ • Linha de TOTAL no final da tabela
+ • Fonte limpa, espaçamento confortável para leitura
+
+Tabela 2 — Produtos Utilizados (lado direito)
+Tabela com 3 colunas. Ordenada do maior para o menor automaticamente.
+Exemplo visual:
+  Plain Text
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ PRODUTOS UTILIZADOS                                                       │
+  ├──────────────────────────────────────────────┬──────────┬────────────────┤
+  │ Produto                                      │ Tipo      │ Caixas         │
+  ├──────────────────────────────────────────────┼──────────┼────────────────┤
+  │ Espeto Bambu 4,5 x 250 mm c/ 5 x 1.000      │ Bambu    │    77          │
+  │ Espeto Bambu 4,0 x 250 mm c/ 5 x 1.000      │ Bambu    │    71          │
+  │ Espeto Bambu 4,0 x 300 mm c/ 5 x 1.000      │ Bambu    │    50          │
+  │ Espeto Bambu 4,5 x 300 mm c/ 5 x 1.000      │ Bambu    │    36          │
+  │ Espeto Bambu 4,5 x 280 mm c/ 5 x 1.000      │ Bambu    │    34          │
+  │ Espeto p/ Queijo Coalho 4,0 x 200 mm        │ Madeira │     13          │
+  │ Espeto Bambu 3,5 x 180 mm c/ 10 x 1.000     │ Bambu    │    11          │
+  ├──────────────────────────────────────────────┼──────────┼────────────────┤
+  │ TOTAL                                        │           │  292           │
+  └──────────────────────────────────────────────┴──────────┴────────────────┘
+
+
+Regras:
+ • Sem barra, sem cor, sem numeração de posição
+ • Sem código do produto (ex: "Cód: 00018") — não precisa aparecer
+ • Coluna "Tipo" mostra apenas: Bambu ou Madeira (tag simples, sem destaque colorido
+   exagerado)
+ • Ordenação automática: produto com mais caixas aparece primeiro
+ • Linha de TOTAL no final da tabela
+
+
+Checklist final para o B.I.
+   Tirar barras (laranjas e verdes)
+   Tirar numeração de posição (1, 2, 3...)
+   Tirar informação de registros ("X reg.")
+   Tirar código do produto ("Cód: 00018")
+   Manter os 3 números resumo no topo
+   Manter filtros de período e exportar PDF
+   Criar tabela "Clientes Pirografados" (2 colunas: Cliente + Caixas)
+   Criar tabela "Produtos Utilizados" (3 colunas: Produto + Tipo + Caixas)
+   Ambas tabelas com linha de TOTAL no final
+   Ordenação automática do maior para o menor
+   Sem cores proporcionais, sem destaque visual entre linhas
+

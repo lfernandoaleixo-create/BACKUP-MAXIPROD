@@ -1,0 +1,235 @@
+Tarefas B.I. — Módulo de Controle de Lote
+
+Objetivo
+Rastrear cada lote de produção desde a entrada da matéria-prima até a entrega ao cliente.
+Controle interno do dashboard — não depende do sistema principal.
+
+Lógica do número de lote
+Formato: SKU-DDMMAA-NOTA
+Exemplo: EC20-100726-4016
+ Parte                           Significado                      Exemplo
+ EC20                            SKU do produto finalizado        EC20
+ 100726                          Data de produção                 10/07/26
+                                 (dia/mês/ano)
+ 4016                            Número da nota fiscal da carga   4016
+                                 de madeira
+
+O líder já sabe no início do dia qual carga está usando.
+
+Estrutura no dashboard
+2 abas novas no menu:
+  Plain Text
+  Lançamento | Histórico | Pirografia | Gráficos | Checklist | Mov. Estoque | Lanç
+
+
+
+ Aba nova                        Quem usa                         Para quê
+ Lançamento de Lote              Líder (tablet)                   Registrar produção do dia com
+                                                                  lote
+ Lotes                         Gestor / Fiscal                Consultar estoque de lotes e
+                                                              histórico
+
+A saída do lote (baixa) NÃO é em aba separada — acontece dentro do pedido, no
+momento de enviar para faturamento (onde hoje é o campo de observação).
+
+Fluxo completo
+  Plain Text
+  ENTRADA
+  │ Líder registra produção na aba "Lançamento de Lote"
+  │ → Lote criado com saldo
+  │
+  ESTOQUE
+  │ Aba "Lotes" mostra todos os lotes com saldo disponível
+  │
+  SAÍDA
+  │ Líder vai enviar pedido para faturamento (tela do pedido)
+  │ → No pedido, campo "Selecionar Lote" (substitui o texto livre de hoje)
+  │ → Seleciona lote(s) + quantidade de caixas de cada
+  │ → Envia para faturar → saldo do lote baixa automaticamente
+  │
+  HISTÓRICO
+  │ Aba "Lotes" → busca por lote ou por cliente
+  │ → Mostra quem recebeu o quê, de qual carga veio
+
+
+
+
+Tela 1 — Aba "Lançamento de Lote" (líder no tablet)
+Formulário simples. O líder preenche 3 campos e o sistema gera o lote.
+  Plain Text
+  ┌──────────────────────────────────────────────────┐
+  │ REGISTRAR LOTE                                   │
+  ├──────────────────────────────────────────────────┤
+  │                                                  │
+  │ SKU do produto:      [ dropdown lista de SKUs ] │
+  │                                                  │
+  │ Nota da carga:       [ campo numérico         ] │
+  │                                                  │
+  │ Caixas produzidas: [ campo numérico           ] │
+  │                                                  │
+  │ ─────────────────────────────────────────────── │
+  │ Lote gerado: EC20-100726-4016                    │
+  │ Data:          10/07/2026 (automática)           │
+  │ ─────────────────────────────────────────────── │
+  │                                                  │
+  │              [ CONFIRMAR ]                         │
+  │                                                  │
+  └──────────────────────────────────────────────────┘
+
+
+Regras:
+ • Data é automática (dia atual) — líder não digita
+ • O sistema monta o código do lote sozinho (SKU + data + nota)
+ • Mostra o lote gerado antes de confirmar (para o líder conferir)
+ • Após confirmar, saldo aparece na aba "Lotes"
+
+
+Tela 2 — Seleção de Lote no Pedido (dentro da tela de
+envio para faturamento)
+Hoje o líder escreve o lote manualmente no campo de observação. Isso muda para um
+campo estruturado.
+Como é hoje:
+  Plain Text
+  ┌──────────────────────────────────────────────────┐
+  │ CAMPO DE OBSERVAÇÃO                              │
+  │ Lote:EC2O-260526-3976                            │
+  │ Lote:EC2O-020726-4016                            │
+  │ Por Erica em 10/07/2026                          │
+  └──────────────────────────────────────────────────┘
+
+
+Como deve ficar:
+  Plain Text
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ LOTES DO PEDIDO                                                          │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │                                                                          │
+  │ [ + Selecionar Lote ]                                                    │
+  │                                                                          │
+  │ ┌────────────────────────────────────────────────────────────────────┐ │
+  │ │ Lote disponível            │ Saldo │ Caixas neste pedido           │ │
+  │ ├────────────────────────────┼────────┼──────────────────────────────┤ │
+  │ │ EC20-260526-3976            │ 22 cx │ [ 15 ]                        │ │
+  │ │ EC20-020726-4016            │ 48 cx │ [ 30 ]                        │ │
+  │ └────────────────────────────┴────────┴──────────────────────────────┘ │
+  │                                                                          │
+  │ Total de caixas do pedido: 45                                            │
+  │                                                                          │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │ CAMPO DE OBSERVAÇÃO (texto livre — para outras informações)              │
+  │ ________________________________________________________________         │
+  │                                                                          │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+
+Regras:
+ • Botão "Selecionar Lote" abre lista com lotes que têm saldo > 0
+ • Lista filtra automaticamente pelo SKU do pedido (só mostra lotes do produto certo)
+ • Líder informa quantas caixas de cada lote vão nesse pedido
+ • Não permite colocar mais caixas do que o saldo disponível
+ • Pode adicionar múltiplos lotes no mesmo pedido (comum)
+ • Ao enviar para faturamento: saldo dos lotes selecionados baixa automaticamente
+ • Campo de observação continua existindo para texto livre (outras informações)
+ • O lote SAI do campo de observação — agora tem campo próprio
+
+
+Tela 3 — Aba "Lotes" (consulta — gestor/fiscal)
+Aba com duas seções: Estoque e Histórico.
+Seção 1: Estoque de Lotes
+Tabela com todos os lotes que ainda têm saldo.
+  Plain Text
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ ESTOQUE DE LOTES                                      [ Filtrar por SKU ]│
+  ├──────────────────┬──────────┬────────────┬───────────────┬───────────────┤
+  │ Lote             │ SKU      │ Produzido │ Carga (nota) │ Saldo           │
+  ├──────────────────┼──────────┼────────────┼───────────────┼───────────────┤
+  │ EC20-100726-4016│ EC20      │ 10/07/26 │ 4016            │ 48 cx         │
+  │ EC20-090726-4016│ EC20      │ 09/07/26 │ 4016            │ 12 cx         │
+  │ EC20-260526-3976│ EC20      │ 26/05/26 │ 3976            │ 22 cx         │
+  │ EC15-100726-4010│ EC15      │ 10/07/26 │ 4010            │ 35 cx         │
+  │ EC30-080726-4010│ EC30      │ 08/07/26 │ 4010            │ 60 cx         │
+  └──────────────────┴──────────┴────────────┴───────────────┴───────────────┘
+
+
+Regras:
+ • Só mostra lotes com saldo > 0
+ • Ordenação: mais recente no topo
+ • Filtro por SKU
+ • Lotes zerados somem daqui, ficam só no histórico
+
+Seção 2: Histórico
+Campo de busca no topo: digitar código do lote OU nome do cliente.
+Busca por LOTE: "Quem recebeu caixas desse lote?"
+  Plain Text
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ HISTÓRICO DO LOTE: EC20-100726-4016                                      │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │ SKU: EC20 | Produzido: 10/07/26 | Carga: 4016                            │
+  │ Total produzido: 48 caixas | Saldo atual: 6 caixas                       │
+  ├────────────────────────┬─────────────┬───────────────────────────────────┤
+  │ Cliente                │ Caixas      │ Data de envio                     │
+  ├────────────────────────┼─────────────┼───────────────────────────────────┤
+  │ Pasa Espetinhos        │    30       │ 11/07/26                          │
+  │ Genuíno                │    12       │ 12/07/26                          │
+  ├────────────────────────┼─────────────┼───────────────────────────────────┤
+  │ Total enviado          │    42       │                                   │
+  │ Saldo restante         │     6       │                                   │
+  └────────────────────────┴─────────────┴───────────────────────────────────┘
+
+
+Busca por CLIENTE: "Quais lotes esse cliente recebeu?"
+  Plain Text
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ HISTÓRICO DO CLIENTE: Pasa Espetinhos                                    │
+  ├──────────────────┬──────────┬─────────────┬──────────────────────────────┤
+  │ Lote             │ SKU      │ Caixas      │ Data de envio                │
+  ├──────────────────┼──────────┼─────────────┼──────────────────────────────┤
+  │ EC20-100726-4016│ EC20      │    30       │ 11/07/26                     │
+  │ EC20-030726-4010│ EC20      │    25       │ 05/07/26                     │
+  │ EC15-280626-4008│ EC15      │    40       │ 01/07/26                     │
+  ├──────────────────┼──────────┼─────────────┼──────────────────────────────┤
+  │ Total            │          │    95       │                              │
+  └──────────────────┴──────────┴─────────────┴──────────────────────────────┘
+
+
+Regras:
+ • Busca por código do lote OU nome do cliente
+ • Filtro por período (data de envio)
+ • Filtro por SKU
+
+
+Checklist para o B.I.
+Banco de dados
+   Criar tabela de lotes (código, SKU, data produção, nota carga, quantidade produzida,
+   saldo atual)
+   Criar tabela de movimentações de lote (lote, pedido, cliente, quantidade enviada, data
+   envio)
+Aba "Lançamento de Lote"
+   Criar aba nova no menu do dashboard
+   Formulário: SKU (dropdown) + Nota da carga (numérico) + Caixas produzidas
+   (numérico)
+   Data automática (dia atual)
+   Gerar código do lote automaticamente: SKU-DDMMAA-NOTA
+   Mostrar lote gerado antes de confirmar
+Seleção de lote no pedido (tela de envio para faturamento)
+   Criar campo "Lotes do Pedido" na tela do pedido (acima ou no lugar do campo de
+   observação atual para lotes)
+   Botão "Selecionar Lote" abre lista de lotes com saldo > 0
+   Filtrar lotes pelo SKU do pedido automaticamente
+  Campo para informar quantidade de caixas de cada lote
+  Permitir múltiplos lotes no mesmo pedido
+  Bloquear quantidade maior que o saldo disponível
+  Ao enviar para faturamento: diminuir saldo dos lotes automaticamente
+  Manter campo de observação separado (texto livre para outras informações)
+  Lote NÃO é mais digitado no campo de observação
+Aba "Lotes"
+  Criar aba nova no menu do dashboard
+  Seção "Estoque de Lotes" — tabela com lotes que têm saldo > 0
+  Filtro por SKU no estoque
+  Ordenação: mais recente no topo
+  Lotes zerados somem do estoque, ficam só no histórico
+  Seção "Histórico" — campo de busca por código de lote ou nome de cliente
+  Histórico por lote: mostra clientes que receberam + quantidades + datas
+  Histórico por cliente: mostra lotes que recebeu + quantidades + datas
+  Filtro por período e por SKU no histórico
+

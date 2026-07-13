@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries } from "../drizzle/schema";
+import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries, productionLots, lotMovements, productCatalog } from "../drizzle/schema";
 import { eq, and, or, sql, desc, gte, lte, inArray } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
@@ -1011,5 +1011,167 @@ export const productionRouter = router({
         })),
         total: parseFloat(String(totalRows[0]?.total)) || 0,
       };
+    }),
+
+  // ═══════════════════════════════════════════════════════════
+  // CONTROLE DE LOTES
+  // ═══════════════════════════════════════════════════════════
+
+  /** Listar produtos do catálogo para dropdown de SKU */
+  getLotProducts: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    const products = await db.select({
+      codigoItem: productCatalog.codigoItem,
+      descricaoItem: productCatalog.descricaoItem,
+    }).from(productCatalog).orderBy(productCatalog.descricaoItem);
+    return products;
+  }),
+
+  /** Criar um novo lote */
+  createLot: publicProcedure
+    .input(z.object({
+      codigoItem: z.string(),
+      descricaoItem: z.string(),
+      notaCarga: z.string(),
+      qtdProduzida: z.number().positive(),
+      lancadoPor: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, "0");
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const aa = String(today.getFullYear()).slice(-2);
+      const dataProducao = today.toISOString().slice(0, 10);
+      const codigo = `${input.codigoItem}-${dd}${mm}${aa}-${input.notaCarga}`;
+
+      // Check if lot code already exists
+      const existing = await db.select().from(productionLots).where(eq(productionLots.codigo, codigo)).limit(1);
+      if (existing.length > 0) {
+        throw new Error(`Lote ${codigo} já existe. Use outra nota de carga.`);
+      }
+
+      await db.insert(productionLots).values({
+        codigo,
+        codigoItem: input.codigoItem,
+        descricaoItem: input.descricaoItem,
+        notaCarga: input.notaCarga,
+        dataProducao,
+        qtdProduzida: String(input.qtdProduzida),
+        saldoAtual: String(input.qtdProduzida),
+        lancadoPor: input.lancadoPor,
+      });
+      return { codigo };
+    }),
+
+  /** Listar lotes com saldo > 0 (para seleção em pedidos) */
+  getLotsWithBalance: publicProcedure
+    .input(z.object({
+      codigoItem: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const conditions = [sql`CAST(${productionLots.saldoAtual} AS DECIMAL(18,2)) > 0`];
+      if (input?.codigoItem) {
+        conditions.push(eq(productionLots.codigoItem, input.codigoItem));
+      }
+      return db.select().from(productionLots)
+        .where(and(...conditions))
+        .orderBy(desc(productionLots.createdAt));
+    }),
+
+  /** Listar todos os lotes (para consulta geral) */
+  getAllLots: publicProcedure
+    .input(z.object({
+      codigoItem: z.string().optional(),
+      search: z.string().optional(),
+      onlyWithBalance: z.boolean().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const conditions: any[] = [];
+      if (input?.codigoItem) {
+        conditions.push(eq(productionLots.codigoItem, input.codigoItem));
+      }
+      if (input?.onlyWithBalance) {
+        conditions.push(sql`CAST(${productionLots.saldoAtual} AS DECIMAL(18,2)) > 0`);
+      }
+      if (input?.search) {
+        conditions.push(sql`${productionLots.codigo} LIKE ${`%${input.search}%`}`);
+      }
+      return db.select().from(productionLots)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(productionLots.createdAt));
+    }),
+
+  /** Registrar movimentação de lote (saída) */
+  createLotMovement: publicProcedure
+    .input(z.object({
+      lotId: z.number(),
+      codigoLote: z.string(),
+      pedido: z.string().optional(),
+      cliente: z.string(),
+      qtdEnviada: z.number().positive(),
+      observacoes: z.string().optional(),
+      lancadoPor: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Check balance
+      const lot = await db.select().from(productionLots).where(eq(productionLots.id, input.lotId)).limit(1);
+      if (lot.length === 0) throw new Error("Lote não encontrado");
+      const saldo = parseFloat(String(lot[0].saldoAtual));
+      if (input.qtdEnviada > saldo) {
+        throw new Error(`Quantidade (${input.qtdEnviada}) excede saldo disponível (${saldo})`);
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      await db.insert(lotMovements).values({
+        lotId: input.lotId,
+        codigoLote: input.codigoLote,
+        pedido: input.pedido || null,
+        cliente: input.cliente,
+        qtdEnviada: String(input.qtdEnviada),
+        dataEnvio: today,
+        observacoes: input.observacoes || null,
+        lancadoPor: input.lancadoPor,
+      });
+
+      // Update balance
+      const newBalance = saldo - input.qtdEnviada;
+      await db.update(productionLots)
+        .set({ saldoAtual: String(newBalance) })
+        .where(eq(productionLots.id, input.lotId));
+
+      return { newBalance };
+    }),
+
+  /** Histórico de movimentações de um lote */
+  getLotMovements: publicProcedure
+    .input(z.object({
+      lotId: z.number().optional(),
+      codigoLote: z.string().optional(),
+      cliente: z.string().optional(),
+      dataInicio: z.string().optional(),
+      dataFim: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const conditions: any[] = [];
+      if (input.lotId) conditions.push(eq(lotMovements.lotId, input.lotId));
+      if (input.codigoLote) conditions.push(sql`${lotMovements.codigoLote} LIKE ${`%${input.codigoLote}%`}`);
+      if (input.cliente) conditions.push(sql`${lotMovements.cliente} LIKE ${`%${input.cliente}%`}`);
+      if (input.dataInicio) conditions.push(gte(lotMovements.dataEnvio, input.dataInicio));
+      if (input.dataFim) conditions.push(lte(lotMovements.dataEnvio, input.dataFim));
+      return db.select().from(lotMovements)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(lotMovements.createdAt));
     }),
 });

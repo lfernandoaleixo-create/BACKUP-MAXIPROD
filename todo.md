@@ -5428,3 +5428,26 @@
 
 ## Card "Aprovações de Pedidos" piscar quando há pendentes
 - [x] Card de Aprovações de Pedidos deve piscar/alertar quando há pedidos pendentes para o gestor
+
+## Liberar card "Movimentação de Estoque" para mais usuários
+- [x] Adicionar Maria, Erica e Larissa ao array de acesso do card Movimentação de Estoque (Bruno, Guilherme, Fernando já têm)
+
+## Reformulação Gráficos de Produção (ProductionCharts)
+- [x] Remover gráfico de pizza "Distribuição por Setor"
+- [x] Remover gráfico de barras empilhadas "Produção Diária por Setor"
+- [x] Remover blocos de texto explicativo dos gráficos
+- [x] Remover "Produção Não Necessária" da visualização principal de paradas
+- [x] Criar Semáforo Geral (tabela com setores, produção do dia, média mês, status cor, vs mês anterior)
+- [x] Criar Gráfico de Barras por Setor (drill-down ao clicar no semáforo)
+- [x] Criar Tabela de Paradas simplificada (Manutenção + Pontual + Falta Mad.)
+
+## Reformulação Aba Pirografia
+- [x] Remover barras coloridas, numeração, "registros", formato ranking
+- [x] Criar Tabela "Clientes Pirografados" (2 colunas: Cliente + Caixas, com TOTAL)
+- [x] Criar Tabela "Produtos Utilizados" (3 colunas: Produto + Tipo + Caixas, com TOTAL)
+
+## Módulo Controle de Lote (NOVO)
+- [x] Criar tabelas no banco (lotes + movimentações de lote)
+- [x] Criar aba "Lançamento de Lote" (formulário: SKU + Nota + Caixas, gera código automático)
+- [x] Criar aba "Lotes" (Estoque de Lotes + Histórico por lote/cliente)
+- [ ] Criar seleção de lote no pedido (campo estruturado substitui texto livre) — futuro

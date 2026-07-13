@@ -1,0 +1,165 @@
+Tarefas B.I. — Novos Gráficos de Produção
+
+O que tirar
+   Remover gráfico de pizza "Distribuição por Setor"
+   Remover gráfico de barras empilhadas colorido "Produção Diária por Setor"
+   Remover todos os blocos de texto explicativo dos gráficos
+   No gráfico de paradas, remover "Produção Não Necessária" da visualização principal
+   (pode ficar num canto informativo separado, mas não misturado com paradas reais)
+
+O que criar
+1. Semáforo Geral (tela principal ao abrir a aba de produção)
+Tabela simples com todos os setores. Cada linha mostra: nome do setor, produção do dia,
+média do mês, um círculo de cor e uma seta comparando com o mês anterior.
+Exemplo visual de como deve aparecer na tela:
+  Plain Text
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ SEMÁFORO DE PRODUÇÃO — Julho/2026                                           │
+  ├─────────────────────┬──────────┬───────────────┬────────┬───────────────────┤
+  │ Setor               │ Hoje     │ Média do Mês │ Status │ vs Junho           │
+
+                                                           🟢
+  ├─────────────────────┼──────────┼───────────────┼────────┼───────────────────┤
+
+                                                           🟡
+  │ Multilâmina         │ 6.760 m³ │ 6.604 m³/dia │        │ ▲ +3%             │
+
+                                                           🔴
+  │ Vareteira           │ 43 sacos │ 44,3 sc/dia │         │ ▼ -12%            │
+
+                                                           🟢
+  │ Seletoras Toco      │ 47 sacos │ 52,0 sc/dia │         │ ▼ -8%             │
+
+                                                           🟢
+  │ Seleção Automática │ 59 sacos │ 55,3 sc/dia │          │ ▲ +5%             │
+
+                                                           🟢
+  │ Seleção Visual      │ 107 form │ 101 form/dia │        │ ▲ +2%             │
+
+                                                           🔴
+  │ Flow Pack           │ 41 cx    │ 41,4 cx/dia │         │ ▲ +1%             │
+
+                                                           🔴
+  │ Ponteira            │ 8 cx     │ 8,0 cx/dia    │       │ ▼ -58%            │
+
+                                                           🟢
+  │ Embalagem           │ 40 cx    │ 68,8 cx/dia │         │ ▼ -15%            │
+  │ Máq. Pirografar     │ 21 cx    │ 15,5 cx/dia │         │ ▲ +19%            │
+  └─────────────────────┴──────────┴───────────────┴────────┴───────────────────┘
+
+
+Regras do círculo de cor (Status):
+ • 🟢 Verde = produção do dia está acima ou igual à média do mês atual
+ •   🟡 Amarelo = produção do dia está até 10% abaixo da média do mês atual
+ •   🔴 Vermelho = produção do dia está mais de 10% abaixo da média do mês atual
+Regras da seta (vs Mês Anterior):
+ • ▲ verde + percentual = média do mês atual está acima da média do mês anterior
+ • ▼ vermelho + percentual = média do mês atual está abaixo da média do mês anterior
+Referência de cálculo:
+ • "Média do mês atual" = soma da produção do mês corrente ÷ dias trabalhados até hoje
+   no mês
+ • "Média do mês anterior" = soma da produção do mês passado inteiro ÷ dias
+   trabalhados no mês passado
+ • Nos primeiros 5 dias úteis do mês, usar a média do mês anterior como referência
+   provisória para o círculo de cor
+2. Gráfico de Barras por Setor (ao clicar/abrir um setor específico)
+Quando clicar em um setor no semáforo, abre o detalhe com o gráfico de barras da semana.
+Exemplo visual — Setor: VARETEIRA (semana 06/07 a 12/07):
+  Plain Text
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ VARETEIRA — Semana 06/07 a 12/07                                            │
+  │                                                                             │
+  │ Média do mês: 44,3 sacos/dia (linha tracejada)                              │
+  │                                         │                                   │
+  │                                         │ (média 44,3)                      │
+
+                                                                                  🟢
+  │                                         │                                   │
+
+                                                                                    🟡
+  │ Seg 06/07 ████████████████████████████████████████████████████ 52           │
+
+                                                                                   🔴
+  │ Ter 07/07 ████████████████████████████████████████████ 44
+
+                                                                                   🟡
+  │ Qua 08/07 ██████████████████████████████████████ 38                         │
+  │ Qui 09/07 ███████████████████████████████████████████ 43                    │
+  │ Sex 10/07                     (sem dados ainda)                             │
+  │                                         │                                   │
+  │                                         │                                   │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │                                                                             │
+  │ Média do mês atual (Jul):     44,3 sacos/dia                                │
+  │ Média do mês anterior (Jun): 50,1 sacos/dia                                 │
+  │ Diferença:                    ▼ -12%                                        │
+  │                                                                             │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+
+Regras visuais:
+ • Cada barra = um dia da semana
+ • Linha vertical tracejada no meio = média do mês atual
+ • Barra VERDE = dia que atingiu ou passou da média
+ • Barra VERMELHA = dia que ficou abaixo da média (mais de 10%)
+ • Barra AMARELA = dia que ficou até 10% abaixo da média
+ • Sem legenda extra, sem texto explicativo, sem cores adicionais
+ • Abaixo do gráfico: bloco com média mês atual / média mês anterior / diferença %
+
+3. Tabela de Paradas (simplificada)
+Exemplo visual de como deve aparecer:
+  Plain Text
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ PARADAS REAIS — Semana 06/07 a 12/07                                        │
+  ├─────────────────────┬────────────┬──────────┬────────────┬──────────────────┤
+  │ Setor               │ Manutenção │ Pontual │ Falta Mad. │ TOTAL             │
+  ├─────────────────────┼────────────┼──────────┼────────────┼──────────────────┤
+  │ Multilâmina         │     0      │    0     │     0      │    0             │
+  │ Vareteira           │     0      │    0     │     0      │    0             │
+  │ Seletoras Toco      │     0      │    0     │     0      │    0             │
+  │ Seleção Automática │      0      │    0     │     0      │    0             │
+
+                                                                           🔴
+  │ Seleção Visual      │     0      │    0     │     0      │    0             │
+
+                                                                           🔴
+  │ Flow Pack           │     0      │    4     │     0      │    4             │
+  │ Ponteira            │    12      │    0     │     0      │   12             │
+  │ Embalagem           │     0      │    0     │     0      │    0             │
+  │ Máq. Pirografar     │     0      │    0     │     0      │    0             │
+  ├─────────────────────┼────────────┼──────────┼────────────┼──────────────────┤
+  │ TOTAL FÁBRICA       │    12      │    4     │     0      │   16             │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+    Informativo: Prod. Não Necessária no período: 603 máquinas (demanda atendida)
+
+
+Regras:
+ • Só mostra paradas reais: Manutenção + Manutenção Pontual + Falta de Madeira
+ • Qualquer setor com TOTAL > 0 recebe destaque vermelho 🔴
+• "Prod. Não Necessária" aparece em texto cinza embaixo, separado, apenas informativo
+• Sem gráfico de barras de paradas — a tabela é mais clara
+
+
+Lógica de reset
+• Quando vira o mês, a média do mês atual zera e começa a acumular do dia 1
+• Nos primeiros 5 dias úteis do mês novo, o semáforo usa a média do mês anterior como
+  referência temporária
+• A partir do 6º dia útil, usa exclusivamente os dados do mês corrente
+
+
+Resumo da estrutura de navegação
+ Plain Text
+ TELA PRINCIPAL (ao abrir aba Produção)
+ │
+ ├── SEMÁFORO GERAL
+ │   (tabela com todos os setores + cor + seta vs mês anterior)
+ │   │
+ │   └── [Clica em qualquer setor]
+ │         │
+ │         ├── Gráfico de barras da semana (verde/amarelo/vermelho vs média do mê
+ │         └── Bloco: média mês atual / média mês anterior / diferença %
+ │
+ └── PARADAS REAIS
+     (tabela limpa, só paradas que importam, "Prod. Não Necessária" em cinza emba
+
