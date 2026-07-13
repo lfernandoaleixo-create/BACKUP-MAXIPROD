@@ -5417,3 +5417,6 @@
 - [x] Todos os pedidos devem ficar como "pendente" até aprovação manual do gestor
 - [x] Gestor deve ter opção de Aprovar ou Recusar (com campo de motivo na recusa)
 - [x] Mostrar código do item (codigoItem) ao lado da descrição nos itens do pedido
+
+## Barra de Desconto visível para todos
+- [x] Barra de desconto (faixas: azul até 20%, verde 20-23%, amarelo 23-27%, laranja 27-32%, vermelho >32%) deve aparecer para todos os vendedores e gestores

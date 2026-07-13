@@ -4653,9 +4653,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const currentSellerPerm = sellerPermsQuery.data?.find(
     (p: any) => p.sellerName.toLowerCase() === sellerName.toLowerCase()
   );
-  // Sellers (no operator logged in) don't see margin bars or cost calculations
+  // Margin bar visible for everyone (sellers and gestores)
   const isGestorMode = !!marginOperator;
-  const showMarginBar = isGestorMode && currentSellerPerm?.showMarginBar !== false; // default true for gestores only
+  const showMarginBar = true; // barra de desconto visível para todos (vendedores e gestores)
   const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
   // Real cost bar (reputação) - only visible for Fernando, Guilherme, Juvenal, Bruno and Renato
   const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal" || marginOperator?.name === "Bruno" || marginOperator?.name === "Renato";
