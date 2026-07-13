@@ -8,11 +8,12 @@
  * - "Painel do Vendedor" (app de vendas normal)
  */
 
-import React, { useState } from "react";
-import { Package, Lock, AlertCircle, Crown, ShoppingCart, ArrowLeft, Settings, ClipboardCheck, RefreshCw } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Package, Lock, AlertCircle, Crown, ShoppingCart, ArrowLeft, Settings, ClipboardCheck, RefreshCw, Users, ChevronRight, Search } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import VendedorDetalhe from "./VendedorDetalhe";
 import { GestaoComercialFullInline } from "./GestaoComercial";
+import TopNav from "@/components/TopNav";
 
 interface SellerSession {
   id: number;
@@ -87,9 +88,9 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
     window.location.href = "/";
   };
 
-  // Modo gestor: usa o VendedorDetalhe sem filtro de seller (mostra todos)
+  // Modo gestor: mostra lista de todos os vendedores para Guilherme/Fernando/Bruno
   if (gestorMode) {
-    return <VendedorDetalhe sellerMode={true} externalSellerId={0} onLogout={handleLogout} />;
+    return <GestorSellerPicker onLogout={handleLogout} />;
   }
 
   if (!session) {
@@ -284,6 +285,132 @@ function LoginView({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+// ============================================================
+// GESTOR SELLER PICKER - Lista todos os vendedores para super-admins
+// (Guilherme, Fernando, Bruno) acessarem qualquer vendedor
+// ============================================================
+function GestorSellerPicker({ onLogout }: { onLogout: () => void }) {
+  const [selectedSellerId, setSelectedSellerId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
+    staleTime: 30 * 1000,
+  });
+
+  const sellers = useMemo(() => {
+    if (!permissionsQuery.data) return [];
+    return permissionsQuery.data
+      .sort((a, b) => a.sellerName.localeCompare(b.sellerName, 'pt-BR'));
+  }, [permissionsQuery.data]);
+
+  const filteredSellers = useMemo(() => {
+    if (!searchTerm.trim()) return sellers;
+    const term = searchTerm.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return sellers.filter(s => 
+      s.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(term) ||
+      s.gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(term)
+    );
+  }, [sellers, searchTerm]);
+
+  // Se um vendedor foi selecionado, mostra o VendedorDetalhe dele
+  if (selectedSellerId !== null) {
+    return (
+      <VendedorDetalhe
+        sellerMode={true}
+        externalSellerId={selectedSellerId}
+        onLogout={() => setSelectedSellerId(null)}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <TopNav />
+      <main className="container py-4 md:py-6 space-y-4 pb-20 md:pb-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+          <a href="/" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-slate-500" />
+          </a>
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+            <Users className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800 dark:text-white">Painel dos Vendedores</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {sellers.length} vendedores cadastrados · {sellers.filter(s => s.authorized).length} autorizados
+            </p>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar vendedor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          />
+        </div>
+
+        {/* Sellers list */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          {permissionsQuery.isLoading ? (
+            <div className="p-6 text-center">
+              <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mx-auto mb-2" />
+              <p className="text-xs text-slate-500">Carregando vendedores...</p>
+            </div>
+          ) : filteredSellers.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="text-sm text-slate-500">Nenhum vendedor encontrado.</p>
+            </div>
+          ) : (
+            <div>
+              {filteredSellers.map((seller, idx) => (
+                <button
+                  key={seller.id}
+                  onClick={() => setSelectedSellerId(seller.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left ${
+                    idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${
+                    seller.authorized
+                      ? "bg-gradient-to-br from-blue-400 to-blue-600"
+                      : "bg-gradient-to-br from-slate-300 to-slate-400"
+                  }`}>
+                    {seller.sellerName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                      {seller.sellerName}
+                    </p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      Gestor: {seller.gestorName} · {seller.authorized ? "Autorizado" : "Bloqueado"}
+                      {seller.priceTableCode ? ` · Tab. ${seller.priceTableCode}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {seller.authorized ? (
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    ) : (
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                    )}
+                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-500" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

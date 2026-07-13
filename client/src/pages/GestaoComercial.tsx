@@ -145,7 +145,6 @@ function ExportMaxiprodButton() {
 }
 
 export default function GestaoComercial() {
-  const [view, setView] = useState<GestaoView>("gestores");
   const { operator } = useOperator();
   const [, setLocation] = useLocation();
 
@@ -327,60 +326,31 @@ export default function GestaoComercial() {
       <TopNav />
 
       <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
-        {/* Sub-navigation tabs */}
+                {/* Header with back button and export */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
-          <button
-            onClick={() => setView("gestores")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-              view === "gestores"
-                ? "bg-teal-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
-          >
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white shadow-sm">
             <Crown className="w-4 h-4" />
-            Gestores
-          </button>
-          <button
-            onClick={() => setView("vendedores")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-              view === "vendedores"
-                ? "bg-teal-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Vendedores
-          </button>
-
+            Painel dos Gestores
+          </div>
           {/* Spacer */}
           <div className="flex-1" />
-
           {/* Exportar Maxiprod button */}
           <ExportMaxiprodButton />
         </div>
 
-        {/* Content */}
-        {view === "gestores" && (
-          <GestoresTab
-            getVendedoresForGestor={getVendedoresForGestor}
-            permissions={permissionsQuery.data || []}
-            isLoading={representantesQuery.isLoading}
-            isError={representantesQuery.isError}
-            errorMessage={representantesQuery.error?.message}
-            onRefresh={() => {
-              representantesQuery.refetch();
-              permissionsQuery.refetch();
-            }}
-            isFetching={representantesQuery.isFetching}
-          />
-        )}
-        {view === "vendedores" && (
-          <VendedoresTab
-            getVendedoresForGestor={getVendedoresForGestor}
-            permissions={permissionsQuery.data || []}
-            isLoading={representantesQuery.isLoading}
-          />
-        )}
+        {/* Content - only Gestores panel (Vendedores has its own separate page) */}
+        <GestoresTab
+          getVendedoresForGestor={getVendedoresForGestor}
+          permissions={permissionsQuery.data || []}
+          isLoading={representantesQuery.isLoading}
+          isError={representantesQuery.isError}
+          errorMessage={representantesQuery.error?.message}
+          onRefresh={() => {
+            representantesQuery.refetch();
+            permissionsQuery.refetch();
+          }}
+          isFetching={representantesQuery.isFetching}
+        />
 
       </main>
     </div>
@@ -2929,8 +2899,6 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
 }
 
 export function GestaoComercialFull() {
-  const [view, setView] = useState<GestaoView>("gestores");
-
   // Fetch seller list from Maxiprod
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
@@ -2961,64 +2929,33 @@ export function GestaoComercialFull() {
       <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
         {/* Back button + title */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
-          <Link href="/gestao-comercial">
+                    <Link href="/gestao-comercial">
             <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer">
               <ArrowLeft className="w-4 h-4" />
             </button>
           </Link>
-          <button
-            onClick={() => setView("gestores")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-              view === "gestores"
-                ? "bg-teal-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
-          >
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white shadow-sm">
             <Crown className="w-4 h-4" />
-            Gestores
-          </button>
-          <button
-            onClick={() => setView("vendedores")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-              view === "vendedores"
-                ? "bg-teal-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Vendedores
-          </button>
-
+            Painel dos Gestores
+          </div>
           {/* Spacer */}
           <div className="flex-1" />
-
           {/* Exportar Maxiprod button */}
           <ExportMaxiprodButton />
         </div>
-
-        {/* Content */}
-        {view === "gestores" && (
-          <GestoresTab
-            getVendedoresForGestor={getVendedoresForGestor}
-            permissions={permissionsQuery.data || []}
-            isLoading={representantesQuery.isLoading}
-            isError={representantesQuery.isError}
-            errorMessage={representantesQuery.error?.message}
-            onRefresh={() => {
-              representantesQuery.refetch();
-              permissionsQuery.refetch();
-            }}
-            isFetching={representantesQuery.isFetching}
-          />
-        )}
-        {view === "vendedores" && (
-          <VendedoresTab
-            getVendedoresForGestor={getVendedoresForGestor}
-            permissions={permissionsQuery.data || []}
-            isLoading={representantesQuery.isLoading}
-          />
-        )}
-
+        {/* Content - only Gestores panel */}
+        <GestoresTab
+          getVendedoresForGestor={getVendedoresForGestor}
+          permissions={permissionsQuery.data || []}
+          isLoading={representantesQuery.isLoading}
+          isError={representantesQuery.isError}
+          errorMessage={representantesQuery.error?.message}
+          onRefresh={() => {
+            representantesQuery.refetch();
+            permissionsQuery.refetch();
+          }}
+          isFetching={representantesQuery.isFetching}
+        />
       </main>
     </div>
   );

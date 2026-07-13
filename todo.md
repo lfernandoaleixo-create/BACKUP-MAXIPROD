@@ -5420,3 +5420,8 @@
 
 ## Barra de Desconto visível para todos
 - [x] Barra de desconto (faixas: azul até 20%, verde 20-23%, amarelo 23-27%, laranja 27-32%, vermelho >32%) deve aparecer para todos os vendedores e gestores
+
+## Super-admin: Guilherme, Fernando e Bruno veem TODOS os vendedores
+- [x] Guilherme, Fernando e Bruno devem ver TODOS os vendedores no Painel dos Vendedores (não apenas os de seu gestor)
+- [x] Ao clicar em qualquer vendedor, devem ver todas as informações completas
+- [x] Remover a aba "Vendedores" de dentro do Painel dos Gestores (cada painel separado)
