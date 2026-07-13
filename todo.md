@@ -5329,3 +5329,9 @@
 ## Feature: Baixar pedido de venda em PDF quando concluído
 - [x] Adicionar botão de download PDF no pedido de venda concluído (similar ao PDF de cadastro de cliente)
 - [x] Gerar PDF com dados do pedido: cliente, itens, quantidades, valores, data, vendedor
+
+## Feature: Legendas nos botões de Atualizar e Sair do aplicativo
+- [x] Adicionar legenda "Atualizar última Versão" no botão verde de refresh em todas as telas
+- [x] Adicionar legenda "Sair do Aplicativo" no botão vermelho de seta em todas as telas
+- [x] Deixar legendas bem visíveis e aparentes para fácil detecção
+  Implementado em: TopNav.tsx (mobile + desktop) e VendedorDetalhe.tsx (app vendedores)

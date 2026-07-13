@@ -228,19 +228,21 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
                   // Force reload all data from server (latest publication)
                   window.location.reload();
                 }}
-                className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 hover:text-teal-700 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors ml-1"
-                title="Atualizar dados"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors ml-1 shadow-sm"
+                title="Atualizar última versão"
               >
                 <RefreshCw className="w-4 h-4" />
+                <span className="text-[10px] font-bold leading-tight">Atualizar</span>
               </button>
             )}
             {sellerMode && onLogout && (
               <button
                 onClick={onLogout}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ml-1"
-                title="Sair"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors ml-1 shadow-sm"
+                title="Sair do aplicativo"
               >
                 <ArrowLeft className="w-4 h-4" />
+                <span className="text-[10px] font-bold leading-tight">Sair</span>
               </button>
             )}
           </div>
