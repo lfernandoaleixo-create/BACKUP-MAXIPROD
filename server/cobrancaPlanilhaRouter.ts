@@ -1187,6 +1187,17 @@ export const cobrancaPlanilhaRouter = router({
           ) || planilhaAtual.find(
             p => p.empresa === inad.empresa && (p.observacoes || p.primeiraCobranca || p.segundaCobranca || p.terceiraCobranca || p.acaoFinal)
           );
+          // HERANÇA DE STATUS FORTE: Se a empresa tem títulos (ativos ou inativos) com status forte,
+          // novos títulos herdam esse status automaticamente (evita perda de status por troca de arId)
+          const STRONG_STATUSES_SYNC = ["Protestado", "Com Protesto", "Fundo Perdido", "Jurídico"];
+          if (inad.status === "Pendente") {
+            const strongMatch = planilhaAtual.find(
+              p => p.empresa === inad.empresa && p.status && STRONG_STATUSES_SYNC.includes(p.status)
+            );
+            if (strongMatch) {
+              inad.status = strongMatch.status!;
+            }
+          }
 
           // VALIDAÇÃO: Só herdar etapas se primeira_cobranca >= vencimento do título novo
           // (não faz sentido cobrar antes do título vencer - seriam etapas de outro título mais antigo)

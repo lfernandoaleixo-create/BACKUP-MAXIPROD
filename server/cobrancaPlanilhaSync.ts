@@ -143,6 +143,15 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   const cutoff = getPreviousBusinessDay();
   const todayStr = getTodayBR();
 
+  // PROTEÇÃO 17:15: Antes das 17:15 (Brasília), NÃO desativar títulos que têm status diferente de "Pendente".
+  // Isso garante que o backup diário (feito até 17:15) capture todos os status corretamente.
+  // Após 17:15, o sync pode desativar normalmente (títulos pagos saem da planilha).
+  const nowBR = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+  const nowDate = new Date(nowBR);
+  const horaAtual = nowDate.getHours() * 60 + nowDate.getMinutes(); // minutos desde meia-noite
+  const HORA_LIMITE_BACKUP = 17 * 60 + 15; // 17:15 = 1035 minutos
+  const isBeforeBackupTime = horaAtual < HORA_LIMITE_BACKUP;
+
   // 1. Get all currently active planilha items
   const activePlanilha = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
 
@@ -195,6 +204,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
     // PROTEÇÃO: Nunca desativar itens com status "Fundo Perdido"
     // Fundo Perdido vem de contas a PAGAR (conta 571), não de contas a receber
     if (item.status === "Fundo Perdido") continue;
+    // PROTEÇÃO 17:15: Antes das 17:15, NÃO desativar títulos com status diferente de "Pendente"
+    // Isso preserva o status para o backup diário e evita perda de dados de cobrança
+    if (isBeforeBackupTime && item.status && item.status !== "Pendente") continue;
     if (item.arId && !validOverdueArIds.has(item.arId)) {
       // The underlying title is no longer EMITIDO or no longer overdue → deactivate
       // Isso inclui clientes "Especial s/ cobrança" que pagaram e saíram da inadimplência
@@ -284,10 +296,11 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       // 1. Se a empresa já tem títulos ativos com status "Especial s/ cobrança" → herda "Especial s/ cobrança"
       // 2. Se existe registro inativo com mesma empresa+vencimento e status não-Pendente → herda esse status
       //    (caso de arId que mudou no Maxiprod mas é o mesmo título)
-      // 3. Caso contrário → entra como Pendente (cada título é tratado individualmente)
-      //
-      // NOTA: Removida a regra que herdava status de outros títulos ativos do mesmo cliente.
-      // Cada título deve ter seu próprio ciclo de cobrança independente.
+      // 3. Se existe registro inativo com mesma empresa+valor e status não-Pendente → herda esse status
+      //    (caso de parcela com vencimento diferente mas mesmo valor)
+      // 4. Se a empresa tem TODOS os títulos inativos com status "Protestado"/"Com Protesto"/"Fundo Perdido" → herda
+      //    (empresa já protestada, novos títulos devem manter o mesmo status)
+      // 5. Caso contrário → entra como Pendente (cada título é tratado individualmente)
       const empresaUpper = title.empresa.toUpperCase().trim();
       const especialMatch = allPlanilhaRecords.find(
         r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper && r.status === "Especial s/ cobrança"
@@ -303,8 +316,39 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         if (sameEmpVenc) {
           statusPlanilha = sameEmpVenc.status!;
         } else {
-          // Cada título novo entra como Pendente — tratamento individual
-          statusPlanilha = "Pendente";
+          // Check for same empresa+valor in inactive records (parcela com vencimento diferente)
+          const valorStr = String(title.valorAReceber.toFixed(2));
+          const sameEmpValor = allPlanilhaRecords.find(
+            r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+              && r.valor && parseFloat(String(r.valor)).toFixed(2) === valorStr
+              && r.status && r.status !== "Pendente"
+          );
+          if (sameEmpValor) {
+            statusPlanilha = sameEmpValor.status!;
+          } else {
+            // Fallback: se a empresa tem títulos inativos recentes com status forte (Protestado/Com Protesto/Fundo Perdido),
+            // herdar esse status para novos títulos da mesma empresa
+            const STRONG_STATUSES = ["Protestado", "Com Protesto", "Fundo Perdido", "Jurídico"];
+            const recentInactiveOfEmpresa = allPlanilhaRecords
+              .filter(r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+                && r.status && STRONG_STATUSES.includes(r.status))
+              .sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+            if (recentInactiveOfEmpresa.length > 0) {
+              statusPlanilha = recentInactiveOfEmpresa[0].status!;
+            } else {
+              // Também verificar títulos ATIVOS da mesma empresa com status forte
+              const activeOfEmpresa = allPlanilhaRecords.find(
+                r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+                  && r.status && STRONG_STATUSES.includes(r.status)
+              );
+              if (activeOfEmpresa) {
+                statusPlanilha = activeOfEmpresa.status!;
+              } else {
+                // Cada título novo entra como Pendente — tratamento individual
+                statusPlanilha = "Pendente";
+              }
+            }
+          }
         }
       }
 

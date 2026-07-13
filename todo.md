@@ -5451,3 +5451,11 @@
 - [x] Criar aba "Lançamento de Lote" (formulário: SKU + Nota + Caixas, gera código automático)
 - [x] Criar aba "Lotes" (Estoque de Lotes + Histórico por lote/cliente)
 - [ ] Criar seleção de lote no pedido (campo estruturado substitui texto livre) — futuro
+
+## Fix: Inadimplência - Recuperar status e proteger diário
+- [x] Recuperar status dos 4 clientes que foram erroneamente para "Pendente" (BR DISTRIBUIDORA, EVAFEST x2, DR. ESPETO)
+- [x] Verificar se outros clientes perderam status na sexta e recuperá-los (A.J COMERCIAL, ACOUGUE L P DA SILVA, PAULYNELLE SILVA)
+- [x] Registrar recuperação no diário de cobrança (6 entradas registradas)
+- [x] Proteger diário: status só pode ser alterado após 17:15 do dia (proteção no auto-sync)
+- [x] Proteger diário: registros NUNCA podem ser perdidos por sincronização com Maxiprod (herança de status forte + bloqueio de delete)
+- [x] Melhorar herança de status: novos títulos herdam status forte (Protestado/Com Protesto/Fundo Perdido/Jurídico) de títulos inativos da mesma empresa

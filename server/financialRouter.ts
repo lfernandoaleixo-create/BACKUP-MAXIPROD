@@ -3554,6 +3554,15 @@ export const financialRouter = router({
         throw new Error('Não é possível resetar: já existem bolinhas de roteiro marcadas para este título.');
       }
 
+      // Verificar se há entradas no diário de cobrança (NUNCA podem ser perdidas)
+      const diaryEntries = await db.select({ id: collectionDiaryEntries.id })
+        .from(collectionDiaryEntries)
+        .where(eq(collectionDiaryEntries.receivableId, input.receivableId))
+        .limit(1);
+      if (diaryEntries.length > 0) {
+        throw new Error('Não é possível resetar: já existem registros no diário de cobrança para este título.');
+      }
+
       await db.delete(collectionActions).where(eq(collectionActions.receivableId, input.receivableId));
       return { success: true };
     }),
