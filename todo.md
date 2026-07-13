@@ -5287,3 +5287,18 @@
 - [x] Notificação deve incluir pedido detalhado (todos os itens, quantidades, preços, forma de pagamento)
   Fix: Notificação agora mostra: razão social, CNPJ, IE, endereço, telefone, email, segmento +
   pedido detalhado com todos os itens, qtd, preços unitários, totais, forma pagamento, frete, obs.
+
+## Bug: Estoque e tabela de preços não puxam para muitos vendedores (só Daniel funciona)
+- [x] Investigar por que apenas Daniel tem estoque/tabela de preços corretos
+- [x] Garantir que todos os vendedores puxem seus produtos da tabela de preços vinculada
+- [x] Verificar matching de nome da tabela de preços para cada vendedor
+  Resultado: O matching já funciona corretamente. Vendedores sem produtos não têm tabela de preços vinculada no Maxiprod.
+  Correção: Renato Ledesma trocado de tabela 008 (RAFAEL LONDRINA) para 007 (B.S.B. REPRESENTACOES).
+
+## Bug: Produtos sem estoque e sem preço na tela de adicionar ao pedido
+- [x] Investigar por que alguns produtos mostram apenas código/dimensões/peso mas sem estoque e sem preço
+- [x] Produtos afetados: 00199, 00044, 00070, 00058, 00274Z, 00008, 00016, 00007Z, 00023
+- [x] Corrigir para que todos os produtos exibam estoque disponível e preço da tabela
+  Causa: getProductsForSeller usava apenas seller_product_visibility para filtrar.
+  Vendedores sem overrides manuais mostravam TODOS os itens do estoque (incluindo os sem preço na tabela).
+  Fix: Agora filtra também pela tabela de preços do vendedor. Só mostra produtos que têm preço configurado.

@@ -402,11 +402,41 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      // Get seller's visible product codes
+      // Get seller's visible product codes (manual overrides)
       const visibleProducts = await db.select()
         .from(sellerProductVisibility)
         .where(eq(sellerProductVisibility.sellerId, input.sellerId));
-      const visibleCodes = new Set(visibleProducts.map(p => p.productCode));
+      const manualVisibleCodes = new Set(visibleProducts.map(p => p.productCode));
+
+      // Also get products from seller's price table (same logic as getSellerProducts)
+      const sellerRow = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.id, input.sellerId)).limit(1);
+      const priceTableCodes = new Set<string>();
+      if (sellerRow.length > 0) {
+        const allTablesForFilter = await db.select().from(priceTables);
+        let matchedTableForFilter: typeof allTablesForFilter[0] | undefined;
+        if (sellerRow[0].priceTableCode) {
+          matchedTableForFilter = allTablesForFilter.find(t => t.codigo === sellerRow[0].priceTableCode);
+        }
+        if (!matchedTableForFilter) {
+          const nameParts = sellerRow[0].sellerName.toUpperCase().split(' ');
+          matchedTableForFilter = allTablesForFilter.find(t => {
+            const desc = t.descricao.toUpperCase();
+            return nameParts.some(part => part.length > 3 && desc.includes(part));
+          });
+        }
+        if (matchedTableForFilter) {
+          const ptItemsForFilter = await db.select({ itemCodigo: priceTableItems.itemCodigo })
+            .from(priceTableItems)
+            .where(eq(priceTableItems.priceTableId, matchedTableForFilter.id));
+          for (const pti of ptItemsForFilter) {
+            priceTableCodes.add(pti.itemCodigo);
+          }
+        }
+      }
+
+      // Combine manual + price table codes for visibility
+      const visibleCodes = new Set([...Array.from(manualVisibleCodes), ...Array.from(priceTableCodes)]);
 
       // Get stock items with available quantity
       const items = await db.select({
@@ -429,7 +459,7 @@ export const salesOrderRouter = router({
       .from(stockItems)
       .where(sql`CAST(${stockItems.quantidade} AS DECIMAL) > 0`);
 
-      // Filter by visibility if seller has configured products
+      // Filter by visibility: only show products in seller's price table or manual overrides
       const filteredItems = visibleCodes.size > 0
         ? items.filter(item => visibleCodes.has(item.codigoItem))
         : items;
