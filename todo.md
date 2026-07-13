@@ -5335,3 +5335,22 @@
 - [x] Adicionar legenda "Sair do Aplicativo" no botão vermelho de seta em todas as telas
 - [x] Deixar legendas bem visíveis e aparentes para fácil detecção
   Implementado em: TopNav.tsx (mobile + desktop) e VendedorDetalhe.tsx (app vendedores)
+
+## Bug: Comissão real puxando 7% quando deveria ser 5% para margem 24,9%
+- [ ] Verificar tabela de faixas de comissão e corrigir o cálculo para margem de 24,9% (Médio)
+- [ ] Confirmar que a faixa 20-25% usa comissão "média" (5%) e não 7%
+
+## Feature: Barra de reputação mensal do vendedor para gestores
+- [ ] Quando logado como Juvenal, Fernando, Bruno ou Guilherme, mostrar barra de reputação do MÊS do vendedor
+- [ ] Barra deve mostrar média ponderada de todos os pedidos do mês do vendedor
+- [ ] Atualizar em tempo real enquanto o gestor está fechando/visualizando pedido
+## Feature: Fluxo de aprovação - pedidos pendentes não aparecem até gestor aprovar
+- [x] TODO pedido começa como "pendente" (mudar createOrder para não auto-aprovar)
+- [x] Gestor responsável precisa aprovar antes de aparecer para Vitória
+- [x] Vitória só vê pedidos com status "aprovado" (aprovado_por preenchido)
+- [x] Juvenal vê pedidos dos SEUS vendedores (pendentes para aprovar + aprovados)
+- [x] Guilherme pode ver TODOS os pedidos (incluindo pendentes) - supervisão geral
+- [x] Reverter os 2 pedidos do Rafael para status "pendente" (foram auto-aprovados incorretamente)
+- [x] Não perder nenhuma informação existente
+  Implementado: createOrder sempre seta 'pendente', getOrdersForOperator filtra por viewer, VitoriaOrders mostra botão Aprovar para Guilherme/Juvenal, barra de progresso com 4 etapas (Pendente→Aprovado→Recebido→Lançado)
+

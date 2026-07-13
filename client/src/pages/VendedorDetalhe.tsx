@@ -4307,7 +4307,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
   const showMarginBar = isGestorMode && currentSellerPerm?.showMarginBar !== false; // default true for gestores only
   const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
   // Real cost bar (reputação) - only visible for Fernando, Guilherme and Juvenal
-  const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal";
+  const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal" || marginOperator?.name === "Bruno";
   const [marginComissao, setMarginComissao] = useState(5.85);
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);

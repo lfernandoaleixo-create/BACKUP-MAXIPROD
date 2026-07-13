@@ -5,6 +5,7 @@
 import { useState, useMemo } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
+import { useOperator } from "@/contexts/OperatorContext";
 import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
@@ -22,11 +23,12 @@ function formatCurrency(value: number | string) {
 type VitoriaFilter = "pendente" | "recebido" | "lancado" | "todos";
 
 export default function VitoriaOrders() {
+  const { operator } = useOperator();
   const [statusFilter, setStatusFilter] = useState<VitoriaFilter>("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
   const { data: orders, isLoading, refetch } = trpc.salesOrders.getOrdersForOperator.useQuery(
-    { status: "todos" },
+    { status: "todos", viewer: operator?.name || "" },
     { staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   );
 
@@ -38,6 +40,7 @@ export default function VitoriaOrders() {
   const markRecebidoMutation = trpc.salesOrders.markRecebido.useMutation();
   const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
+  const approveOrderMutation = trpc.salesOrders.approveOrder.useMutation();
   const exportMaxiprodMutation = trpc.salesOrders.exportClientMaxiprod.useMutation();
   const exportOrderMutation = trpc.salesOrders.exportOrderMaxiprod.useMutation();
   const utils = trpc.useUtils();
@@ -148,6 +151,21 @@ export default function VitoriaOrders() {
     );
   };
 
+  const handleApproveOrder = (orderId: number) => {
+    approveOrderMutation.mutate(
+      { orderId, aprovadoPor: operator?.name || "Gestor" },
+      {
+        onSuccess: () => {
+          toast.success("Pedido aprovado com sucesso!");
+          utils.salesOrders.getOrdersForOperator.invalidate();
+        },
+        onError: (err) => {
+          toast.error(err.message || "Erro ao aprovar pedido");
+        },
+      }
+    );
+  };
+
   const handleMarkRecebido = (orderId: number) => {
     markRecebidoMutation.mutate(
       { orderId },
@@ -174,16 +192,30 @@ export default function VitoriaOrders() {
     );
   };
 
-  // Filter orders based on Vitória's status flow
+  // Determine viewer role
+  const isGuilhermeViewer = operator?.name === "Guilherme";
+  const isJuvenalViewer = operator?.name === "Juvenal";
+  const canSeeAguardandoAprovacao = isGuilhermeViewer || isJuvenalViewer;
+
+  // Filter orders based on status flow
+  // "Novos" tab: for Guilherme/Juvenal includes both 'pendente' (aguardando aprovacao) AND 'aprovado' not yet received
+  // For Vitória: only 'aprovado' not yet received
   const filteredOrders = (orders || []).filter((o: any) => {
     if (statusFilter === "todos") return true;
-    if (statusFilter === "pendente") return o.status === "aprovado" && !o.vitoriaRecebido;
+    if (statusFilter === "pendente") {
+      if (canSeeAguardandoAprovacao) {
+        return (o.status === "pendente" || (o.status === "aprovado" && !o.vitoriaRecebido));
+      }
+      return o.status === "aprovado" && !o.vitoriaRecebido;
+    }
     if (statusFilter === "recebido") return o.vitoriaRecebido && !o.vitoriaLancado;
     if (statusFilter === "lancado") return o.vitoriaLancado;
     return true;
   });
 
-  const pendingCount = (orders || []).filter((o: any) => o.status === "aprovado" && !o.vitoriaRecebido).length;
+  const pendingCount = canSeeAguardandoAprovacao
+    ? (orders || []).filter((o: any) => o.status === "pendente" || (o.status === "aprovado" && !o.vitoriaRecebido)).length
+    : (orders || []).filter((o: any) => o.status === "aprovado" && !o.vitoriaRecebido).length;
   const recebidoCount = (orders || []).filter((o: any) => o.vitoriaRecebido && !o.vitoriaLancado).length;
   const lancadoCount = (orders || []).filter((o: any) => o.vitoriaLancado).length;
 
@@ -309,6 +341,7 @@ export default function VitoriaOrders() {
               const isExpanded = expandedOrder === order.id;
               const isLancado = order.vitoriaLancado;
               const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
+              const isPendente = order.status === "pendente"; // Aguardando aprovação do gestor
               const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
 
               // Determine border color based on status
@@ -316,7 +349,9 @@ export default function VitoriaOrders() {
                 ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
                 : isRecebido
                   ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
-                  : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
+                  : isPendente
+                    ? "border-orange-200 dark:border-orange-800 border-l-4 border-l-orange-500"
+                    : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
 
               return (
                 <div
@@ -331,12 +366,15 @@ export default function VitoriaOrders() {
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isLancado ? "bg-green-100 dark:bg-green-900/30" :
                       isRecebido ? "bg-blue-100 dark:bg-blue-900/30" :
+                      isPendente ? "bg-orange-100 dark:bg-orange-900/30" :
                       "bg-amber-100 dark:bg-amber-900/30"
                     }`}>
                       {isLancado ? (
                         <CheckCheck className="w-4.5 h-4.5 text-green-600" />
                       ) : isRecebido ? (
                         <Inbox className="w-4.5 h-4.5 text-blue-600" />
+                      ) : isPendente ? (
+                        <Clock className="w-4.5 h-4.5 text-orange-600" />
                       ) : (
                         <AlertCircle className="w-4.5 h-4.5 text-amber-600" />
                       )}
@@ -351,9 +389,10 @@ export default function VitoriaOrders() {
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           isLancado ? "bg-green-50 text-green-600" :
                           isRecebido ? "bg-blue-50 text-blue-600" :
+                          isPendente ? "bg-orange-50 text-orange-700" :
                           "bg-amber-50 text-amber-700"
                         }`}>
-                          {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : "NOVO"}
+                          {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
                         </span>
                         {order.temPrecoAbaixoMinimo && (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-700">
@@ -400,11 +439,13 @@ export default function VitoriaOrders() {
                       {/* Status Progress Bar */}
                       <div className="mt-3 mb-4">
                         <div className="flex items-center gap-1">
+                          <div className={`flex-1 h-2 rounded-full ${isPendente || isNovo || isRecebido || isLancado ? (isPendente ? "bg-orange-400" : "bg-orange-400") : "bg-slate-200"}`} />
                           <div className={`flex-1 h-2 rounded-full ${isNovo || isRecebido || isLancado ? "bg-amber-400" : "bg-slate-200"}`} />
                           <div className={`flex-1 h-2 rounded-full ${isRecebido || isLancado ? "bg-blue-400" : "bg-slate-200"}`} />
                           <div className={`flex-1 h-2 rounded-full ${isLancado ? "bg-green-400" : "bg-slate-200"}`} />
                         </div>
                         <div className="flex justify-between mt-1 text-[9px] text-slate-400 font-medium">
+                          <span className={isPendente || isNovo || isRecebido || isLancado ? "text-orange-600" : ""}>Pendente</span>
                           <span className={isNovo || isRecebido || isLancado ? "text-amber-600" : ""}>Aprovado</span>
                           <span className={isRecebido || isLancado ? "text-blue-600" : ""}>Recebido</span>
                           <span className={isLancado ? "text-green-600" : ""}>Lançado</span>
@@ -759,6 +800,26 @@ export default function VitoriaOrders() {
                           )}
                         </div>
                       </div>
+
+                      {/* APPROVE BUTTON - For pending orders (Guilherme/Juvenal only) */}
+                      {isPendente && canSeeAguardandoAprovacao && (
+                        <div className="mt-4">
+                          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg mb-3">
+                            <p className="text-xs text-orange-700 dark:text-orange-400 font-medium">
+                              <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
+                              Pedido aguardando aprovação do gestor
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleApproveOrder(order.id)}
+                            disabled={approveOrderMutation.isPending}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            {approveOrderMutation.isPending ? "Aprovando..." : "✓ Aprovar Pedido"}
+                          </button>
+                        </div>
+                      )}
 
                       {/* ACTION BUTTONS - Status flow */}
                       {isNovo && (

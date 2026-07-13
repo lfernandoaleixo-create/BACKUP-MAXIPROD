@@ -704,8 +704,8 @@ export const salesOrderRouter = router({
       const valorFrete = input.valorFrete || 0;
       const totalPedido = totalProdutos + valorFrete;
 
-      // Determine status
-      const status = input.isSimulation ? "simulacao" as const : (temPrecoAbaixoMinimo ? "pendente" as const : "aprovado" as const);
+      // Determine status - ALL real orders start as 'pendente' and require gestor approval
+      const status = input.isSimulation ? "simulacao" as const : "pendente" as const;
       const motivoAlerta = alertMotivos.length > 0 ? alertMotivos.join("; ") : null;
 
       // Get next sequential order number atomically
@@ -1063,16 +1063,34 @@ export const salesOrderRouter = router({
 
   /** Get approved orders for Vitória (ready to process in Maxiprod) */
   getOrdersForOperator: publicProcedure
-    .input(z.object({ status: z.enum(["aprovado", "processado", "todos"]).optional() }).optional())
+    .input(z.object({
+      status: z.enum(["aprovado", "processado", "todos"]).optional(),
+      viewer: z.string().optional(), // Who is viewing: determines visibility rules
+    }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
 
-      const statusFilter = input?.status || "aprovado";
+      const viewer = (input?.viewer || "").toLowerCase();
+      const isGuilherme = viewer.includes("guilherme");
+      const isJuvenal = viewer.includes("juvenal");
+      // Guilherme sees ALL orders (pending + approved + processed) - supervision
+      // Juvenal sees his sellers' orders (pending for approval + approved)
+      // Vitória/others only see approved + processed orders
+      
       const conditions: any[] = [];
-      if (statusFilter !== "todos") {
-        conditions.push(eq(salesOrderRequests.status, statusFilter));
+      if (isGuilherme) {
+        // Guilherme sees everything except simulations
+        conditions.push(sql`${salesOrderRequests.status} != 'simulacao'`);
+      } else if (isJuvenal) {
+        // Juvenal sees pending (his sellers) + approved + processed
+        conditions.push(or(
+          eq(salesOrderRequests.status, "pendente"),
+          eq(salesOrderRequests.status, "aprovado"),
+          eq(salesOrderRequests.status, "processado")
+        ));
       } else {
+        // Vitória and others: only approved + processed (already approved by gestor)
         conditions.push(or(
           eq(salesOrderRequests.status, "aprovado"),
           eq(salesOrderRequests.status, "processado")
