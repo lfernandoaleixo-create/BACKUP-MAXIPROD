@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -2438,6 +2438,7 @@ export const salesOrderRouter = router({
         tipoContribuinte: salesOrderRequests.tipoContribuinte,
         status: salesOrderRequests.status,
         createdAt: salesOrderRequests.createdAt,
+        clienteNome: salesOrderRequests.razaoSocial,
       }).from(salesOrderRequests)
         .where(and(
           eq(salesOrderRequests.sellerId, input.sellerId),
@@ -2498,7 +2499,7 @@ export const salesOrderRouter = router({
       const faturamentoTrimestral = Number(revenueRow?.total || 0);
 
       // Calculate margin for each order
-      const orderMargins: Array<{ orderId: number; valorPedido: number; margemPercentual: number }> = [];
+      const orderMargins: Array<{ orderId: number; valorPedido: number; margemPercentual: number; clienteNome: string; createdAt: string }> = [];
 
       for (const order of orders) {
         // Get items for this order
@@ -2544,6 +2545,8 @@ export const salesOrderRouter = router({
           orderId: order.id,
           valorPedido: valorVenda,
           margemPercentual: margem,
+          clienteNome: order.clienteNome || 'Cliente',
+          createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : '',
         });
       }
 
@@ -2647,7 +2650,37 @@ export const salesOrderRouter = router({
           orderId: o.orderId,
           valor: o.valorPedido,
           margem: o.margemPercentual,
+          clienteNome: o.clienteNome,
+          createdAt: o.createdAt,
         })),
       };
+    }),
+
+  /**
+   * Verify manager password to override monthly margin block
+   * Checks against operator passwords (only active managers can override)
+   */
+  verifyManagerPassword: publicProcedure
+    .input(z.object({ password: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false, operatorName: null };
+      // Check against active operator passwords
+      const opRows = await db.select().from(operators)
+        .where(and(
+          eq(operators.password, input.password),
+          eq(operators.active, true)
+        )).limit(1);
+      if (opRows.length > 0) {
+        return { success: true, operatorName: opRows[0].name };
+      }
+      // Fallback: check admin_password in settings
+      const adminRows = await db.select().from(appSettings)
+        .where(eq(appSettings.settingKey, "admin_password")).limit(1);
+      const adminPwd = adminRows.length > 0 ? adminRows[0].settingValue : null;
+      if (adminPwd && input.password === adminPwd) {
+        return { success: true, operatorName: "Admin" };
+      }
+      return { success: false, operatorName: null };
     }),
 });

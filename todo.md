@@ -5243,3 +5243,8 @@
 - [x] Frontend: barra "Reputação do Mês" mostrando a média ponderada mensal do vendedor
 - [x] Frontend: bloqueio de fechamento do pedido quando média ponderada mensal < 15% com o novo pedido incluído
 - [x] Frontend: mostrar comissão mensal (Nível 3) como a definitiva para pagamento
+
+## Reputação do Mês - Melhorias
+- [x] Painel de Reputação do Mês na tela inicial do vendedor (sem precisar abrir pedido)
+- [x] Aprovação por senha do gerente para liberar fechamento de pedido quando média ponderada < 15%
+- [x] Botão de detalhes na barra de Reputação do Mês que abre modal com lista de pedidos que compõem a média ponderada
