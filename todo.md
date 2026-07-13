@@ -5251,3 +5251,6 @@
 
 ## Bug Fix - Acesso ao Aplicativo
 - [x] Vendedor criado via "Configurar Senhas" pelo sub-gestor deve aparecer na aba "Acesso ao Aplicativo" desse sub-gestor
+
+## Tabela de Preço - Ordenação
+- [x] Ordenar itens da tabela de preço por código em ordem crescente (igual Maxiprod)

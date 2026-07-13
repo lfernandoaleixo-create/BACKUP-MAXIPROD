@@ -1298,11 +1298,11 @@ function PriceMatrixView({ gestorName }: { gestorName: string }) {
     );
   }
 
-  const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
-  const bambuProducts = products.filter(p => p.segmento === "bambu");
-  const madeiraProducts = products.filter(p => p.segmento === "madeira");
-
-  const filterProducts = (list: typeof products) => {
+    const { sellers, products } = matrixQuery.data || { sellers: [], products: [] };
+  const sortedProducts = [...products].sort((a, b) => a.codigoItem.localeCompare(b.codigoItem, undefined, { numeric: true }));
+  const bambuProducts = sortedProducts.filter(p => p.segmento === "bambu");
+  const madeiraProducts = sortedProducts.filter(p => p.segmento === "madeira");
+  const filterProducts = (list: typeof sortedProducts) => {
     if (!search.trim()) return list;
     return list.filter(p =>
       p.descricaoItem.toLowerCase().includes(search.toLowerCase()) ||

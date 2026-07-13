@@ -6894,9 +6894,10 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
 
   const filteredItems = useMemo(() => {
     if (!data?.items) return [];
-    if (!searchTerm) return data.items;
+    const sorted = [...data.items].sort((a: any, b: any) => a.itemCodigo.localeCompare(b.itemCodigo, undefined, { numeric: true }));
+    if (!searchTerm) return sorted;
     const term = searchTerm.toLowerCase();
-    return data.items.filter((item: any) =>
+    return sorted.filter((item: any) =>
       item.itemCodigo.toLowerCase().includes(term) ||
       item.itemDescricao.toLowerCase().includes(term)
     );
