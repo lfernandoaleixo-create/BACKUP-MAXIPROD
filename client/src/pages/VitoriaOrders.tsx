@@ -277,24 +277,7 @@ export default function VitoriaOrders() {
           </div>
         </div>
 
-        {/* New Clients Section - Clients registered without orders */}
-        {newClients && newClients.length > 0 && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-700">
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Clientes Cadastrados (sem pedido)</h3>
-                <span className="ml-auto px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold rounded-full">{newClients.length}</span>
-              </div>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Clientes cadastrados pelos vendedores que precisam ser exportados para o Maxiprod</p>
-            </div>
-            <div className="divide-y divide-emerald-100 dark:divide-emerald-800">
-              {newClients.map((client: any) => (
-                <NewClientExpandableRow key={client.id} client={client} exportingClientId={exportingClientId} setExportingClientId={setExportingClientId} exportVendorClientMutation={exportVendorClientMutation} markExportedMutation={markExportedMutation} refetchClients={refetchClients} utils={utils} />
-              ))}
-            </div>
-          </div>
-        )}
+
 
         {/* Filter tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">

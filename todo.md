@@ -5372,3 +5372,8 @@
 - [x] Renato adicionado a hasAccess('gestao-comercial') em OperatorContext.tsx
 - [x] Renato adicionado ao showNavigationHub em GestaoComercial.tsx
 - [x] Renato adicionado ao showRealCostBar em VendedorDetalhe.tsx
+
+## Fix: Separar Cadastro de Clientes e Pedidos de Vendas
+- [x] Remover seção "Clientes Cadastrados (sem pedido)" da tela de Pedidos para Processamento (VitoriaOrders.tsx)
+- [x] Garantir que o painel "Cadastro de Clientes" no hub mostra APENAS clientes cadastrados sem pedido
+- [x] Garantir que o painel "Pedidos de Vendas" mostra APENAS pedidos de venda (sem lista de clientes)

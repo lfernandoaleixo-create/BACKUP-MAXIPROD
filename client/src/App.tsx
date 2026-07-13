@@ -22,6 +22,7 @@ import VendedorDetalhe from "./pages/VendedorDetalhe";
 import Importacao from "./pages/Importacao";
 import GestorAprovacoes from "./pages/GestorAprovacoes";
 import VitoriaOrders from "./pages/VitoriaOrders";
+import CadastroClientes from "./pages/CadastroClientes";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -34,6 +35,7 @@ function Router() {
       <Route path={"/gestao-comercial/vendedor/:sellerId"} component={VendedorDetalhe} />
       <Route path={"/gestao-comercial/aprovacoes"} component={GestorAprovacoes} />
       <Route path={"/gestao-comercial/pedidos-operador"} component={VitoriaOrders} />
+      <Route path={"/gestao-comercial/cadastro-clientes"} component={CadastroClientes} />
       <Route path={"/faturamento"} component={Billing} />
       <Route path={"/financeiro"} component={Financial} />
       <Route path={"/importacao"} component={Importacao} />

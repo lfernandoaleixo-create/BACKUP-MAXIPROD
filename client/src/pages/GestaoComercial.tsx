@@ -249,7 +249,7 @@ export default function GestaoComercial() {
             </a>
 
             {/* Painel de Cadastro de Clientes */}
-            <Link href="/gestao-comercial/pedidos-operador">
+            <Link href="/gestao-comercial/cadastro-clientes">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 shadow-sm p-6 hover:shadow-lg hover:border-emerald-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
