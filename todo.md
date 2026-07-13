@@ -5307,3 +5307,8 @@
 - [x] Adicionar botão "Baixar PDF" na seção "Clientes Cadastrados (sem pedido)" para Vitória, Juvenal e Guilherme
 - [x] PDF deve conter todas as informações do cliente (razão social, fantasia, CNPJ, CEP, endereço, telefone, email, contato, segmento, regime tributário, forma cobrança, cond. pagamento, região, perfil, produtos, probabilidade, tamanho, fornecedor atual, redespacho)
   Implementado via window.print() com layout HTML formatado. Botão azul "Baixar PDF" ao lado do "Exportar Maxiprod".
+
+## Feature: Painel de clientes cadastrados e pedidos de venda para Juvenal e Guilherme
+- [x] Dar acesso ao Juvenal e Guilherme ao mesmo painel que a Vitória tem (clientes cadastrados sem pedido + pedidos de venda)
+- [x] Permitir que Juvenal e Guilherme vejam e acompanhem o andamento dos pedidos e cadastros
+  Implementado: GestaoComercial.tsx auto-redireciona Juvenal e Guilherme para /gestao-comercial/pedidos-operador (mesmo painel da Vitória). Botão "Voltar" aponta para / para evitar loop de redirecionamento.

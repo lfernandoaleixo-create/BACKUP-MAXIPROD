@@ -149,23 +149,26 @@ export default function GestaoComercial() {
   const [, setLocation] = useLocation();
 
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
+  const isJuvenal = operator?.name === "Juvenal";
+  const isGuilherme = operator?.name === "Guilherme";
+  const shouldRedirectToPedidos = isVitoria || isJuvenal || isGuilherme;
 
-  // Auto-redirect Vitória to her Pedidos page
+  // Auto-redirect Vitória, Juvenal and Guilherme to Pedidos page
   useEffect(() => {
-    if (isVitoria) {
+    if (shouldRedirectToPedidos) {
       setLocation("/gestao-comercial/pedidos-operador");
     }
-  }, [isVitoria, setLocation]);
+  }, [shouldRedirectToPedidos, setLocation]);
 
   // Fetch seller list from Maxiprod
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
-    enabled: !isVitoria,
+    enabled: !shouldRedirectToPedidos,
   });
 
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
-    enabled: !isVitoria,
+    enabled: !shouldRedirectToPedidos,
   });
 
   // Get vendedores for a specific gestor from Maxiprod data
@@ -197,8 +200,8 @@ export default function GestaoComercial() {
     return names;
   }, [representantesQuery.data]);
 
-  // If Vitória, show nothing (redirect will happen)
-  if (isVitoria) return null;
+  // If Vitória/Juvenal/Guilherme, show nothing (redirect will happen)
+  if (shouldRedirectToPedidos) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
