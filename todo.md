@@ -5400,3 +5400,8 @@
 
 ## Fix: Detalhes completos nos pedidos de aprovação
 - [x] Renato/Juvenal devem ver nos pedidos de aprovação TODOS os detalhes que a Vitória vê (máximo de informações)
+
+## Fix: Painel do Gestor no SellerApp deve mostrar APENAS o card do gestor logado
+- [x] Renato vê apenas o card "RENATO LEDESMA" já expandido (sem Jordão, Ana Paula, Juvenal)
+- [x] Juvenal vê apenas o card "JUVENAL TEIXEIRA" já expandido
+- [x] Aprovações de Pedidos deve filtrar por gestorName do gestor logado (Renato vê pedidos do Rafael)

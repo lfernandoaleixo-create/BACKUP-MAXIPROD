@@ -397,12 +397,13 @@ interface GestoresTabProps {
   errorMessage?: string;
   onRefresh: () => void;
   isFetching: boolean;
+  filterGestorName?: string; // If set, show only this gestor's card (already expanded)
 }
 
-function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching }: GestoresTabProps) {
-  // Auto-expand gestor from URL param (when coming from SellerApp hub)
+function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching, filterGestorName }: GestoresTabProps) {
+  // Auto-expand gestor from URL param or prop
   const urlParams = new URLSearchParams(window.location.search);
-  const autoExpandName = urlParams.get("autoExpand");
+  const autoExpandName = filterGestorName || urlParams.get("autoExpand");
   const [expandedGestor, setExpandedGestor] = useState<string | null>(autoExpandName || null);
   const [activeConfig, setActiveConfig] = useState<ConfigCategory | null>(null);
   const [, navigate] = useLocation();
@@ -471,7 +472,216 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     return vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
   };
 
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(!!filterGestorName);
+
+  // When filtered (SellerApp gestor mode), skip the collapsible wrapper
+  if (filterGestorName) {
+    return (
+      <div className="space-y-3">
+        {/* Loading */}
+        {isLoading && (
+          <div className="p-8 text-center">
+            <RefreshCw className="w-6 h-6 text-teal-500 animate-spin mx-auto mb-3" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
+          </div>
+        )}
+
+        {/* Error */}
+        {isError && (
+          <div className="rounded-lg border border-red-200 dark:border-red-800 p-4">
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">Erro ao buscar representantes</p>
+                <p className="text-xs text-red-500 mt-1">{errorMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Single gestor card, already expanded */}
+        {!isLoading && GESTOR_CARDS.filter(card => {
+          return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        }).map((card) => {
+          const vendedoresBase = getVendedoresForCard(card);
+          const vendedores = card.role === "Sub-gestor" 
+            ? vendedoresBase 
+            : [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== card.name.toUpperCase())];
+          const vendedorCount = vendedores.length;
+          const isSubGestor = card.role === "Sub-gestor";
+
+          return (
+            <div key={card.name} className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden transition-all ${
+              isSubGestor 
+                ? "border-purple-200 dark:border-purple-800" 
+                : "border-slate-200 dark:border-slate-700"
+            }`}>
+              {/* Card Header */}
+              <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-slate-100 dark:border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ${
+                    isSubGestor 
+                      ? "bg-gradient-to-br from-purple-400 to-purple-600" 
+                      : "bg-gradient-to-br from-teal-400 to-teal-600"
+                  }`}>
+                    {card.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm md:text-base font-bold text-slate-800 dark:text-white">{card.name}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${
+                        isSubGestor
+                          ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                          : "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
+                      }`}>
+                        {card.role.toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      {vendedorCount} vendedor{vendedorCount !== 1 ? "es" : ""}
+                      {isSubGestor && card.parentGestor && ` \u00b7 subordinado a ${card.parentGestor}`}
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                  isSubGestor
+                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                    : "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
+                }`}>
+                  {vendedorCount}
+                </span>
+              </div>
+
+              {/* Config Panel - always expanded */}
+              <div className="border-t border-slate-100 dark:border-slate-700">
+                {!activeConfig && (
+                  <div className="p-4 md:p-6">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">Configurações dos vendedores:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      <button onClick={() => setActiveConfig("estoque")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <Package className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Estoque</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("tabela_preco")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <Tag className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Tabela de Preço</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("catalogos")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <FolderOpen className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Documentos/Catálogos</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("senha")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <Lock className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Senhas</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("pedidos")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <ShoppingCart className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Aprovações de Pedidos</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("metricas")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <BarChart3 className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Métricas de Venda</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("acesso")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <Shield className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Acesso ao Aplicativo</span>
+                      </button>
+                      <button onClick={() => setActiveConfig("comissao")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <Percent className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Comissão</span>
+                      </button>
+                      <button onClick={() => { /* TODO: cadastrar vendedor */ }} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
+                        <UserPlus className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                        <span className="text-xs font-medium text-teal-700 dark:text-teal-300">Cadastrar Vendedor</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {activeConfig && (
+                  <div className="p-4 md:p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <button
+                        onClick={() => setActiveConfig(null)}
+                        className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 font-medium cursor-pointer"
+                      >
+                        <ArrowLeft className="w-3 h-3" />
+                        Voltar
+                      </button>
+                      <span className="text-xs text-slate-400">/</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {activeConfig === "estoque" && "Configura\u00e7\u00e3o de Estoque"}
+                        {activeConfig === "tabela_preco" && "Configurar Tabela de Pre\u00e7o"}
+                        {activeConfig === "catalogos" && "Documentos/Cat\u00e1logos"}
+                        {activeConfig === "senha" && "Configurar Senhas"}
+                        {activeConfig === "pedidos" && "Aprova\u00e7\u00f5es de Pedidos"}
+                        {activeConfig === "metricas" && "M\u00e9tricas de Venda"}
+                        {activeConfig === "acesso" && "Acesso ao Aplicativo"}
+                        {activeConfig === "comissao" && "Comiss\u00e3o dos Vendedores"}
+                      </span>
+                    </div>
+                    {activeConfig === "estoque" ? (
+                      <EstoqueMatrixView gestorName={card.name} />
+                    ) : activeConfig === "tabela_preco" ? (
+                      <PriceMatrixView gestorName={card.name} />
+                    ) : activeConfig === "catalogos" ? (
+                      <CatalogMatrixView gestorName={card.name} />
+                    ) : activeConfig === "senha" ? (
+                      <PasswordManagerView gestorName={card.name} />
+                    ) : activeConfig === "metricas" ? (
+                      <GestaoMetricasVendedores sellerNames={vendedores} />
+                    ) : activeConfig === "acesso" ? (
+                      <AcessoAppView gestorName={card.name} vendedores={vendedores} permissions={permissions} onToggleAuth={handleToggleAuth} />
+                    ) : activeConfig === "pedidos" ? (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(card.name)}`} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Ver Aprova\u00e7\u00f5es
+                          </Link>
+                        </div>
+                        {vendedores.length === 0 && (
+                          <div className="text-center py-6">
+                            <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                            <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
+                          </div>
+                        )}
+                        {vendedores.map((vendedor) => {
+                          const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
+                          const navUrl = `/gestao-comercial/vendedor/${perm?.id}?tab=pedidos`;
+                          return (
+                            <div
+                              key={vendedor}
+                              onClick={() => { if (perm) navigate(navUrl); }}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-all cursor-pointer"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
+                                {vendedor.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{vendedor}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {perm && (
+                                  <span className={`w-2 h-2 rounded-full ${perm.authorized ? "bg-emerald-500" : "bg-red-400"}`} />
+                                )}
+                                <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : activeConfig === "comissao" ? (
+                      <ComissaoView gestorName={card.name} />
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -489,7 +699,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             <div className="text-left">
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Gestores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores · 1 sub-gestor · {totalVendedores} vendedores
+                {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores \u00b7 1 sub-gestor \u00b7 {totalVendedores} vendedores
               </p>
             </div>
           </div>
@@ -530,8 +740,11 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
               </div>
             )}
 
-            {/* 4 Gestor Cards */}
-            {!isLoading && GESTOR_CARDS.map((card) => {
+            {/* Gestor Cards (filtered if filterGestorName is set) */}
+            {!isLoading && GESTOR_CARDS.filter(card => {
+              if (!filterGestorName) return true;
+              return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            }).map((card) => {
         const isExpanded = expandedGestor === card.name;
         const vendedoresBase = getVendedoresForCard(card);
         // Include the gestor themselves as a vendedor in their own card (except sub-gestores)
@@ -706,7 +919,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       <div className="space-y-3">
                         {/* Quick access: Aprovações + Pedidos (Vitória) */}
                         <div className="flex flex-wrap gap-2 mb-3">
-                          <Link href="/gestao-comercial/aprovacoes" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
+                          <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(card.name)}`} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all cursor-pointer">
                             <ShieldCheck className="w-3.5 h-3.5" />
                             Aprovações
                           </Link>
@@ -2708,8 +2921,6 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
 // ============================================================
 // Inline version for SellerApp (no TopNav, no back link to /gestao-comercial)
 export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?: string }) {
-  const [view, setView] = useState<GestaoView>("gestores");
-
   // Fetch seller list from Maxiprod
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
@@ -2735,60 +2946,20 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
 
   return (
     <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
-      {/* Tab buttons */}
-      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
-        <button
-          onClick={() => setView("gestores")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-            view === "gestores"
-              ? "bg-teal-600 text-white shadow-sm"
-              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-          }`}
-        >
-          <Crown className="w-4 h-4" />
-          Gestores
-        </button>
-        <button
-          onClick={() => setView("vendedores")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-            view === "vendedores"
-              ? "bg-teal-600 text-white shadow-sm"
-              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Vendedores
-        </button>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Exportar Maxiprod button */}
-        <ExportMaxiprodButton />
-      </div>
-
-      {/* Content */}
-      {view === "gestores" && (
-        <GestoresTab
-          getVendedoresForGestor={getVendedoresForGestor}
-          permissions={permissionsQuery.data || []}
-          isLoading={representantesQuery.isLoading}
-          isError={representantesQuery.isError}
-          errorMessage={representantesQuery.error?.message}
-          onRefresh={() => {
-            representantesQuery.refetch();
-            permissionsQuery.refetch();
-          }}
-          isFetching={representantesQuery.isFetching}
-        />
-      )}
-      {view === "vendedores" && (
-        <VendedoresTab
-          getVendedoresForGestor={getVendedoresForGestor}
-          permissions={permissionsQuery.data || []}
-          isLoading={representantesQuery.isLoading}
-        />
-      )}
+      {/* Show only this gestor's card, already expanded */}
+      <GestoresTab
+        getVendedoresForGestor={getVendedoresForGestor}
+        permissions={permissionsQuery.data || []}
+        isLoading={representantesQuery.isLoading}
+        isError={representantesQuery.isError}
+        errorMessage={representantesQuery.error?.message}
+        onRefresh={() => {
+          representantesQuery.refetch();
+          permissionsQuery.refetch();
+        }}
+        isFetching={representantesQuery.isFetching}
+        filterGestorName={autoExpandName}
+      />
     </main>
   );
 }
