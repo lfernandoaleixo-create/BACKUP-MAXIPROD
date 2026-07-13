@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from "react";
-import { Package, Lock, AlertCircle, Crown, ShoppingCart, ArrowLeft, Settings, ClipboardCheck } from "lucide-react";
+import { Package, Lock, AlertCircle, Crown, ShoppingCart, ArrowLeft, Settings, ClipboardCheck, RefreshCw } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import VendedorDetalhe from "./VendedorDetalhe";
 
@@ -100,16 +100,14 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
     return <GestorVendedorHub session={session} onChoice={setHubChoice} onLogout={handleLogout} />;
   }
 
-  // Se escolheu "gestor", mostra o VendedorDetalhe em modo gestor (com todas as abas de config)
+  // Se escolheu "gestor", redireciona para a Gestão Comercial (mesmo painel dos gestores)
   if (hubChoice === "gestor") {
+    // Navigate to gestao-comercial with gestor filter
+    window.location.href = `/gestao-comercial?autoExpand=${encodeURIComponent(session.name)}`;
     return (
-      <VendedorDetalhe 
-        sellerMode={false} 
-        externalSellerId={session.id} 
-        onLogout={() => setHubChoice(null)}
-        gestorSelfMode={true}
-        gestorName={session.name}
-      />
+      <div className="min-h-screen flex items-center justify-center">
+        <RefreshCw className="w-6 h-6 text-teal-500 animate-spin" />
+      </div>
     );
   }
 

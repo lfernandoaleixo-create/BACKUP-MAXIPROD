@@ -5389,3 +5389,14 @@
 - [x] Quando Renato ou Juvenal logam no /vendedor, mostrar hub com 2 cards: "Painel do Gestor" e "Painel do Vendedor"
 - [x] "Painel do Gestor" abre configuração dos vendedores (estoque, tabela, catálogos, comissão) + pedidos para aprovação
 - [x] "Painel do Vendedor" abre o app de vendedor normal deles (para vender)
+
+## Fix: Painel do Gestor para Renato/Juvenal - usar mesmo painel da Gestão Comercial
+- [x] Quando Renato/Juvenal escolhem "Painel do Gestor", abrir o mesmo painel expandido da Gestão Comercial (cards: Estoque, Tabela, Catálogos, Senhas, Métricas, Acesso ao App, Comissão, Cadastrar Vendedor)
+- [x] Renomear "Pedidos de Venda" para "Aprovações de Pedidos" no painel do gestor deles
+
+## Fix: Numeração dos pedidos de venda
+- [x] Recomeçar numeração dos pedidos a partir de #01, #02, #03... em ordem crescente
+- [x] Atualizar os pedidos existentes para a nova numeração
+
+## Fix: Detalhes completos nos pedidos de aprovação
+- [x] Renato/Juvenal devem ver nos pedidos de aprovação TODOS os detalhes que a Vitória vê (máximo de informações)

@@ -400,7 +400,10 @@ interface GestoresTabProps {
 }
 
 function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching }: GestoresTabProps) {
-  const [expandedGestor, setExpandedGestor] = useState<string | null>(null);
+  // Auto-expand gestor from URL param (when coming from SellerApp hub)
+  const urlParams = new URLSearchParams(window.location.search);
+  const autoExpandName = urlParams.get("autoExpand");
+  const [expandedGestor, setExpandedGestor] = useState<string | null>(autoExpandName || null);
   const [activeConfig, setActiveConfig] = useState<ConfigCategory | null>(null);
   const [, navigate] = useLocation();
 
@@ -627,7 +630,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
                       >
                         <ShoppingCart className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Pedidos de Venda</span>
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Aprovações de Pedidos</span>
                       </button>
                       <button
                         onClick={() => setActiveConfig("metricas")}
@@ -679,7 +682,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         {activeConfig === "tabela_preco" && "Configurar Tabela de Preço"}
                         {activeConfig === "catalogos" && "Documentos/Catálogos"}
                         {activeConfig === "senha" && "Configurar Senhas"}
-                        {activeConfig === "pedidos" && "Pedidos de Venda"}
+                        {activeConfig === "pedidos" && "Aprovações de Pedidos"}
                         {activeConfig === "metricas" && "Métricas de Venda"}
                         {activeConfig === "acesso" && "Acesso ao Aplicativo"}
                         {activeConfig === "comissao" && "Comissão dos Vendedores"}

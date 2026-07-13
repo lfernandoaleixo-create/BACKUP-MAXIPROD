@@ -454,7 +454,7 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-slate-400">#{order.orderNumber || order.id}</span>
+                      <span className="text-xs font-mono text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
                       <span className="text-sm font-bold text-slate-800 truncate">{order.razaoSocial}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
@@ -4154,7 +4154,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-bold text-slate-400">#{pm.orderNumber || pm.id}</span>
+                      <span className="text-[10px] font-bold text-slate-400">#{String(pm.orderNumber || pm.id).padStart(2, '0')}</span>
                       <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
                         {pm.razaoSocial || pm.nomeFantasia || "Cliente"}
                       </p>

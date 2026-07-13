@@ -365,7 +365,7 @@ export default function VitoriaOrders() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-400">#{order.orderNumber || order.id}</span>
+                        <span className="text-[10px] font-bold text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                           {order.razaoSocial || order.nomeFantasia}
                         </p>
@@ -858,7 +858,7 @@ export default function VitoriaOrders() {
                               const printWindow = window.open("", "_blank");
                               if (printWindow) {
                                 printWindow.document.write(`
-                                  <html><head><title>Pedido #${order.orderNumber || order.id} - ${order.razaoSocial || order.nomeFantasia}</title>
+                                  <html><head><title>Pedido #${String(order.orderNumber || order.id).padStart(2, '0')} - ${order.razaoSocial || order.nomeFantasia}</title>
                                   <style>
                                     body { font-family: Arial, sans-serif; padding: 30px; font-size: 11px; line-height: 1.5; color: #333; }
                                     h1 { font-size: 18px; color: #1a5c3a; border-bottom: 2px solid #1a5c3a; padding-bottom: 8px; margin-bottom: 20px; }
@@ -879,7 +879,7 @@ export default function VitoriaOrders() {
                                     .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888; }
                                     .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; background: #dcfce7; color: #166534; }
                                   </style></head><body>
-                                  <h1>PEDIDO DE VENDA #${order.orderNumber || order.id}</h1>
+                                  <h1>PEDIDO DE VENDA #${String(order.orderNumber || order.id).padStart(2, '0')}</h1>
                                   <div class="header-info">
                                     <div>
                                       <strong>Cliente:</strong> ${order.razaoSocial || order.nomeFantasia || "—"}<br/>

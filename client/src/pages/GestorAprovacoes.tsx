@@ -9,7 +9,8 @@ import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
-  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2
+  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2,
+  Building2, Phone, CreditCard
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -20,6 +21,7 @@ function formatCurrency(value: number | string) {
 
 type OrderWithItems = {
   id: number;
+  orderNumber: number | null;
   sellerId: number;
   sellerName: string;
   gestorName: string | null;
@@ -39,6 +41,53 @@ type OrderWithItems = {
   aprovadoPor: string | null;
   dataAprovacao: string | Date | null;
   motivoRejeicao: string | null;
+  // Full client details
+  regimeTributario: string | null;
+  emailNfe: string | null;
+  cnaeFiscal: string | null;
+  cep: string | null;
+  endereco: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  telefone1: string | null;
+  telefone2: string | null;
+  emailContato: string | null;
+  inscricaoMunicipal: string | null;
+  inscricaoSuframa: string | null;
+  situacaoFiscalEspecial: string | null;
+  website: string | null;
+  segmento: string | null;
+  formaCobranca: string | null;
+  limiteCredito: string | null;
+  tabelaPrecos: string | null;
+  regiao: string | null;
+  perfil: string | null;
+  formaPedido: string | null;
+  produtos: string | null;
+  probabilidadeNegocio: string | null;
+  tamanho: string | null;
+  atencao: string | null;
+  fornecedorAtual: string | null;
+  situacaoCobranca: string | null;
+  possuiRedespacho: boolean | null;
+  redespachoCnpj: string | null;
+  redespachoRazaoSocial: string | null;
+  redespachoCep: string | null;
+  redespachoLogradouro: string | null;
+  redespachoNumero: string | null;
+  redespachoBairro: string | null;
+  redespachoCidade: string | null;
+  redespachoUf: string | null;
+  redespachoTelefone: string | null;
+  enderecoEntregaMesmo: boolean | null;
+  entregaCep: string | null;
+  entregaLogradouro: string | null;
+  entregaNumero: string | null;
+  entregaBairro: string | null;
+  entregaCidade: string | null;
+  entregaUf: string | null;
+  entregaTelefone: string | null;
   items: Array<{
     id: number;
     orderId: number;
@@ -291,7 +340,7 @@ export default function GestorAprovacoes(props: any = {}) {
                     {/* Order Info */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-400">#{order.orderNumber || order.id}</span>
+                        <span className="text-[10px] font-bold text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                           {order.razaoSocial || order.nomeFantasia}
                         </p>
@@ -403,24 +452,259 @@ export default function GestorAprovacoes(props: any = {}) {
                         </div>
                       )}
 
-                      {/* Client Info */}
-                      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-                        <div>
-                          <span className="text-slate-400 uppercase font-bold">CNPJ/CPF</span>
-                          <p className="text-slate-700 dark:text-slate-200 font-mono">{order.cnpjCpf}</p>
+                      {/* Full Client Info - Same as Vitoria sees */}
+                      <div className="mt-4 space-y-3">
+                        {/* Section: Dados do Cliente */}
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                            <Building2 className="w-3 h-3" />
+                            Dados do Cliente
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {order.razaoSocial && (
+                              <div className="col-span-2 md:col-span-3">
+                                <span className="text-slate-400 font-semibold">Razão Social</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-medium">{order.razaoSocial}</p>
+                              </div>
+                            )}
+                            {order.nomeFantasia && (
+                              <div className="col-span-2 md:col-span-2">
+                                <span className="text-slate-400 font-semibold">Nome Fantasia</span>
+                                <p className="text-slate-800 dark:text-slate-100">{order.nomeFantasia}</p>
+                              </div>
+                            )}
+                            {order.cnpjCpf && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">CNPJ/CPF</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.cnpjCpf}</p>
+                              </div>
+                            )}
+                            {order.regimeTributario && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">Regime Tributário</span>
+                                <p className="text-slate-800 dark:text-slate-100">{order.regimeTributario}</p>
+                              </div>
+                            )}
+                            {order.emailNfe && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">Email NF-e</span>
+                                <p className="text-slate-800 dark:text-slate-100 text-[9px] truncate">{order.emailNfe}</p>
+                              </div>
+                            )}
+                            {order.cnaeFiscal && (
+                              <div>
+                                <span className="text-slate-400 font-semibold">CNAE Fiscal</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.cnaeFiscal}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        {order.segmento && (<div><span className="text-slate-400 uppercase font-bold">Segmento</span><p className="text-slate-700 dark:text-slate-200">{order.segmento}</p></div>)}
-                        {order.condicaoPagamento && (<div><span className="text-slate-400 uppercase font-bold">Pagamento</span><p className="text-slate-700 dark:text-slate-200">{order.condicaoPagamento}</p></div>)}
-                        {order.formaCobranca && (<div><span className="text-slate-400 uppercase font-bold">Cobrança</span><p className="text-slate-700 dark:text-slate-200">{order.formaCobranca}</p></div>)}
-                        {order.regiao && (<div><span className="text-slate-400 uppercase font-bold">Região</span><p className="text-slate-700 dark:text-slate-200">{order.regiao}</p></div>)}
-                        {order.perfil && (<div><span className="text-slate-400 uppercase font-bold">Perfil</span><p className="text-slate-700 dark:text-slate-200">{order.perfil}</p></div>)}
-                        {order.situacaoCobranca && order.situacaoCobranca !== "SEM PROTESTO" && (<div><span className="text-red-500 uppercase font-bold">Sit. Cobrança</span><p className="text-red-600 dark:text-red-400 font-bold">{order.situacaoCobranca}</p></div>)}
-                        {order.observacoes && (
-                          <div className="col-span-2">
-                            <span className="text-slate-400 uppercase font-bold">Observações</span>
-                            <p className="text-slate-700 dark:text-slate-200">{order.observacoes}</p>
+
+                        {/* Section: Endereço */}
+                        {(order.cep || order.endereco || order.municipio) && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <MapPin className="w-3 h-3" />
+                              Endereço
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.cep && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100 font-mono">{order.cep}</p>
+                                </div>
+                              )}
+                              {(order.endereco || order.numero) && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100">
+                                    {order.endereco}{order.numero ? `, ${order.numero}` : ""}{order.complemento ? ` - ${order.complemento}` : ""}
+                                  </p>
+                                </div>
+                              )}
+                              {order.bairro && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Bairro</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.bairro}</p>
+                                </div>
+                              )}
+                              {(order.municipio || order.uf) && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Município/UF</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.municipio}{order.uf ? `/${order.uf}` : ""}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
+
+                        {/* Section: Contato */}
+                        {(order.telefone1 || order.telefone2 || order.emailContato) && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <Phone className="w-3 h-3" />
+                              Contato
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.telefone1 && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone 1</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.telefone1}</p>
+                                </div>
+                              )}
+                              {order.telefone2 && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone 2</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.telefone2}</p>
+                                </div>
+                              )}
+                              {order.emailContato && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Email</span>
+                                  <p className="text-slate-800 dark:text-slate-100 truncate">{order.emailContato}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Dados Fiscais */}
+                        {(order.regimeTributario || order.inscricaoMunicipal || order.inscricaoSuframa || order.situacaoFiscalEspecial || order.cnaeFiscal || order.emailNfe || order.website) && (
+                          <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1 mb-2">
+                              📋 Dados Fiscais
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.regimeTributario && (<div><span className="text-slate-400 font-semibold">Regime Tributário</span><p className="text-slate-800 dark:text-slate-100">{order.regimeTributario}</p></div>)}
+                              {order.inscricaoMunicipal && (<div><span className="text-slate-400 font-semibold">Inscrição Municipal</span><p className="text-slate-800 dark:text-slate-100">{order.inscricaoMunicipal}</p></div>)}
+                              {order.inscricaoSuframa && (<div><span className="text-slate-400 font-semibold">SUFRAMA</span><p className="text-slate-800 dark:text-slate-100">{order.inscricaoSuframa}</p></div>)}
+                              {order.situacaoFiscalEspecial && (<div><span className="text-slate-400 font-semibold">Sit. Fiscal Especial</span><p className="text-slate-800 dark:text-slate-100">{order.situacaoFiscalEspecial}</p></div>)}
+                              {order.cnaeFiscal && (<div><span className="text-slate-400 font-semibold">CNAE Fiscal</span><p className="text-slate-800 dark:text-slate-100">{order.cnaeFiscal}</p></div>)}
+                              {order.emailNfe && (<div><span className="text-slate-400 font-semibold">Email NFe</span><p className="text-slate-800 dark:text-slate-100">{order.emailNfe}</p></div>)}
+                              {order.website && (<div><span className="text-slate-400 font-semibold">Website</span><p className="text-slate-800 dark:text-slate-100">{order.website}</p></div>)}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Dados Comerciais / Venda */}
+                        {(order.segmento || order.condicaoPagamento || order.formaCobranca || order.limiteCredito || order.tabelaPrecos || order.observacoes) && (
+                          <div className="bg-green-50/50 dark:bg-green-900/10 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                            <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase flex items-center gap-1 mb-2">
+                              <CreditCard className="w-3 h-3" />
+                              Dados de Venda
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.segmento && (<div><span className="text-slate-400 font-semibold">Segmento</span><p className="text-slate-800 dark:text-slate-100">{order.segmento}</p></div>)}
+                              {order.limiteCredito && (<div><span className="text-slate-400 font-semibold">Limite Crédito</span><p className="text-slate-800 dark:text-slate-100">R$ {order.limiteCredito}</p></div>)}
+                              {order.formaCobranca && (<div><span className="text-slate-400 font-semibold">Forma Cobrança</span><p className="text-slate-800 dark:text-slate-100">{order.formaCobranca}</p></div>)}
+                              {order.tabelaPrecos && (<div><span className="text-slate-400 font-semibold">Tabela Preços</span><p className="text-slate-800 dark:text-slate-100">{order.tabelaPrecos}</p></div>)}
+                              {order.condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800 dark:text-slate-100">{order.condicaoPagamento}</p></div>)}
+                              {order.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 dark:text-slate-100 whitespace-pre-wrap">{order.observacoes}</p></div>)}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Dados CRM / Relacionamento */}
+                        {(order.regiao || order.perfil || order.formaPedido || order.produtos || order.probabilidadeNegocio || order.tamanho || order.atencao || order.fornecedorAtual) && (
+                          <div className="bg-purple-50/50 dark:bg-purple-900/10 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                            <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase flex items-center gap-1 mb-2">
+                              🏢 Relacionamento (CRM)
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.regiao && (<div><span className="text-slate-400 font-semibold">Região</span><p className="text-slate-800 dark:text-slate-100">{order.regiao}</p></div>)}
+                              {order.perfil && (<div><span className="text-slate-400 font-semibold">Perfil</span><p className="text-slate-800 dark:text-slate-100">{order.perfil}</p></div>)}
+                              {order.formaPedido && (<div><span className="text-slate-400 font-semibold">Forma Pedido</span><p className="text-slate-800 dark:text-slate-100">{order.formaPedido}</p></div>)}
+                              {order.produtos && (<div><span className="text-slate-400 font-semibold">Produtos</span><p className="text-slate-800 dark:text-slate-100">{order.produtos}</p></div>)}
+                              {order.probabilidadeNegocio && (<div><span className="text-slate-400 font-semibold">Probabilidade</span><p className="text-slate-800 dark:text-slate-100">{order.probabilidadeNegocio}</p></div>)}
+                              {order.tamanho && (<div><span className="text-slate-400 font-semibold">Tamanho</span><p className="text-slate-800 dark:text-slate-100">{order.tamanho}</p></div>)}
+                              {order.atencao && order.atencao !== "Normal" && (<div><span className="text-slate-400 font-semibold">Atenção</span><p className="text-orange-600 dark:text-orange-400 font-bold">{order.atencao}</p></div>)}
+                              {order.fornecedorAtual && (<div><span className="text-slate-400 font-semibold">Fornecedor Atual</span><p className="text-slate-800 dark:text-slate-100">{order.fornecedorAtual}</p></div>)}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Cobrança */}
+                        {order.situacaoCobranca && order.situacaoCobranca !== "SEM PROTESTO" && (
+                          <div className="bg-red-50/50 dark:bg-red-900/10 rounded-lg p-3 border border-red-200 dark:border-red-700">
+                            <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase flex items-center gap-1 mb-2">
+                              ⚠️ Cobrança
+                            </p>
+                            <div className="text-[10px]">
+                              <span className="text-red-500 font-semibold">Situação:</span>
+                              <span className="text-red-700 dark:text-red-300 font-bold ml-1">{order.situacaoCobranca}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Redespacho */}
+                        <div className={`rounded-lg p-3 border ${order.possuiRedespacho ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`}>
+                          <p className={`text-[10px] font-bold uppercase flex items-center gap-1 mb-1 ${order.possuiRedespacho ? "text-blue-600 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+                            🚚 Possui Redespacho: <span className="ml-1 font-bold">{order.possuiRedespacho ? "Sim" : "Não"}</span>
+                          </p>
+                          {order.possuiRedespacho && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px] mt-1">
+                              {order.redespachoCnpj && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CNPJ</span>
+                                  <p className="text-slate-800 dark:text-slate-100 font-mono">{order.redespachoCnpj}</p>
+                                </div>
+                              )}
+                              {order.redespachoRazaoSocial && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Razão Social</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.redespachoRazaoSocial}</p>
+                                </div>
+                              )}
+                              {order.redespachoCep && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.redespachoCep}</p>
+                                </div>
+                              )}
+                              {(order.redespachoLogradouro || order.redespachoNumero || order.redespachoBairro) && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{[order.redespachoLogradouro, order.redespachoNumero, order.redespachoBairro, order.redespachoCidade, order.redespachoUf].filter(Boolean).join(", ")}</p>
+                                </div>
+                              )}
+                              {order.redespachoTelefone && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.redespachoTelefone}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Endereço de Entrega */}
+                        <div className={`rounded-lg p-3 border ${!order.enderecoEntregaMesmo ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`}>
+                          <p className={`text-[10px] font-bold uppercase flex items-center gap-1 mb-1 ${!order.enderecoEntregaMesmo ? "text-orange-600 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>
+                            📦 Endereço de entrega é o mesmo do cadastro: <span className="ml-1 font-bold">{order.enderecoEntregaMesmo ? "Sim" : "Não"}</span>
+                          </p>
+                          {!order.enderecoEntregaMesmo && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px] mt-1">
+                              {order.entregaCep && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.entregaCep}</p>
+                                </div>
+                              )}
+                              {(order.entregaLogradouro || order.entregaNumero || order.entregaBairro) && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{[order.entregaLogradouro, order.entregaNumero, order.entregaBairro, order.entregaCidade, order.entregaUf].filter(Boolean).join(", ")}</p>
+                                </div>
+                              )}
+                              {order.entregaTelefone && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Telefone</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.entregaTelefone}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Actions for pending orders */}
