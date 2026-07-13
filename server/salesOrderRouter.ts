@@ -852,12 +852,45 @@ export const salesOrderRouter = router({
           const { createNotification } = await import("./notificationRouter");
           const totalCaixas = itemsWithValidation.reduce((sum, i) => sum + i.quantidade, 0);
           const itemsResume = itemsWithValidation.map(i => `${i.descricaoItem} (${i.quantidade}cx × R$ ${i.precoUnitario.toFixed(2)} = R$ ${i.totalItem.toFixed(2)})`).join(" | ");
+          // Build detailed client info
+          const clientInfo = [
+            `Razão Social: ${input.razaoSocial}`,
+            input.nomeFantasia ? `Nome Fantasia: ${input.nomeFantasia}` : null,
+            `CNPJ/CPF: ${input.cnpjCpf}`,
+            input.inscricaoEstadual ? `IE: ${input.inscricaoEstadual}` : null,
+            input.tipoContribuinte ? `Contribuinte: ${input.tipoContribuinte}` : null,
+            input.regimeTributario ? `Regime: ${input.regimeTributario}` : null,
+            input.telefone1 ? `Tel: ${input.telefone1}${input.telefone2 ? ' / ' + input.telefone2 : ''}` : null,
+            input.emailContato ? `Email: ${input.emailContato}` : null,
+            input.emailNfe ? `Email NFe: ${input.emailNfe}` : null,
+            input.nomeContato ? `Contato: ${input.nomeContato}` : null,
+            input.segmento ? `Segmento: ${input.segmento}` : null,
+            (input.endereco || input.cep) ? `Endereço: ${input.endereco || ''}${input.numero ? ', ' + input.numero : ''}${input.complemento ? ' - ' + input.complemento : ''} - ${input.bairro || ''} - ${input.municipio || ''}/${input.uf || ''} CEP: ${input.cep || ''}` : null,
+            input.formaCobranca ? `Forma Cobrança: ${input.formaCobranca}` : null,
+            input.limiteCredito ? `Limite Crédito: R$ ${input.limiteCredito}` : null,
+            input.situacaoCobranca ? `Situação: ${input.situacaoCobranca}` : null,
+          ].filter(Boolean).join(' \n ');
+          // Build detailed order info
+          const orderInfo = [
+            `Pedido #${orderNumber}`,
+            `Vendedor: ${seller.sellerName} (Gestor: ${seller.gestorName})`,
+            `Forma Pagamento: ${input.formaPagamento || 'N/A'}`,
+            input.condicaoPagamento ? `Condição: ${input.condicaoPagamento}` : null,
+            input.tipoFrete ? `Frete: ${input.tipoFrete}${valorFrete > 0 ? ' - R$ ' + valorFrete.toFixed(2) : ''}` : (valorFrete > 0 ? `Frete: R$ ${valorFrete.toFixed(2)}` : null),
+            input.dataEntrega ? `Data Entrega: ${input.dataEntrega}` : null,
+            input.observacoes ? `Obs: ${input.observacoes}` : null,
+            `--- ITENS (${itemsWithValidation.length}) ---`,
+            ...itemsWithValidation.map((i, idx) => `${idx+1}. ${i.descricaoItem} | ${i.quantidade}cx × R$ ${i.precoUnitario.toFixed(2)} = R$ ${i.totalItem.toFixed(2)}${i.precoMinimo !== null && i.precoUnitario < i.precoMinimo ? ' ⚠️ ABAIXO MÍN' : ''}`),
+            `--- TOTAL: R$ ${totalPedido.toFixed(2)} (${totalCaixas} caixas) ---`,
+            temPrecoAbaixoMinimo ? '⚠️ ATENÇÃO: PREÇO ABAIXO DO MÍNIMO' : null,
+          ].filter(Boolean).join(' \n ');
+          const fullMessage = `📌 CADASTRO DO CLIENTE:\n${clientInfo}\n\n📦 PEDIDO:\n${orderInfo}`;
           await createNotification({
             type: "pedido_vendedor",
-            title: `Novo Pedido - ${seller.sellerName}`,
-            message: `Cliente: ${input.razaoSocial} | ${itemsWithValidation.length} ${itemsWithValidation.length === 1 ? 'item' : 'itens'} | ${totalCaixas} caixas | Total: R$ ${totalPedido.toFixed(2)}${temPrecoAbaixoMinimo ? ' ⚠️ PREÇO ABAIXO DO MÍNIMO' : ''} | Itens: ${itemsResume}`,
+            title: `Novo Pedido #${orderNumber} - ${seller.sellerName}`,
+            message: fullMessage,
             severity: temPrecoAbaixoMinimo ? "warning" : "success",
-            metadata: { orderId: Number(orderId), sellerName: seller.sellerName, gestorName: seller.gestorName, clientName: input.razaoSocial, totalPedido, totalCaixas, status },
+            metadata: { orderId: Number(orderId), sellerName: seller.sellerName, gestorName: seller.gestorName, clientName: input.razaoSocial, totalPedido, totalCaixas, status, orderNumber },
           });
         } catch (err) {
           console.error("[SalesOrder] Failed to create notification:", err);

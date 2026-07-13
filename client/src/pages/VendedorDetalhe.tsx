@@ -4402,6 +4402,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
     if (client.condicaoPagamento && !condicaoPagamento) {
       setCondicaoPagamento(client.condicaoPagamento);
     }
+    // Auto-fill formaPagamento from client's formaCobranca
+    if (client.formaCobranca && !formaPagamento) {
+      const fc = client.formaCobranca.toLowerCase();
+      if (fc.includes('prazo') || fc.includes('boleto')) {
+        setFormaPagamento('A prazo');
+      } else {
+        setFormaPagamento('À vista');
+      }
+    }
     setVendorClientId(client.vendorClientId || null);
     setShowClientDropdown(false);
     setClientSearch("");
@@ -5893,6 +5902,42 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, onClose }
               <p className="text-xs text-slate-400 text-center py-3">Carregando produtos...</p>
             )}
 
+            {/* Forma de Pagamento - visível para vendedores que não passam pelo step pagamento */}
+            {!isGestorMode && (
+              <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-3">
+                <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase mb-2">💰 Pagamento</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-medium">Forma de Pagamento <span className="text-red-500">*</span></label>
+                    <select
+                      value={formaPagamento}
+                      onChange={(e) => setFormaPagamento(e.target.value)}
+                      className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!formaPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="A prazo">A prazo</option>
+                      <option value="À vista">À vista</option>
+                      <option value="Sem pagamento">Sem pagamento</option>
+                      <option value="Outros">Outros</option>
+                    </select>
+                    {!formaPagamento && <p className="text-[8px] text-red-500 mt-0.5">Campo obrigatório</p>}
+                  </div>
+                  {formaPagamento === 'A prazo' && (
+                    <div>
+                      <label className="text-[10px] text-slate-500 font-medium">Condição de Pagamento <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={condicaoPagamento}
+                        onChange={(e) => setCondicaoPagamento(e.target.value)}
+                        placeholder="Ex: 30/60/90 dias"
+                        className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 ${formaPagamento === 'A prazo' && !condicaoPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
+                      />
+                      {!condicaoPagamento && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório para pagamento a prazo</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Observações - visível na tela de produtos */}
             <div className="pt-2">
               <label className="text-[10px] text-slate-500 font-medium">Observações (opcional)</label>

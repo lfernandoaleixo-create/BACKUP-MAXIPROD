@@ -5274,3 +5274,16 @@
   Causa: getSellerProducts e sellerLogin só consultavam seller_product_visibility (manual overrides).
   Rafael não tinha overrides manuais - seus 38 produtos vinham da tabela de preços.
   Fix: ambos endpoints agora incluem produtos da tabela de preços do vendedor (mesma lógica do getEstoqueMatrix).
+
+## Bug: Forma de pagamento preenchida mas sistema bloqueia conclusão do pedido
+- [x] Investigar validação de forma de pagamento no fluxo de conclusão de pedido do vendedor
+- [x] Corrigir para que "Dinheiro - À Vista" (e outras formas) sejam aceitas corretamente
+  Causa: O step "Custos de Venda" (onde fica o seletor de Forma de Pagamento) era oculto para vendedores.
+  Fix: Adicionado seletor simples de Forma de Pagamento diretamente no step de produtos para vendedores.
+  Auto-preenche a partir da formaCobranca do cliente (Boleto -> A prazo, Dinheiro/PIX/etc -> À vista).
+
+## Notificação detalhada ao concluir pedido
+- [x] Ao concluir pedido, notificação para Vitória/Juvenal/Guilherme deve incluir cadastro completo do cliente
+- [x] Notificação deve incluir pedido detalhado (todos os itens, quantidades, preços, forma de pagamento)
+  Fix: Notificação agora mostra: razão social, CNPJ, IE, endereço, telefone, email, segmento +
+  pedido detalhado com todos os itens, qtd, preços unitários, totais, forma pagamento, frete, obs.

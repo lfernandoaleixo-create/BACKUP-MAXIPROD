@@ -3634,7 +3634,7 @@ export const salesRouter = router({
           .filter(ti => stockCodes.has(ti.itemCodigo) && !manualCodes.has(ti.itemCodigo))
           .map(ti => ti.itemCodigo);
       }
-      const allVisibleCodes = [...manualCodes, ...priceTableCodes];
+      const allVisibleCodes = Array.from(manualCodes).concat(priceTableCodes);
 
       // Buscar catálogos visíveis
       const visibleCatalogs = await db.select().from(sellerCatalogVisibility)

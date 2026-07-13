@@ -249,7 +249,7 @@ export default function NotificationBell() {
                               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${severity.dot}`} />
                             )}
                           </div>
-                          <p className={`text-[11px] mt-0.5 leading-relaxed ${isUnread ? "text-slate-600" : "text-slate-400"}`}>
+                          <p className={`text-[11px] mt-0.5 leading-relaxed whitespace-pre-line ${isUnread ? "text-slate-600" : "text-slate-400"}`}>
                             {notif.message}
                           </p>
                           <span className="text-[10px] text-slate-400 mt-1 block">
