@@ -3576,6 +3576,13 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     return Array.from(statuses).sort();
   }, [pedidos]);
 
+  // Monthly reputation panel (no pending order - just shows current state)
+  // MUST be declared before any early return to respect React Rules of Hooks
+  const monthlyRepQuery = trpc.salesOrders.getSellerMonthlyMargin.useQuery(
+    { sellerId },
+    { staleTime: 60 * 1000 }
+  );
+
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
@@ -3591,12 +3598,6 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const totalValor = filteredPedidos.reduce((sum: number, p) => sum + p.valorTotal, 0);
   const totalPedidosManuais = pedidosManuais?.length || 0;
   const periodLabel = period === "current" ? "Mês Atual" : period === "previous" ? "Mês Anterior" : `${MONTHS_PT_ORDERS[customMonth.month].slice(0,3)}/${customMonth.year}`;
-
-  // Monthly reputation panel (no pending order - just shows current state)
-  const monthlyRepQuery = trpc.salesOrders.getSellerMonthlyMargin.useQuery(
-    { sellerId },
-    { staleTime: 60 * 1000 }
-  );
 
   return (
     <div className="space-y-4">

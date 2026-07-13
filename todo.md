@@ -5257,3 +5257,9 @@
 
 ## Bug Fix - Botão Autorizar
 - [x] Patrick Lucio e Renato Aleixo estão sem botão de autorizar na aba Acesso ao Aplicativo
+
+## Bug Fix - Status Visual Vendedores
+- [x] Bolinha verde e nome laranja para vendedores autorizados na aba Vendedores (atualmente alguns ficam vermelha/cinza mesmo autorizados)
+
+## Bug Fix: React error #310 em SellerOrdersView (Vendedor login crash)
+- [x] Fix React error #310 "Rendered more hooks than during the previous render" in SellerOrdersView — monthlyRepQuery useQuery hook was declared AFTER the `if (isLoading) return ...` early return, violating React Rules of Hooks. Moved hook declaration to before the early return.
