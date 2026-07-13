@@ -151,8 +151,10 @@ export default function GestaoComercial() {
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
   const isJuvenal = operator?.name === "Juvenal";
   const isGuilherme = operator?.name === "Guilherme";
+  const isBruno = operator?.name === "Bruno";
+  const isFernando = operator?.name === "Fernando";
   const shouldRedirectToPedidos = isVitoria; // Only Vitória auto-redirects
-  const showNavigationHub = isJuvenal || isGuilherme; // Juvenal/Guilherme see navigation hub
+  const showNavigationHub = isJuvenal || isGuilherme || isBruno || isFernando; // These operators see navigation hub
 
   // Auto-redirect Vitória to Pedidos page
   useEffect(() => {
@@ -231,7 +233,7 @@ export default function GestaoComercial() {
             </Link>
 
             {/* Painel dos Vendedores */}
-            <Link href="/vendedor-gestor">
+            <a href="/vendedor-gestor">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-sm p-6 hover:shadow-lg hover:border-blue-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
@@ -243,7 +245,7 @@ export default function GestaoComercial() {
                   </div>
                 </div>
               </div>
-            </Link>
+            </a>
 
             {/* Painel de Cadastro de Clientes */}
             <Link href="/gestao-comercial/pedidos-operador">
@@ -2693,7 +2695,7 @@ export function GestaoComercialFull() {
       <TopNav />
 
       <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
-        {/* Back button + Sub-navigation tabs */}
+        {/* Back button + title */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
           <Link href="/gestao-comercial">
             <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer">

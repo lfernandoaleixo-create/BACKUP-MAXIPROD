@@ -5320,3 +5320,8 @@
 - [x] Painel dos Vendedores: link para /vendedor-gestor (app de vendas completo)
 - [x] Painel de Cadastro de Clientes: link para /gestao-comercial/pedidos-operador
 - [x] Painel de Pedidos de Vendas: link para /gestao-comercial/pedidos-operador
+
+## Fix: Hub de 4 painéis - correções
+- [x] Fix 404 no "Painel dos Vendedores" (link /vendedor-gestor não funciona como rota wouter) - corrigido usando <a> em vez de <Link> para forçar navegação full-page
+- [x] Mover aba "Vendedores" (lista de vendedores com configurações) do Painel dos Gestores para o Painel dos Vendedores - mantido no GestaoComercialFull com abas Gestores/Vendedores
+- [x] Mostrar hub de 4 painéis também para Bruno e Fernando (não apenas Juvenal e Guilherme) - adicionado isBruno e isFernando ao showNavigationHub
