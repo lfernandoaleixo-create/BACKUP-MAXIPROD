@@ -287,6 +287,20 @@ export default function CustosDeVendaStep({
     <div className="space-y-3">
       <p className="text-xs font-semibold text-slate-500 uppercase">3. Custos de Venda</p>
 
+      {/* ===== VALOR TOTAL DO PEDIDO (DESTAQUE) ===== */}
+      <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-xl p-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-white/80" />
+            <span className="text-sm font-bold text-white/90 uppercase tracking-wide">Valor Total do Pedido</span>
+          </div>
+          <span className="text-2xl font-black text-white">{formatCurrency(totalProdutos)}</span>
+        </div>
+        <div className="mt-2 pt-2 border-t border-white/20 flex items-center justify-between text-xs text-white/70">
+          <span>{items.length} {items.length === 1 ? 'produto' : 'produtos'} | {totalVolumes} {totalVolumes === 1 ? 'volume' : 'volumes'} | {totalPeso.toFixed(1)} kg</span>
+        </div>
+      </div>
+
       {/* Controls row */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2">
@@ -385,13 +399,13 @@ export default function CustosDeVendaStep({
       <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection("custos")}
-          className="w-full flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <Package className="w-3.5 h-3.5 text-green-600" />
-            <span>1. Custo da Mercadoria</span>
+            <Package className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-bold">1. Custo da Mercadoria</span>
             {costsData && (
-              <span className="text-green-700 font-black">{formatCurrency(costsData.custoMercadoria.total)}</span>
+              <span className="text-green-700 font-black text-sm">{formatCurrency(costsData.custoMercadoria.total)}</span>
             )}
           </div>
           {expandedSection === "custos" ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -436,13 +450,13 @@ export default function CustosDeVendaStep({
       <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection("impostos")}
-          className="w-full flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <Calculator className="w-3.5 h-3.5 text-red-600" />
-            <span>2. Impostos</span>
+            <Calculator className="w-4 h-4 text-red-600" />
+            <span className="text-sm font-bold">2. Impostos</span>
             {costsData && (
-              <span className="text-red-700 font-black">{formatCurrency(costsData.impostos.totalImpostosValor)} ({formatPercent(costsData.impostos.totalImpostosPerc)})</span>
+              <span className="text-red-700 font-black text-sm">{formatCurrency(costsData.impostos.totalImpostosValor)} ({formatPercent(costsData.impostos.totalImpostosPerc)})</span>
             )}
           </div>
           {expandedSection === "impostos" ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -524,13 +538,13 @@ export default function CustosDeVendaStep({
       <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection("comissao")}
-          className="w-full flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <Percent className="w-3.5 h-3.5 text-blue-600" />
-            <span>3. Comissão do Vendedor</span>
+            <Percent className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-bold">3. Comissão do Vendedor</span>
             {costsData && (
-              <span className="text-blue-700 font-black">{formatCurrency(costsData.comissao.valor)} ({costsData.comissao.percentual.toFixed(1)}%)</span>
+              <span className="text-blue-700 font-black text-sm">{formatCurrency(costsData.comissao.valor)} ({costsData.comissao.percentual.toFixed(1)}%)</span>
             )}
           </div>
           {expandedSection === "comissao" ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -595,13 +609,13 @@ export default function CustosDeVendaStep({
       <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection("frete")}
-          className="w-full flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <Truck className="w-3.5 h-3.5 text-teal-600" />
-            <span>4. Transportadora (Frete)</span>
+            <Truck className="w-4 h-4 text-teal-600" />
+            <span className="text-sm font-bold">4. Transportadora (Frete)</span>
             {Number(valorFrete) > 0 && (
-              <span className="text-teal-700 font-black">{formatCurrency(Number(valorFrete))}</span>
+              <span className="text-teal-700 font-black text-sm">{formatCurrency(Number(valorFrete))}</span>
             )}
           </div>
           {expandedSection === "frete" ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -751,13 +765,13 @@ export default function CustosDeVendaStep({
       <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection("gastos")}
-          className="w-full flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <PlusCircle className="w-3.5 h-3.5 text-orange-600" />
-            <span>5. Gastos Adicionais</span>
+            <PlusCircle className="w-4 h-4 text-orange-600" />
+            <span className="text-sm font-bold">5. Gastos Adicionais</span>
             {gastosAdicionais > 0 && (
-              <span className="text-orange-700 font-black">{formatCurrency(gastosAdicionais)}</span>
+              <span className="text-orange-700 font-black text-sm">{formatCurrency(gastosAdicionais)}</span>
             )}
           </div>
           {expandedSection === "gastos" ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}

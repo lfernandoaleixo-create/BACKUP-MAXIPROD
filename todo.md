@@ -5476,3 +5476,6 @@
 ## Feature: Card "Aprovações de Pedidos" piscar quando há pendentes
 - [x] Card pisca colorido enquanto houver pedidos pendentes para aprovar (animação blink-approval com cores alternando)
 - [x] Para de piscar quando todos foram aprovados ou recusados (condicional no pendingCount)
+## UI: Etapa Custos de Venda - Melhorias visuais
+- [x] Mostrar valor total do pedido destacado na etapa 3 (Custos de Venda)
+- [x] Aumentar fonte dos títulos das seções de custo (Custo da Mercadoria, Impostos, Comissão, Transportadora, Gastos Adicionais)
