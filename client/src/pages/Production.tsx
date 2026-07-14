@@ -239,13 +239,19 @@ function getVariantIcon(sectorOrdem: number) {
 
 /* ─── Botão Movimentação de Estoque com alerta piscante ─── */
 function MovimentacaoButton({ viewMode, onClick, operatorName }: { viewMode: string; onClick: () => void; operatorName: string }) {
-  const isLarissa = operatorName === "Larissa";
+  const MOVIMENTACAO_USERS = ["Bruno", "Fernando", "Guilherme", "Larissa", "Maria", "Erica"];
+  const hasAccess = MOVIMENTACAO_USERS.includes(operatorName);
+  const isMariOrErica = operatorName === "Maria" || operatorName === "Erica";
   const { data: pendingData } = trpc.stockWithdrawal.countPending.useQuery(undefined, {
-    enabled: isLarissa,
+    enabled: hasAccess,
     refetchInterval: 15000,
   });
-  const hasPending = isLarissa && (pendingData?.pending ?? 0) > 0;
-  const pendingCount = pendingData?.pending ?? 0;
+  // Pisca para todos quando há pendentes, e também para Maria/Erica quando há ações recentes
+  const hasPending = hasAccess && (
+    (pendingData?.pending ?? 0) > 0 ||
+    (isMariOrErica && (pendingData?.recentlyActioned ?? 0) > 0)
+  );
+  const pendingCount = (pendingData?.pending ?? 0) + (isMariOrErica ? (pendingData?.recentlyActioned ?? 0) : 0);
 
   return (
     <button

@@ -93,11 +93,16 @@ export default function StockWithdrawal() {
 
 /* ─── Botão Pendentes com alerta piscante ─── */
 function PendentesButton({ activeView, onClick }: { activeView: string; onClick: () => void }) {
+  const { operator } = useOperator();
+  const isMariOrErica = operator?.name === "Maria" || operator?.name === "Erica";
   const { data } = trpc.stockWithdrawal.countPending.useQuery(undefined, { refetchInterval: 15000 });
-  const hasPending = (data?.pending ?? 0) > 0;
+  const pendingCount = data?.pending ?? 0;
+  const recentlyActioned = data?.recentlyActioned ?? 0;
+  // Pisca para todos quando há pendentes, e para Maria/Erica quando há ações recentes
+  const hasAlert = pendingCount > 0 || (isMariOrErica && recentlyActioned > 0);
+  const badgeCount = pendingCount + (isMariOrErica ? recentlyActioned : 0);
   const isActive = activeView === "pendentes";
-  // Pisca quando há pendentes E o usuário NÃO está na aba pendentes (ou seja, ainda não visualizou)
-  const shouldBlink = hasPending && !isActive;
+  const shouldBlink = hasAlert && !isActive;
 
   return (
     <button
@@ -111,9 +116,9 @@ function PendentesButton({ activeView, onClick }: { activeView: string; onClick:
       }`}
     >
       <Clock className="w-4 h-4" /> Pendentes
-      {hasPending && (
+      {hasAlert && (
         <span className={`ml-1 px-1.5 py-0.5 text-xs font-bold rounded-full min-w-[18px] text-center ${isActive ? "bg-white text-amber-700" : "bg-red-500 text-white"} ${shouldBlink ? "animate-bounce" : ""}`}>
-          {data?.pending}
+          {badgeCount}
         </span>
       )}
     </button>

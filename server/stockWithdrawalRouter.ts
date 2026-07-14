@@ -2,7 +2,7 @@ import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { stockWithdrawalRequests, productCatalog, operators } from "../drizzle/schema";
-import { eq, and, sql, desc, gte, lte, count } from "drizzle-orm";
+import { eq, and, sql, desc, gte, lte, count, inArray } from "drizzle-orm";
 
 /**
  * Router para Solicitações de Baixa Manual no Estoque
@@ -127,10 +127,11 @@ export const stockWithdrawalRouter = router({
 
   /**
    * Contar pendências (para badge/notificação)
+   * Também retorna recentlyActioned: itens aprovados/recusados nas últimas 2h (para Maria/Erica)
    */
   countPending: publicProcedure.query(async () => {
     const db = await getDb();
-    if (!db) return { pending: 0, approvedOver24h: 0 };
+    if (!db) return { pending: 0, approvedOver24h: 0, recentlyActioned: 0 };
 
     const [pendingResult] = await db.select({ count: count() })
       .from(stockWithdrawalRequests)
@@ -145,9 +146,19 @@ export const stockWithdrawalRouter = router({
         lte(stockWithdrawalRequests.dataAprovacao, twentyFourHoursAgo)
       ));
 
+    // Itens aprovados ou recusados nas últimas 2h (para Maria/Erica saberem que houve ação)
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const [recentlyActionedResult] = await db.select({ count: count() })
+      .from(stockWithdrawalRequests)
+      .where(and(
+        inArray(stockWithdrawalRequests.status, ["aprovada", "recusada"]),
+        gte(stockWithdrawalRequests.dataAprovacao, twoHoursAgo)
+      ));
+
     return {
       pending: pendingResult?.count || 0,
       approvedOver24h: over24hResult?.count || 0,
+      recentlyActioned: recentlyActionedResult?.count || 0,
     };
   }),
 
