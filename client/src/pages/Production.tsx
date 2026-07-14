@@ -237,6 +237,37 @@ function getVariantIcon(sectorOrdem: number) {
   return Ruler; // Ponteira e setores com medida usam Ruler
 }
 
+/* ─── Botão Movimentação de Estoque com alerta piscante ─── */
+function MovimentacaoButton({ viewMode, onClick, operatorName }: { viewMode: string; onClick: () => void; operatorName: string }) {
+  const isLarissa = operatorName === "Larissa";
+  const { data: pendingData } = trpc.stockWithdrawal.countPending.useQuery(undefined, {
+    enabled: isLarissa,
+    refetchInterval: 15000,
+  });
+  const hasPending = isLarissa && (pendingData?.pending ?? 0) > 0;
+  const pendingCount = pendingData?.pending ?? 0;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        viewMode === "movimentacao"
+          ? "bg-violet-600 text-white shadow-sm"
+          : hasPending
+            ? "bg-violet-100 text-violet-700 border border-violet-300 animate-pulse shadow-[0_0_8px_rgba(139,92,246,0.4)]"
+            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+      }`}
+    >
+      <Package className="w-4 h-4" /> Movimentação de Estoque
+      {hasPending && (
+        <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[18px] text-center animate-bounce">
+          {pendingCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function Production() {
   const { hasAccess, operator } = useOperator();
   const [, setLocation] = useLocation();
@@ -911,9 +942,7 @@ export default function Production() {
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>
             {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
-            <button onClick={() => setViewMode("movimentacao")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "movimentacao" ? "bg-violet-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
-              <Package className="w-4 h-4" /> Movimentação de Estoque
-            </button>
+            <MovimentacaoButton viewMode={viewMode} onClick={() => setViewMode("movimentacao")} operatorName={operator?.name || ""} />
             )}
             {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
             <button onClick={() => setViewMode("lotes")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lotes" ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>

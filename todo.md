@@ -5479,3 +5479,7 @@
 ## UI: Etapa Custos de Venda - Melhorias visuais
 - [x] Mostrar valor total do pedido destacado na etapa 3 (Custos de Venda)
 - [x] Aumentar fonte dos títulos das seções de custo (Custo da Mercadoria, Impostos, Comissão, Transportadora, Gastos Adicionais)
+## Feature: Alerta piscante na aba Produção para análises pendentes
+- [x] Quando houver análise pendente, aba Produção deve piscar alerta para a Larissa saber
+- [x] Card "Movimentação de Estoque" na Produção também deve piscar quando houver análise pendente
+- [x] Na lista de pendentes da Movimentação de Estoque, deixar claro se é BAIXA ou ACRÉSCIMO (tipo da solicitação)

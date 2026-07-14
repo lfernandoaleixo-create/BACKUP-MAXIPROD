@@ -15,7 +15,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import { toast } from "sonner";
 import {
   Plus, Search, Check, X, Clock, CheckCircle2, XCircle, AlertTriangle,
-  Package, ArrowRight, Loader2, Filter, History, ChevronDown, ChevronUp, Trash2, Lock,
+  Package, ArrowRight, ArrowDown, ArrowUp, Loader2, Filter, History, ChevronDown, ChevronUp, Trash2, Lock,
 } from "lucide-react";
 
 const MOTIVO_LABELS: Record<string, string> = {
@@ -836,11 +836,20 @@ function RequestCard({ request, actions }: { request: any; actions?: React.React
   const StatusIcon = statusCfg.icon;
   const isOver24h = request.status === "aprovada" && request.dataAprovacao && (Date.now() - new Date(request.dataAprovacao).getTime() > 24 * 60 * 60 * 1000);
 
+  // Determinar tipo de movimentação: devolucao_retrabalho = ACRÉSCIMO, demais = BAIXA
+  const isAcrescimo = request.motivo === "devolucao_retrabalho";
+  const tipoLabel = isAcrescimo ? "ACRÉSCIMO" : "BAIXA";
+  const tipoBg = isAcrescimo ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-red-100 text-red-800 border-red-300";
+  const TipoIcon = isAcrescimo ? ArrowUp : ArrowDown;
+
   return (
     <div className={`bg-white rounded-xl border p-4 ${isOver24h ? "border-orange-300 ring-1 ring-orange-200" : "border-slate-200"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${tipoBg}`}>
+              <TipoIcon className="w-3.5 h-3.5" /> {tipoLabel}
+            </span>
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${statusCfg.bg} ${statusCfg.color}`}>
               <StatusIcon className="w-3 h-3" /> {statusCfg.label}
             </span>
