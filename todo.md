@@ -5570,3 +5570,8 @@
 - [x] Esconder botão Apagar para Maria, Erica e Larissa (só Bruno, Guilherme e Fernando podem ver)
 - [x] Exigir senha ao clicar em Apagar para confirmar
 - [x] Registrar exclusão em histórico (quem apagou, quando, qual solicitação)
+
+## Serasa: Novo fluxo de confirmação e registro
+- [x] Adicionar confirmação "Consultar Serasa?" com botões Sim/Não antes de executar
+- [x] Exigir senha (nome do operador) para registrar quem solicitou nas métricas
+- [x] Opção de apagar consulta do histórico quando senha for "Guilherme" (modo teste)

@@ -114,7 +114,7 @@ interface ProductionChartsProps {
     id: number;
     nome: string;
     ordem: number;
-    unidade: string;
+    unidadeMedida: string;
     machines: Array<{ id: number; nome: string; ordem: number }>;
   }>;
 }
@@ -204,7 +204,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
       return {
         id: sector.id,
         name: sector.nome,
-        unit: sector.unidade,
+        unit: sector.unidadeMedida,
         todayProd,
         currentAvg,
         prevAvg,
@@ -333,7 +333,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             <div>
               <h3 className="text-lg font-bold text-slate-800">{sectorDrillDown.sector.nome}</h3>
               <p className="text-xs text-slate-500">
-                Semana {fmtFullDate(weekRange.start)} a {fmtFullDate(weekRange.end)} — Unidade: {sectorDrillDown.sector.unidade}
+                Semana {fmtFullDate(weekRange.start)} a {fmtFullDate(weekRange.end)} — Unidade: {sectorDrillDown.sector.unidadeMedida}
               </p>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     return (
                       <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-xs">
                         <p className="font-bold text-slate-700 mb-1">{item.weekday} — {item.label}</p>
-                        <p className="text-slate-600">Produção: <strong>{fmtNum(item.value, 0)} {sectorDrillDown.sector.unidade}</strong></p>
+                        <p className="text-slate-600">Produção: <strong>{fmtNum(item.value, 0)} {sectorDrillDown.sector.unidadeMedida}</strong></p>
                         <p className="text-slate-500 mt-1">Média ref.: {fmtNum(sectorDrillDown.avg, 1)}</p>
                       </div>
                     );

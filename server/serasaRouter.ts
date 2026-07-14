@@ -333,4 +333,36 @@ export const serasaRouter = router({
       if (!consulta) return null;
       return consulta;
     }),
+
+  /**
+   * Apaga uma consulta do histórico (apenas para Guilherme - modo teste).
+   * Usado durante fase de testes para limpar consultas de teste.
+   */
+  deleteConsulta: publicProcedure
+    .input(z.object({
+      consultaId: z.number(),
+      operadorPassword: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+
+      // Apenas Guilherme pode apagar consultas (modo teste)
+      const [operator] = await db!
+        .select()
+        .from(operators)
+        .where(
+          and(
+            sql`LOWER(${operators.name}) = LOWER('Guilherme')`,
+            eq(operators.active, true)
+          )
+        )
+        .limit(1);
+
+      if (!operator || operator.password !== input.operadorPassword) {
+        return { success: false, error: "Apenas Guilherme pode apagar consultas (modo teste)." };
+      }
+
+      await db!.delete(serasaConsultas).where(eq(serasaConsultas.id, input.consultaId));
+      return { success: true };
+    }),
 });

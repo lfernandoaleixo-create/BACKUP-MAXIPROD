@@ -1,17 +1,20 @@
 /**
  * SerasaConsulta - Componente de consulta de crédito Serasa
  * 
- * Botão vermelho "Consultar Serasa" que:
- * 1. Pede confirmação de senha do operador
- * 2. Faz a consulta via API
- * 3. Exibe resultado em card verde (OK) ou vermelho (pendências)
+ * Fluxo:
+ * 1. Botão vermelho "Consultar Serasa"
+ * 2. Pergunta "Consultar Serasa?" com botões Sim/Não
+ * 3. Se Sim: pede senha (nome do operador) para registrar quem solicitou
+ * 4. Executa consulta e exibe resultado
+ * 5. Se senha foi "Guilherme": mostra opção de apagar consulta (modo teste)
  * 
  * Também mostra "Última consulta feita há X dias" quando há histórico.
  */
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Shield, ShieldAlert, ShieldCheck, X, Lock, AlertTriangle, CheckCircle2, Building2, Phone, Mail, MapPin, Users, TrendingUp, Clock, FileSearch } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, X, Lock, AlertTriangle, CheckCircle2, Building2, Phone, Mail, MapPin, Users, TrendingUp, Clock, FileSearch, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SerasaConsultaProps {
   documento: string; // CPF ou CNPJ do cliente
@@ -22,11 +25,12 @@ interface SerasaConsultaProps {
 }
 
 export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrderRequestId, compact = false }: SerasaConsultaProps) {
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [step, setStep] = useState<"idle" | "confirm" | "password" | "loading" | "result">("idle");
   const [password, setPassword] = useState("");
-  const [showResult, setShowResult] = useState(false);
   const [resultData, setResultData] = useState<any>(null);
+  const [consultaId, setConsultaId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [usedPassword, setUsedPassword] = useState<string>(""); // Track which password was used
 
   // Verificar autorização
   const authCheck = trpc.serasa.checkAuthorization.useQuery(
@@ -45,27 +49,48 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
     onSuccess: (data) => {
       if (data.success) {
         setResultData(data.resultado);
-        setShowResult(true);
-        setShowPasswordDialog(false);
-        setPassword("");
+        setConsultaId(data.consultaId ? Number(data.consultaId) : null);
+        setStep("result");
         setError(null);
         // Invalidate última consulta
         ultimaConsulta.refetch();
       } else {
         setError(data.error || "Erro desconhecido");
+        setStep("password");
       }
     },
     onError: (err) => {
       setError(err.message || "Erro ao consultar Serasa");
+      setStep("password");
+    },
+  });
+
+  // Mutation para apagar consulta (apenas Guilherme)
+  const deleteMutation = trpc.serasa.deleteConsulta.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Consulta apagada do histórico (modo teste)");
+        setStep("idle");
+        setResultData(null);
+        setConsultaId(null);
+        ultimaConsulta.refetch();
+      } else {
+        toast.error(data.error || "Erro ao apagar");
+      }
+    },
+    onError: (err) => {
+      toast.error(err.message || "Erro ao apagar consulta");
     },
   });
 
   const handleConsultar = () => {
     if (!password.trim()) {
-      setError("Digite sua senha");
+      setError("Digite sua senha (seu nome)");
       return;
     }
     setError(null);
+    setUsedPassword(password.trim());
+    setStep("loading");
 
     const docLimpo = documento.replace(/[.\-\/]/g, "");
     const tipoPessoa = docLimpo.length <= 11 ? "PF" : "PJ";
@@ -73,27 +98,44 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
     consultarMutation.mutate({
       documento: docLimpo,
       tipoPessoa,
-      operadorName,
-      operadorPassword: password,
+      operadorName: password.trim(), // O nome digitado na senha É o operador que solicitou
+      operadorPassword: password.trim(),
       ...(salesOrderRequestId ? { salesOrderRequestId } : {}),
     });
   };
 
-  // Password dialog JSX (shared between compact and full modes)
-  const passwordDialogJSX = showPasswordDialog ? (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]" onClick={() => setShowPasswordDialog(false)}>
+  const handleDelete = () => {
+    if (!consultaId) return;
+    deleteMutation.mutate({
+      consultaId,
+      operadorPassword: usedPassword,
+    });
+  };
+
+  const resetFlow = () => {
+    setStep("idle");
+    setPassword("");
+    setError(null);
+    setResultData(null);
+    setConsultaId(null);
+    setUsedPassword("");
+  };
+
+  // ─── CONFIRMATION DIALOG ───────────────────────────────────────────────
+  const confirmDialogJSX = step === "confirm" ? (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]" onClick={resetFlow}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Confirmar Consulta</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Consultar Serasa?</h3>
               <p className="text-[10px] text-slate-500">Esta consulta é paga e afeta o score</p>
             </div>
           </div>
-          <button onClick={() => setShowPasswordDialog(false)} className="text-slate-400 hover:text-slate-600">
+          <button onClick={resetFlow} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -102,9 +144,54 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="text-[11px] text-amber-800 dark:text-amber-200">
               <p className="font-bold">Atenção!</p>
-              <p>Consultas ao Serasa são <strong>pagas</strong> e afetam o <strong>score do cliente</strong>. Confirme digitando sua senha.</p>
+              <p>Consultas ao Serasa são <strong>pagas</strong> e podem afetar o <strong>score do cliente</strong>.</p>
             </div>
           </div>
+        </div>
+        <div className="mb-4">
+          <p className="text-xs text-slate-600 dark:text-slate-300 mb-1">
+            Cliente: <strong>{clienteNome || documento}</strong>
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Documento: <strong>{documento}</strong>
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={resetFlow}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors"
+          >
+            Não
+          </button>
+          <button
+            onClick={() => setStep("password")}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Sim
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  // ─── PASSWORD DIALOG ───────────────────────────────────────────────────
+  const passwordDialogJSX = (step === "password" || step === "loading") ? (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]" onClick={resetFlow}>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Identificação</h3>
+              <p className="text-[10px] text-slate-500">Digite seu nome para registrar a consulta</p>
+            </div>
+          </div>
+          <button onClick={resetFlow} className="text-slate-400 hover:text-slate-600">
+            <X className="w-5 h-5" />
+          </button>
         </div>
         <div className="mb-4">
           <p className="text-xs text-slate-600 dark:text-slate-300 mb-1">
@@ -114,17 +201,21 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
             Documento: <strong>{documento}</strong>
           </p>
           <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
-            Sua senha ({operadorName}):
+            Sua senha (seu nome):
           </label>
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleConsultar()}
-            placeholder="Digite sua senha..."
+            placeholder="Digite seu nome..."
             className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
             autoFocus
+            disabled={step === "loading"}
           />
+          <p className="text-[9px] text-slate-400 mt-1">
+            A consulta ficará registrada no seu nome nas métricas
+          </p>
         </div>
         {error && (
           <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -133,17 +224,18 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
         )}
         <div className="flex gap-2">
           <button
-            onClick={() => setShowPasswordDialog(false)}
+            onClick={resetFlow}
             className="flex-1 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+            disabled={step === "loading"}
           >
             Cancelar
           </button>
           <button
             onClick={handleConsultar}
-            disabled={consultarMutation.isPending || !password.trim()}
+            disabled={step === "loading" || !password.trim()}
             className="flex-1 px-3 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 rounded-lg transition-colors flex items-center justify-center gap-1"
           >
-            {consultarMutation.isPending ? (
+            {step === "loading" ? (
               <>
                 <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Consultando...
@@ -207,19 +299,33 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
             <span>Nenhuma consulta Serasa realizada para este cliente</span>
           </div>
         )}
-        {!showResult && (
+        {step !== "result" && (
           <button
-            onClick={() => { setShowPasswordDialog(true); setError(null); setPassword(""); }}
-            disabled={!documento || documento.length < 11 || consultarMutation.isPending}
+            onClick={() => { setStep("confirm"); setError(null); setPassword(""); }}
+            disabled={!documento || documento.length < 11}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all duration-300 shadow-[0_0_12px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)] hover:scale-[1.02] active:scale-95"
           >
             <Shield className="w-4 h-4" />
             Consultar Serasa
           </button>
         )}
-        {showPasswordDialog && passwordDialogJSX}
-        {showResult && resultData && (
-          <SerasaResultCard resultado={resultData} onClose={() => setShowResult(false)} />
+        {confirmDialogJSX}
+        {passwordDialogJSX}
+        {step === "result" && resultData && (
+          <div className="space-y-2">
+            <SerasaResultCard resultado={resultData} onClose={resetFlow} />
+            {/* Botão apagar - apenas se a senha usada foi "Guilherme" */}
+            {usedPassword.toLowerCase() === "guilherme" && consultaId && (
+              <button
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                {deleteMutation.isPending ? "Apagando..." : "Apagar consulta (modo teste)"}
+              </button>
+            )}
+          </div>
         )}
       </div>
     );
@@ -228,7 +334,7 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
   return (
     <div className="space-y-2">
       {/* Última consulta info */}
-      {ultimaConsulta.data?.found && !showResult && (
+      {ultimaConsulta.data?.found && step !== "result" && (
         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg">
           <Clock className="w-3 h-3 flex-shrink-0" />
           <span>Última consulta: <strong>{ultimaConsulta.data.consulta?.tempoTexto}</strong> por {ultimaConsulta.data.consulta?.operadorName}</span>
@@ -245,32 +351,37 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
       )}
 
       {/* Botão Consultar */}
-      {!showResult && (
+      {step !== "result" && (
         <button
-          onClick={() => { setShowPasswordDialog(true); setError(null); setPassword(""); }}
-          disabled={!documento || documento.length < 11 || consultarMutation.isPending}
+          onClick={() => { setStep("confirm"); setError(null); setPassword(""); }}
+          disabled={!documento || documento.length < 11}
           className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_25px_rgba(239,68,68,0.7)] hover:scale-[1.02] active:scale-95"
         >
-          {consultarMutation.isPending ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Consultando...
-            </>
-          ) : (
-            <>
-              <Shield className="w-5 h-5" />
-              Consultar Serasa
-            </>
-          )}
+          <Shield className="w-5 h-5" />
+          Consultar Serasa
         </button>
       )}
 
-      {/* Dialog de Senha */}
-      {showPasswordDialog && passwordDialogJSX}
+      {/* Dialogs */}
+      {confirmDialogJSX}
+      {passwordDialogJSX}
 
       {/* Resultado da Consulta */}
-      {showResult && resultData && (
-        <SerasaResultCard resultado={resultData} onClose={() => setShowResult(false)} />
+      {step === "result" && resultData && (
+        <div className="space-y-2">
+          <SerasaResultCard resultado={resultData} onClose={resetFlow} />
+          {/* Botão apagar - apenas se a senha usada foi "Guilherme" */}
+          {usedPassword.toLowerCase() === "guilherme" && consultaId && (
+            <button
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              {deleteMutation.isPending ? "Apagando..." : "Apagar consulta (modo teste)"}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -338,165 +449,128 @@ function SerasaResultCard({ resultado, onClose }: { resultado: any; onClose: () 
               (resultado.score || 0) >= 700 ? "text-emerald-600" :
               (resultado.score || 0) >= 400 ? "text-amber-600" : "text-red-600"
             }`}>{resultado.score || "—"}</p>
-            <p className="text-[9px] text-slate-400">de 1000</p>
-          </div>
-          <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm">
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pontualidade</p>
-            <p className="text-xl font-black text-slate-800 dark:text-slate-100">
-              {resultado.pontualidade ? `${resultado.pontualidade}%` : "—"}
+            <p className="text-[9px] text-slate-400">
+              {(resultado.score || 0) >= 700 ? "Excelente" : (resultado.score || 0) >= 400 ? "Regular" : "Crítico"}
             </p>
           </div>
           <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm">
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Limite Crédito</p>
-            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatCurrency(resultado.limiteCredito)}</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pontualidade</p>
+            <p className="text-xl font-black text-slate-700 dark:text-slate-200">{resultado.pontualidade ?? "—"}%</p>
+            <p className="text-[9px] text-slate-400">Pagamentos em dia</p>
           </div>
           <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm">
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Renda/Faturamento</p>
-            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatCurrency(resultado.rendaEstimada)}</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pendências</p>
+            <p className={`text-xl font-black ${resultado.totalPendencias > 0 ? "text-red-600" : "text-emerald-600"}`}>
+              {resultado.totalPendencias}
+            </p>
+            <p className="text-[9px] text-slate-400">Registros negativos</p>
+          </div>
+          <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Limite Crédito</p>
+            <p className="text-lg font-black text-slate-700 dark:text-slate-200">{formatCurrency(resultado.limiteCredito)}</p>
+            <p className="text-[9px] text-slate-400">Sugerido Serasa</p>
           </div>
         </div>
 
-        {/* Pendências */}
-        {resultado.totalPendencias > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-            <h4 className="text-xs font-bold text-red-800 dark:text-red-200 mb-2 flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Pendências Encontradas ({resultado.totalPendencias})
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              {resultado.temProtesto && (
-                <div className="bg-red-100 dark:bg-red-900/30 rounded-lg p-2">
-                  <p className="font-bold text-red-700 dark:text-red-300">Protestos</p>
-                  <p className="text-red-600 dark:text-red-400">
-                    {resultado.pendencias?.protestos?.quantidade || 0} registro(s) - {formatCurrency(resultado.pendencias?.protestos?.valor || 0)}
+        {/* Análise IA */}
+        {resultado.analiseIA && (
+          <div className={`rounded-xl p-3 border ${isAprovado ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"}`}>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> Análise Inteligente
+            </p>
+            <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">{resultado.analiseIA}</p>
+          </div>
+        )}
+
+        {/* Detalhes de Pendências */}
+        {resultado.totalPendencias > 0 && resultado.pendencias && (
+          <div className="space-y-2">
+            {resultado.pendencias.rgi?.quantidade > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedSection(expandedSection === "rgi" ? null : "rgi")}>
+                  <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
+                    RGI (Registros): {resultado.pendencias.rgi.quantidade} • {formatCurrency(resultado.pendencias.rgi.valor)}
                   </p>
+                  <span className="text-[9px] text-red-500">{expandedSection === "rgi" ? "▲" : "▼"}</span>
                 </div>
-              )}
-              {resultado.temRgi && (
-                <div className="bg-red-100 dark:bg-red-900/30 rounded-lg p-2">
-                  <p className="font-bold text-red-700 dark:text-red-300">Registros (RGI)</p>
-                  <p className="text-red-600 dark:text-red-400">
-                    {resultado.pendencias?.rgi?.quantidade || 0} registro(s) - {formatCurrency(resultado.pendencias?.rgi?.valor || 0)}
-                  </p>
-                </div>
-              )}
-              {resultado.temChequeSemFundo && (
-                <div className="bg-red-100 dark:bg-red-900/30 rounded-lg p-2">
-                  <p className="font-bold text-red-700 dark:text-red-300">Cheques sem Fundo</p>
-                  <p className="text-red-600 dark:text-red-400">
-                    {resultado.pendencias?.chequesSemFundo?.quantidade || 0} registro(s)
-                  </p>
-                </div>
-              )}
-            </div>
-            {/* Detalhes dos protestos */}
-            {resultado.pendencias?.protestos?.registros?.length > 0 && (
-              <div className="mt-2">
-                <button 
-                  onClick={() => setExpandedSection(expandedSection === "protestos" ? null : "protestos")}
-                  className="text-[10px] text-red-600 dark:text-red-400 underline"
-                >
-                  {expandedSection === "protestos" ? "Ocultar detalhes" : "Ver detalhes dos protestos"}
-                </button>
-                {expandedSection === "protestos" && (
-                  <div className="mt-1 space-y-1">
-                    {resultado.pendencias.protestos.registros.map((r: any, i: number) => (
-                      <div key={i} className="text-[10px] text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/10 rounded p-1.5">
-                        {r.dataOcorrencia && <span>{r.dataOcorrencia} • </span>}
-                        {r.valor && <span>{formatCurrency(parseFloat(r.valor))} • </span>}
-                        {r.cartorio && <span>{r.cartorio} • </span>}
-                        {r.cidade && <span>{r.cidade}/{r.uf}</span>}
-                      </div>
+                {expandedSection === "rgi" && resultado.pendencias.rgi.registros?.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {resultado.pendencias.rgi.registros.map((r: any, i: number) => (
+                      <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                        {r.credor} • {formatCurrency(r.valor)} • {r.dataOcorrencia}
+                      </p>
                     ))}
                   </div>
                 )}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Análise IA */}
-        {resultado.analiseIA && (
-          <div className={`rounded-xl p-3 border ${
-            resultado.analiseAprovada 
-              ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800" 
-              : "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-          }`}>
-            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              Análise de Crédito (IA Serasa)
-            </h4>
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{resultado.analiseIA}</p>
+            {resultado.pendencias.protestos?.quantidade > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedSection(expandedSection === "protestos" ? null : "protestos")}>
+                  <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
+                    Protestos: {resultado.pendencias.protestos.quantidade} • {formatCurrency(resultado.pendencias.protestos.valor)}
+                  </p>
+                  <span className="text-[9px] text-red-500">{expandedSection === "protestos" ? "▲" : "▼"}</span>
+                </div>
+                {expandedSection === "protestos" && resultado.pendencias.protestos.registros?.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {resultado.pendencias.protestos.registros.map((r: any, i: number) => (
+                      <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                        {r.cartorio || r.credor} • {formatCurrency(r.valor)} • {r.dataOcorrencia}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {resultado.pendencias.chequesSemFundo?.quantidade > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
+                <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
+                  Cheques sem Fundo: {resultado.pendencias.chequesSemFundo.quantidade}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* Dados Cadastrais */}
         {resultado.cadastro && (
-          <div className="bg-white dark:bg-slate-700/30 rounded-xl p-3 border border-slate-200 dark:border-slate-600">
-            <button 
+          <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
+            <div
+              className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-700/50 cursor-pointer"
               onClick={() => setExpandedSection(expandedSection === "cadastro" ? null : "cadastro")}
-              className="w-full flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200"
             >
-              <span className="flex items-center gap-1">
-                <Building2 className="w-3.5 h-3.5" />
-                Dados Cadastrais
-              </span>
-              <span className="text-[10px] text-slate-400">{expandedSection === "cadastro" ? "▲" : "▼"}</span>
-            </button>
+              <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                <Building2 className="w-3 h-3" /> Dados Cadastrais
+              </p>
+              <span className="text-[9px] text-slate-400">{expandedSection === "cadastro" ? "▲" : "▼"}</span>
+            </div>
             {expandedSection === "cadastro" && (
-              <div className="mt-2 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="text-[10px] text-slate-400">Razão Social</p>
-                    <p className="font-medium">{resultado.cadastro.nome}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400">Documento</p>
-                    <p className="font-medium">{formatDoc(resultado.cadastro.documento || resultado.documento)}</p>
-                  </div>
-                  {resultado.cadastro.situacao && (
-                    <div>
-                      <p className="text-[10px] text-slate-400">Situação</p>
-                      <p className={`font-medium ${resultado.cadastro.situacao === "ATIVA" ? "text-emerald-600" : "text-red-600"}`}>
-                        {resultado.cadastro.situacao}
-                      </p>
-                    </div>
-                  )}
-                  {resultado.cadastro.porte && (
-                    <div>
-                      <p className="text-[10px] text-slate-400">Porte</p>
-                      <p className="font-medium">{resultado.cadastro.porte}</p>
-                    </div>
-                  )}
-                  {resultado.cadastro.capitalSocial && (
-                    <div>
-                      <p className="text-[10px] text-slate-400">Capital Social</p>
-                      <p className="font-medium">{formatCurrency(resultado.cadastro.capitalSocial)}</p>
-                    </div>
-                  )}
-                  {resultado.cadastro.atividadePrincipal && (
-                    <div className="col-span-2">
-                      <p className="text-[10px] text-slate-400">Atividade Principal</p>
-                      <p className="font-medium">{resultado.cadastro.atividadePrincipal}</p>
-                    </div>
-                  )}
-                </div>
+              <div className="p-3 space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
+                <p><strong>Nome:</strong> {resultado.cadastro.nome}</p>
+                {resultado.cadastro.documento && <p><strong>Documento:</strong> {formatDoc(resultado.cadastro.documento)}</p>}
+                {resultado.cadastro.situacao && <p><strong>Situação:</strong> {resultado.cadastro.situacao}</p>}
+                {resultado.cadastro.porte && <p><strong>Porte:</strong> {resultado.cadastro.porte}</p>}
+                {resultado.cadastro.atividadePrincipal && <p><strong>Atividade:</strong> {resultado.cadastro.atividadePrincipal}</p>}
+                {resultado.cadastro.capitalSocial && <p><strong>Capital Social:</strong> {formatCurrency(resultado.cadastro.capitalSocial)}</p>}
+                {resultado.cadastro.faturamentoPresumido && <p><strong>Faturamento Presumido:</strong> {formatCurrency(resultado.cadastro.faturamentoPresumido)}</p>}
 
                 {/* Contatos */}
-                {(resultado.cadastro.emails?.length > 0 || resultado.cadastro.telefones?.length > 0) && (
+                {resultado.cadastro.telefones?.length > 0 && (
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
-                    {resultado.cadastro.emails?.length > 0 && (
-                      <div className="flex items-center gap-1 mb-1">
-                        <Mail className="w-3 h-3 text-slate-400" />
-                        <span>{resultado.cadastro.emails.join(", ")}</span>
-                      </div>
-                    )}
-                    {resultado.cadastro.telefones?.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        <span>{resultado.cadastro.telefones.join(", ")}</span>
-                      </div>
-                    )}
+                    <p className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><Phone className="w-3 h-3" /> Telefones</p>
+                    {resultado.cadastro.telefones.map((t: any, i: number) => (
+                      <p key={i} className="text-[10px] text-slate-500 dark:text-slate-400">({t.ddd}) {t.numero}</p>
+                    ))}
+                  </div>
+                )}
+
+                {resultado.cadastro.emails?.length > 0 && (
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
+                    <p className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><Mail className="w-3 h-3" /> E-mails</p>
+                    {resultado.cadastro.emails.map((e: any, i: number) => (
+                      <p key={i} className="text-[10px] text-slate-500 dark:text-slate-400">{e.email || e}</p>
+                    ))}
                   </div>
                 )}
 
