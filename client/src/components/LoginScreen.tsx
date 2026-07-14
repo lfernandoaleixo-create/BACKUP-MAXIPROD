@@ -117,26 +117,41 @@ export default function LoginScreen() {
       toast.error("Digite sua senha");
       return;
     }
-    try {
-      const result = await validateMutation.mutateAsync({ password: password.trim() });
-      if (result.success && result.loginType === "operator" && result.operator) {
-        login(result.operator, result.granularPermissions || {});
-        toast.success(`Bem-vindo, ${result.operator.name}!`);
-      } else if (result.success && result.loginType === "seller" && result.seller) {
-        // Seller login - store session and redirect to seller area
-        sessionStorage.setItem("sellerSession", JSON.stringify(result.seller));
-        toast.success(`Bem-vindo, ${result.seller.name}!`);
-        window.location.href = "/vendedor";
-      } else if (result.error) {
-        toast.error(result.error);
-        setPassword("");
-      } else {
-        toast.error("Senha incorreta");
-        setPassword("");
+    // Retry up to 3 times on network failure (cold start can be slow)
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const result = await validateMutation.mutateAsync({ password: password.trim() });
+        if (result.success && result.loginType === "operator" && result.operator) {
+          login(result.operator, result.granularPermissions || {});
+          toast.success(`Bem-vindo, ${result.operator.name}!`);
+          return;
+        } else if (result.success && result.loginType === "seller" && result.seller) {
+          // Seller login - store session and redirect to seller area
+          sessionStorage.setItem("sellerSession", JSON.stringify(result.seller));
+          toast.success(`Bem-vindo, ${result.seller.name}!`);
+          window.location.href = "/vendedor";
+          return;
+        } else if (result.error) {
+          toast.error(result.error);
+          setPassword("");
+          return;
+        } else {
+          toast.error("Senha incorreta");
+          setPassword("");
+          return;
+        }
+      } catch (err) {
+        lastError = err;
+        // Wait before retry (exponential backoff)
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, (attempt + 1) * 1500));
+        }
       }
-    } catch {
-      toast.error("Erro ao validar senha");
     }
+    // All retries failed
+    console.error("Login failed after 3 attempts:", lastError);
+    toast.error("Erro ao validar senha. Verifique sua conexão e tente novamente.");
   };
 
   return (

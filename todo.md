@@ -5459,3 +5459,10 @@
 - [x] Proteger diário: status só pode ser alterado após 17:15 do dia (proteção no auto-sync)
 - [x] Proteger diário: registros NUNCA podem ser perdidos por sincronização com Maxiprod (herança de status forte + bloqueio de delete)
 - [x] Melhorar herança de status: novos títulos herdam status forte (Protestado/Com Protesto/Fundo Perdido/Jurídico) de títulos inativos da mesma empresa
+
+## Fix: Inadimplência - Recuperar status dos 12 clientes ainda pendentes
+- [x] Identificar os 11 clientes pendentes na planilha de cobrança
+- [x] Restaurar 4 clientes com histórico: J LEAL → Em negociação, MC COMERCIO → Contatado, VALVES → Contatado, WENDER → Promessa de Pgto
+- [x] Criar collection_actions e diary entries para os 4 restaurados
+- [x] Verificar 3 restantes (BRASILIENSE, LIVRIERI, RAIANE) - genuinamente novos, sem histórico anterior
+- [x] Adicionar retry logic no login (3 tentativas com backoff) para resolver timeout no tablet
