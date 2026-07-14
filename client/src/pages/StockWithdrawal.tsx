@@ -608,6 +608,9 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
     { refetchInterval: 15000 }
   );
 
+  const { operator } = useOperator();
+  const canDelete = ["Bruno", "Guilherme", "Fernando"].some(n => operator?.name?.toLowerCase().includes(n.toLowerCase()));
+
   // State for password prompts
   const [approveId, setApproveId] = useState<number | null>(null);
   const [approveSenha, setApproveSenha] = useState("");
@@ -616,6 +619,8 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
   const [rejectJustificativa, setRejectJustificativa] = useState("");
   const [completeId, setCompleteId] = useState<number | null>(null);
   const [completeSenha, setCompleteSenha] = useState("");
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteSenha, setDeleteSenha] = useState("");
 
   const approveMutation = trpc.stockWithdrawal.approve.useMutation({
     onSuccess: () => {
@@ -653,13 +658,20 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
 
   const deleteMutation = trpc.stockWithdrawal.delete.useMutation({
     onSuccess: () => {
-      toast.success("Solicitação apagada!");
+      toast.success("Solicitação apagada e registrada no histórico!");
+      setDeleteId(null);
+      setDeleteSenha("");
       utils.stockWithdrawal.list.invalidate();
       utils.stockWithdrawal.countPending.invalidate();
       utils.stockWithdrawal.monthlyStats.invalidate();
     },
     onError: (err) => toast.error(err.message || "Erro ao apagar"),
   });
+
+  function handleDelete(id: number) {
+    if (!deleteSenha.trim()) return toast.error("Digite sua senha para confirmar a exclusão");
+    deleteMutation.mutate({ id, operatorName: operator?.name || "", senha: deleteSenha.trim() });
+  }
 
   function handleApprove(id: number) {
     if (!approveSenha.trim()) return toast.error("Digite a senha da Larissa para aprovar");
@@ -775,13 +787,22 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                             </button>
                           </>
                         )}
-                        <button
-                          onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
-                          disabled={deleteMutation.isPending}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors ml-auto"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Apagar
-                        </button>
+                        {canDelete && (
+                          deleteId === req.id ? (
+                            <div className="flex items-center gap-2 ml-auto">
+                              <input type="password" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                              <button onClick={() => handleDelete(req.id)} disabled={deleteMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{deleteMutation.isPending ? "..." : "Confirmar"}</button>
+                              <button onClick={() => { setDeleteId(null); setDeleteSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeleteId(req.id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors ml-auto"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Apagar
+                            </button>
+                          )
+                        )}
                       </div>
                     )}
                   </div>
@@ -845,13 +866,22 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                         )}
                       </>
                     )}
-                    <button
-                      onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
-                      disabled={deleteMutation.isPending}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors ml-auto"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Apagar
-                    </button>
+                    {canDelete && (
+                      deleteId === req.id ? (
+                        <div className="flex items-center gap-2 ml-auto">
+                          <input type="password" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                          <button onClick={() => handleDelete(req.id)} disabled={deleteMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{deleteMutation.isPending ? "..." : "Confirmar"}</button>
+                          <button onClick={() => { setDeleteId(null); setDeleteSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteId(req.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors ml-auto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Apagar
+                        </button>
+                      )
+                    )}
                   </div>
                 }
               />
@@ -926,19 +956,30 @@ function RequestCard({ request, actions }: { request: any; actions?: React.React
 
 /* ─── Histórico Completo ─── */
 function HistoricoList() {
+  const { operator } = useOperator();
+  const canDelete = ["Bruno", "Guilherme", "Fernando"].some(n => operator?.name?.toLowerCase().includes(n.toLowerCase()));
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteSenha, setDeleteSenha] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "pendente" | "aprovada" | "concluida" | "recusada">("todas");
   const [motivoFilter, setMotivoFilter] = useState<string>("todos");
   const { data: requests, isLoading } = trpc.stockWithdrawal.list.useQuery({ status: statusFilter, limit: 200 });
   const utils = trpc.useUtils();
   const deleteMutation = trpc.stockWithdrawal.delete.useMutation({
     onSuccess: () => {
-      toast.success("Solicitação apagada!");
+      toast.success("Solicitação apagada e registrada no histórico!");
+      setDeleteId(null);
+      setDeleteSenha("");
       utils.stockWithdrawal.list.invalidate();
       utils.stockWithdrawal.countPending.invalidate();
       utils.stockWithdrawal.monthlyStats.invalidate();
     },
     onError: (err) => toast.error(err.message || "Erro ao apagar"),
   });
+
+  function handleDelete(id: number) {
+    if (!deleteSenha.trim()) return toast.error("Digite sua senha para confirmar a exclusão");
+    deleteMutation.mutate({ id, operatorName: operator?.name || "", senha: deleteSenha.trim() });
+  }
 
   // Filtrar por motivo no client-side
   const filteredRequests = useMemo(() => {
@@ -1000,15 +1041,24 @@ function HistoricoList() {
         <div className="space-y-3">
           {filteredRequests.map((req) => (
             <RequestCard key={req.id} request={req} actions={
-              <div className="mt-3 flex justify-end">
-                <button
-                  onClick={() => { if (confirm("Tem certeza que deseja apagar esta solicitação?")) deleteMutation.mutate({ id: req.id }); }}
-                  disabled={deleteMutation.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 disabled:opacity-50 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Apagar
-                </button>
-              </div>
+              canDelete ? (
+                <div className="mt-3 flex justify-end">
+                  {deleteId === req.id ? (
+                    <div className="flex items-center gap-2">
+                      <input type="password" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                      <button onClick={() => handleDelete(req.id)} disabled={deleteMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{deleteMutation.isPending ? "..." : "Confirmar"}</button>
+                      <button onClick={() => { setDeleteId(null); setDeleteSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteId(req.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Apagar
+                    </button>
+                  )}
+                </div>
+              ) : undefined
             } />
           ))}
         </div>

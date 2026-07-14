@@ -2879,6 +2879,23 @@ export const stockWithdrawalRequests = mysqlTable("stock_withdrawal_requests", {
 export type StockWithdrawalRequest = typeof stockWithdrawalRequests.$inferSelect;
 export type InsertStockWithdrawalRequest = typeof stockWithdrawalRequests.$inferInsert;
 
+// Histórico de exclusões de solicitações de movimentação
+export const withdrawalDeletionHistory = mysqlTable("withdrawal_deletion_history", {
+  id: int("id").autoincrement().primaryKey(),
+  // Dados da solicitação excluída
+  requestId: int("request_id").notNull(),
+  productCode: varchar("product_code", { length: 50 }).notNull(),
+  productName: varchar("product_name", { length: 300 }).notNull(),
+  quantity: varchar("quantity", { length: 20 }).notNull(),
+  motivo: varchar("motivo", { length: 50 }).notNull(),
+  solicitanteName: varchar("solicitante_name", { length: 100 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull(),
+  dataSolicitacao: timestamp("data_solicitacao"),
+  // Quem apagou
+  deletedByName: varchar("deleted_by_name", { length: 100 }).notNull(),
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+});
+
 
 // ═══════════════════════════════════════════════════════════════
 // MATRIZ DE COMISSÃO - Tabela cruzada (faixa de preço x % meta)

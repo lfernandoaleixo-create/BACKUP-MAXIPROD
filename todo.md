@@ -5565,3 +5565,8 @@
 - [x] Aumentar fonte dos dados do cliente (Razão Social, Nome Fantasia, CNPJ, Regime Tributário)
 - [x] Aumentar fonte do endereço (CEP, Endereço, Bairro, Município/UF)
 - [x] Mostrar código do produto antes da descrição nos itens do pedido (ex: 00018 - ESPETO DE BAMBU...)
+
+## Restringir botão Apagar movimentações
+- [x] Esconder botão Apagar para Maria, Erica e Larissa (só Bruno, Guilherme e Fernando podem ver)
+- [x] Exigir senha ao clicar em Apagar para confirmar
+- [x] Registrar exclusão em histórico (quem apagou, quando, qual solicitação)

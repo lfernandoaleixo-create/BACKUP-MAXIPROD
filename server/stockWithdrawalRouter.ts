@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { stockWithdrawalRequests, productCatalog, operators } from "../drizzle/schema";
+import { stockWithdrawalRequests, productCatalog, operators, withdrawalDeletionHistory } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte, count, inArray } from "drizzle-orm";
 
 /**
@@ -263,20 +263,48 @@ export const stockWithdrawalRouter = router({
     }),
 
   /**
-   * Apagar solicitação (apenas pendentes)
+   * Apagar solicitação (apenas Bruno, Guilherme e Fernando - com senha)
    */
   delete: publicProcedure
     .input(z.object({
       id: z.number(),
+      operatorName: z.string(),
+      senha: z.string(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Permite apagar qualquer solicitação independente do status
+      // Verificar se o operador tem permissão para apagar
+      const allowedNames = ["Bruno", "Guilherme", "Fernando"];
+      if (!allowedNames.some(n => input.operatorName.toLowerCase().includes(n.toLowerCase()))) {
+        throw new Error("Você não tem permissão para apagar solicitações");
+      }
+
+      // Validar senha do operador
+      const [op] = await db.select().from(operators).where(eq(operators.name, input.operatorName));
+      if (!op || op.password !== input.senha) {
+        throw new Error("Senha incorreta");
+      }
+
+      // Buscar solicitação
       const [existing] = await db.select().from(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
       if (!existing) throw new Error("Solicitação não encontrada");
 
+      // Registrar no histórico de exclusões
+      await db.insert(withdrawalDeletionHistory).values({
+        requestId: existing.id,
+        productCode: existing.productCode,
+        productName: existing.productName,
+        quantity: String(existing.quantity),
+        motivo: existing.motivo,
+        solicitanteName: existing.solicitanteName,
+        status: existing.status,
+        dataSolicitacao: existing.dataSolicitacao,
+        deletedByName: input.operatorName,
+      });
+
+      // Apagar a solicitação
       await db.delete(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
       return { success: true };
     }),
