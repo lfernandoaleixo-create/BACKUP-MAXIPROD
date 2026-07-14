@@ -5466,3 +5466,9 @@
 - [x] Criar collection_actions e diary entries para os 4 restaurados
 - [x] Verificar 3 restantes (BRASILIENSE, LIVRIERI, RAIANE) - genuinamente novos, sem histórico anterior
 - [x] Adicionar retry logic no login (3 tentativas com backoff) para resolver timeout no tablet
+
+## Feature: Diário de Cobrança - Registro Imutável Completo
+- [x] Gravar snapshot completo às 17:15: status, etapas de cobrança (1ª, 2ª, 3ª Cob, Ação Final), observações, collection_actions e histórico completo
+- [x] Diário nunca é alterado/deletado por sincronizações - apenas adiciona novos registros (verificado: nenhum sync toca nas tabelas diary)
+- [x] Diário apenas puxa e registra atividades diárias às 17:15 (heartbeat job confirmado: 20:15 UTC = 17:15 BRT)
+- [x] Garantir que nenhum código de sync toque nos registros do diário (deleteCollectionAction tem 3 verificações de proteção)
