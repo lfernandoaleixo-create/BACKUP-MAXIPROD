@@ -5551,3 +5551,11 @@
 ## Lotes: Mostrar todos os lotes disponíveis (sem filtro por SKU)
 - [x] Backend: getAvailableLotsForItem não filtra mais por codigoItem (mostra todos com saldo > 0)
 - [x] Frontend: modal "Selecionar Lote" mostra todos os lotes disponíveis independente do produto
+
+## Integração SintegraWS - Consulta CNPJ no Cadastro de Cliente
+- [x] Salvar token SintegraWS como secret (SINTEGRA_API_TOKEN)
+- [x] Criar procedure backend consultaCnpj que chama API RF + ST do SintegraWS
+- [x] Retornar dados unificados: razão social, fantasia, endereço, IE, contribuinte_icms, regime tributário
+- [x] Adicionar botão "Consultar CNPJ" no formulário de cadastro de cliente (Gestão Comercial)
+- [x] Auto-preencher campos do formulário com dados retornados da API
+- [x] Determinar tipoContribuinte automaticamente (Contribuinte/Não contribuinte/Isento)

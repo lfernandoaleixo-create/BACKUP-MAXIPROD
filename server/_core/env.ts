@@ -12,4 +12,5 @@ export const ENV = {
   maxiprodGraphqlToken: process.env.MAXIPROD_GRAPHQL_TOKEN ?? "",
   serasaApiLogin: process.env.SERASA_API_LOGIN ?? "",
   serasaApiPassword: process.env.SERASA_API_PASSWORD ?? "",
+  sintegraApiToken: process.env.SINTEGRA_API_TOKEN ?? "",
 };

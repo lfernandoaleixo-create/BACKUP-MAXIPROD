@@ -8,6 +8,7 @@ import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
 import { quoteAllSswCnpjs } from "./sswApi";
 import { quoteAllRodonavesCnpjs, RODONAVES_CNPJS } from "./rodonavesApi";
+import { consultaCnpjCompleta } from "./sintegraApi";
 
 /**
  * Sales Order Requests Router
@@ -33,6 +34,15 @@ function normalizeTipoContribuinte(value: string | null | undefined): TipoContri
 }
 
 export const salesOrderRouter = router({
+
+  // ===== CONSULTA CNPJ (SintegraWS) =====
+
+  /** Consulta CNPJ na Receita Federal + Sintegra para preencher cadastro de cliente */
+  consultaCnpj: publicProcedure
+    .input(z.object({ cnpj: z.string().min(11) }))
+    .query(async ({ input }) => {
+      return consultaCnpjCompleta(input.cnpj);
+    }),
 
   // ===== CLIENT SEARCH (AUTOCOMPLETE) =====
 

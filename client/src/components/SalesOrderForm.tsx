@@ -393,9 +393,33 @@ function ClientStep(props: any) {
         </p>
       </div>
 
-      {/* CNPJ/CPF */}
+      {/* CNPJ/CPF with lookup button */}
       <div className="grid grid-cols-2 gap-3">
-        <InputField label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" />
+        <div>
+          <InputField label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" />
+          {cnpjCpf.replace(/\D/g, "").length >= 14 && (
+            <CnpjLookupButton
+              cnpj={cnpjCpf}
+              onResult={(data) => {
+                if (data.razaoSocial) setRazaoSocial(data.razaoSocial);
+                if (data.nomeFantasia) setNomeFantasia(data.nomeFantasia);
+                if (data.inscricaoEstadual) setInscricaoEstadual(data.inscricaoEstadual);
+                if (data.tipoContribuinte) setTipoContribuinte(data.tipoContribuinte);
+                if (data.regimeTributacao) setRegimeTributario(data.regimeTributacao === "Normal" ? "Normal" : data.regimeTributacao.includes("Simples") ? "Simples Nacional" : "Normal");
+                if (data.email) setEmailNfe(data.email);
+                if (data.cnaePrincipal) setCnaeFiscal(data.cnaePrincipal);
+                if (data.cep) setCep(data.cep);
+                if (data.logradouro) setEndereco(data.logradouro);
+                if (data.numero) setNumero(data.numero);
+                if (data.complemento) setComplemento(data.complemento);
+                if (data.bairro) setBairro(data.bairro);
+                if (data.municipio) setMunicipio(data.municipio);
+                if (data.uf) setUf(data.uf);
+                if (data.telefone) setTelefone1(data.telefone);
+              }}
+            />
+          )}
+        </div>
         <SelectField label="Regime Tributário" value={regimeTributario} onChange={setRegimeTributario} options={["Normal", "Simples Nacional", "MEI"]} />
       </div>
 
@@ -746,6 +770,80 @@ function SelectField({ label, value, onChange, options }: {
           <option key={opt} value={opt}>{opt || "Selecione..."}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+
+// ===== CNPJ LOOKUP BUTTON (SintegraWS) =====
+function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: any) => void }) {
+  const [manualTrigger, setManualTrigger] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const cleanCnpj = cnpj.replace(/\D/g, "");
+
+  const consultaQuery = trpc.salesOrders.consultaCnpj.useQuery(
+    { cnpj: cleanCnpj },
+    { enabled: manualTrigger && cleanCnpj.length >= 14, retry: false }
+  );
+
+  // Handle result when query succeeds
+  React.useEffect(() => {
+    if (consultaQuery.data && manualTrigger) {
+      if (consultaQuery.data.success) {
+        onResult(consultaQuery.data);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
+      setManualTrigger(false);
+    }
+  }, [consultaQuery.data, manualTrigger]);
+
+  React.useEffect(() => {
+    if (consultaQuery.error && manualTrigger) {
+      setManualTrigger(false);
+    }
+  }, [consultaQuery.error, manualTrigger]);
+
+  const handleLookup = () => {
+    if (cleanCnpj.length < 14) return;
+    setManualTrigger(true);
+    consultaQuery.refetch();
+  };
+
+  const loading = consultaQuery.isFetching && manualTrigger;
+  const error = consultaQuery.error?.message || (consultaQuery.data && !consultaQuery.data.success ? consultaQuery.data.error : null);
+
+  return (
+    <div className="mt-1.5">
+      <button
+        type="button"
+        onClick={handleLookup}
+        disabled={loading || cleanCnpj.length < 14}
+        className={`w-full px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all ${
+          success
+            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+            : "bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100"
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {loading ? (
+          <span className="flex items-center justify-center gap-1.5">
+            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Consultando Receita Federal...
+          </span>
+        ) : success ? (
+          <span className="flex items-center justify-center gap-1">
+            <CheckCircle className="w-3 h-3" /> Dados preenchidos!
+          </span>
+        ) : (
+          "🔍 Consultar CNPJ (Receita Federal + Sintegra)"
+        )}
+      </button>
+      {error && (
+        <p className="mt-1 text-[9px] text-red-500 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> {error}
+        </p>
+      )}
     </div>
   );
 }
