@@ -73,6 +73,7 @@ import CustosDeVendaStep from "@/components/CustosDeVendaStep";
 import { ProductMarginBar, MarginParamsEditor } from "@/components/ProductMarginBar";
 import { RealCostMarginBar, MarginSimulationParams } from "@/components/RealCostMarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
+import { SerasaConsulta } from "@/components/SerasaConsulta";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes" | "aprovacoes";
 
@@ -5538,6 +5539,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 </div>
               );
             })()}
+
+            {/* Consulta Serasa - Botão protegido por senha */}
+            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && (
+              <div className="pt-2">
+                <SerasaConsulta
+                  documento={cnpjCpf}
+                  clienteNome={razaoSocial || nomeFantasia}
+                  operadorName={sellerName}
+                />
+              </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <button

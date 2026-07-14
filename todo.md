@@ -5498,3 +5498,14 @@
 - [x] Gestão Comercial pisca para Vitória apenas quando há cadastro de cliente novo OU pedido aprovado (não pendente)
 - [x] Renomear aba "Catálogos" dos vendedores para "Documentos/Catálogos" e apresentar em pastinhas com ícones, igual gestores
 - [ ] Otimizar carregamento do Painel dos Vendedores para abrir imediatamente
+
+- [x] Serasa API: criar tabela serasa_consultas para histórico de consultas
+- [x] Serasa API: implementar integração backend (login + consulta relatório GOLD)
+- [x] Serasa API: botão vermelho "Consultar Serasa" no pedido de venda (após selecionar cliente, antes dos produtos)
+- [x] Serasa API: exigir senha do vendedor antes de executar consulta
+- [x] Serasa API: card bonito com resultado (verde = OK, vermelho = pendências)
+- [x] Serasa API: exibir todos os dados retornados pela API no card
+- [x] Serasa API: salvar histórico completo (quem consultou, quando, qual cliente, resultado)
+- [x] Serasa API: restringir acesso ao botão apenas para Fernando, Guilherme e Bruno
+- [x] Serasa API: mostrar "última consulta feita há X dias" para Vitória quando vendedor não consultar
+- [x] Serasa API: métricas no painel dos gestores (quantas consultas cada vendedor fez)

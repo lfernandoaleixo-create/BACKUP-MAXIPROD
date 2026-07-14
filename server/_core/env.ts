@@ -10,4 +10,6 @@ export const ENV = {
   maxiprodEmail: process.env.MAXIPROD_EMAIL ?? "",
   maxiprodPassword: process.env.MAXIPROD_PASSWORD ?? "",
   maxiprodGraphqlToken: process.env.MAXIPROD_GRAPHQL_TOKEN ?? "",
+  serasaApiLogin: process.env.SERASA_API_LOGIN ?? "",
+  serasaApiPassword: process.env.SERASA_API_PASSWORD ?? "",
 };

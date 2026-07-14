@@ -1,0 +1,23 @@
+CREATE TABLE `serasa_consultas` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`operador_name` varchar(200) NOT NULL,
+	`operador_id` int,
+	`cliente_documento` varchar(20) NOT NULL,
+	`cliente_nome` varchar(300),
+	`tipo_pessoa` enum('PF','PJ') NOT NULL,
+	`aprovado` boolean,
+	`score` int,
+	`pontualidade` decimal(5,2),
+	`limite_credito` decimal(18,2),
+	`renda_estimada` decimal(18,2),
+	`total_pendencias` int DEFAULT 0,
+	`valor_total_pendencias` decimal(18,2) DEFAULT '0',
+	`tem_protesto` boolean DEFAULT false,
+	`tem_rgi` boolean DEFAULT false,
+	`tem_cheque_sem_fundo` boolean DEFAULT false,
+	`analise_ia` text,
+	`resultado_completo` json,
+	`sales_order_request_id` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `serasa_consultas_id` PRIMARY KEY(`id`)
+);

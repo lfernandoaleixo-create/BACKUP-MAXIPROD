@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 // import MarginBar from "@/components/MarginBar"; // oculto temporariamente - fase de teste
 import { useOperator } from "@/contexts/OperatorContext";
+import { SerasaConsulta } from "@/components/SerasaConsulta";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
 type ExtraFilter = "comissao_travada" | null;
@@ -376,6 +377,19 @@ export default function PedidosVendedoresTab() {
                 <div className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs text-slate-500 font-medium">Observações</p>
                   <p className="text-sm text-slate-700">{detailsQuery.data.order.observacoes}</p>
+                </div>
+              )}
+
+              {/* Consulta Serasa - Mostra última consulta ou botão para gestores */}
+              {detailsQuery.data.order.cnpjCpf && (
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <SerasaConsulta
+                    documento={detailsQuery.data.order.cnpjCpf}
+                    clienteNome={detailsQuery.data.order.razaoSocial || detailsQuery.data.order.nomeFantasia || ""}
+                    operadorName={operator?.name || ""}
+                    salesOrderRequestId={detailsQuery.data.order.id}
+                    compact={!(["Fernando", "Guilherme", "Bruno"].some(n => (operator?.name || "").toLowerCase().includes(n.toLowerCase())))}
+                  />
                 </div>
               )}
 

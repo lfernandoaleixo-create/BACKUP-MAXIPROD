@@ -2998,3 +2998,41 @@ export const lotMovements = mysqlTable("lot_movements", {
 });
 export type LotMovement = typeof lotMovements.$inferSelect;
 export type InsertLotMovement = typeof lotMovements.$inferInsert;
+
+
+/**
+ * Consultas Serasa - Histórico de consultas de crédito realizadas via API KSI.
+ * Cada registro = 1 consulta paga ao Serasa (Relatório GOLD).
+ * Armazena quem consultou, qual cliente, quando, e o resultado completo.
+ * Consultas são protegidas por senha e restritas a operadores autorizados.
+ */
+export const serasaConsultas = mysqlTable("serasa_consultas", {
+  id: int("id").autoincrement().primaryKey(),
+  // Quem consultou
+  operadorName: varchar("operador_name", { length: 200 }).notNull(),
+  operadorId: int("operador_id"), // FK para operators.id (se disponível)
+  // Cliente consultado
+  clienteDocumento: varchar("cliente_documento", { length: 20 }).notNull(), // CPF ou CNPJ sem máscara
+  clienteNome: varchar("cliente_nome", { length: 300 }), // Nome/Razão Social retornado pela API
+  tipoPessoa: mysqlEnum("tipo_pessoa", ["PF", "PJ"]).notNull(),
+  // Resultado resumido
+  aprovado: boolean("aprovado"), // true = sem pendências, false = com pendências
+  score: int("score"), // Score de crédito
+  pontualidade: decimal("pontualidade", { precision: 5, scale: 2 }), // % pontualidade
+  limiteCredito: decimal("limite_credito", { precision: 18, scale: 2 }),
+  rendaEstimada: decimal("renda_estimada", { precision: 18, scale: 2 }),
+  totalPendencias: int("total_pendencias").default(0),
+  valorTotalPendencias: decimal("valor_total_pendencias", { precision: 18, scale: 2 }).default("0"),
+  temProtesto: boolean("tem_protesto").default(false),
+  temRgi: boolean("tem_rgi").default(false),
+  temChequeSemFundo: boolean("tem_cheque_sem_fundo").default(false),
+  analiseIA: text("analise_ia"), // Texto da análise de IA do Serasa
+  // Resultado completo (JSON)
+  resultadoCompleto: json("resultado_completo"), // JSON completo da resposta da API
+  // Contexto
+  salesOrderRequestId: int("sales_order_request_id"), // FK opcional - se foi feito durante um pedido
+  // Metadados
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type SerasaConsulta = typeof serasaConsultas.$inferSelect;
+export type InsertSerasaConsulta = typeof serasaConsultas.$inferInsert;
