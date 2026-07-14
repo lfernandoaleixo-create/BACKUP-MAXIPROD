@@ -5494,3 +5494,5 @@
 - [ ] Tooltip no alerta vermelho de bloqueio mostrando quanto falta para a média mensal atingir 15%
 - [ ] Filtro na aba de gestão de pedidos para visualizar pedidos com comissão travada em 4%
 - [ ] Painel/barra de progresso no topo da tela exibindo a média de margem mensal atual do vendedor
+- [x] Gestão Comercial pisca para gestor/Juvenal/Guilherme/Fernando/Bruno quando há pedidos pendentes, para de piscar ao aprovar/recusar
+- [x] Gestão Comercial pisca para Vitória apenas quando há cadastro de cliente novo OU pedido aprovado (não pendente)

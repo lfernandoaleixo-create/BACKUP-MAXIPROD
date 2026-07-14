@@ -66,18 +66,20 @@ export default function TopNav({ rightContent }: TopNavProps) {
     (pendingStockData?.recentlyActioned ?? 0) > 0
   );
 
-  // Blink Gestão Comercial tab for gestores (pending approval) and Vitória (pending processing)
-  const isGestor = operator?.name === "Juvenal" || operator?.name === "Fernando" || operator?.name === "Guilherme";
+  // Blink Gestão Comercial tab:
+  // - Gestor/Juvenal/Guilherme/Fernando/Bruno: pisca quando há pedidos PENDENTES (aguardando aprovação). Para ao aprovar/recusar.
+  // - Vitória: pisca quando há cadastro de cliente novo OU pedido APROVADO (pronto para processar). Não pisca para pendentes.
+  const isGestorOrApprover = operator?.name === "Juvenal" || operator?.name === "Fernando" || operator?.name === "Guilherme" || operator?.name === "Bruno";
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
   const { data: pendingGestorData } = trpc.salesOrders.countPendingGestor.useQuery(undefined, {
-    enabled: isGestor,
+    enabled: isGestorOrApprover,
     refetchInterval: 20000,
   });
   const { data: pendingVitoriaData } = trpc.salesOrders.countPendingVitoria.useQuery(undefined, {
     enabled: isVitoria,
     refetchInterval: 20000,
   });
-  const hasGestaoAlert = (isGestor && (pendingGestorData?.pending ?? 0) > 0) || (isVitoria && (pendingVitoriaData?.pending ?? 0) > 0);
+  const hasGestaoAlert = (isGestorOrApprover && (pendingGestorData?.pending ?? 0) > 0) || (isVitoria && (pendingVitoriaData?.pending ?? 0) > 0);
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
