@@ -211,9 +211,9 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
           <button
             onClick={() => { setShowPasswordDialog(true); setError(null); setPassword(""); }}
             disabled={!documento || documento.length < 11 || consultarMutation.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all duration-300 shadow-[0_0_12px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)] hover:scale-[1.02] active:scale-95"
           >
-            <Shield className="w-3 h-3" />
+            <Shield className="w-4 h-4" />
             Consultar Serasa
           </button>
         )}
@@ -249,7 +249,7 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
         <button
           onClick={() => { setShowPasswordDialog(true); setError(null); setPassword(""); }}
           disabled={!documento || documento.length < 11 || consultarMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+          className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_25px_rgba(239,68,68,0.7)] hover:scale-[1.02] active:scale-95"
         >
           {consultarMutation.isPending ? (
             <>
@@ -258,7 +258,7 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
             </>
           ) : (
             <>
-              <Shield className="w-4 h-4" />
+              <Shield className="w-5 h-5" />
               Consultar Serasa
             </>
           )}
