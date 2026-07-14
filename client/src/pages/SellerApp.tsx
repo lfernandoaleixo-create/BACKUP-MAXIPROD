@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { Link, useLocation } from "wouter";
 import { Package, Lock, AlertCircle, Crown, ShoppingCart, ArrowLeft, Settings, ClipboardCheck, RefreshCw, Users, ChevronRight, Search } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import VendedorDetalhe from "./VendedorDetalhe";
@@ -79,13 +80,15 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
     );
   };
 
+  const [, navigate] = useLocation();
+
   const handleLogout = () => {
     sessionStorage.removeItem("sellerSession");
     setSession(null);
     setPassword("");
     setError("");
     setHubChoice(null);
-    window.location.href = "/";
+    navigate("/gestao-comercial");
   };
 
   // Modo gestor: mostra lista de todos os vendedores para Guilherme/Fernando/Bruno
@@ -334,9 +337,9 @@ function GestorSellerPicker({ onLogout }: { onLogout: () => void }) {
       <main className="container py-4 md:py-6 space-y-4 pb-20 md:pb-6">
         {/* Header */}
         <div className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
-          <a href="/" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <Link href="/gestao-comercial" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             <ArrowLeft className="w-5 h-5 text-slate-500" />
-          </a>
+          </Link>
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
             <Users className="w-5 h-5 text-white" />
           </div>

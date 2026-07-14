@@ -172,7 +172,6 @@ export default function GestaoComercial() {
 
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
-    enabled: !shouldRedirectToPedidos && !showNavigationHub,
   });
 
   // Get vendedores for a specific gestor from Maxiprod data
@@ -245,7 +244,7 @@ export default function GestaoComercial() {
             </Link>
 
             {/* Painel dos Vendedores (visão geral - para gestores que administram vendedores) */}
-            <a href="/vendedor-gestor">
+            <Link href="/vendedor-gestor">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-sm p-6 hover:shadow-lg hover:border-blue-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
@@ -257,7 +256,7 @@ export default function GestaoComercial() {
                   </div>
                 </div>
               </div>
-            </a>
+            </Link>
 
             {/* Meu Painel de Vendedor - para Renato/Juvenal que também vendem */}
             {isGestorVendedor && (

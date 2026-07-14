@@ -5497,3 +5497,4 @@
 - [x] Gestão Comercial pisca para gestor/Juvenal/Guilherme/Fernando/Bruno quando há pedidos pendentes, para de piscar ao aprovar/recusar
 - [x] Gestão Comercial pisca para Vitória apenas quando há cadastro de cliente novo OU pedido aprovado (não pendente)
 - [x] Renomear aba "Catálogos" dos vendedores para "Documentos/Catálogos" e apresentar em pastinhas com ícones, igual gestores
+- [ ] Otimizar carregamento do Painel dos Vendedores para abrir imediatamente
