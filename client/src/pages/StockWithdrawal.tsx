@@ -29,11 +29,18 @@ const MOTIVO_LABELS: Record<string, string> = {
   outro: "Outros",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+const STATUS_CONFIG_BAIXA: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pendente: { label: "Pendente", color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: Clock },
   aprovada: { label: "Solicitação autorizada para dar baixa no Maxiprod", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: CheckCircle2 },
   concluida: { label: "Baixa dada no Maxiprod", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
   recusada: { label: "Solicitação recusada para dar baixa no Maxiprod", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: XCircle },
+};
+
+const STATUS_CONFIG_ACRESCIMO: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+  pendente: { label: "Pendente", color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: Clock },
+  aprovada: { label: "Solicitação autorizada para acréscimo no Maxiprod", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: CheckCircle2 },
+  concluida: { label: "Acréscimo feito no Maxiprod", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
+  recusada: { label: "Solicitação recusada para acréscimo no Maxiprod", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: XCircle },
 };
 
 export default function StockWithdrawal() {
@@ -790,10 +797,10 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
         <div>
           <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-blue-600" />
-            Aprovadas — Aguardando Baixa no Maxiprod ({approvedList.length})
+            Aprovadas — Aguardando Ação no Maxiprod ({approvedList.length})
           </h3>
           <p className="text-xs text-slate-500 mb-3">
-            Larissa: faça a baixa manualmente no Maxiprod e depois clique em "Baixa dada no Maxiprod" para confirmar.
+            Larissa: faça a operação manualmente no Maxiprod e depois clique no botão para confirmar.
           </p>
           <div className="space-y-3">
             {approvedList.map((req) => (
@@ -833,7 +840,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                           >
                             <span className="w-5 h-5 rounded border-2 border-amber-400 group-hover:border-emerald-500 flex items-center justify-center transition-colors shrink-0">
                             </span>
-                            Baixa dada no Maxiprod
+                            {req.motivo === "devolucao_retrabalho" ? "Acréscimo feito no Maxiprod" : "Baixa dada no Maxiprod"}
                           </button>
                         )}
                       </>
@@ -858,12 +865,12 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
 
 /* ─── Card de Solicitação ─── */
 function RequestCard({ request, actions }: { request: any; actions?: React.ReactNode }) {
+  // Determinar tipo de movimentação: devolucao_retrabalho = ACRÉSCIMO, demais = BAIXA
+  const isAcrescimo = request.motivo === "devolucao_retrabalho";
+  const STATUS_CONFIG = isAcrescimo ? STATUS_CONFIG_ACRESCIMO : STATUS_CONFIG_BAIXA;
   const statusCfg = STATUS_CONFIG[request.status] || STATUS_CONFIG.pendente;
   const StatusIcon = statusCfg.icon;
   const isOver24h = request.status === "aprovada" && request.dataAprovacao && (Date.now() - new Date(request.dataAprovacao).getTime() > 24 * 60 * 60 * 1000);
-
-  // Determinar tipo de movimentação: devolucao_retrabalho = ACRÉSCIMO, demais = BAIXA
-  const isAcrescimo = request.motivo === "devolucao_retrabalho";
   const tipoLabel = isAcrescimo ? "ACRÉSCIMO" : "BAIXA";
   const tipoBg = isAcrescimo ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-red-100 text-red-800 border-red-300";
   const TipoIcon = isAcrescimo ? ArrowUp : ArrowDown;
@@ -954,7 +961,7 @@ function HistoricoList() {
             onClick={() => setStatusFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${statusFilter === s ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
           >
-            {s === "todas" ? "Todas" : STATUS_CONFIG[s]?.label || s}
+            {s === "todas" ? "Todas" : STATUS_CONFIG_BAIXA[s]?.label || s}
           </button>
         ))}
       </div>
@@ -1054,7 +1061,7 @@ function Indicadores() {
           <p className="text-sm font-medium text-slate-700 mb-2">Por Status</p>
           <div className="space-y-1.5">
             {data.byStatus.map((s) => {
-              const cfg = STATUS_CONFIG[s.status];
+              const cfg = STATUS_CONFIG_BAIXA[s.status];
               return (
                 <div key={s.status} className="flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium border ${cfg?.bg || "bg-slate-50"} ${cfg?.color || "text-slate-700"}`}>
