@@ -298,7 +298,7 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       //    (caso de arId que mudou no Maxiprod mas é o mesmo título)
       // 3. Se existe registro inativo com mesma empresa+valor e status não-Pendente → herda esse status
       //    (caso de parcela com vencimento diferente mas mesmo valor)
-      // 4. Se a empresa tem TODOS os títulos inativos com status "Protestado"/"Com Protesto"/"Fundo Perdido" → herda
+      // 4. Se a empresa tem títulos inativos com status forte (Protestado/Fundo Perdido/etc) → herda
       //    (empresa já protestada, novos títulos devem manter o mesmo status)
       // 5. Caso contrário → entra como Pendente (cada título é tratado individualmente)
       const empresaUpper = title.empresa.toUpperCase().trim();
@@ -326,9 +326,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
           if (sameEmpValor) {
             statusPlanilha = sameEmpValor.status!;
           } else {
-            // Fallback: se a empresa tem títulos inativos recentes com status forte (Protestado/Com Protesto/Fundo Perdido),
+            // Fallback: se a empresa tem títulos inativos recentes com status forte,
             // herdar esse status para novos títulos da mesma empresa
-            const STRONG_STATUSES = ["Protestado", "Com Protesto", "Fundo Perdido", "Jurídico"];
+            const STRONG_STATUSES = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança", "Contatado", "Em negociação", "Promessa de Pgto"];
             const recentInactiveOfEmpresa = allPlanilhaRecords
               .filter(r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
                 && r.status && STRONG_STATUSES.includes(r.status))
