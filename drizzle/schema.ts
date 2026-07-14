@@ -3036,3 +3036,23 @@ export const serasaConsultas = mysqlTable("serasa_consultas", {
 });
 export type SerasaConsulta = typeof serasaConsultas.$inferSelect;
 export type InsertSerasaConsulta = typeof serasaConsultas.$inferInsert;
+
+
+/**
+ * Atribuição de lotes a pedidos de venda
+ * Quando o líder/gestor envia para faturamento, seleciona quais lotes vão naquele pedido
+ * e quantas caixas de cada lote. Ao confirmar, o saldo do lote é baixado automaticamente.
+ */
+export const orderLotAssignments = mysqlTable("order_lot_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("order_id").notNull(), // FK sales_order_requests.id
+  lotId: int("lot_id").notNull(), // FK production_lots.id
+  codigoLote: varchar("codigo_lote", { length: 100 }).notNull(), // Desnormalizado para consulta rápida
+  codigoItem: varchar("codigo_item", { length: 20 }).notNull(), // SKU do produto
+  descricaoItem: text("descricao_item"), // Descrição do produto
+  qtdCaixas: decimal("qtd_caixas", { precision: 18, scale: 2 }).notNull(), // Caixas atribuídas
+  atribuidoPor: varchar("atribuido_por", { length: 200 }).notNull(), // Quem fez a atribuição
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type OrderLotAssignment = typeof orderLotAssignments.$inferSelect;
+export type InsertOrderLotAssignment = typeof orderLotAssignments.$inferInsert;

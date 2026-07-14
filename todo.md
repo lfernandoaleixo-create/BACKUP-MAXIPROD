@@ -5513,3 +5513,17 @@
 - [x] Serasa: adicionar animação de carregamento no botão enquanto API é consultada
 - [x] Serasa: disponibilizar botão "Consultar Serasa" também para Vitória
 - [x] Serasa: adicionar filtro nas métricas dos gestores para visualizar consultas com pendências
+
+## Módulo de Controle de Lote — Tela 2 (Seleção de Lote no Pedido)
+- [x] Criar/atualizar tabela de lotes no banco (order_lot_assignments)
+- [x] Criar tabela de movimentações de lote (order_lot_assignments com baixa automática)
+- [x] Backend: procedure para listar lotes com saldo > 0 (filtro por SKU do produto)
+- [x] Backend: procedure para atribuir lotes a um pedido (com validação de saldo)
+- [x] Backend: ao enviar para faturamento, baixar saldo dos lotes automaticamente
+- [x] Frontend: seção "LOTES DO PEDIDO" com botão [+ Selecionar Lote] na tela de envio para faturamento
+- [x] Frontend: modal/lista de lotes disponíveis filtrados por SKU do pedido
+- [x] Frontend: campo para informar quantidade de caixas de cada lote
+- [x] Frontend: bloquear quantidade maior que saldo disponível
+- [x] Frontend: permitir múltiplos lotes no mesmo pedido
+- [ ] Frontend: manter campo de observação separado (texto livre para outras informações)
+- [x] Frontend: lote NÃO é mais digitado no campo de observação

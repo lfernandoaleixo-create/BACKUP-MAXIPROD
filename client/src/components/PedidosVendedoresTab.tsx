@@ -32,6 +32,7 @@ import {
 // import MarginBar from "@/components/MarginBar"; // oculto temporariamente - fase de teste
 import { useOperator } from "@/contexts/OperatorContext";
 import { SerasaConsulta } from "@/components/SerasaConsulta";
+import { LotAssignmentPanel } from "@/components/LotAssignmentPanel";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
 type ExtraFilter = "comissao_travada" | null;
@@ -350,6 +351,15 @@ export default function PedidosVendedoresTab() {
                   ))}
                 </div>
               </div>
+
+              {/* Seleção de Lotes */}
+              {detailsQuery.data.items && detailsQuery.data.items.length > 0 && (
+                <LotAssignmentPanel
+                  orderId={detailsQuery.data.order.id}
+                  items={detailsQuery.data.items}
+                  orderStatus={detailsQuery.data.order.status}
+                />
+              )}
 
               {/* Totais */}
               <div className="bg-teal-50 rounded-lg p-3 space-y-1">

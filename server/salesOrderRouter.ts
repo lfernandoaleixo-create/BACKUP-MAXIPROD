@@ -3056,4 +3056,122 @@ export const salesOrderRouter = router({
 
       return { success: true, orderId: input.orderId, orderNumber: order.orderNumber };
     }),
+
+  // ===== LOT ASSIGNMENT (Tela 2 - Seleção de Lote no Pedido) =====
+
+  /** Listar lotes disponíveis para um produto específico (com saldo > 0) */
+  getAvailableLotsForItem: publicProcedure
+    .input(z.object({
+      codigoItem: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const { productionLots } = await import("../drizzle/schema");
+      return db.select().from(productionLots)
+        .where(and(
+          eq(productionLots.codigoItem, input.codigoItem),
+          sql`CAST(${productionLots.saldoAtual} AS DECIMAL(18,2)) > 0`
+        ))
+        .orderBy(desc(productionLots.createdAt));
+    }),
+
+  /** Atribuir lotes a um pedido (baixa automática do saldo) */
+  assignLotsToOrder: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      assignments: z.array(z.object({
+        lotId: z.number(),
+        codigoLote: z.string(),
+        codigoItem: z.string(),
+        descricaoItem: z.string().optional(),
+        qtdCaixas: z.number().positive(),
+      })),
+      atribuidoPor: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const { orderLotAssignments, productionLots } = await import("../drizzle/schema");
+
+      // Validate all lots have enough balance first
+      for (const assignment of input.assignments) {
+        const lot = await db.select().from(productionLots)
+          .where(eq(productionLots.id, assignment.lotId)).limit(1);
+        if (lot.length === 0) throw new Error(`Lote ${assignment.codigoLote} não encontrado`);
+        const saldo = parseFloat(String(lot[0].saldoAtual));
+        if (assignment.qtdCaixas > saldo) {
+          throw new Error(`Lote ${assignment.codigoLote}: quantidade (${assignment.qtdCaixas}) excede saldo disponível (${saldo})`);
+        }
+      }
+
+      // Insert assignments and deduct balances
+      for (const assignment of input.assignments) {
+        await db.insert(orderLotAssignments).values({
+          orderId: input.orderId,
+          lotId: assignment.lotId,
+          codigoLote: assignment.codigoLote,
+          codigoItem: assignment.codigoItem,
+          descricaoItem: assignment.descricaoItem || null,
+          qtdCaixas: String(assignment.qtdCaixas),
+          atribuidoPor: input.atribuidoPor,
+        });
+
+        // Deduct from lot balance
+        const lot = await db.select().from(productionLots)
+          .where(eq(productionLots.id, assignment.lotId)).limit(1);
+        const currentBalance = parseFloat(String(lot[0].saldoAtual));
+        const newBalance = currentBalance - assignment.qtdCaixas;
+        await db.update(productionLots)
+          .set({ saldoAtual: String(newBalance) })
+          .where(eq(productionLots.id, assignment.lotId));
+      }
+
+      return { success: true };
+    }),
+
+  /** Listar lotes atribuídos a um pedido */
+  getOrderLotAssignments: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const { orderLotAssignments } = await import("../drizzle/schema");
+      return db.select().from(orderLotAssignments)
+        .where(eq(orderLotAssignments.orderId, input.orderId))
+        .orderBy(desc(orderLotAssignments.createdAt));
+    }),
+
+  /** Remover atribuição de lote (devolver saldo) */
+  removeLotAssignment: publicProcedure
+    .input(z.object({
+      assignmentId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const { orderLotAssignments, productionLots } = await import("../drizzle/schema");
+
+      // Get the assignment
+      const assignment = await db.select().from(orderLotAssignments)
+        .where(eq(orderLotAssignments.id, input.assignmentId)).limit(1);
+      if (assignment.length === 0) throw new Error("Atribuição não encontrada");
+
+      // Return balance to lot
+      const lot = await db.select().from(productionLots)
+        .where(eq(productionLots.id, assignment[0].lotId)).limit(1);
+      if (lot.length > 0) {
+        const currentBalance = parseFloat(String(lot[0].saldoAtual));
+        const returnQty = parseFloat(String(assignment[0].qtdCaixas));
+        await db.update(productionLots)
+          .set({ saldoAtual: String(currentBalance + returnQty) })
+          .where(eq(productionLots.id, assignment[0].lotId));
+      }
+
+      // Delete assignment
+      await db.delete(orderLotAssignments)
+        .where(eq(orderLotAssignments.id, input.assignmentId));
+
+      return { success: true };
+    }),
 });
