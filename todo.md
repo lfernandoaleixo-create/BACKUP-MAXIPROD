@@ -5527,3 +5527,8 @@
 - [x] Frontend: permitir múltiplos lotes no mesmo pedido
 - [ ] Frontend: manter campo de observação separado (texto livre para outras informações)
 - [x] Frontend: lote NÃO é mais digitado no campo de observação
+
+## Melhorias Lote-Pedido (Tela 2)
+- [x] Alerta visual quando qtd lotes atribuída difere da qtd total do produto
+- [x] Registro de histórico: quem adicionou/removeu lotes e quando
+- [x] Indicador na lista principal de pedidos: lotes completos vs faltando

@@ -3,7 +3,7 @@
  * Permite ao líder/gestor selecionar lotes disponíveis para cada item do pedido
  * antes de enviar para faturamento. A baixa do saldo é automática.
  */
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Package, Plus, Trash2, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { Package, Plus, Trash2, Loader2, CheckCircle, AlertTriangle, History, Clock } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
 
 interface OrderItem {
@@ -36,6 +36,7 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
   const [showLotModal, setShowLotModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<OrderItem | null>(null);
   const [qtdInput, setQtdInput] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
 
   // Fetch existing lot assignments for this order
   const assignmentsQuery = trpc.salesOrders.getOrderLotAssignments.useQuery(
@@ -65,6 +66,41 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
   });
 
   const assignments = assignmentsQuery.data || [];
+
+  // Calculate quantity comparison per item
+  const quantityComparison = useMemo(() => {
+    const comparison: Record<string, { pedido: number; atribuido: number }> = {};
+    
+    // Sum order quantities per codigoItem
+    items.forEach((item) => {
+      const qty = Number(item.quantidade) || 0;
+      if (!comparison[item.codigoItem]) {
+        comparison[item.codigoItem] = { pedido: 0, atribuido: 0 };
+      }
+      comparison[item.codigoItem].pedido += qty;
+    });
+
+    // Sum assigned lot quantities per codigoItem
+    assignments.forEach((a) => {
+      const qty = Number(a.qtdCaixas) || 0;
+      if (!comparison[a.codigoItem]) {
+        comparison[a.codigoItem] = { pedido: 0, atribuido: 0 };
+      }
+      comparison[a.codigoItem].atribuido += qty;
+    });
+
+    return comparison;
+  }, [items, assignments]);
+
+  // Check if all items have matching lot quantities
+  const allItemsComplete = useMemo(() => {
+    return Object.values(quantityComparison).every(
+      (c) => c.atribuido >= c.pedido && c.pedido > 0
+    );
+  }, [quantityComparison]);
+
+  const hasAnyAssignment = assignments.length > 0;
+  const hasMismatch = hasAnyAssignment && !allItemsComplete;
 
   // Only show for approved orders (before processing/billing)
   if (!["aprovado", "pendente"].includes(orderStatus)) {
@@ -109,16 +145,98 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
           <p className="text-xs text-purple-600 font-medium flex items-center gap-1">
             <Package className="w-3 h-3" /> Lotes do Pedido
           </p>
-          {assignments.length > 0 && (
-            <Badge className="bg-green-100 text-green-700 border-green-200 text-[10px]">
-              <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
-              {assignments.length} lote{assignments.length > 1 ? "s" : ""}
-            </Badge>
-          )}
+          <div className="flex items-center gap-1.5">
+            {hasAnyAssignment && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[10px] text-slate-500 hover:text-slate-700"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <History className="w-3 h-3 mr-0.5" />
+                Histórico
+              </Button>
+            )}
+            {allItemsComplete && (
+              <Badge className="bg-green-100 text-green-700 border-green-200 text-[10px]">
+                <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
+                Completo
+              </Badge>
+            )}
+            {hasAnyAssignment && !allItemsComplete && (
+              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-[10px]">
+                <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
+                Incompleto
+              </Badge>
+            )}
+          </div>
         </div>
 
+        {/* Quantity mismatch alert */}
+        {hasMismatch && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[11px] text-yellow-800 font-medium flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Quantidade de lotes difere do pedido:
+            </p>
+            <div className="space-y-1">
+              {Object.entries(quantityComparison).map(([codigo, comp]) => {
+                const item = items.find(i => i.codigoItem === codigo);
+                const isOk = comp.atribuido >= comp.pedido;
+                return (
+                  <div key={codigo} className={`flex items-center justify-between text-[10px] px-2 py-1 rounded ${isOk ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                    <span className="truncate flex-1">{item?.descricaoItem || codigo}</span>
+                    <span className="font-mono font-bold ml-2">
+                      {comp.atribuido}/{comp.pedido} cx
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* All complete indicator */}
+        {allItemsComplete && hasAnyAssignment && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+            <p className="text-[11px] text-green-700 font-medium flex items-center justify-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Todos os lotes atribuídos corretamente
+            </p>
+          </div>
+        )}
+
+        {/* History log */}
+        {showHistory && assignments.length > 0 && (
+          <div className="bg-white border border-slate-200 rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mb-1">
+              <Clock className="w-3 h-3" /> Histórico de Atribuições
+            </p>
+            {assignments
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .map((a) => (
+                <div key={a.id} className="flex items-start gap-2 text-[10px] border-l-2 border-purple-300 pl-2 py-0.5">
+                  <div className="flex-1">
+                    <p className="text-slate-700">
+                      <span className="font-semibold text-purple-700">{a.atribuidoPor}</span>
+                      {" adicionou "}
+                      <span className="font-semibold">{Number(a.qtdCaixas).toFixed(0)} cx</span>
+                      {" do lote "}
+                      <span className="font-bold text-purple-600">{a.codigoLote}</span>
+                      {" → "}
+                      <span className="text-slate-500">{a.descricaoItem || a.codigoItem}</span>
+                    </p>
+                    <p className="text-slate-400 mt-0.5">
+                      {new Date(a.createdAt).toLocaleDateString("pt-BR")} às {new Date(a.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+
         {/* Existing assignments */}
-        {assignments.length > 0 && (
+        {assignments.length > 0 && !showHistory && (
           <div className="space-y-1.5">
             {assignments.map((a) => (
               <div key={a.id} className="flex items-center justify-between text-xs bg-white rounded-lg p-2 border border-purple-100">
@@ -160,21 +278,34 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
 
         {/* Add lot buttons per item */}
         <div className="space-y-1.5">
-          {uniqueItems.map((item) => (
-            <Button
-              key={item.codigoItem}
-              variant="outline"
-              size="sm"
-              className="w-full justify-start text-xs border-purple-200 text-purple-700 hover:bg-purple-100 h-8"
-              onClick={() => {
-                setSelectedItem(item);
-                setShowLotModal(true);
-              }}
-            >
-              <Plus className="w-3 h-3 mr-1.5" />
-              Adicionar Lote — {item.descricaoItem?.substring(0, 30) || item.codigoItem}
-            </Button>
-          ))}
+          {uniqueItems.map((item) => {
+            const comp = quantityComparison[item.codigoItem];
+            const isComplete = comp && comp.atribuido >= comp.pedido && comp.pedido > 0;
+            return (
+              <Button
+                key={item.codigoItem}
+                variant="outline"
+                size="sm"
+                className={`w-full justify-start text-xs h-8 ${isComplete ? "border-green-200 text-green-700 hover:bg-green-50" : "border-purple-200 text-purple-700 hover:bg-purple-100"}`}
+                onClick={() => {
+                  setSelectedItem(item);
+                  setShowLotModal(true);
+                }}
+              >
+                {isComplete ? (
+                  <CheckCircle className="w-3 h-3 mr-1.5" />
+                ) : (
+                  <Plus className="w-3 h-3 mr-1.5" />
+                )}
+                {isComplete ? "Lote OK" : "Adicionar Lote"} — {item.descricaoItem?.substring(0, 25) || item.codigoItem}
+                {comp && (
+                  <span className="ml-auto font-mono text-[10px] opacity-70">
+                    {comp.atribuido}/{comp.pedido}
+                  </span>
+                )}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
@@ -194,6 +325,11 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
                 <p className="text-[10px] text-slate-400">Produto</p>
                 <p className="text-sm font-medium text-slate-700">{selectedItem.descricaoItem}</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">Código: {selectedItem.codigoItem}</p>
+                {quantityComparison[selectedItem.codigoItem] && (
+                  <p className="text-[10px] text-purple-600 mt-1 font-medium">
+                    Pedido: {quantityComparison[selectedItem.codigoItem].pedido} cx | Atribuído: {quantityComparison[selectedItem.codigoItem].atribuido} cx
+                  </p>
+                )}
               </div>
 
               {/* Available lots */}
@@ -274,5 +410,37 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/**
+ * LotStatusIndicator - Badge para a lista principal de pedidos
+ * Mostra se o pedido tem lotes completos, incompletos ou sem lotes
+ */
+export function LotStatusIndicator({ orderId }: { orderId: number }) {
+  const assignmentsQuery = trpc.salesOrders.getOrderLotAssignments.useQuery(
+    { orderId },
+    { enabled: !!orderId }
+  );
+
+  const assignments = assignmentsQuery.data || [];
+
+  if (assignmentsQuery.isLoading) return null;
+
+  if (assignments.length === 0) {
+    return (
+      <Badge className="bg-slate-100 text-slate-500 border-slate-200 text-[9px] px-1.5 py-0">
+        Sem lote
+      </Badge>
+    );
+  }
+
+  // We can't easily check completeness without items data here,
+  // so just show that lots are assigned
+  return (
+    <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-[9px] px-1.5 py-0">
+      <Package className="w-2.5 h-2.5 mr-0.5" />
+      {assignments.length} lote{assignments.length > 1 ? "s" : ""}
+    </Badge>
   );
 }

@@ -32,7 +32,7 @@ import {
 // import MarginBar from "@/components/MarginBar"; // oculto temporariamente - fase de teste
 import { useOperator } from "@/contexts/OperatorContext";
 import { SerasaConsulta } from "@/components/SerasaConsulta";
-import { LotAssignmentPanel } from "@/components/LotAssignmentPanel";
+import { LotAssignmentPanel, LotStatusIndicator } from "@/components/LotAssignmentPanel";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
 type ExtraFilter = "comissao_travada" | null;
@@ -227,6 +227,9 @@ export default function PedidosVendedoresTab() {
                       <Badge className="bg-red-100 text-red-600 border-red-200 text-[10px]">
                         <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />Preço abaixo
                       </Badge>
+                    )}
+                    {["aprovado", "pendente"].includes(order.status) && (
+                      <LotStatusIndicator orderId={order.id} />
                     )}
                   </div>
                   <p className="font-semibold text-slate-800 truncate">{order.razaoSocial}</p>
