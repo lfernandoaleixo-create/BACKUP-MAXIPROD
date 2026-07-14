@@ -438,8 +438,8 @@ export default function VitoriaOrders() {
                       {/* Order Items */}
                       {orderDetails && orderDetails.order.id === order.id && (
                         <div className="mt-3 space-y-1.5">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                            <Package className="w-3 h-3" />
+                          <p className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
+                            <Package className="w-3.5 h-3.5" />
                             Itens do Pedido ({orderDetails.items.length})
                           </p>
                           {orderDetails.items.map((item) => (
@@ -452,14 +452,14 @@ export default function VitoriaOrders() {
                               }`}
                             >
                               <div className="min-w-0 flex-1">
-                                <p className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate">
-                                  {item.descricaoItem}
+                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                                  {item.codigoItem} - {item.descricaoItem}
                                 </p>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-xs text-slate-400">
                                   {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(Number(item.precoUnitario))}
                                 </span>
                               </div>
-                              <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 ml-2">
+                              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
                                 {formatCurrency(Number(item.totalItem))}
                               </p>
                             </div>
@@ -531,34 +531,34 @@ export default function VitoriaOrders() {
 
                         {/* Section: Dados do Cliente */}
                         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
-                            <Building2 className="w-3 h-3" />
+                          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                            <Building2 className="w-3.5 h-3.5" />
                             Dados do Cliente
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-xs">
                             {order.razaoSocial && (
                               <div className="col-span-2 md:col-span-3">
-                                <span className="text-slate-400 font-semibold">Razão Social</span>
-                                <p className="text-slate-800 dark:text-slate-100 font-medium">{order.razaoSocial}</p>
+                                <span className="text-slate-400 font-semibold text-[11px]">Razão Social</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-semibold text-sm">{order.razaoSocial}</p>
                               </div>
                             )}
                             {order.nomeFantasia && (
                               <div className="col-span-2 md:col-span-2">
-                                <span className="text-slate-400 font-semibold">Nome Fantasia</span>
-                                <p className="text-slate-800 dark:text-slate-100">{order.nomeFantasia}</p>
+                                <span className="text-slate-400 font-semibold text-[11px]">Nome Fantasia</span>
+                                <p className="text-slate-800 dark:text-slate-100 text-sm">{order.nomeFantasia}</p>
                               </div>
                             )}
                             {order.cnpjCpf && (
                               <div>
-                                <span className="text-slate-400 font-semibold">CNPJ/CPF</span>
-                                <p className="text-slate-800 dark:text-slate-100 font-mono text-[9px]">{order.cnpjCpf}</p>
+                                <span className="text-slate-400 font-semibold text-[11px]">CNPJ/CPF</span>
+                                <p className="text-slate-800 dark:text-slate-100 font-mono text-xs">{order.cnpjCpf}</p>
                               </div>
                             )}
 
                             {order.regimeTributario && (
                               <div>
-                                <span className="text-slate-400 font-semibold">Regime Tributário</span>
-                                <p className="text-slate-800 dark:text-slate-100">{order.regimeTributario}</p>
+                                <span className="text-slate-400 font-semibold text-[11px]">Regime Tributário</span>
+                                <p className="text-slate-800 dark:text-slate-100 text-sm">{order.regimeTributario}</p>
                               </div>
                             )}
                             {order.emailNfe && (
@@ -579,35 +579,35 @@ export default function VitoriaOrders() {
                         {/* Section: Endereço */}
                         {(order.cep || order.endereco || order.municipio) && (
                           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
-                              <MapPin className="w-3 h-3" />
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <MapPin className="w-3.5 h-3.5" />
                               Endereço
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-xs">
                               {order.cep && (
                                 <div>
-                                  <span className="text-slate-400 font-semibold">CEP</span>
-                                  <p className="text-slate-800 dark:text-slate-100 font-mono">{order.cep}</p>
+                                  <span className="text-slate-400 font-semibold text-[11px]">CEP</span>
+                                  <p className="text-slate-800 dark:text-slate-100 font-mono text-sm">{order.cep}</p>
                                 </div>
                               )}
                               {(order.endereco || order.numero) && (
                                 <div className="col-span-2">
-                                  <span className="text-slate-400 font-semibold">Endereço</span>
-                                  <p className="text-slate-800 dark:text-slate-100">
+                                  <span className="text-slate-400 font-semibold text-[11px]">Endereço</span>
+                                  <p className="text-slate-800 dark:text-slate-100 text-sm">
                                     {order.endereco}{order.numero ? `, ${order.numero}` : ""}{order.complemento ? ` - ${order.complemento}` : ""}
                                   </p>
                                 </div>
                               )}
                               {order.bairro && (
                                 <div>
-                                  <span className="text-slate-400 font-semibold">Bairro</span>
-                                  <p className="text-slate-800 dark:text-slate-100">{order.bairro}</p>
+                                  <span className="text-slate-400 font-semibold text-[11px]">Bairro</span>
+                                  <p className="text-slate-800 dark:text-slate-100 text-sm">{order.bairro}</p>
                                 </div>
                               )}
                               {(order.municipio || order.uf) && (
                                 <div>
-                                  <span className="text-slate-400 font-semibold">Município/UF</span>
-                                  <p className="text-slate-800 dark:text-slate-100">{order.municipio}{order.uf ? `/${order.uf}` : ""}</p>
+                                  <span className="text-slate-400 font-semibold text-[11px]">Município/UF</span>
+                                  <p className="text-slate-800 dark:text-slate-100 text-sm">{order.municipio}{order.uf ? `/${order.uf}` : ""}</p>
                                 </div>
                               )}
                             </div>
@@ -617,27 +617,27 @@ export default function VitoriaOrders() {
                         {/* Section: Contato */}
                         {(order.telefone1 || order.telefone2 || order.emailContato) && (
                           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
-                              <Phone className="w-3 h-3" />
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-2">
+                              <Phone className="w-3.5 h-3.5" />
                               Contato
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-xs">
                               {order.telefone1 && (
                                 <div>
-                                  <span className="text-slate-400 font-semibold">Telefone 1</span>
-                                  <p className="text-slate-800 dark:text-slate-100">{order.telefone1}</p>
+                                  <span className="text-slate-400 font-semibold text-[11px]">Telefone 1</span>
+                                  <p className="text-slate-800 dark:text-slate-100 text-sm">{order.telefone1}</p>
                                 </div>
                               )}
                               {order.telefone2 && (
                                 <div>
-                                  <span className="text-slate-400 font-semibold">Telefone 2</span>
-                                  <p className="text-slate-800 dark:text-slate-100">{order.telefone2}</p>
+                                  <span className="text-slate-400 font-semibold text-[11px]">Telefone 2</span>
+                                  <p className="text-slate-800 dark:text-slate-100 text-sm">{order.telefone2}</p>
                                 </div>
                               )}
                               {order.emailContato && (
                                 <div>
-                                  <span className="text-slate-400 font-semibold">Email</span>
-                                  <p className="text-slate-800 dark:text-slate-100 truncate">{order.emailContato}</p>
+                                  <span className="text-slate-400 font-semibold text-[11px]">Email</span>
+                                  <p className="text-slate-800 dark:text-slate-100 text-sm truncate">{order.emailContato}</p>
                                 </div>
                               )}
                             </div>
@@ -648,10 +648,10 @@ export default function VitoriaOrders() {
                         {/* Dados Fiscais */}
                         {(order.regimeTributario || order.inscricaoMunicipal || order.inscricaoSuframa || order.situacaoFiscalEspecial || order.cnaeFiscal || order.emailNfe || order.website) && (
                           <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
-                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1 mb-2">
+                            <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1 mb-2">
                               📋 Dados Fiscais
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-xs">
                               {order.regimeTributario && (<div><span className="text-slate-400 font-semibold">Regime Tributário</span><p className="text-slate-800 dark:text-slate-100">{order.regimeTributario}</p></div>)}
                               {order.inscricaoMunicipal && (<div><span className="text-slate-400 font-semibold">Inscrição Municipal</span><p className="text-slate-800 dark:text-slate-100">{order.inscricaoMunicipal}</p></div>)}
                               {order.inscricaoSuframa && (<div><span className="text-slate-400 font-semibold">SUFRAMA</span><p className="text-slate-800 dark:text-slate-100">{order.inscricaoSuframa}</p></div>)}

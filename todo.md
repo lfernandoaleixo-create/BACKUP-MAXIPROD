@@ -5559,3 +5559,9 @@
 - [x] Adicionar botão "Consultar CNPJ" no formulário de cadastro de cliente (Gestão Comercial)
 - [x] Auto-preencher campos do formulário com dados retornados da API
 - [x] Determinar tipoContribuinte automaticamente (Contribuinte/Não contribuinte/Isento)
+
+## Aumentar fonte nos Pedidos de Venda
+- [x] Aumentar fonte dos itens do pedido (nome do produto e qtd x preço)
+- [x] Aumentar fonte dos dados do cliente (Razão Social, Nome Fantasia, CNPJ, Regime Tributário)
+- [x] Aumentar fonte do endereço (CEP, Endereço, Bairro, Município/UF)
+- [x] Mostrar código do produto antes da descrição nos itens do pedido (ex: 00018 - ESPETO DE BAMBU...)
