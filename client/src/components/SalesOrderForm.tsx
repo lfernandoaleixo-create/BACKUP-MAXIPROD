@@ -781,7 +781,7 @@ const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
 
 async function consultaCnpjClientSide(cnpj: string) {
   const cleanCnpj = cnpj.replace(/\D/g, "");
-  if (cleanCnpj.length !== 14) return { success: false, error: "CNPJ inv\u00e1lido" };
+  if (cleanCnpj.length !== 14) return { success: false, error: "CNPJ inválido" };
 
   // Consultar Receita Federal (RF) e Sintegra (ST) em paralelo
   const [rfRes, stRes] = await Promise.allSettled([
@@ -793,11 +793,11 @@ async function consultaCnpjClientSide(cnpj: string) {
   const stData = stRes.status === "fulfilled" ? stRes.value : null;
 
   if (!rfData || rfData.code !== "0") {
-    return { success: false, error: rfData?.message || "Erro na consulta. Verifique se o CNPJ est\u00e1 correto." };
+    return { success: false, error: rfData?.message || "Erro na consulta. Verifique se o CNPJ está correto." };
   }
 
   // Determinar tipo contribuinte
-  let tipoContribuinte = "N\u00e3o contribuinte";
+  let tipoContribuinte = "Não contribuinte";
   if (stData && stData.code === "0") {
     if (stData.contribuinte_icms === true) tipoContribuinte = "Contribuinte";
     else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") tipoContribuinte = "Isento";
@@ -824,40 +824,113 @@ async function consultaCnpjClientSide(cnpj: string) {
   };
 }
 
+async function consultaCpfClientSide(cpf: string, dataNascimento: string) {
+  const cleanCpf = cpf.replace(/\D/g, "");
+  const cleanDt = dataNascimento.replace(/\D/g, "");
+  if (cleanCpf.length !== 11) return { success: false, error: "CPF inválido" };
+  if (cleanDt.length !== 8) return { success: false, error: "Data de nascimento inválida (use dd/mm/aaaa)" };
+
+  const res = await fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cpf=${cleanCpf}&data-nascimento=${cleanDt}&plugin=CPF`);
+  const cpfData = await res.json();
+
+  if (!cpfData || cpfData.code !== "0") {
+    if (cpfData?.code === "9") return { success: false, error: "Data de nascimento divergente da Receita Federal." };
+    return { success: false, error: cpfData?.message || "CPF não encontrado na Receita Federal." };
+  }
+
+  return {
+    success: true,
+    razaoSocial: cpfData.nome || "",
+    nomeFantasia: "",
+    inscricaoEstadual: "",
+    tipoContribuinte: "Não contribuinte", // Pessoa física = sempre não contribuinte
+    regimeTributacao: "",
+    cnaePrincipal: "",
+    email: "",
+    telefone: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    municipio: "",
+    uf: cpfData.uf && cpfData.uf.length > 0 ? cpfData.uf[0] : "",
+  };
+}
+
 function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: any) => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [dataNascimento, setDataNascimento] = useState("");
 
-  const cleanCnpj = cnpj.replace(/\D/g, "");
+  const cleanDoc = cnpj.replace(/\D/g, "");
+  const isCpf = cleanDoc.length === 11;
+  const isCnpj = cleanDoc.length >= 14;
 
   const handleLookup = async () => {
-    if (cleanCnpj.length < 14) return;
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-    try {
-      const result = await consultaCnpjClientSide(cleanCnpj);
-      if (result.success) {
-        onResult(result);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        setError(result.error || "Erro na consulta");
+    if (isCnpj) {
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
+      try {
+        const result = await consultaCnpjClientSide(cleanDoc);
+        if (result.success) {
+          onResult(result);
+          setSuccess(true);
+          setTimeout(() => setSuccess(false), 3000);
+        } else {
+          setError(result.error || "Erro na consulta");
+        }
+      } catch (e: any) {
+        setError(e.message || "Erro de conexão com SintegraWS");
+      } finally {
+        setLoading(false);
       }
-    } catch (e: any) {
-      setError(e.message || "Erro de conex\u00e3o com SintegraWS");
-    } finally {
-      setLoading(false);
+    } else if (isCpf) {
+      const cleanDt = dataNascimento.replace(/\D/g, "");
+      if (cleanDt.length !== 8) {
+        setError("Preencha a data de nascimento para consultar CPF.");
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
+      try {
+        const result = await consultaCpfClientSide(cleanDoc, cleanDt);
+        if (result.success) {
+          onResult(result);
+          setSuccess(true);
+          setTimeout(() => setSuccess(false), 3000);
+        } else {
+          setError(result.error || "Erro na consulta");
+        }
+      } catch (e: any) {
+        setError(e.message || "Erro de conexão com SintegraWS");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   return (
     <div className="mt-1.5">
+      {/* Campo Data de Nascimento - aparece quando CPF */}
+      {isCpf && (
+        <div className="mb-1.5">
+          <label className="block text-[9px] font-medium text-amber-600 mb-0.5">Data de Nascimento (para consultar CPF)</label>
+          <input
+            type="date"
+            value={dataNascimento}
+            onChange={(e) => { setDataNascimento(e.target.value); setError(null); }}
+            className="w-full px-2 py-1.5 text-xs border border-amber-300 rounded-lg bg-amber-50 text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          />
+        </div>
+      )}
       <button
         type="button"
         onClick={handleLookup}
-        disabled={loading || cleanCnpj.length < 14}
+        disabled={loading || (!isCnpj && !isCpf)}
         className={`w-full px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all ${
           success
             ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
@@ -867,14 +940,14 @@ function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: a
         {loading ? (
           <span className="flex items-center justify-center gap-1.5">
             <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-            Consultando Receita Federal...
+            {isCpf ? "Consultando CPF..." : "Consultando Receita Federal..."}
           </span>
         ) : success ? (
           <span className="flex items-center justify-center gap-1">
             <CheckCircle className="w-3 h-3" /> Dados preenchidos!
           </span>
         ) : (
-          "🔍 Consultar CNPJ (Receita Federal + Sintegra)"
+          isCpf ? "🔍 Consultar CPF (Receita Federal)" : "🔍 Consultar CNPJ (Receita Federal + Sintegra)"
         )}
       </button>
       {error && (

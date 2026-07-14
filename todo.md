@@ -5575,3 +5575,8 @@
 - [x] Adicionar confirmação "Consultar Serasa?" com botões Sim/Não antes de executar
 - [x] Exigir senha (nome do operador) para registrar quem solicitou nas métricas
 - [x] Opção de apagar consulta do histórico quando senha for "Guilherme" (modo teste)
+
+## SintegraWS: Suporte a CPF + Regra Contribuinte ICMS
+- [x] Adicionar campo de data de nascimento quando CPF (11 dígitos) é digitado no cadastro de cliente
+- [x] Disparar consulta SintegraWS com plugin=CPF quando data de nascimento for preenchida
+- [x] Garantir que a regra contribuinte/não contribuinte ICMS funciona para CPF e CNPJ

@@ -2514,6 +2514,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
   const { operator } = useOperator();
   const isGuilherme = operator?.name === "Guilherme";
   const [cnpjCpf, setCnpjCpf] = useState("");
+  const [dataNascimento, setDataNascimento] = useState(""); // ddmmaaaa para consulta CPF
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
@@ -2656,12 +2657,16 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
     }
   }, [editClient]);
 
-  // Auto-consulta CNPJ via SintegraWS (client-side) quando 14 dígitos são digitados
-  const isCnpj = cnpjCpf.replace(/\D/g, "").length >= 14;
+  // Auto-consulta CNPJ/CPF via SintegraWS (client-side)
+  const cleanDoc = cnpjCpf.replace(/\D/g, "");
+  const isCnpj = cleanDoc.length >= 14;
+  const isCpf = cleanDoc.length === 11;
   const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
   const [cnpjLookupDone, setCnpjLookupDone] = useState(false);
+  const [cpfLookupError, setCpfLookupError] = useState<string | null>(null);
   const lastLookedUpCnpj = useRef("");
 
+  // CNPJ: consulta automática quando 14 dígitos
   useEffect(() => {
     const cleanCnpj = cnpjCpf.replace(/\D/g, "");
     if (cleanCnpj.length === 14 && cleanCnpj !== lastLookedUpCnpj.current && !editMode) {
@@ -2692,7 +2697,6 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         }
         if (stData && stData.code === "0") {
           if (stData.inscricao_estadual) setInscricaoEstadual(stData.inscricao_estadual);
-          // Determinar tipo contribuinte
           if (stData.contribuinte_icms === true) {
             setTipoContribuinte("Contribuinte");
           } else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") {
@@ -2700,17 +2704,54 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           } else if (stData.inscricao_estadual && stData.situacao_ie === "Ativo") {
             setTipoContribuinte("Contribuinte");
           } else {
-            setTipoContribuinte("N\u00e3o contribuinte");
+            setTipoContribuinte("Não contribuinte");
           }
           if (stData.regime_tributacao && !regimeTributario) setRegimeTributario(stData.regime_tributacao);
         } else {
-          setTipoContribuinte("N\u00e3o contribuinte");
+          setTipoContribuinte("Não contribuinte");
         }
         setCnpjLookupDone(true);
         setTimeout(() => setCnpjLookupDone(false), 3000);
       }).catch(() => {}).finally(() => setCnpjLookupLoading(false));
     }
   }, [cnpjCpf]);
+
+  // CPF: consulta quando data de nascimento é preenchida (8 dígitos)
+  const lastLookedUpCpf = useRef("");
+  useEffect(() => {
+    const cleanCpf = cnpjCpf.replace(/\D/g, "");
+    const cleanDt = dataNascimento.replace(/\D/g, "");
+    const lookupKey = `${cleanCpf}_${cleanDt}`;
+    if (cleanCpf.length === 11 && cleanDt.length === 8 && lookupKey !== lastLookedUpCpf.current && !editMode) {
+      lastLookedUpCpf.current = lookupKey;
+      setCnpjLookupLoading(true);
+      setCnpjLookupDone(false);
+      setCpfLookupError(null);
+      const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
+      const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+      fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cpf=${cleanCpf}&data-nascimento=${cleanDt}&plugin=CPF`)
+        .then(r => r.json())
+        .then((cpfData) => {
+          if (cpfData && cpfData.code === "0") {
+            if (cpfData.nome && !razaoSocial) setRazaoSocial(cpfData.nome);
+            // CPF é pessoa física - sempre Não contribuinte de ICMS
+            setTipoContribuinte("Não contribuinte");
+            // UF pode vir no array
+            if (cpfData.uf && cpfData.uf.length > 0 && !uf) setUf(cpfData.uf[0]);
+            setCnpjLookupDone(true);
+            setTimeout(() => setCnpjLookupDone(false), 3000);
+          } else if (cpfData && cpfData.code === "9") {
+            setCpfLookupError("Data de nascimento divergente da Receita Federal.");
+          } else {
+            setCpfLookupError(cpfData?.message || "CPF não encontrado na Receita Federal.");
+          }
+        })
+        .catch(() => {
+          setCpfLookupError("Erro de conexão com SintegraWS.");
+        })
+        .finally(() => setCnpjLookupLoading(false));
+    }
+  }, [cnpjCpf, dataNascimento]);
 
   const handleSave = async () => {
     // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
@@ -3040,11 +3081,11 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <FormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" required />
+            <FormInput label="CNPJ/CPF" value={cnpjCpf} onChange={(v) => { setCnpjCpf(v); setCpfLookupError(null); }} placeholder="00.000.000/0001-00" required />
             {cnpjLookupLoading && (
               <p className="mt-1 text-[9px] text-teal-600 flex items-center gap-1">
                 <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                Consultando Receita Federal + Sintegra...
+                {isCpf ? "Consultando CPF na Receita Federal..." : "Consultando Receita Federal + Sintegra..."}
               </p>
             )}
             {cnpjLookupDone && (
@@ -3052,8 +3093,36 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
                 <CheckCircle2 className="w-3 h-3" /> Dados preenchidos automaticamente!
               </p>
             )}
+            {cpfLookupError && (
+              <p className="mt-1 text-[9px] text-red-600 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> {cpfLookupError}
+              </p>
+            )}
           </div>
-          <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
+          {/* Campo Data de Nascimento - aparece quando CPF (11 dígitos) */}
+          {isCpf && !editMode && (
+            <div>
+              <label className="block text-[10px] font-medium text-slate-500 mb-1">Data de Nascimento <span className="text-red-500">*</span></label>
+              <input
+                type="date"
+                value={dataNascimento.length === 8 ? `${dataNascimento.slice(4,8)}-${dataNascimento.slice(2,4)}-${dataNascimento.slice(0,2)}` : ""}
+                onChange={(e) => {
+                  const val = e.target.value; // yyyy-mm-dd
+                  if (val) {
+                    const [y, m, d] = val.split("-");
+                    setDataNascimento(`${d}${m}${y}`); // ddmmaaaa
+                  } else {
+                    setDataNascimento("");
+                  }
+                }}
+                className="w-full px-3 py-2 border border-amber-300 dark:border-amber-600 rounded-lg text-xs bg-amber-50 dark:bg-amber-900/20 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <p className="mt-0.5 text-[9px] text-amber-600">Necessário para consultar CPF na Receita Federal</p>
+            </div>
+          )}
+          {!isCpf && (
+            <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
+          )}
         </div>
 
         {/* Contribuinte determinado automaticamente pela IE - DESATIVADO temporariamente */}
