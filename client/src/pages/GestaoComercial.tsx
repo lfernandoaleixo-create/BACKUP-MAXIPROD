@@ -279,10 +279,10 @@ export default function GestaoComercial() {
             {/* Aprovações de Pedidos - para Renato/Juvenal que precisam aprovar pedidos dos seus vendedores */}
             {isGestorVendedor && gestorNameForHub && (
               <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(gestorNameForHub)}`}>
-                <div className={`bg-white dark:bg-slate-800 rounded-xl border-2 shadow-sm p-6 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden ${
+                <div className={`rounded-xl border-2 shadow-sm p-6 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden ${
                   pendingCount > 0
-                    ? "border-red-400 dark:border-red-500 animate-pulse shadow-red-100 dark:shadow-red-900/20"
-                    : "border-orange-200 dark:border-orange-700 hover:border-orange-400"
+                    ? "border-red-400 dark:border-red-500 shadow-lg shadow-red-200 dark:shadow-red-900/40 animate-[blink-approval_2s_ease-in-out_infinite]"
+                    : "bg-white dark:bg-slate-800 border-orange-200 dark:border-orange-700 hover:border-orange-400"
                 }`}>
                   {pendingCount > 0 && (
                     <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-bounce">

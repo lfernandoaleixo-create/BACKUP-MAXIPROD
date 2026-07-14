@@ -5472,3 +5472,7 @@
 - [x] Diário nunca é alterado/deletado por sincronizações - apenas adiciona novos registros (verificado: nenhum sync toca nas tabelas diary)
 - [x] Diário apenas puxa e registra atividades diárias às 17:15 (heartbeat job confirmado: 20:15 UTC = 17:15 BRT)
 - [x] Garantir que nenhum código de sync toque nos registros do diário (deleteCollectionAction tem 3 verificações de proteção)
+
+## Feature: Card "Aprovações de Pedidos" piscar quando há pendentes
+- [x] Card pisca colorido enquanto houver pedidos pendentes para aprovar (animação blink-approval com cores alternando)
+- [x] Para de piscar quando todos foram aprovados ou recusados (condicional no pendingCount)

@@ -658,3 +658,27 @@
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
+
+/* Colorful blinking animation for approval card when there are pending orders */
+@keyframes blink-approval {
+  0%, 100% {
+    background-color: white;
+    border-color: #f87171;
+    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.3);
+  }
+  25% {
+    background-color: #fef3c7;
+    border-color: #f59e0b;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    background-color: #fce7f3;
+    border-color: #ec4899;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+  }
+  75% {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+  }
+}
