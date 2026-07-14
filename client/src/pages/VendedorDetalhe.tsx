@@ -5297,6 +5297,18 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 </div>
               )}
             </div>
+
+            {/* Consulta Serasa - Aparece imediatamente após selecionar o cliente */}
+            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && marginOperator?.name && (
+              <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-xl">
+                <SerasaConsulta
+                  documento={cnpjCpf}
+                  clienteNome={razaoSocial || nomeFantasia}
+                  operadorName={marginOperator.name}
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={(v) => { setCnpjCpf(v); setShowClientValidationError(false); }} placeholder="00.000.000/0001-00" required error={showClientValidationError} />
               <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" />
@@ -5539,17 +5551,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 </div>
               );
             })()}
-
-            {/* Consulta Serasa - Botão protegido por senha */}
-            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && marginOperator?.name && (
-              <div className="pt-2">
-                <SerasaConsulta
-                  documento={cnpjCpf}
-                  clienteNome={razaoSocial || nomeFantasia}
-                  operadorName={marginOperator.name}
-                />
-              </div>
-            )}
 
             <div className="flex justify-end pt-2">
               <button
