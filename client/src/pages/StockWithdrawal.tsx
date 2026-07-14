@@ -64,13 +64,7 @@ export default function StockWithdrawal() {
             <Plus className="w-4 h-4" /> Nova Solicitação
           </button>
         )}
-        <button
-          onClick={() => setActiveView("pendentes")}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === "pendentes" ? "bg-amber-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}
-        >
-          <Clock className="w-4 h-4" /> Pendentes
-          <PendingBadge />
-        </button>
+        <PendentesButton activeView={activeView} onClick={() => setActiveView("pendentes")} />
         <button
           onClick={() => setActiveView("historico")}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === "historico" ? "bg-slate-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}
@@ -97,7 +91,36 @@ export default function StockWithdrawal() {
   );
 }
 
-/* ─── Badge de pendências ─── */
+/* ─── Botão Pendentes com alerta piscante ─── */
+function PendentesButton({ activeView, onClick }: { activeView: string; onClick: () => void }) {
+  const { data } = trpc.stockWithdrawal.countPending.useQuery(undefined, { refetchInterval: 15000 });
+  const hasPending = (data?.pending ?? 0) > 0;
+  const isActive = activeView === "pendentes";
+  // Pisca quando há pendentes E o usuário NÃO está na aba pendentes (ou seja, ainda não visualizou)
+  const shouldBlink = hasPending && !isActive;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        isActive
+          ? "bg-amber-600 text-white shadow-sm"
+          : shouldBlink
+            ? "bg-amber-100 text-amber-800 border border-amber-300 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+      }`}
+    >
+      <Clock className="w-4 h-4" /> Pendentes
+      {hasPending && (
+        <span className={`ml-1 px-1.5 py-0.5 text-xs font-bold rounded-full min-w-[18px] text-center ${isActive ? "bg-white text-amber-700" : "bg-red-500 text-white"} ${shouldBlink ? "animate-bounce" : ""}`}>
+          {data?.pending}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/* ─── Badge de pendências (legacy, mantido para compatibilidade) ─── */
 function PendingBadge() {
   const { data } = trpc.stockWithdrawal.countPending.useQuery(undefined, { refetchInterval: 30000 });
   if (!data || data.pending === 0) return null;

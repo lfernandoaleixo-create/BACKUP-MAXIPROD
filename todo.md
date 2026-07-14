@@ -5483,3 +5483,4 @@
 - [x] Quando houver análise pendente, aba Produção deve piscar alerta para a Larissa saber
 - [x] Card "Movimentação de Estoque" na Produção também deve piscar quando houver análise pendente
 - [x] Na lista de pendentes da Movimentação de Estoque, deixar claro se é BAIXA ou ACRÉSCIMO (tipo da solicitação)
+- [x] Botão "Pendentes" na Movimentação de Estoque deve piscar quando houver pendências, parar ao Larissa visualizar/executar ação
