@@ -5541,12 +5541,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             })()}
 
             {/* Consulta Serasa - Botão protegido por senha */}
-            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && (
+            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && marginOperator?.name && (
               <div className="pt-2">
                 <SerasaConsulta
                   documento={cnpjCpf}
                   clienteNome={razaoSocial || nomeFantasia}
-                  operadorName={sellerName}
+                  operadorName={marginOperator.name}
                 />
               </div>
             )}

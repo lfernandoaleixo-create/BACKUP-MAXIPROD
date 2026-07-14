@@ -16,7 +16,7 @@ import { sql, eq, desc, and } from "drizzle-orm";
 import { consultarSerasa } from "./serasaApi";
 
 // Operadores autorizados a consultar Serasa (por enquanto apenas gestores)
-const AUTHORIZED_NAMES = ["Fernando", "Guilherme", "Bruno"];
+const AUTHORIZED_NAMES = ["Fernando", "Guilherme", "Bruno", "Vitória"];
 
 export const serasaRouter = router({
   /**

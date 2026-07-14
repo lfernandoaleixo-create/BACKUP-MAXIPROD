@@ -79,8 +79,89 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
     });
   };
 
+  // Password dialog JSX (shared between compact and full modes)
+  const passwordDialogJSX = showPasswordDialog ? (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]" onClick={() => setShowPasswordDialog(false)}>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Confirmar Consulta</h3>
+              <p className="text-[10px] text-slate-500">Esta consulta é paga e afeta o score</p>
+            </div>
+          </div>
+          <button onClick={() => setShowPasswordDialog(false)} className="text-slate-400 hover:text-slate-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="text-[11px] text-amber-800 dark:text-amber-200">
+              <p className="font-bold">Atenção!</p>
+              <p>Consultas ao Serasa são <strong>pagas</strong> e afetam o <strong>score do cliente</strong>. Confirme digitando sua senha.</p>
+            </div>
+          </div>
+        </div>
+        <div className="mb-4">
+          <p className="text-xs text-slate-600 dark:text-slate-300 mb-1">
+            Cliente: <strong>{clienteNome || documento}</strong>
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Documento: <strong>{documento}</strong>
+          </p>
+          <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+            Sua senha ({operadorName}):
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleConsultar()}
+            placeholder="Digite sua senha..."
+            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            autoFocus
+          />
+        </div>
+        {error && (
+          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-xs text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowPasswordDialog(false)}
+            className="flex-1 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConsultar}
+            disabled={consultarMutation.isPending || !password.trim()}
+            className="flex-1 px-3 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 rounded-lg transition-colors flex items-center justify-center gap-1"
+          >
+            {consultarMutation.isPending ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Consultando...
+              </>
+            ) : (
+              <>
+                <FileSearch className="w-3.5 h-3.5" />
+                Consultar
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // Se não autorizado, não mostra nada (ou mostra apenas última consulta no modo compact)
-  if (!authCheck.data?.authorized && !compact) {
+  if (!authCheck.data?.authorized) {
     // Mostra apenas a info de última consulta se existir
     if (ultimaConsulta.data?.found) {
       return (
@@ -95,28 +176,51 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
         </div>
       );
     }
-    return null;
-  }
-
-  // Modo compacto (para Vitória) - mostra apenas última consulta
-  if (compact) {
-    if (ultimaConsulta.data?.found) {
+    if (compact) {
       return (
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <Clock className="w-3 h-3" />
-          <span>Última consulta Serasa: <strong className={ultimaConsulta.data.consulta?.diasDesdeConsulta && ultimaConsulta.data.consulta.diasDesdeConsulta > 30 ? "text-amber-600" : ""}>{ultimaConsulta.data.consulta?.tempoTexto}</strong></span>
-          {ultimaConsulta.data.consulta?.aprovado ? (
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-          ) : (
-            <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-          )}
+        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+          <AlertTriangle className="w-3 h-3" />
+          <span>Nenhuma consulta Serasa realizada para este cliente</span>
         </div>
       );
     }
+    return null;
+  }
+
+  // Modo compacto - mostra última consulta + botão menor
+  if (compact) {
     return (
-      <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-        <AlertTriangle className="w-3 h-3" />
-        <span>Nenhuma consulta Serasa realizada para este cliente</span>
+      <div className="space-y-2">
+        {ultimaConsulta.data?.found ? (
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <Clock className="w-3 h-3" />
+            <span>Última consulta Serasa: <strong className={ultimaConsulta.data.consulta?.diasDesdeConsulta && ultimaConsulta.data.consulta.diasDesdeConsulta > 30 ? "text-amber-600" : ""}>{ultimaConsulta.data.consulta?.tempoTexto}</strong></span>
+            {ultimaConsulta.data.consulta?.aprovado ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="w-3 h-3" />
+            <span>Nenhuma consulta Serasa realizada para este cliente</span>
+          </div>
+        )}
+        {!showResult && (
+          <button
+            onClick={() => { setShowPasswordDialog(true); setError(null); setPassword(""); }}
+            disabled={!documento || documento.length < 11 || consultarMutation.isPending}
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm"
+          >
+            <Shield className="w-3 h-3" />
+            Consultar Serasa
+          </button>
+        )}
+        {showPasswordDialog && passwordDialogJSX}
+        {showResult && resultData && (
+          <SerasaResultCard resultado={resultData} onClose={() => setShowResult(false)} />
+        )}
       </div>
     );
   }
@@ -144,98 +248,25 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
       {!showResult && (
         <button
           onClick={() => { setShowPasswordDialog(true); setError(null); setPassword(""); }}
-          disabled={!documento || documento.length < 11}
+          disabled={!documento || documento.length < 11 || consultarMutation.isPending}
           className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
         >
-          <Shield className="w-4 h-4" />
-          Consultar Serasa
+          {consultarMutation.isPending ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Consultando...
+            </>
+          ) : (
+            <>
+              <Shield className="w-4 h-4" />
+              Consultar Serasa
+            </>
+          )}
         </button>
       )}
 
       {/* Dialog de Senha */}
-      {showPasswordDialog && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]" onClick={() => setShowPasswordDialog(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Confirmar Consulta</h3>
-                  <p className="text-[10px] text-slate-500">Esta consulta é paga e afeta o score</p>
-                </div>
-              </div>
-              <button onClick={() => setShowPasswordDialog(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="text-[11px] text-amber-800 dark:text-amber-200">
-                  <p className="font-bold">Atenção!</p>
-                  <p>Consultas ao Serasa são <strong>pagas</strong> e afetam o <strong>score do cliente</strong>. Confirme digitando sua senha.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-xs text-slate-600 dark:text-slate-300 mb-1">
-                Cliente: <strong>{clienteNome || documento}</strong>
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                Documento: <strong>{documento}</strong>
-              </p>
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
-                Sua senha ({operadorName}):
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleConsultar()}
-                placeholder="Digite sua senha..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                autoFocus
-              />
-            </div>
-
-            {error && (
-              <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-xs text-red-700 dark:text-red-300">{error}</p>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowPasswordDialog(false)}
-                className="flex-1 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConsultar}
-                disabled={consultarMutation.isPending || !password.trim()}
-                className="flex-1 px-3 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 rounded-lg transition-colors flex items-center justify-center gap-1"
-              >
-                {consultarMutation.isPending ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Consultando...
-                  </>
-                ) : (
-                  <>
-                    <FileSearch className="w-3.5 h-3.5" />
-                    Consultar
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showPasswordDialog && passwordDialogJSX}
 
       {/* Resultado da Consulta */}
       {showResult && resultData && (
@@ -514,6 +545,7 @@ function SerasaResultCard({ resultado, onClose }: { resultado: any; onClose: () 
  */
 export function SerasaMetricas() {
   const [periodo, setPeriodo] = useState<"7d" | "30d" | "90d" | "all">("30d");
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | "pendencias" | "aprovadas">("todos");
   const metricas = trpc.serasa.metricas.useQuery({ periodo });
 
   if (metricas.isLoading) {
@@ -530,22 +562,40 @@ export function SerasaMetricas() {
 
   return (
     <div className="space-y-4">
-      {/* Filtro de período */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-500 dark:text-slate-400">Período:</span>
-        {(["7d", "30d", "90d", "all"] as const).map(p => (
-          <button
-            key={p}
-            onClick={() => setPeriodo(p)}
-            className={`px-2.5 py-1 text-[10px] font-medium rounded-full transition-colors ${
-              periodo === p 
-                ? "bg-red-600 text-white" 
-                : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-            }`}
-          >
-            {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
-          </button>
-        ))}
+      {/* Filtros */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Período:</span>
+          {(["7d", "30d", "90d", "all"] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriodo(p)}
+              className={`px-2.5 py-1 text-[10px] font-medium rounded-full transition-colors ${
+                periodo === p 
+                  ? "bg-red-600 text-white" 
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+              }`}
+            >
+              {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Status:</span>
+          {(["todos", "pendencias", "aprovadas"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setFiltroStatus(s)}
+              className={`px-2.5 py-1 text-[10px] font-medium rounded-full transition-colors ${
+                filtroStatus === s 
+                  ? s === "pendencias" ? "bg-red-600 text-white" : s === "aprovadas" ? "bg-emerald-600 text-white" : "bg-slate-600 text-white"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+              }`}
+            >
+              {s === "todos" ? "Todos" : s === "pendencias" ? "Com Pendências" : "Aprovadas"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Totais */}
@@ -586,9 +636,22 @@ export function SerasaMetricas() {
       {/* Últimas consultas */}
       {data.ultimasConsultas.length > 0 && (
         <div className="bg-white dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-3">Últimas Consultas</h4>
+          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-3">
+            Últimas Consultas
+            {filtroStatus !== "todos" && (
+              <span className={`ml-2 text-[9px] font-normal px-1.5 py-0.5 rounded-full ${filtroStatus === "pendencias" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"}`}>
+                Filtro: {filtroStatus === "pendencias" ? "Com Pendências" : "Aprovadas"}
+              </span>
+            )}
+          </h4>
           <div className="space-y-1.5">
-            {data.ultimasConsultas.map((c: any) => (
+            {data.ultimasConsultas
+              .filter((c: any) => {
+                if (filtroStatus === "pendencias") return !c.aprovado;
+                if (filtroStatus === "aprovadas") return c.aprovado;
+                return true;
+              })
+              .map((c: any) => (
               <div key={c.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2">
                   {c.aprovado ? (

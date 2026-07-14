@@ -5509,3 +5509,7 @@
 - [x] Serasa API: restringir acesso ao botão apenas para Fernando, Guilherme e Bruno
 - [x] Serasa API: mostrar "última consulta feita há X dias" para Vitória quando vendedor não consultar
 - [x] Serasa API: métricas no painel dos gestores (quantas consultas cada vendedor fez)
+- [x] Serasa: corrigir visibilidade do botão (não está aparecendo para o usuário)
+- [x] Serasa: adicionar animação de carregamento no botão enquanto API é consultada
+- [x] Serasa: disponibilizar botão "Consultar Serasa" também para Vitória
+- [x] Serasa: adicionar filtro nas métricas dos gestores para visualizar consultas com pendências
