@@ -146,14 +146,10 @@ export const stockWithdrawalRouter = router({
         lte(stockWithdrawalRequests.dataAprovacao, twentyFourHoursAgo)
       ));
 
-    // Itens aprovados ou recusados nas últimas 2h (para Maria/Erica saberem que houve ação)
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    // Itens aprovados (aguardando baixa/acréscimo no Maxiprod) - para de piscar quando Larissa conclui
     const [recentlyActionedResult] = await db.select({ count: count() })
       .from(stockWithdrawalRequests)
-      .where(and(
-        inArray(stockWithdrawalRequests.status, ["aprovada", "recusada"]),
-        gte(stockWithdrawalRequests.dataAprovacao, twoHoursAgo)
-      ));
+      .where(eq(stockWithdrawalRequests.status, "aprovada"));
 
     return {
       pending: pendingResult?.count || 0,

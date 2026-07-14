@@ -5486,3 +5486,5 @@
 - [x] Botão "Pendentes" na Movimentação de Estoque deve piscar quando houver pendências, parar ao Larissa visualizar/executar ação
 - [x] Aba Produção + botão Movimentação pisca para todos com acesso (Bruno, Fernando, Guilherme, Larissa, Maria, Erica) quando há pendências
 - [x] Para Maria e Erica: piscar quando Larissa aprovar/recusar (para ciência do resultado)
+- [x] Piscar para Bruno, Fernando e Guilherme também quando Larissa aprovar/recusar (não só Maria/Erica)
+- [x] Parar de piscar tudo quando Larissa concluir (baixa/acréscimo feito no Maxiprod)

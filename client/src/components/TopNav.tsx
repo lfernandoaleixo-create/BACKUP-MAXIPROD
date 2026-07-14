@@ -56,15 +56,14 @@ export default function TopNav({ rightContent }: TopNavProps) {
   // Blink produção tab for all operators with access to Movimentação de Estoque
   const MOVIMENTACAO_USERS = ["Bruno", "Fernando", "Guilherme", "Larissa", "Maria", "Erica"];
   const hasMovimentacaoAccess = MOVIMENTACAO_USERS.includes(operator?.name || "");
-  const isMariOrErica = operator?.name === "Maria" || operator?.name === "Erica";
   const { data: pendingStockData } = trpc.stockWithdrawal.countPending.useQuery(undefined, {
     enabled: hasMovimentacaoAccess,
     refetchInterval: 15000,
   });
-  // Pisca para todos quando há pendentes, e também para Maria/Erica quando há ações recentes da Larissa
+  // Pisca para todos quando há pendentes OU quando há ações recentes (aprovado/recusado aguardando conclusão)
   const hasPendingStock = hasMovimentacaoAccess && (
     (pendingStockData?.pending ?? 0) > 0 ||
-    (isMariOrErica && (pendingStockData?.recentlyActioned ?? 0) > 0)
+    (pendingStockData?.recentlyActioned ?? 0) > 0
   );
 
   // Blink Gestão Comercial tab for gestores (pending approval) and Vitória (pending processing)

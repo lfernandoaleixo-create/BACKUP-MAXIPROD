@@ -93,14 +93,12 @@ export default function StockWithdrawal() {
 
 /* ─── Botão Pendentes com alerta piscante ─── */
 function PendentesButton({ activeView, onClick }: { activeView: string; onClick: () => void }) {
-  const { operator } = useOperator();
-  const isMariOrErica = operator?.name === "Maria" || operator?.name === "Erica";
   const { data } = trpc.stockWithdrawal.countPending.useQuery(undefined, { refetchInterval: 15000 });
   const pendingCount = data?.pending ?? 0;
   const recentlyActioned = data?.recentlyActioned ?? 0;
-  // Pisca para todos quando há pendentes, e para Maria/Erica quando há ações recentes
-  const hasAlert = pendingCount > 0 || (isMariOrErica && recentlyActioned > 0);
-  const badgeCount = pendingCount + (isMariOrErica ? recentlyActioned : 0);
+  // Pisca para todos quando há pendentes OU quando há ações recentes (aprovado/recusado aguardando conclusão)
+  const hasAlert = pendingCount > 0 || recentlyActioned > 0;
+  const badgeCount = pendingCount + recentlyActioned;
   const isActive = activeView === "pendentes";
   const shouldBlink = hasAlert && !isActive;
 
