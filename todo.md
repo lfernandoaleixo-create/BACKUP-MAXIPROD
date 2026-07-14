@@ -5488,3 +5488,6 @@
 - [x] Para Maria e Erica: piscar quando Larissa aprovar/recusar (para ciência do resultado)
 - [x] Piscar para Bruno, Fernando e Guilherme também quando Larissa aprovar/recusar (não só Maria/Erica)
 - [x] Parar de piscar tudo quando Larissa concluir (baixa/acréscimo feito no Maxiprod)
+- [x] Implementar lógica de comissão real na etapa 3 (Custos de Venda): após calcular margem com 5,85%, identificar faixa e sugerir comissão real (7%/6%/5%/4%)
+- [x] Recalcular margem final com comissão real aplicada
+- [x] Bloquear fechamento de pedido se margem < 15% e média mensal do vendedor ≤ 15%

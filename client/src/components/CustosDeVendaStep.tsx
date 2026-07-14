@@ -553,10 +553,24 @@ export default function CustosDeVendaStep({
           <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
             {/* Auto commission info */}
             {costsData && (costsData.comissao as any).fonte !== "manual" && (
-              <div className={`mb-2 p-2 rounded border ${(costsData.comissao as any).critico ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'}`}>
-                <p className={`text-[10px] font-medium ${(costsData.comissao as any).critico ? 'text-red-700 dark:text-red-300' : 'text-blue-700 dark:text-blue-300'}`}>
-                  {(costsData.comissao as any).critico ? (
-                    <>Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — Comissão zerada automaticamente</>
+              <div className={`mb-2 p-2 rounded border ${
+                (costsData.comissao as any).fonte === "critico_bloqueado" ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' :
+                (costsData.comissao as any).fonte === "critico_liberado" ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700' :
+                (costsData.comissao as any).critico ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' :
+                'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
+              }`}>
+                <p className={`text-[10px] font-medium ${
+                  (costsData.comissao as any).fonte === "critico_bloqueado" ? 'text-red-700 dark:text-red-300' :
+                  (costsData.comissao as any).fonte === "critico_liberado" ? 'text-amber-700 dark:text-amber-300' :
+                  (costsData.comissao as any).critico ? 'text-red-700 dark:text-red-300' :
+                  'text-blue-700 dark:text-blue-300'
+                }`}>
+                  {(costsData.comissao as any).fonte === "critico_bloqueado" ? (
+                    <>⚠️ Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — <strong>Pedido BLOQUEADO</strong>. Média mensal do vendedor: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}% (≤ 15%). Não é possível fechar este pedido.</>
+                  ) : (costsData.comissao as any).fonte === "critico_liberado" ? (
+                    <>⚠️ Margem abaixo de 15% ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%) — Comissão travada em <strong>4%</strong> (Meta 120%). Média mensal: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}% (&gt; 15%, liberado).</>
+                  ) : (costsData.comissao as any).critico ? (
+                    <>⚠️ Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — Comissão zerada automaticamente</>
                   ) : (
                     <>Comissão automática: <strong>{(costsData.comissao as any).autoPercentual}%</strong>
                     {" "}(Faixa: {(costsData.comissao as any).tier === "mostrado_alto" ? "Projetado (≥29%)" : (costsData.comissao as any).tier === "medio_alto" ? "Médio-Alto (25-29%)" : (costsData.comissao as any).tier === "medio" ? "Médio (20-25%)" : "Baixo (15-20%)"}
@@ -910,14 +924,38 @@ export default function CustosDeVendaStep({
         <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
       </div>
 
+      {/* Alerta de bloqueio */}
+      {costsData && (costsData.comissao as any).fonte === "critico_bloqueado" && (
+        <div className="p-3 bg-red-100 dark:bg-red-900/30 border-2 border-red-400 dark:border-red-600 rounded-lg animate-pulse">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div>
+              <p className="text-sm font-bold text-red-700 dark:text-red-300">Pedido Bloqueado</p>
+              <p className="text-xs text-red-600 dark:text-red-400">A margem deste pedido está abaixo de 15% e a média mensal do vendedor também está ≤ 15%. Não é possível avançar.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="flex justify-between pt-2">
         <button onClick={onBack} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
           Voltar
         </button>
         <button
-          onClick={onNext}
-          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg transition-colors"
+          onClick={() => {
+            if (costsData && (costsData.comissao as any).fonte === "critico_bloqueado") {
+              toast.error("Pedido bloqueado: margem abaixo de 15% e média mensal do vendedor ≤ 15%.");
+              return;
+            }
+            onNext();
+          }}
+          disabled={!!(costsData && (costsData.comissao as any).fonte === "critico_bloqueado")}
+          className={`px-4 py-2 text-white text-xs font-medium rounded-lg transition-colors ${
+            costsData && (costsData.comissao as any).fonte === "critico_bloqueado"
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-teal-600 hover:bg-teal-700"
+          }`}
         >
           Próximo: Revisão
         </button>

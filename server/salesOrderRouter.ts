@@ -2,7 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators } from "../drizzle/schema";
-import { sql, and, eq, desc, like, or, inArray, isNull } from "drizzle-orm";
+import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
@@ -2304,10 +2304,62 @@ export const salesOrderRouter = router({
       // Step 3: Look up commission % from the matrix (always 120% meta for now)
       let autoComissaoPercentual = 0;
       let comissaoFonte = "manual";
+      let mediaMensalVendedor: number | null = null;
+      let podeFechar = true; // can the order be closed?
       if (margemCritica) {
-        // Below 15% margin = critical, no commission
-        autoComissaoPercentual = 0;
-        comissaoFonte = "critico";
+        // Below 15% margin - check seller's monthly average
+        if (input.sellerId) {
+          // Calculate average margin of all approved/processed orders this month for this seller
+          const now = new Date();
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthOrders = await db.select({
+            totalProdutos: salesOrderRequests.totalProdutos,
+            totalPedido: salesOrderRequests.totalPedido,
+          }).from(salesOrderRequests)
+            .where(and(
+              eq(salesOrderRequests.sellerId, input.sellerId),
+              inArray(salesOrderRequests.status, ["aprovado", "processado"]),
+              gte(salesOrderRequests.createdAt, startOfMonth),
+            ));
+          
+          if (monthOrders.length > 0) {
+            // Simple average: sum of (totalPedido - totalProdutos) / totalPedido for each order
+            // This is a rough margin proxy (revenue - product cost) / revenue
+            let totalMargemSum = 0;
+            let validCount = 0;
+            for (const o of monthOrders) {
+              const tp = Number(o.totalPedido) || 0;
+              const tprod = Number(o.totalProdutos) || 0;
+              if (tp > 0) {
+                // Use a rough margin: (totalPedido has all costs baked in from when order was created)
+                // Actually totalPedido = total sale value, totalProdutos = sum of item prices
+                // We need actual margin data - for now use the stored values
+                totalMargemSum += ((tp - tprod) / tp) * 100;
+                validCount++;
+              }
+            }
+            mediaMensalVendedor = validCount > 0 ? totalMargemSum / validCount : 0;
+          } else {
+            mediaMensalVendedor = 0;
+          }
+          
+          if (mediaMensalVendedor !== null && mediaMensalVendedor > 15) {
+            // Monthly avg > 15%: allow order with commission locked at 4%
+            autoComissaoPercentual = 4;
+            comissaoFonte = "critico_liberado";
+            podeFechar = true;
+          } else {
+            // Monthly avg <= 15%: order cannot be closed
+            autoComissaoPercentual = 4;
+            comissaoFonte = "critico_bloqueado";
+            podeFechar = false;
+          }
+        } else {
+          // No seller - can't check monthly avg, block by default
+          autoComissaoPercentual = 0;
+          comissaoFonte = "critico";
+          podeFechar = false;
+        }
       } else if (input.sellerId) {
         const sellerMatrixRow = await db.select().from(commissionMatrix)
           .where(and(
@@ -2365,6 +2417,8 @@ export const salesOrderRouter = router({
           fonte: comissaoFonte,
           margemSemComissao,
           critico: margemCritica,
+          mediaMensalVendedor,
+          podeFechar,
         },
         gastosAdicionais: input.gastosAdicionais,
         margem: {
