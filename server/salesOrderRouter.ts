@@ -3062,17 +3062,15 @@ export const salesOrderRouter = router({
   /** Listar lotes disponíveis para um produto específico (com saldo > 0) */
   getAvailableLotsForItem: publicProcedure
     .input(z.object({
-      codigoItem: z.string(),
-    }))
+      codigoItem: z.string().optional(),
+    }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
       const { productionLots } = await import("../drizzle/schema");
+      // Mostrar todos os lotes com saldo > 0 (sem filtro por SKU - operador escolhe livremente)
       return db.select().from(productionLots)
-        .where(and(
-          eq(productionLots.codigoItem, input.codigoItem),
-          sql`CAST(${productionLots.saldoAtual} AS DECIMAL(18,2)) > 0`
-        ))
+        .where(sql`CAST(${productionLots.saldoAtual} AS DECIMAL(18,2)) > 0`)
         .orderBy(desc(productionLots.createdAt));
     }),
 

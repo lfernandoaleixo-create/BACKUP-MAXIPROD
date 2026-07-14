@@ -45,10 +45,10 @@ export function LotAssignmentPanel({ orderId, pedidoNumero, items, orderStatus }
     { enabled: !!(orderId || pedidoNumero) }
   );
 
-  // Fetch available lots when modal is open
+  // Fetch available lots when modal is open (todos os lotes com saldo, sem filtro por SKU)
   const availableLotsQuery = trpc.salesOrders.getAvailableLotsForItem.useQuery(
-    { codigoItem: selectedItem?.codigoItem || "" },
-    { enabled: !!selectedItem?.codigoItem && showLotModal }
+    undefined,
+    { enabled: showLotModal }
   );
 
   const assignMutation = trpc.salesOrders.assignLotsToOrder.useMutation({

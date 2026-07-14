@@ -5547,3 +5547,7 @@
 - [x] Criar procedure backend para deletar lote (com confirmação, devolve saldo se houver atribuições)
 - [x] Adicionar botão de apagar na linha do lote no Estoque de Lotes (Produção)
 - [x] Confirmação antes de apagar (modal ou dialog)
+
+## Lotes: Mostrar todos os lotes disponíveis (sem filtro por SKU)
+- [x] Backend: getAvailableLotsForItem não filtra mais por codigoItem (mostra todos com saldo > 0)
+- [x] Frontend: modal "Selecionar Lote" mostra todos os lotes disponíveis independente do produto
