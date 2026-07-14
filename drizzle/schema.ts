@@ -3045,7 +3045,8 @@ export type InsertSerasaConsulta = typeof serasaConsultas.$inferInsert;
  */
 export const orderLotAssignments = mysqlTable("order_lot_assignments", {
   id: int("id").autoincrement().primaryKey(),
-  orderId: int("order_id").notNull(), // FK sales_order_requests.id
+  orderId: int("order_id"), // FK sales_order_requests.id (nullable - pedidos internos)
+  pedidoNumero: varchar("pedido_numero", { length: 20 }), // Número do pedido Maxiprod (para faturamento)
   lotId: int("lot_id").notNull(), // FK production_lots.id
   codigoLote: varchar("codigo_lote", { length: 100 }).notNull(), // Desnormalizado para consulta rápida
   codigoItem: varchar("codigo_item", { length: 20 }).notNull(), // SKU do produto

@@ -5450,7 +5450,7 @@
 - [x] Criar tabelas no banco (lotes + movimentações de lote)
 - [x] Criar aba "Lançamento de Lote" (formulário: SKU + Nota + Caixas, gera código automático)
 - [x] Criar aba "Lotes" (Estoque de Lotes + Histórico por lote/cliente)
-- [ ] Criar seleção de lote no pedido (campo estruturado substitui texto livre) — futuro
+- [x] Criar seleção de lote no pedido (campo estruturado substitui texto livre) — implementado no Faturamento e Pedidos Internos
 
 ## Fix: Inadimplência - Recuperar status e proteger diário
 - [x] Recuperar status dos 4 clientes que foram erroneamente para "Pendente" (BR DISTRIBUIDORA, EVAFEST x2, DR. ESPETO)
@@ -5532,3 +5532,13 @@
 - [x] Alerta visual quando qtd lotes atribuída difere da qtd total do produto
 - [x] Registro de histórico: quem adicionou/removeu lotes e quando
 - [x] Indicador na lista principal de pedidos: lotes completos vs faltando
+
+## Lotes no Faturamento (Billing.tsx)
+- [x] Adicionar coluna pedido_numero na tabela order_lot_assignments (para pedidos Maxiprod)
+- [x] Tornar orderId nullable (suportar pedidos que não são internos)
+- [x] Backend: assignLotsToOrder aceita pedidoNumero como alternativa ao orderId
+- [x] Backend: getOrderLotAssignments aceita pedidoNumero como alternativa ao orderId
+- [x] LotAssignmentPanel: aceita pedidoNumero como prop alternativa
+- [x] LotAssignmentPanel: status editáveis inclui "A faturar", "Autorizado", "Faturado parcial"
+- [x] Billing.tsx: importar e renderizar LotAssignmentPanel na seção expandida do pedido
+- [x] Billing.tsx: passar pedidoNumero={order.pedido}, items mapeados, orderStatus={order.estadoItem}

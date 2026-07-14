@@ -26,22 +26,23 @@ interface OrderItem {
 }
 
 interface LotAssignmentPanelProps {
-  orderId: number;
+  orderId?: number;
+  pedidoNumero?: string;
   items: OrderItem[];
   orderStatus: string;
 }
 
-export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmentPanelProps) {
+export function LotAssignmentPanel({ orderId, pedidoNumero, items, orderStatus }: LotAssignmentPanelProps) {
   const { operator } = useOperator();
   const [showLotModal, setShowLotModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<OrderItem | null>(null);
   const [qtdInput, setQtdInput] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
-  // Fetch existing lot assignments for this order
+  // Fetch existing lot assignments for this order (by orderId or pedidoNumero)
   const assignmentsQuery = trpc.salesOrders.getOrderLotAssignments.useQuery(
-    { orderId },
-    { enabled: !!orderId }
+    { orderId, pedidoNumero },
+    { enabled: !!(orderId || pedidoNumero) }
   );
 
   // Fetch available lots when modal is open
@@ -102,8 +103,9 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
   const hasAnyAssignment = assignments.length > 0;
   const hasMismatch = hasAnyAssignment && !allItemsComplete;
 
-  // Only show for approved orders (before processing/billing)
-  if (!["aprovado", "pendente"].includes(orderStatus)) {
+  // Only show editable panel for orders that can still have lots assigned
+  const editableStatuses = ["aprovado", "pendente", "A faturar", "Autorizado", "Faturado parcial"];
+  if (!editableStatuses.includes(orderStatus)) {
     // For processed orders, just show assigned lots read-only
     if (assignments.length > 0) {
       return (
@@ -379,6 +381,7 @@ export function LotAssignmentPanel({ orderId, items, orderStatus }: LotAssignmen
                             onClick={() => {
                               assignMutation.mutate({
                                 orderId,
+                                pedidoNumero,
                                 assignments: [{
                                   lotId: lot.id,
                                   codigoLote: lot.codigo,

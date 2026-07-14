@@ -3079,7 +3079,8 @@ export const salesOrderRouter = router({
   /** Atribuir lotes a um pedido (baixa automática do saldo) */
   assignLotsToOrder: publicProcedure
     .input(z.object({
-      orderId: z.number(),
+      orderId: z.number().optional(),
+      pedidoNumero: z.string().optional(),
       assignments: z.array(z.object({
         lotId: z.number(),
         codigoLote: z.string(),
@@ -3092,6 +3093,7 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
+      if (!input.orderId && !input.pedidoNumero) throw new Error("orderId ou pedidoNumero é obrigatório");
       const { orderLotAssignments, productionLots } = await import("../drizzle/schema");
 
       // Validate all lots have enough balance first
@@ -3108,7 +3110,8 @@ export const salesOrderRouter = router({
       // Insert assignments and deduct balances
       for (const assignment of input.assignments) {
         await db.insert(orderLotAssignments).values({
-          orderId: input.orderId,
+          orderId: input.orderId || null,
+          pedidoNumero: input.pedidoNumero || null,
           lotId: assignment.lotId,
           codigoLote: assignment.codigoLote,
           codigoItem: assignment.codigoItem,
@@ -3132,13 +3135,20 @@ export const salesOrderRouter = router({
 
   /** Listar lotes atribuídos a um pedido */
   getOrderLotAssignments: publicProcedure
-    .input(z.object({ orderId: z.number() }))
+    .input(z.object({
+      orderId: z.number().optional(),
+      pedidoNumero: z.string().optional(),
+    }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
+      if (!input.orderId && !input.pedidoNumero) return [];
       const { orderLotAssignments } = await import("../drizzle/schema");
+      const condition = input.pedidoNumero
+        ? eq(orderLotAssignments.pedidoNumero, input.pedidoNumero)
+        : eq(orderLotAssignments.orderId, input.orderId!);
       return db.select().from(orderLotAssignments)
-        .where(eq(orderLotAssignments.orderId, input.orderId))
+        .where(condition)
         .orderBy(desc(orderLotAssignments.createdAt));
     }),
 

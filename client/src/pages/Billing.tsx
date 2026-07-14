@@ -79,6 +79,7 @@ import TopNav from "@/components/TopNav";
 import ProductionAcceptanceCard from "@/components/ProductionAcceptanceCard";
 import { useOperator } from "@/contexts/OperatorContext";
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
+import { LotAssignmentPanel } from "@/components/LotAssignmentPanel";
 
 /* ---- Helpers ---- */
 function formatCurrencyFull(n: number): string {
@@ -1384,6 +1385,20 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Lotes do Pedido */}
+          <div className="px-4 py-3">
+            <LotAssignmentPanel
+              pedidoNumero={order.pedido}
+              items={order.itens.map(item => ({
+                codigoItem: item.codigoItem || "",
+                descricaoItem: item.descricaoItem || item.descricao,
+                quantidade: item.quantidade,
+                unidadeMedida: item.unidadeMedida || null,
+              }))}
+              orderStatus={order.estadoItem}
+            />
           </div>
         </div>
       )}
