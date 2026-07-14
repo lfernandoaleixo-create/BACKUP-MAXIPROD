@@ -4648,6 +4648,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [realComissaoPerc, setRealComissaoPerc] = useState<number | null>(null);
   const [realFretePerc, setRealFretePerc] = useState<number | null>(null);
   const [realMargemPerc, setRealMargemPerc] = useState<number | null>(null);
+  const [realComissaoFonte, setRealComissaoFonte] = useState<string | null>(null);
+  const [realComissaoTier, setRealComissaoTier] = useState<string | null>(null);
   const [marginRecalculated, setMarginRecalculated] = useState(false);
   const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
   const currentSellerPerm = sellerPermsQuery.data?.find(
@@ -5008,6 +5010,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       entregaUf: !enderecoEntregaMesmo ? (entregaUf || undefined) : undefined,
       entregaTelefone: !enderecoEntregaMesmo ? (entregaTelefone || undefined) : undefined,
       forceSubmitBelowMin: forceSubmitBelowMin || false,
+      // Comissão
+      comissaoFonte: realComissaoFonte || undefined,
+      comissaoPercentual: realComissaoPerc || undefined,
+      comissaoTier: realComissaoTier || undefined,
+      margemPercentual: realMargemPerc || undefined,
       items: items.map(item => ({
         codigoItem: item.codigoItem,
         descricaoItem: item.descricaoItem,
@@ -6460,6 +6467,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               setRealComissaoPerc(data.comissaoPerc);
               setRealFretePerc(data.fretePerc);
               setRealMargemPerc(data.margemReal);
+              setRealComissaoFonte(data.comissaoFonte || null);
+              setRealComissaoTier(data.comissaoTier || null);
             }}
           />
         )}

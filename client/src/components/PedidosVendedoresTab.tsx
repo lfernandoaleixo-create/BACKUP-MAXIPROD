@@ -33,10 +33,12 @@ import {
 import { useOperator } from "@/contexts/OperatorContext";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
+type ExtraFilter = "comissao_travada" | null;
 
 export default function PedidosVendedoresTab() {
   const { operator } = useOperator();
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("todos");
+  const [extraFilter, setExtraFilter] = useState<ExtraFilter>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -44,7 +46,7 @@ export default function PedidosVendedoresTab() {
   const [showProcessDialog, setShowProcessDialog] = useState(false);
 
   const ordersQuery = trpc.salesOrders.listOrders.useQuery(
-    { status: statusFilter === "todos" ? undefined : statusFilter },
+    { status: statusFilter === "todos" ? undefined : statusFilter, comissaoTravada: extraFilter === "comissao_travada" ? true : undefined },
     { refetchInterval: 30000 }
   );
 
@@ -168,6 +170,28 @@ export default function PedidosVendedoresTab() {
           </div>
           <p className="text-2xl font-bold text-teal-600 mt-1">{orders.length}</p>
         </button>
+      </div>
+
+      {/* Filtro extra: Comissão Travada */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setExtraFilter(extraFilter === "comissao_travada" ? null : "comissao_travada")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+            extraFilter === "comissao_travada"
+              ? "bg-amber-100 border-amber-400 text-amber-700 shadow-sm"
+              : "bg-white border-slate-200 text-slate-600 hover:border-amber-200"
+          }`}
+        >
+          <span className="mr-1">⚠️</span> Comissão Travada 4%
+        </button>
+        {extraFilter && (
+          <button
+            onClick={() => setExtraFilter(null)}
+            className="text-xs text-slate-400 hover:text-slate-600 underline"
+          >
+            Limpar filtro
+          </button>
+        )}
       </div>
 
       {/* Lista de pedidos */}

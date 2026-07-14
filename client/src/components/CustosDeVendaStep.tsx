@@ -60,7 +60,7 @@ interface CustosDeVendaStepProps {
   setPrevisaoEntregaPedido: (v: string) => void;
   onBack: () => void;
   onNext: () => void;
-  onRealCostsCalculated?: (data: { comissaoPerc: number; fretePerc: number; margemReal: number }) => void;
+  onRealCostsCalculated?: (data: { comissaoPerc: number; fretePerc: number; margemReal: number; comissaoFonte?: string; comissaoTier?: string }) => void;
 }
 
 function formatCurrency(value: number) {
@@ -220,7 +220,9 @@ export default function CustosDeVendaStep({
       const fretePerc = valorVenda > 0 ? (freteVal / valorVenda) * 100 : 0;
       const comissaoPerc = costsData.comissao.percentual;
       const margemReal = costsData.margem.margemPercentual;
-      onRealCostsRef.current({ comissaoPerc, fretePerc, margemReal });
+      const comissaoFonte = costsData.comissao.fonte || undefined;
+      const comissaoTier = costsData.comissao.tier || undefined;
+      onRealCostsRef.current({ comissaoPerc, fretePerc, margemReal, comissaoFonte, comissaoTier });
     }
   }, [costsData, valorFrete]);
 
@@ -286,6 +288,42 @@ export default function CustosDeVendaStep({
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold text-slate-500 uppercase">3. Custos de Venda</p>
+
+      {/* ===== BARRA DE PROGRESSO - MÉDIA MENSAL DO VENDEDOR ===== */}
+      {costsData && (costsData.comissao as any).mediaMensalVendedor !== null && (costsData.comissao as any).mediaMensalVendedor !== undefined && (
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">Média Mensal do Vendedor</span>
+            </div>
+            <span className={`text-sm font-black ${
+              (costsData.comissao as any).mediaMensalVendedor > 25 ? 'text-green-600' :
+              (costsData.comissao as any).mediaMensalVendedor > 20 ? 'text-emerald-600' :
+              (costsData.comissao as any).mediaMensalVendedor > 15 ? 'text-amber-600' :
+              'text-red-600'
+            }`}>{((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}%</span>
+          </div>
+          <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden relative">
+            {/* Marcador de 15% */}
+            <div className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10" style={{ left: '50%' }} />
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${
+                (costsData.comissao as any).mediaMensalVendedor > 25 ? 'bg-green-500' :
+                (costsData.comissao as any).mediaMensalVendedor > 20 ? 'bg-emerald-500' :
+                (costsData.comissao as any).mediaMensalVendedor > 15 ? 'bg-amber-500' :
+                'bg-red-500'
+              }`}
+              style={{ width: `${Math.max(0, Math.min(100, ((costsData.comissao as any).mediaMensalVendedor / 30) * 100))}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1 text-[8px] text-slate-400">
+            <span>0%</span>
+            <span className="text-red-400 font-bold">15% (mínimo)</span>
+            <span>30%</span>
+          </div>
+        </div>
+      )}
 
       {/* ===== VALOR TOTAL DO PEDIDO (DESTAQUE) ===== */}
       <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-xl p-4 shadow-lg">
@@ -932,6 +970,9 @@ export default function CustosDeVendaStep({
             <div>
               <p className="text-sm font-bold text-red-700 dark:text-red-300">Pedido Bloqueado</p>
               <p className="text-xs text-red-600 dark:text-red-400">A margem deste pedido está abaixo de 15% e a média mensal do vendedor também está ≤ 15%. Não é possível avançar.</p>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-semibold">
+                Falta {(15 - ((costsData.comissao as any).mediaMensalVendedor ?? 0)).toFixed(1)} p.p. para a média mensal atingir 15% (atual: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}%)
+              </p>
             </div>
           </div>
         </div>

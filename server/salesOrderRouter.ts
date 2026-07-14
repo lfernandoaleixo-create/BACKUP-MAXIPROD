@@ -662,6 +662,11 @@ export const salesOrderRouter = router({
       forceSubmitBelowMin: z.boolean().optional(),
       // Flag: pedido é simulação (sem dados reais de cliente)
       isSimulation: z.boolean().optional(),
+      // Comissão
+      comissaoFonte: z.string().optional(),
+      comissaoPercentual: z.number().optional(),
+      comissaoTier: z.string().optional(),
+      margemPercentual: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -790,6 +795,10 @@ export const salesOrderRouter = router({
         totalPedido: totalPedido.toFixed(2),
         temPrecoAbaixoMinimo,
         motivoAlerta,
+        comissaoFonte: input.comissaoFonte || null,
+        comissaoPercentual: input.comissaoPercentual?.toFixed(2) || null,
+        comissaoTier: input.comissaoTier || null,
+        margemPercentual: input.margemPercentual?.toFixed(2) || null,
       });
 
       const orderId = result.insertId;
@@ -991,6 +1000,7 @@ export const salesOrderRouter = router({
       status: z.enum(["pendente", "aprovado", "rejeitado", "processado", "todos"]).optional(),
       sellerId: z.number().optional(),
       gestorName: z.string().optional(),
+      comissaoTravada: z.boolean().optional(), // Filter for orders with commission locked at 4%
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -1005,6 +1015,9 @@ export const salesOrderRouter = router({
       }
       if (input?.gestorName) {
         conditions.push(eq(salesOrderRequests.gestorName, input.gestorName));
+      }
+      if (input?.comissaoTravada) {
+        conditions.push(eq(salesOrderRequests.comissaoFonte, "critico_liberado"));
       }
 
       const orders = await db.select().from(salesOrderRequests)

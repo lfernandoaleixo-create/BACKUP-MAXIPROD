@@ -2208,6 +2208,12 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   tipoFrete: varchar("tipo_frete", { length: 50 }), // CIF, FOB
   observacoes: text("observacoes"),
   
+  // Comissão
+  comissaoFonte: varchar("comissao_fonte", { length: 30 }), // auto, critico_liberado, critico_bloqueado, manual
+  comissaoPercentual: decimal("comissao_percentual", { precision: 5, scale: 2 }), // % da comissão aplicada
+  comissaoTier: varchar("comissao_tier", { length: 30 }), // mostrado_alto, medio_alto, medio, baixo
+  margemPercentual: decimal("margem_percentual", { precision: 5, scale: 2 }), // margem final do pedido
+  
   // Totais
   totalProdutos: decimal("total_produtos", { precision: 18, scale: 2 }).notNull(),
   totalPedido: decimal("total_pedido", { precision: 18, scale: 2 }).notNull(),

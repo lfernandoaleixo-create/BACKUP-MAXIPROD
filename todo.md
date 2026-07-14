@@ -5491,3 +5491,6 @@
 - [x] Implementar lógica de comissão real na etapa 3 (Custos de Venda): após calcular margem com 5,85%, identificar faixa e sugerir comissão real (7%/6%/5%/4%)
 - [x] Recalcular margem final com comissão real aplicada
 - [x] Bloquear fechamento de pedido se margem < 15% e média mensal do vendedor ≤ 15%
+- [ ] Tooltip no alerta vermelho de bloqueio mostrando quanto falta para a média mensal atingir 15%
+- [ ] Filtro na aba de gestão de pedidos para visualizar pedidos com comissão travada em 4%
+- [ ] Painel/barra de progresso no topo da tela exibindo a média de margem mensal atual do vendedor
