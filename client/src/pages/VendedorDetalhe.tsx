@@ -2656,9 +2656,61 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
     }
   }, [editClient]);
 
-  // Auto-determinar tipoContribuinte - DESATIVADO por enquanto (ajustar configurações primeiro)
+  // Auto-consulta CNPJ via SintegraWS (client-side) quando 14 dígitos são digitados
   const isCnpj = cnpjCpf.replace(/\D/g, "").length >= 14;
-  // useEffect removido temporariamente - contribuinte não será auto-determinado
+  const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
+  const [cnpjLookupDone, setCnpjLookupDone] = useState(false);
+  const lastLookedUpCnpj = useRef("");
+
+  useEffect(() => {
+    const cleanCnpj = cnpjCpf.replace(/\D/g, "");
+    if (cleanCnpj.length === 14 && cleanCnpj !== lastLookedUpCnpj.current && !editMode) {
+      lastLookedUpCnpj.current = cleanCnpj;
+      setCnpjLookupLoading(true);
+      setCnpjLookupDone(false);
+      const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
+      const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+      Promise.allSettled([
+        fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`).then(r => r.json()),
+        fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`).then(r => r.json()),
+      ]).then(([rfRes, stRes]) => {
+        const rfData = rfRes.status === "fulfilled" ? rfRes.value : null;
+        const stData = stRes.status === "fulfilled" ? stRes.value : null;
+        if (rfData && rfData.code === "0") {
+          if (rfData.nome && !razaoSocial) setRazaoSocial(rfData.nome);
+          if (rfData.fantasia && rfData.fantasia !== "********" && !nomeFantasia) setNomeFantasia(rfData.fantasia);
+          if (rfData.cep && !cep) setCep(rfData.cep.replace(/[^\d]/g, ""));
+          if (rfData.logradouro && !logradouro) setLogradouro(rfData.logradouro);
+          if (rfData.numero && !numero) setNumero(rfData.numero);
+          if (rfData.complemento && !complemento) setComplemento(rfData.complemento);
+          if (rfData.bairro && !bairro) setBairro(rfData.bairro);
+          if (rfData.municipio && !cidade) setCidade(rfData.municipio);
+          if (rfData.uf && !uf) setUf(rfData.uf);
+          if (rfData.telefone && !telefone1) setTelefone1(rfData.telefone);
+          if (rfData.email && !email) setEmail(rfData.email);
+          if (rfData.atividade_principal?.[0]?.code && !cnaeFiscal) setCnaeFiscal(rfData.atividade_principal[0].code);
+        }
+        if (stData && stData.code === "0") {
+          if (stData.inscricao_estadual) setInscricaoEstadual(stData.inscricao_estadual);
+          // Determinar tipo contribuinte
+          if (stData.contribuinte_icms === true) {
+            setTipoContribuinte("Contribuinte");
+          } else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") {
+            setTipoContribuinte("Isento");
+          } else if (stData.inscricao_estadual && stData.situacao_ie === "Ativo") {
+            setTipoContribuinte("Contribuinte");
+          } else {
+            setTipoContribuinte("N\u00e3o contribuinte");
+          }
+          if (stData.regime_tributacao && !regimeTributario) setRegimeTributario(stData.regime_tributacao);
+        } else {
+          setTipoContribuinte("N\u00e3o contribuinte");
+        }
+        setCnpjLookupDone(true);
+        setTimeout(() => setCnpjLookupDone(false), 3000);
+      }).catch(() => {}).finally(() => setCnpjLookupLoading(false));
+    }
+  }, [cnpjCpf]);
 
   const handleSave = async () => {
     // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
@@ -2987,7 +3039,20 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           <Building2 className="w-3 h-3" /> Dados da Empresa
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <FormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" required />
+          <div>
+            <FormInput label="CNPJ/CPF" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" required />
+            {cnpjLookupLoading && (
+              <p className="mt-1 text-[9px] text-teal-600 flex items-center gap-1">
+                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Consultando Receita Federal + Sintegra...
+              </p>
+            )}
+            {cnpjLookupDone && (
+              <p className="mt-1 text-[9px] text-emerald-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Dados preenchidos automaticamente!
+              </p>
+            )}
+          </div>
           <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
         </div>
 
