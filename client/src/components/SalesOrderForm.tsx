@@ -775,44 +775,82 @@ function SelectField({ label, value, onChange, options }: {
 }
 
 
-// ===== CNPJ LOOKUP BUTTON (SintegraWS) =====
+// ===== CNPJ LOOKUP BUTTON (SintegraWS - Client-Side) =====
+const SINTEGRA_TOKEN = import.meta.env.VITE_SINTEGRA_API_TOKEN || "";
+const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+
+async function consultaCnpjClientSide(cnpj: string) {
+  const cleanCnpj = cnpj.replace(/\D/g, "");
+  if (cleanCnpj.length !== 14) return { success: false, error: "CNPJ inv\u00e1lido" };
+
+  // Consultar Receita Federal (RF) e Sintegra (ST) em paralelo
+  const [rfRes, stRes] = await Promise.allSettled([
+    fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`).then(r => r.json()),
+    fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`).then(r => r.json()),
+  ]);
+
+  const rfData = rfRes.status === "fulfilled" ? rfRes.value : null;
+  const stData = stRes.status === "fulfilled" ? stRes.value : null;
+
+  if (!rfData || rfData.code !== "0") {
+    return { success: false, error: rfData?.message || "Erro na consulta. Verifique se o CNPJ est\u00e1 correto." };
+  }
+
+  // Determinar tipo contribuinte
+  let tipoContribuinte = "N\u00e3o contribuinte";
+  if (stData && stData.code === "0") {
+    if (stData.contribuinte_icms === true) tipoContribuinte = "Contribuinte";
+    else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") tipoContribuinte = "Isento";
+    else if (stData.inscricao_estadual && stData.situacao_ie === "Ativo") tipoContribuinte = "Contribuinte";
+  }
+
+  return {
+    success: true,
+    razaoSocial: rfData.nome || "",
+    nomeFantasia: rfData.fantasia && rfData.fantasia !== "********" ? rfData.fantasia : "",
+    inscricaoEstadual: stData?.inscricao_estadual || "",
+    tipoContribuinte,
+    regimeTributacao: stData?.regime_tributacao || "",
+    cnaePrincipal: rfData.atividade_principal?.[0]?.code || "",
+    email: rfData.email || "",
+    telefone: rfData.telefone || "",
+    cep: (rfData.cep || "").replace(/[^\d]/g, ""),
+    logradouro: rfData.logradouro || "",
+    numero: rfData.numero || "",
+    complemento: rfData.complemento || "",
+    bairro: rfData.bairro || "",
+    municipio: rfData.municipio || "",
+    uf: rfData.uf || "",
+  };
+}
+
 function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: any) => void }) {
-  const [manualTrigger, setManualTrigger] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const cleanCnpj = cnpj.replace(/\D/g, "");
 
-  const consultaQuery = trpc.salesOrders.consultaCnpj.useQuery(
-    { cnpj: cleanCnpj },
-    { enabled: manualTrigger && cleanCnpj.length >= 14, retry: false }
-  );
-
-  // Handle result when query succeeds
-  React.useEffect(() => {
-    if (consultaQuery.data && manualTrigger) {
-      if (consultaQuery.data.success) {
-        onResult(consultaQuery.data);
+  const handleLookup = async () => {
+    if (cleanCnpj.length < 14) return;
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      const result = await consultaCnpjClientSide(cleanCnpj);
+      if (result.success) {
+        onResult(result);
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
+      } else {
+        setError(result.error || "Erro na consulta");
       }
-      setManualTrigger(false);
+    } catch (e: any) {
+      setError(e.message || "Erro de conex\u00e3o com SintegraWS");
+    } finally {
+      setLoading(false);
     }
-  }, [consultaQuery.data, manualTrigger]);
-
-  React.useEffect(() => {
-    if (consultaQuery.error && manualTrigger) {
-      setManualTrigger(false);
-    }
-  }, [consultaQuery.error, manualTrigger]);
-
-  const handleLookup = () => {
-    if (cleanCnpj.length < 14) return;
-    setManualTrigger(true);
-    consultaQuery.refetch();
   };
-
-  const loading = consultaQuery.isFetching && manualTrigger;
-  const error = consultaQuery.error?.message || (consultaQuery.data && !consultaQuery.data.success ? consultaQuery.data.error : null);
 
   return (
     <div className="mt-1.5">
