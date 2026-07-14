@@ -9,8 +9,9 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Package, Plus, Search, Loader2, ChevronDown, ChevronRight,
-  Box, History, Layers, X, Check,
+  Box, History, Layers, X, Check, Trash2,
 } from "lucide-react";
+import { useOperator } from "@/contexts/OperatorContext";
 
 type Tab = "lancamento" | "estoque" | "historico";
 
@@ -249,7 +250,7 @@ function LancamentoLote() {
    ═══════════════════════════════════════════════════════════ */
 function EstoqueLotes() {
   const [filterSku, setFilterSku] = useState("");
-  const { data: lots, isLoading } = trpc.production.getAllLots.useQuery({ onlyWithBalance: true, codigoItem: filterSku || undefined });
+  const { data: lots, isLoading, refetch: refetchLots } = trpc.production.getAllLots.useQuery({ onlyWithBalance: true, codigoItem: filterSku || undefined });
   const { data: products } = trpc.production.getLotProducts.useQuery();
   const [expandedLot, setExpandedLot] = useState<number | null>(null);
 
@@ -297,7 +298,7 @@ function EstoqueLotes() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {lots.map(lot => (
-                <LotRow key={lot.id} lot={lot} expanded={expandedLot === lot.id} onToggle={() => setExpandedLot(expandedLot === lot.id ? null : lot.id)} />
+                <LotRow key={lot.id} lot={lot} expanded={expandedLot === lot.id} onToggle={() => setExpandedLot(expandedLot === lot.id ? null : lot.id)} onDeleted={() => { setExpandedLot(null); refetchLots(); }} />
               ))}
             </tbody>
           </table>
@@ -307,11 +308,24 @@ function EstoqueLotes() {
   );
 }
 
-function LotRow({ lot, expanded, onToggle }: { lot: any; expanded: boolean; onToggle: () => void }) {
+function LotRow({ lot, expanded, onToggle, onDeleted }: { lot: any; expanded: boolean; onToggle: () => void; onDeleted: () => void }) {
+  const { operator } = useOperator();
   const { data: movements } = trpc.production.getLotMovements.useQuery(
     { lotId: lot.id },
     { enabled: expanded }
   );
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const deleteMutation = trpc.production.deleteLot.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Lote ${data.deletedLot} apagado com sucesso`);
+      setConfirmDelete(false);
+      onDeleted();
+    },
+    onError: (err) => {
+      toast.error(`Erro ao apagar lote: ${err.message}`);
+    },
+  });
 
   const saldo = parseFloat(String(lot.saldoAtual));
   const produzido = parseFloat(String(lot.qtdProduzida));
@@ -367,6 +381,46 @@ function LotRow({ lot, expanded, onToggle }: { lot: any; expanded: boolean; onTo
                 </tbody>
               </table>
             )}
+
+            {/* Botão Apagar Lote */}
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              {!confirmDelete ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Apagar Lote
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg p-2.5">
+                  <span className="text-xs text-red-700 font-medium flex-1">
+                    Tem certeza? Isso apagará o lote, movimentações e atribuições vinculadas.
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteMutation.mutate({ lotId: lot.id, operador: operator?.name || "Gestor" });
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="flex items-center gap-1 text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-md disabled:opacity-50"
+                  >
+                    {deleteMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3 h-3" />
+                    )}
+                    Confirmar
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
+                    className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1.5 rounded-md hover:bg-slate-100"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
           </td>
         </tr>
       )}

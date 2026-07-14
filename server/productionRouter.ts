@@ -1174,4 +1174,31 @@ export const productionRouter = router({
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(lotMovements.createdAt));
     }),
+
+  /** Apagar um lote (remove lote + movimentações + atribuições vinculadas) */
+  deleteLot: publicProcedure
+    .input(z.object({
+      lotId: z.number(),
+      operador: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const { orderLotAssignments } = await import("../drizzle/schema");
+
+      // Check if lot exists
+      const lot = await db.select().from(productionLots).where(eq(productionLots.id, input.lotId)).limit(1);
+      if (lot.length === 0) throw new Error("Lote não encontrado");
+
+      // Delete any order lot assignments referencing this lot
+      await db.delete(orderLotAssignments).where(eq(orderLotAssignments.lotId, input.lotId));
+
+      // Delete movements
+      await db.delete(lotMovements).where(eq(lotMovements.lotId, input.lotId));
+
+      // Delete the lot itself
+      await db.delete(productionLots).where(eq(productionLots.id, input.lotId));
+
+      return { success: true, deletedLot: lot[0].codigo };
+    }),
 });

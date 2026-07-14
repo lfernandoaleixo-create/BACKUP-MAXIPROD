@@ -5542,3 +5542,8 @@
 - [x] LotAssignmentPanel: status editáveis inclui "A faturar", "Autorizado", "Faturado parcial"
 - [x] Billing.tsx: importar e renderizar LotAssignmentPanel na seção expandida do pedido
 - [x] Billing.tsx: passar pedidoNumero={order.pedido}, items mapeados, orderStatus={order.estadoItem}
+
+## Botão Apagar Lote
+- [x] Criar procedure backend para deletar lote (com confirmação, devolve saldo se houver atribuições)
+- [x] Adicionar botão de apagar na linha do lote no Estoque de Lotes (Produção)
+- [x] Confirmação antes de apagar (modal ou dialog)
