@@ -289,6 +289,7 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
             tipoFrete={tipoFrete}
             hasPrecoAbaixo={hasPrecoAbaixo}
             observacoes={observacoes}
+            tipoContribuinte={tipoContribuinte}
           />
         )}
       </div>
@@ -664,8 +665,28 @@ function PaymentStep({
 // ===== REVIEW STEP =====
 function ReviewStep({
   razaoSocial, cnpjCpf, municipio, uf, items, totalProdutos, valorFrete, totalPedido,
-  condicaoPagamento, tipoFrete, hasPrecoAbaixo, observacoes,
+  condicaoPagamento, tipoFrete, hasPrecoAbaixo, observacoes, tipoContribuinte,
 }: any) {
+  // Calculate DIFAL for Contribuinte in interestadual sales
+  const isInterestadual = uf && uf.toUpperCase() !== "MG";
+  const isContribuinte = (tipoContribuinte || "").toLowerCase().includes("contribuinte") && !(tipoContribuinte || "").toLowerCase().includes("n\u00e3o");
+  
+  // Query DIFAL value: we ask the backend what DIFAL would be if it were "N\u00e3o contribuinte"
+  // (because for Contribuinte the backend returns 0, but the client still has to pay it)
+  const difalQuery = trpc.salesOrders.calculateSalesCosts.useQuery(
+    {
+      items: items.map((i: OrderItem) => ({ codigoItem: i.codigoItem, quantidade: i.quantidade, precoUnitario: i.precoUnitario })),
+      ufDestino: uf || "MG",
+      tipoContribuinte: "N\u00e3o contribuinte", // Force to get DIFAL value
+      tipoProduto: "importado",
+      freteValor: valorFrete || 0,
+    },
+    { enabled: isInterestadual && isContribuinte && items.length > 0 }
+  );
+
+  const difalValor = difalQuery.data?.impostos?.difalValor || 0;
+  const difalPerc = difalQuery.data?.impostos?.difalEfetivo || 0;
+
   return (
     <div className="space-y-4 pb-24">
       <p className="text-xs font-bold text-slate-500 uppercase mb-1">Revisão do Pedido</p>
@@ -719,6 +740,30 @@ function ReviewStep({
           <p className="text-[10px] text-teal-600 pt-1">Pagamento: {condicaoPagamento}</p>
         )}
       </div>
+
+      {/* DIFAL Info Card - When client is Contribuinte in interestadual sale */}
+      {isInterestadual && isContribuinte && difalValor > 0 && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-800">Este cliente é Contribuinte de ICMS</p>
+              <p className="text-xs text-amber-700 mt-1">
+                O <span className="font-bold">cliente</span> é responsável pelo pagamento do DIFAL nesta venda interestadual.
+              </p>
+            </div>
+          </div>
+          <div className="bg-white/70 rounded-lg p-3 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-amber-700 font-medium">Valor do DIFAL ({difalPerc.toFixed(2)}%)</span>
+              <span className="text-base font-bold text-amber-900">R$ {difalValor.toFixed(2)}</span>
+            </div>
+            <p className="text-[10px] text-amber-600 mt-1.5">
+              Informe ao cliente que ele deverá pagar este valor de DIFAL referente à diferença de alíquota interestadual ({uf}).
+            </p>
+          </div>
+        </div>
+      )}
 
       {observacoes && (
         <div className="bg-white rounded-xl border border-slate-100 p-3">

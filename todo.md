@@ -5580,3 +5580,12 @@
 - [x] Adicionar campo de data de nascimento quando CPF (11 dígitos) é digitado no cadastro de cliente
 - [x] Disparar consulta SintegraWS com plugin=CPF quando data de nascimento for preenchida
 - [x] Garantir que a regra contribuinte/não contribuinte ICMS funciona para CPF e CNPJ
+
+## DIFAL: Card informativo para vendedor quando cliente é Contribuinte
+- [x] Mostrar card antes da conclusão do pedido informando que o cliente paga o DIFAL
+- [x] Exibir valor exato do DIFAL do pedido para o vendedor informar ao cliente
+- [x] DIFAL zerado nos impostos do Grupo Fox mas valor visível para comunicação
+
+## Documentos/Catálogos: Vendedor deve ver mesma estrutura de pastas do gestor
+- [x] Vendedor deve ver pastas organizadas igual ao gestor (Catálogos, Documento de Importação, etc.)
+- [x] Layout de pastas com nomes corretos e organização impecável para vendedores

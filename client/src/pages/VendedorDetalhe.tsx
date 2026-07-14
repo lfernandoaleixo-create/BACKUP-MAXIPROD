@@ -1650,7 +1650,11 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
   const [openFolder, setOpenFolder] = useState<string | null>(null);
 
   const visibleCatalogs = useMemo(() => {
-    if (!catalogsQuery.data || !sellerCatalogsQuery.data) return [];
+    if (!catalogsQuery.data) return [];
+    // Se não há restrições configuradas, mostrar TODOS os catálogos (mesma visão do gestor)
+    if (!sellerCatalogsQuery.data || sellerCatalogsQuery.data.length === 0) {
+      return catalogsQuery.data;
+    }
     const allowedIds = new Set(sellerCatalogsQuery.data);
     return catalogsQuery.data.filter(c => allowedIds.has(c.id));
   }, [catalogsQuery.data, sellerCatalogsQuery.data]);
