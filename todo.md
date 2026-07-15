@@ -5679,3 +5679,10 @@
 - [x] ProductMarginBar inline em cada produto expandido (usando preço mostrado da tabela)
 - [x] Corrigir barra do produto: usar desconto sobre preço mostrado (sem frete/comissão/impostos)
 - [x] Corrigir unicode escapes na barra mensal (Reputação do Mês)
+
+## Correção: Comissão R$ 0,00 no CustosDeVendaStep (15/07/2026)
+- [x] Investigar causa raiz: commission_matrix só tinha dados para seller_id=1 (Daniel Tavares/Juvenal)
+- [x] Rafael (seller_id=490001, gestor Renato Ledesma) não tinha entradas na commission_matrix
+- [x] Adicionar fallback na calculateSalesCosts: quando não encontra pelo seller_id nem pelo gestor_name, busca qualquer entrada disponível na tabela com meta_percent=120 e priceTier correspondente
+- [x] Adicionar mesmo fallback na getSellerMonthlyMargin para consistência
+- [x] Testado via API: comissão agora retorna 8.85% (7% tabela + 1.85% encargos) com fonte "matriz_padrao"

@@ -2458,6 +2458,7 @@ export const salesOrderRouter = router({
           autoComissaoPercentual = Number(sellerMatrixRow[0].commissionPercent);
           comissaoFonte = "matriz_vendedor";
         } else {
+          // Fallback 1: try gestor-specific matrix
           const sellerPerm = await db.select().from(sellerPermissions)
             .where(eq(sellerPermissions.id, input.sellerId)).limit(1);
           if (sellerPerm.length > 0) {
@@ -2470,6 +2471,19 @@ export const salesOrderRouter = router({
             if (gestorMatrix.length > 0) {
               autoComissaoPercentual = Number(gestorMatrix[0].commissionPercent);
               comissaoFonte = "matriz_gestor";
+            }
+          }
+          // Fallback 2: if still no commission found, use the default/first available matrix entry
+          // This handles sellers whose gestor doesn't have specific entries in commission_matrix
+          if (autoComissaoPercentual === 0) {
+            const defaultMatrix = await db.select().from(commissionMatrix)
+              .where(and(
+                eq(commissionMatrix.metaPercent, 120),
+                eq(commissionMatrix.priceTier, autoTier),
+              )).limit(1);
+            if (defaultMatrix.length > 0) {
+              autoComissaoPercentual = Number(defaultMatrix[0].commissionPercent);
+              comissaoFonte = "matriz_padrao";
             }
           }
         }
@@ -2868,6 +2882,16 @@ export const salesOrderRouter = router({
             )).limit(1);
           if (gestorMatrix.length > 0) {
             monthlyComissaoPercentual = Number(gestorMatrix[0].commissionPercent);
+          } else {
+            // Fallback: use default matrix entry when no seller/gestor specific entry exists
+            const defaultMatrix = await db.select().from(commissionMatrix)
+              .where(and(
+                eq(commissionMatrix.metaPercent, 120),
+                eq(commissionMatrix.priceTier, monthlyTier),
+              )).limit(1);
+            if (defaultMatrix.length > 0) {
+              monthlyComissaoPercentual = Number(defaultMatrix[0].commissionPercent);
+            }
           }
         }
       }
