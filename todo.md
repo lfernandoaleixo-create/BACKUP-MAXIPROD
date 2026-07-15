@@ -5686,3 +5686,22 @@
 - [x] Adicionar fallback na calculateSalesCosts: quando não encontra pelo seller_id nem pelo gestor_name, busca qualquer entrada disponível na tabela com meta_percent=120 e priceTier correspondente
 - [x] Adicionar mesmo fallback na getSellerMonthlyMargin para consistência
 - [x] Testado via API: comissão agora retorna 8.85% (7% tabela + 1.85% encargos) com fonte "matriz_padrao"
+
+## Regra de Comissão - PENDENTE DEFINIÇÃO COMPLETA (15/07/2026)
+
+**O que já sabemos:**
+- Valores fixos padrão (antes de simular custos reais): 13% frete + 5,85% comissão
+- Comissão real = valor da tabela commission_matrix + 1,85% encargos
+- Sempre considerar meta de 120% na tabela
+- Tiers da tabela: Mostrado/Alto, Médio-Alto, Médio, Baixo
+- Tier é determinado pela MARGEM DE LUCRO do pedido (não pelo desconto)
+- Se margem < 15% → trava em 4% + 1,85% = 5,85% (piso)
+- Faixas de desconto na descrição: Mostrado/Alto = sem desconto ou até 20% | Médio-Alto = 23% | Médio = 27% | Baixo = 32%
+- Margem 28.7% (< 29%) deveria dar 6% + 1,85% = 7,85% (tier Médio-Alto?)
+- Margem >= 29% → 7% + 1,85% = 8,85% (tier Mostrado/Alto)
+
+**PENDENTE - Perguntar amanhã:**
+- [ ] Qual é a margem de referência para determinar o tier? (margem final COM comissão ou SEM comissão?)
+- [ ] Quais são os limites exatos de cada faixa de margem para cada tier?
+- [ ] Confirmar valores de comissão para cada tier na meta 120%
+- [ ] Implementar regra correta no calculateSalesCosts
