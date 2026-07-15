@@ -28,11 +28,13 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
+  Download,
 } from "lucide-react";
 // import MarginBar from "@/components/MarginBar"; // oculto temporariamente - fase de teste
 import { useOperator } from "@/contexts/OperatorContext";
 import { SerasaConsulta } from "@/components/SerasaConsulta";
 import { LotAssignmentPanel, LotStatusIndicator } from "@/components/LotAssignmentPanel";
+import { generateOrderPdf } from "@/lib/generateOrderPdf";
 
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
 type ExtraFilter = "comissao_travada" | null;
@@ -268,10 +270,56 @@ export default function PedidosVendedoresTab() {
             </div>
           ) : detailsQuery.data ? (
             <div className="space-y-4">
-              {/* Status */}
+              {/* Status + Exportar PDF */}
               <div className="flex items-center justify-between">
                 {getStatusBadge(detailsQuery.data.order.status)}
-                <span className="text-xs text-slate-400">{formatDate(detailsQuery.data.order.createdAt)}</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1 border-teal-200 text-teal-700 hover:bg-teal-50"
+                    onClick={async () => {
+                      const o = detailsQuery.data!.order;
+                      const items = detailsQuery.data!.items;
+                      await generateOrderPdf({
+                        pedido: String(o.orderNumber || o.id),
+                        cliente: o.razaoSocial || o.nomeFantasia || "",
+                        clienteApelido: o.nomeFantasia || undefined,
+                        uf: o.uf || "MG",
+                        dataEmissao: o.createdAt ? new Date(o.createdAt).toLocaleDateString("pt-BR") : "",
+                        dataEntrega: o.dataEntrega ? new Date(o.dataEntrega).toLocaleDateString("pt-BR") : "",
+                        empresa: "GRUPO FOX",
+                        representante: o.sellerName || "",
+                        segmento: o.segmento || "",
+                        condicaoPagamento: o.condicaoPagamento || undefined,
+                        transportadora: (o as any).transportadora || undefined,
+                        observacoes: o.observacoes || undefined,
+                        valorTotal: items.reduce((sum, it) => sum + Number(it.totalItem || 0), 0),
+                        endereco: o.endereco ? {
+                          logradouro: o.endereco,
+                          numero: o.numero || "",
+                          complemento: o.complemento || "",
+                          bairro: o.bairro || "",
+                          cep: o.cep || "",
+                          cidade: o.municipio || "",
+                          uf: o.uf || "",
+                        } : null,
+                        itens: items.map(it => ({
+                          descricao: it.descricaoItem || "",
+                          quantidade: Number(it.quantidade) || 0,
+                          valorUnitario: Number(it.precoUnitario) || 0,
+                          valorTotal: Number(it.totalItem) || 0,
+                          codigoItem: it.codigoItem || null,
+                          unidadeMedida: it.unidadeMedida || "CX",
+                        })),
+                      }, true);
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Exportar PDF
+                  </Button>
+                  <span className="text-xs text-slate-400">{formatDate(detailsQuery.data.order.createdAt)}</span>
+                </div>
               </div>
 
               {/* Vendedor */}

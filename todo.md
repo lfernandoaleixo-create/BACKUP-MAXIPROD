@@ -5639,3 +5639,7 @@
 
 ## Acesso Bruno à Gestão Comercial
 - [x] Liberar aba Gestão Comercial para Bruno
+
+## Exportar Pedido de Venda em PDF
+- [x] Adicionar botão "Exportar PDF" no pedido de venda
+- [x] Gerar PDF com todas as informações do pedido (cliente, itens, valores, observações)
