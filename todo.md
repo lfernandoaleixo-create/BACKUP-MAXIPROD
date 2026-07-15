@@ -5643,3 +5643,10 @@
 ## Exportar Pedido de Venda em PDF
 - [x] Adicionar botão "Exportar PDF" no pedido de venda
 - [x] Gerar PDF com todas as informações do pedido (cliente, itens, valores, observações)
+
+## URGENTE: Gráficos de margem não aparecem para gestores
+- [x] Gráficos de margem (produto, pedido, mês) devem aparecer para Guilherme, Fernando, Bruno e gestores nos pedidos do Rafael
+- [x] Verificar lógica de visibilidade dos MarginBar nos pedidos de venda
+- [x] Implementar RealCostMarginBar por produto no dialog de aprovação
+- [x] Implementar barra de Reputação do Pedido (média ponderada) no dialog de aprovação
+- [x] Implementar barra de Reputação Mensal do vendedor no dialog de aprovação
