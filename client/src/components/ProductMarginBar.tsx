@@ -17,12 +17,15 @@
  * Preço Alto = preço modelo. Vender nele = zero. Acima = crédito. Abaixo = débito.
  */
 
+import { useState } from 'react';
+
 interface ProductMarginBarProps {
   desconto: number; // discount percentage given (e.g., 25.5 means 25.5%)
   showValues?: boolean; // whether to show numeric values (controlled per seller)
 }
 
 export function ProductMarginBar({ desconto, showValues = true }: ProductMarginBarProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
   // Determine which color zone the discount falls into
   const getZone = (d: number): { color: string; bg: string; label: string; textColor: string } => {
     if (d >= 32) return { color: "bg-red-500", bg: "bg-red-100 dark:bg-red-900/30", label: "Crítico", textColor: "text-red-700 dark:text-red-300" };
@@ -52,7 +55,19 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       {/* Wide color bar with dividers */}
-      <div className="relative w-52 sm:w-64 flex-shrink-0">
+      <div
+        className="relative w-52 sm:w-64 flex-shrink-0 cursor-pointer"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onTouchStart={() => setShowTooltip(prev => !prev)}
+      >
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-10 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
+            Desconto: {desconto.toFixed(1)}%
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-slate-800 dark:border-t-slate-200" />
+          </div>
+        )}
         <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
           {/* Solid color segments */}
           <div className="absolute inset-0 rounded-full overflow-hidden flex">
