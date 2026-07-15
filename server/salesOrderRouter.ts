@@ -2722,10 +2722,13 @@ export const salesOrderRouter = router({
           faturamentoTrimestral,
         });
 
-        const frete = Number(order.valorFrete || 0);
-        // For monthly margin, we DON'T include commission in the cost (margin sem comissão)
-        // because the commission itself depends on this monthly margin
-        const totalCustos = custoMercadoria + frete + impostos.totalImpostosValor;
+        // Frete fixo de 13% até integração completa com transportadoras
+        const fretePerc = 13;
+        const freteValor = valorVenda * (fretePerc / 100);
+        // Comissão base de 5,85% para cálculo da margem (antes do fechamento)
+        const comissaoPerc = 5.85;
+        const comissaoValor = valorVenda * (comissaoPerc / 100);
+        const totalCustos = custoMercadoria + freteValor + comissaoValor + impostos.totalImpostosValor;
         const lucro = valorVenda - totalCustos;
         const margem = (lucro / valorVenda) * 100;
 
@@ -2773,7 +2776,10 @@ export const salesOrderRouter = router({
             faturamentoTrimestral,
           });
 
-          const totalCustosPending = custoMercPending + po.freteValor + impostosPending.totalImpostosValor + po.gastosAdicionais;
+          // Frete fixo 13% + comissão 5,85% (consistente com cálculo mensal)
+          const freteValorPending = valorVendaPending * (13 / 100);
+          const comissaoValorPending = valorVendaPending * (5.85 / 100);
+          const totalCustosPending = custoMercPending + freteValorPending + comissaoValorPending + impostosPending.totalImpostosValor + po.gastosAdicionais;
           const lucroPending = valorVendaPending - totalCustosPending;
           pendingOrderMargin = (lucroPending / valorVendaPending) * 100;
 
