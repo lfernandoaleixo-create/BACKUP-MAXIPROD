@@ -1647,7 +1647,7 @@ function SellerCatalogsPanel({ sellerId, sellerName }: { sellerId: number; selle
 function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const catalogsQuery = trpc.sales.listCatalogs.useQuery();
   const sellerCatalogsQuery = trpc.sales.getSellerCatalogs.useQuery({ sellerId });
-  const [openFolder, setOpenFolder] = useState<string | null>(null);
+  const [openFolderId, setOpenFolderId] = useState<number | null>(null);
 
   const visibleCatalogs = useMemo(() => {
     if (!catalogsQuery.data) return [];
@@ -1659,13 +1659,20 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
     return catalogsQuery.data.filter(c => allowedIds.has(c.id));
   }, [catalogsQuery.data, sellerCatalogsQuery.data]);
 
-  const folders = useMemo(() => {
-    const folderMap = new Map<string, number>();
-    visibleCatalogs.forEach(c => {
-      folderMap.set(c.folder, (folderMap.get(c.folder) || 0) + 1);
-    });
-    return Array.from(folderMap.entries()).map(([name, count]) => ({ name, count }));
+  // Get root-level folders (isFolder=true, parentId=null)
+  const rootFolders = useMemo(() => {
+    return visibleCatalogs.filter(c => c.isFolder && (c.parentId === null || c.parentId === undefined));
   }, [visibleCatalogs]);
+
+  // Get files inside a folder (parentId = folderId, isFolder=false)
+  const getFilesInFolder = (folderId: number) => {
+    return visibleCatalogs.filter(c => !c.isFolder && c.parentId === folderId);
+  };
+
+  // Count items in a folder (direct children)
+  const countItemsInFolder = (folderId: number) => {
+    return visibleCatalogs.filter(c => c.parentId === folderId).length;
+  };
 
   if (catalogsQuery.isLoading || sellerCatalogsQuery.isLoading) {
     return (
@@ -1686,14 +1693,16 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
   }
 
   // If a folder is open, show its contents
-  if (openFolder) {
-    const folderFiles = visibleCatalogs.filter(c => c.folder === openFolder);
+  if (openFolderId !== null) {
+    const currentFolder = visibleCatalogs.find(c => c.id === openFolderId);
+    const folderFiles = getFilesInFolder(openFolderId);
+    const folderName = currentFolder?.name || "Pasta";
     return (
       <div className="space-y-4">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm">
           <button
-            onClick={() => setOpenFolder(null)}
+            onClick={() => setOpenFolderId(null)}
             className="flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -1702,7 +1711,7 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
           <span className="text-slate-300">|</span>
           <span className="font-bold text-slate-700 dark:text-slate-200">Documentos/Catálogos</span>
           <span className="text-slate-300">/</span>
-          <span className="font-semibold text-violet-600">{openFolder}</span>
+          <span className="font-semibold text-violet-600">{folderName}</span>
         </div>
 
         {/* Folder header */}
@@ -1712,7 +1721,7 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
               <FolderOpen className="w-5 h-5 text-violet-600" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{openFolder}</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{folderName}</h3>
               <p className="text-[10px] text-slate-400">{folderFiles.length} {folderFiles.length === 1 ? 'documento' : 'documentos'}</p>
             </div>
           </div>
@@ -1729,7 +1738,7 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{catalog.name}</p>
-                  <p className="text-[10px] text-slate-400">PDF • {openFolder}</p>
+                  <p className="text-[10px] text-slate-400">PDF • {folderName}</p>
                 </div>
                 <a
                   href={catalog.url}
@@ -1748,7 +1757,8 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
     );
   }
 
-  // Main folder grid view
+  // Main folder grid view - show root folders
+  const totalFiles = visibleCatalogs.filter(c => !c.isFolder).length;
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1756,31 +1766,34 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
           <FolderOpen className="w-5 h-5 text-violet-600" />
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Documentos/Catálogos</h2>
           <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-            {folders.length} {folders.length === 1 ? 'pasta' : 'pastas'} • {visibleCatalogs.length} {visibleCatalogs.length === 1 ? 'arquivo' : 'arquivos'}
+            {rootFolders.length} {rootFolders.length === 1 ? 'pasta' : 'pastas'} • {totalFiles} {totalFiles === 1 ? 'arquivo' : 'arquivos'}
           </span>
         </div>
       </div>
 
       {/* Folder cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {folders.map(folder => (
-          <button
-            key={folder.name}
-            onClick={() => setOpenFolder(folder.name)}
-            className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md transition-all text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <FolderOpen className="w-6 h-6 text-violet-600" />
+        {rootFolders.map(folder => {
+          const itemCount = countItemsInFolder(folder.id);
+          return (
+            <button
+              key={folder.id}
+              onClick={() => setOpenFolderId(folder.id)}
+              className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md transition-all text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <FolderOpen className="w-6 h-6 text-violet-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors">{folder.name}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{itemCount} {itemCount === 1 ? 'item' : 'itens'}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors">{folder.name}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">{folder.count} {folder.count === 1 ? 'documento' : 'documentos'}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors" />
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
