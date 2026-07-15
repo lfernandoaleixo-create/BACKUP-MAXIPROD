@@ -162,6 +162,7 @@ export default function CustosDeVendaStep({
   const [comissaoPercOverride, setComissaoPercOverride] = useState<number | null>(null);
   const [gastosAdicionais, setGastosAdicionais] = useState(0);
   const [tipoProduto, setTipoProduto] = useState<"importado" | "industrializado">("importado");
+  const [notaFiscalPercentual, setNotaFiscalPercentual] = useState(100);
   const [showFreight, setShowFreight] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>("custos");
@@ -206,6 +207,7 @@ export default function CustosDeVendaStep({
       ...(sellerId ? { sellerId } : {}),
       freteValor: Number(valorFrete) || 0,
       gastosAdicionais,
+      notaFiscalPercentual,
     },
     { enabled: items.length > 0, staleTime: 60 * 1000, retry: 1, retryDelay: 2000 }
   );
@@ -501,6 +503,33 @@ export default function CustosDeVendaStep({
         </button>
         {expandedSection === "impostos" && costsData && (
           <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+            {/* Nota Fiscal % Selector */}
+            <div className="mb-3 p-2 bg-white dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+              <p className="text-[9px] text-slate-500 uppercase font-bold mb-1.5">% da Nota Fiscal</p>
+              <div className="flex items-center gap-1.5">
+                {[0, 50, 100].map((pct) => (
+                  <button
+                    key={pct}
+                    onClick={() => setNotaFiscalPercentual(pct)}
+                    className={`flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all border ${
+                      notaFiscalPercentual === pct
+                        ? pct === 0 ? 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/40 dark:border-red-600 dark:text-red-300'
+                          : pct === 50 ? 'bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-900/40 dark:border-amber-600 dark:text-amber-300'
+                          : 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/40 dark:border-green-600 dark:text-green-300'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {pct === 0 ? 'Sem Nota (0%)' : pct === 50 ? 'Meia Nota (50%)' : 'Nota Cheia (100%)'}
+                  </button>
+                ))}
+              </div>
+              {notaFiscalPercentual !== 100 && (
+                <p className="mt-1.5 text-[9px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {notaFiscalPercentual === 0 ? 'Venda sem nota fiscal \u2014 impostos zerados' : `Meia nota \u2014 impostos calculados sobre ${notaFiscalPercentual}% do valor`}
+                </p>
+              )}
+            </div>
             {/* Tax context */}
             <div className="grid grid-cols-3 gap-2 text-[9px] pb-2 border-b border-slate-100 dark:border-slate-700 mb-2">
               <div>

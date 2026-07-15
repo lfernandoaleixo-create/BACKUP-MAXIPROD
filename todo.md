@@ -5619,3 +5619,12 @@
 - [x] Piscar aba "Produção" no TopNav quando houver solicitações pendentes
 - [x] Piscar botão "Controle de Lotes" na página de Produção quando houver solicitações pendentes
 - [x] Piscar aba "Autorizações" dentro do Controle de Lotes quando houver solicitações pendentes
+
+## Comissão: Somar 1,85% na comissão por pedido (2ª comissão)
+- [x] Somar +1,85% na comissão por pedido (2ª comissão) após consultar a tabela/matrix com meta 120%
+- [x] Garantir que a comissão mensal (3ª comissão) NÃO soma 1,85% — é avaliação individual do vendedor de rua
+
+## Seletor de % da Nota Fiscal no Custo dos Produtos
+- [x] Adicionar seletor de % da nota fiscal (0%, 50%, 100%) na seção de Impostos do CustosDeVendaStep
+- [x] Recalcular impostos proporcionalmente ao % escolhido (backend)
+- [x] Frete recalculado com base no valor ajustado da nota

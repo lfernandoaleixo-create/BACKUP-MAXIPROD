@@ -2208,6 +2208,7 @@ export const salesOrderRouter = router({
       sellerId: z.number().optional(),
       freteValor: z.number().min(0).default(0),
       gastosAdicionais: z.number().min(0).default(0),
+      notaFiscalPercentual: z.number().min(0).max(100).default(100), // % da nota fiscal: 0=sem nota, 50=meia nota, 100=nota cheia
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -2299,14 +2300,30 @@ export const salesOrderRouter = router({
         }
       }
 
-      // Calculate taxes
-      const impostos = calcularImpostos({
+      // Calculate taxes (full value first)
+      const impostosCheia = calcularImpostos({
         valorVenda,
         ufDestino: input.ufDestino,
         tipoProduto: input.tipoProduto as TipoProduto,
         tipoContribuinte: normalizeTipoContribuinte(input.tipoContribuinte),
         faturamentoTrimestral,
       });
+
+      // Apply nota fiscal percentage: adjusts taxes proportionally
+      // 100% = nota cheia (impostos cheios), 50% = meia nota (metade dos impostos), 0% = sem nota (sem impostos)
+      const notaFactor = (input.notaFiscalPercentual ?? 100) / 100;
+      const impostos = {
+        ...impostosCheia,
+        icmsValor: impostosCheia.icmsValor * notaFactor,
+        pisValor: impostosCheia.pisValor * notaFactor,
+        cofinsValor: impostosCheia.cofinsValor * notaFactor,
+        irpjValor: impostosCheia.irpjValor * notaFactor,
+        csllValor: impostosCheia.csllValor * notaFactor,
+        difalValor: impostosCheia.difalValor * notaFactor,
+        totalImpostosValor: impostosCheia.totalImpostosValor * notaFactor,
+        totalImpostosPerc: impostosCheia.totalImpostosPerc * notaFactor,
+        notaFiscalPercentual: input.notaFiscalPercentual ?? 100,
+      };
 
       // === AUTO COMMISSION CALCULATION ===
       // Step 1: Calculate margin WITHOUT commission to determine the price tier
@@ -2409,6 +2426,11 @@ export const salesOrderRouter = router({
             }
           }
         }
+        // Comissão por pedido (2ª comissão): somar +1,85% dos vendedores internos do escritório
+        // Esse 1,85% é a comissão dos vendedores internos que ganham sobre todos os pedidos
+        if (autoComissaoPercentual > 0) {
+          autoComissaoPercentual += 1.85;
+        }
       }
 
       // Step 4: Use auto commission (manual override only if explicitly > 0)
@@ -2444,6 +2466,7 @@ export const salesOrderRouter = router({
           podeFechar,
         },
         gastosAdicionais: input.gastosAdicionais,
+        notaFiscalPercentual: input.notaFiscalPercentual ?? 100,
         margem: {
           valorVenda,
           custoMercadoria: custoMercadoriaTotal,
@@ -2772,6 +2795,7 @@ export const salesOrderRouter = router({
       else { monthlyTier = "baixo"; monthlyMargemCritica = true; }
 
       // Look up commission from matrix (same logic as calculateSalesCosts)
+      // NOTA: Comissão mensal (3ª comissão) NÃO soma +1,85% — é avaliação individual do vendedor de rua
       let monthlyComissaoPercentual = 0;
       if (!monthlyMargemCritica) {
         const sellerMatrixRow = await db.select().from(commissionMatrix)
