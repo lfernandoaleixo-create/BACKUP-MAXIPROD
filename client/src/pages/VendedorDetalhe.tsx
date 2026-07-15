@@ -1655,8 +1655,23 @@ function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; selle
     if (!sellerCatalogsQuery.data || sellerCatalogsQuery.data.length === 0) {
       return catalogsQuery.data;
     }
+    // Incluir os IDs permitidos E suas pastas-pai
     const allowedIds = new Set(sellerCatalogsQuery.data);
-    return catalogsQuery.data.filter(c => allowedIds.has(c.id));
+    // Encontrar pastas-pai dos arquivos permitidos e incluí-las
+    const allItems = catalogsQuery.data;
+    const expandedIds = new Set(allowedIds);
+    for (const id of Array.from(allowedIds)) {
+      const item = allItems.find(c => c.id === id);
+      if (item && item.parentId) {
+        expandedIds.add(item.parentId);
+        // Também incluir avô (pasta raiz) se necessário
+        const parent = allItems.find(c => c.id === item.parentId);
+        if (parent && parent.parentId) {
+          expandedIds.add(parent.parentId);
+        }
+      }
+    }
+    return allItems.filter(c => expandedIds.has(c.id));
   }, [catalogsQuery.data, sellerCatalogsQuery.data]);
 
   // Get root-level folders (isFolder=true, parentId=null)
