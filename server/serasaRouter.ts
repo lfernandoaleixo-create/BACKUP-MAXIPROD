@@ -116,7 +116,7 @@ export const serasaRouter = router({
         salesOrderRequestId: input.salesOrderRequestId || null,
       });
 
-      // 6. Retornar resultado completo para exibição
+      // 6. Retornar resultado completo para exibição (TODOS os campos da API)
       return {
         success: true,
         consultaId: inserted.insertId,
@@ -136,18 +136,30 @@ export const serasaRouter = router({
           temChequeSemFundo: credito.contemChequeSemFundo,
           analiseIA: dados.relatorioIA?.analiseAi || null,
           analiseAprovada: dados.relatorioIA?.aprovado ?? null,
-          // Dados cadastrais completos
+          // Dados cadastrais completos - TODOS os campos disponíveis
           cadastro: cadastro ? {
             nome: cadastro.nome,
             documento: cadastro.documento,
+            dataNascimento: cadastro.dataNascimento || null, // Data de fundação (PJ) ou nascimento (PF)
             situacao: cadastro.situacao || cadastro.situacaoCPF || null,
             porte: cadastro.porte || null,
             atividadePrincipal: cadastro.atividadePrincipal || null,
             capitalSocial: cadastro.capitalSocial || null,
             faturamentoPresumido: cadastro.faturamentoPresumido || null,
+            rendaEstimada: cadastro.rendaEstimada || null,
+            limiteDeCredito: cadastro.limiteDeCredito || null,
+            pontualidadeDePagamento: cadastro.pontualidadeDePagamento || null,
+            score: cadastro.score || null,
+            // Contatos
+            qntEmails: cadastro.qntEmails || 0,
             emails: cadastro.emails || [],
+            qntTelefones: cadastro.qntTelefones || 0,
             telefones: cadastro.telefones || [],
+            // Endereços
+            qntEnderecos: cadastro.qntEnderecos || 0,
             enderecos: cadastro.enderecos || [],
+            // Quadro Societário
+            qntQuadroSociatario: cadastro.qntQuadroSociatario || 0,
             quadroSociatario: cadastro.quadroSociatario || [],
           } : null,
           // Detalhes de pendências

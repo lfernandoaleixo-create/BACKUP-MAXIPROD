@@ -5597,3 +5597,8 @@
 ## Importação: Botão de excluir documento
 - [x] Adicionar botão de lixeira (excluir) nos documentos de importação (CI, Ordem de Pagamento)
 - [ ] Permitir substituir o arquivo após excluir (upload de novo arquivo no lugar)
+
+## Serasa: Exibir TODAS as informações da API
+- [x] Passar rawResponse completo para o frontend (todos os campos da API Serasa)
+- [x] Exibir: dataNascimento/fundação da empresa, todos os endereços completos, todos os telefones com DDD, todos os emails, quadro societário com CPF e participação, CNAE completo, capital social, faturamento presumido, renda estimada, limite de crédito, porte, situação cadastral
+- [x] Seções expansíveis: Dados Cadastrais (sempre aberto), Endereços, Telefones, Emails, Quadro Societário, Crédito/Pendências

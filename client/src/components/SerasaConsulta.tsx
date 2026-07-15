@@ -13,7 +13,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Shield, ShieldAlert, ShieldCheck, X, Lock, AlertTriangle, CheckCircle2, Building2, Phone, Mail, MapPin, Users, TrendingUp, Clock, FileSearch, Trash2 } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, X, Lock, AlertTriangle, CheckCircle2, Building2, Phone, Mail, MapPin, Users, TrendingUp, Clock, FileSearch, Trash2, ChevronDown, ChevronUp, Calendar, Briefcase, DollarSign, CreditCard, Activity, Hash } from "lucide-react";
 import { toast } from "sonner";
 
 interface SerasaConsultaProps {
@@ -388,15 +388,28 @@ export function SerasaConsulta({ documento, clienteNome, operadorName, salesOrde
 }
 
 /**
- * Card de resultado da consulta Serasa
+ * Card de resultado da consulta Serasa - EXIBE TODOS OS DADOS DA API
  */
 function SerasaResultCard({ resultado, onClose }: { resultado: any; onClose: () => void }) {
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["cadastro"]));
   const isAprovado = resultado.aprovado;
 
-  const formatCurrency = (value: number | null) => {
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
+  };
+
+  const isSectionOpen = (section: string) => expandedSections.has(section);
+
+  const formatCurrency = (value: number | string | null) => {
     if (value === null || value === undefined) return "—";
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    if (isNaN(num)) return "—";
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(num);
   };
 
   const formatDoc = (doc: string) => {
@@ -406,6 +419,32 @@ function SerasaResultCard({ resultado, onClose }: { resultado: any; onClose: () 
     if (clean.length === 14) return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
     return doc;
   };
+
+  const formatPhone = (phone: string) => {
+    if (!phone) return "";
+    const clean = phone.replace(/\D/g, "");
+    if (clean.length === 11) return `(${clean.slice(0,2)}) ${clean.slice(2,7)}-${clean.slice(7)}`;
+    if (clean.length === 10) return `(${clean.slice(0,2)}) ${clean.slice(2,6)}-${clean.slice(6)}`;
+    if (clean.length === 9) return `${clean.slice(0,5)}-${clean.slice(5)}`;
+    if (clean.length === 8) return `${clean.slice(0,4)}-${clean.slice(4)}`;
+    return phone;
+  };
+
+  // Section header component
+  const SectionHeader = ({ id, icon: Icon, title, badge }: { id: string; icon: any; title: string; badge?: string | number }) => (
+    <div
+      className="flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+      onClick={() => toggleSection(id)}
+    >
+      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+        <Icon className="w-3.5 h-3.5" /> {title}
+        {badge !== undefined && badge !== null && (
+          <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-full font-medium">{badge}</span>
+        )}
+      </p>
+      {isSectionOpen(id) ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+    </div>
+  );
 
   return (
     <div className={`rounded-2xl overflow-hidden shadow-lg border-2 transition-all ${
@@ -441,7 +480,7 @@ function SerasaResultCard({ resultado, onClose }: { resultado: any; onClose: () 
 
       {/* Body */}
       <div className="p-4 space-y-3">
-        {/* Score e Resumo */}
+        {/* Score, Pontualidade, Pendências, Limite */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm">
             <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Score</p>
@@ -482,119 +521,209 @@ function SerasaResultCard({ resultado, onClose }: { resultado: any; onClose: () 
           </div>
         )}
 
-        {/* Detalhes de Pendências */}
-        {resultado.totalPendencias > 0 && resultado.pendencias && (
-          <div className="space-y-2">
-            {resultado.pendencias.rgi?.quantidade > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedSection(expandedSection === "rgi" ? null : "rgi")}>
-                  <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
-                    RGI (Registros): {resultado.pendencias.rgi.quantidade} • {formatCurrency(resultado.pendencias.rgi.valor)}
-                  </p>
-                  <span className="text-[9px] text-red-500">{expandedSection === "rgi" ? "▲" : "▼"}</span>
-                </div>
-                {expandedSection === "rgi" && resultado.pendencias.rgi.registros?.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {resultado.pendencias.rgi.registros.map((r: any, i: number) => (
-                      <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
-                        {r.credor} • {formatCurrency(r.valor)} • {r.dataOcorrencia}
+        {/* ═══ DADOS CADASTRAIS ═══ */}
+        {resultado.cadastro && (
+          <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
+            <SectionHeader id="cadastro" icon={Building2} title="Dados Cadastrais" />
+            {isSectionOpen("cadastro") && (
+              <div className="p-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <p><strong>Nome:</strong> {resultado.cadastro.nome}</p>
+                    {resultado.cadastro.documento && <p><strong>Documento:</strong> {formatDoc(resultado.cadastro.documento)}</p>}
+                    {resultado.cadastro.dataNascimento && (
+                      <p className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <strong>{resultado.tipoPessoa === "PJ" ? "Fundação:" : "Nascimento:"}</strong> {resultado.cadastro.dataNascimento}
                       </p>
-                    ))}
+                    )}
+                    {resultado.cadastro.situacao && (
+                      <p><strong>Situação:</strong> <span className={resultado.cadastro.situacao === "ATIVA" ? "text-emerald-600 font-medium" : "text-red-600 font-medium"}>{resultado.cadastro.situacao}</span></p>
+                    )}
+                    {resultado.cadastro.porte && <p><strong>Porte:</strong> {resultado.cadastro.porte}</p>}
                   </div>
-                )}
-              </div>
-            )}
-            {resultado.pendencias.protestos?.quantidade > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedSection(expandedSection === "protestos" ? null : "protestos")}>
-                  <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
-                    Protestos: {resultado.pendencias.protestos.quantidade} • {formatCurrency(resultado.pendencias.protestos.valor)}
-                  </p>
-                  <span className="text-[9px] text-red-500">{expandedSection === "protestos" ? "▲" : "▼"}</span>
-                </div>
-                {expandedSection === "protestos" && resultado.pendencias.protestos.registros?.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {resultado.pendencias.protestos.registros.map((r: any, i: number) => (
-                      <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
-                        {r.cartorio || r.credor} • {formatCurrency(r.valor)} • {r.dataOcorrencia}
+                  <div className="space-y-1.5">
+                    {resultado.cadastro.atividadePrincipal && (
+                      <p className="flex items-start gap-1">
+                        <Briefcase className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+                        <span><strong>Atividade:</strong> {resultado.cadastro.atividadePrincipal}</span>
                       </p>
-                    ))}
+                    )}
+                    {resultado.cadastro.capitalSocial != null && resultado.cadastro.capitalSocial > 0 && (
+                      <p className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3 text-slate-400" />
+                        <strong>Capital Social:</strong> {formatCurrency(resultado.cadastro.capitalSocial)}
+                      </p>
+                    )}
+                    {resultado.cadastro.faturamentoPresumido != null && resultado.cadastro.faturamentoPresumido > 0 && (
+                      <p className="flex items-center gap-1">
+                        <Activity className="w-3 h-3 text-slate-400" />
+                        <strong>Faturamento Presumido:</strong> {formatCurrency(resultado.cadastro.faturamentoPresumido)}
+                      </p>
+                    )}
+                    {resultado.cadastro.rendaEstimada != null && resultado.cadastro.rendaEstimada > 0 && (
+                      <p className="flex items-center gap-1">
+                        <CreditCard className="w-3 h-3 text-slate-400" />
+                        <strong>Renda Estimada:</strong> {formatCurrency(resultado.cadastro.rendaEstimada)}
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
-            {resultado.pendencias.chequesSemFundo?.quantidade > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
-                <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
-                  Cheques sem Fundo: {resultado.pendencias.chequesSemFundo.quantidade}
-                </p>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Dados Cadastrais */}
-        {resultado.cadastro && (
+        {/* ═══ TELEFONES ═══ */}
+        {resultado.cadastro?.telefones?.length > 0 && (
           <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
-            <div
-              className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-700/50 cursor-pointer"
-              onClick={() => setExpandedSection(expandedSection === "cadastro" ? null : "cadastro")}
-            >
-              <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
-                <Building2 className="w-3 h-3" /> Dados Cadastrais
-              </p>
-              <span className="text-[9px] text-slate-400">{expandedSection === "cadastro" ? "▲" : "▼"}</span>
-            </div>
-            {expandedSection === "cadastro" && (
-              <div className="p-3 space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
-                <p><strong>Nome:</strong> {resultado.cadastro.nome}</p>
-                {resultado.cadastro.documento && <p><strong>Documento:</strong> {formatDoc(resultado.cadastro.documento)}</p>}
-                {resultado.cadastro.situacao && <p><strong>Situação:</strong> {resultado.cadastro.situacao}</p>}
-                {resultado.cadastro.porte && <p><strong>Porte:</strong> {resultado.cadastro.porte}</p>}
-                {resultado.cadastro.atividadePrincipal && <p><strong>Atividade:</strong> {resultado.cadastro.atividadePrincipal}</p>}
-                {resultado.cadastro.capitalSocial && <p><strong>Capital Social:</strong> {formatCurrency(resultado.cadastro.capitalSocial)}</p>}
-                {resultado.cadastro.faturamentoPresumido && <p><strong>Faturamento Presumido:</strong> {formatCurrency(resultado.cadastro.faturamentoPresumido)}</p>}
+            <SectionHeader id="telefones" icon={Phone} title="Telefones" badge={resultado.cadastro.qntTelefones || resultado.cadastro.telefones.length} />
+            {isSectionOpen("telefones") && (
+              <div className="p-3 space-y-1.5">
+                {resultado.cadastro.telefones.map((tel: any, i: number) => {
+                  const phoneStr = typeof tel === "string" ? tel : (tel.ddd ? `(${tel.ddd}) ${tel.numero}` : tel.numero || "");
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                      <Phone className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                      <span className="font-mono">{typeof tel === "string" ? formatPhone(tel) : phoneStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
-                {/* Contatos */}
-                {resultado.cadastro.telefones?.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
-                    <p className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><Phone className="w-3 h-3" /> Telefones</p>
-                    {resultado.cadastro.telefones.map((t: any, i: number) => (
-                      <p key={i} className="text-[10px] text-slate-500 dark:text-slate-400">({t.ddd}) {t.numero}</p>
-                    ))}
-                  </div>
-                )}
+        {/* ═══ E-MAILS ═══ */}
+        {resultado.cadastro?.emails?.length > 0 && (
+          <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
+            <SectionHeader id="emails" icon={Mail} title="E-mails" badge={resultado.cadastro.qntEmails || resultado.cadastro.emails.length} />
+            {isSectionOpen("emails") && (
+              <div className="p-3 space-y-1.5">
+                {resultado.cadastro.emails.map((email: any, i: number) => {
+                  const emailStr = typeof email === "string" ? email : (email.email || email);
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                      <Mail className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                      <span className="font-mono lowercase">{emailStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
-                {resultado.cadastro.emails?.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
-                    <p className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><Mail className="w-3 h-3" /> E-mails</p>
-                    {resultado.cadastro.emails.map((e: any, i: number) => (
-                      <p key={i} className="text-[10px] text-slate-500 dark:text-slate-400">{e.email || e}</p>
-                    ))}
-                  </div>
-                )}
-
-                {/* Endereços */}
-                {resultado.cadastro.enderecos?.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
-                    <p className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> Endereços</p>
-                    {resultado.cadastro.enderecos.map((end: any, i: number) => (
-                      <p key={i} className="text-[10px] text-slate-500 dark:text-slate-400">
-                        {end.logradouro}{end.numero ? `, ${end.numero}` : ""}{end.complemento ? ` - ${end.complemento}` : ""} • {end.bairro} • {end.cidade}/{end.uf} • CEP {end.cep}
-                      </p>
-                    ))}
-                  </div>
-                )}
-
-                {/* Quadro Societário */}
-                {resultado.cadastro.quadroSociatario?.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
-                    <p className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Quadro Societário</p>
-                    {resultado.cadastro.quadroSociatario.map((s: any, i: number) => (
-                      <div key={i} className="text-[10px] text-slate-500 dark:text-slate-400">
-                        <span className="font-medium">{s.nome}</span> • {s.descricaos} • {s.participacao}%
+        {/* ═══ ENDEREÇOS ═══ */}
+        {resultado.cadastro?.enderecos?.length > 0 && (
+          <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
+            <SectionHeader id="enderecos" icon={MapPin} title="Endereços" badge={resultado.cadastro.qntEnderecos || resultado.cadastro.enderecos.length} />
+            {isSectionOpen("enderecos") && (
+              <div className="p-3 space-y-3">
+                {resultado.cadastro.enderecos.map((end: any, i: number) => (
+                  <div key={i} className="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5 text-xs text-slate-600 dark:text-slate-300">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-3 h-3 text-rose-500 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-0.5">
+                        <p className="font-medium">
+                          {end.logradouro}{end.numero ? `, ${end.numero}` : ""}
+                          {end.complemento ? ` - ${end.complemento}` : ""}
+                        </p>
+                        <p className="text-slate-500 dark:text-slate-400">
+                          {end.bairro} • {end.cidade}/{end.uf}
+                        </p>
+                        <p className="text-slate-400 font-mono text-[10px]">CEP: {end.cep}</p>
                       </div>
-                    ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ QUADRO SOCIETÁRIO ═══ */}
+        {resultado.cadastro?.quadroSociatario?.length > 0 && (
+          <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
+            <SectionHeader id="socios" icon={Users} title="Quadro Societário" badge={resultado.cadastro.qntQuadroSociatario || resultado.cadastro.quadroSociatario.length} />
+            {isSectionOpen("socios") && (
+              <div className="p-3 space-y-2">
+                {resultado.cadastro.quadroSociatario.map((socio: any, i: number) => (
+                  <div key={i} className="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5 text-xs text-slate-600 dark:text-slate-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-3 h-3 text-indigo-500 flex-shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-700 dark:text-slate-200">{socio.nome}</p>
+                          <p className="text-[10px] text-slate-400">{socio.descricaos || socio.descricao || "Sócio"}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-indigo-600 dark:text-indigo-400">{socio.participacao}%</p>
+                        {socio.documento && (
+                          <p className="text-[9px] text-slate-400 font-mono">{formatDoc(socio.documento)}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ PENDÊNCIAS DETALHADAS ═══ */}
+        {resultado.totalPendencias > 0 && resultado.pendencias && (
+          <div className="border border-red-200 dark:border-red-800 rounded-xl overflow-hidden">
+            <SectionHeader id="pendencias" icon={AlertTriangle} title="Pendências Detalhadas" badge={resultado.totalPendencias} />
+            {isSectionOpen("pendencias") && (
+              <div className="p-3 space-y-2">
+                {resultado.pendencias.rgi?.quantidade > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
+                    <p className="text-[11px] font-bold text-red-700 dark:text-red-300 mb-1">
+                      RGI (Registros): {resultado.pendencias.rgi.quantidade} • {formatCurrency(resultado.pendencias.rgi.valor)}
+                    </p>
+                    {resultado.pendencias.rgi.registros?.length > 0 && (
+                      <div className="space-y-1 mt-2">
+                        {resultado.pendencias.rgi.registros.map((r: any, i: number) => (
+                          <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                            {r.credor} • {formatCurrency(r.valor)} • {r.dataOcorrencia}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {resultado.pendencias.protestos?.quantidade > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
+                    <p className="text-[11px] font-bold text-red-700 dark:text-red-300 mb-1">
+                      Protestos: {resultado.pendencias.protestos.quantidade} • {formatCurrency(resultado.pendencias.protestos.valor)}
+                    </p>
+                    {resultado.pendencias.protestos.registros?.length > 0 && (
+                      <div className="space-y-1 mt-2">
+                        {resultado.pendencias.protestos.registros.map((r: any, i: number) => (
+                          <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                            {r.cartorio || r.credor} • {formatCurrency(r.valor)} • {r.dataOcorrencia}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {resultado.pendencias.chequesSemFundo?.quantidade > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 border border-red-100 dark:border-red-900/30">
+                    <p className="text-[11px] font-bold text-red-700 dark:text-red-300">
+                      Cheques sem Fundo: {resultado.pendencias.chequesSemFundo.quantidade}
+                    </p>
+                    {resultado.pendencias.chequesSemFundo.registros?.length > 0 && (
+                      <div className="space-y-1 mt-2">
+                        {resultado.pendencias.chequesSemFundo.registros.map((r: any, i: number) => (
+                          <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                            {r.banco || r.credor} • {r.agencia} • {r.dataOcorrencia}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -662,7 +791,7 @@ export function SerasaMetricas() {
               onClick={() => setFiltroStatus(s)}
               className={`px-2.5 py-1 text-[10px] font-medium rounded-full transition-colors ${
                 filtroStatus === s 
-                  ? s === "pendencias" ? "bg-red-600 text-white" : s === "aprovadas" ? "bg-emerald-600 text-white" : "bg-slate-600 text-white"
+                  ? "bg-red-600 text-white" 
                   : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
               }`}
             >
@@ -672,34 +801,34 @@ export function SerasaMetricas() {
         </div>
       </div>
 
-      {/* Totais */}
+      {/* Cards de resumo */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm border border-slate-200 dark:border-slate-600">
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">Total Consultas</p>
-          <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{Number(data.totais?.total || 0)}</p>
+          <p className="text-[10px] text-slate-400 uppercase">Total</p>
+          <p className="text-xl font-black text-slate-700 dark:text-slate-200">{(data.totais as any)?.total || 0}</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center shadow-sm border border-emerald-200 dark:border-emerald-800">
-          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase">Aprovadas</p>
-          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{Number(data.totais?.aprovadas || 0)}</p>
+        <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm border border-slate-200 dark:border-slate-600">
+          <p className="text-[10px] text-slate-400 uppercase">Aprovadas</p>
+          <p className="text-xl font-black text-emerald-600">{(data.totais as any)?.aprovadas || 0}</p>
         </div>
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center shadow-sm border border-red-200 dark:border-red-800">
-          <p className="text-[10px] text-red-600 dark:text-red-400 uppercase">Reprovadas</p>
-          <p className="text-2xl font-black text-red-600 dark:text-red-400">{Number(data.totais?.reprovadas || 0)}</p>
+        <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 text-center shadow-sm border border-slate-200 dark:border-slate-600">
+          <p className="text-[10px] text-slate-400 uppercase">Reprovadas</p>
+          <p className="text-xl font-black text-red-600">{(data.totais as any)?.reprovadas || 0}</p>
         </div>
       </div>
 
-      {/* Por Operador */}
-      {data.porOperador.length > 0 && (
-        <div className="bg-white dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-3">Consultas por Operador</h4>
+      {/* Por operador */}
+      {(data.porOperador as any[])?.length > 0 && (
+        <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-600">
+          <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">Por Operador</p>
           <div className="space-y-2">
-            {data.porOperador.map((op: any, i: number) => (
-              <div key={i} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{op.operadorName}</span>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="text-slate-500">{Number(op.totalConsultas)} consultas</span>
-                  <span className="text-emerald-600">{Number(op.consultasAprovadas)} ✓</span>
-                  <span className="text-red-600">{Number(op.consultasReprovadas)} ✗</span>
+            {(data.porOperador as any[]).map((op: any, i: number) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span className="font-medium text-slate-700 dark:text-slate-200">{op.operadorName}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-500">{op.totalConsultas} consultas</span>
+                  <span className="text-emerald-600">{op.consultasAprovadas} OK</span>
+                  <span className="text-red-600">{op.consultasReprovadas} pend.</span>
                 </div>
               </div>
             ))}
@@ -708,58 +837,29 @@ export function SerasaMetricas() {
       )}
 
       {/* Últimas consultas */}
-      {data.ultimasConsultas.length > 0 && (
-        <div className="bg-white dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-3">
-            Últimas Consultas
-            {filtroStatus !== "todos" && (
-              <span className={`ml-2 text-[9px] font-normal px-1.5 py-0.5 rounded-full ${filtroStatus === "pendencias" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"}`}>
-                Filtro: {filtroStatus === "pendencias" ? "Com Pendências" : "Aprovadas"}
-              </span>
-            )}
-          </h4>
+      {data.ultimasConsultas?.length > 0 && (
+        <div className="bg-white dark:bg-slate-700/50 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-600">
+          <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">Últimas Consultas</p>
           <div className="space-y-1.5">
             {data.ultimasConsultas
               .filter((c: any) => {
-                if (filtroStatus === "pendencias") return !c.aprovado;
+                if (filtroStatus === "todos") return true;
                 if (filtroStatus === "aprovadas") return c.aprovado;
-                return true;
+                return !c.aprovado;
               })
               .map((c: any) => (
-              <div key={c.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+              <div key={c.id} className="flex items-center justify-between text-[11px] py-1 border-b border-slate-100 dark:border-slate-600 last:border-0">
                 <div className="flex items-center gap-2">
-                  {c.aprovado ? (
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  ) : (
-                    <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-                  )}
-                  <div>
-                    <p className="text-[11px] font-medium text-slate-700 dark:text-slate-200">
-                      {c.clienteNome || c.clienteDocumento}
-                    </p>
-                    <p className="text-[9px] text-slate-400">
-                      {c.operadorName} • {new Date(c.createdAt).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
+                  {c.aprovado ? <ShieldCheck className="w-3 h-3 text-emerald-500" /> : <ShieldAlert className="w-3 h-3 text-red-500" />}
+                  <span className="font-medium text-slate-700 dark:text-slate-200">{c.clienteNome || c.clienteDocumento}</span>
                 </div>
-                <div className="text-right">
-                  <p className={`text-[10px] font-bold ${(c.score || 0) >= 700 ? "text-emerald-600" : (c.score || 0) >= 400 ? "text-amber-600" : "text-red-600"}`}>
-                    Score: {c.score || "—"}
-                  </p>
-                  {c.totalPendencias > 0 && (
-                    <p className="text-[9px] text-red-500">{c.totalPendencias} pendência(s)</p>
-                  )}
+                <div className="flex items-center gap-2 text-slate-400">
+                  <span>{c.operadorName}</span>
+                  <span>{new Date(c.createdAt).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {data.porOperador.length === 0 && data.ultimasConsultas.length === 0 && (
-        <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-          <Shield className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          <p className="text-xs">Nenhuma consulta Serasa realizada neste período</p>
         </div>
       )}
     </div>
