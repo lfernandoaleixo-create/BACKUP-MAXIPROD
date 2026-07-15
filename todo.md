@@ -5610,3 +5610,6 @@
 - [x] No painel de Bruno/Guilherme: alerta piscando com solicitações pendentes para autorizar/recusar
 - [x] Após aprovação: permitir que Maria/Erica criem o lote com a data retroativa autorizada
 - [x] Aba/seção de histórico de autorizações retroativas
+
+## Pedidos com Faturamento Parcial
+- [x] Pedidos com faturamento parcial (saldo restante) devem permanecer em "Pedidos em Aberto" / "Autorizado a Faturar" e NÃO ir para "Faturados últimos 30 dias"

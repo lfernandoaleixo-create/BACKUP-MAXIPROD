@@ -233,10 +233,32 @@ export const billingRouter = router({
       // Usa funções compartilhadas de shared/grupoClassification.ts
       // REGRA: "Faturado c/ entrega futura" = faturou financeiro mas mercadoria ainda não entregue
       // Deve aparecer como pedido em aberto (produção precisa entregar)
-      const openItems = allItems.filter(i => 
-        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") &&
-        isAprovadoOuFaturado(i.estadoNota)
-      );
+      //
+      // REGRA FATURAMENTO PARCIAL: Se um pedido tem QUALQUER item que NÃO é "Faturado",
+      // TODOS os itens desse pedido ficam em "Pedidos em Aberto" (inclusive os já faturados).
+      // O pedido só vai para "Faturados" quando 100% dos itens estiverem com estado "Faturado".
+      
+      // Primeiro, identificar pedidos que têm pelo menos 1 item não-faturado (parcialmente faturados)
+      const pedidosComItemAberto = new Set<string>();
+      for (const item of allItems) {
+        if (!isAprovadoOuFaturado(item.estadoNota)) continue;
+        const pedido = item.pedido || "sem-pedido";
+        if (item.estadoItem === "A faturar" || item.estadoItem === "Faturado parcial" || item.estadoItem === "Faturado c/ entrega futura") {
+          pedidosComItemAberto.add(pedido);
+        }
+      }
+      
+      // Open: itens que são "A faturar"/"Faturado parcial"/"Faturado c/ entrega futura"
+      // OU itens "Faturado" cujo pedido ainda tem itens em aberto (faturamento parcial do pedido)
+      const openItems = allItems.filter(i => {
+        if (!isAprovadoOuFaturado(i.estadoNota)) return false;
+        const pedido = i.pedido || "sem-pedido";
+        // Item em aberto
+        if (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") return true;
+        // Item faturado mas pedido ainda tem itens em aberto → manter junto no aberto
+        if (i.estadoItem === "Faturado" && pedidosComItemAberto.has(pedido)) return true;
+        return false;
+      });
       
       // Helper to format ISO date to DD/MM/YYYY
       const formatDate = (d: string | null): string => {
@@ -269,6 +291,9 @@ export const billingRouter = router({
         // REGRA DE NEGÓCIO: Na aba Faturamento, APENAS pedidos APROVADOS/FATURADOS devem aparecer.
         // NOTA: NÃO filtrar isOutros - AMOSTRA e BONIFICAÇÃO devem aparecer para a produção
         if (!isAprovadoOuFaturado(i.estadoNota)) return false;
+        // REGRA FATURAMENTO PARCIAL: se o pedido ainda tem itens em aberto, NÃO colocar aqui
+        const pedido = i.pedido || "sem-pedido";
+        if (pedidosComItemAberto.has(pedido)) return false;
         try {
           const itemDate = new Date(i.dataEmissao);
           return itemDate >= preFilterDaysAgo;
