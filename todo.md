@@ -5631,3 +5631,11 @@
 
 ## Esconder Simulação Custo Real dos Vendedores
 - [ ] Barra "Simulação Custo Real" (UF Destino, Comissão, Frete, Custos Adic.) deve ser visível APENAS para Gestores, Guilherme, Fernando e Bruno — esconder para vendedores
+
+## Visibilidade das Barras de Margem
+- [x] Primeira barra dos produtos (desconto - azul/verde/amarelo/laranja/vermelho) = visível para TODOS
+- [x] Segunda barra dos produtos (custo real - 15%/20%/25%/29%) = APENAS Gestores, Guilherme, Fernando e Bruno
+- [x] Barra do pedido completo e barra de reputação mensal = visível para TODOS (vendedores incluídos)
+
+## Acesso Bruno à Gestão Comercial
+- [x] Liberar aba Gestão Comercial para Bruno
