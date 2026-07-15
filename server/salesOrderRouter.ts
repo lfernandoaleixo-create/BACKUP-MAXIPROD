@@ -1035,7 +1035,23 @@ export const salesOrderRouter = router({
         .orderBy(desc(salesOrderRequests.createdAt))
         .limit(100);
 
-      return orders;
+      // Attach items to each order for margin calculation
+      const orderIds = orders.map(o => o.id);
+      let allItems: any[] = [];
+      if (orderIds.length > 0) {
+        allItems = await db.select().from(salesOrderRequestItems)
+          .where(inArray(salesOrderRequestItems.orderId, orderIds));
+      }
+      const itemsByOrder = new Map<number, typeof allItems>();
+      for (const item of allItems) {
+        if (!itemsByOrder.has(item.orderId)) itemsByOrder.set(item.orderId, []);
+        itemsByOrder.get(item.orderId)!.push(item);
+      }
+
+      return orders.map(order => ({
+        ...order,
+        items: itemsByOrder.get(order.id) || [],
+      }));
     }),
 
   /** Get order details with items */
@@ -1052,7 +1068,35 @@ export const salesOrderRouter = router({
       const items = await db.select().from(salesOrderRequestItems)
         .where(eq(salesOrderRequestItems.orderId, input.orderId));
 
-      return { order, items };
+      // Get seller's price table to provide precoMostrado for each item
+      let priceTableMap: Record<string, number> = {};
+      try {
+        const [seller] = await db.select().from(sellerPermissions)
+          .where(eq(sellerPermissions.id, order.sellerId));
+        if (seller) {
+          const allTables = await db.select().from(priceTables);
+          let matchedTable: typeof allTables[0] | undefined;
+          if (seller.priceTableCode) {
+            matchedTable = allTables.find(t => t.codigo === seller.priceTableCode);
+          }
+          if (!matchedTable) {
+            const nameParts = seller.sellerName.toUpperCase().split(' ');
+            matchedTable = allTables.find(t => {
+              const desc = t.descricao.toUpperCase();
+              return nameParts.some(part => part.length > 3 && desc.includes(part));
+            });
+          }
+          if (matchedTable) {
+            const ptItems = await db.select().from(priceTableItems)
+              .where(eq(priceTableItems.priceTableId, matchedTable.id));
+            for (const pti of ptItems) {
+              priceTableMap[pti.itemCodigo] = parseFloat(pti.preco);
+            }
+          }
+        }
+      } catch (e) { /* ignore price table errors */ }
+
+      return { order, items, priceTableMap };
     }),
 
   /** Get all orders for a specific gestor (approval dashboard) */
