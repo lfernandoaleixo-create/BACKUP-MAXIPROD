@@ -273,6 +273,38 @@ function MovimentacaoButton({ viewMode, onClick, operatorName }: { viewMode: str
   );
 }
 
+/* ---- Lot Control Button with blink for pending retroactive requests ---- */
+function LotControlButton({ viewMode, onClick, operatorName }: { viewMode: string; onClick: () => void; operatorName: string }) {
+  const RETRO_APPROVERS = ["Bruno", "Fernando", "Guilherme"];
+  const isApprover = RETRO_APPROVERS.includes(operatorName);
+  const { data: pendingRetroData } = trpc.production.countPendingRetroactive.useQuery(undefined, {
+    enabled: isApprover,
+    refetchInterval: 10000,
+  });
+  const hasPending = isApprover && (pendingRetroData?.pending ?? 0) > 0;
+  const pendingCount = pendingRetroData?.pending ?? 0;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        viewMode === "lotes"
+          ? "bg-indigo-600 text-white shadow-sm"
+          : hasPending
+            ? "bg-amber-100 text-amber-700 border border-amber-300 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+      }`}
+    >
+      <Layers className="w-4 h-4" /> Controle de Lotes
+      {hasPending && (
+        <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[18px] text-center animate-bounce">
+          {pendingCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function Production() {
   const { hasAccess, operator } = useOperator();
   const [, setLocation] = useLocation();
@@ -950,9 +982,7 @@ export default function Production() {
             <MovimentacaoButton viewMode={viewMode} onClick={() => setViewMode("movimentacao")} operatorName={operator?.name || ""} />
             )}
             {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
-            <button onClick={() => setViewMode("lotes")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lotes" ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
-              <Layers className="w-4 h-4" /> Controle de Lotes
-            </button>
+            <LotControlButton viewMode={viewMode} onClick={() => setViewMode("lotes")} operatorName={operator?.name || ""} />
             )}
 
             {/* ─── PDF Export Menu ─── */}

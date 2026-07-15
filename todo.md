@@ -5614,3 +5614,8 @@
 ## Pedidos com Faturamento Parcial
 - [x] Pedidos com faturamento parcial (saldo restante) devem permanecer em "Pedidos em Aberto" / "Autorizado a Faturar" e NÃO ir para "Faturados últimos 30 dias"
 - [x] Pedidos parcialmente faturados (estadoItem = "Faturado parcial") têm autorização removida automaticamente e voltam para "Pedidos em Aberto"
+
+## Alertas Piscando para Solicitações de Lote Retroativo
+- [x] Piscar aba "Produção" no TopNav quando houver solicitações pendentes
+- [x] Piscar botão "Controle de Lotes" na página de Produção quando houver solicitações pendentes
+- [x] Piscar aba "Autorizações" dentro do Controle de Lotes quando houver solicitações pendentes
