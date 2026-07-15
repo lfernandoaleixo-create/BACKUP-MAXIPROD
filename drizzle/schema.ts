@@ -3074,3 +3074,37 @@ export const orderLotAssignments = mysqlTable("order_lot_assignments", {
 });
 export type OrderLotAssignment = typeof orderLotAssignments.$inferSelect;
 export type InsertOrderLotAssignment = typeof orderLotAssignments.$inferInsert;
+
+/**
+ * Solicitações de autorização para lançamento de lotes com data retroativa.
+ * Quando Maria/Erica tentam lançar um lote com data anterior a hoje,
+ * o sistema cria uma solicitação que precisa ser aprovada por Bruno ou Guilherme.
+ * Após aprovação, o lote pode ser criado com a data retroativa autorizada.
+ */
+export const retroactiveLotRequests = mysqlTable("retroactive_lot_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  // Solicitante
+  solicitanteNome: varchar("solicitante_nome", { length: 200 }).notNull(),
+  // Dados do lote pretendido
+  codigoItem: varchar("codigo_item", { length: 20 }).notNull(),
+  descricaoItem: text("descricao_item").notNull(),
+  notaCarga: varchar("nota_carga", { length: 50 }).notNull(),
+  qtdProduzida: decimal("qtd_produzida", { precision: 18, scale: 2 }).notNull(),
+  dataProducao: varchar("data_producao", { length: 10 }).notNull(), // YYYY-MM-DD (data retroativa desejada)
+  codigoLotePreview: varchar("codigo_lote_preview", { length: 100 }).notNull(), // Preview do código que será gerado
+  motivo: text("motivo"), // Motivo opcional da solicitação
+  // Status do fluxo
+  status: mysqlEnum("status", ["pendente", "aprovado", "recusado"]).default("pendente").notNull(),
+  // Quem aprovou/recusou
+  aprovadorNome: varchar("aprovador_nome", { length: 200 }),
+  motivoRecusa: text("motivo_recusa"), // Motivo da recusa (se recusado)
+  dataDecisao: timestamp("data_decisao"),
+  // Se aprovado e lote criado, referência ao lote
+  loteCriadoId: int("lote_criado_id"), // FK production_lots.id (preenchido após criação)
+  loteCriadoCodigo: varchar("lote_criado_codigo", { length: 100 }),
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type RetroactiveLotRequest = typeof retroactiveLotRequests.$inferSelect;
+export type InsertRetroactiveLotRequest = typeof retroactiveLotRequests.$inferInsert;

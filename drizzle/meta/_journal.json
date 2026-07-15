@@ -1212,6 +1212,13 @@
       "when": 1784040691336,
       "tag": "0172_faulty_magma",
       "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "5",
+      "when": 1784121280932,
+      "tag": "0173_loose_silver_fox",
+      "breakpoints": true
     }
   ]
 }

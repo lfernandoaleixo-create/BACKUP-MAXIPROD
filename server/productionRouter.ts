@@ -1,8 +1,9 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries, productionLots, lotMovements, productCatalog } from "../drizzle/schema";
-import { eq, and, or, sql, desc, gte, lte, inArray } from "drizzle-orm";
+import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries, productionLots, lotMovements, productCatalog, retroactiveLotRequests } from "../drizzle/schema";
+import { count } from "drizzle-orm";
+import { eq, and, or, sql, desc, gte, lte, inArray, ne } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
 export const MACHINE_STATUS_OPTIONS = [
@@ -1200,5 +1201,184 @@ export const productionRouter = router({
       await db.delete(productionLots).where(eq(productionLots.id, input.lotId));
 
       return { success: true, deletedLot: lot[0].codigo };
+    }),
+
+  // ═══════════════════════════════════════════════════════════
+  // AUTORIZAÇÃO DE LOTES RETROATIVOS
+  // ═══════════════════════════════════════════════════════════
+
+  /** Criar solicitação de lote retroativo */
+  requestRetroactiveLot: publicProcedure
+    .input(z.object({
+      solicitanteNome: z.string(),
+      codigoItem: z.string(),
+      descricaoItem: z.string(),
+      notaCarga: z.string(),
+      qtdProduzida: z.number().positive(),
+      dataProducao: z.string(), // YYYY-MM-DD
+      motivo: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Gerar preview do código do lote com a data retroativa
+      const [year, month, day] = input.dataProducao.split("-");
+      const dd = day;
+      const mm = month;
+      const aa = year.slice(-2);
+      const codigoLotePreview = `${input.codigoItem}-${dd}${mm}${aa}-${input.notaCarga}`;
+
+      // Verificar se já existe solicitação pendente para o mesmo lote
+      const existing = await db.select().from(retroactiveLotRequests)
+        .where(and(
+          eq(retroactiveLotRequests.codigoLotePreview, codigoLotePreview),
+          eq(retroactiveLotRequests.status, "pendente")
+        ))
+        .limit(1);
+      if (existing.length > 0) {
+        throw new Error(`Já existe uma solicitação pendente para o lote ${codigoLotePreview}`);
+      }
+
+      const [inserted] = await db.insert(retroactiveLotRequests).values({
+        solicitanteNome: input.solicitanteNome,
+        codigoItem: input.codigoItem,
+        descricaoItem: input.descricaoItem,
+        notaCarga: input.notaCarga,
+        qtdProduzida: String(input.qtdProduzida),
+        dataProducao: input.dataProducao,
+        codigoLotePreview,
+        motivo: input.motivo || null,
+      });
+
+      return { success: true, id: inserted.insertId, codigoLotePreview };
+    }),
+
+  /** Listar solicitações pendentes (para Bruno/Guilherme) */
+  listPendingRetroactive: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(retroactiveLotRequests)
+      .where(eq(retroactiveLotRequests.status, "pendente"))
+      .orderBy(desc(retroactiveLotRequests.createdAt));
+  }),
+
+  /** Contar solicitações pendentes (para alerta piscando) */
+  countPendingRetroactive: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { pending: 0 };
+    const [result] = await db.select({ count: count() })
+      .from(retroactiveLotRequests)
+      .where(eq(retroactiveLotRequests.status, "pendente"));
+    return { pending: result?.count || 0 };
+  }),
+
+  /** Aprovar solicitação retroativa e criar o lote */
+  approveRetroactiveLot: publicProcedure
+    .input(z.object({
+      requestId: z.number(),
+      aprovadorNome: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Buscar a solicitação
+      const [request] = await db.select().from(retroactiveLotRequests)
+        .where(eq(retroactiveLotRequests.id, input.requestId));
+      if (!request) throw new Error("Solicitação não encontrada");
+      if (request.status !== "pendente") throw new Error("Solicitação já foi processada");
+
+      // Verificar se o lote já existe
+      const existing = await db.select().from(productionLots)
+        .where(eq(productionLots.codigo, request.codigoLotePreview)).limit(1);
+      if (existing.length > 0) {
+        throw new Error(`Lote ${request.codigoLotePreview} já existe no sistema`);
+      }
+
+      // Criar o lote com a data retroativa
+      await db.insert(productionLots).values({
+        codigo: request.codigoLotePreview,
+        codigoItem: request.codigoItem,
+        descricaoItem: request.descricaoItem,
+        notaCarga: request.notaCarga,
+        dataProducao: request.dataProducao,
+        qtdProduzida: String(request.qtdProduzida),
+        saldoAtual: String(request.qtdProduzida),
+        lancadoPor: request.solicitanteNome,
+      });
+
+      // Buscar o ID do lote criado
+      const [newLot] = await db.select().from(productionLots)
+        .where(eq(productionLots.codigo, request.codigoLotePreview)).limit(1);
+
+      // Atualizar a solicitação como aprovada
+      await db.update(retroactiveLotRequests)
+        .set({
+          status: "aprovado",
+          aprovadorNome: input.aprovadorNome,
+          dataDecisao: new Date(),
+          loteCriadoId: newLot?.id || null,
+          loteCriadoCodigo: request.codigoLotePreview,
+        })
+        .where(eq(retroactiveLotRequests.id, input.requestId));
+
+      return { success: true, codigoLote: request.codigoLotePreview };
+    }),
+
+  /** Recusar solicitação retroativa */
+  rejectRetroactiveLot: publicProcedure
+    .input(z.object({
+      requestId: z.number(),
+      aprovadorNome: z.string(),
+      motivoRecusa: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const [request] = await db.select().from(retroactiveLotRequests)
+        .where(eq(retroactiveLotRequests.id, input.requestId));
+      if (!request) throw new Error("Solicitação não encontrada");
+      if (request.status !== "pendente") throw new Error("Solicitação já foi processada");
+
+      await db.update(retroactiveLotRequests)
+        .set({
+          status: "recusado",
+          aprovadorNome: input.aprovadorNome,
+          motivoRecusa: input.motivoRecusa || null,
+          dataDecisao: new Date(),
+        })
+        .where(eq(retroactiveLotRequests.id, input.requestId));
+
+      return { success: true };
+    }),
+
+  /** Histórico de todas as solicitações retroativas (aprovadas + recusadas) */
+  retroactiveHistory: publicProcedure
+    .input(z.object({
+      limit: z.number().optional().default(50),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(retroactiveLotRequests)
+        .where(ne(retroactiveLotRequests.status, "pendente"))
+        .orderBy(desc(retroactiveLotRequests.dataDecisao))
+        .limit(input?.limit || 50);
+    }),
+
+  /** Listar solicitações do solicitante (para Maria/Erica verem o status) */
+  myRetroactiveRequests: publicProcedure
+    .input(z.object({
+      solicitanteNome: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(retroactiveLotRequests)
+        .where(eq(retroactiveLotRequests.solicitanteNome, input.solicitanteNome))
+        .orderBy(desc(retroactiveLotRequests.createdAt))
+        .limit(20);
     }),
 });

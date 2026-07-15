@@ -81,6 +81,14 @@ export default function TopNav({ rightContent }: TopNavProps) {
   });
   const hasGestaoAlert = (isGestorOrApprover && (pendingGestorData?.pending ?? 0) > 0) || (isVitoria && (pendingVitoriaData?.pending ?? 0) > 0);
 
+  // Blink Produção tab for retroactive lot requests (Bruno/Guilherme/Fernando)
+  const isRetroApprover = operator?.name === "Bruno" || operator?.name === "Guilherme" || operator?.name === "Fernando";
+  const { data: pendingRetroData } = trpc.production.countPendingRetroactive.useQuery(undefined, {
+    enabled: isRetroApprover,
+    refetchInterval: 15000,
+  });
+  const hasPendingRetroactive = isRetroApprover && (pendingRetroData?.pending ?? 0) > 0;
+
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
     return location.startsWith(href);
@@ -199,7 +207,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 && discountAlerts.blinkLevel === "financeiro-tab" 
                 && discountAlerts.unreadCount > 0;
 
-              const shouldBlinkProducao = item.section === "producao" && hasPendingStock;
+              const shouldBlinkProducao = item.section === "producao" && (hasPendingStock || hasPendingRetroactive);
               const shouldBlinkGestao = item.section === "gestao-comercial" && hasGestaoAlert;
 
               const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao;
@@ -270,7 +278,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 && discountAlerts.blinkLevel === "financeiro-tab" 
                 && discountAlerts.unreadCount > 0;
 
-              const shouldBlinkProducao = item.section === "producao" && hasPendingStock;
+              const shouldBlinkProducao = item.section === "producao" && (hasPendingStock || hasPendingRetroactive);
               const shouldBlinkGestao = item.section === "gestao-comercial" && hasGestaoAlert;
 
               const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao;

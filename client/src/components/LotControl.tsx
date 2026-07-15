@@ -9,14 +9,20 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Package, Plus, Search, Loader2, ChevronDown, ChevronRight,
-  Box, History, Layers, X, Check, Trash2,
+  Box, History, Layers, X, Check, Trash2, Send, Clock, CheckCircle2, XCircle, Shield,
 } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
 
-type Tab = "lancamento" | "estoque" | "historico";
+type Tab = "lancamento" | "estoque" | "historico" | "autorizacoes";
 
 export default function LotControl() {
   const [tab, setTab] = useState<Tab>("lancamento");
+  const { operator } = useOperator();
+  const isApprover = operator?.name === "Bruno" || operator?.name === "Guilherme" || operator?.name === "Fernando";
+  const { data: pendingCount } = trpc.production.countPendingRetroactive.useQuery(undefined, {
+    enabled: isApprover,
+    refetchInterval: 15000,
+  });
 
   return (
     <div className="space-y-4">
@@ -31,7 +37,7 @@ export default function LotControl() {
             <p className="text-xs text-slate-500">Rastreabilidade de produção por lote</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setTab("lancamento")}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -56,12 +62,28 @@ export default function LotControl() {
           >
             <History className="w-4 h-4" /> Histórico
           </button>
+          {isApprover && (
+            <button
+              onClick={() => setTab("autorizacoes")}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
+                tab === "autorizacoes" ? "bg-amber-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              } ${(pendingCount?.pending ?? 0) > 0 && tab !== "autorizacoes" ? "animate-discount-blink" : ""}`}
+            >
+              <Shield className="w-4 h-4" /> Autorizações
+              {(pendingCount?.pending ?? 0) > 0 && (
+                <span className="ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingCount!.pending}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
       {tab === "lancamento" && <LancamentoLote />}
       {tab === "estoque" && <EstoqueLotes />}
       {tab === "historico" && <HistoricoLotes />}
+      {tab === "autorizacoes" && isApprover && <AutorizacoesRetroativas />}
     </div>
   );
 }
@@ -70,30 +92,61 @@ export default function LotControl() {
    LANÇAMENTO DE LOTE
    ═══════════════════════════════════════════════════════════ */
 function LancamentoLote() {
+  const { operator } = useOperator();
   const [codigoItem, setCodigoItem] = useState("");
   const [descricaoItem, setDescricaoItem] = useState("");
   const [notaCarga, setNotaCarga] = useState("");
   const [qtdProduzida, setQtdProduzida] = useState("");
+  const [dataProducao, setDataProducao] = useState(() => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10);
+  });
   const [searchProduct, setSearchProduct] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [showRetroModal, setShowRetroModal] = useState(false);
+  const [motivo, setMotivo] = useState("");
 
   const { data: products, isLoading: loadingProducts } = trpc.production.getLotProducts.useQuery();
+  const { data: myRequests } = trpc.production.myRetroactiveRequests.useQuery(
+    { solicitanteNome: operator?.name || "" },
+    { enabled: !!operator?.name }
+  );
   const utils = trpc.useUtils();
 
   const createLot = trpc.production.createLot.useMutation({
     onSuccess: (data) => {
       toast.success(`Lote ${data.codigo} criado com sucesso!`);
-      setCodigoItem("");
-      setDescricaoItem("");
-      setNotaCarga("");
-      setQtdProduzida("");
-      setPreview(null);
+      resetForm();
       utils.production.getAllLots.invalidate();
       utils.production.getLotsWithBalance.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
+
+  const requestRetroactive = trpc.production.requestRetroactiveLot.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Solicitação enviada! Lote ${data.codigoLotePreview} aguardando autorização de Bruno ou Guilherme.`);
+      resetForm();
+      setShowRetroModal(false);
+      setMotivo("");
+      utils.production.myRetroactiveRequests.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const resetForm = () => {
+    setCodigoItem("");
+    setDescricaoItem("");
+    setNotaCarga("");
+    setQtdProduzida("");
+    setDataProducao(new Date().toISOString().slice(0, 10));
+    setPreview(null);
+  };
+
+  // Detectar se a data é retroativa (anterior a hoje)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isRetroactive = dataProducao < todayStr;
 
   const filteredProducts = useMemo(() => {
     if (!products || !searchProduct) return products || [];
@@ -109,138 +162,269 @@ function LancamentoLote() {
       toast.error("Preencha todos os campos");
       return;
     }
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, "0");
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const aa = String(today.getFullYear()).slice(-2);
+    const [year, month, day] = dataProducao.split("-");
+    const dd = day;
+    const mm = month;
+    const aa = year.slice(-2);
     setPreview(`${codigoItem}-${dd}${mm}${aa}-${notaCarga}`);
   };
 
   const handleConfirm = () => {
     if (!preview) return;
-    createLot.mutate({
+    if (isRetroactive) {
+      // Mostrar modal de solicitação
+      setShowRetroModal(true);
+    } else {
+      createLot.mutate({
+        codigoItem,
+        descricaoItem,
+        notaCarga,
+        qtdProduzida: parseFloat(qtdProduzida),
+        lancadoPor: operator?.name || "Operador",
+      });
+    }
+  };
+
+  const handleSendRequest = () => {
+    requestRetroactive.mutate({
+      solicitanteNome: operator?.name || "Operador",
       codigoItem,
       descricaoItem,
       notaCarga,
       qtdProduzida: parseFloat(qtdProduzida),
-      lancadoPor: "Operador",
+      dataProducao,
+      motivo: motivo || undefined,
     });
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-      <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-        <Plus className="w-4 h-4 text-indigo-500" /> Lançamento de Novo Lote
-      </h3>
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <Plus className="w-4 h-4 text-indigo-500" /> Lançamento de Novo Lote
+        </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* SKU Dropdown */}
-        <div className="relative">
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Produto (SKU)</label>
-          <input
-            type="text"
-            value={codigoItem ? `${codigoItem} - ${descricaoItem}` : searchProduct}
-            onChange={(e) => {
-              setSearchProduct(e.target.value);
-              setCodigoItem("");
-              setDescricaoItem("");
-              setShowDropdown(true);
-              setPreview(null);
-            }}
-            onFocus={() => setShowDropdown(true)}
-            placeholder="Buscar produto..."
-            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-          {codigoItem && (
-            <button onClick={() => { setCodigoItem(""); setDescricaoItem(""); setSearchProduct(""); setPreview(null); }}
-              className="absolute right-2 top-7 text-slate-400 hover:text-slate-600">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-          {showDropdown && !codigoItem && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-              {loadingProducts ? (
-                <div className="p-3 text-center text-sm text-slate-400"><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Carregando...</div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="p-3 text-center text-sm text-slate-400">Nenhum produto encontrado</div>
-              ) : (
-                filteredProducts.map(p => (
-                  <button key={p.codigoItem}
-                    onClick={() => { setCodigoItem(p.codigoItem); setDescricaoItem(p.descricaoItem); setShowDropdown(false); setSearchProduct(""); setPreview(null); }}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0"
-                  >
-                    <span className="font-medium text-indigo-700">{p.codigoItem}</span>
-                    <span className="text-slate-500 ml-2">{p.descricaoItem}</span>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Nota da Carga */}
-        <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Nota da Carga</label>
-          <input
-            type="text"
-            value={notaCarga}
-            onChange={(e) => { setNotaCarga(e.target.value); setPreview(null); }}
-            placeholder="Ex: 12345"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-        </div>
-
-        {/* Quantidade */}
-        <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Caixas Produzidas</label>
-          <input
-            type="number"
-            value={qtdProduzida}
-            onChange={(e) => { setQtdProduzida(e.target.value); setPreview(null); }}
-            placeholder="0"
-            min="1"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-        </div>
-
-        {/* Data (automática) */}
-        <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Data de Produção</label>
-          <input
-            type="text"
-            value={new Date().toLocaleDateString("pt-BR")}
-            disabled
-            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 text-slate-500"
-          />
-        </div>
-      </div>
-
-      {/* Preview & Confirm */}
-      <div className="mt-5 flex items-center gap-3">
-        {!preview ? (
-          <button onClick={generatePreview}
-            className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-            <Package className="w-4 h-4" /> Gerar Código do Lote
-          </button>
-        ) : (
-          <div className="flex items-center gap-4 w-full">
-            <div className="flex-1 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-              <div className="text-xs text-indigo-600 font-medium mb-0.5">Código do Lote:</div>
-              <div className="text-lg font-bold text-indigo-800 font-mono">{preview}</div>
-              <div className="text-xs text-slate-500 mt-1">{qtdProduzida} caixas · {descricaoItem}</div>
-            </div>
-            <button onClick={handleConfirm} disabled={createLot.isPending}
-              className="px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50">
-              {createLot.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Confirmar Lote
-            </button>
-            <button onClick={() => setPreview(null)}
-              className="px-3 py-2.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg">
-              Cancelar
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* SKU Dropdown */}
+          <div className="relative">
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Produto (SKU)</label>
+            <input
+              type="text"
+              value={codigoItem ? `${codigoItem} - ${descricaoItem}` : searchProduct}
+              onChange={(e) => {
+                setSearchProduct(e.target.value);
+                setCodigoItem("");
+                setDescricaoItem("");
+                setShowDropdown(true);
+                setPreview(null);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              placeholder="Buscar produto..."
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            {codigoItem && (
+              <button onClick={() => { setCodigoItem(""); setDescricaoItem(""); setSearchProduct(""); setPreview(null); }}
+                className="absolute right-2 top-7 text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            {showDropdown && !codigoItem && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {loadingProducts ? (
+                  <div className="p-3 text-center text-sm text-slate-400"><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Carregando...</div>
+                ) : filteredProducts.length === 0 ? (
+                  <div className="p-3 text-center text-sm text-slate-400">Nenhum produto encontrado</div>
+                ) : (
+                  filteredProducts.map(p => (
+                    <button key={p.codigoItem}
+                      onClick={() => { setCodigoItem(p.codigoItem); setDescricaoItem(p.descricaoItem); setShowDropdown(false); setSearchProduct(""); setPreview(null); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0"
+                    >
+                      <span className="font-medium text-indigo-700">{p.codigoItem}</span>
+                      <span className="text-slate-500 ml-2">{p.descricaoItem}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Nota da Carga */}
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Nota da Carga</label>
+            <input
+              type="text"
+              value={notaCarga}
+              onChange={(e) => { setNotaCarga(e.target.value); setPreview(null); }}
+              placeholder="Ex: 12345"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
+          {/* Quantidade */}
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Caixas Produzidas</label>
+            <input
+              type="number"
+              value={qtdProduzida}
+              onChange={(e) => { setQtdProduzida(e.target.value); setPreview(null); }}
+              placeholder="0"
+              min="1"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
+          {/* Data de Produção (editável) */}
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Data de Produção</label>
+            <input
+              type="date"
+              value={dataProducao}
+              onChange={(e) => { setDataProducao(e.target.value); setPreview(null); }}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                isRetroactive ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200"
+              }`}
+            />
+            {isRetroactive && (
+              <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Data retroativa: requer autorização
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Preview & Confirm */}
+        <div className="mt-5 flex items-center gap-3">
+          {!preview ? (
+            <button onClick={generatePreview}
+              className={`px-4 py-2.5 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                isRetroactive ? "bg-amber-600 hover:bg-amber-700" : "bg-indigo-600 hover:bg-indigo-700"
+              }`}>
+              <Package className="w-4 h-4" /> {isRetroactive ? "Solicitar Autorização" : "Gerar Código do Lote"}
+            </button>
+          ) : (
+            <div className="flex items-center gap-4 w-full">
+              <div className={`flex-1 rounded-lg p-3 border ${
+                isRetroactive ? "bg-amber-50 border-amber-200" : "bg-indigo-50 border-indigo-200"
+              }`}>
+                <div className={`text-xs font-medium mb-0.5 ${isRetroactive ? "text-amber-600" : "text-indigo-600"}`}>
+                  {isRetroactive ? "Lote Retroativo (requer autorização):" : "Código do Lote:"}
+                </div>
+                <div className={`text-lg font-bold font-mono ${isRetroactive ? "text-amber-800" : "text-indigo-800"}`}>{preview}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {qtdProduzida} caixas · {descricaoItem} · {dataProducao.split("-").reverse().join("/")}
+                </div>
+              </div>
+              <button onClick={handleConfirm} disabled={createLot.isPending || requestRetroactive.isPending}
+                className={`px-4 py-2.5 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${
+                  isRetroactive ? "bg-amber-600 hover:bg-amber-700" : "bg-emerald-600 hover:bg-emerald-700"
+                }`}>
+                {(createLot.isPending || requestRetroactive.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : isRetroactive ? <Send className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                {isRetroactive ? "Enviar Solicitação" : "Confirmar Lote"}
+              </button>
+              <button onClick={() => setPreview(null)}
+                className="px-3 py-2.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg">
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Modal de Solicitação Retroativa */}
+      {showRetroModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowRetroModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Solicitação de Lote Retroativo</h3>
+                <p className="text-xs text-slate-500">Será enviada para análise de Bruno ou Guilherme</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <div className="text-xs text-amber-700 font-medium">Lote:</div>
+              <div className="text-base font-bold font-mono text-amber-800">{preview}</div>
+              <div className="text-xs text-slate-600 mt-1">
+                {qtdProduzida} caixas · {descricaoItem} · Data: {dataProducao.split("-").reverse().join("/")}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Motivo (opcional)</label>
+              <textarea
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                placeholder="Ex: Produção realizada ontem mas não foi lançada no sistema..."
+                rows={3}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSendRequest}
+                disabled={requestRetroactive.isPending}
+                className="flex-1 px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {requestRetroactive.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Enviar Solicitação
+              </button>
+              <button
+                onClick={() => setShowRetroModal(false)}
+                className="px-4 py-2.5 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Minhas Solicitações Retroativas */}
+      {myRequests && myRequests.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-amber-500" /> Minhas Solicitações Retroativas
+          </h4>
+          <div className="space-y-2">
+            {myRequests.slice(0, 5).map((req: any) => (
+              <div key={req.id} className={`flex items-center justify-between p-2.5 rounded-lg border ${
+                req.status === "pendente" ? "bg-amber-50 border-amber-200" :
+                req.status === "aprovado" ? "bg-emerald-50 border-emerald-200" :
+                "bg-red-50 border-red-200"
+              }`}>
+                <div>
+                  <div className="text-xs font-mono font-medium text-slate-700">{req.codigoLotePreview}</div>
+                  <div className="text-[10px] text-slate-500">
+                    {req.descricaoItem?.slice(0, 40)} · {req.dataProducao.split("-").reverse().join("/")}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {req.status === "pendente" && (
+                    <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Aguardando
+                    </span>
+                  )}
+                  {req.status === "aprovado" && (
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Aprovado por {req.aprovadorNome}
+                    </span>
+                  )}
+                  {req.status === "recusado" && (
+                    <span className="text-[10px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <XCircle className="w-3 h-3" /> Recusado{req.aprovadorNome ? ` por ${req.aprovadorNome}` : ""}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -563,6 +747,197 @@ function HistoricoLotes() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   AUTORIZAÇÕES RETROATIVAS (Bruno/Guilherme/Fernando)
+   ═══════════════════════════════════════════════════════════ */
+function AutorizacoesRetroativas() {
+  const { operator } = useOperator();
+  const [motivoRecusa, setMotivoRecusa] = useState<Record<number, string>>({});
+  const [showRejectInput, setShowRejectInput] = useState<number | null>(null);
+
+  const { data: pending, isLoading: loadingPending } = trpc.production.listPendingRetroactive.useQuery(undefined, {
+    refetchInterval: 10000,
+  });
+  const { data: history, isLoading: loadingHistory } = trpc.production.retroactiveHistory.useQuery({});
+  const utils = trpc.useUtils();
+
+  const approveMut = trpc.production.approveRetroactiveLot.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Lote ${data.codigoLote} aprovado e criado com sucesso!`);
+      utils.production.listPendingRetroactive.invalidate();
+      utils.production.countPendingRetroactive.invalidate();
+      utils.production.retroactiveHistory.invalidate();
+      utils.production.getAllLots.invalidate();
+      utils.production.getLotsWithBalance.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const rejectMut = trpc.production.rejectRetroactiveLot.useMutation({
+    onSuccess: () => {
+      toast.success("Solicitação recusada.");
+      setShowRejectInput(null);
+      utils.production.listPendingRetroactive.invalidate();
+      utils.production.countPendingRetroactive.invalidate();
+      utils.production.retroactiveHistory.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Pendentes */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <Shield className="w-4 h-4 text-amber-500" /> Solicitações Pendentes
+        </h3>
+
+        {loadingPending ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+            <span className="ml-2 text-sm text-slate-500">Carregando...</span>
+          </div>
+        ) : !pending || pending.length === 0 ? (
+          <div className="text-center py-8 text-sm text-slate-400">
+            <CheckCircle2 className="w-10 h-10 text-emerald-300 mx-auto mb-2" />
+            Nenhuma solicitação pendente
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pending.map((req: any) => (
+              <div key={req.id} className="border border-amber-200 bg-amber-50 rounded-lg p-4 animate-pulse-slow">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                        PENDENTE
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Solicitado por <span className="font-medium text-slate-700">{req.solicitanteNome}</span>
+                      </span>
+                    </div>
+                    <div className="font-mono text-base font-bold text-slate-800 mb-1">{req.codigoLotePreview}</div>
+                    <div className="text-xs text-slate-600 space-y-0.5">
+                      <div>Produto: <span className="font-medium">{req.codigoItem}</span> - {req.descricaoItem?.slice(0, 50)}</div>
+                      <div>Quantidade: <span className="font-medium">{parseFloat(String(req.qtdProduzida))} caixas</span></div>
+                      <div>Data retroativa: <span className="font-medium text-amber-700">{req.dataProducao.split("-").reverse().join("/")}</span></div>
+                      <div>Nota da Carga: <span className="font-medium">{req.notaCarga}</span></div>
+                      {req.motivo && <div className="mt-1 italic text-slate-500">Motivo: "{req.motivo}"</div>}
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        Solicitado em: {new Date(req.createdAt).toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => approveMut.mutate({ requestId: req.id, aprovadorNome: operator?.name || "Gestor" })}
+                      disabled={approveMut.isPending}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                    >
+                      {approveMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                      Autorizar
+                    </button>
+                    {showRejectInput === req.id ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Motivo (opcional)"
+                          value={motivoRecusa[req.id] || ""}
+                          onChange={(e) => setMotivoRecusa(prev => ({ ...prev, [req.id]: e.target.value }))}
+                          className="w-full text-xs border border-red-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400"
+                        />
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => rejectMut.mutate({ requestId: req.id, aprovadorNome: operator?.name || "Gestor", motivoRecusa: motivoRecusa[req.id] || undefined })}
+                            disabled={rejectMut.isPending}
+                            className="flex-1 text-[10px] font-bold text-white bg-red-600 rounded-md px-2 py-1.5 hover:bg-red-700 disabled:opacity-50"
+                          >
+                            Confirmar Recusa
+                          </button>
+                          <button
+                            onClick={() => setShowRejectInput(null)}
+                            className="text-[10px] text-slate-500 px-2 py-1.5 hover:bg-slate-100 rounded-md"
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowRejectInput(req.id)}
+                        className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        Recusar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Histórico */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <History className="w-4 h-4 text-violet-500" /> Histórico de Autorizações
+        </h3>
+
+        {loadingHistory ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+          </div>
+        ) : !history || history.length === 0 ? (
+          <div className="text-center py-6 text-sm text-slate-400">Nenhum registro no histórico</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50">
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500 uppercase">Lote</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500 uppercase">Solicitante</th>
+                  <th className="text-center px-3 py-2 font-semibold text-slate-500 uppercase">Data Retro</th>
+                  <th className="text-center px-3 py-2 font-semibold text-slate-500 uppercase">Status</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500 uppercase">Aprovador</th>
+                  <th className="text-right px-3 py-2 font-semibold text-slate-500 uppercase">Data Decisão</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {history.map((h: any) => (
+                  <tr key={h.id} className="hover:bg-slate-50/50">
+                    <td className="px-3 py-2 font-mono font-medium text-slate-700">{h.codigoLotePreview}</td>
+                    <td className="px-3 py-2 text-slate-600">{h.solicitanteNome}</td>
+                    <td className="px-3 py-2 text-center text-slate-600">{h.dataProducao.split("-").reverse().join("/")}</td>
+                    <td className="px-3 py-2 text-center">
+                      {h.status === "aprovado" ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-medium">
+                          <CheckCircle2 className="w-3 h-3" /> Aprovado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-red-700 bg-red-100 px-2 py-0.5 rounded-full font-medium">
+                          <XCircle className="w-3 h-3" /> Recusado
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">{h.aprovadorNome || "-"}</td>
+                    <td className="px-3 py-2 text-right text-slate-500">
+                      {h.dataDecisao ? new Date(h.dataDecisao).toLocaleString("pt-BR") : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -5602,3 +5602,11 @@
 - [x] Passar rawResponse completo para o frontend (todos os campos da API Serasa)
 - [x] Exibir: dataNascimento/fundação da empresa, todos os endereços completos, todos os telefones com DDD, todos os emails, quadro societário com CPF e participação, CNAE completo, capital social, faturamento presumido, renda estimada, limite de crédito, porte, situação cadastral
 - [x] Seções expansíveis: Dados Cadastrais (sempre aberto), Endereços, Telefones, Emails, Quadro Societário, Crédito/Pendências
+
+## Autorização de Lotes Retroativos (data anterior a hoje)
+- [x] Criar tabela retroactive_lot_requests no banco (solicitante, data_producao, produto, status, aprovador, motivo, timestamps)
+- [x] Criar rotas tRPC: solicitar autorização, listar pendentes, aprovar/recusar, histórico
+- [x] No frontend de Lançamento de Lotes: detectar data retroativa e mostrar modal "Enviar solicitação para análise"
+- [x] No painel de Bruno/Guilherme: alerta piscando com solicitações pendentes para autorizar/recusar
+- [x] Após aprovação: permitir que Maria/Erica criem o lote com a data retroativa autorizada
+- [x] Aba/seção de histórico de autorizações retroativas
