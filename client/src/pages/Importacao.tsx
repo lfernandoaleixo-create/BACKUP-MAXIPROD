@@ -2548,6 +2548,15 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
       utils.import.getPosBySupplier.invalidate({ supplierId });
     },
   });
+  const removeDocMut = trpc.import.removePoDocument.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+      toast.success('Documento removido!');
+    },
+    onError: () => {
+      toast.error('Erro ao remover documento');
+    },
+  });
   const deletePoMut = trpc.import.deletePo.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId });
@@ -2975,6 +2984,18 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                   >
                     <Download className="w-3.5 h-3.5" />
                   </a>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Tem certeza que deseja remover a CI desta PO?')) {
+                        removeDocMut.mutate({ poId: po.id, type: 'ci' });
+                      }
+                    }}
+                    className="flex items-center px-1.5 py-1 text-red-500 hover:bg-red-50 border-l border-blue-200 h-full"
+                    title="Remover CI"
+                    disabled={removeDocMut.isPending}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
               {/* Upload Ordem de Pagamento button (when no OP exists) */}
@@ -3018,6 +3039,18 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                   >
                     <Download className="w-3.5 h-3.5" />
                   </a>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Tem certeza que deseja remover a Ordem de Pagamento desta PO?')) {
+                        removeDocMut.mutate({ poId: po.id, type: 'ordemPagamento' });
+                      }
+                    }}
+                    className="flex items-center px-1.5 py-1 text-red-500 hover:bg-red-50 border-l border-emerald-200 h-full"
+                    title="Remover Ordem de Pagamento"
+                    disabled={removeDocMut.isPending}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
               {/* Navigation Status Checkboxes */}

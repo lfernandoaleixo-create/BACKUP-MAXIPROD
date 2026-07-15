@@ -5593,3 +5593,7 @@
 ## Cards piscando quando há pedidos pendentes de aprovação
 - [x] Card "Painel do Gestor" deve piscar quando há pedidos pendentes de aprovação
 - [x] Card "Aprovações de Pedidos" (dentro do painel do gestor) deve piscar quando há pedidos pendentes
+
+## Importação: Botão de excluir documento
+- [x] Adicionar botão de lixeira (excluir) nos documentos de importação (CI, Ordem de Pagamento)
+- [ ] Permitir substituir o arquivo após excluir (upload de novo arquivo no lugar)
