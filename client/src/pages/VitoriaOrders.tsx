@@ -7,6 +7,7 @@ import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { RealCostMarginBar } from "@/components/RealCostMarginBar";
+import { ProductMarginBar } from "@/components/ProductMarginBar";
 import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
@@ -244,6 +245,79 @@ export default function VitoriaOrders() {
   const recebidoCount = (orders || []).filter((o: any) => o.vitoriaRecebido && !o.vitoriaLancado).length;
   const lancadoCount = (orders || []).filter((o: any) => o.vitoriaLancado).length;
 
+  // Calculate order margin for each order (for collapsed card bars)
+  const orderMarginsMap = useMemo(() => {
+    if (!orders || !productMarginsQuery.data) return new Map<number, number>();
+    const map = new Map<number, number>();
+    const { costMap, taxBreakdownImportado, taxBreakdownIndustrializado } = productMarginsQuery.data;
+    for (const order of orders as any[]) {
+      if (!order.items?.length) continue;
+      let sumPVxM = 0, sumPV = 0;
+      for (const item of order.items) {
+        const cd = costMap[item.codigoItem];
+        if (!cd) continue;
+        const pv = Number(item.precoUnitario);
+        if (pv <= 0) continue;
+        const taxBd = cd.tipoProduto === "industrializado" ? taxBreakdownIndustrializado : taxBreakdownImportado;
+        const totalDed = (cd.cost / pv) * 100 + (taxBd?.total || 0) + 13 + 5.85;
+        const m = 100 - totalDed;
+        const tv = pv * Number(item.quantidade);
+        sumPVxM += tv * m;
+        sumPV += tv;
+      }
+      if (sumPV > 0) map.set(order.id, sumPVxM / sumPV);
+    }
+    return map;
+  }, [orders, productMarginsQuery.data]);
+
+  // Helper for margin tier color
+  const getMarginColor = (m: number) => {
+    if (m < 15) return { bg: 'bg-red-100', text: 'text-red-700', label: 'Crítico' };
+    if (m < 20) return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Baixo' };
+    if (m < 25) return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Médio' };
+    if (m < 29) return { bg: 'bg-green-100', text: 'text-green-700', label: 'Bom' };
+    return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Ótimo' };
+  };
+
+  // Group filtered orders by seller for Fernando/Guilherme/Bruno view
+  const isTopGestor = isFernandoViewer || isGuilhermeViewer || isBrunoViewer;
+  const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
+
+  const sellerGroups = useMemo(() => {
+    if (!isTopGestor) return [];
+    const groups: { sellerName: string; sellerId: number; orders: any[] }[] = [];
+    const map = new Map<string, { sellerId: number; orders: any[] }>();
+    for (const order of filteredOrders as any[]) {
+      const name = order.sellerName || 'Sem vendedor';
+      if (!map.has(name)) {
+        map.set(name, { sellerId: order.sellerId, orders: [] });
+      }
+      map.get(name)!.orders.push(order);
+    }
+    Array.from(map.entries()).forEach(([sellerName, data]) => {
+      groups.push({ sellerName, sellerId: data.sellerId, orders: data.orders });
+    });
+    return groups;
+  }, [filteredOrders, isTopGestor]);
+
+  // For isTopGestor: use the expanded seller's ID for monthly margin query
+  const expandedSellerIdForMonthly = useMemo(() => {
+    if (expandedSeller) {
+      const group = sellerGroups.find(g => g.sellerName === expandedSeller);
+      return group?.sellerId || 0;
+    }
+    return orderSellerId || 0;
+  }, [expandedSeller, sellerGroups, orderSellerId]);
+
+  // Override monthly margin query for seller-grouped view
+  const sellerMonthlyInput = useMemo(() => ({
+    sellerId: expandedSellerIdForMonthly,
+  }), [expandedSellerIdForMonthly]);
+  const sellerMonthlyQuery = trpc.salesOrders.getSellerMonthlyMargin.useQuery(
+    sellerMonthlyInput,
+    { enabled: isTopGestor && expandedSellerIdForMonthly > 0, staleTime: 30 * 1000 }
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
       <TopNav />
@@ -343,16 +417,247 @@ export default function VitoriaOrders() {
                "Nenhum pedido encontrado"}
             </p>
           </div>
+        ) : isTopGestor ? (
+          /* ===== SELLER-GROUPED VIEW for Fernando/Guilherme/Bruno ===== */
+          <div className="space-y-4">
+            {sellerGroups.map((group) => {
+              const isSellerExpanded = expandedSeller === group.sellerName;
+              return (
+                <div key={group.sellerName} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                  {/* Seller Header */}
+                  <button
+                    onClick={() => setExpandedSeller(isSellerExpanded ? null : group.sellerName)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                        <User className="w-4.5 h-4.5 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{group.sellerName}</p>
+                        <p className="text-[10px] text-slate-500">{group.orders.length} pedido{group.orders.length !== 1 ? 's' : ''}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-bold text-green-700 dark:text-green-400">
+                        {formatCurrency(group.orders.reduce((s: number, o: any) => s + (Number(o.totalPedido) || 0), 0))}
+                      </p>
+                      {isSellerExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
+
+                  {/* Seller Expanded Content */}
+                  {isSellerExpanded && (
+                    <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                      {/* Monthly Margin Bar */}
+                      {sellerMonthlyQuery.data && sellerMonthlyQuery.data.sellerId === group.sellerId && (() => {
+                        const md = sellerMonthlyQuery.data;
+                        const margin = md.currentMonthlyMargin ?? 0;
+                        if (md.totalOrders === 0) return null;
+                        const mColor = margin >= 29 ? { text: 'text-blue-700', label: 'Ótimo' } : margin >= 25 ? { text: 'text-green-700', label: 'Bom' } : margin >= 20 ? { text: 'text-yellow-700', label: 'Médio' } : margin >= 15 ? { text: 'text-orange-700', label: 'Baixo' } : { text: 'text-red-700', label: 'Crítico' };
+                        const barMin = -5, barMax = 40;
+                        const clamped = Math.max(barMin, Math.min(barMax, margin));
+                        const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+                        return (
+                          <div className="mt-3 bg-indigo-50 border-2 border-indigo-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                                <span className="text-[10px] font-bold text-indigo-700 uppercase">Reputação do Mês — {group.sellerName} ({md.month})</span>
+                              </div>
+                              <span className={`text-sm font-black tabular-nums ${mColor.text}`}>
+                                {margin.toFixed(1)}% ({mColor.label})
+                              </span>
+                            </div>
+                            <div className="relative w-full">
+                              <div className="relative h-6 rounded-full overflow-visible border-2 border-slate-300 shadow-sm">
+                                <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                                  <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                                  <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                                  <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                                  <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                                  <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                                </div>
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "44.4%" }} />
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "55.5%" }} />
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "66.6%" }} />
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "75.5%" }} />
+                                <div className="absolute flex flex-col items-center" style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}>
+                                  <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900" />
+                                  <div className="w-[2px] flex-1 bg-slate-900 rounded-full" />
+                                </div>
+                              </div>
+                              <div className="relative w-full h-3 mt-0.5">
+                                <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
+                                <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
+                                <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
+                                <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-[10px]">
+                              <span className="text-slate-500">{md.totalOrders} pedido{md.totalOrders !== 1 ? 's' : ''} no mês</span>
+                              {md.monthlyComissaoPercentual > 0 && (
+                                <span className="font-bold text-emerald-600">Comissão: {md.monthlyComissaoPercentual}%</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Orders for this seller */}
+                      <div className="space-y-3 mt-3">
+                        {group.orders.map((order: any) => {
+                          const isExpanded = expandedOrder === order.id;
+                          const isLancado = order.vitoriaLancado;
+                          const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
+                          const isPendente = order.status === "pendente";
+                          const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
+                          const borderClass = isLancado
+                            ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
+                            : isRecebido
+                              ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
+                              : isPendente
+                                ? "border-orange-200 dark:border-orange-800 border-l-4 border-l-orange-500"
+                                : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
+                          const orderMargin = orderMarginsMap.get(order.id);
+
+                          return (
+                            <div key={order.id} className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden ${borderClass}`}>
+                              {/* Order Header */}
+                              <div
+                                onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                                className="w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    isLancado ? "bg-green-100 dark:bg-green-900/30" :
+                                    isRecebido ? "bg-blue-100 dark:bg-blue-900/30" :
+                                    isPendente ? "bg-orange-100 dark:bg-orange-900/30" :
+                                    "bg-amber-100 dark:bg-amber-900/30"
+                                  }`}>
+                                    {isLancado ? <CheckCheck className="w-4.5 h-4.5 text-green-600" /> :
+                                     isRecebido ? <Inbox className="w-4.5 h-4.5 text-blue-600" /> :
+                                     isPendente ? <Clock className="w-4.5 h-4.5 text-orange-600" /> :
+                                     <AlertCircle className="w-4.5 h-4.5 text-amber-600" />}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-[10px] font-bold text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
+                                      <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{order.razaoSocial || order.nomeFantasia}</p>
+                                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                        isLancado ? "bg-green-50 text-green-600" :
+                                        isRecebido ? "bg-blue-50 text-blue-600" :
+                                        isPendente ? "bg-orange-50 text-orange-700" :
+                                        "bg-amber-50 text-amber-700"
+                                      }`}>
+                                        {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
+                                      {order.municipio && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{order.municipio}/{order.uf}</span>}
+                                      <span>{order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR") : ""}</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex-shrink-0 flex items-center gap-2">
+                                    <p className="text-sm font-bold text-green-700 dark:text-green-400">{formatCurrency(order.totalPedido)}</p>
+                                    {/* Mini order margin bar */}
+                                    {orderMargin !== undefined && (() => {
+                                      const barMin = -5, barMax = 40;
+                                      const clamped = Math.max(barMin, Math.min(barMax, orderMargin));
+                                      const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+                                      const mc = getMarginColor(orderMargin);
+                                      return (
+                                        <div className="flex items-center gap-1.5">
+                                          <div className="relative w-24 h-4 rounded-full overflow-visible border border-slate-300">
+                                            <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                                              <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                                              <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                                              <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                                              <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                                              <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                                            </div>
+                                            <div className="absolute flex flex-col items-center" style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-3px", bottom: "-1px" }}>
+                                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-slate-900" />
+                                              <div className="w-[2px] flex-1 bg-slate-900 rounded-full" />
+                                            </div>
+                                          </div>
+                                          <span className={`text-[9px] font-bold ${mc.text}`}>{orderMargin.toFixed(1)}%</span>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                  {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                                </div>
+                              </div>
+
+                              {/* Expanded Details - reuse existing expanded content */}
+                              {isExpanded && orderDetails && orderDetails.order.id === order.id && (
+                                <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-700">
+                                  {/* Items with ProductMarginBar */}
+                                  <div className="mt-3 space-y-1.5">
+                                    <p className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
+                                      <Package className="w-3.5 h-3.5" />
+                                      Itens do Pedido ({orderDetails.items.length})
+                                    </p>
+                                    {orderDetails.items.map((item: any) => {
+                                      const precoMostrado = orderDetails.priceTableMap?.[item.codigoItem];
+                                      const precoVenda = Number(item.precoUnitario);
+                                      const descontoDado = precoMostrado && precoMostrado > 0 ? ((precoMostrado - precoVenda) / precoMostrado) * 100 : null;
+                                      return (
+                                        <div key={item.id} className="space-y-1">
+                                          <div className={`flex items-center justify-between text-xs rounded-lg px-3 py-2 ${
+                                            item.abaixoDoMinimo ? "bg-amber-50 border border-amber-200" : "bg-slate-50"
+                                          }`}>
+                                            <div className="min-w-0 flex-1">
+                                              <p className="text-sm font-semibold text-slate-700 truncate">{item.codigoItem} - {item.descricaoItem}</p>
+                                              <span className="text-xs text-slate-400">{Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(precoVenda)}</span>
+                                            </div>
+                                            <p className="text-sm font-bold text-slate-700 ml-2">{formatCurrency(Number(item.totalItem))}</p>
+                                          </div>
+                                          {descontoDado !== null && (
+                                            <div className="pl-3">
+                                              <ProductMarginBar desconto={descontoDado} showValues={false} />
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Approve button for pending */}
+                                  {isPendente && (
+                                    <div className="mt-4">
+                                      <button
+                                        onClick={() => handleApproveOrder(order.id)}
+                                        disabled={approveOrderMutation.isPending}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                                      >
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        {approveOrderMutation.isPending ? "Aprovando..." : "Aprovar Pedido"}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="space-y-3">
             {(filteredOrders as any[]).map((order) => {
               const isExpanded = expandedOrder === order.id;
               const isLancado = order.vitoriaLancado;
               const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
-              const isPendente = order.status === "pendente"; // Aguardando aprovação do gestor
+              const isPendente = order.status === "pendente";
               const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
 
-              // Determine border color based on status
               const borderClass = isLancado
                 ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
                 : isRecebido

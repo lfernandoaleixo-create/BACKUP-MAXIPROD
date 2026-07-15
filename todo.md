@@ -5673,3 +5673,9 @@
 - [x] Garantir visibilidade completa de informações para gestores
 - [x] Fernando e Bruno adicionados como isTopGestor no servidor (veem tudo como Guilherme)
 - [x] Fernando e Bruno adicionados ao canSeeAguardandoAprovacao no frontend
+- [x] Visão de Pedidos de Vendas agrupada por vendedor para Fernando/Guilherme/Bruno
+- [x] Barra mensal no topo de cada vendedor expandido
+- [x] Mini barra colorida de margem do pedido no card recolhido (substituindo badge %)
+- [x] ProductMarginBar inline em cada produto expandido (usando preço mostrado da tabela)
+- [x] Corrigir barra do produto: usar desconto sobre preço mostrado (sem frete/comissão/impostos)
+- [x] Corrigir unicode escapes na barra mensal (Reputação do Mês)
