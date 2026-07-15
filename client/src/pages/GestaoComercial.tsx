@@ -401,6 +401,14 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
   const [activeConfig, setActiveConfig] = useState<ConfigCategory | null>(null);
   const [, navigate] = useLocation();
 
+  // Query pending orders for the current gestor (for blinking Aprovações button)
+  const gestorForPending = filterGestorName || expandedGestor;
+  const pendingForGestorQuery = trpc.salesOrders.listOrders.useQuery(
+    { status: "pendente", gestorName: gestorForPending || undefined },
+    { staleTime: 30 * 1000, enabled: !!gestorForPending, refetchInterval: 60 * 1000 }
+  );
+  const gestorPendingCount = pendingForGestorQuery.data?.length || 0;
+
   const toggleAuthMutation = trpc.sales.toggleSellerAuthorization.useMutation();
   const utils = trpc.useUtils();
 
@@ -567,9 +575,18 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         <Lock className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Senhas</span>
                       </button>
-                      <button onClick={() => setActiveConfig("pedidos")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
-                        <ShoppingCart className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Aprovações de Pedidos</span>
+                      <button onClick={() => setActiveConfig("pedidos")} className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
+                        gestorPendingCount > 0
+                          ? "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-900/20 animate-[blink-approval_2s_ease-in-out_infinite]"
+                          : "border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20"
+                      }`}>
+                        {gestorPendingCount > 0 && (
+                          <div className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
+                            {gestorPendingCount}
+                          </div>
+                        )}
+                        <ShoppingCart className={`w-6 h-6 ${gestorPendingCount > 0 ? "text-red-600 dark:text-red-400" : "text-teal-600 dark:text-teal-400"}`} />
+                        <span className={`text-xs font-medium ${gestorPendingCount > 0 ? "text-red-700 dark:text-red-300" : "text-slate-700 dark:text-slate-200"}`}>Aprovações de Pedidos</span>
                       </button>
                       <button onClick={() => setActiveConfig("metricas")} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
                         <BarChart3 className="w-6 h-6 text-teal-600 dark:text-teal-400" />
@@ -796,10 +813,19 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                       </button>
                       <button
                         onClick={() => setActiveConfig("pedidos")}
-                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
+                        className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
+                          gestorPendingCount > 0
+                            ? "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-900/20 animate-[blink-approval_2s_ease-in-out_infinite]"
+                            : "border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:border-teal-300 hover:bg-teal-50 dark:hover:border-teal-600 dark:hover:bg-teal-900/20"
+                        }`}
                       >
-                        <ShoppingCart className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Aprovações de Pedidos</span>
+                        {gestorPendingCount > 0 && (
+                          <div className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
+                            {gestorPendingCount}
+                          </div>
+                        )}
+                        <ShoppingCart className={`w-6 h-6 ${gestorPendingCount > 0 ? "text-red-600 dark:text-red-400" : "text-teal-600 dark:text-teal-400"}`} />
+                        <span className={`text-xs font-medium ${gestorPendingCount > 0 ? "text-red-700 dark:text-red-300" : "text-slate-700 dark:text-slate-200"}`}>Aprovações de Pedidos</span>
                       </button>
                       <button
                         onClick={() => setActiveConfig("metricas")}
