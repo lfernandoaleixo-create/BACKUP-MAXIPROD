@@ -359,7 +359,7 @@ export default function GestorAprovacoes(props: any = {}) {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-indigo-600" />
-                  <span className="text-xs font-bold text-indigo-700 uppercase">Reputa\u00e7\u00e3o do M\u00eas \u2014 {sellerNameForBar} ({md.month})</span>
+                  <span className="text-xs font-bold text-indigo-700 uppercase">Reputação do Mês — {sellerNameForBar} ({md.month})</span>
                 </div>
                 <span className={`text-base font-black tabular-nums ${mColor.text}`}>
                   {margin.toFixed(1)}% ({mColor.label})
@@ -394,10 +394,10 @@ export default function GestorAprovacoes(props: any = {}) {
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">{md.totalOrders} pedido{md.totalOrders !== 1 ? 's' : ''} no m\u00eas</span>
+                <span className="text-slate-500">{md.totalOrders} pedido{md.totalOrders !== 1 ? 's' : ''} no mês</span>
                 <div className="flex items-center gap-2">
                   {md.monthlyComissaoPercentual > 0 && (
-                    <span className="font-bold text-emerald-600">Comiss\u00e3o: {md.monthlyComissaoPercentual}%</span>
+                    <span className="font-bold text-emerald-600">Comissão: {md.monthlyComissaoPercentual}%</span>
                   )}
                   {md.orderBreakdown && md.orderBreakdown.length > 0 && (
                     <button
@@ -412,7 +412,7 @@ export default function GestorAprovacoes(props: any = {}) {
               </div>
               {showMonthlyDetails && md.orderBreakdown && md.orderBreakdown.length > 0 && (
                 <div className="mt-2 border-t border-slate-200 pt-2">
-                  <p className="text-[10px] font-bold text-slate-600 mb-1.5">Pedidos do m\u00eas:</p>
+                  <p className="text-[10px] font-bold text-slate-600 mb-1.5">Pedidos do mês:</p>
                   <div className="space-y-1 max-h-40 overflow-y-auto">
                     {md.orderBreakdown.map((ob: any, idx: number) => {
                       const peso = md.totalValue > 0 ? (ob.valor / md.totalValue) * 100 : 0;
@@ -623,7 +623,7 @@ export default function GestorAprovacoes(props: any = {}) {
                                   const descontoDado = ((precoMostrado - precoVenda) / precoMostrado) * 100;
                                   return (
                                     <div className="ml-2 mr-2">
-                                      <ProductMarginBar desconto={descontoDado} showValues={true} />
+                                      <ProductMarginBar desconto={descontoDado} showValues={false} />
                                     </div>
                                   );
                                 })()}
