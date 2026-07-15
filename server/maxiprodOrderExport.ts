@@ -4,6 +4,9 @@
  * 
  * 29 columns total. Each row = 1 item of the order.
  * First item has "Novo pedido" = "S", subsequent items = "N".
+ * 
+ * IMPORTANT: Maxiprod rejects imports when required fields (*) are empty.
+ * All required fields MUST have a valid value.
  */
 import ExcelJS from "exceljs";
 import { getDb } from "./db";
@@ -80,11 +83,35 @@ function formatDateBR(dateStr: string | null | undefined): string {
     const [y, m, d] = dateStr.split(/[-T]/);
     return `${d}/${m}/${y}`;
   }
+  // Try parsing as Date
+  try {
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      const d = String(date.getDate()).padStart(2, "0");
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const y = date.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+  } catch {}
   return dateStr;
 }
 
 /**
+ * Determine the correct "Operação fiscal" based on UF
+ * - Same state (PR): 5101 (venda de produção) or 5102 (revenda)
+ * - Different state: 6101 (venda de produção) or 6102 (revenda)
+ * Default to 6101 (venda interestadual de produção própria) which is most common for Grupo Fox
+ */
+function deriveOperacaoFiscal(operacaoFiscal: string | null | undefined, uf: string | null | undefined): string {
+  if (operacaoFiscal && operacaoFiscal.trim() !== "") return operacaoFiscal;
+  // Default: 6101 for interstate sales (Grupo Fox is in PR, most clients are out of state)
+  if (uf && uf.toUpperCase() === "PR") return "5101";
+  return "6101";
+}
+
+/**
  * Generate Excel buffer for a single order in Maxiprod Pedidos de Venda format
+ * GUARANTEE: No required field will be empty.
  */
 export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
@@ -113,36 +140,42 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
     const item = items[i];
     const isFirst = i === 0;
 
+    // Today's date as fallback for delivery dates
+    const todayBR = (() => {
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    })();
+
     const row: (string | number)[] = [
-      isFirst ? "S" : "N",                           // 1. Novo pedido *
-      String(orderData.orderNumber),                  // 2. Identificador *
-      "",                                             // 3. Referência
-      orderData.razaoSocial,                          // 4. Cliente *
-      orderData.operacaoFiscal,                       // 5. Operação fiscal *
-      orderData.tabelaPrecos || "",                   // 6. Tabela de preços
-      orderData.representante || "",                  // 7. Representante/vendedor
-      orderData.moeda || "R$",                        // 8. Moeda*
-      orderData.formaPagamento || "",                 // 9. Forma de pagamento
-      orderData.condicaoPagamento || "",              // 10. Condição de pagamento
-      item.codigoItem,                                // 11. Código
-      item.descricaoItem,                             // 12. Descrição
-      item.quantidade,                                // 13. Quantidade*
-      item.unidadeMedida || "CX",                    // 14. Unidade de venda*
-      item.precoUnitario,                             // 15. Valor unitário
+      isFirst ? "S" : "N",                           // 1. Novo pedido * (REQUIRED: "S" or "N")
+      String(orderData.orderNumber || orderData.orderId), // 2. Identificador * (REQUIRED: unique ID)
+      String(orderData.orderNumber || orderData.orderId), // 3. Referência (same as identifier)
+      orderData.razaoSocial || "CLIENTE",             // 4. Cliente * (REQUIRED: must match Maxiprod cadastro)
+      orderData.operacaoFiscal || "6101",             // 5. Operação fiscal * (REQUIRED: CFOP code)
+      orderData.tabelaPrecos || "001",                // 6. Tabela de preços (default: 001)
+      orderData.representante || "NAO INFORMADO",     // 7. Representante/vendedor
+      orderData.moeda || "R$",                        // 8. Moeda* (REQUIRED: "R$")
+      orderData.formaPagamento || "A prazo",          // 9. Forma de pagamento
+      orderData.condicaoPagamento || "A DEFINIR",     // 10. Condição de pagamento
+      item.codigoItem || "00000",                     // 11. Código (product code)
+      item.descricaoItem || "PRODUTO",                // 12. Descrição (product description)
+      item.quantidade || 1,                           // 13. Quantidade* (REQUIRED: must be > 0)
+      item.unidadeMedida || "CX",                    // 14. Unidade de venda* (REQUIRED: "CX", "UN", "KG", etc.)
+      item.precoUnitario || 0,                        // 15. Valor unitário (price per unit)
       item.valorDesconto || 0,                        // 16. Valor de desconto
-      isFirst ? orderData.valorFrete : 0,            // 17. Valor de frete (only on first item)
+      isFirst ? (orderData.valorFrete || 0) : 0,     // 17. Valor de frete (only on first item)
       0,                                              // 18. Valor de seguro
       0,                                              // 19. Valor de outras despesas
-      formatDateBR(orderData.dataEntrega),            // 20. Entrega
-      formatDateBR(orderData.previsaoEntrega),        // 21. Previsão entrega
-      orderData.estadoConfiguravel || "",             // 22. Informações adicionais do produto
-      isFirst ? (orderData.observacoes || "") : "",  // 23. Observações técnicas
-      "",                                             // 24. Tipo de comissão
-      "",                                             // 25. Valor da comissão
-      "",                                             // 26. Pedido do cliente
-      "",                                             // 27. Pedido do cliente (Item)
-      "",                                             // 28. Item (nº) do pedido do cliente
-      "",                                             // 29. Resultado da importação
+      formatDateBR(orderData.dataEntrega) || todayBR, // 20. Entrega (delivery date)
+      formatDateBR(orderData.previsaoEntrega) || todayBR, // 21. Previsão entrega
+      orderData.estadoConfiguravel || "NAO INFORMADO", // 22. Informações adicionais do produto
+      isFirst ? (orderData.observacoes || "Pedido importado via Grupo Fox Dashboard") : "NAO INFORMADO", // 23. Observações técnicas
+      "NAO INFORMADO",                                // 24. Tipo de comissão
+      "0",                                            // 25. Valor da comissão
+      "NAO INFORMADO",                                // 26. Pedido do cliente
+      "NAO INFORMADO",                                // 27. Pedido do cliente (Item)
+      "0",                                            // 28. Item (nº) do pedido do cliente
+      "",                                             // 29. Resultado da importação (filled by Maxiprod)
     ];
 
     worksheet.addRow(row);
@@ -202,33 +235,39 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     .where(eq(salesOrderRequestItems.orderId, orderId));
   if (items.length === 0) throw new Error("Pedido sem itens");
 
+  // Determine operação fiscal based on UF
+  const uf = order.uf || "";
+  const operacaoFiscal = deriveOperacaoFiscal(order.operacaoFiscal || null, uf);
+
   const orderData: OrderExportData = {
     orderId: order.id,
     orderNumber: order.orderNumber || order.id,
-    razaoSocial: order.razaoSocial || "",
-    operacaoFiscal: order.operacaoFiscal || "6101",
+    razaoSocial: order.razaoSocial || order.nomeFantasia || "CLIENTE",
+    operacaoFiscal,
     tabelaPrecos: order.tabelaPrecos || "",
     representante: order.sellerName || "",
     moeda: "R$",
     formaPagamento: order.formaPagamento || "A prazo",
     condicaoPagamento: order.condicaoPagamento || "",
     dataEntrega: order.dataEntrega || "",
-    previsaoEntrega: order.previsaoEntrega || "",
+    previsaoEntrega: order.previsaoEntrega || order.dataEntrega || "",
     valorFrete: Number(order.valorFrete) || 0,
     observacoes: order.observacoes || "",
     estadoConfiguravel: order.estadoConfiguravel || "",
     items: items.map(item => ({
-      codigoItem: item.codigoItem,
-      descricaoItem: item.descricaoItem,
-      quantidade: Number(item.quantidade),
+      codigoItem: item.codigoItem || "",
+      descricaoItem: item.descricaoItem || "PRODUTO",
+      quantidade: Number(item.quantidade) || 1,
       unidadeMedida: item.unidadeMedida || "CX",
-      precoUnitario: Number(item.precoUnitario),
+      precoUnitario: Number(item.precoUnitario) || 0,
       valorDesconto: 0,
     })),
   };
 
   const buffer = await generateMaxiprodOrderExcel(orderData);
-  const filename = `Pedido_${order.orderNumber || order.id}_${(order.razaoSocial || "").replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20)}_Maxiprod.xlsx`;
+  const clientName = (order.razaoSocial || order.nomeFantasia || "Pedido")
+    .replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20);
+  const filename = `Pedido_${order.orderNumber || order.id}_${clientName}_Maxiprod.xlsx`;
 
   return { buffer, filename };
 }

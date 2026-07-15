@@ -97,7 +97,7 @@ describe("maxiprodOrderExport", () => {
     expect(row3.getCell(13).value).toBe(8); // Quantidade
     expect(row3.getCell(15).value).toBe(520); // Different price
     expect(row3.getCell(17).value).toBe(0); // No frete on second item
-    expect(row3.getCell(23).value).toBe(""); // No observações on second item
+    expect(row3.getCell(23).value).toBe("NAO INFORMADO"); // Placeholder on second item
   });
 
   it("formatDateBR handles various date formats", async () => {

@@ -5650,3 +5650,8 @@
 - [x] Implementar RealCostMarginBar por produto no dialog de aprovação
 - [x] Implementar barra de Reputação do Pedido (média ponderada) no dialog de aprovação
 - [x] Implementar barra de Reputação Mensal do vendedor no dialog de aprovação
+
+## Corrigir Exportação Maxiprod (Empresas + Pedidos)
+- [x] Garantir que todos os campos obrigatórios da planilha de Empresas tenham valores padrão quando vazios
+- [x] Garantir que todos os campos obrigatórios da planilha de Pedidos de Venda tenham valores padrão quando vazios
+- [x] Campos que não podem ficar em branco devem ter fallback válido aceito pelo Maxiprod
