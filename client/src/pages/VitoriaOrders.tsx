@@ -6,11 +6,12 @@ import { useState, useMemo } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
+import { RealCostMarginBar } from "@/components/RealCostMarginBar";
 import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
   Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2,
-  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare
+  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare, TrendingUp, Calendar, Eye
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -36,6 +37,28 @@ export default function VitoriaOrders() {
     { orderId: expandedOrder! },
     { enabled: expandedOrder !== null }
   );
+
+  // Margin data for gestores (Fernando, Guilherme, Bruno, Juvenal, Renato)
+  const isGestor = ["Fernando", "Guilherme", "Bruno", "Juvenal", "Renato"].some(
+    n => (operator?.name || "").toLowerCase().includes(n.toLowerCase())
+  );
+  const orderUf = orderDetails?.order?.uf || "MG";
+  const orderTipoContrib = orderDetails?.order?.tipoContribuinte || "Contribuinte";
+  const orderSellerId = orderDetails?.order?.sellerId;
+
+  const productMarginsQuery = trpc.salesOrders.getProductMargins.useQuery(
+    { ufDestino: orderUf, tipoContribuinte: orderTipoContrib },
+    { enabled: isGestor && !!orderDetails, staleTime: 60 * 1000 }
+  );
+
+  const monthlyMarginInput = useMemo(() => ({
+    sellerId: orderSellerId || 0,
+  }), [orderSellerId]);
+  const monthlyMarginQuery = trpc.salesOrders.getSellerMonthlyMargin.useQuery(
+    monthlyMarginInput,
+    { enabled: isGestor && !!orderSellerId && orderSellerId > 0, staleTime: 30 * 1000 }
+  );
+  const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
   const markRecebidoMutation = trpc.salesOrders.markRecebido.useMutation();
   const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
@@ -194,8 +217,10 @@ export default function VitoriaOrders() {
 
   // Determine viewer role
   const isGuilhermeViewer = operator?.name === "Guilherme";
+  const isFernandoViewer = (operator?.name || "").toLowerCase().includes("fernando");
+  const isBrunoViewer = (operator?.name || "").toLowerCase().includes("bruno");
   const isJuvenalViewer = operator?.name === "Juvenal";
-  const canSeeAguardandoAprovacao = isGuilhermeViewer || isJuvenalViewer;
+  const canSeeAguardandoAprovacao = isGuilhermeViewer || isFernandoViewer || isBrunoViewer || isJuvenalViewer;
 
   // Filter orders based on status flow
   // "Novos" tab: for Guilherme/Juvenal includes both 'pendente' (aguardando aprovacao) AND 'aprovado' not yet received
@@ -783,6 +808,228 @@ export default function VitoriaOrders() {
                           )}
                         </div>
                       </div>
+
+                      {/* MARGIN BARS - Gestores only */}
+                      {isGestor && orderDetails && orderDetails.order.id === order.id && productMarginsQuery.data && (() => {
+                        const items = orderDetails.items;
+                        const costMap = productMarginsQuery.data!.costMap;
+                        const taxBdImportado = productMarginsQuery.data!.taxBreakdownImportado;
+                        const taxBdIndustrializado = productMarginsQuery.data!.taxBreakdownIndustrializado;
+                        const defaultFrete = 13;
+                        const defaultComissao = 5.85;
+                        const defaultCustosAd = 0;
+
+                        // Calculate weighted average margin for the order
+                        let sumPVxMargin = 0;
+                        let sumPV = 0;
+                        items.forEach((item: any) => {
+                          const costData = costMap[item.codigoItem];
+                          if (!costData) return;
+                          const pv = Number(item.precoUnitario);
+                          if (pv <= 0) return;
+                          const custoPerc = (costData.cost / pv) * 100;
+                          const taxBd = costData.tipoProduto === "industrializado" ? taxBdIndustrializado : taxBdImportado;
+                          const totalDeducoes = custoPerc + (taxBd?.total || 0) + defaultFrete + defaultComissao + defaultCustosAd;
+                          const itemMargin = 100 - totalDeducoes;
+                          const totalPV = pv * Number(item.quantidade);
+                          sumPVxMargin += totalPV * itemMargin;
+                          sumPV += totalPV;
+                        });
+
+                        const weightedMargin = sumPV > 0 ? sumPVxMargin / sumPV : null;
+
+                        const getRepColor = (m: number) => {
+                          if (m < 15) return { text: 'text-red-700', label: 'Crítico' };
+                          if (m < 20) return { text: 'text-orange-700', label: 'Baixo' };
+                          if (m < 25) return { text: 'text-yellow-700', label: 'Médio' };
+                          if (m < 29) return { text: 'text-green-700', label: 'Bom' };
+                          return { text: 'text-blue-700', label: 'Ótimo' };
+                        };
+
+                        return (
+                          <div className="mt-4 space-y-3">
+                            {/* 1. Per-product RealCostMarginBar */}
+                            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
+                              <p className="text-xs font-bold text-indigo-700 flex items-center gap-1">
+                                <TrendingUp className="w-3.5 h-3.5" /> Margem Real por Produto
+                              </p>
+                              <div className="space-y-2">
+                                {items.map((item: any, idx: number) => {
+                                  const costData = costMap[item.codigoItem];
+                                  if (!costData) return (
+                                    <div key={idx} className="text-[10px] text-slate-400 bg-white rounded px-2 py-1">
+                                      {item.descricaoItem} — sem custo cadastrado
+                                    </div>
+                                  );
+                                  const taxBd = costData.tipoProduto === "industrializado" ? taxBdIndustrializado : taxBdImportado;
+                                  if (!taxBd) return null;
+                                  return (
+                                    <div key={idx} className="bg-white rounded-lg p-2 border border-slate-100">
+                                      <p className="text-[10px] font-medium text-slate-600 truncate mb-1">{item.descricaoItem}</p>
+                                      <RealCostMarginBar
+                                        precoVenda={Number(item.precoUnitario)}
+                                        custoBox={costData.cost}
+                                        fonte={costData.fonte}
+                                        tipoProduto={costData.tipoProduto}
+                                        taxBreakdown={taxBd}
+                                        fretePerc={defaultFrete}
+                                        comissaoPerc={defaultComissao}
+                                        custosAdicionaisPerc={defaultCustosAd}
+                                        quantidade={Number(item.quantidade)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* 2. Order Reputation Bar */}
+                            {weightedMargin !== null && (() => {
+                              const repColor = getRepColor(weightedMargin);
+                              const barMin = -5;
+                              const barMax = 40;
+                              const clamped = Math.max(barMin, Math.min(barMax, weightedMargin));
+                              const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+                              return (
+                                <div className="bg-indigo-50 border-2 border-indigo-300 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-[10px] font-bold text-indigo-700">🏆 Reputação do Pedido</span>
+                                    <span className={`text-sm font-black tabular-nums ${repColor.text}`}>
+                                      {weightedMargin.toFixed(1)}% ({repColor.label})
+                                    </span>
+                                  </div>
+                                  <div className="relative w-full">
+                                    <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 shadow-sm">
+                                      <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                                        <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                                        <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                                        <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                                        <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                                        <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                                      </div>
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "44.4%" }} />
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "55.5%" }} />
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "66.6%" }} />
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "75.5%" }} />
+                                      <div
+                                        className="absolute flex flex-col items-center"
+                                        style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-7px", bottom: "-3px" }}
+                                      >
+                                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900" />
+                                        <div className="w-[3px] flex-1 bg-slate-900 rounded-full" />
+                                      </div>
+                                    </div>
+                                    <div className="relative w-full h-3 mt-0.5">
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* 3. Monthly Seller Reputation Bar */}
+                            {monthlyMarginQuery.data && (() => {
+                              const md = monthlyMarginQuery.data;
+                              const margin = md.currentMonthlyMargin ?? 0;
+                              if (md.totalOrders === 0) return null;
+                              const getMonthColor = (m: number) => {
+                                if (m < 15) return { text: 'text-red-700', label: 'Crítico' };
+                                if (m < 20) return { text: 'text-orange-700', label: 'Baixo' };
+                                if (m < 25) return { text: 'text-yellow-700', label: 'Médio' };
+                                if (m < 29) return { text: 'text-green-700', label: 'Médio-Alto' };
+                                return { text: 'text-blue-700', label: 'Ótimo' };
+                              };
+                              const mColor = getMonthColor(margin);
+                              const barMin = -5;
+                              const barMax = 40;
+                              const clamped = Math.max(barMin, Math.min(barMax, margin));
+                              const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+                              return (
+                                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                                      <span className="text-[10px] font-bold text-indigo-700 uppercase">Reputação do Mês — {order.sellerName} ({md.month})</span>
+                                    </div>
+                                    <span className={`text-sm font-black tabular-nums ${mColor.text}`}>
+                                      {margin.toFixed(1)}% ({mColor.label})
+                                    </span>
+                                  </div>
+                                  <div className="relative w-full">
+                                    <div className="relative h-6 rounded-full overflow-visible border-2 border-slate-300 shadow-sm">
+                                      <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                                        <div className="h-full bg-red-500" style={{ width: "44.4%" }} />
+                                        <div className="h-full bg-orange-500" style={{ width: "11.1%" }} />
+                                        <div className="h-full bg-yellow-400" style={{ width: "11.1%" }} />
+                                        <div className="h-full bg-green-500" style={{ width: "8.9%" }} />
+                                        <div className="h-full bg-blue-500" style={{ width: "24.5%" }} />
+                                      </div>
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "44.4%" }} />
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "55.5%" }} />
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "66.6%" }} />
+                                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "75.5%" }} />
+                                      <div
+                                        className="absolute flex flex-col items-center"
+                                        style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
+                                      >
+                                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900" />
+                                        <div className="w-[2px] flex-1 bg-slate-900 rounded-full" />
+                                      </div>
+                                    </div>
+                                    <div className="relative w-full h-3 mt-0.5">
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "44.4%", transform: "translateX(-50%)" }}>15%</span>
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "55.5%", transform: "translateX(-50%)" }}>20%</span>
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "66.6%", transform: "translateX(-50%)" }}>25%</span>
+                                      <span className="absolute text-[8px] font-bold text-indigo-400" style={{ left: "75.5%", transform: "translateX(-50%)" }}>29%</span>
+                                    </div>
+                                  </div>
+                                  <div className="mt-2 flex items-center justify-between text-[10px]">
+                                    <span className="text-slate-500">{md.totalOrders} pedido{md.totalOrders !== 1 ? 's' : ''} no mês</span>
+                                    <div className="flex items-center gap-2">
+                                      {md.monthlyComissaoPercentual > 0 && (
+                                        <span className="font-bold text-emerald-600">Comissão: {md.monthlyComissaoPercentual}%</span>
+                                      )}
+                                      {md.orderBreakdown && md.orderBreakdown.length > 0 && (
+                                        <button
+                                          onClick={() => setShowMonthlyDetails(prev => !prev)}
+                                          className="text-[10px] font-medium text-teal-600 hover:underline flex items-center gap-0.5"
+                                        >
+                                          <Eye className="w-3 h-3" />
+                                          {showMonthlyDetails ? 'Ocultar' : 'Detalhes'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {showMonthlyDetails && md.orderBreakdown && md.orderBreakdown.length > 0 && (
+                                    <div className="mt-2 border-t border-slate-200 pt-2">
+                                      <p className="text-[10px] font-bold text-slate-600 mb-1.5">Pedidos do mês:</p>
+                                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                                        {md.orderBreakdown.map((ob: any, idx: number) => {
+                                          const peso = md.totalValue > 0 ? (ob.valor / md.totalValue) * 100 : 0;
+                                          const tierColor = ob.margem >= 29 ? 'text-blue-600' : ob.margem >= 25 ? 'text-green-600' : ob.margem >= 20 ? 'text-yellow-600' : ob.margem >= 15 ? 'text-orange-600' : 'text-red-600';
+                                          return (
+                                            <div key={idx} className="flex items-center justify-between bg-white rounded px-2 py-1">
+                                              <span className="text-[9px] text-slate-600 truncate flex-1">#{ob.orderId} — {ob.clienteNome || 'Cliente'}</span>
+                                              <div className="flex items-center gap-2 text-[9px] shrink-0">
+                                                <span className="text-slate-400">{Number(ob.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                                <span className={`font-bold ${tierColor}`}>{ob.margem.toFixed(1)}%</span>
+                                                <span className="text-slate-400">({peso.toFixed(0)}%)</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        );
+                      })()}
 
                       {/* APPROVE BUTTON - For pending orders (Guilherme/Juvenal only) */}
                       {isPendente && canSeeAguardandoAprovacao && (

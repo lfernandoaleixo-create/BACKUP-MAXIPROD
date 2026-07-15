@@ -1100,14 +1100,17 @@ export const salesOrderRouter = router({
 
       const viewer = (input?.viewer || "").toLowerCase();
       const isGuilherme = viewer.includes("guilherme");
+      const isFernando = viewer.includes("fernando");
+      const isBruno = viewer.includes("bruno");
       const isJuvenal = viewer.includes("juvenal");
-      // Guilherme sees ALL orders (pending + approved + processed) - supervision
+      const isTopGestor = isGuilherme || isFernando || isBruno;
+      // Top gestores (Guilherme, Fernando, Bruno) see ALL orders - full supervision
       // Juvenal sees his sellers' orders (pending for approval + approved)
       // Vitória/others only see approved + processed orders
       
       const conditions: any[] = [];
-      if (isGuilherme) {
-        // Guilherme sees everything except simulations
+      if (isTopGestor) {
+        // Top gestores see everything except simulations
         conditions.push(sql`${salesOrderRequests.status} != 'simulacao'`);
       } else if (isJuvenal) {
         // Juvenal sees pending (his sellers) + approved + processed

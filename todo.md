@@ -5663,3 +5663,13 @@
 - [x] Garantir que a margem seja recalculada corretamente após correção
 - [x] Adicionar validação obrigatória de UF no cadastro de cliente
 - [x] Adicionar validação obrigatória de UF antes de fechar pedido de venda
+
+## Barras de margem na aba Pedidos para Processamento (Vitória)
+- [x] Adicionar barras de margem (produto, pedido, mês) no detalhe expandido dos pedidos na aba Pedidos para Processamento
+- [x] Garantir que gestores vejam as mesmas informações que na aba de Aprovações
+
+## Gestores veem todos os pedidos nas Aprovações
+- [x] Verificar se Fernando, Guilherme e Bruno veem todos os pedidos de todos os vendedores subordinados
+- [x] Garantir visibilidade completa de informações para gestores
+- [x] Fernando e Bruno adicionados como isTopGestor no servidor (veem tudo como Guilherme)
+- [x] Fernando e Bruno adicionados ao canSeeAguardandoAprovacao no frontend
