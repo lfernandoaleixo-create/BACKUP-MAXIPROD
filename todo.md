@@ -5589,3 +5589,7 @@
 ## Documentos/Catálogos: Vendedor deve ver mesma estrutura de pastas do gestor
 - [x] Vendedor deve ver pastas organizadas igual ao gestor (Catálogos, Documento de Importação, etc.)
 - [x] Layout de pastas com nomes corretos e organização impecável para vendedores
+
+## Cards piscando quando há pedidos pendentes de aprovação
+- [x] Card "Painel do Gestor" deve piscar quando há pedidos pendentes de aprovação
+- [x] Card "Aprovações de Pedidos" (dentro do painel do gestor) deve piscar quando há pedidos pendentes

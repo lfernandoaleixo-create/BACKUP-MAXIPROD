@@ -160,6 +160,13 @@ function GestorVendedorHub({
   onChoice: (choice: "gestor" | "vendedor") => void;
   onLogout: () => void;
 }) {
+  // Query pending orders for this gestor
+  const pendingOrdersQuery = trpc.salesOrders.listOrders.useQuery(
+    { status: "pendente", gestorName: session.name },
+    { staleTime: 30 * 1000, refetchInterval: 60 * 1000 }
+  );
+  const pendingCount = pendingOrdersQuery.data?.length || 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col">
       {/* Header */}
@@ -194,15 +201,33 @@ function GestorVendedorHub({
             {/* Card: Painel do Gestor */}
             <button
               onClick={() => onChoice("gestor")}
-              className="w-full bg-white rounded-xl border-2 border-teal-200 shadow-sm p-5 hover:shadow-lg hover:border-teal-400 transition-all cursor-pointer group text-left"
+              className={`w-full rounded-xl border-2 shadow-sm p-5 hover:shadow-lg transition-all cursor-pointer group text-left relative overflow-hidden ${
+                pendingCount > 0
+                  ? "border-red-400 shadow-lg shadow-red-200 animate-[blink-approval_2s_ease-in-out_infinite]"
+                  : "bg-white border-teal-200 hover:border-teal-400"
+              }`}
             >
+              {pendingCount > 0 && (
+                <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
+                  {pendingCount}
+                </div>
+              )}
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 transition-colors shrink-0">
-                  <Crown className="w-7 h-7 text-teal-600" />
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
+                  pendingCount > 0
+                    ? "bg-red-50 group-hover:bg-red-100"
+                    : "bg-teal-50 group-hover:bg-teal-100"
+                }`}>
+                  <Crown className={`w-7 h-7 ${pendingCount > 0 ? "text-red-600" : "text-teal-600"}`} />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-800">Painel do Gestor</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Configurações dos vendedores, tabelas de preço, catálogos, comissão e aprovações de pedidos</p>
+                  <p className={`text-xs mt-0.5 ${pendingCount > 0 ? "text-red-500 font-semibold" : "text-slate-500"}`}>
+                    {pendingCount > 0
+                      ? `${pendingCount} pedido${pendingCount > 1 ? 's' : ''} aguardando aprovação!`
+                      : "Configurações dos vendedores, tabelas de preço, catálogos, comissão e aprovações de pedidos"
+                    }
+                  </p>
                 </div>
               </div>
             </button>
