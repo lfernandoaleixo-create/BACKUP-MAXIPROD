@@ -1903,8 +1903,9 @@ export default function Billing() {
     return pedidos;
   }, [newPedidosData]);
 
-  // Cleanup billed authorizations on load
-  trpc.billing.cleanupBilledAuthorizations.useMutation();
+  // Cleanup billed authorizations on load (removes authorizations for fully-billed or partially-billed orders)
+  const cleanupMut = trpc.billing.cleanupBilledAuthorizations.useMutation();
+  useEffect(() => { cleanupMut.mutate(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Production notes - fetch for all open orders
   const allOpenPedidos = useMemo(() => openOrders.map(o => o.pedido).filter(Boolean), [openOrders]);

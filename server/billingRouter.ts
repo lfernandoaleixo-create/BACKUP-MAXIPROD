@@ -1043,6 +1043,11 @@ export const billingRouter = router({
         if (!states || (states.size === 1 && states.has("Faturado"))) {
           toRemove.push(pedido);
         }
+        // REGRA FATURAMENTO PARCIAL: se o pedido tem itens "Faturado parcial" ou "A faturar",
+        // remover autorização para que volte para "Pedidos em Aberto" (precisa ser re-autorizado)
+        if (states && (states.has("Faturado parcial") || (states.has("Faturado") && states.has("A faturar")))) {
+          toRemove.push(pedido);
+        }
       }
 
       if (toRemove.length > 0) {
