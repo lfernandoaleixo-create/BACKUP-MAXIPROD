@@ -503,30 +503,35 @@ export default function CustosDeVendaStep({
         </button>
         {expandedSection === "impostos" && costsData && (
           <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-            {/* Nota Fiscal % Selector */}
+            {/* Nota Fiscal % Selector - Manual Input */}
             <div className="mb-3 p-2 bg-white dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
               <p className="text-[9px] text-slate-500 uppercase font-bold mb-1.5">% da Nota Fiscal</p>
-              <div className="flex items-center gap-1.5">
-                {[0, 50, 100].map((pct) => (
-                  <button
-                    key={pct}
-                    onClick={() => setNotaFiscalPercentual(pct)}
-                    className={`flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all border ${
-                      notaFiscalPercentual === pct
-                        ? pct === 0 ? 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/40 dark:border-red-600 dark:text-red-300'
-                          : pct === 50 ? 'bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-900/40 dark:border-amber-600 dark:text-amber-300'
-                          : 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/40 dark:border-green-600 dark:text-green-300'
-                        : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {pct === 0 ? 'Sem Nota (0%)' : pct === 50 ? 'Meia Nota (50%)' : 'Nota Cheia (100%)'}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={notaFiscalPercentual}
+                  onChange={(e) => {
+                    const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                    setNotaFiscalPercentual(val);
+                  }}
+                  className="w-20 px-2 py-1.5 rounded-md text-sm font-bold text-center border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
+                />
+                <span className="text-sm font-bold text-slate-500">%</span>
+                <span className={`ml-2 px-2 py-1 rounded-md text-[10px] font-bold ${
+                  notaFiscalPercentual === 0 ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                    : notaFiscalPercentual === 50 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                    : notaFiscalPercentual === 100 ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                }`}>
+                  {notaFiscalPercentual === 0 ? 'Sem Nota' : notaFiscalPercentual === 50 ? 'Meia Nota' : notaFiscalPercentual === 100 ? 'Nota Cheia' : `${notaFiscalPercentual}% da Nota`}
+                </span>
               </div>
-              {notaFiscalPercentual !== 100 && (
+              {notaFiscalPercentual < 100 && (
                 <p className="mt-1.5 text-[9px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  {notaFiscalPercentual === 0 ? 'Venda sem nota fiscal \u2014 impostos zerados' : `Meia nota \u2014 impostos calculados sobre ${notaFiscalPercentual}% do valor`}
+                  {notaFiscalPercentual === 0 ? 'Venda sem nota fiscal \u2014 impostos zerados' : `Impostos calculados sobre ${notaFiscalPercentual}% do valor da nota`}
                 </p>
               )}
             </div>

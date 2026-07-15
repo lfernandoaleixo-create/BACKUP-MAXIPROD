@@ -5628,3 +5628,6 @@
 - [x] Adicionar seletor de % da nota fiscal (0%, 50%, 100%) na seção de Impostos do CustosDeVendaStep
 - [x] Recalcular impostos proporcionalmente ao % escolhido (backend)
 - [x] Frete recalculado com base no valor ajustado da nota
+
+## Esconder Simulação Custo Real dos Vendedores
+- [ ] Barra "Simulação Custo Real" (UF Destino, Comissão, Frete, Custos Adic.) deve ser visível APENAS para Gestores, Guilherme, Fernando e Bruno — esconder para vendedores
