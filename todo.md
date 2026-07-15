@@ -5655,3 +5655,11 @@
 - [x] Garantir que todos os campos obrigatórios da planilha de Empresas tenham valores padrão quando vazios
 - [x] Garantir que todos os campos obrigatórios da planilha de Pedidos de Venda tenham valores padrão quando vazios
 - [x] Campos que não podem ficar em branco devem ter fallback válido aceito pelo Maxiprod
+
+## BUG: UF do cliente não preenchida no pedido de venda
+- [x] Investigar por que o pedido #240001 (Flavia - Londrina/PR) ficou com UF null
+- [x] Corrigir o fluxo de criação de pedido para sempre preencher a UF do cliente
+- [x] Corrigir pedido #240001 no banco (UF = PR)
+- [x] Garantir que a margem seja recalculada corretamente após correção
+- [x] Adicionar validação obrigatória de UF no cadastro de cliente
+- [x] Adicionar validação obrigatória de UF antes de fechar pedido de venda

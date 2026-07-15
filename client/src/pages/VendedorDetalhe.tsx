@@ -2791,6 +2791,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       const strictMissing: string[] = [];
       if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
       if (!cep.trim()) strictMissing.push("CEP");
+      if (!uf.trim()) strictMissing.push("UF (estado)");
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
       if (!email.trim()) strictMissing.push("E-mail");
       // Perguntas obrigatórias: devem ser respondidas (Sim ou Não)
@@ -5055,6 +5056,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const itemsBelowMin = items.filter(item => item.precoMinimo !== null && item.precoUnitario < item.precoMinimo);
 
   const doSubmitOrder = (forceSubmitBelowMin?: boolean) => {
+    if (!isSimulation && !uf.trim()) {
+      alert("Preencha a UF (estado) do cliente antes de finalizar o pedido. A UF é obrigatória para o cálculo correto de impostos.");
+      return;
+    }
     if (!formaPagamento) {
       alert("Selecione a Forma de Pagamento antes de finalizar o pedido.");
       return;
