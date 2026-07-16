@@ -1018,7 +1018,7 @@ export const productionRouter = router({
   // CONTROLE DE LOTES
   // ═══════════════════════════════════════════════════════════
 
-  /** Listar produtos do catálogo para dropdown de SKU */
+  /** Listar produtos do catálogo para dropdown de SKU (com classificação bambu/madeira) */
   getLotProducts: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
@@ -1026,7 +1026,37 @@ export const productionRouter = router({
       codigoItem: productCatalog.codigoItem,
       descricaoItem: productCatalog.descricaoItem,
     }).from(productCatalog).orderBy(productCatalog.descricaoItem);
-    return products;
+
+    // Get material classification from stock_items (superGrupoCodigo + grupoCodigo)
+    const stockClassification = await db.selectDistinct({
+      codigoItem: stockItems.codigoItem,
+      superGrupoCodigo: stockItems.superGrupoCodigo,
+      grupoCodigo: stockItems.grupoCodigo,
+    }).from(stockItems);
+    const classMap = new Map<string, { superGrupoCodigo: string | null; grupoCodigo: string | null }>();
+    for (const s of stockClassification) {
+      classMap.set(s.codigoItem, { superGrupoCodigo: s.superGrupoCodigo, grupoCodigo: s.grupoCodigo });
+    }
+
+    return products.map(p => {
+      const cls = classMap.get(p.codigoItem);
+      let material: "bambu" | "madeira" | "outro" = "bambu"; // default
+      if (cls) {
+        // Madeira: superGrupoCodigo "05" (Industrialização) ou "16" com grupoCodigo "18"/"19"
+        if (cls.superGrupoCodigo === "05" || (cls.superGrupoCodigo === "16" && (cls.grupoCodigo === "18" || cls.grupoCodigo === "19"))) {
+          material = "madeira";
+        } else if (cls.superGrupoCodigo === "12") {
+          material = "bambu";
+        }
+      } else {
+        // Fallback: classify by description
+        const d = p.descricaoItem.toUpperCase();
+        if ((d.includes("MADEIRA") || d.includes("PINUS")) && !d.includes("BAMBU")) {
+          material = "madeira";
+        }
+      }
+      return { ...p, material };
+    });
   }),
 
   /** Criar um novo lote */

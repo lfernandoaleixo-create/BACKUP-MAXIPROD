@@ -5724,3 +5724,4 @@
 - [x] Labels: Comissão Baixa, Comissão Média, Comissão Média-Alta, Comissão Alta
 - [x] Comissão mensal NÃO soma 1,85% (apenas comissão individual do pedido soma)
 - [x] Replicar permissões do Guilherme (id=7) para o Luís Eduardo (id=60002): 7 módulos + 26 permissões granulares copiadas
+- [x] Produção > Controle de Lotes > Lançamento de novo lote: separar produtos em dois cards (Bambu e Madeira) usando classificação da aba Estoque

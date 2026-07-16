@@ -106,6 +106,7 @@ function LancamentoLote() {
   const [preview, setPreview] = useState<string | null>(null);
   const [showRetroModal, setShowRetroModal] = useState(false);
   const [motivo, setMotivo] = useState("");
+  const [materialFilter, setMaterialFilter] = useState<"bambu" | "madeira">("bambu");
 
   const { data: products, isLoading: loadingProducts } = trpc.production.getLotProducts.useQuery();
   const { data: myRequests } = trpc.production.myRetroactiveRequests.useQuery(
@@ -148,14 +149,26 @@ function LancamentoLote() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const isRetroactive = dataProducao < todayStr;
 
+  // Separate products by material
+  const bambuProducts = useMemo(() => {
+    if (!products) return [];
+    return products.filter(p => p.material !== "madeira");
+  }, [products]);
+
+  const madeiraProducts = useMemo(() => {
+    if (!products) return [];
+    return products.filter(p => p.material === "madeira");
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
-    if (!products || !searchProduct) return products || [];
+    const source = materialFilter === "bambu" ? bambuProducts : madeiraProducts;
+    if (!searchProduct) return source;
     const q = searchProduct.toLowerCase();
-    return products.filter(p =>
+    return source.filter(p =>
       p.codigoItem.toLowerCase().includes(q) ||
       p.descricaoItem.toLowerCase().includes(q)
     ).slice(0, 20);
-  }, [products, searchProduct]);
+  }, [bambuProducts, madeiraProducts, materialFilter, searchProduct]);
 
   const generatePreview = () => {
     if (!codigoItem || !notaCarga || !qtdProduzida) {
@@ -199,9 +212,55 @@ function LancamentoLote() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-          <Plus className="w-4 h-4 text-indigo-500" /> Lançamento de Novo Lote
+      {/* Material Type Selector - Two Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => { setMaterialFilter("bambu"); setCodigoItem(""); setDescricaoItem(""); setSearchProduct(""); setPreview(null); }}
+          className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+            materialFilter === "bambu"
+              ? "border-green-500 bg-green-50 shadow-md"
+              : "border-slate-200 bg-white hover:border-green-300 hover:bg-green-50/50"
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            materialFilter === "bambu" ? "bg-green-500 text-white" : "bg-green-100 text-green-600"
+          }`}>
+            <Layers className="w-5 h-5" />
+          </div>
+          <span className={`text-sm font-bold ${
+            materialFilter === "bambu" ? "text-green-700" : "text-slate-600"
+          }`}>Bambu</span>
+          <span className="text-[10px] text-slate-400">{bambuProducts.length} produtos</span>
+        </button>
+
+        <button
+          onClick={() => { setMaterialFilter("madeira"); setCodigoItem(""); setDescricaoItem(""); setSearchProduct(""); setPreview(null); }}
+          className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+            materialFilter === "madeira"
+              ? "border-amber-500 bg-amber-50 shadow-md"
+              : "border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/50"
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            materialFilter === "madeira" ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-600"
+          }`}>
+            <Box className="w-5 h-5" />
+          </div>
+          <span className={`text-sm font-bold ${
+            materialFilter === "madeira" ? "text-amber-700" : "text-slate-600"
+          }`}>Madeira</span>
+          <span className="text-[10px] text-slate-400">{madeiraProducts.length} produtos</span>
+        </button>
+      </div>
+
+      <div className={`bg-white rounded-xl border-2 shadow-sm p-5 ${
+        materialFilter === "bambu" ? "border-green-200" : "border-amber-200"
+      }`}>
+        <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 flex items-center gap-2 ${
+          materialFilter === "bambu" ? "text-green-700" : "text-amber-700"
+        }`}>
+          <Plus className={`w-4 h-4 ${materialFilter === "bambu" ? "text-green-500" : "text-amber-500"}`} />
+          Lançamento de Novo Lote — {materialFilter === "bambu" ? "Bambu" : "Madeira"}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -219,8 +278,12 @@ function LancamentoLote() {
                 setPreview(null);
               }}
               onFocus={() => setShowDropdown(true)}
-              placeholder="Buscar produto..."
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              placeholder={`Buscar produto ${materialFilter === "bambu" ? "de bambu" : "de madeira"}...`}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                materialFilter === "bambu"
+                  ? "border-green-200 focus:ring-green-400"
+                  : "border-amber-200 focus:ring-amber-400"
+              }`}
             />
             {codigoItem && (
               <button onClick={() => { setCodigoItem(""); setDescricaoItem(""); setSearchProduct(""); setPreview(null); }}
@@ -238,9 +301,11 @@ function LancamentoLote() {
                   filteredProducts.map(p => (
                     <button key={p.codigoItem}
                       onClick={() => { setCodigoItem(p.codigoItem); setDescricaoItem(p.descricaoItem); setShowDropdown(false); setSearchProduct(""); setPreview(null); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0"
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors border-b border-slate-50 last:border-0 ${
+                        materialFilter === "bambu" ? "hover:bg-green-50" : "hover:bg-amber-50"
+                      }`}
                     >
-                      <span className="font-medium text-indigo-700">{p.codigoItem}</span>
+                      <span className={`font-medium ${materialFilter === "bambu" ? "text-green-700" : "text-amber-700"}`}>{p.codigoItem}</span>
                       <span className="text-slate-500 ml-2">{p.descricaoItem}</span>
                     </button>
                   ))
@@ -298,19 +363,19 @@ function LancamentoLote() {
           {!preview ? (
             <button onClick={generatePreview}
               className={`px-4 py-2.5 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                isRetroactive ? "bg-amber-600 hover:bg-amber-700" : "bg-indigo-600 hover:bg-indigo-700"
+                isRetroactive ? "bg-amber-600 hover:bg-amber-700" : materialFilter === "bambu" ? "bg-green-600 hover:bg-green-700" : "bg-amber-600 hover:bg-amber-700"
               }`}>
               <Package className="w-4 h-4" /> {isRetroactive ? "Solicitar Autorização" : "Gerar Código do Lote"}
             </button>
           ) : (
             <div className="flex items-center gap-4 w-full">
               <div className={`flex-1 rounded-lg p-3 border ${
-                isRetroactive ? "bg-amber-50 border-amber-200" : "bg-indigo-50 border-indigo-200"
+                isRetroactive ? "bg-amber-50 border-amber-200" : materialFilter === "bambu" ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"
               }`}>
-                <div className={`text-xs font-medium mb-0.5 ${isRetroactive ? "text-amber-600" : "text-indigo-600"}`}>
+                <div className={`text-xs font-medium mb-0.5 ${isRetroactive ? "text-amber-600" : materialFilter === "bambu" ? "text-green-600" : "text-amber-600"}`}>
                   {isRetroactive ? "Lote Retroativo (requer autorização):" : "Código do Lote:"}
                 </div>
-                <div className={`text-lg font-bold font-mono ${isRetroactive ? "text-amber-800" : "text-indigo-800"}`}>{preview}</div>
+                <div className={`text-lg font-bold font-mono ${isRetroactive ? "text-amber-800" : materialFilter === "bambu" ? "text-green-800" : "text-amber-800"}`}>{preview}</div>
                 <div className="text-xs text-slate-500 mt-1">
                   {qtdProduzida} caixas · {descricaoItem} · {dataProducao.split("-").reverse().join("/")}
                 </div>
