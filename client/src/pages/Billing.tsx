@@ -2441,6 +2441,12 @@ export default function Billing() {
               />
             </div>
 
+            {/* Alertas de Estoque Insuficiente - PRIMEIRO CARD */}
+            <StockInsufficientAlerts
+              operatorName={operator?.name}
+              canRespond={operator?.name === "Maria" || operator?.name === "Erica" || operator?.name === "Fernando"}
+            />
+
             {/* Card 0: Aceite da Produção */}
             <ProductionAcceptanceCard
               orders={pendingAcceptanceOrders}
@@ -2451,12 +2457,6 @@ export default function Billing() {
               onReject={hasGranularAccess("fat.aceiteProducao") ? handleRejectAcceptance : () => {}}
               showValues={showValues}
               isAccepting={acceptMutation.isPending}
-            />
-
-            {/* Alertas de Estoque Insuficiente */}
-            <StockInsufficientAlerts
-              operatorName={operator?.name}
-              canRespond={operator?.name === "Maria" || operator?.name === "Erica" || operator?.name === "Fernando"}
             />
 
             {/* Card 1: Pedidos em Aberto (todos os abertos não autorizados) */}
