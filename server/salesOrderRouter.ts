@@ -2373,19 +2373,26 @@ export const salesOrderRouter = router({
       };
 
       // === AUTO COMMISSION CALCULATION ===
-      // Step 1: Calculate margin WITHOUT commission to determine the price tier
+      // Step 1: Calculate margin WITH FIXED 5.85% commission to determine the price tier
+      // Rule: The tier is determined by the margin calculated with the default fixed commission (5.85%)
+      // This is the "1ª comissão" used during order assembly
+      const comissaoFixaParaTier = valorVenda * 0.0585; // 5.85% fixed commission for tier determination
+      const custosComComissaoFixa = custoMercadoriaTotal + input.freteValor + impostos.totalImpostosValor + input.gastosAdicionais + comissaoFixaParaTier;
+      const lucroComComissaoFixa = valorVenda - custosComComissaoFixa;
+      const margemParaTier = valorVenda > 0 ? (lucroComComissaoFixa / valorVenda) * 100 : 0;
+      // Keep margemSemComissao for reference/display
       const custosSemComissao = custoMercadoriaTotal + input.freteValor + impostos.totalImpostosValor + input.gastosAdicionais;
       const lucroSemComissao = valorVenda - custosSemComissao;
       const margemSemComissao = valorVenda > 0 ? (lucroSemComissao / valorVenda) * 100 : 0;
 
-      // Step 2: Determine price tier based on margin thresholds
-      // Faixas: <15% = crítico (sem comissão), 15-20% = baixo, 20-25% = médio, 25-29% = médio-alto, >=29% = projetado
+      // Step 2: Determine price tier based on margin thresholds (using margin WITH 5.85% fixed commission)
+      // Faixas (PDF RELATÓRIOSEMANAL): <15% = crítico, 15-18% = baixo (4%), 18-25% = médio (5%), 25-29% = médio-alto (6%), >=29% = mostrado_alto (7%)
       let autoTier: "baixo" | "medio" | "medio_alto" | "mostrado_alto" = "baixo";
-      let margemCritica = false; // below 15% = no commission
-      if (margemSemComissao >= 29) autoTier = "mostrado_alto";
-      else if (margemSemComissao >= 25) autoTier = "medio_alto";
-      else if (margemSemComissao >= 20) autoTier = "medio";
-      else if (margemSemComissao >= 15) autoTier = "baixo";
+      let margemCritica = false; // below 15% = commission locked at 4% + 1.85%
+      if (margemParaTier >= 29) autoTier = "mostrado_alto";
+      else if (margemParaTier >= 25) autoTier = "medio_alto";
+      else if (margemParaTier >= 18) autoTier = "medio";
+      else if (margemParaTier >= 15) autoTier = "baixo";
       else { autoTier = "baixo"; margemCritica = true; }
 
       // Step 3: Look up commission % from the matrix (always 120% meta for now)
@@ -2521,7 +2528,8 @@ export const salesOrderRouter = router({
           autoPercentual: autoComissaoPercentual,
           tier: autoTier,
           fonte: comissaoFonte,
-          margemSemComissao,
+          margemParaTier, // margem calculada com comissão fixa 5.85% (usada para determinar o tier)
+          margemSemComissao, // margem sem nenhuma comissão (referência)
           critico: margemCritica,
           mediaMensalVendedor,
           podeFechar,
@@ -2852,12 +2860,13 @@ export const salesOrderRouter = router({
       }
 
       // Determine monthly commission tier based on current (or projected) margin
+      // Faixas (PDF RELATÓRIOSEMANAL): <15% = crítico, 15-18% = baixo (4%), 18-25% = médio (5%), 25-29% = médio-alto (6%), >=29% = mostrado_alto (7%)
       const marginForTier = projectedMonthlyMargin ?? currentMonthlyMargin ?? 0;
       let monthlyTier: "baixo" | "medio" | "medio_alto" | "mostrado_alto" = "baixo";
       let monthlyMargemCritica = false;
       if (marginForTier >= 29) monthlyTier = "mostrado_alto";
       else if (marginForTier >= 25) monthlyTier = "medio_alto";
-      else if (marginForTier >= 20) monthlyTier = "medio";
+      else if (marginForTier >= 18) monthlyTier = "medio";
       else if (marginForTier >= 15) monthlyTier = "baixo";
       else { monthlyTier = "baixo"; monthlyMargemCritica = true; }
 

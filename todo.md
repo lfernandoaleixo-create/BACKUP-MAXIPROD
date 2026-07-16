@@ -5687,21 +5687,26 @@
 - [x] Adicionar mesmo fallback na getSellerMonthlyMargin para consistência
 - [x] Testado via API: comissão agora retorna 8.85% (7% tabela + 1.85% encargos) com fonte "matriz_padrao"
 
-## Regra de Comissão - PENDENTE DEFINIÇÃO COMPLETA (15/07/2026)
+## Regra de Comissão - IMPLEMENTADA (16/07/2026)
 
-**O que já sabemos:**
+**Regra confirmada pelo Fernando:**
 - Valores fixos padrão (antes de simular custos reais): 13% frete + 5,85% comissão
 - Comissão real = valor da tabela commission_matrix + 1,85% encargos
 - Sempre considerar meta de 120% na tabela
-- Tiers da tabela: Mostrado/Alto, Médio-Alto, Médio, Baixo
-- Tier é determinado pela MARGEM DE LUCRO do pedido (não pelo desconto)
-- Se margem < 15% → trava em 4% + 1,85% = 5,85% (piso)
-- Faixas de desconto na descrição: Mostrado/Alto = sem desconto ou até 20% | Médio-Alto = 23% | Médio = 27% | Baixo = 32%
-- Margem 28.7% (< 29%) deveria dar 6% + 1,85% = 7,85% (tier Médio-Alto?)
-- Margem >= 29% → 7% + 1,85% = 8,85% (tier Mostrado/Alto)
+- Tier é determinado pela margem calculada COM comissão fixa de 5,85% (Opção A)
+- Margem final exibida na barra é recalculada com a comissão real
 
-**PENDENTE - Perguntar amanhã:**
-- [ ] Qual é a margem de referência para determinar o tier? (margem final COM comissão ou SEM comissão?)
-- [ ] Quais são os limites exatos de cada faixa de margem para cada tier?
-- [ ] Confirmar valores de comissão para cada tier na meta 120%
-- [ ] Implementar regra correta no calculateSalesCosts
+**Faixas (thresholds corrigidos):**
+- < 15% → crítico (4% + 1,85% = 5,85%)
+- 15-18% → baixo (4% + 1,85% = 5,85%)
+- 18-25% → médio (5% + 1,85% = 6,85%)
+- 25-29% → médio-alto (6% + 1,85% = 7,85%)
+- ≥ 29% → mostrado_alto (7% + 1,85% = 8,85%)
+
+- [x] Qual é a margem de referência para determinar o tier? → Margem COM comissão fixa 5,85%
+- [x] Quais são os limites exatos de cada faixa? → 15, 18, 25, 29
+- [x] Confirmar valores de comissão para cada tier na meta 120% → 4%, 5%, 6%, 7%
+- [x] Implementar regra correta no calculateSalesCosts
+- [x] Atualizar frontend para mostrar margem c/ 5.85% ao lado do tier
+- [x] Corrigir thresholds mensais (getSellerMonthlyMargin) de 20 para 18
+- [x] Documentar regra completa no REGRA_COMISSAO.md

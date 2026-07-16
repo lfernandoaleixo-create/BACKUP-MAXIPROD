@@ -645,8 +645,8 @@ export default function CustosDeVendaStep({
                     <>⚠️ Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — Comissão zerada automaticamente</>
                   ) : (
                     <>Comissão automática: <strong>{(costsData.comissao as any).autoPercentual}%</strong>
-                    {" "}(Faixa: {(costsData.comissao as any).tier === "mostrado_alto" ? "Projetado (≥29%)" : (costsData.comissao as any).tier === "medio_alto" ? "Médio-Alto (25-29%)" : (costsData.comissao as any).tier === "medio" ? "Médio (20-25%)" : "Baixo (15-20%)"}
-                    {" "}| Margem s/ comissão: {((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%
+                    {" "}(Faixa: {(costsData.comissao as any).tier === "mostrado_alto" ? "Projetado (≥29%)" : (costsData.comissao as any).tier === "medio_alto" ? "Médio-Alto (25-29%)" : (costsData.comissao as any).tier === "medio" ? "Médio (18-25%)" : "Baixo (15-18%)"}
+                    {" "}| Margem c/ 5.85%: {((costsData.comissao as any).margemParaTier ?? (costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%
                     {" "}| Meta: 120%)
                     </>
                   )}
