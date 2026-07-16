@@ -733,135 +733,104 @@ function LotRow({ lot, expanded, onToggle, onDeleted }: { lot: any; expanded: bo
    HISTÓRICO DE LOTES
    ═══════════════════════════════════════════════════════════ */
 function HistoricoLotes() {
-  const [searchType, setSearchType] = useState<"lote" | "cliente">("lote");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [filterText, setFilterText] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
 
-  const { data: movements, isLoading } = trpc.production.getLotMovements.useQuery(
-    {
-      codigoLote: searchType === "lote" && searchTerm ? searchTerm : undefined,
-      cliente: searchType === "cliente" && searchTerm ? searchTerm : undefined,
-      dataInicio: dataInicio || undefined,
-      dataFim: dataFim || undefined,
-    },
-    { enabled: searchTerm.length >= 2 }
-  );
+  // Carrega todas as movimentações diretamente (sem exigir busca)
+  const { data: movements, isLoading } = trpc.production.getLotMovements.useQuery({
+    dataInicio: dataInicio || undefined,
+    dataFim: dataFim || undefined,
+  });
 
-  const { data: allLots } = trpc.production.getAllLots.useQuery(
-    { search: searchType === "lote" && searchTerm ? searchTerm : undefined },
-    { enabled: searchType === "lote" && searchTerm.length >= 2 }
-  );
+  // Filtro local por texto (lote ou cliente) + suporte a códigos convertidos
+  const filteredMovements = useMemo(() => {
+    if (!movements) return [];
+    if (!filterText.trim()) return movements;
+    const q = filterText.trim().toUpperCase();
+    return movements.filter((m: any) => {
+      const codigoOriginal = (m.codigoLote || "").toUpperCase();
+      const codigoConvertido = convertLotCode(m.codigoLote || "").toUpperCase();
+      const cliente = (m.cliente || "").toUpperCase();
+      const pedido = (m.pedido || "").toUpperCase();
+      return codigoOriginal.includes(q) || codigoConvertido.includes(q) || cliente.includes(q) || pedido.includes(q);
+    });
+  }, [movements, filterText]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-      <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
-        <History className="w-4 h-4 text-violet-500" /> Histórico de Movimentações
-      </h3>
-
-      {/* Search Controls */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Buscar por</label>
-          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
-            <button onClick={() => { setSearchType("lote"); setSearchTerm(""); }}
-              className={`px-3 py-2 text-xs font-medium ${searchType === "lote" ? "bg-indigo-600 text-white" : "bg-white text-slate-600"}`}>
-              Lote
-            </button>
-            <button onClick={() => { setSearchType("cliente"); setSearchTerm(""); }}
-              className={`px-3 py-2 text-xs font-medium ${searchType === "cliente" ? "bg-indigo-600 text-white" : "bg-white text-slate-600"}`}>
-              Cliente
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="text-xs font-medium text-slate-500 mb-1 block">
-            {searchType === "lote" ? "Código do Lote" : "Nome do Cliente"}
-          </label>
-          <div className="relative">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-100 space-y-3">
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+          <History className="w-4 h-4 text-violet-500" /> Histórico de Movimentações (Baixas)
+        </h3>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={searchType === "lote" ? "Ex: 00123-130726-NF456" : "Ex: Restaurante..."}
-              className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Filtrar por lote, cliente ou pedido..."
+              className="w-full border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
+            {filterText && (
+              <button onClick={() => setFilterText("")} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
-        </div>
-        <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">De</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">De</label>
+            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Até</label>
+            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
         </div>
       </div>
 
-      {/* Results */}
-      {searchTerm.length < 2 ? (
-        <div className="text-center py-8 text-sm text-slate-400">
-          <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          Digite pelo menos 2 caracteres para buscar
-        </div>
-      ) : isLoading ? (
-        <div className="flex items-center justify-center py-8">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
           <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+          <span className="ml-2 text-sm text-slate-500">Carregando movimentações...</span>
+        </div>
+      ) : !filteredMovements || filteredMovements.length === 0 ? (
+        <div className="text-center py-12 text-sm text-slate-400">
+          <History className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          {filterText ? "Nenhuma movimentação encontrada para este filtro" : "Nenhuma movimentação registrada"}
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* If searching by lot, show lot info first */}
-          {searchType === "lote" && allLots && allLots.length > 0 && (
-            <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-              <div className="text-xs font-medium text-indigo-600 mb-2">Lotes encontrados:</div>
-              {allLots.map(lot => (
-                <div key={lot.id} className="flex items-center justify-between py-1.5 border-b border-indigo-100 last:border-0">
-                  <div>
-                    <span className="font-mono text-xs font-medium text-indigo-800">{convertLotCode(lot.codigo)}</span>
-                    <span className="text-xs text-slate-500 ml-2">{lot.descricaoItem.slice(0, 40)}</span>
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-slate-500">Produzido: {parseFloat(String(lot.qtdProduzida))}</span>
-                    <span className="mx-2">|</span>
-                    <span className="font-medium text-emerald-600">Saldo: {parseFloat(String(lot.saldoAtual))}</span>
-                  </div>
-                </div>
+        <div className="overflow-x-auto">
+          <div className="px-5 py-2 text-xs text-slate-500 border-b border-slate-100">
+            {filteredMovements.length} movimentaç{filteredMovements.length === 1 ? "ão" : "ões"}
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/50">
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Lote</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Cliente</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Pedido</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Qtd</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Data</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Lançado por</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredMovements.map((m: any) => (
+                <tr key={m.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-2.5 font-mono text-xs text-indigo-700 font-medium">{convertLotCode(m.codigoLote)}</td>
+                  <td className="px-4 py-2.5 text-slate-700 text-xs">{m.cliente}</td>
+                  <td className="px-4 py-2.5 text-slate-500 text-xs">{m.pedido || "-"}</td>
+                  <td className="px-4 py-2.5 text-right font-medium tabular-nums text-xs">{parseFloat(String(m.qtdEnviada))}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-500 text-xs">{m.dataEnvio.split("-").reverse().join("/")}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-500 text-xs">{m.lancadoPor || "-"}</td>
+                </tr>
               ))}
-            </div>
-          )}
-
-          {/* Movements table */}
-          {!movements || movements.length === 0 ? (
-            <div className="text-center py-6 text-sm text-slate-400">Nenhuma movimentação encontrada</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/50">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Lote</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Cliente</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Pedido</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Qtd</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Data</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {movements.map((m: any) => (
-                    <tr key={m.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 font-mono text-xs text-indigo-700">{convertLotCode(m.codigoLote)}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{m.cliente}</td>
-                      <td className="px-4 py-2.5 text-slate-500">{m.pedido || "-"}</td>
-                      <td className="px-4 py-2.5 text-right font-medium tabular-nums">{parseFloat(String(m.qtdEnviada))}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-500">{m.dataEnvio.split("-").reverse().join("/")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
