@@ -3108,3 +3108,37 @@ export const retroactiveLotRequests = mysqlTable("retroactive_lot_requests", {
 });
 export type RetroactiveLotRequest = typeof retroactiveLotRequests.$inferSelect;
 export type InsertRetroactiveLotRequest = typeof retroactiveLotRequests.$inferInsert;
+
+
+/**
+ * Alertas de estoque insuficiente
+ * Quando um pedido "Em Digitação" tem item com estoque insuficiente,
+ * gera um alerta para a produção (Maria/Erica) confirmar se é possível
+ * fazer conversão/transformação do produto.
+ * Status: pendente → aceito/recusado
+ */
+export const stockInsufficientAlerts = mysqlTable("stock_insufficient_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  // Dados do pedido
+  pedidoNumero: varchar("pedido_numero", { length: 20 }).notNull(),
+  cliente: varchar("cliente", { length: 300 }),
+  // Dados do item insuficiente
+  codigoItem: varchar("codigo_item", { length: 50 }).notNull(),
+  descricaoItem: text("descricao_item"),
+  quantidadePedida: decimal("quantidade_pedida", { precision: 18, scale: 5 }).notNull(),
+  unidadeMedida: varchar("unidade_medida", { length: 10 }),
+  estoqueDisponivel: decimal("estoque_disponivel", { precision: 18, scale: 5 }),
+  // Status do alerta
+  status: varchar("status", { length: 20 }).notNull().default("pendente"), // pendente, aceito, recusado
+  // Resposta da produção
+  respondidoPor: varchar("respondido_por", { length: 200 }),
+  respostaObservacao: text("resposta_observacao"), // Motivo da recusa ou observação do aceite
+  respondidoEm: timestamp("respondido_em"),
+  // Controle
+  criadoPor: varchar("criado_por", { length: 100 }).default("sistema"), // sistema (auto-detecção)
+  visualizadoPor: text("visualizado_por"), // JSON array de nomes que já viram
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type StockInsufficientAlert = typeof stockInsufficientAlerts.$inferSelect;
+export type InsertStockInsufficientAlert = typeof stockInsufficientAlerts.$inferInsert;

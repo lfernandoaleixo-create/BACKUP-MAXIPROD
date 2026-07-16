@@ -77,6 +77,7 @@ import {
 } from "lucide-react";
 import TopNav from "@/components/TopNav";
 import ProductionAcceptanceCard from "@/components/ProductionAcceptanceCard";
+import StockInsufficientAlerts from "@/components/StockInsufficientAlerts";
 import { useOperator } from "@/contexts/OperatorContext";
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
 import { LotAssignmentPanel } from "@/components/LotAssignmentPanel";
@@ -1857,7 +1858,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
 
 /* ---- Main Billing Page ---- */
 export default function Billing() {
-  const { hasGranularAccess } = useOperator();
+  const { hasGranularAccess, operator } = useOperator();
   const [empresa, setEmpresa] = useState("all");
   const [showValues, setShowValues] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -2450,6 +2451,12 @@ export default function Billing() {
               onReject={hasGranularAccess("fat.aceiteProducao") ? handleRejectAcceptance : () => {}}
               showValues={showValues}
               isAccepting={acceptMutation.isPending}
+            />
+
+            {/* Alertas de Estoque Insuficiente */}
+            <StockInsufficientAlerts
+              operatorName={operator?.name}
+              canRespond={operator?.name === "Maria" || operator?.name === "Erica" || operator?.name === "Fernando"}
             />
 
             {/* Card 1: Pedidos em Aberto (todos os abertos não autorizados) */}

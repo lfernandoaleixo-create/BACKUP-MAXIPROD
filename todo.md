@@ -5728,3 +5728,4 @@
 - [x] Controle de Lotes > Aba Estoque: conversão de códigos na busca (00077→AR125, 00080→AR15, 00082→AR18, 00095→AR20, 00086→AR218, 00089→AR25, 00091→AR30, 00112→AR35, 00103→EC20, 00147→EC25)
 - [x] Controle de Lotes > Histórico: mostrar todas as movimentações (baixas) como lista direta sem exigir busca prévia
 - [x] Movimentação de Estoque > Nova Solicitação: remover produtos de madeira, manter apenas bambu (tanto em baixa quanto em acréscimo)
+- [x] Sistema de alertas de estoque insuficiente: detectar itens insuficientes em pedidos 'Em Digitação', alertar produção (Maria/Erica) e faturamento (Vitória/Bruno/Guilherme/Fernando), com fluxo de aceite/recusa para conversão de produtos

@@ -33,6 +33,7 @@ import { salesVisitRouter } from "./salesVisitRouter";
 import { checklistRouter } from "./checklistRouter";
 import { stockWithdrawalRouter } from "./stockWithdrawalRouter";
 import { serasaRouter } from "./serasaRouter";
+import { stockAlertRouter } from "./stockAlertRouter";
 import { syncClientsFromMaxiprod } from "./clientSyncMaxiprod";
 
 export const appRouter = router({
@@ -57,6 +58,7 @@ export const appRouter = router({
   checklist: checklistRouter,
   stockWithdrawal: stockWithdrawalRouter,
   serasa: serasaRouter,
+  stockAlert: stockAlertRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

@@ -15,6 +15,7 @@ import { syncCobrancaPlanilhaAuto } from "./cobrancaPlanilhaSync";
 import { syncPriceTables } from "./priceTableSync";
 import { syncPrevisaoEntregaFromMaxiprod } from "./previsaoEntregaSync";
 import { syncClientsFromMaxiprod } from "./clientSyncMaxiprod";
+import { detectStockInsufficientAlerts } from "./stockAlertDetector";
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
@@ -84,6 +85,15 @@ export function startScheduler(): void {
           console.log(`[Scheduler] Cobrança planilha synced: ${cobrancaResult.added} novos, ${cobrancaResult.deactivated} desativados, ${cobrancaResult.total} ativos`);
         } catch (cobErr: any) {
           console.error(`[Scheduler] Cobrança planilha sync failed: ${cobErr.message}`);
+        }
+        // Detectar alertas de estoque insuficiente em pedidos "Em Digitação"
+        try {
+          const alertResult = await detectStockInsufficientAlerts();
+          if (alertResult.created > 0) {
+            console.log(`[Scheduler] Stock alerts: ${alertResult.created} novo(s) alerta(s) de estoque insuficiente`);
+          }
+        } catch (alertErr: any) {
+          console.error(`[Scheduler] Stock alert detection failed: ${alertErr.message}`);
         }
         // Sync price tables (tabelas de preço por vendedor) + auto-update product visibility
         try {

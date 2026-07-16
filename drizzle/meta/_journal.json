@@ -1219,6 +1219,13 @@
       "when": 1784121280932,
       "tag": "0173_loose_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 174,
+      "version": "5",
+      "when": 1784220778015,
+      "tag": "0174_misty_nightshade",
+      "breakpoints": true
     }
   ]
 }
