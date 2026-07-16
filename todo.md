@@ -5733,3 +5733,5 @@
 - [x] Alertas de estoque: mostrar número de caixas (quantidade pedida) em cada alerta
 - [x] Alertas de estoque: criar seção de Histórico com alertas aceitos/recusados
 - [x] Alertas de estoque: corrigir subtítulo de "Em Digitação" para "A aprovar"
+- [x] Produção Lotes: mover 00141A (AMOSTRA ESPETO DE BAMBU) de Madeira para Bambu
+- [x] Produção Lotes: remover itens de importação da lista Bambu (00526 INCUBADORA, 00523 LÂMINA SERRA CIRCULAR, 00522 LÂMINA SERRA FITA)

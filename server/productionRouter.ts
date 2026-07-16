@@ -512,18 +512,35 @@ export const productionRouter = router({
     if (!db) return [];
     const categoria = input?.categoria || "madeira";
     
+    // Itens que devem ser FORÇADOS em Bambu (mesmo que o grupo diga outra coisa)
+    const forceBambu = ["00141A"]; // AMOSTRA ESPETO DE BAMBU - superGrupo 16/grupo 18 mas é bambu
+    // Itens que devem ser EXCLUÍDOS de Bambu (são máquinas/importação, não produto bambu)
+    const excludeFromBambu = ["00526", "00523", "00522"]; // INCUBADORA, LÂMINAS DE SERRA
+    
     let whereClause;
     if (categoria === "bambu") {
       // Bambu/Importação: superGrupoCodigo = "12" (Importação revenda: bambu, fibra)
-      whereClause = eq(stockItems.superGrupoCodigo, "12");
+      // + itens forçados em bambu
+      // - itens excluídos (máquinas/importação)
+      whereClause = and(
+        or(
+          eq(stockItems.superGrupoCodigo, "12"),
+          inArray(stockItems.codigoItem, forceBambu)
+        ),
+        sql`${stockItems.codigoItem} NOT IN (${sql.raw(excludeFromBambu.map(c => `'${c}'`).join(","))})`
+      );
     } else {
       // Madeira PA: superGrupoCodigo = "05" OR ("16" AND grupoCodigo IN ("18","19"))
-      whereClause = or(
-        eq(stockItems.superGrupoCodigo, "05"),
-        and(
-          eq(stockItems.superGrupoCodigo, "16"),
-          inArray(stockItems.grupoCodigo, ["18", "19"])
-        )
+      // - itens forçados em bambu (excluir da madeira)
+      whereClause = and(
+        or(
+          eq(stockItems.superGrupoCodigo, "05"),
+          and(
+            eq(stockItems.superGrupoCodigo, "16"),
+            inArray(stockItems.grupoCodigo, ["18", "19"])
+          )
+        ),
+        sql`${stockItems.codigoItem} NOT IN (${sql.raw(forceBambu.map(c => `'${c}'`).join(","))})`
       );
     }
     
@@ -708,26 +725,43 @@ export const productionRouter = router({
       if (!db) return [];
       const categoria = input?.categoria || "todos";
 
+      // Itens forçados em Bambu (mesmo que o grupo diga outra coisa)
+      const forceBambu = ["00141A"]; // AMOSTRA ESPETO DE BAMBU
+      // Itens excluídos de Bambu (máquinas/importação)
+      const excludeFromBambu = ["00526", "00523", "00522"]; // INCUBADORA, LÂMINAS DE SERRA
+
       let whereClause;
       if (categoria === "bambu") {
-        whereClause = eq(stockItems.superGrupoCodigo, "12");
+        whereClause = and(
+          or(
+            eq(stockItems.superGrupoCodigo, "12"),
+            inArray(stockItems.codigoItem, forceBambu)
+          ),
+          sql`${stockItems.codigoItem} NOT IN (${sql.raw(excludeFromBambu.map(c => `'${c}'`).join(","))})`
+        );
       } else if (categoria === "madeira") {
-        whereClause = or(
-          eq(stockItems.superGrupoCodigo, "05"),
-          and(
-            eq(stockItems.superGrupoCodigo, "16"),
-            inArray(stockItems.grupoCodigo, ["18", "19"])
-          )
+        whereClause = and(
+          or(
+            eq(stockItems.superGrupoCodigo, "05"),
+            and(
+              eq(stockItems.superGrupoCodigo, "16"),
+              inArray(stockItems.grupoCodigo, ["18", "19"])
+            )
+          ),
+          sql`${stockItems.codigoItem} NOT IN (${sql.raw(forceBambu.map(c => `'${c}'`).join(","))})`
         );
       } else {
-        // todos: Bambu + Madeira
-        whereClause = or(
-          eq(stockItems.superGrupoCodigo, "12"),
-          eq(stockItems.superGrupoCodigo, "05"),
-          and(
-            eq(stockItems.superGrupoCodigo, "16"),
-            inArray(stockItems.grupoCodigo, ["18", "19"])
-          )
+        // todos: Bambu + Madeira (excluindo máquinas)
+        whereClause = and(
+          or(
+            eq(stockItems.superGrupoCodigo, "12"),
+            eq(stockItems.superGrupoCodigo, "05"),
+            and(
+              eq(stockItems.superGrupoCodigo, "16"),
+              inArray(stockItems.grupoCodigo, ["18", "19"])
+            )
+          ),
+          sql`${stockItems.codigoItem} NOT IN (${sql.raw(excludeFromBambu.map(c => `'${c}'`).join(","))})`
         );
       }
 
@@ -748,7 +782,7 @@ export const productionRouter = router({
       for (const row of rows) {
         if (!seen.has(row.codigoItem)) {
           seen.add(row.codigoItem);
-          const isBambu = row.superGrupoCodigo === "12";
+          const isBambu = row.superGrupoCodigo === "12" || forceBambu.includes(row.codigoItem);
           products.push({
             codigoItem: row.codigoItem,
             descricaoItem: row.descricaoItem || row.codigoItem,
