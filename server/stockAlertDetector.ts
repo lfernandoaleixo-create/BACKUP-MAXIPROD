@@ -65,13 +65,20 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     estoqueMap.set(item.codigoItem, current + Number(item.quantidade || 0));
   }
 
-  // 3. Buscar alertas pendentes existentes para não duplicar
+  // 3. Buscar TODOS os alertas existentes (pendente, aceito, recusado) para não duplicar
+  // Isso evita recriar alertas que já foram aceitos/recusados
   const alertasExistentes = await db.select({
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,
     codigoItem: stockInsufficientAlerts.codigoItem,
   })
     .from(stockInsufficientAlerts)
-    .where(eq(stockInsufficientAlerts.status, "pendente"));
+    .where(
+      and(
+        inArray(stockInsufficientAlerts.status, ["pendente", "aceito", "recusado"]),
+        // Só considerar alertas dos últimos 7 dias para não bloquear para sempre
+        gte(stockInsufficientAlerts.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+      )
+    );
 
   const alertaSet = new Set(alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`));
 
