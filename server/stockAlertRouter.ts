@@ -2,7 +2,8 @@ import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { stockInsufficientAlerts, stockItems, salesOrders } from "../drizzle/schema";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, inArray, gte } from "drizzle-orm";
+import { detectStockInsufficientAlerts } from "./stockAlertDetector";
 
 /**
  * Router para Alertas de Estoque Insuficiente
@@ -19,7 +20,7 @@ export const stockAlertRouter = router({
    */
   getAlerts: publicProcedure
     .input(z.object({
-      status: z.enum(["pendente", "aceito", "recusado", "todos"]).optional(),
+      status: z.enum(["pendente", "aceito", "recusado", "expirado", "todos"]).optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -30,6 +31,9 @@ export const stockAlertRouter = router({
       let conditions: any[] = [];
       if (statusFilter !== "todos") {
         conditions.push(eq(stockInsufficientAlerts.status, statusFilter));
+      } else {
+        // Por padrão, não mostrar expirados
+        conditions.push(sql`${stockInsufficientAlerts.status} != 'expirado'`);
       }
       
       const alerts = await db.select()
@@ -91,89 +95,8 @@ export const stockAlertRouter = router({
    * Cria alertas para itens novos que ainda não têm alerta pendente
    */
   detectInsufficient: publicProcedure.mutation(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    
-    // 1. Buscar todos os itens de pedidos em "Digitação"
-    const pedidosDigitacao = await db.select({
-      pedido: salesOrders.pedido,
-      cliente: salesOrders.cliente,
-      codigoItem: salesOrders.codigoItem,
-      descricaoItem: salesOrders.descricaoItem,
-      quantidade: salesOrders.quantidade,
-      unidadeMedida: salesOrders.unidadeMedidaCodigo,
-    })
-      .from(salesOrders)
-      .where(eq(salesOrders.estadoNota, "Digitação"));
-    
-    if (pedidosDigitacao.length === 0) return { created: 0, message: "Nenhum pedido em digitação" };
-    
-    // 2. Buscar estoque disponível para esses itens (apenas bambu - superGrupoCodigo = "12")
-    const codigosUnicos = Array.from(new Set(pedidosDigitacao.map(p => p.codigoItem).filter(Boolean)));
-    if (codigosUnicos.length === 0) return { created: 0, message: "Nenhum item encontrado" };
-    
-    const estoqueItems = await db.select({
-      codigoItem: stockItems.codigoItem,
-      quantidade: stockItems.quantidade,
-    })
-      .from(stockItems)
-      .where(
-        and(
-          inArray(stockItems.codigoItem, codigosUnicos as string[]),
-          eq(stockItems.superGrupoCodigo, "12")
-        )
-      );
-    
-    // Agregar estoque por código (pode ter múltiplos locais)
-    const estoqueMap = new Map<string, number>();
-    for (const item of estoqueItems) {
-      const current = estoqueMap.get(item.codigoItem) || 0;
-      estoqueMap.set(item.codigoItem, current + Number(item.quantidade || 0));
-    }
-    
-    // 3. Buscar alertas pendentes existentes para não duplicar
-    const alertasExistentes = await db.select({
-      pedidoNumero: stockInsufficientAlerts.pedidoNumero,
-      codigoItem: stockInsufficientAlerts.codigoItem,
-    })
-      .from(stockInsufficientAlerts)
-      .where(eq(stockInsufficientAlerts.status, "pendente"));
-    
-    const alertaSet = new Set(alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`));
-    
-    // 4. Detectar insuficientes e criar alertas
-    let created = 0;
-    for (const pedido of pedidosDigitacao) {
-      if (!pedido.codigoItem || !pedido.pedido) continue;
-      
-      const estoqueDisponivel = estoqueMap.get(pedido.codigoItem) ?? 0;
-      const quantidadePedida = Number(pedido.quantidade || 0);
-      
-      // Se estoque é 0 ou insuficiente para a quantidade pedida
-      // A unidade no estoque é "un" e no pedido é "CX" - precisamos comparar em caixas
-      // O estoque em stock_items está em unidades, mas para simplificar vamos comparar
-      // Se estoque = 0, definitivamente insuficiente
-      if (estoqueDisponivel <= 0) {
-        const key = `${pedido.pedido}-${pedido.codigoItem}`;
-        if (!alertaSet.has(key)) {
-          await db.insert(stockInsufficientAlerts).values({
-            pedidoNumero: pedido.pedido,
-            cliente: pedido.cliente || "N/A",
-            codigoItem: pedido.codigoItem,
-            descricaoItem: pedido.descricaoItem || pedido.codigoItem,
-            quantidadePedida: String(quantidadePedida),
-            unidadeMedida: pedido.unidadeMedida || "CX",
-            estoqueDisponivel: "0",
-            status: "pendente",
-            criadoPor: "sistema",
-          });
-          alertaSet.add(key);
-          created++;
-        }
-      }
-    }
-    
-    return { created, message: `${created} novo(s) alerta(s) criado(s)` };
+    // Usa o detector centralizado que filtra apenas pedidos recentes (últimos 3 dias)
+    return await detectStockInsufficientAlerts();
   }),
 
   /**
