@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { stockWithdrawalRequests, productCatalog, operators, withdrawalDeletionHistory } from "../drizzle/schema";
+import { stockWithdrawalRequests, productCatalog, operators, withdrawalDeletionHistory, stockItems } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte, count, inArray } from "drizzle-orm";
 
 /**
@@ -24,13 +24,22 @@ export const stockWithdrawalRouter = router({
       const db = await getDb();
       if (!db) return [];
       const q = input.query.toUpperCase();
+      // Apenas produtos de BAMBU (superGrupoCodigo = "12" na stock_items)
+      const bambuCodes = await db.selectDistinct({ codigoItem: stockItems.codigoItem })
+        .from(stockItems)
+        .where(eq(stockItems.superGrupoCodigo, "12"));
+      const bambuCodeSet = bambuCodes.map(r => r.codigoItem);
+      if (bambuCodeSet.length === 0) return [];
       const results = await db.select({
         codigoItem: productCatalog.codigoItem,
         descricaoItem: productCatalog.descricaoItem,
       })
         .from(productCatalog)
         .where(
-          sql`(${productCatalog.codigoItem} LIKE ${`%${q}%`} OR UPPER(${productCatalog.descricaoItem}) LIKE ${`%${q}%`})`
+          and(
+            sql`(${productCatalog.codigoItem} LIKE ${`%${q}%`} OR UPPER(${productCatalog.descricaoItem}) LIKE ${`%${q}%`})`,
+            inArray(productCatalog.codigoItem, bambuCodeSet)
+          )
         )
         .limit(30);
       return results;
