@@ -5735,3 +5735,7 @@
 - [x] Alertas de estoque: corrigir subtítulo de "Em Digitação" para "A aprovar"
 - [x] Produção Lotes: mover 00141A (AMOSTRA ESPETO DE BAMBU) de Madeira para Bambu
 - [x] Produção Lotes: remover itens de importação da lista Bambu (00526 INCUBADORA, 00523 LÂMINA SERRA CIRCULAR, 00522 LÂMINA SERRA FITA)
+- [x] Alertas de estoque: usar GraphQL direto do Maxiprod para verificar insuficiência (não mais dados locais)
+- [x] Alertas de estoque: só considerar insuficiente itens que TÊM registros de estoque no Maxiprod
+- [x] Alertas de estoque: item 00084 VARETA AROMATIZADOR não deve gerar alerta (sem registros de estoque)
+- [x] Alertas de estoque: remover debug logs do maxiprodSync.ts

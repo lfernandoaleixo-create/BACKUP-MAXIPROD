@@ -2,71 +2,147 @@
  * Detector automático de alertas de estoque insuficiente.
  * Chamado pelo scheduler após cada sincronização com o Maxiprod.
  * 
- * Lógica:
- * 1. Busca pedidos RECENTES (últimos 3 dias) em estado "A aprovar" no sales_orders
- * 2. Para cada item, verifica se o estoque (stock_items) é insuficiente para a quantidade pedida
- * 3. Se insuficiente e não há alerta pendente duplicado, cria um novo alerta
- * 4. Remove alertas antigos de pedidos que não estão mais em "A aprovar"
+ * Lógica (via GraphQL direto no Maxiprod):
+ * 1. Busca itens de pedidos com pedidoDeVenda.estado = AAPROVAR via GraphQL
+ * 2. Busca estoque agrupado (quantidadeTotal - quantidadeReservada) para cada item
+ * 3. Se estoque disponível < quantidade pedida → item é insuficiente
+ * 4. Cria alertas para itens insuficientes que não tenham alerta recente (pendente/aceito/recusado)
+ * 5. Expira alertas pendentes de pedidos que não estão mais em "A aprovar"
  */
 import { getDb } from "./db";
-import { stockInsufficientAlerts, stockItems, salesOrders } from "../drizzle/schema";
-import { eq, and, inArray, sql, gte, or } from "drizzle-orm";
+import { stockInsufficientAlerts } from "../drizzle/schema";
+import { eq, and, inArray, gte } from "drizzle-orm";
+import { gql } from "./maxiprodGraphQL";
+
+interface PedidoItem {
+  itemId: number;
+  codigoItem: string;
+  descricao: string;
+  quantidade: number;
+  unidade: string;
+  pedidoNumero: string;
+  cliente: string;
+}
+
+/**
+ * Fetch items from pedidos in "A aprovar" state directly from Maxiprod GraphQL.
+ * Also fetches the item's estoques to determine if the item has stock records.
+ * Only items WITH stock records can be "Insuficiente (reservar)".
+ */
+async function fetchAaprovarItems(): Promise<PedidoItem[]> {
+  try {
+    const data = await gql<any>(`{
+      itensDosPedidosDeVendas(
+        skip: 0, take: 500,
+        where: { pedidoDeVenda: { estado: { eq: AAPROVAR } } }
+      ) {
+        totalCount
+        items {
+          itemId
+          descricao
+          quantidade
+          estado
+          unidade { codigo }
+          item { codigo descricao estoques { quantidade } }
+          pedidoDeVenda {
+            numero
+            cliente { razaoSocial nomeFantasia }
+          }
+        }
+      }
+    }`);
+
+    if (!data?.itensDosPedidosDeVendas?.items) return [];
+
+    // CRITICAL: Only include items that HAVE stock records in Maxiprod.
+    // If item.estoques is empty (no stock records), Maxiprod does NOT mark as "Insuficiente".
+    // The "Insuficiente (reservar)" only appears when the item HAS stock records but qty is insufficient.
+    return data.itensDosPedidosDeVendas.items
+      .filter((item: any) => {
+        const estoques = item.item?.estoques || [];
+        // Item must have at least one stock record to be considered for insufficiency
+        return estoques.length > 0;
+      })
+      .map((item: any) => ({
+        itemId: item.itemId,
+        codigoItem: item.item?.codigo || "",
+        descricao: item.descricao || item.item?.descricao || "",
+        quantidade: item.quantidade || 0,
+        unidade: item.unidade?.codigo || "CX",
+        pedidoNumero: String(item.pedidoDeVenda?.numero || ""),
+        cliente: item.pedidoDeVenda?.cliente?.razaoSocial || item.pedidoDeVenda?.cliente?.nomeFantasia || "N/A",
+      }));
+  } catch (error: any) {
+    console.error("[StockAlert] Erro ao buscar itens A aprovar via GraphQL:", error.message);
+    return [];
+  }
+}
+
+/**
+ * Fetch aggregated stock for given itemIds from Maxiprod GraphQL
+ */
+async function fetchStockForItems(itemIds: number[]): Promise<Map<number, { total: number; reserved: number }>> {
+  const stockMap = new Map<number, { total: number; reserved: number }>();
+  if (itemIds.length === 0) return stockMap;
+
+  try {
+    const data = await gql<any>(`{
+      estoquesAgrupados(
+        skip: 0, take: 1000,
+        where: { itemId: { in: [${itemIds.join(",")}] } }
+      ) {
+        totalCount
+        items {
+          itemId
+          quantidadeTotal
+          quantidadeReservada
+        }
+      }
+    }`);
+
+    if (!data?.estoquesAgrupados?.items) return stockMap;
+
+    for (const s of data.estoquesAgrupados.items) {
+      const existing = stockMap.get(s.itemId) || { total: 0, reserved: 0 };
+      existing.total += s.quantidadeTotal || 0;
+      existing.reserved += s.quantidadeReservada || 0;
+      stockMap.set(s.itemId, existing);
+    }
+  } catch (error: any) {
+    console.error("[StockAlert] Erro ao buscar estoque via GraphQL:", error.message);
+  }
+
+  return stockMap;
+}
 
 export async function detectStockInsufficientAlerts(): Promise<{ created: number; message: string }> {
   const db = await getDb();
   if (!db) return { created: 0, message: "Database not available" };
 
-  // Calcular data limite (últimos 3 dias)
-  const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-  const dateLimit = threeDaysAgo.toISOString().split("T")[0]; // YYYY-MM-DD
-
-  // 1. Buscar itens de pedidos RECENTES em "A aprovar" (dataEmissao >= 3 dias atrás)
-  const pedidosAaprovar = await db.select({
-    pedido: salesOrders.pedido,
-    cliente: salesOrders.cliente,
-    codigoItem: salesOrders.codigoItem,
-    descricaoItem: salesOrders.descricaoItem,
-    quantidade: salesOrders.quantidade,
-    unidadeMedida: salesOrders.unidadeMedidaCodigo,
-    dataEmissao: salesOrders.dataEmissao,
-  })
-    .from(salesOrders)
-    .where(
-      and(
-        eq(salesOrders.estadoNota, "A aprovar"),
-        gte(salesOrders.dataEmissao, dateLimit)
-      )
-    );
-
-  if (pedidosAaprovar.length === 0) {
-    // Limpar alertas pendentes de pedidos que não estão mais em "A aprovar" recente
+  // 1. Buscar itens de pedidos "A aprovar" direto do Maxiprod via GraphQL
+  const pedidoItems = await fetchAaprovarItems();
+  
+  if (pedidoItems.length === 0) {
+    // Nenhum pedido em A aprovar → expirar todos os alertas pendentes
     await cleanupOldAlerts(db);
-    return { created: 0, message: "Nenhum pedido recente em 'A aprovar'" };
+    return { created: 0, message: "Nenhum pedido em 'A aprovar' no Maxiprod" };
   }
 
-  // 2. Buscar estoque disponível para esses itens (TODOS os itens, não apenas bambu)
-  const codigosUnicos = Array.from(new Set(pedidosAaprovar.map(p => p.codigoItem).filter(Boolean)));
-  if (codigosUnicos.length === 0) return { created: 0, message: "Nenhum item encontrado" };
+  // 2. Buscar estoque agrupado para os itens
+  const uniqueItemIds = Array.from(new Set(pedidoItems.map(p => p.itemId)));
+  const stockMap = await fetchStockForItems(uniqueItemIds);
 
-  const estoqueItems = await db.select({
-    codigoItem: stockItems.codigoItem,
-    quantidade: stockItems.quantidade,
-  })
-    .from(stockItems)
-    .where(
-      inArray(stockItems.codigoItem, codigosUnicos as string[])
-    );
-
-  // Agregar estoque por código (pode ter múltiplos locais)
-  const estoqueMap = new Map<string, number>();
-  for (const item of estoqueItems) {
-    const current = estoqueMap.get(item.codigoItem) || 0;
-    estoqueMap.set(item.codigoItem, current + Number(item.quantidade || 0));
+  // 3. Identificar itens insuficientes (estoque disponível < quantidade pedida)
+  const insufficientItems: PedidoItem[] = [];
+  for (const item of pedidoItems) {
+    const stock = stockMap.get(item.itemId) || { total: 0, reserved: 0 };
+    const available = stock.total - stock.reserved;
+    if (available < item.quantidade) {
+      insufficientItems.push(item);
+    }
   }
 
-  // 3. Buscar TODOS os alertas existentes (pendente, aceito, recusado) para não duplicar
-  // Isso evita recriar alertas que já foram aceitos/recusados
+  // 4. Buscar alertas existentes (pendente, aceito, recusado) dos últimos 7 dias para evitar duplicatas
   const alertasExistentes = await db.select({
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,
     codigoItem: stockInsufficientAlerts.codigoItem,
@@ -75,76 +151,79 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     .where(
       and(
         inArray(stockInsufficientAlerts.status, ["pendente", "aceito", "recusado"]),
-        // Só considerar alertas dos últimos 7 dias para não bloquear para sempre
         gte(stockInsufficientAlerts.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
       )
     );
 
   const alertaSet = new Set(alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`));
 
-  // 4. Detectar insuficientes e criar alertas
-  // Um item é insuficiente quando: estoque disponível < quantidade pedida
+  // 5. Criar alertas para itens insuficientes que não têm alerta recente
   let created = 0;
-  const pedidosRecentes = new Set<string>();
-  
-  for (const pedido of pedidosAaprovar) {
-    if (!pedido.codigoItem || !pedido.pedido) continue;
-    pedidosRecentes.add(pedido.pedido);
+  const pedidosAtuais = new Set<string>();
 
-    const estoqueDisponivel = estoqueMap.get(pedido.codigoItem) ?? 0;
-    const quantidadePedida = Number(pedido.quantidade || 0);
+  for (const item of insufficientItems) {
+    pedidosAtuais.add(item.pedidoNumero);
+    const key = `${item.pedidoNumero}-${item.codigoItem}`;
+    
+    if (!alertaSet.has(key)) {
+      const stock = stockMap.get(item.itemId) || { total: 0, reserved: 0 };
+      const available = stock.total - stock.reserved;
 
-    // Se estoque é menor que a quantidade pedida, é insuficiente
-    if (estoqueDisponivel < quantidadePedida) {
-      const key = `${pedido.pedido}-${pedido.codigoItem}`;
-      if (!alertaSet.has(key)) {
-        await db.insert(stockInsufficientAlerts).values({
-          pedidoNumero: pedido.pedido,
-          cliente: pedido.cliente || "N/A",
-          codigoItem: pedido.codigoItem,
-          descricaoItem: pedido.descricaoItem || pedido.codigoItem,
-          quantidadePedida: String(quantidadePedida),
-          unidadeMedida: pedido.unidadeMedida || "CX",
-          estoqueDisponivel: String(estoqueDisponivel),
-          status: "pendente",
-          criadoPor: "sistema",
-        });
-        alertaSet.add(key);
-        created++;
-      }
+      await db.insert(stockInsufficientAlerts).values({
+        pedidoNumero: item.pedidoNumero,
+        cliente: item.cliente,
+        codigoItem: item.codigoItem,
+        descricaoItem: item.descricao,
+        quantidadePedida: String(item.quantidade),
+        unidadeMedida: item.unidade,
+        estoqueDisponivel: String(Math.max(0, available)),
+        status: "pendente",
+        criadoPor: "sistema",
+      });
+      alertaSet.add(key);
+      created++;
     }
   }
 
-  // 5. Limpar alertas pendentes de pedidos que não estão mais em "A aprovar" recente
-  await cleanupOldAlerts(db, pedidosRecentes);
+  // 6. Limpar alertas pendentes de pedidos que não estão mais insuficientes
+  await cleanupOldAlerts(db, pedidosAtuais, insufficientItems);
 
-  return { created, message: `${created} novo(s) alerta(s) criado(s)` };
+  const msg = `${created} novo(s) alerta(s). ${insufficientItems.length} item(ns) insuficiente(s) em ${pedidosAtuais.size} pedido(s) A aprovar.`;
+  console.log(`[StockAlert] ${msg}`);
+  return { created, message: msg };
 }
 
 /**
- * Remove alertas pendentes de pedidos que não estão mais em "A aprovar" recente.
- * Isso evita acumular alertas de pedidos antigos que já foram processados.
+ * Remove alertas pendentes que não correspondem mais a itens insuficientes em pedidos "A aprovar".
  */
-async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>) {
+async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentInsufficient?: PedidoItem[]) {
   if (!currentPedidos || currentPedidos.size === 0) {
-    // Se não há pedidos recentes em "A aprovar", marcar todos os pendentes como expirados
+    // Nenhum pedido A aprovar → expirar todos os pendentes
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(eq(stockInsufficientAlerts.status, "pendente"));
     return;
   }
 
-  // Buscar alertas pendentes que não pertencem a pedidos recentes em "A aprovar"
+  // Buscar alertas pendentes
   const pendentes = await db.select({
     id: stockInsufficientAlerts.id,
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,
+    codigoItem: stockInsufficientAlerts.codigoItem,
   })
     .from(stockInsufficientAlerts)
     .where(eq(stockInsufficientAlerts.status, "pendente"));
 
+  // Criar set dos itens que REALMENTE são insuficientes agora
+  const insufficientSet = new Set(
+    (currentInsufficient || []).map(i => `${i.pedidoNumero}-${i.codigoItem}`)
+  );
+
   const idsToExpire: number[] = [];
   for (const alerta of pendentes) {
-    if (!currentPedidos.has(alerta.pedidoNumero)) {
+    const key = `${alerta.pedidoNumero}-${alerta.codigoItem}`;
+    // Expirar se o pedido não está mais em A aprovar OU se o item não é mais insuficiente
+    if (!insufficientSet.has(key)) {
       idsToExpire.push(alerta.id);
     }
   }
@@ -153,5 +232,6 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>) {
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(inArray(stockInsufficientAlerts.id, idsToExpire));
+    console.log(`[StockAlert] ${idsToExpire.length} alerta(s) expirado(s) (pedido não mais insuficiente/A aprovar)`);
   }
 }

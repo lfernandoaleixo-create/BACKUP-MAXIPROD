@@ -1072,25 +1072,37 @@ export const productionRouter = router({
       classMap.set(s.codigoItem, { superGrupoCodigo: s.superGrupoCodigo, grupoCodigo: s.grupoCodigo });
     }
 
-    return products.map(p => {
-      const cls = classMap.get(p.codigoItem);
-      let material: "bambu" | "madeira" | "outro" = "bambu"; // default
-      if (cls) {
-        // Madeira: superGrupoCodigo "05" (Industrialização) ou "16" com grupoCodigo "18"/"19"
-        if (cls.superGrupoCodigo === "05" || (cls.superGrupoCodigo === "16" && (cls.grupoCodigo === "18" || cls.grupoCodigo === "19"))) {
-          material = "madeira";
-        } else if (cls.superGrupoCodigo === "12") {
-          material = "bambu";
+    // Itens que devem ser FORÇADOS em Bambu (mesmo que o grupo diga outra coisa)
+    const forceBambu = ["00141A"]; // AMOSTRA ESPETO DE BAMBU - superGrupo 16/grupo 18 mas é bambu
+    // Itens que devem ser EXCLUÍDOS de Bambu (são máquinas/importação, não produto bambu)
+    const excludeFromBambu = ["00522", "00523", "00524", "00525", "00526", "00527"];
+    // INCUBADORA, LÂMINAS DE SERRA, PRATELEIRA, CARRINHO, CHOCADEIRA
+
+    return products
+      .filter(p => !excludeFromBambu.includes(p.codigoItem)) // Remove itens que não são produção
+      .map(p => {
+        // Forçar bambu para itens específicos
+        if (forceBambu.includes(p.codigoItem)) {
+          return { ...p, material: "bambu" as const };
         }
-      } else {
-        // Fallback: classify by description
-        const d = p.descricaoItem.toUpperCase();
-        if ((d.includes("MADEIRA") || d.includes("PINUS")) && !d.includes("BAMBU")) {
-          material = "madeira";
+        const cls = classMap.get(p.codigoItem);
+        let material: "bambu" | "madeira" | "outro" = "bambu"; // default
+        if (cls) {
+          // Madeira: superGrupoCodigo "05" (Industrialização) ou "16" com grupoCodigo "18"/"19"
+          if (cls.superGrupoCodigo === "05" || (cls.superGrupoCodigo === "16" && (cls.grupoCodigo === "18" || cls.grupoCodigo === "19"))) {
+            material = "madeira";
+          } else if (cls.superGrupoCodigo === "12") {
+            material = "bambu";
+          }
+        } else {
+          // Fallback: classify by description
+          const d = p.descricaoItem.toUpperCase();
+          if ((d.includes("MADEIRA") || d.includes("PINUS")) && !d.includes("BAMBU")) {
+            material = "madeira";
+          }
         }
-      }
-      return { ...p, material };
-    });
+        return { ...p, material };
+      });
   }),
 
   /** Criar um novo lote */
