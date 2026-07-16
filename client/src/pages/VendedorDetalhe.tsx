@@ -4072,10 +4072,10 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
         const margin = md.currentMonthlyMargin ?? 0;
         const getColor = (m: number) => {
           if (m < 15) return { bg: 'from-red-500 to-red-600', text: 'text-red-600 dark:text-red-400', label: 'Crítico', badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' };
-          if (m < 20) return { bg: 'from-orange-500 to-orange-600', text: 'text-orange-600 dark:text-orange-400', label: 'Baixo', badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' };
-          if (m < 25) return { bg: 'from-yellow-400 to-yellow-500', text: 'text-yellow-600 dark:text-yellow-400', label: 'Médio', badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' };
-          if (m < 29) return { bg: 'from-green-500 to-green-600', text: 'text-green-600 dark:text-green-400', label: 'Médio-Alto', badge: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' };
-          return { bg: 'from-blue-500 to-blue-600', text: 'text-blue-600 dark:text-blue-400', label: 'Projetado', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' };
+          if (m < 20) return { bg: 'from-orange-500 to-orange-600', text: 'text-orange-600 dark:text-orange-400', label: 'Comissão Baixa', badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' };
+          if (m < 25) return { bg: 'from-yellow-400 to-yellow-500', text: 'text-yellow-600 dark:text-yellow-400', label: 'Comissão Média', badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' };
+          if (m < 29) return { bg: 'from-green-500 to-green-600', text: 'text-green-600 dark:text-green-400', label: 'Comissão Média-Alta', badge: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' };
+          return { bg: 'from-blue-500 to-blue-600', text: 'text-blue-600 dark:text-blue-400', label: 'Comissão Alta', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' };
         };
         const c = getColor(margin);
         const barMin = -5;
@@ -6027,11 +6027,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   const weightedMargin = sumPVxMargin / sumPV;
                   // Colors: <15% red, 15-20% orange, 20-25% yellow, 25-29% green, >29% blue
                   const getRepColor = (m: number) => {
-                    if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
-                    if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Baixo' };
-                    if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Médio' };
-                    if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Bom' };
-                    return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Ótimo' };
+                     if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
+                     if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Comissão Baixa' };
+                     if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Comissão Média' };
+                     if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Comissão Média-Alta' };
+                     return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Comissão Alta' };
                   };
                   const repColor = getRepColor(weightedMargin);
                   // Bar position: range -5% to 40%
@@ -6842,10 +6842,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               if (!hasOrders) return null;
               const getMonthColor = (m: number) => {
                 if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
-                if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Baixo' };
-                if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Médio' };
-                if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Médio-Alto' };
-                return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Projetado' };
+                if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Comissão Baixa' };
+                if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Comissão Média' };
+                if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Comissão Média-Alta' };
+                return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Comissão Alta' };
               };
               const mColor = getMonthColor(margin);
               const barMin = -5;

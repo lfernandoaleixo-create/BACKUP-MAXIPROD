@@ -72,8 +72,8 @@ O frete é calculado pela API das transportadoras (Braspress, Alfa, Camilo dos S
 
 | Tier no banco       | Faixa de Margem (c/ 5.85% fixo) | Comissão Base (meta 120%) | + Encargos | Total |
 |---------------------|----------------------------------|--------------------------|------------|-------|
-| baixo               | 15% a 18%                        | 4%                       | 1,85%      | 5,85% |
-| medio               | 18% a 25%                        | 5%                       | 1,85%      | 6,85% |
+| baixo               | 15% a 19,99%                     | 4%                       | 1,85%      | 5,85% |
+| medio               | 20% a 24,99%                     | 5%                       | 1,85%      | 6,85% |
 | medio_alto          | 25% a 29%                        | 6%                       | 1,85%      | 7,85% |
 | mostrado_alto       | ≥ 29%                            | 7%                       | 1,85%      | 8,85% |
 | (crítico)           | < 15%                            | 4% (travado)             | 1,85%      | 5,85% |

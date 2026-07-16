@@ -2391,7 +2391,7 @@ export const salesOrderRouter = router({
       let margemCritica = false; // below 15% = commission locked at 4% + 1.85%
       if (margemParaTier >= 29) autoTier = "mostrado_alto";
       else if (margemParaTier >= 25) autoTier = "medio_alto";
-      else if (margemParaTier >= 18) autoTier = "medio";
+      else if (margemParaTier >= 20) autoTier = "medio";
       else if (margemParaTier >= 15) autoTier = "baixo";
       else { autoTier = "baixo"; margemCritica = true; }
 
@@ -2866,7 +2866,7 @@ export const salesOrderRouter = router({
       let monthlyMargemCritica = false;
       if (marginForTier >= 29) monthlyTier = "mostrado_alto";
       else if (marginForTier >= 25) monthlyTier = "medio_alto";
-      else if (marginForTier >= 18) monthlyTier = "medio";
+      else if (marginForTier >= 20) monthlyTier = "medio";
       else if (marginForTier >= 15) monthlyTier = "baixo";
       else { monthlyTier = "baixo"; monthlyMargemCritica = true; }
 

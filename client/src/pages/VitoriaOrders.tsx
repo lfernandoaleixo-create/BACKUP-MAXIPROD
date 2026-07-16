@@ -273,10 +273,10 @@ export default function VitoriaOrders() {
   // Helper for margin tier color
   const getMarginColor = (m: number) => {
     if (m < 15) return { bg: 'bg-red-100', text: 'text-red-700', label: 'Crítico' };
-    if (m < 20) return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Baixo' };
-    if (m < 25) return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Médio' };
-    if (m < 29) return { bg: 'bg-green-100', text: 'text-green-700', label: 'Bom' };
-    return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Ótimo' };
+    if (m < 20) return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Comissão Baixa' };
+    if (m < 25) return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Comissão Média' };
+    if (m < 29) return { bg: 'bg-green-100', text: 'text-green-700', label: 'Comissão Média-Alta' };
+    return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Comissão Alta' };
   };
 
   // Group filtered orders by seller for Fernando/Guilherme/Bruno view
@@ -454,7 +454,7 @@ export default function VitoriaOrders() {
                         const md = sellerMonthlyQuery.data;
                         const margin = md.currentMonthlyMargin ?? 0;
                         if (md.totalOrders === 0) return null;
-                        const mColor = margin >= 29 ? { text: 'text-blue-700', label: 'Ótimo' } : margin >= 25 ? { text: 'text-green-700', label: 'Bom' } : margin >= 20 ? { text: 'text-yellow-700', label: 'Médio' } : margin >= 15 ? { text: 'text-orange-700', label: 'Baixo' } : { text: 'text-red-700', label: 'Crítico' };
+                        const mColor = margin >= 29 ? { text: 'text-blue-700', label: 'Comissão Alta' } : margin >= 25 ? { text: 'text-green-700', label: 'Comissão Média-Alta' } : margin >= 20 ? { text: 'text-yellow-700', label: 'Comissão Média' } : margin >= 15 ? { text: 'text-orange-700', label: 'Comissão Baixa' } : { text: 'text-red-700', label: 'Crítico' };
                         const barMin = -5, barMax = 40;
                         const clamped = Math.max(barMin, Math.min(barMax, margin));
                         const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
@@ -1145,10 +1145,10 @@ export default function VitoriaOrders() {
 
                         const getRepColor = (m: number) => {
                           if (m < 15) return { text: 'text-red-700', label: 'Crítico' };
-                          if (m < 20) return { text: 'text-orange-700', label: 'Baixo' };
-                          if (m < 25) return { text: 'text-yellow-700', label: 'Médio' };
-                          if (m < 29) return { text: 'text-green-700', label: 'Bom' };
-                          return { text: 'text-blue-700', label: 'Ótimo' };
+                          if (m < 20) return { text: 'text-orange-700', label: 'Comissão Baixa' };
+                          if (m < 25) return { text: 'text-yellow-700', label: 'Comissão Média' };
+                          if (m < 29) return { text: 'text-green-700', label: 'Comissão Média-Alta' };
+                          return { text: 'text-blue-700', label: 'Comissão Alta' };
                         };
 
                         return (
@@ -1242,10 +1242,10 @@ export default function VitoriaOrders() {
                               if (md.totalOrders === 0) return null;
                               const getMonthColor = (m: number) => {
                                 if (m < 15) return { text: 'text-red-700', label: 'Crítico' };
-                                if (m < 20) return { text: 'text-orange-700', label: 'Baixo' };
-                                if (m < 25) return { text: 'text-yellow-700', label: 'Médio' };
-                                if (m < 29) return { text: 'text-green-700', label: 'Médio-Alto' };
-                                return { text: 'text-blue-700', label: 'Ótimo' };
+                                if (m < 20) return { text: 'text-orange-700', label: 'Comissão Baixa' };
+                                if (m < 25) return { text: 'text-yellow-700', label: 'Comissão Média' };
+                                if (m < 29) return { text: 'text-green-700', label: 'Comissão Média-Alta' };
+                                return { text: 'text-blue-700', label: 'Comissão Alta' };
                               };
                               const mColor = getMonthColor(margin);
                               const barMin = -5;

@@ -83,10 +83,10 @@ export function RealCostMarginBar({
 
   const getMarginColor = (m: number) => {
     if (m < 15) return { text: "text-red-700 dark:text-red-300", label: "Crítico" };
-    if (m < 20) return { text: "text-orange-700 dark:text-orange-300", label: "Baixo" };
-    if (m < 25) return { text: "text-yellow-700 dark:text-yellow-300", label: "Médio" };
-    if (m < 29) return { text: "text-green-700 dark:text-green-300", label: "Bom" };
-    return { text: "text-blue-700 dark:text-blue-300", label: "Ótimo" };
+    if (m < 20) return { text: "text-orange-700 dark:text-orange-300", label: "Comissão Baixa" };
+    if (m < 25) return { text: "text-yellow-700 dark:text-yellow-300", label: "Comissão Média" };
+    if (m < 29) return { text: "text-green-700 dark:text-green-300", label: "Comissão Média-Alta" };
+    return { text: "text-blue-700 dark:text-blue-300", label: "Comissão Alta" };
   };
 
   const color = getMarginColor(margin);

@@ -514,10 +514,10 @@ export default function PedidosVendedoresTab() {
 
                 const getRepColor = (m: number) => {
                   if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700', label: 'Crítico' };
-                  if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700', label: 'Baixo' };
-                  if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700', label: 'Médio' };
-                  if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700', label: 'Bom' };
-                  return { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Ótimo' };
+                  if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700', label: 'Comissão Baixa' };
+                  if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700', label: 'Comissão Média' };
+                  if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700', label: 'Comissão Média-Alta' };
+                  return { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Comissão Alta' };
                 };
 
                 return (
@@ -611,10 +611,10 @@ export default function PedidosVendedoresTab() {
                       if (md.totalOrders === 0) return null;
                       const getMonthColor = (m: number) => {
                         if (m < 15) return { bg: 'bg-red-500', text: 'text-red-700', label: 'Crítico' };
-                        if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700', label: 'Baixo' };
-                        if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700', label: 'Médio' };
-                        if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700', label: 'Médio-Alto' };
-                        return { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Ótimo' };
+                        if (m < 20) return { bg: 'bg-orange-500', text: 'text-orange-700', label: 'Comissão Baixa' };
+                        if (m < 25) return { bg: 'bg-yellow-400', text: 'text-yellow-700', label: 'Comissão Média' };
+                        if (m < 29) return { bg: 'bg-green-500', text: 'text-green-700', label: 'Comissão Média-Alta' };
+                        return { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Comissão Alta' };
                       };
                       const mColor = getMonthColor(margin);
                       const barMin = -5;
