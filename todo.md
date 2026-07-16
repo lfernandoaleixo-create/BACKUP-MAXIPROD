@@ -5723,3 +5723,4 @@
 - [x] Thresholds corrigidos de 15/18/25/29 para 15/20/25/29 (confirmado Fernando)
 - [x] Labels: Comissão Baixa, Comissão Média, Comissão Média-Alta, Comissão Alta
 - [x] Comissão mensal NÃO soma 1,85% (apenas comissão individual do pedido soma)
+- [x] Replicar permissões do Guilherme (id=7) para o Luís Eduardo (id=60002): 7 módulos + 26 permissões granulares copiadas
