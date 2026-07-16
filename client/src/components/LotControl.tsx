@@ -463,7 +463,7 @@ function LancamentoLote() {
                 "bg-red-50 border-red-200"
               }`}>
                 <div>
-                  <div className="text-xs font-mono font-medium text-slate-700">{req.codigoLotePreview}</div>
+                  <div className="text-xs font-mono font-medium text-slate-700">{convertLotCode(req.codigoLotePreview)}</div>
                   <div className="text-[10px] text-slate-500">
                     {req.descricaoItem?.slice(0, 40)} · {req.dataProducao.split("-").reverse().join("/")}
                   </div>
@@ -497,28 +497,80 @@ function LancamentoLote() {
 /* ═══════════════════════════════════════════════════════════
    ESTOQUE DE LOTES
    ═══════════════════════════════════════════════════════════ */
+// Mapa de conversão de códigos SKU para códigos de exibição
+const SKU_CODE_MAP: Record<string, string> = {
+  "00077": "AR125",
+  "00080": "AR15",
+  "00082": "AR18",
+  "00095": "AR20",
+  "00086": "AR218",
+  "00089": "AR25",
+  "00091": "AR30",
+  "00112": "AR35",
+  "00103": "EC20",
+  "00147": "EC25",
+};
+
+/** Converte a primeira sequência do código do lote (ex: 00103-160726-12345 → EC20-160726-12345) */
+function convertLotCode(codigo: string): string {
+  const parts = codigo.split("-");
+  if (parts.length >= 1 && SKU_CODE_MAP[parts[0]]) {
+    parts[0] = SKU_CODE_MAP[parts[0]];
+  }
+  return parts.join("-");
+}
+
 function EstoqueLotes() {
   const [filterSku, setFilterSku] = useState("");
+  const [searchText, setSearchText] = useState("");
   const { data: lots, isLoading, refetch: refetchLots } = trpc.production.getAllLots.useQuery({ onlyWithBalance: true, codigoItem: filterSku || undefined });
   const { data: products } = trpc.production.getLotProducts.useQuery();
   const [expandedLot, setExpandedLot] = useState<number | null>(null);
 
+  // Filtrar lotes pela busca (suporta código original e convertido)
+  const filteredLots = useMemo(() => {
+    if (!lots || !searchText.trim()) return lots || [];
+    const q = searchText.trim().toUpperCase();
+    return lots.filter(lot => {
+      const codigoOriginal = lot.codigo.toUpperCase();
+      const codigoConvertido = convertLotCode(lot.codigo).toUpperCase();
+      return codigoOriginal.includes(q) || codigoConvertido.includes(q);
+    });
+  }, [lots, searchText]);
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
-          <Box className="w-4 h-4 text-emerald-500" /> Estoque de Lotes (saldo &gt; 0)
-        </h3>
-        <select
-          value={filterSku}
-          onChange={(e) => setFilterSku(e.target.value)}
-          className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-        >
-          <option value="">Todos os SKUs</option>
-          {products?.map(p => (
-            <option key={p.codigoItem} value={p.codigoItem}>{p.codigoItem} - {p.descricaoItem.slice(0, 40)}</option>
-          ))}
-        </select>
+      <div className="px-5 py-4 border-b border-slate-100 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+            <Box className="w-4 h-4 text-emerald-500" /> Estoque de Lotes (saldo &gt; 0)
+          </h3>
+          <select
+            value={filterSku}
+            onChange={(e) => setFilterSku(e.target.value)}
+            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
+            <option value="">Todos os SKUs</option>
+            {products?.map(p => (
+              <option key={p.codigoItem} value={p.codigoItem}>{p.codigoItem} - {p.descricaoItem.slice(0, 40)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Buscar por código do lote (ex: EC20, AR125, 00103...)"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          {searchText && (
+            <button onClick={() => setSearchText("")} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -546,7 +598,7 @@ function EstoqueLotes() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {lots.map(lot => (
+              {filteredLots.map(lot => (
                 <LotRow key={lot.id} lot={lot} expanded={expandedLot === lot.id} onToggle={() => setExpandedLot(expandedLot === lot.id ? null : lot.id)} onDeleted={() => { setExpandedLot(null); refetchLots(); }} />
               ))}
             </tbody>
@@ -583,7 +635,7 @@ function LotRow({ lot, expanded, onToggle, onDeleted }: { lot: any; expanded: bo
   return (
     <>
       <tr className="hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={onToggle}>
-        <td className="px-4 py-2.5 font-mono text-xs font-medium text-indigo-700">{lot.codigo}</td>
+        <td className="px-4 py-2.5 font-mono text-xs font-medium text-indigo-700">{convertLotCode(lot.codigo)}</td>
         <td className="px-4 py-2.5 text-slate-700 text-xs">{lot.descricaoItem.slice(0, 50)}</td>
         <td className="px-4 py-2.5 text-center text-slate-600 text-xs">{lot.dataProducao.split("-").reverse().join("/")}</td>
         <td className="px-4 py-2.5 text-center text-slate-600 text-xs">{lot.notaCarga}</td>
@@ -768,7 +820,7 @@ function HistoricoLotes() {
               {allLots.map(lot => (
                 <div key={lot.id} className="flex items-center justify-between py-1.5 border-b border-indigo-100 last:border-0">
                   <div>
-                    <span className="font-mono text-xs font-medium text-indigo-800">{lot.codigo}</span>
+                    <span className="font-mono text-xs font-medium text-indigo-800">{convertLotCode(lot.codigo)}</span>
                     <span className="text-xs text-slate-500 ml-2">{lot.descricaoItem.slice(0, 40)}</span>
                   </div>
                   <div className="text-xs">
@@ -799,7 +851,7 @@ function HistoricoLotes() {
                 <tbody className="divide-y divide-slate-100">
                   {movements.map((m: any) => (
                     <tr key={m.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 font-mono text-xs text-indigo-700">{m.codigoLote}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-indigo-700">{convertLotCode(m.codigoLote)}</td>
                       <td className="px-4 py-2.5 text-slate-700">{m.cliente}</td>
                       <td className="px-4 py-2.5 text-slate-500">{m.pedido || "-"}</td>
                       <td className="px-4 py-2.5 text-right font-medium tabular-nums">{parseFloat(String(m.qtdEnviada))}</td>
@@ -886,7 +938,7 @@ function AutorizacoesRetroativas() {
                         Solicitado por <span className="font-medium text-slate-700">{req.solicitanteNome}</span>
                       </span>
                     </div>
-                    <div className="font-mono text-base font-bold text-slate-800 mb-1">{req.codigoLotePreview}</div>
+                    <div className="font-mono text-base font-bold text-slate-800 mb-1">{convertLotCode(req.codigoLotePreview)}</div>
                     <div className="text-xs text-slate-600 space-y-0.5">
                       <div>Produto: <span className="font-medium">{req.codigoItem}</span> - {req.descricaoItem?.slice(0, 50)}</div>
                       <div>Quantidade: <span className="font-medium">{parseFloat(String(req.qtdProduzida))} caixas</span></div>
@@ -978,7 +1030,7 @@ function AutorizacoesRetroativas() {
               <tbody className="divide-y divide-slate-100">
                 {history.map((h: any) => (
                   <tr key={h.id} className="hover:bg-slate-50/50">
-                    <td className="px-3 py-2 font-mono font-medium text-slate-700">{h.codigoLotePreview}</td>
+                    <td className="px-3 py-2 font-mono font-medium text-slate-700">{convertLotCode(h.codigoLotePreview)}</td>
                     <td className="px-3 py-2 text-slate-600">{h.solicitanteNome}</td>
                     <td className="px-3 py-2 text-center text-slate-600">{h.dataProducao.split("-").reverse().join("/")}</td>
                     <td className="px-3 py-2 text-center">

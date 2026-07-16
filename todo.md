@@ -5725,3 +5725,4 @@
 - [x] Comissão mensal NÃO soma 1,85% (apenas comissão individual do pedido soma)
 - [x] Replicar permissões do Guilherme (id=7) para o Luís Eduardo (id=60002): 7 módulos + 26 permissões granulares copiadas
 - [x] Produção > Controle de Lotes > Lançamento de novo lote: separar produtos em dois cards (Bambu e Madeira) usando classificação da aba Estoque
+- [x] Controle de Lotes > Aba Estoque: conversão de códigos na busca (00077→AR125, 00080→AR15, 00082→AR18, 00095→AR20, 00086→AR218, 00089→AR25, 00091→AR30, 00112→AR35, 00103→EC20, 00147→EC25)
