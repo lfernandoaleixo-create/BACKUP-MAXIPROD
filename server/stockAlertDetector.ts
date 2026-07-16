@@ -3,14 +3,14 @@
  * Chamado pelo scheduler após cada sincronização com o Maxiprod.
  * 
  * Lógica:
- * 1. Busca pedidos RECENTES (últimos 3 dias) em estado "Digitação" no sales_orders
- * 2. Para cada item, verifica se o estoque (stock_items) é 0 ou insuficiente
+ * 1. Busca pedidos RECENTES (últimos 3 dias) em estado "A aprovar" no sales_orders
+ * 2. Para cada item, verifica se o estoque (stock_items) é insuficiente para a quantidade pedida
  * 3. Se insuficiente e não há alerta pendente duplicado, cria um novo alerta
- * 4. Remove alertas antigos de pedidos que não estão mais em "Digitação"
+ * 4. Remove alertas antigos de pedidos que não estão mais em "A aprovar"
  */
 import { getDb } from "./db";
 import { stockInsufficientAlerts, stockItems, salesOrders } from "../drizzle/schema";
-import { eq, and, inArray, sql, gte, not } from "drizzle-orm";
+import { eq, and, inArray, sql, gte, or } from "drizzle-orm";
 
 export async function detectStockInsufficientAlerts(): Promise<{ created: number; message: string }> {
   const db = await getDb();
@@ -21,8 +21,8 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
   const dateLimit = threeDaysAgo.toISOString().split("T")[0]; // YYYY-MM-DD
 
-  // 1. Buscar itens de pedidos RECENTES em "Digitação" (dataEmissao >= 3 dias atrás)
-  const pedidosDigitacao = await db.select({
+  // 1. Buscar itens de pedidos RECENTES em "A aprovar" (dataEmissao >= 3 dias atrás)
+  const pedidosAaprovar = await db.select({
     pedido: salesOrders.pedido,
     cliente: salesOrders.cliente,
     codigoItem: salesOrders.codigoItem,
@@ -34,19 +34,19 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     .from(salesOrders)
     .where(
       and(
-        eq(salesOrders.estadoNota, "Digitação"),
+        eq(salesOrders.estadoNota, "A aprovar"),
         gte(salesOrders.dataEmissao, dateLimit)
       )
     );
 
-  if (pedidosDigitacao.length === 0) {
-    // Limpar alertas pendentes de pedidos que não estão mais em Digitação recente
+  if (pedidosAaprovar.length === 0) {
+    // Limpar alertas pendentes de pedidos que não estão mais em "A aprovar" recente
     await cleanupOldAlerts(db);
-    return { created: 0, message: "Nenhum pedido recente em digitação" };
+    return { created: 0, message: "Nenhum pedido recente em 'A aprovar'" };
   }
 
-  // 2. Buscar estoque disponível para esses itens (apenas bambu - superGrupoCodigo = "12")
-  const codigosUnicos = Array.from(new Set(pedidosDigitacao.map(p => p.codigoItem).filter(Boolean)));
+  // 2. Buscar estoque disponível para esses itens (TODOS os itens, não apenas bambu)
+  const codigosUnicos = Array.from(new Set(pedidosAaprovar.map(p => p.codigoItem).filter(Boolean)));
   if (codigosUnicos.length === 0) return { created: 0, message: "Nenhum item encontrado" };
 
   const estoqueItems = await db.select({
@@ -55,10 +55,7 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   })
     .from(stockItems)
     .where(
-      and(
-        inArray(stockItems.codigoItem, codigosUnicos as string[]),
-        eq(stockItems.superGrupoCodigo, "12")
-      )
+      inArray(stockItems.codigoItem, codigosUnicos as string[])
     );
 
   // Agregar estoque por código (pode ter múltiplos locais)
@@ -78,18 +75,20 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
 
   const alertaSet = new Set(alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`));
 
-  // 4. Detectar insuficientes e criar alertas (apenas para pedidos recentes)
+  // 4. Detectar insuficientes e criar alertas
+  // Um item é insuficiente quando: estoque disponível < quantidade pedida
   let created = 0;
   const pedidosRecentes = new Set<string>();
   
-  for (const pedido of pedidosDigitacao) {
+  for (const pedido of pedidosAaprovar) {
     if (!pedido.codigoItem || !pedido.pedido) continue;
     pedidosRecentes.add(pedido.pedido);
 
     const estoqueDisponivel = estoqueMap.get(pedido.codigoItem) ?? 0;
+    const quantidadePedida = Number(pedido.quantidade || 0);
 
-    // Se estoque é 0, definitivamente insuficiente
-    if (estoqueDisponivel <= 0) {
+    // Se estoque é menor que a quantidade pedida, é insuficiente
+    if (estoqueDisponivel < quantidadePedida) {
       const key = `${pedido.pedido}-${pedido.codigoItem}`;
       if (!alertaSet.has(key)) {
         await db.insert(stockInsufficientAlerts).values({
@@ -97,9 +96,9 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
           cliente: pedido.cliente || "N/A",
           codigoItem: pedido.codigoItem,
           descricaoItem: pedido.descricaoItem || pedido.codigoItem,
-          quantidadePedida: String(Number(pedido.quantidade || 0)),
+          quantidadePedida: String(quantidadePedida),
           unidadeMedida: pedido.unidadeMedida || "CX",
-          estoqueDisponivel: "0",
+          estoqueDisponivel: String(estoqueDisponivel),
           status: "pendente",
           criadoPor: "sistema",
         });
@@ -109,26 +108,26 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     }
   }
 
-  // 5. Limpar alertas pendentes de pedidos que não estão mais em Digitação recente
+  // 5. Limpar alertas pendentes de pedidos que não estão mais em "A aprovar" recente
   await cleanupOldAlerts(db, pedidosRecentes);
 
   return { created, message: `${created} novo(s) alerta(s) criado(s)` };
 }
 
 /**
- * Remove alertas pendentes de pedidos que não estão mais em "Digitação" recente.
+ * Remove alertas pendentes de pedidos que não estão mais em "A aprovar" recente.
  * Isso evita acumular alertas de pedidos antigos que já foram processados.
  */
 async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>) {
   if (!currentPedidos || currentPedidos.size === 0) {
-    // Se não há pedidos recentes em digitação, marcar todos os pendentes como expirados
+    // Se não há pedidos recentes em "A aprovar", marcar todos os pendentes como expirados
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(eq(stockInsufficientAlerts.status, "pendente"));
     return;
   }
 
-  // Buscar alertas pendentes que não pertencem a pedidos recentes
+  // Buscar alertas pendentes que não pertencem a pedidos recentes em "A aprovar"
   const pendentes = await db.select({
     id: stockInsufficientAlerts.id,
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,

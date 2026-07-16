@@ -86,7 +86,7 @@ export function startScheduler(): void {
         } catch (cobErr: any) {
           console.error(`[Scheduler] Cobrança planilha sync failed: ${cobErr.message}`);
         }
-        // Detectar alertas de estoque insuficiente em pedidos "Em Digitação"
+        // Detectar alertas de estoque insuficiente em pedidos "A aprovar"
         try {
           const alertResult = await detectStockInsufficientAlerts();
           if (alertResult.created > 0) {

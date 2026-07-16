@@ -9,7 +9,7 @@ import { detectStockInsufficientAlerts } from "./stockAlertDetector";
  * Router para Alertas de Estoque Insuficiente
  * 
  * FLUXO:
- * 1. Sistema detecta itens insuficientes em pedidos "Em Digitação"
+ * 1. Sistema detecta itens insuficientes em pedidos "A aprovar"
  * 2. Alerta aparece na aba Faturamento para Maria, Erica, Vitória, Bruno, Guilherme e Fernando
  * 3. Produção (Maria/Erica) aceita ou recusa a conversão/transformação
  * 4. Resultado volta para todos verem
@@ -40,10 +40,10 @@ export const stockAlertRouter = router({
         .from(stockInsufficientAlerts)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(
-          sql`FIELD(${stockInsufficientAlerts.status}, 'pendente', 'aceito', 'recusado')`,
+          sql`FIELD(${stockInsufficientAlerts.status}, 'pendente', 'aceito', 'recusado', 'expirado')`,
           desc(stockInsufficientAlerts.createdAt)
         )
-        .limit(100);
+        .limit(200);
       
       return alerts;
     }),
@@ -90,7 +90,7 @@ export const stockAlertRouter = router({
     }),
 
   /**
-   * Detectar itens insuficientes nos pedidos "Em Digitação"
+   * Detectar itens insuficientes nos pedidos "A aprovar"
    * Compara quantidade pedida com estoque disponível na stock_items
    * Cria alertas para itens novos que ainda não têm alerta pendente
    */

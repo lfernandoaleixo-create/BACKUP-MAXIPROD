@@ -5729,3 +5729,7 @@
 - [x] Controle de Lotes > Histórico: mostrar todas as movimentações (baixas) como lista direta sem exigir busca prévia
 - [x] Movimentação de Estoque > Nova Solicitação: remover produtos de madeira, manter apenas bambu (tanto em baixa quanto em acréscimo)
 - [x] Sistema de alertas de estoque insuficiente: detectar itens insuficientes em pedidos 'Em Digitação', alertar produção (Maria/Erica) e faturamento (Vitória/Bruno/Guilherme/Fernando), com fluxo de aceite/recusa para conversão de produtos
+- [x] Alertas de estoque: filtrar apenas "A aprovar" (remover "Digitação")
+- [x] Alertas de estoque: mostrar número de caixas (quantidade pedida) em cada alerta
+- [x] Alertas de estoque: criar seção de Histórico com alertas aceitos/recusados
+- [x] Alertas de estoque: corrigir subtítulo de "Em Digitação" para "A aprovar"
