@@ -5715,7 +5715,7 @@
 
 - [x] Criar procedure backend getSellerMonthlyDiscount (média ponderada de descontos)
 - [x] Adicionar segunda barra de comissão no VendedorDetalhe
-- [ ] Adicionar segunda barra de comissão no PedidosVendedoresTab
+- [x] Adicionar segunda barra de comissão no PedidosVendedoresTab
 - [x] Regra: <20% desc = Alta(7%), 20-23% = Média-Alta(6%), 23-27% = Média(5%), 27-32% = Baixa(4%)
 
 ## Correção Thresholds (16/07/2026)
