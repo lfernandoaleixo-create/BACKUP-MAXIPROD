@@ -12,7 +12,7 @@ import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
   Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2,
-  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare, TrendingUp, Calendar, Eye
+  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare, TrendingUp, TrendingDown, Calendar, Eye
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -317,6 +317,10 @@ export default function VitoriaOrders() {
     sellerMonthlyInput,
     { enabled: isTopGestor && expandedSellerIdForMonthly > 0, staleTime: 30 * 1000 }
   );
+  const sellerDiscountQuery = trpc.salesOrders.getSellerMonthlyDiscount.useQuery(
+    sellerMonthlyInput,
+    { enabled: isTopGestor && expandedSellerIdForMonthly > 0, staleTime: 30 * 1000 }
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -449,6 +453,60 @@ export default function VitoriaOrders() {
                   {/* Seller Expanded Content */}
                   {isSellerExpanded && (
                     <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                      {/* Monthly Discount-Based Commission Bar (comparativo) */}
+                      {sellerDiscountQuery.data && sellerDiscountQuery.data.sellerId === group.sellerId && sellerDiscountQuery.data.avgDiscount !== null && (() => {
+                        const dd = sellerDiscountQuery.data;
+                        const avgDisc = dd.avgDiscount!;
+                        const dColor = avgDisc < 20 ? { text: 'text-blue-700', label: 'Comissão Alta' } : avgDisc <= 23 ? { text: 'text-green-700', label: 'Comissão Média-Alta' } : avgDisc <= 27 ? { text: 'text-yellow-700', label: 'Comissão Média' } : avgDisc <= 32 ? { text: 'text-orange-700', label: 'Comissão Baixa' } : { text: 'text-red-700', label: 'Crítico' };
+                        const barMin = 0, barMax = 40;
+                        const clamped = Math.max(barMin, Math.min(barMax, avgDisc));
+                        const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+                        return (
+                          <div className="mt-3 bg-purple-50 border-2 border-purple-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <TrendingDown className="w-3.5 h-3.5 text-purple-600" />
+                                <span className="text-[10px] font-bold text-purple-700 uppercase">Comissão por Desconto Médio — {group.sellerName}</span>
+                              </div>
+                              <span className={`text-sm font-black tabular-nums ${dColor.text}`}>
+                                {avgDisc.toFixed(1)}% desc. ({dColor.label})
+                              </span>
+                            </div>
+                            <div className="relative w-full">
+                              <div className="relative h-6 rounded-full overflow-visible border-2 border-slate-300 shadow-sm">
+                                <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                                  <div className="h-full bg-blue-500" style={{ width: "50%" }} />
+                                  <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
+                                  <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
+                                  <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
+                                  <div className="h-full bg-red-500" style={{ width: "20%" }} />
+                                </div>
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "50%" }} />
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "57.5%" }} />
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "67.5%" }} />
+                                <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "80%" }} />
+                                <div className="absolute flex flex-col items-center" style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}>
+                                  <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900" />
+                                  <div className="w-[2px] flex-1 bg-slate-900 rounded-full" />
+                                </div>
+                              </div>
+                              <div className="relative w-full h-3 mt-0.5">
+                                <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
+                                <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
+                                <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
+                                <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-[10px]">
+                              <span className="text-slate-500">{dd.totalOrders} pedido{dd.totalOrders !== 1 ? 's' : ''} analisados</span>
+                              {dd.discountComissao && (
+                                <span className="font-bold text-purple-600">Comissão: {dd.discountComissao}%</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* Monthly Margin Bar */}
                       {sellerMonthlyQuery.data && sellerMonthlyQuery.data.sellerId === group.sellerId && (() => {
                         const md = sellerMonthlyQuery.data;
