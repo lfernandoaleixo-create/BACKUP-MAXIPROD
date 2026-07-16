@@ -1206,6 +1206,16 @@ export const productionRouter = router({
         .orderBy(desc(lotMovements.createdAt));
     }),
 
+  /** Listar todas as baixas (atribuições de lotes a pedidos) para o Histórico */
+  getAllLotAssignments: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const { orderLotAssignments } = await import("../drizzle/schema");
+      return db.select().from(orderLotAssignments)
+        .orderBy(desc(orderLotAssignments.createdAt));
+    }),
+
   /** Apagar um lote (remove lote + movimentações + atribuições vinculadas) */
   deleteLot: publicProcedure
     .input(z.object({

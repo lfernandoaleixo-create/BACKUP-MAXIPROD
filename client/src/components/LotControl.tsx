@@ -734,34 +734,30 @@ function LotRow({ lot, expanded, onToggle, onDeleted }: { lot: any; expanded: bo
    ═══════════════════════════════════════════════════════════ */
 function HistoricoLotes() {
   const [filterText, setFilterText] = useState("");
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
 
-  // Carrega todas as movimentações diretamente (sem exigir busca)
-  const { data: movements, isLoading } = trpc.production.getLotMovements.useQuery({
-    dataInicio: dataInicio || undefined,
-    dataFim: dataFim || undefined,
-  });
+  // Carrega todas as baixas (atribuições de lotes) diretamente
+  const { data: assignments, isLoading } = trpc.production.getAllLotAssignments.useQuery();
 
-  // Filtro local por texto (lote ou cliente) + suporte a códigos convertidos
-  const filteredMovements = useMemo(() => {
-    if (!movements) return [];
-    if (!filterText.trim()) return movements;
+  // Filtro local por texto (código lote, produto, pedido) + suporte a códigos convertidos
+  const filteredAssignments = useMemo(() => {
+    if (!assignments) return [];
+    if (!filterText.trim()) return assignments;
     const q = filterText.trim().toUpperCase();
-    return movements.filter((m: any) => {
-      const codigoOriginal = (m.codigoLote || "").toUpperCase();
-      const codigoConvertido = convertLotCode(m.codigoLote || "").toUpperCase();
-      const cliente = (m.cliente || "").toUpperCase();
-      const pedido = (m.pedido || "").toUpperCase();
-      return codigoOriginal.includes(q) || codigoConvertido.includes(q) || cliente.includes(q) || pedido.includes(q);
+    return assignments.filter((a: any) => {
+      const codigoOriginal = (a.codigoLote || "").toUpperCase();
+      const codigoConvertido = convertLotCode(a.codigoLote || "").toUpperCase();
+      const codigoItem = (a.codigoItem || "").toUpperCase();
+      const descricao = (a.descricaoItem || "").toUpperCase();
+      const pedido = (a.pedidoNumero || "").toUpperCase();
+      return codigoOriginal.includes(q) || codigoConvertido.includes(q) || codigoItem.includes(q) || descricao.includes(q) || pedido.includes(q);
     });
-  }, [movements, filterText]);
+  }, [assignments, filterText]);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-slate-100 space-y-3">
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
-          <History className="w-4 h-4 text-violet-500" /> Histórico de Movimentações (Baixas)
+          <History className="w-4 h-4 text-violet-500" /> Histórico de Baixas
         </h3>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px] relative">
@@ -770,7 +766,7 @@ function HistoricoLotes() {
               type="text"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Filtrar por lote, cliente ou pedido..."
+              placeholder="Filtrar por código do lote, produto ou pedido..."
               className="w-full border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
             {filterText && (
@@ -779,54 +775,47 @@ function HistoricoLotes() {
               </button>
             )}
           </div>
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">De</label>
-            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Até</label>
-            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-          </div>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
-          <span className="ml-2 text-sm text-slate-500">Carregando movimentações...</span>
+          <span className="ml-2 text-sm text-slate-500">Carregando baixas...</span>
         </div>
-      ) : !filteredMovements || filteredMovements.length === 0 ? (
+      ) : !filteredAssignments || filteredAssignments.length === 0 ? (
         <div className="text-center py-12 text-sm text-slate-400">
           <History className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          {filterText ? "Nenhuma movimentação encontrada para este filtro" : "Nenhuma movimentação registrada"}
+          {filterText ? "Nenhuma baixa encontrada para este filtro" : "Nenhuma baixa registrada"}
         </div>
       ) : (
         <div className="overflow-x-auto">
           <div className="px-5 py-2 text-xs text-slate-500 border-b border-slate-100">
-            {filteredMovements.length} movimentaç{filteredMovements.length === 1 ? "ão" : "ões"}
+            {filteredAssignments.length} baixa{filteredAssignments.length === 1 ? "" : "s"}
           </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/50">
                 <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Lote</th>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Cliente</th>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Pedido</th>
-                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Qtd</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Produto</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Pedido</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Caixas</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Atribuído por</th>
                 <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Data</th>
-                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Lançado por</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredMovements.map((m: any) => (
-                <tr key={m.id} className="hover:bg-slate-50/50">
-                  <td className="px-4 py-2.5 font-mono text-xs text-indigo-700 font-medium">{convertLotCode(m.codigoLote)}</td>
-                  <td className="px-4 py-2.5 text-slate-700 text-xs">{m.cliente}</td>
-                  <td className="px-4 py-2.5 text-slate-500 text-xs">{m.pedido || "-"}</td>
-                  <td className="px-4 py-2.5 text-right font-medium tabular-nums text-xs">{parseFloat(String(m.qtdEnviada))}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-500 text-xs">{m.dataEnvio.split("-").reverse().join("/")}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-500 text-xs">{m.lancadoPor || "-"}</td>
+              {filteredAssignments.map((a: any) => (
+                <tr key={a.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-2.5 font-mono text-xs text-indigo-700 font-medium">{convertLotCode(a.codigoLote)}</td>
+                  <td className="px-4 py-2.5 text-slate-700 text-xs">
+                    <span className="font-medium">{a.codigoItem}</span>
+                    {a.descricaoItem && <span className="text-slate-500 ml-1">- {a.descricaoItem.slice(0, 40)}</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-center text-slate-600 text-xs font-medium">{a.pedidoNumero || "-"}</td>
+                  <td className="px-4 py-2.5 text-right font-bold tabular-nums text-xs text-red-600">{parseFloat(String(a.qtdCaixas))}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-500 text-xs">{a.atribuidoPor}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-500 text-xs">{new Date(a.createdAt).toLocaleDateString("pt-BR")} {new Date(a.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
                 </tr>
               ))}
             </tbody>
