@@ -2929,6 +2929,153 @@ export const salesOrderRouter = router({
     }),
 
   /**
+   * Get seller monthly weighted average discount (compared to preço mostrado)
+   * Used for the second commission bar (discount-based)
+   * Rule: <20% = Alta(7%), 20-23% = Média-Alta(6%), 23-27% = Média(5%), 27-32% = Baixa(4%)
+   */
+  getSellerMonthlyDiscount: publicProcedure
+    .input(z.object({ sellerId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Get seller info
+      const [seller] = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.id, input.sellerId));
+      if (!seller) throw new Error("Vendedor não encontrado");
+
+      // Get current month range (São Paulo timezone)
+      const now = new Date();
+      const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const monthStart = new Date(spNow.getFullYear(), spNow.getMonth(), 1);
+      const monthStartStr = monthStart.toISOString().split("T")[0];
+
+      // Get all non-simulation orders for this seller in the current month
+      const orders = await db.select({
+        id: salesOrderRequests.id,
+        status: salesOrderRequests.status,
+      }).from(salesOrderRequests)
+        .where(and(
+          eq(salesOrderRequests.sellerId, input.sellerId),
+          sql`${salesOrderRequests.status} != 'simulacao'`,
+          sql`${salesOrderRequests.createdAt} >= ${monthStartStr}`,
+        ));
+
+      if (orders.length === 0) {
+        return {
+          sellerId: input.sellerId,
+          sellerName: seller.sellerName,
+          totalOrders: 0,
+          avgDiscount: null,
+          discountTier: null,
+          discountComissao: null,
+          itemBreakdown: [],
+        };
+      }
+
+      // Get seller's price table
+      let priceMap = new Map<string, number>(); // codigoItem -> precoMostrado
+      const allTables = await db.select().from(priceTables);
+      let matchedTable: typeof allTables[0] | undefined;
+      // 1. Try direct mapping via priceTableCode field
+      if (seller.priceTableCode) {
+        matchedTable = allTables.find(t => t.codigo === seller.priceTableCode);
+      }
+      // 2. Fallback: match by seller name in table description
+      if (!matchedTable) {
+        const nameParts = seller.sellerName.toUpperCase().split(' ');
+        matchedTable = allTables.find(t => {
+          const desc = t.descricao.toUpperCase();
+          return nameParts.some(part => part.length > 3 && desc.includes(part));
+        });
+      }
+      if (matchedTable) {
+        const items = await db.select({
+          itemCodigo: priceTableItems.itemCodigo,
+          preco: priceTableItems.preco,
+        }).from(priceTableItems)
+          .where(eq(priceTableItems.priceTableId, matchedTable.id));
+        for (const item of items) {
+          priceMap.set(item.itemCodigo, Number(item.preco));
+        }
+      }
+
+      // Get all items from these orders
+      const orderIds = orders.map(o => o.id);
+      const allItems = await db.select({
+        orderId: salesOrderRequestItems.orderId,
+        codigoItem: salesOrderRequestItems.codigoItem,
+        descricaoItem: salesOrderRequestItems.descricaoItem,
+        quantidade: salesOrderRequestItems.quantidade,
+        precoUnitario: salesOrderRequestItems.precoUnitario,
+        totalItem: salesOrderRequestItems.totalItem,
+      }).from(salesOrderRequestItems)
+        .where(inArray(salesOrderRequestItems.orderId, orderIds));
+
+      // Calculate weighted average discount
+      let sumDiscountTimesValue = 0;
+      let sumValue = 0;
+      const itemBreakdown: Array<{ codigoItem: string; descricao: string; precoVendido: number; precoMostrado: number | null; desconto: number | null; valorTotal: number }> = [];
+
+      for (const item of allItems) {
+        const precoVendido = Number(item.precoUnitario);
+        const valorTotal = Number(item.totalItem);
+        const precoMostrado = priceMap.get(item.codigoItem) || null;
+
+        let desconto: number | null = null;
+        if (precoMostrado && precoMostrado > 0) {
+          desconto = ((1 - precoVendido / precoMostrado) * 100);
+          if (desconto < 0) desconto = 0; // Vendeu acima do mostrado = 0% desconto
+          sumDiscountTimesValue += desconto * valorTotal;
+          sumValue += valorTotal;
+        }
+
+        itemBreakdown.push({
+          codigoItem: item.codigoItem,
+          descricao: item.descricaoItem?.substring(0, 50) || "",
+          precoVendido,
+          precoMostrado,
+          desconto,
+          valorTotal,
+        });
+      }
+
+      const avgDiscount = sumValue > 0 ? sumDiscountTimesValue / sumValue : null;
+
+      // Determine tier based on average discount
+      let discountTier: string | null = null;
+      let discountComissao: number | null = null;
+      if (avgDiscount !== null) {
+        if (avgDiscount < 20) {
+          discountTier = "alta";
+          discountComissao = 7;
+        } else if (avgDiscount <= 23) {
+          discountTier = "media_alta";
+          discountComissao = 6;
+        } else if (avgDiscount <= 27) {
+          discountTier = "media";
+          discountComissao = 5;
+        } else if (avgDiscount <= 32) {
+          discountTier = "baixa";
+          discountComissao = 4;
+        } else {
+          discountTier = "critico";
+          discountComissao = 4; // cap at 4% even above 32%
+        }
+      }
+
+      return {
+        sellerId: input.sellerId,
+        sellerName: seller.sellerName,
+        totalOrders: orders.length,
+        avgDiscount: avgDiscount !== null ? Math.round(avgDiscount * 100) / 100 : null,
+        discountTier,
+        discountComissao,
+        itemBreakdown: itemBreakdown.slice(0, 50), // limit for performance
+      };
+    }),
+
+  /**
    * Verify manager password to override monthly margin block
    * Checks against operator passwords (only active managers can override)
    */

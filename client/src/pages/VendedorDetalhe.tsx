@@ -66,6 +66,7 @@ import {
   RotateCcw,
   Eye,
   ClipboardCheck,
+  TrendingDown,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -4047,6 +4048,10 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     { sellerId },
     { staleTime: 60 * 1000 }
   );
+  const monthlyDiscountQuery = trpc.salesOrders.getSellerMonthlyDiscount.useQuery(
+    { sellerId },
+    { staleTime: 60 * 1000 }
+  );
 
   if (isLoading) {
     return (
@@ -4768,6 +4773,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const monthlyMarginQuery = trpc.salesOrders.getSellerMonthlyMargin.useQuery(
     monthlyMarginInput,
     { enabled: !isSimulation && items.length > 0, staleTime: 30 * 1000 }
+  );
+  const monthlyDiscountQuery = trpc.salesOrders.getSellerMonthlyDiscount.useQuery(
+    { sellerId },
+    { enabled: !isSimulation && items.length > 0, staleTime: 60 * 1000 }
   );
   const utils = trpc.useUtils();
 
@@ -7034,6 +7043,73 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 Calculando reputação mensal...
               </div>
             )}
+            {/* Second bar: Discount-based commission (comparativo) */}
+            {isGestorMode && !isSimulation && monthlyDiscountQuery.data && (() => {
+              const dd = monthlyDiscountQuery.data;
+              if (!dd.avgDiscount && dd.avgDiscount !== 0) return null;
+              if (dd.totalOrders === 0) return null;
+              const discount = dd.avgDiscount ?? 0;
+              const getDiscountColor = (d: number) => {
+                if (d < 20) return { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', label: 'Comissão Alta' };
+                if (d <= 23) return { bg: 'bg-green-500', text: 'text-green-700 dark:text-green-300', label: 'Comissão Média-Alta' };
+                if (d <= 27) return { bg: 'bg-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', label: 'Comissão Média' };
+                if (d <= 32) return { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', label: 'Comissão Baixa' };
+                return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
+              };
+              const dColor = getDiscountColor(discount);
+              // Bar: 0% to 40% discount range
+              const barMin = 0;
+              const barMax = 40;
+              const clamped = Math.max(barMin, Math.min(barMax, discount));
+              const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+              return (
+                <div className="rounded-lg p-3 border-2 bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 mt-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingDown className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase">Comissão por Desconto Médio</span>
+                    </div>
+                    <span className={`text-sm font-black tabular-nums ${dColor.text}`}>
+                      {discount.toFixed(1)}% desc. ({dColor.label})
+                    </span>
+                  </div>
+                  <div className="relative w-full">
+                    <div className="relative h-6 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
+                      <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                        <div className="h-full bg-blue-500" style={{ width: "50%" }} />
+                        <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
+                        <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
+                        <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
+                        <div className="h-full bg-red-500" style={{ width: "20%" }} />
+                      </div>
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "50%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "57.5%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "67.5%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "80%" }} />
+                      <div
+                        className="absolute flex flex-col items-center"
+                        style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
+                      >
+                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-slate-900 dark:border-t-white" />
+                        <div className="w-[2px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
+                      </div>
+                    </div>
+                    <div className="relative w-full h-3 mt-0.5">
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px]">
+                    <span className="text-slate-500">{dd.totalOrders} pedido{dd.totalOrders !== 1 ? 's' : ''} · Média pond. dos descontos</span>
+                    {dd.discountComissao && (
+                      <span className="font-bold text-purple-600 dark:text-purple-400">Comissão: {dd.discountComissao}%</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
             <div className="flex justify-between pt-2">
               <button onClick={() => isGestorMode ? setStep("pagamento") : setStep("produtos")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar

@@ -5710,3 +5710,16 @@
 - [x] Atualizar frontend para mostrar margem c/ 5.85% ao lado do tier
 - [x] Corrigir thresholds mensais (getSellerMonthlyMargin) de 20 para 18
 - [x] Documentar regra completa no REGRA_COMISSAO.md
+
+## Barra de Comissão por Desconto Médio (comparativo)
+
+- [x] Criar procedure backend getSellerMonthlyDiscount (média ponderada de descontos)
+- [x] Adicionar segunda barra de comissão no VendedorDetalhe
+- [ ] Adicionar segunda barra de comissão no PedidosVendedoresTab
+- [x] Regra: <20% desc = Alta(7%), 20-23% = Média-Alta(6%), 23-27% = Média(5%), 27-32% = Baixa(4%)
+
+## Correção Thresholds (16/07/2026)
+
+- [x] Thresholds corrigidos de 15/18/25/29 para 15/20/25/29 (confirmado Fernando)
+- [x] Labels: Comissão Baixa, Comissão Média, Comissão Média-Alta, Comissão Alta
+- [x] Comissão mensal NÃO soma 1,85% (apenas comissão individual do pedido soma)
