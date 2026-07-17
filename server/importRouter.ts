@@ -9,10 +9,11 @@ import { fetchOneTracking } from "./oneTracking";
 import { fetchLogcomexAiTracking, ARMADORES } from "./logcomexAiTracking";
 import { gql } from "./maxiprodGraphQL";
 
-// Cache de cotação USD/BRL em memória (TTL: 30 minutos)
+// Cache de cotação USD/BRL em memória (TTL: 5 minutos)
 let exchangeRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
-// Cache de cotação USD/CNY (RMB) em memória (TTL: 30 minutos)
+// Cache de cotação USD/CNY (RMB) em memória (TTL: 5 minutos)
 let rmbRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
+const EXCHANGE_RATE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Cache de getRealTimeCosts em memória (TTL: 60 segundos) para evitar recálculo pesado a cada chamada
 let realTimeCostsCache: { data: any; timestamp: number } | null = null;
@@ -23,7 +24,7 @@ const REAL_TIME_COSTS_TTL = 60 * 1000; // 60 seconds
  */
 async function fetchRmbRate(): Promise<{ rate: number; source: string }> {
   const now = Date.now();
-  if (rmbRateCache && now - rmbRateCache.timestamp < 30 * 60 * 1000) {
+  if (rmbRateCache && now - rmbRateCache.timestamp < EXCHANGE_RATE_TTL) {
     return rmbRateCache.data;
   }
   try {
@@ -435,11 +436,13 @@ export const importRouter = router({
 
   // ===== EXCHANGE RATE (USD/BRL) =====
   getExchangeRate: publicProcedure.query(async () => {
-    // Cache em memória para evitar chamadas excessivas (TTL: 30 minutos)
+    // Cache em memória para evitar chamadas excessivas (TTL: 5 minutos)
     const now = Date.now();
-    if (exchangeRateCache && now - exchangeRateCache.timestamp < 30 * 60 * 1000) {
+    if (exchangeRateCache && now - exchangeRateCache.timestamp < EXCHANGE_RATE_TTL) {
       const rmbCached = await fetchRmbRate();
-      return { ...exchangeRateCache.data, rmbRate: rmbCached.rate, rmbSource: rmbCached.source };
+      // Cross rate for direct RMB→BRL conversion (avoids double-conversion rounding errors)
+      const crossRateBrl = exchangeRateCache.data.rate / rmbCached.rate;
+      return { ...exchangeRateCache.data, rmbRate: rmbCached.rate, rmbSource: rmbCached.source, crossRateBrl };
     }
 
     // 1. Banco Central do Brasil (PTAX) - fonte oficial, formato MM-DD-YYYY
@@ -457,7 +460,8 @@ export const importRouter = router({
           const result = { rate: data.value[0].cotacaoVenda, source: "BCB PTAX", timestamp: data.value[0].dataHoraCotacao };
           exchangeRateCache = { data: result, timestamp: now };
           const rmbR1 = await fetchRmbRate();
-          return { ...result, rmbRate: rmbR1.rate, rmbSource: rmbR1.source };
+          const crossRateBrl = result.rate / rmbR1.rate;
+          return { ...result, rmbRate: rmbR1.rate, rmbSource: rmbR1.source, crossRateBrl };
         }
       }
     } catch (e) {
@@ -479,7 +483,8 @@ export const importRouter = router({
           const result = { rate: data.value[0].cotacaoVenda, source: "BCB PTAX (D-1)", timestamp: data.value[0].dataHoraCotacao };
           exchangeRateCache = { data: result, timestamp: now };
           const rmbR2 = await fetchRmbRate();
-          return { ...result, rmbRate: rmbR2.rate, rmbSource: rmbR2.source };
+          const crossRateBrl = result.rate / rmbR2.rate;
+          return { ...result, rmbRate: rmbR2.rate, rmbSource: rmbR2.source, crossRateBrl };
         }
       }
     } catch (e) {
@@ -496,7 +501,8 @@ export const importRouter = router({
           const result = { rate, source: "AwesomeAPI", timestamp: data.USDBRL.create_date };
           exchangeRateCache = { data: result, timestamp: now };
           const rmbR3 = await fetchRmbRate();
-          return { ...result, rmbRate: rmbR3.rate, rmbSource: rmbR3.source };
+          const crossRateBrl = result.rate / rmbR3.rate;
+          return { ...result, rmbRate: rmbR3.rate, rmbSource: rmbR3.source, crossRateBrl };
         }
       }
     } catch (e) {
@@ -506,12 +512,14 @@ export const importRouter = router({
     // 4. Usar cache antigo se disponível (melhor que fallback fixo)
     if (exchangeRateCache) {
       const rmbRate = await fetchRmbRate();
-      return { ...exchangeRateCache.data, source: exchangeRateCache.data.source + " (cache)", rmbRate: rmbRate.rate, rmbSource: rmbRate.source };
+      const crossRateBrl = exchangeRateCache.data.rate / rmbRate.rate;
+      return { ...exchangeRateCache.data, source: exchangeRateCache.data.source + " (cache)", rmbRate: rmbRate.rate, rmbSource: rmbRate.source, crossRateBrl };
     }
 
     // Last resort fallback
     const rmbRate = await fetchRmbRate();
-    return { rate: 5.04, source: "fallback", timestamp: new Date().toISOString(), rmbRate: rmbRate.rate, rmbSource: rmbRate.source };
+    const crossRateBrl = 5.04 / rmbRate.rate;
+    return { rate: 5.04, source: "fallback", timestamp: new Date().toISOString(), rmbRate: rmbRate.rate, rmbSource: rmbRate.source, crossRateBrl };
   }),
 
   // ===== ALERT: Dismiss payment alert (manual by Larissa) =====

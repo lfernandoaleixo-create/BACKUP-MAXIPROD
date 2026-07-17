@@ -91,7 +91,7 @@ export default function Importacao() {
 
 function PagamentosFornecedores() {
   const { data: fullData, isLoading, refetch } = trpc.import.getFullData.useQuery();
-  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery(undefined, { refetchInterval: 5 * 60 * 1000 });
   const { data: activeAlerts, refetch: refetchAlerts } = trpc.import.getActiveAlerts.useQuery();
   const dismissAlert = trpc.import.dismissAlert.useMutation({
     onSuccess: () => { refetchAlerts(); toast.success("Alerta dispensado"); },
@@ -136,6 +136,8 @@ function PagamentosFornecedores() {
 
   const exchangeRate = exchangeData?.rate || 5.50;
   const rmbRate = (exchangeData as any)?.rmbRate || 7.25;
+  // Cross rate for direct RMB→BRL (avoids USD intermediate rounding errors)
+  const crossRateBrl: number = (exchangeData as any)?.crossRateBrl || (exchangeRate / rmbRate);
   const convertValue = (val: number) => {
     if (currency === "BRL") return val * exchangeRate;
     if (currency === "RMB") return val * rmbRate;
@@ -195,7 +197,7 @@ function PagamentosFornecedores() {
           </button>
           {exchangeData && (
             <span className="text-[10px] sm:text-xs text-slate-500">
-              Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 1 USD = ¥ {rmbRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+              Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 1 USD = ¥ {rmbRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 1 RMB = R$ {crossRateBrl.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</strong>
             </span>
           )}
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
@@ -1248,11 +1250,11 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
-  // Convert display currency back to USD
+  // Convert display currency back to USD (10 decimal places to avoid cent discrepancies)
   const toUsd = (val: string) => {
     const num = parseFloat(val) || 0;
-    if (currency === "BRL") return String(Math.round((num / exchangeRate) * 1000000) / 1000000);
-    if (currency === "RMB") return String(Math.round((num / rmbRate) * 1000000) / 1000000);
+    if (currency === "BRL") return String(num / exchangeRate);
+    if (currency === "RMB") return String(num / rmbRate);
     return String(num);
   };
   const displayVal = (usdVal: number | string | null) => {
@@ -1389,11 +1391,11 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
 function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
   
   
-  // Convert display currency back to USD for storage
+  // Convert display currency back to USD for storage (full precision to avoid cent discrepancies)
   const toUsd = (val: string) => {
     const num = parseFloat(val) || 0;
-    if (currency === "BRL") return String(Math.round((num / exchangeRate) * 1000000) / 1000000);
-    if (currency === "RMB") return String(Math.round((num / rmbRate) * 1000000) / 1000000);
+    if (currency === "BRL") return String(num / exchangeRate);
+    if (currency === "RMB") return String(num / rmbRate);
     return String(num);
   };
   const [form, setForm] = useState({
@@ -1644,7 +1646,7 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
 type CustoSubTab = "realtime" | "pos" | "config";
 function CustoMercadoria() {
   const [custoTab, setCustoTab] = useState<CustoSubTab>("realtime");
-  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery(undefined, { refetchInterval: 5 * 60 * 1000 });
   const [currency, setCurrency] = useState<"USD" | "BRL" | "RMB">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
   const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
@@ -3291,7 +3293,7 @@ function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "
   const effectiveRate = exchangeRate + 0.20;
   const [isOpen, setIsOpen] = useState(false);
   const utils = trpc.useUtils();
-  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery(undefined, { refetchInterval: 5 * 60 * 1000 });
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });

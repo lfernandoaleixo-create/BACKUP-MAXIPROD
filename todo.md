@@ -5759,3 +5759,5 @@
 - [x] Bug CRÍTICO: Autorização de pagamentos - implementado optimistic updates para atualização instantânea do cache (total, items, PDF) + rollback em caso de erro + toast de erro
 - [x] Faturamento parcial: quando pedido tem estado "Fat parcial", quantidade faturada vai para "Faturado nos últimos 30 dias" e quantidade restante (Qt a faturar) volta para "Pedidos em Aberto"
 - [x] Conversão BRL na aba Pagamentos Fornecedores: remover spread (+0,20) - usar cotação pura (spread só se aplica na aba Custo da Mercadoria)
+- [x] Cotação em tempo real: reduzir cache TTL de 30min para 5min para manter cotação mais atualizada
+- [x] Fix divergência de centavos RMB→BRL: aumentar precisão DB de 6 para 10 casas decimais + remover arredondamento intermediário na conversão + taxa cruzada direta crossRateBrl

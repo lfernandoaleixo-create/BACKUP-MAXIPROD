@@ -87,7 +87,7 @@ describe("importRouter", () => {
     expect(supplier!.payments).toHaveLength(1);
     expect(supplier!.payments[0].sectionTitle).toBe("TEST_SUPPLIER_VITEST - BAMBU");
     expect(supplier!.payments[0].status).toBe("Produção");
-    expect(supplier!.payments[0].totalUsd).toBe("1500.00");
+    expect(parseFloat(supplier!.payments[0].totalUsd)).toBe(1500);
     expect(supplier!.payments[0].rastreio).toBe("CONTAINER-123");
   });
 
@@ -105,10 +105,10 @@ describe("importRouter", () => {
     const supplier = data.find((s: any) => s.id === testSupplierId);
     const payment = supplier!.payments[0];
     expect(payment.status).toBe("Navegando");
-    expect(payment.totalPago).toBe("1000.00");
-    expect(payment.saldoDevedorTotal).toBe("500.00");
+    expect(parseFloat(payment.totalPago)).toBe(1000);
+    expect(parseFloat(payment.saldoDevedorTotal)).toBe(500);
     // Unchanged fields should remain
-    expect(payment.totalUsd).toBe("1500.00");
+    expect(parseFloat(payment.totalUsd)).toBe(1500);
   });
 
   it("deletes a payment", async () => {
@@ -125,9 +125,15 @@ describe("importRouter", () => {
     expect(result).toHaveProperty("rate");
     expect(result).toHaveProperty("source");
     expect(result).toHaveProperty("timestamp");
+    expect(result).toHaveProperty("rmbRate");
+    expect(result).toHaveProperty("crossRateBrl");
     expect(typeof result.rate).toBe("number");
     expect(result.rate).toBeGreaterThan(0);
     expect(result.source).toMatch(/BCB|AwesomeAPI|fallback/);
+    // Cross rate should be rate / rmbRate (direct RMB->BRL conversion)
+    expect(typeof result.crossRateBrl).toBe("number");
+    expect(result.crossRateBrl).toBeGreaterThan(0);
+    expect(result.crossRateBrl).toBeCloseTo(result.rate / result.rmbRate, 6);
   }, 30000);
 
   it("deletes a supplier and cascades payments", async () => {

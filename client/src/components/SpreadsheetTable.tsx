@@ -151,7 +151,7 @@ export function SpreadsheetTable({
         let usdVal = num;
         if (currency === "BRL") usdVal = num / exchangeRate;
         else if (currency === "RMB") usdVal = num / rmbRate;
-        valueToStore = String(Math.round(usdVal * 1000000) / 1000000);
+        valueToStore = String(usdVal);
       }
       const newCells = { ...row.cells, [editingCell.colKey]: valueToStore };
       onCellChange(editingCell.rowId, newCells);
