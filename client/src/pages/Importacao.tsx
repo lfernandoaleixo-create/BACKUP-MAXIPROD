@@ -99,7 +99,7 @@ function PagamentosFornecedores() {
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState("");
   const [newSupplierCategory, setNewSupplierCategory] = useState("");
-  const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
+  const [currency, setCurrency] = useState<"USD" | "BRL" | "RMB">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
   const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
   const [trackingBl, setTrackingBl] = useState<string | null>(null);
@@ -134,11 +134,16 @@ function PagamentosFornecedores() {
   };
 
   const exchangeRate = exchangeData?.rate || 5.50;
+  const rmbRate = (exchangeData as any)?.rmbRate || 7.25;
   const SPREAD = 0.20;
   const effectiveRate = exchangeRate + SPREAD;
-  const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
-  const currencySymbol = currency === "USD" ? "$" : "R$";
-  const currencyLabel = currency === "USD" ? "USD" : "BRL";
+  const convertValue = (val: number) => {
+    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "RMB") return val * rmbRate;
+    return val;
+  };
+  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
+  const currencyLabel = currency === "USD" ? "USD" : currency === "BRL" ? "BRL" : "RMB";
 
   const createSupplier = trpc.import.createSupplier.useMutation({
     onSuccess: () => {
@@ -191,29 +196,33 @@ function PagamentosFornecedores() {
           </button>
           {exchangeData && (
             <span className="text-[10px] sm:text-xs text-slate-500">
-              Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+              Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 1 USD = ¥ {rmbRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </span>
           )}
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
             currency === "USD"
               ? "bg-blue-100 border-blue-400 text-blue-800"
-              : "bg-green-100 border-green-400 text-green-800"
+              : currency === "BRL"
+                ? "bg-green-100 border-green-400 text-green-800"
+                : "bg-red-100 border-red-400 text-red-800"
           }`}>
             <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-              currency === "USD" ? "bg-blue-500" : "bg-green-500"
+              currency === "USD" ? "bg-blue-500" : currency === "BRL" ? "bg-green-500" : "bg-red-500"
             }`}></span>
-            {currency === "USD" ? "DÓLAR (USD)" : "REAL (BRL)"}
+            {currency === "USD" ? "DÓLAR (USD)" : currency === "BRL" ? "REAL (BRL)" : "RENMINBI (RMB)"}
           </div>
           <button
-            onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
+            onClick={() => setCurrency(prev => prev === "USD" ? "RMB" : prev === "RMB" ? "BRL" : "USD")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm ${
-              currency === "BRL"
-                ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
-                : "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+              currency === "USD"
+                ? "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                : currency === "BRL"
+                  ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                  : "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
             }`}
           >
             <ArrowLeftRight className="w-4 h-4" />
-            {currency === "USD" ? "USD → BRL" : "BRL → USD"}
+            {currency === "USD" ? "USD → RMB" : currency === "RMB" ? "RMB → BRL" : "BRL → USD"}  
           </button>
         </div>
       </div>
@@ -288,7 +297,7 @@ function PagamentosFornecedores() {
 
       {/* Supplier Sections */}
       {(fullData || []).map((supplier: any) => (
-        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} onTrackAi={(container, armador, bl, supplierName, poNumber, products) => { setTrackingContainer(container); setTrackingArmador(armador); if (bl) setTrackingBl(bl); setTrackingSupplier(supplierName || null); setTrackingPo(poNumber || null); setTrackingProducts(products || null); }} />
+        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} onTrackAi={(container, armador, bl, supplierName, poNumber, products) => { setTrackingContainer(container); setTrackingArmador(armador); if (bl) setTrackingBl(bl); setTrackingSupplier(supplierName || null); setTrackingPo(poNumber || null); setTrackingProducts(products || null); }} />
       ))}
 
       {/* Add Supplier */}
@@ -392,10 +401,14 @@ interface SupplierData {
   payments: PaymentData[];
 }
 
-function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void }) {
+function SupplierSection({ supplier, onRefetch, currency, exchangeRate, rmbRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void }) {
   const effectiveRate = exchangeRate + 0.20;
-  const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
-  const currencySymbol = currency === "USD" ? "$" : "R$";
+  const convertValue = (val: number) => {
+    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "RMB") return val * rmbRate;
+    return val;
+  };
+  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const [expanded, setExpanded] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -548,10 +561,12 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack,
           <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border-2 ${
             currency === "USD"
               ? "bg-blue-100 border-blue-400 text-blue-800"
-              : "bg-green-100 border-green-400 text-green-800"
+              : currency === "BRL"
+                ? "bg-green-100 border-green-400 text-green-800"
+                : "bg-red-100 border-red-400 text-red-800"
           }`}>
-            <span className={`w-2.5 h-2.5 rounded-full ${currency === "USD" ? "bg-blue-500" : "bg-green-500"}`}></span>
-            {currency === "USD" ? "DÓLAR (USD)" : "REAL (BRL)"}
+            <span className={`w-2.5 h-2.5 rounded-full ${currency === "USD" ? "bg-blue-500" : currency === "BRL" ? "bg-green-500" : "bg-red-500"}`}></span>
+            {currency === "USD" ? "DÓLAR (USD)" : currency === "BRL" ? "REAL (BRL)" : "RENMINBI (RMB)"}
           </div>
           <div className="hidden sm:flex items-center gap-0 text-xs">
             <div className="text-right w-[140px]">
@@ -605,6 +620,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack,
               onRefetch={onRefetch}
               currency={currency}
               exchangeRate={exchangeRate}
+              rmbRate={rmbRate}
               totalSections={sections.length}
               isWinnie={supplier.name.toUpperCase().includes("WINNIE")}
               onRemoveSection={(title) => {
@@ -736,6 +752,7 @@ function SectionTable({
   onRefetch,
   currency,
   exchangeRate,
+  rmbRate,
   totalSections,
   onRemoveSection,
   onRenameSection,
@@ -752,8 +769,9 @@ function SectionTable({
   editingId: number | null;
   setEditingId: (id: number | null) => void;
   onRefetch: () => void;
-  currency: "USD" | "BRL";
+  currency: "USD" | "BRL" | "RMB";
   exchangeRate: number;
+  rmbRate: number;
   totalSections: number;
   onRemoveSection?: (sectionTitle: string) => void;
   onRenameSection?: (oldTitle: string, newTitle: string) => void;
@@ -763,8 +781,12 @@ function SectionTable({
   isWinnie?: boolean;
 }) {
   const effectiveRate = exchangeRate + 0.20;
-  const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
-  const currencySymbol = currency === "USD" ? "$" : "R$";
+  const convertValue = (val: number) => {
+    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "RMB") return val * rmbRate;
+    return val;
+  };
+  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const [showAddRow, setShowAddRow] = useState(false);
   const [editingSectionTitle, setEditingSectionTitle] = useState(false);
   const [editSectionName, setEditSectionName] = useState("");
@@ -911,7 +933,7 @@ function SectionTable({
             editingId === payment.id ? (
               <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} supplierName={supplierName} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} onTrackAi={onTrackAi} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
+              <PaymentRow key={payment.id} payment={payment} supplierName={supplierName} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} onTrackAi={onTrackAi} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} isWinnie={isWinnie} />
             )
           ))}
           {payments.length === 0 && (
@@ -970,11 +992,15 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
+function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, rmbRate, isWinnie = false }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; isWinnie?: boolean }) {
   const SPREAD = 0.20;
   const effectiveRate = exchangeRate + SPREAD;
-  const convertValue = (val: number) => currency === "BRL" ? val * effectiveRate : val;
-  const currencySymbol = currency === "USD" ? "$" : "R$";
+  const convertValue = (val: number) => {
+    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "RMB") return val * rmbRate;
+    return val;
+  };
+  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
 
   const deletePayment = trpc.import.deletePayment.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Pedido removido"); },
@@ -1487,7 +1513,7 @@ type CustoSubTab = "realtime" | "pos" | "config";
 function CustoMercadoria() {
   const [custoTab, setCustoTab] = useState<CustoSubTab>("realtime");
   const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
-  const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
+  const [currency, setCurrency] = useState<"USD" | "BRL" | "RMB">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
   const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
   const [pdfViewerTitle, setPdfViewerTitle] = useState("");
@@ -1593,23 +1619,27 @@ function CustoMercadoria() {
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
                 currency === "USD"
                   ? "bg-blue-100 border-blue-400 text-blue-800"
-                  : "bg-green-100 border-green-400 text-green-800"
+                  : currency === "BRL"
+                    ? "bg-green-100 border-green-400 text-green-800"
+                    : "bg-red-100 border-red-400 text-red-800"
               }`}>
                 <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-                  currency === "USD" ? "bg-blue-500" : "bg-green-500"
+                  currency === "USD" ? "bg-blue-500" : currency === "BRL" ? "bg-green-500" : "bg-red-500"
                 }`}></span>
-                {currency === "USD" ? "DÓLAR (USD)" : "REAL (BRL)"}
+                {currency === "USD" ? "DÓLAR (USD)" : currency === "BRL" ? "REAL (BRL)" : "RENMINBI (RMB)"}
               </div>
               <button
-                onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
+                onClick={() => setCurrency(prev => prev === "USD" ? "RMB" : prev === "RMB" ? "BRL" : "USD")}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm ${
-                  currency === "BRL"
-                    ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
-                    : "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                  currency === "USD"
+                    ? "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                    : currency === "BRL"
+                      ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                      : "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
                 }`}
               >
                 <ArrowLeftRight className="w-4 h-4" />
-                {currency === "USD" ? "USD → BRL" : "BRL → USD"}
+                {currency === "USD" ? "USD → RMB" : currency === "RMB" ? "RMB → BRL" : "BRL → USD"}
               </button>
             </div>
           </div>
@@ -1657,7 +1687,7 @@ function CustoMercadoria() {
   );
 }
 
-function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; currency: "USD" | "BRL" }) {
+function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; currency: "USD" | "BRL" | "RMB" }) {
   const { data: costs, isLoading } = trpc.import.getRealTimeCosts.useQuery();
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -1960,7 +1990,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
   );
 }
 
-function CustoPosView({ currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { currency: "USD" | "BRL"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
+function CustoPosView({ currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { currency: "USD" | "BRL" | "RMB"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
   const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
   const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
@@ -2383,7 +2413,7 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
   supplier: { id: number; name: string; displayName: string | null; category: string | null; poCount: number };
   isExpanded: boolean;
   onToggle: () => void;
-  currency: "USD" | "BRL";
+  currency: "USD" | "BRL" | "RMB";
   exchangeRate: number;
   setPdfViewerUrl: (url: string | null) => void;
   setPdfViewerTitle: (title: string) => void;
@@ -2525,7 +2555,7 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
   );
 }
 
-function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { supplierId: number; currency: "USD" | "BRL"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
+function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { supplierId: number; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
   const { data: pos, isLoading } = trpc.import.getPosBySupplier.useQuery({ supplierId });
   const [expandedPo, setExpandedPo] = useState<number | null>(null);
   const [showNewPo, setShowNewPo] = useState(false);
@@ -3125,7 +3155,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
 }
 
 // ===== PAINEL DE CUSTOS LOGÍSTICOS POR PO =====
-function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "USD" | "BRL"; exchangeRate: number }) {
+function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "USD" | "BRL" | "RMB"; exchangeRate: number }) {
   const effectiveRate = exchangeRate + 0.20;
   const [isOpen, setIsOpen] = useState(false);
   const utils = trpc.useUtils();
@@ -3471,7 +3501,7 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
   );
 }
 
-function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50, onCollapse }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number; onCollapse?: () => void }) {
+function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50, onCollapse }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; onCollapse?: () => void }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
   const { data: vilelaConfig } = trpc.import.getVilelaPercent.useQuery();

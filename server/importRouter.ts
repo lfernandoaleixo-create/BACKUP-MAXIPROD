@@ -10,10 +10,39 @@ import { gql } from "./maxiprodGraphQL";
 
 // Cache de cotação USD/BRL em memória (TTL: 30 minutos)
 let exchangeRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
+// Cache de cotação USD/CNY (RMB) em memória (TTL: 30 minutos)
+let rmbRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
 
 // Cache de getRealTimeCosts em memória (TTL: 60 segundos) para evitar recálculo pesado a cada chamada
 let realTimeCostsCache: { data: any; timestamp: number } | null = null;
 const REAL_TIME_COSTS_TTL = 60 * 1000; // 60 seconds
+
+/**
+ * Fetch USD/CNY (RMB) exchange rate from AwesomeAPI
+ */
+async function fetchRmbRate(): Promise<{ rate: number; source: string }> {
+  const now = Date.now();
+  if (rmbRateCache && now - rmbRateCache.timestamp < 30 * 60 * 1000) {
+    return rmbRateCache.data;
+  }
+  try {
+    const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-CNY", { signal: AbortSignal.timeout(8000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.USDCNY) {
+        const rate = parseFloat(data.USDCNY.bid);
+        const result = { rate, source: "AwesomeAPI", timestamp: data.USDCNY.create_date };
+        rmbRateCache = { data: result, timestamp: now };
+        return result;
+      }
+    }
+  } catch (e) {
+    console.log("[ExchangeRate] RMB fetch failed:", (e as Error).message);
+  }
+  // Fallback
+  if (rmbRateCache) return rmbRateCache.data;
+  return { rate: 7.25, source: "fallback" };
+}
 
 export const importRouter = router({
   // ===== SUPPLIERS =====
@@ -232,7 +261,8 @@ export const importRouter = router({
     // Cache em memória para evitar chamadas excessivas (TTL: 30 minutos)
     const now = Date.now();
     if (exchangeRateCache && now - exchangeRateCache.timestamp < 30 * 60 * 1000) {
-      return exchangeRateCache.data;
+      const rmbCached = await fetchRmbRate();
+      return { ...exchangeRateCache.data, rmbRate: rmbCached.rate, rmbSource: rmbCached.source };
     }
 
     // 1. Banco Central do Brasil (PTAX) - fonte oficial, formato MM-DD-YYYY
@@ -249,7 +279,8 @@ export const importRouter = router({
         if (data.value && data.value.length > 0) {
           const result = { rate: data.value[0].cotacaoVenda, source: "BCB PTAX", timestamp: data.value[0].dataHoraCotacao };
           exchangeRateCache = { data: result, timestamp: now };
-          return result;
+          const rmbR1 = await fetchRmbRate();
+          return { ...result, rmbRate: rmbR1.rate, rmbSource: rmbR1.source };
         }
       }
     } catch (e) {
@@ -270,7 +301,8 @@ export const importRouter = router({
         if (data.value && data.value.length > 0) {
           const result = { rate: data.value[0].cotacaoVenda, source: "BCB PTAX (D-1)", timestamp: data.value[0].dataHoraCotacao };
           exchangeRateCache = { data: result, timestamp: now };
-          return result;
+          const rmbR2 = await fetchRmbRate();
+          return { ...result, rmbRate: rmbR2.rate, rmbSource: rmbR2.source };
         }
       }
     } catch (e) {
@@ -286,7 +318,8 @@ export const importRouter = router({
           const rate = parseFloat(data.USDBRL.bid);
           const result = { rate, source: "AwesomeAPI", timestamp: data.USDBRL.create_date };
           exchangeRateCache = { data: result, timestamp: now };
-          return result;
+          const rmbR3 = await fetchRmbRate();
+          return { ...result, rmbRate: rmbR3.rate, rmbSource: rmbR3.source };
         }
       }
     } catch (e) {
@@ -295,11 +328,13 @@ export const importRouter = router({
 
     // 4. Usar cache antigo se disponível (melhor que fallback fixo)
     if (exchangeRateCache) {
-      return { ...exchangeRateCache.data, source: exchangeRateCache.data.source + " (cache)" };
+      const rmbRate = await fetchRmbRate();
+      return { ...exchangeRateCache.data, source: exchangeRateCache.data.source + " (cache)", rmbRate: rmbRate.rate, rmbSource: rmbRate.source };
     }
 
     // Last resort fallback
-    return { rate: 5.04, source: "fallback", timestamp: new Date().toISOString() };
+    const rmbRate = await fetchRmbRate();
+    return { rate: 5.04, source: "fallback", timestamp: new Date().toISOString(), rmbRate: rmbRate.rate, rmbSource: rmbRate.source };
   }),
 
   // ===== ALERT: Dismiss payment alert (manual by Larissa) =====
