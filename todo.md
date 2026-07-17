@@ -5756,3 +5756,4 @@
 - [x] PDF Custo Mercadoria: adicionar colunas faltantes (Código, Tipo Frete, Unid. Caixa, Vlr Pago Ordem Pagamento, Diferença, Frete Calculado Fornecedor, Frete Rateio Correto, Valor Referência, Porcentagem %, Valor da Caixa, Preço Mil/Unid.)
 - [x] PDF Custo Mercadoria: adicionar resumo por PO (Vlr Total Ordem Pgto, Vlr Total Frete, Total Geral, Remessas 1ª/2ª/3ª, Custos Adicionais: CI, Desp. Liberação, Frete SP/MG, DIFAL, Comissão Silvério, Custos Totais Importação)
 - [x] Bug: conversão RMB gera decimal quebrado (1715 RMB vira 1714,988 ao exibir) - aumentada precisão para 6 casas decimais no DB e toUsd + maximumFractionDigits:2 no display
+- [x] Bug CRÍTICO: Autorização de pagamentos - implementado optimistic updates para atualização instantânea do cache (total, items, PDF) + rollback em caso de erro + toast de erro

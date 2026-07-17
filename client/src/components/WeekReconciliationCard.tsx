@@ -899,9 +899,50 @@ export default function WeekReconciliationCard() {
   const [authCompletionError, setAuthCompletionError] = useState(false);
   const [authCompletionLoading, setAuthCompletionLoading] = useState(false);
 
+  // Helper: optimistically update the getWeekReconciliation cache
+  const optimisticUpdateAuth = (ids: Set<number>, authorized: boolean) => {
+    const prev = utils.financial.getWeekReconciliation.getData();
+    if (!prev) return prev;
+    const updateItems = (items: any[]) =>
+      items.map((it: any) =>
+        ids.has(it.maxiprodId)
+          ? { ...it, authorized, authStatus: authorized ? "autorizado" : null }
+          : it
+      );
+    const recalc = (items: any[]) => {
+      const authItems = items.filter((it: any) => it.authStatus === "autorizado");
+      return {
+        authorizedTotal: Math.round(authItems.reduce((s: number, it: any) => s + it.valor, 0) * 100) / 100,
+        authorizedCount: authItems.length,
+      };
+    };
+    const updated = {
+      ...prev,
+      days: prev.days.map((day: any) => {
+        const updatedItems = updateItems(day.items);
+        return { ...day, items: updatedItems, ...recalc(updatedItems) };
+      }),
+      vencidas: (() => {
+        const updatedItems = updateItems(prev.vencidas.items);
+        return { ...prev.vencidas, items: updatedItems, ...recalc(updatedItems) };
+      })(),
+    };
+    utils.financial.getWeekReconciliation.setData(undefined, updated as any);
+    return prev;
+  };
+
   const toggleMutation = trpc.financial.togglePaymentAuth.useMutation({
-    onMutate: ({ accountPayableId }) => {
+    onMutate: async ({ accountPayableId, authorized }) => {
       setTogglingIds((prev) => new Set(prev).add(accountPayableId));
+      await utils.financial.getWeekReconciliation.cancel();
+      const prev = optimisticUpdateAuth(new Set([accountPayableId]), authorized);
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        utils.financial.getWeekReconciliation.setData(undefined, context.prev as any);
+      }
+      toast.error("Erro ao salvar autorização. Tente novamente.");
     },
     onSettled: (_data, _err, { accountPayableId }) => {
       setTogglingIds((prev) => {
@@ -915,12 +956,21 @@ export default function WeekReconciliationCard() {
 
   const batchToggleMutation =
     trpc.financial.batchTogglePaymentAuth.useMutation({
-      onMutate: ({ accountPayableIds }) => {
+      onMutate: async ({ accountPayableIds, authorized }) => {
         setTogglingIds((prev) => {
           const next = new Set(prev);
           accountPayableIds.forEach((id) => next.add(id));
           return next;
         });
+        await utils.financial.getWeekReconciliation.cancel();
+        const prev = optimisticUpdateAuth(new Set(accountPayableIds), authorized);
+        return { prev };
+      },
+      onError: (_err, _vars, context) => {
+        if (context?.prev) {
+          utils.financial.getWeekReconciliation.setData(undefined, context.prev as any);
+        }
+        toast.error("Erro ao salvar autorizações. Tente novamente.");
       },
       onSettled: (_data, _err, { accountPayableIds }) => {
         setTogglingIds((prev) => {
