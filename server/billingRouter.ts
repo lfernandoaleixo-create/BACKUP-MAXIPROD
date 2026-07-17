@@ -234,29 +234,17 @@ export const billingRouter = router({
       // REGRA: "Faturado c/ entrega futura" = faturou financeiro mas mercadoria ainda não entregue
       // Deve aparecer como pedido em aberto (produção precisa entregar)
       //
-      // REGRA FATURAMENTO PARCIAL: Se um pedido tem QUALQUER item que NÃO é "Faturado",
-      // TODOS os itens desse pedido ficam em "Pedidos em Aberto" (inclusive os já faturados).
-      // O pedido só vai para "Faturados" quando 100% dos itens estiverem com estado "Faturado".
+      // REGRA FATURAMENTO PARCIAL (NOVA LÓGICA):
+      // Quando um item tem estado "Faturado parcial":
+      //   - A quantidade JÁ FATURADA (quantidadeFaturada) vai para "Faturados (Últ. 30 dias)"
+      //   - A quantidade RESTANTE (quantidade - quantidadeFaturada = Qt a faturar) fica em "Pedidos em Aberto"
+      // Itens 100% "Faturado" vão normalmente para Faturados.
+      // Itens "A faturar" e "Faturado c/ entrega futura" ficam em Aberto.
       
-      // Primeiro, identificar pedidos que têm pelo menos 1 item não-faturado (parcialmente faturados)
-      const pedidosComItemAberto = new Set<string>();
-      for (const item of allItems) {
-        if (!isAprovadoOuFaturado(item.estadoNota)) continue;
-        const pedido = item.pedido || "sem-pedido";
-        if (item.estadoItem === "A faturar" || item.estadoItem === "Faturado parcial" || item.estadoItem === "Faturado c/ entrega futura") {
-          pedidosComItemAberto.add(pedido);
-        }
-      }
-      
-      // Open: itens que são "A faturar"/"Faturado parcial"/"Faturado c/ entrega futura"
-      // OU itens "Faturado" cujo pedido ainda tem itens em aberto (faturamento parcial do pedido)
+      // Open: itens "A faturar", "Faturado parcial" (só a parte restante), "Faturado c/ entrega futura"
       const openItems = allItems.filter(i => {
         if (!isAprovadoOuFaturado(i.estadoNota)) return false;
-        const pedido = i.pedido || "sem-pedido";
-        // Item em aberto
         if (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") return true;
-        // Item faturado mas pedido ainda tem itens em aberto → manter junto no aberto
-        if (i.estadoItem === "Faturado" && pedidosComItemAberto.has(pedido)) return true;
         return false;
       });
       
@@ -285,15 +273,17 @@ export const billingRouter = router({
       const preFilterDaysAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       preFilterDaysAgo.setHours(0, 0, 0, 0);
       
+      // Billed: itens 100% "Faturado" + itens "Faturado parcial" (só a parte já faturada)
       const billedItems = allItems.filter(i => {
-        if (i.estadoItem !== "Faturado") return false;
+        if (i.estadoItem !== "Faturado" && i.estadoItem !== "Faturado parcial") return false;
         if (!i.dataEmissao) return false;
         // REGRA DE NEGÓCIO: Na aba Faturamento, APENAS pedidos APROVADOS/FATURADOS devem aparecer.
-        // NOTA: NÃO filtrar isOutros - AMOSTRA e BONIFICAÇÃO devem aparecer para a produção
         if (!isAprovadoOuFaturado(i.estadoNota)) return false;
-        // REGRA FATURAMENTO PARCIAL: se o pedido ainda tem itens em aberto, NÃO colocar aqui
-        const pedido = i.pedido || "sem-pedido";
-        if (pedidosComItemAberto.has(pedido)) return false;
+        // Para "Faturado parcial", só incluir se tem quantidadeFaturada > 0
+        if (i.estadoItem === "Faturado parcial") {
+          const qtdFat = i.quantidadeFaturada ? parseFloat(String(i.quantidadeFaturada)) : 0;
+          if (qtdFat <= 0) return false;
+        }
         try {
           const itemDate = new Date(i.dataEmissao);
           return itemDate >= preFilterDaysAgo;
@@ -464,13 +454,20 @@ export const billingRouter = router({
           });
         }
         const order = billedMap.get(key)!;
-        const vt = parseFloat(String(item.valorTotal || 0));
-        order.valorTotal += vt;
+        const vtOriginalBilled = parseFloat(String(item.valorTotal || 0));
+        const qtdOriginalBilled = parseFloat(String(item.quantidade || 0));
+        const qtdFaturadaBilled = item.quantidadeFaturada ? parseFloat(String(item.quantidadeFaturada)) : 0;
+        const vuBilled = parseFloat(String(item.valorUnitario || 0));
+        // Para "Faturado parcial", usar apenas a quantidade já faturada e recalcular valor proporcional
+        const isBilledParcial = item.estadoItem === "Faturado parcial" && qtdFaturadaBilled > 0;
+        const qtdEfetivaBilled = isBilledParcial ? qtdFaturadaBilled : qtdOriginalBilled;
+        const vtEfetivoBilled = isBilledParcial ? (qtdFaturadaBilled * vuBilled) : vtOriginalBilled;
+        order.valorTotal += vtEfetivoBilled;
         // Conversão para caixas (faturados) — PRIORIDADE: quantidade lançada no Maxiprod
         // Usa observações quando há conversão de unidades explícita (ex: kg → caixas, MIL → caixas)
         const billedCodigoItem = item.codigoItem || "";
         const billedUnidade = (item.unidadeMedidaCodigo || "").toLowerCase();
-        let billedQtd = parseFloat(String(item.quantidade || 0));
+        let billedQtd = qtdEfetivaBilled;
         let billedUnidadeExibicao = item.unidadeMedidaCodigo || "";
         const billedObs = (item.observacoes || "");
         const billedIsKg = billedUnidade === 'kg';
@@ -489,10 +486,10 @@ export const billingRouter = router({
         order.itens.push({
           descricao: item.descricao || "",
           quantidade: billedQtd,
-          valorUnitario: parseFloat(String(item.valorUnitario || 0)),
-          valorTotal: Math.round(vt * 100) / 100,
+          valorUnitario: vuBilled,
+          valorTotal: Math.round(vtEfetivoBilled * 100) / 100,
           valorFaturar: parseFloat(String(item.valorFaturar || 0)),
-          estadoItem: item.estadoItem || "",
+          estadoItem: isBilledParcial ? "Faturado parcial" : (item.estadoItem || ""),
           codigoGrupo: item.codigoGrupo || "",
           dataEntregaItem: item.dataEntregaItem || "",
           codigoItem: item.codigoItem || null,
@@ -504,6 +501,7 @@ export const billingRouter = router({
           ncm: item.ncm || "",
           fatorConversao: item.fatorConversao ? parseFloat(String(item.fatorConversao)) : null,
           grupoDescricao: item.grupoDescricao || "",
+          quantidadeFaturada: isBilledParcial ? qtdFaturadaBilled : undefined,
         });
       }
 
