@@ -5754,3 +5754,4 @@
 - [x] Moeda: conversão bidirecional correta - valores armazenados em USD, exibidos na moeda selecionada, digitados na moeda selecionada e convertidos de volta para USD ao salvar
 - [x] Importação: toolbar (Exportar PDF + conversor moeda) e 3 cards de resumo devem ser sticky (fixos no topo ao fazer scroll)
 - [x] PDF Custo Mercadoria: adicionar colunas faltantes (Código, Tipo Frete, Unid. Caixa, Vlr Pago Ordem Pagamento, Diferença, Frete Calculado Fornecedor, Frete Rateio Correto, Valor Referência, Porcentagem %, Valor da Caixa, Preço Mil/Unid.)
+- [x] PDF Custo Mercadoria: adicionar resumo por PO (Vlr Total Ordem Pgto, Vlr Total Frete, Total Geral, Remessas 1ª/2ª/3ª, Custos Adicionais: CI, Desp. Liberação, Frete SP/MG, DIFAL, Comissão Silvério, Custos Totais Importação)

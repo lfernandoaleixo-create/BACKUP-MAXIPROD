@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import PDFDocument from "pdfkit";
 import { getDb } from "./db";
-import { importSuppliers, importPos, importPoProducts } from "../drizzle/schema";
+import { importSuppliers, importPos, importPoProducts, importConfig } from "../drizzle/schema";
 import { asc, eq, or } from "drizzle-orm";
 
 // Helper: format monetary value
@@ -13,12 +13,13 @@ const formatMoney = (val: string | number | null | undefined, symbol: string, ra
   return `${symbol} ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const formatMoneyAlways = (val: number, symbol: string): string => {
+  return `${symbol} ${val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 /**
  * Generates a PDF report of Custo da Mercadoria (all suppliers, POs, and products).
- * Spreadsheet-style layout with proper grid lines, full product descriptions,
- * and all columns matching the screen display.
- * 
- * Columns: PO | Produto | Código | NCM | Tipo Frete | Unid.Cx | Vlr Fornecedor | Vlr Ordem Pgto | Diferença | Qtd Cx | Frete Calc. Forn. | Frete Rateio | Vlr Referência | % | Vlr Caixa | Preço Mil/U
+ * Complete backup: includes product table + PO summary (remessas, custos adicionais, custos totais).
  * 
  * GET /api/import/export-custo-pdf
  */
@@ -35,6 +36,10 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       .orderBy(asc(importSuppliers.displayOrder));
     const allPos = await db.select().from(importPos).orderBy(asc(importPos.id));
     const allProducts = await db.select().from(importPoProducts).orderBy(asc(importPoProducts.id));
+
+    // Get vilela percent config
+    const vilelaRows = await db.select().from(importConfig).where(eq(importConfig.configKey, 'vilela_percent'));
+    const vilelaPercent = Number(vilelaRows[0]?.configValue || '37');
 
     // Currency configuration from query params
     const currency = (req.query.currency as string || "USD").toUpperCase() as "USD" | "BRL";
@@ -62,7 +67,6 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
     const tableLeft = doc.page.margins.left;
 
     // Column definitions - all columns matching the screen
-    // PO | Produto | Código | NCM | Tipo Frete | Unid.Cx | Vlr Forn | Vlr Ordem | Diferença | Qtd Cx | Frete Calc | Frete Rateio | Vlr Ref | % | Vlr Caixa | Preço Mil/U
     const colWidths = [32, 145, 35, 52, 28, 28, 50, 50, 42, 30, 50, 50, 55, 35, 50, 45];
     const headers = ["PO", "Produto", "Código", "NCM", "Frete", "Un.Cx", "Vlr Forn.", "Vlr Ordem", "Diferença", "Qtd", "Frete Calc.", "Frete Rateio", "Vlr Referência", "%", "Vlr Caixa", "Preço Mil/U"];
     const tableWidth = colWidths.reduce((a, b) => a + b, 0);
@@ -79,12 +83,10 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
 
     // Helper: draw table header row with background
     const drawTableHeader = (y: number): number => {
-      // Dark header background
       doc.save();
       doc.rect(tableLeft, y, tableWidth, HEADER_HEIGHT).fill("#334155");
       doc.restore();
 
-      // Header text
       doc.fontSize(5.8).font("Helvetica-Bold").fillColor("#ffffff");
       let x = tableLeft;
       for (let i = 0; i < headers.length; i++) {
@@ -102,26 +104,23 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
 
     // Helper: draw a data row with grid lines
     const drawDataRow = (y: number, values: string[], options?: { bg?: string; bold?: boolean }): number => {
-      // Row background
       if (options?.bg) {
         doc.save();
         doc.rect(tableLeft, y, tableWidth, ROW_HEIGHT).fill(options.bg);
         doc.restore();
       }
 
-      // Cell text
       doc.fontSize(5.5).font(options?.bold ? "Helvetica-Bold" : "Helvetica").fillColor("#334155");
       let x = tableLeft;
       for (let i = 0; i < values.length; i++) {
         const text = values[i] || "";
         const align = i === 1 ? "left" : (i === 0 ? "left" : "center");
-        // Special colors for certain columns
         if (i === 14 && text !== "-" && text !== "—") {
-          doc.fillColor("#065f46"); // Valor da Caixa - green
+          doc.fillColor("#065f46");
         } else if (i === 15 && text !== "-" && text !== "—") {
-          doc.fillColor("#0f766e"); // Preço Mil/U - teal
+          doc.fillColor("#0f766e");
         } else if (i === 13 && text !== "-" && text !== "—") {
-          doc.fillColor("#3730a3"); // % - indigo
+          doc.fillColor("#3730a3");
         } else {
           doc.fillColor("#334155");
         }
@@ -135,13 +134,11 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
         x += colWidths[i];
       }
 
-      // Horizontal grid line at bottom of row
       doc.save();
       doc.strokeColor("#e2e8f0").lineWidth(0.3);
       doc.moveTo(tableLeft, y + ROW_HEIGHT).lineTo(tableLeft + tableWidth, y + ROW_HEIGHT).stroke();
       doc.restore();
 
-      // Vertical grid lines
       doc.save();
       doc.strokeColor("#e2e8f0").lineWidth(0.2);
       x = tableLeft;
@@ -152,6 +149,128 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       doc.restore();
 
       return ROW_HEIGHT;
+    };
+
+    // Helper: draw PO summary section (remessas + custos adicionais + custos totais)
+    const drawPoSummary = (y: number, po: any, products: any[], totalValorReferencia: number, totalFreteCalculado: number): number => {
+      const isLegacyPo = po.totalCustosImportacao && Number(po.totalCustosImportacao) > 0;
+      const poExchangeRate = Number(po.valorDolar1 || po.valorDolar1Remessa || exchangeRate);
+      const rate = isLegacyPo ? (poExchangeRate + 0.20) : conversionRate;
+      const sym = currencySymbol;
+
+      // Calculate values
+      const valorCi = Number(po.totalCiRemessa || po.totalCiUsd || 0);
+      const vilelaReal = Number(po.vilelaValorReal || 0);
+      const despLib = isLegacyPo
+        ? Number(po.despesasLiberacaoRemessa || 0)
+        : (vilelaReal > 0 ? vilelaReal : valorCi * (vilelaPercent / 100));
+      const freteSP = Number(po.freteSpMg || po.freteTermestreRemessa || 0);
+      const difal = Number(po.difalValor || 0);
+      const comSilverio = Number(po.comissaoSilverio || 0);
+
+      const custosTotais = isLegacyPo
+        ? Number(po.totalCustosImportacao || 0)
+        : totalValorReferencia + totalFreteCalculado + despLib + freteSP + difal + comSilverio;
+
+      // Remessas
+      const pag2 = Number(po.pagamento2Remessa || 0);
+      const pag3 = Number(po.pagamento3Remessa || 0);
+      const totalGeral = totalValorReferencia + totalFreteCalculado;
+      const pag1 = totalGeral - pag2 - pag3;
+
+      const summaryStartY = y;
+      const lineHeight = 11;
+      const colLeft = tableLeft;
+      const col2 = tableLeft + 270;
+      const col3 = tableLeft + 540;
+
+      // === ROW 1: Totals (green boxes) ===
+      doc.save();
+      doc.rect(colLeft, y, 250, 22).fill("#f0fdf4").stroke("#bbf7d0");
+      doc.restore();
+      doc.fontSize(6).font("Helvetica-Bold").fillColor("#15803d")
+        .text("VALOR TOTAL DA ORDEM DE PAGAMENTO", colLeft + 5, y + 3);
+      doc.fontSize(8).font("Helvetica-Bold").fillColor("#166534")
+        .text(formatMoneyAlways(totalValorReferencia * (currency === "BRL" ? rate : 1), sym), colLeft + 5, y + 12);
+
+      doc.save();
+      doc.rect(col2, y, 250, 22).fill("#fef9c3").stroke("#fde047");
+      doc.restore();
+      doc.fontSize(6).font("Helvetica-Bold").fillColor("#a16207")
+        .text("VALOR TOTAL DO FRETE", col2 + 5, y + 3);
+      doc.fontSize(8).font("Helvetica-Bold").fillColor("#92400e")
+        .text(formatMoneyAlways(totalFreteCalculado * (currency === "BRL" ? rate : 1), sym), col2 + 5, y + 12);
+
+      doc.save();
+      doc.rect(col3, y, 250, 22).fill("#fef2f2").stroke("#fecaca");
+      doc.restore();
+      doc.fontSize(6).font("Helvetica-Bold").fillColor("#dc2626")
+        .text("TOTAL GERAL (ORDEM + FRETE)", col3 + 5, y + 3);
+      doc.fontSize(8).font("Helvetica-Bold").fillColor("#991b1b")
+        .text(formatMoneyAlways(totalGeral * (currency === "BRL" ? rate : 1), sym), col3 + 5, y + 12);
+
+      y += 28;
+
+      // === ROW 2: Remessas de Pagamento ===
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#334155")
+        .text("REMESSAS DE PAGAMENTO", colLeft, y);
+      y += 10;
+
+      doc.fontSize(6).font("Helvetica").fillColor("#64748b")
+        .text("1ª Remessa (valor total menos 2ª e 3ª)", colLeft, y);
+      doc.text("2ª Remessa", col2, y);
+      doc.text("3ª Remessa", col3, y);
+      y += 9;
+
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(formatMoneyAlways(pag1 * (currency === "BRL" ? rate : 1), sym), colLeft, y);
+      doc.text(formatMoneyAlways(pag2 * (currency === "BRL" ? rate : 1), sym), col2, y);
+      doc.text(formatMoneyAlways(pag3 * (currency === "BRL" ? rate : 1), sym), col3, y);
+      y += 14;
+
+      // === ROW 3: Custos Adicionais da Importação ===
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#334155")
+        .text("CUSTOS ADICIONAIS DA IMPORTAÇÃO", colLeft, y);
+      y += 10;
+
+      // Line 1: Valor da CI + Despesas de Liberação
+      doc.fontSize(6).font("Helvetica").fillColor("#64748b")
+        .text("Valor da CI (Commercial Invoice)", colLeft, y);
+      doc.text("Despesas de Liberação", col2, y);
+      y += 9;
+
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(formatMoneyAlways(valorCi * (currency === "BRL" ? rate : 1), sym), colLeft, y);
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#b45309")
+        .text(formatMoneyAlways(despLib * (currency === "BRL" ? rate : 1), sym), col2, y);
+      y += 12;
+
+      // Line 2: Frete SP/MG + DIFAL + Comissão Silvério
+      doc.fontSize(6).font("Helvetica").fillColor("#64748b")
+        .text("Frete Terrestre SP/MG", colLeft, y);
+      doc.text("DIFAL", col2, y);
+      doc.text("Comissão Silvério", col3, y);
+      y += 9;
+
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(formatMoneyAlways(freteSP * (currency === "BRL" ? rate : 1), sym), colLeft, y);
+      doc.text(formatMoneyAlways(difal * (currency === "BRL" ? rate : 1), sym), col2, y);
+      doc.text(formatMoneyAlways(comSilverio * (currency === "BRL" ? rate : 1), sym), col3, y);
+      y += 14;
+
+      // === ROW 4: Custos Totais da Importação (purple banner) ===
+      doc.save();
+      doc.rect(colLeft, y, tableWidth, 20).fill("#7c3aed");
+      doc.restore();
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#ffffff")
+        .text("CUSTOS TOTAIS DA IMPORTAÇÃO", colLeft + 5, y + 3);
+      doc.fontSize(5.5).font("Helvetica").fillColor("#e9d5ff")
+        .text("Ordem de Pagamento (CI) + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério", colLeft + 5, y + 12);
+      doc.fontSize(10).font("Helvetica-Bold").fillColor("#ffffff")
+        .text(formatMoneyAlways(custosTotais * (currency === "BRL" ? rate : 1), sym), colLeft + tableWidth - 150, y + 4, { width: 145, align: "right" });
+      y += 24;
+
+      return y - summaryStartY;
     };
 
     // Helper: check page break and re-draw header if needed
@@ -173,13 +292,11 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       const supplierPos = allPos.filter(p => p.supplierId === supplier.id);
       if (supplierPos.length === 0) continue;
 
-      // Count total products for this supplier
       const totalProducts = supplierPos.reduce((sum, po) => {
         return sum + allProducts.filter(p => p.poId === po.id).length;
       }, 0);
       if (totalProducts === 0) continue;
 
-      // Check if we need a new page for supplier header + at least a few rows
       currentY = checkPageBreak(currentY, HEADER_HEIGHT + ROW_HEIGHT * 3 + 30);
 
       // Supplier header
@@ -190,10 +307,7 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
         .text(`${supplier.category || 'Fornecedor'} • ${supplierPos.length} POs`, tableLeft, currentY);
       currentY += 12;
 
-      // Draw table header
-      currentY += drawTableHeader(currentY);
-
-      // Draw products for each PO (sorted by PO number descending - newest first)
+      // Draw products for each PO (sorted by PO number descending)
       const sortedPos = [...supplierPos].sort((a, b) => {
         const numA = parseInt((a.poNumber || "0").replace(/\D/g, "")) || 0;
         const numB = parseInt((b.poNumber || "0").replace(/\D/g, "")) || 0;
@@ -204,11 +318,10 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
         const products = allProducts.filter(p => p.poId === po.id);
         if (products.length === 0) continue;
 
-        // Determine if this is a legacy PO (has totalCustosImportacao saved)
         const isLegacyPo = po.totalCustosImportacao && Number(po.totalCustosImportacao) > 0;
         const poExchangeRate = Number(po.valorDolar1 || po.valorDolar1Remessa || exchangeRate);
 
-        // Calculate totals for this PO (needed for % and Valor da Caixa)
+        // Calculate totals for this PO
         const totalFreteAutoCalc = products.reduce((sum, prod) => {
           const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
           const valorOrdem = Number(String(prod.valorPoCheia || 0).replace(',', '.'));
@@ -216,7 +329,8 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
           const diff = valorOrdem - valorForn;
           return sum + (diff > 0 ? diff * qty : 0);
         }, 0);
-        const totalFreteCalculado = totalFreteAutoCalc;
+        const freteOverride = po.freteOverrideUsd ? Number(po.freteOverrideUsd) : null;
+        const totalFreteCalculado = freteOverride !== null ? freteOverride : totalFreteAutoCalc;
 
         const totalValorReferencia = products.reduce((sum, prod) => {
           const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
@@ -224,11 +338,29 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
           return sum + (valorForn * qty);
         }, 0);
 
-        // Custos Totais for new POs (simplified - without vilela/frete terrestre which need extra queries)
+        const valorCi = Number(po.totalCiRemessa || po.totalCiUsd || 0);
+        const vilelaReal = Number(po.vilelaValorReal || 0);
+        const despLib = isLegacyPo
+          ? Number(po.despesasLiberacaoRemessa || 0)
+          : (vilelaReal > 0 ? vilelaReal : valorCi * (vilelaPercent / 100));
+        const freteSP = Number(po.freteSpMg || po.freteTermestreRemessa || 0);
+        const difal = Number(po.difalValor || 0);
+        const comSilverio = Number(po.comissaoSilverio || 0);
+
         const custosTotais = isLegacyPo
           ? Number(po.totalCustosImportacao || 0)
-          : totalValorReferencia + totalFreteCalculado + Number(po.despesasLiberacaoRemessa || 0) + Number(po.freteSpMg || 0) + Number(po.difalValor || 0) + Number(po.comissaoSilverio || 0);
+          : totalValorReferencia + totalFreteCalculado + despLib + freteSP + difal + comSilverio;
 
+        // PO sub-header
+        currentY = checkPageBreak(currentY, HEADER_HEIGHT + ROW_HEIGHT * 3 + 20);
+        doc.fontSize(8).font("Helvetica-Bold").fillColor("#475569")
+          .text(`${po.poNumber || "PO"}  ${po.containerName ? `• ${po.containerName}` : ""}`, tableLeft, currentY);
+        currentY += 11;
+
+        // Draw table header for this PO
+        currentY += drawTableHeader(currentY);
+
+        // Draw product rows
         for (let idx = 0; idx < products.length; idx++) {
           const product = products[idx];
           currentY = checkPageBreak(currentY, ROW_HEIGHT + 2);
@@ -243,13 +375,11 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
           const percProdutoNaOrdem = totalValorReferencia > 0 ? valorRef / totalValorReferencia : 0;
           const freteRateioCorreto = percProdutoNaOrdem * totalFreteCalculado;
 
-          // Valor da Caixa calculation
+          // Valor da Caixa
           let valorDaCaixa = 0;
           if (isLegacyPo && product.valorCaixaBrl && Number(product.valorCaixaBrl) > 0) {
-            // Legacy: use saved value (already in BRL)
             valorDaCaixa = currency === "BRL" ? Number(product.valorCaixaBrl) : Number(product.valorCaixaBrl) / (poExchangeRate + 0.20);
           } else {
-            // New PO: calculate
             const valorDaCaixaUsd = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
             valorDaCaixa = currency === "BRL" ? valorDaCaixaUsd * conversionRate : valorDaCaixaUsd;
           }
@@ -285,10 +415,23 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
           const bg = idx % 2 === 0 ? undefined : "#f8fafc";
           currentY += drawDataRow(currentY, values, { bg });
         }
+
+        // === PO SUMMARY SECTION ===
+        currentY += 6;
+        currentY = checkPageBreak(currentY, 120);
+        currentY += drawPoSummary(currentY, po, products, totalValorReferencia, totalFreteCalculado);
+        currentY += 10;
+
+        // Separator line between POs
+        doc.save();
+        doc.strokeColor("#cbd5e1").lineWidth(0.5);
+        doc.moveTo(tableLeft, currentY).lineTo(tableLeft + tableWidth, currentY).stroke();
+        doc.restore();
+        currentY += 8;
       }
 
       // Spacing between suppliers
-      currentY += 14;
+      currentY += 10;
     }
 
     // ===== FOOTER on last page =====
