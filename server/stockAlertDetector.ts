@@ -198,18 +198,24 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
  */
 async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentInsufficient?: PedidoItem[]) {
   if (!currentPedidos || currentPedidos.size === 0) {
-    // Nenhum pedido A aprovar → expirar todos os pendentes
+    // Nenhum pedido A aprovar → expirar todos os pendentes criados pelo sistema (não manuais)
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
-      .where(eq(stockInsufficientAlerts.status, "pendente"));
+      .where(
+        and(
+          eq(stockInsufficientAlerts.status, "pendente"),
+          eq(stockInsufficientAlerts.criadoPor, "sistema")
+        )
+      );
     return;
   }
 
-  // Buscar alertas pendentes
+  // Buscar alertas pendentes criados pelo sistema (não expirar manuais)
   const pendentes = await db.select({
     id: stockInsufficientAlerts.id,
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,
     codigoItem: stockInsufficientAlerts.codigoItem,
+    criadoPor: stockInsufficientAlerts.criadoPor,
   })
     .from(stockInsufficientAlerts)
     .where(eq(stockInsufficientAlerts.status, "pendente"));
@@ -221,6 +227,8 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
 
   const idsToExpire: number[] = [];
   for (const alerta of pendentes) {
+    // Não expirar alertas criados manualmente - só expirar os do sistema
+    if (alerta.criadoPor === 'manual') continue;
     const key = `${alerta.pedidoNumero}-${alerta.codigoItem}`;
     // Expirar se o pedido não está mais em A aprovar OU se o item não é mais insuficiente
     if (!insufficientSet.has(key)) {
