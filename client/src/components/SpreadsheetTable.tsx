@@ -54,14 +54,18 @@ function getGroupColor(groupName: string | null, groupColor?: string): typeof GR
   return GROUP_COLORS[3];
 }
 
-// No conversion - values are stored exactly as entered in the selected currency
-// The currency symbol is just for display
-function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB"): string {
+// Convert stored USD values to the selected currency for display
+function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
   const num = parseFloat(value) || 0;
   if (num === 0) return "";
-  if (currency === "USD") return `$ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (currency === "BRL") return `R$ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  return `¥ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const SPREAD = 0.20;
+  const effectiveRate = exchangeRate + SPREAD;
+  let converted = num;
+  if (currency === "BRL") converted = num * effectiveRate;
+  else if (currency === "RMB") converted = num * rmbRate;
+  if (currency === "USD") return `$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (currency === "BRL") return `R$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `¥ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function SpreadsheetTable({
@@ -119,17 +123,37 @@ export function SpreadsheetTable({
     }
   }, [editingCell]);
 
-    const startEdit = (rowId: number, colKey: string, currentValue: string, _colType?: string) => {
+    const SPREAD = 0.20;
+  const effectiveRate = exchangeRate + SPREAD;
+
+  const startEdit = (rowId: number, colKey: string, currentValue: string, colType?: string) => {
     setEditingCell({ rowId, colKey });
-    // No conversion - show the stored value as-is for editing
-    setEditValue(currentValue || "");
+    // For number columns, show the converted value (in selected currency) for editing
+    if (colType === "number" && currentValue) {
+      const num = parseFloat(currentValue) || 0;
+      let converted = num;
+      if (currency === "BRL") converted = num * effectiveRate;
+      else if (currency === "RMB") converted = num * rmbRate;
+      setEditValue(converted ? String(Math.round(converted * 100) / 100) : "");
+    } else {
+      setEditValue(currentValue || "");
+    }
   };
   const commitEdit = () => {
     if (!editingCell) return;
     const row = rows.find((r) => r.id === editingCell.rowId);
     if (row) {
-      // Store the value exactly as entered - no conversion
-      const newCells = { ...row.cells, [editingCell.colKey]: editValue };
+      const col = columns.find(c => c.key === editingCell.colKey);
+      let valueToStore = editValue;
+      // For number columns, convert back from selected currency to USD for storage
+      if (col?.type === "number" && editValue) {
+        const num = parseFloat(editValue) || 0;
+        let usdVal = num;
+        if (currency === "BRL") usdVal = num / effectiveRate;
+        else if (currency === "RMB") usdVal = num / rmbRate;
+        valueToStore = String(Math.round(usdVal * 100) / 100);
+      }
+      const newCells = { ...row.cells, [editingCell.colKey]: valueToStore };
       onCellChange(editingCell.rowId, newCells);
     }
     setEditingCell(null);
@@ -447,7 +471,7 @@ export function SpreadsheetTable({
                       ) : (
                         <span className="block truncate text-[11px]">
                           {col.type === "number" && cellValue
-                            ? formatCurrency(cellValue, currency)
+                            ? formatCurrency(cellValue, currency, exchangeRate, rmbRate)
                             : cellValue}
                         </span>
                       )}
