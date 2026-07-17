@@ -179,96 +179,104 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       const pag1 = totalGeral - pag2 - pag3;
 
       const summaryStartY = y;
-      const lineHeight = 11;
       const colLeft = tableLeft;
-      const col2 = tableLeft + 270;
-      const col3 = tableLeft + 540;
+      const cardWidth = (tableWidth - 16) / 3;
+      const col2 = colLeft + cardWidth + 8;
+      const col3 = col2 + cardWidth + 8;
+      const cardH = 28;
 
-      // === ROW 1: Totals (green boxes) ===
+      // === SECTION 1: Three summary cards (Ordem, Frete, Total Geral) ===
+      // Card 1: Valor Total da Ordem de Pagamento (green)
       doc.save();
-      doc.rect(colLeft, y, 250, 22).fill("#f0fdf4").stroke("#bbf7d0");
+      doc.roundedRect(colLeft, y, cardWidth, cardH, 3).fill("#f0fdf4");
+      doc.roundedRect(colLeft, y, cardWidth, cardH, 3).lineWidth(0.8).strokeColor("#86efac").stroke();
       doc.restore();
-      doc.fontSize(6).font("Helvetica-Bold").fillColor("#15803d")
-        .text("VALOR TOTAL DA ORDEM DE PAGAMENTO", colLeft + 5, y + 3);
-      doc.fontSize(8).font("Helvetica-Bold").fillColor("#166534")
-        .text(formatMoneyAlways(totalValorReferencia * (currency === "BRL" ? rate : 1), sym), colLeft + 5, y + 12);
+      doc.fontSize(5.5).font("Helvetica").fillColor("#15803d")
+        .text("VALOR TOTAL DA ORDEM DE PAGAMENTO", colLeft + 6, y + 4);
+      doc.fontSize(9).font("Helvetica-Bold").fillColor("#166534")
+        .text(formatMoneyAlways(totalValorReferencia * (currency === "BRL" ? rate : 1), sym), colLeft + 6, y + 14);
 
+      // Card 2: Valor Total do Frete (amber)
       doc.save();
-      doc.rect(col2, y, 250, 22).fill("#fef9c3").stroke("#fde047");
+      doc.roundedRect(col2, y, cardWidth, cardH, 3).fill("#fffbeb");
+      doc.roundedRect(col2, y, cardWidth, cardH, 3).lineWidth(0.8).strokeColor("#fcd34d").stroke();
       doc.restore();
-      doc.fontSize(6).font("Helvetica-Bold").fillColor("#a16207")
-        .text("VALOR TOTAL DO FRETE", col2 + 5, y + 3);
-      doc.fontSize(8).font("Helvetica-Bold").fillColor("#92400e")
-        .text(formatMoneyAlways(totalFreteCalculado * (currency === "BRL" ? rate : 1), sym), col2 + 5, y + 12);
+      doc.fontSize(5.5).font("Helvetica").fillColor("#92400e")
+        .text("VALOR TOTAL DO FRETE", col2 + 6, y + 4);
+      doc.fontSize(9).font("Helvetica-Bold").fillColor("#78350f")
+        .text(formatMoneyAlways(totalFreteCalculado * (currency === "BRL" ? rate : 1), sym), col2 + 6, y + 14);
 
+      // Card 3: Total Geral (red)
       doc.save();
-      doc.rect(col3, y, 250, 22).fill("#fef2f2").stroke("#fecaca");
+      doc.roundedRect(col3, y, cardWidth, cardH, 3).fill("#fef2f2");
+      doc.roundedRect(col3, y, cardWidth, cardH, 3).lineWidth(0.8).strokeColor("#fca5a5").stroke();
       doc.restore();
-      doc.fontSize(6).font("Helvetica-Bold").fillColor("#dc2626")
-        .text("TOTAL GERAL (ORDEM + FRETE)", col3 + 5, y + 3);
-      doc.fontSize(8).font("Helvetica-Bold").fillColor("#991b1b")
-        .text(formatMoneyAlways(totalGeral * (currency === "BRL" ? rate : 1), sym), col3 + 5, y + 12);
+      doc.fontSize(5.5).font("Helvetica").fillColor("#dc2626")
+        .text("TOTAL GERAL (ORDEM + FRETE)", col3 + 6, y + 4);
+      doc.fontSize(9).font("Helvetica-Bold").fillColor("#991b1b")
+        .text(formatMoneyAlways(totalGeral * (currency === "BRL" ? rate : 1), sym), col3 + 6, y + 14);
 
-      y += 28;
+      y += cardH + 10;
 
-      // === ROW 2: Remessas de Pagamento ===
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#334155")
-        .text("REMESSAS DE PAGAMENTO", colLeft, y);
-      y += 10;
-
-      doc.fontSize(6).font("Helvetica").fillColor("#64748b")
-        .text("1ª Remessa (valor total menos 2ª e 3ª)", colLeft, y);
-      doc.text("2ª Remessa", col2, y);
-      doc.text("3ª Remessa", col3, y);
-      y += 9;
-
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
-        .text(formatMoneyAlways(pag1 * (currency === "BRL" ? rate : 1), sym), colLeft, y);
-      doc.text(formatMoneyAlways(pag2 * (currency === "BRL" ? rate : 1), sym), col2, y);
-      doc.text(formatMoneyAlways(pag3 * (currency === "BRL" ? rate : 1), sym), col3, y);
-      y += 14;
-
-      // === ROW 3: Custos Adicionais da Importação ===
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#334155")
-        .text("CUSTOS ADICIONAIS DA IMPORTAÇÃO", colLeft, y);
-      y += 10;
-
-      // Line 1: Valor da CI + Despesas de Liberação
-      doc.fontSize(6).font("Helvetica").fillColor("#64748b")
-        .text("Valor da CI (Commercial Invoice)", colLeft, y);
-      doc.text("Despesas de Liberação", col2, y);
-      y += 9;
-
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
-        .text(formatMoneyAlways(valorCi * (currency === "BRL" ? rate : 1), sym), colLeft, y);
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#b45309")
-        .text(formatMoneyAlways(despLib * (currency === "BRL" ? rate : 1), sym), col2, y);
-      y += 12;
-
-      // Line 2: Frete SP/MG + DIFAL + Comissão Silvério
-      doc.fontSize(6).font("Helvetica").fillColor("#64748b")
-        .text("Frete Terrestre SP/MG", colLeft, y);
-      doc.text("DIFAL", col2, y);
-      doc.text("Comissão Silvério", col3, y);
-      y += 9;
-
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
-        .text(formatMoneyAlways(freteSP * (currency === "BRL" ? rate : 1), sym), colLeft, y);
-      doc.text(formatMoneyAlways(difal * (currency === "BRL" ? rate : 1), sym), col2, y);
-      doc.text(formatMoneyAlways(comSilverio * (currency === "BRL" ? rate : 1), sym), col3, y);
-      y += 14;
-
-      // === ROW 4: Custos Totais da Importação (purple banner) ===
+      // === SECTION 2: Remessas de Pagamento (bordered box) ===
+      const remessaBoxH = 32;
       doc.save();
-      doc.rect(colLeft, y, tableWidth, 20).fill("#7c3aed");
+      doc.roundedRect(colLeft, y, tableWidth, remessaBoxH, 3).lineWidth(0.5).strokeColor("#e2e8f0").stroke();
       doc.restore();
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#ffffff")
-        .text("CUSTOS TOTAIS DA IMPORTAÇÃO", colLeft + 5, y + 3);
-      doc.fontSize(5.5).font("Helvetica").fillColor("#e9d5ff")
-        .text("Ordem de Pagamento (CI) + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério", colLeft + 5, y + 12);
-      doc.fontSize(10).font("Helvetica-Bold").fillColor("#ffffff")
-        .text(formatMoneyAlways(custosTotais * (currency === "BRL" ? rate : 1), sym), colLeft + tableWidth - 150, y + 4, { width: 145, align: "right" });
-      y += 24;
+      doc.fontSize(6.5).font("Helvetica-Bold").fillColor("#475569")
+        .text("REMESSAS DE PAGAMENTO", colLeft + 8, y + 4);
+      doc.fontSize(5.5).font("Helvetica").fillColor("#94a3b8")
+        .text("1\u00aa Remessa (total - 2\u00aa - 3\u00aa)", colLeft + 8, y + 14);
+      doc.text("2\u00aa Remessa", col2 + 8, y + 14);
+      doc.text("3\u00aa Remessa", col3 + 8, y + 14);
+      doc.fontSize(8).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(formatMoneyAlways(pag1 * (currency === "BRL" ? rate : 1), sym), colLeft + 8, y + 22);
+      doc.text(formatMoneyAlways(pag2 * (currency === "BRL" ? rate : 1), sym), col2 + 8, y + 22);
+      doc.text(formatMoneyAlways(pag3 * (currency === "BRL" ? rate : 1), sym), col3 + 8, y + 22);
+      y += remessaBoxH + 8;
+
+      // === SECTION 3: Custos Adicionais da Importa\u00e7\u00e3o (bordered box with grid) ===
+      const custosBoxH = 52;
+      doc.save();
+      doc.roundedRect(colLeft, y, tableWidth, custosBoxH, 3).lineWidth(0.5).strokeColor("#e2e8f0").stroke();
+      doc.restore();
+      doc.fontSize(6.5).font("Helvetica-Bold").fillColor("#475569")
+        .text("CUSTOS ADICIONAIS DA IMPORTA\u00c7\u00c3O", colLeft + 8, y + 4);
+
+      // Row 1: Valor da CI + Despesas de Libera\u00e7\u00e3o
+      const row1Y = y + 15;
+      doc.fontSize(5.5).font("Helvetica").fillColor("#94a3b8")
+        .text("Valor da CI (Commercial Invoice)", colLeft + 8, row1Y);
+      doc.text("Despesas de Libera\u00e7\u00e3o (Vilela)", col2 + 8, row1Y);
+      doc.fontSize(7.5).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(formatMoneyAlways(valorCi * (currency === "BRL" ? rate : 1), sym), colLeft + 8, row1Y + 9);
+      doc.fontSize(7.5).font("Helvetica-Bold").fillColor("#b45309")
+        .text(formatMoneyAlways(despLib * (currency === "BRL" ? rate : 1), sym), col2 + 8, row1Y + 9);
+
+      // Row 2: Frete SP/MG + DIFAL + Comiss\u00e3o Silv\u00e9rio
+      const row2Y = y + 34;
+      doc.fontSize(5.5).font("Helvetica").fillColor("#94a3b8")
+        .text("Frete Terrestre SP/MG", colLeft + 8, row2Y);
+      doc.text("DIFAL", col2 + 8, row2Y);
+      doc.text("Comiss\u00e3o Silv\u00e9rio", col3 + 8, row2Y);
+      doc.fontSize(7.5).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(formatMoneyAlways(freteSP * (currency === "BRL" ? rate : 1), sym), colLeft + 8, row2Y + 9);
+      doc.text(formatMoneyAlways(difal * (currency === "BRL" ? rate : 1), sym), col2 + 8, row2Y + 9);
+      doc.text(formatMoneyAlways(comSilverio * (currency === "BRL" ? rate : 1), sym), col3 + 8, row2Y + 9);
+      y += custosBoxH + 8;
+
+      // === SECTION 4: Custos Totais da Importa\u00e7\u00e3o (purple banner) ===
+      const bannerH = 24;
+      doc.save();
+      doc.roundedRect(colLeft, y, tableWidth, bannerH, 3).fill("#7c3aed");
+      doc.restore();
+      doc.fontSize(7.5).font("Helvetica-Bold").fillColor("#ffffff")
+        .text("CUSTOS TOTAIS DA IMPORTA\u00c7\u00c3O", colLeft + 8, y + 4);
+      doc.fontSize(5).font("Helvetica").fillColor("#ddd6fe")
+        .text("Ordem Pgto (CI) + Desp. Libera\u00e7\u00e3o + Frete Terrestre + DIFAL + Comiss\u00e3o Silv\u00e9rio", colLeft + 8, y + 15);
+      doc.fontSize(11).font("Helvetica-Bold").fillColor("#ffffff")
+        .text(formatMoneyAlways(custosTotais * (currency === "BRL" ? rate : 1), sym), colLeft + tableWidth - 180, y + 5, { width: 172, align: "right" });
+      y += bannerH + 4;
 
       return y - summaryStartY;
     };
