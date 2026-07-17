@@ -16,9 +16,9 @@ const formatMoney = (val: string | number | null | undefined, symbol: string, ra
 /**
  * Generates a PDF report of Custo da Mercadoria (all suppliers, POs, and products).
  * Spreadsheet-style layout with proper grid lines, full product descriptions,
- * and correct freight calculations.
+ * and all columns matching the screen display.
  * 
- * Columns: PO | Produto | Qtd | NCM | Vlr USD | PO Cheia | PO Menor | Frete/Cx | Frete Tot | Impostos | Total BRL
+ * Columns: PO | Produto | Código | NCM | Tipo Frete | Unid.Cx | Vlr Fornecedor | Vlr Ordem Pgto | Diferença | Qtd Cx | Frete Calc. Forn. | Frete Rateio | Vlr Referência | % | Vlr Caixa | Preço Mil/U
  * 
  * GET /api/import/export-custo-pdf
  */
@@ -47,7 +47,7 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
     const doc = new PDFDocument({
       size: "A4",
       layout: "landscape",
-      margins: { top: 35, bottom: 35, left: 20, right: 20 },
+      margins: { top: 30, bottom: 30, left: 15, right: 15 },
     });
 
     // Set response headers
@@ -61,21 +61,21 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
     const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
     const tableLeft = doc.page.margins.left;
 
-    // Column definitions - optimized widths for landscape A4
-    // Total available: ~802px (A4 landscape minus margins)
-    const colWidths = [42, 195, 35, 62, 58, 58, 58, 62, 62, 58, 62];
-    const headers = ["PO", "Produto", "Qtd", "NCM", "Vlr USD", "PO Cheia", "PO Menor", "Frete/Cx", "Frete Tot", "Impostos", "Total BRL"];
+    // Column definitions - all columns matching the screen
+    // PO | Produto | Código | NCM | Tipo Frete | Unid.Cx | Vlr Forn | Vlr Ordem | Diferença | Qtd Cx | Frete Calc | Frete Rateio | Vlr Ref | % | Vlr Caixa | Preço Mil/U
+    const colWidths = [32, 145, 35, 52, 28, 28, 50, 50, 42, 30, 50, 50, 55, 35, 50, 45];
+    const headers = ["PO", "Produto", "Código", "NCM", "Frete", "Un.Cx", "Vlr Forn.", "Vlr Ordem", "Diferença", "Qtd", "Frete Calc.", "Frete Rateio", "Vlr Referência", "%", "Vlr Caixa", "Preço Mil/U"];
     const tableWidth = colWidths.reduce((a, b) => a + b, 0);
-    const ROW_HEIGHT = 14;
-    const HEADER_HEIGHT = 18;
+    const ROW_HEIGHT = 13;
+    const HEADER_HEIGHT = 20;
 
     // ===== TITLE HEADER =====
-    doc.fontSize(14).font("Helvetica-Bold").fillColor("#1e293b")
+    doc.fontSize(13).font("Helvetica-Bold").fillColor("#1e293b")
       .text("GRUPO FOX - Custo da Mercadoria", { align: "center" });
     doc.moveDown(0.2);
-    doc.fontSize(8).font("Helvetica").fillColor("#64748b")
-      .text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} | Moeda: ${currencyLabel} | Cotação: 1 USD = R$ ${exchangeRate.toFixed(2)}`, { align: "center" });
-    doc.moveDown(0.8);
+    doc.fontSize(7.5).font("Helvetica").fillColor("#64748b")
+      .text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} | Moeda: ${currencyLabel} | Cotação: 1 USD = R$ ${exchangeRate.toFixed(2)} | Relatório: Manos e Fernando`, { align: "center" });
+    doc.moveDown(0.7);
 
     // Helper: draw table header row with background
     const drawTableHeader = (y: number): number => {
@@ -85,14 +85,14 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       doc.restore();
 
       // Header text
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#ffffff");
+      doc.fontSize(5.8).font("Helvetica-Bold").fillColor("#ffffff");
       let x = tableLeft;
       for (let i = 0; i < headers.length; i++) {
-        doc.text(headers[i], x + 2, y + 5, {
-          width: colWidths[i] - 4,
+        doc.text(headers[i], x + 1.5, y + 4, {
+          width: colWidths[i] - 3,
           height: HEADER_HEIGHT - 4,
           align: i === 1 ? "left" : "center",
-          lineBreak: false,
+          lineBreak: i === 1 ? false : true,
         });
         x += colWidths[i];
       }
@@ -110,19 +110,23 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       }
 
       // Cell text
-      doc.fontSize(6.5).font(options?.bold ? "Helvetica-Bold" : "Helvetica").fillColor("#334155");
+      doc.fontSize(5.5).font(options?.bold ? "Helvetica-Bold" : "Helvetica").fillColor("#334155");
       let x = tableLeft;
       for (let i = 0; i < values.length; i++) {
         const text = values[i] || "";
         const align = i === 1 ? "left" : (i === 0 ? "left" : "center");
-        // Special color for Total BRL column
-        if (i === 10 && text !== "-") {
-          doc.fillColor("#1e40af");
+        // Special colors for certain columns
+        if (i === 14 && text !== "-" && text !== "—") {
+          doc.fillColor("#065f46"); // Valor da Caixa - green
+        } else if (i === 15 && text !== "-" && text !== "—") {
+          doc.fillColor("#0f766e"); // Preço Mil/U - teal
+        } else if (i === 13 && text !== "-" && text !== "—") {
+          doc.fillColor("#3730a3"); // % - indigo
         } else {
           doc.fillColor("#334155");
         }
-        doc.text(text, x + 2, y + 3.5, {
-          width: colWidths[i] - 4,
+        doc.text(text, x + 1.5, y + 3, {
+          width: colWidths[i] - 3,
           height: ROW_HEIGHT - 3,
           align,
           lineBreak: false,
@@ -179,12 +183,12 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       currentY = checkPageBreak(currentY, HEADER_HEIGHT + ROW_HEIGHT * 3 + 30);
 
       // Supplier header
-      doc.fontSize(11).font("Helvetica-Bold").fillColor("#1e40af")
+      doc.fontSize(10).font("Helvetica-Bold").fillColor("#1e40af")
         .text(supplier.displayName || supplier.name, tableLeft, currentY);
-      currentY += 14;
-      doc.fontSize(7.5).font("Helvetica").fillColor("#64748b")
+      currentY += 13;
+      doc.fontSize(7).font("Helvetica").fillColor("#64748b")
         .text(`${supplier.category || 'Fornecedor'} • ${supplierPos.length} POs`, tableLeft, currentY);
-      currentY += 14;
+      currentY += 12;
 
       // Draw table header
       currentY += drawTableHeader(currentY);
@@ -200,31 +204,82 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
         const products = allProducts.filter(p => p.poId === po.id);
         if (products.length === 0) continue;
 
+        // Determine if this is a legacy PO (has totalCustosImportacao saved)
+        const isLegacyPo = po.totalCustosImportacao && Number(po.totalCustosImportacao) > 0;
+        const poExchangeRate = Number(po.valorDolar1 || po.valorDolar1Remessa || exchangeRate);
+
+        // Calculate totals for this PO (needed for % and Valor da Caixa)
+        const totalFreteAutoCalc = products.reduce((sum, prod) => {
+          const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+          const valorOrdem = Number(String(prod.valorPoCheia || 0).replace(',', '.'));
+          const qty = Number(prod.quantidade || 0);
+          const diff = valorOrdem - valorForn;
+          return sum + (diff > 0 ? diff * qty : 0);
+        }, 0);
+        const totalFreteCalculado = totalFreteAutoCalc;
+
+        const totalValorReferencia = products.reduce((sum, prod) => {
+          const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+          const qty = Number(prod.quantidade || 0);
+          return sum + (valorForn * qty);
+        }, 0);
+
+        // Custos Totais for new POs (simplified - without vilela/frete terrestre which need extra queries)
+        const custosTotais = isLegacyPo
+          ? Number(po.totalCustosImportacao || 0)
+          : totalValorReferencia + totalFreteCalculado + Number(po.despesasLiberacaoRemessa || 0) + Number(po.freteSpMg || 0) + Number(po.difalValor || 0) + Number(po.comissaoSilverio || 0);
+
         for (let idx = 0; idx < products.length; idx++) {
           const product = products[idx];
           currentY = checkPageBreak(currentY, ROW_HEIGHT + 2);
 
-          // Calculate Frete/Cx = (PO Cheia - Vlr USD) per box
-          const valorUsd = parseFloat(product.valorUsd || "0");
-          const valorPoCheia = parseFloat(product.valorPoCheia || "0");
-          const valorPoMenor = parseFloat(product.valorPoMenor || "0");
-          const quantidade = product.quantidade || 0;
-          const fretePorCaixa = valorPoCheia > 0 && valorUsd > 0 ? (valorPoCheia - valorUsd) : 0;
-          // Frete Tot = Frete/Cx * Quantidade
-          const freteTotal = fretePorCaixa > 0 && quantidade > 0 ? fretePorCaixa * quantidade : 0;
+          const valorForn = Number(String(product.valorUsd || 0).replace(',', '.'));
+          const valorOrdem = Number(String(product.valorPoCheia || 0).replace(',', '.'));
+          const qty = Number(product.quantidade || 0);
+          const diferenca = valorOrdem - valorForn;
+          const freteCalcFornecedor = diferenca > 0 && qty > 0 ? diferenca * qty : 0;
+          const valorRef = valorForn * qty;
+          const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
+          const percProdutoNaOrdem = totalValorReferencia > 0 ? valorRef / totalValorReferencia : 0;
+          const freteRateioCorreto = percProdutoNaOrdem * totalFreteCalculado;
+
+          // Valor da Caixa calculation
+          let valorDaCaixa = 0;
+          if (isLegacyPo && product.valorCaixaBrl && Number(product.valorCaixaBrl) > 0) {
+            // Legacy: use saved value (already in BRL)
+            valorDaCaixa = currency === "BRL" ? Number(product.valorCaixaBrl) : Number(product.valorCaixaBrl) / (poExchangeRate + 0.20);
+          } else {
+            // New PO: calculate
+            const valorDaCaixaUsd = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
+            valorDaCaixa = currency === "BRL" ? valorDaCaixaUsd * conversionRate : valorDaCaixaUsd;
+          }
+
+          // Preço Mil/Unid
+          let precoMilUnid = 0;
+          if (isLegacyPo && product.precoMilUnid && Number(product.precoMilUnid) > 0) {
+            precoMilUnid = currency === "BRL" ? Number(product.precoMilUnid) : Number(product.precoMilUnid) / (poExchangeRate + 0.20);
+          } else {
+            const unid = Number(product.unidCaixa || 0);
+            precoMilUnid = unid > 0 ? valorDaCaixa / unid : 0;
+          }
 
           const values = [
             po.poNumber || "",
             product.description || "",
-            quantidade ? String(quantidade) : "-",
+            product.productCode || "-",
             product.ncm || "-",
-            formatMoney(product.valorUsd, currencySymbol, conversionRate),
-            formatMoney(product.valorPoCheia, currencySymbol, conversionRate),
-            formatMoney(product.valorPoMenor, currencySymbol, conversionRate),
-            fretePorCaixa > 0 ? formatMoney(fretePorCaixa, currencySymbol, conversionRate) : "-",
-            freteTotal > 0 ? formatMoney(freteTotal, currencySymbol, conversionRate) : "-",
-            formatMoney(product.totalImpostos, "R$", 1),
-            formatMoney(product.valorCaixaBrl, "R$", 1),
+            product.incoterm || "-",
+            product.unidCaixa ? String(Number(product.unidCaixa).toFixed(0)) : "-",
+            valorForn > 0 ? formatMoney(valorForn, currencySymbol, conversionRate) : "-",
+            valorOrdem > 0 ? formatMoney(valorOrdem, currencySymbol, conversionRate) : "-",
+            diferenca !== 0 ? formatMoney(diferenca, currencySymbol, conversionRate) : "-",
+            qty > 0 ? String(qty) : "-",
+            freteCalcFornecedor > 0 ? formatMoney(freteCalcFornecedor, currencySymbol, conversionRate) : "-",
+            freteRateioCorreto > 0 ? formatMoney(freteRateioCorreto, currencySymbol, conversionRate) : "-",
+            valorRef > 0 ? formatMoney(valorRef, currencySymbol, conversionRate) : "-",
+            percProdutoNoTotal > 0 ? `${percProdutoNoTotal.toFixed(2)}%` : "-",
+            valorDaCaixa > 0 ? `${currencySymbol} ${valorDaCaixa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-",
+            precoMilUnid > 0 ? `${currencySymbol} ${precoMilUnid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-",
           ];
 
           const bg = idx % 2 === 0 ? undefined : "#f8fafc";
@@ -233,12 +288,12 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       }
 
       // Spacing between suppliers
-      currentY += 16;
+      currentY += 14;
     }
 
     // ===== FOOTER on last page =====
-    doc.fontSize(7).font("Helvetica").fillColor("#94a3b8")
-      .text("Grupo Fox - Dashboard de Estoque | Relatório gerado automaticamente", tableLeft, doc.page.height - 28, { align: "center", width: pageWidth });
+    doc.fontSize(6.5).font("Helvetica").fillColor("#94a3b8")
+      .text("Grupo Fox - Dashboard de Estoque | Relatório gerado automaticamente por Manos e Fernando", tableLeft, doc.page.height - 25, { align: "center", width: pageWidth });
 
     doc.end();
   } catch (error) {
