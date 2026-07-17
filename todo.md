@@ -5739,3 +5739,6 @@
 - [x] Alertas de estoque: só considerar insuficiente itens que TÊM registros de estoque no Maxiprod
 - [x] Alertas de estoque: item 00084 VARETA AROMATIZADOR não deve gerar alerta (sem registros de estoque)
 - [x] Alertas de estoque: remover debug logs do maxiprodSync.ts
+
+- [ ] Importação - Planilhas editáveis estilo Excel (criar/remover colunas, renomear colunas, criar/remover linhas)
+- [ ] Preservar todos os dados já preenchidos na migração para planilha flexível

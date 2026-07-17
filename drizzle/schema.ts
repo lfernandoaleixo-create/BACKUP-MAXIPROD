@@ -2538,10 +2538,34 @@ export const importPayments = mysqlTable("import_payments", {
   blNumber: varchar("bl_number", { length: 100 }), // Número do Bill of Lading (ex: XMNG50123700) para rastreamento direto no armador
   armador: varchar("armador", { length: 50 }), // Nome do armador/carrier para rastreamento via Logcomex AI (ex: ONE, MSC, MAERSK)
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  cells: json("cells").$type<Record<string, string>>(), // Flexible cell data as key-value pairs
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 export type ImportPayment = typeof importPayments.$inferSelect;
 export type InsertImportPayment = typeof importPayments.$inferInsert;
+
+/**
+ * Configuração de colunas da planilha flexível por fornecedor
+ * Cada fornecedor pode ter sua própria estrutura de colunas
+ */
+export const importSpreadsheetConfig = mysqlTable("import_spreadsheet_config", {
+  id: int("id").autoincrement().primaryKey(),
+  supplierId: int("supplier_id").notNull(),
+  sectionTitle: varchar("section_title", { length: 200 }),
+  columns: json("columns").$type<SpreadsheetColumn[]>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SpreadsheetColumn = {
+  key: string;
+  name: string;
+  type: 'text' | 'number' | 'date';
+  group: string | Record<string, never>; // string for group name, {} for no group
+  width: number;
+};
+
+export type ImportSpreadsheetConfig = typeof importSpreadsheetConfig.$inferSelect;
 
 
 /**

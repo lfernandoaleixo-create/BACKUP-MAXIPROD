@@ -10,7 +10,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle, Table2 } from "lucide-react";
+import { SpreadsheetTable } from "@/components/SpreadsheetTable";
 import { TrackingModal } from "@/components/TrackingModal";
 import { RastreioEmConjunto } from "@/components/RastreioEmConjunto";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -788,9 +789,28 @@ function SectionTable({
   };
   const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const [showAddRow, setShowAddRow] = useState(false);
+  const [spreadsheetMode, setSpreadsheetMode] = useState(true); // Default to spreadsheet mode
   const [editingSectionTitle, setEditingSectionTitle] = useState(false);
   const [editSectionName, setEditSectionName] = useState("");
   const [editSectionSubtitle, setEditSectionSubtitle] = useState("");
+
+  // Spreadsheet config query
+  const spreadsheetConfig = trpc.import.getSpreadsheetConfig.useQuery(
+    { supplierId, sectionTitle: sectionTitle || undefined },
+    { enabled: spreadsheetMode }
+  );
+  const updateConfigMut = trpc.import.updateSpreadsheetConfig.useMutation({
+    onSuccess: () => spreadsheetConfig.refetch(),
+  });
+  const updateCellsMut = trpc.import.updatePaymentCells.useMutation({
+    onSuccess: () => onRefetch(),
+  });
+  const addRowMut = trpc.import.addSpreadsheetRow.useMutation({
+    onSuccess: () => onRefetch(),
+  });
+  const deletePaymentMut = trpc.import.deletePayment.useMutation({
+    onSuccess: () => { onRefetch(); toast.success("Linha removida"); },
+  });
 
   // Section totals (all manual values, just summed for display)
   const sectionTotals = payments.reduce((acc, p) => {
@@ -899,6 +919,80 @@ function SectionTable({
         );
       })()}
 
+      {/* Mode toggle */}
+      <div className="flex items-center justify-end px-3 py-1.5 border-b border-slate-50">
+        <button
+          onClick={() => setSpreadsheetMode(!spreadsheetMode)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${
+            spreadsheetMode
+              ? "bg-blue-100 text-blue-700 border border-blue-200"
+              : "bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200"
+          }`}
+          title={spreadsheetMode ? "Modo planilha (editável)" : "Modo visualização"}
+        >
+          <Table2 className="w-3 h-3" />
+          {spreadsheetMode ? "Planilha" : "Visualização"}
+        </button>
+      </div>
+
+      {/* Spreadsheet mode */}
+      {spreadsheetMode && spreadsheetConfig.data ? (
+        <div className="px-3 py-2">
+          <SpreadsheetTable
+            supplierId={supplierId}
+            sectionTitle={sectionTitle}
+            columns={spreadsheetConfig.data.columns || []}
+            rows={payments.map(p => ({
+              id: p.id,
+              cells: (p as any).cells || {
+                status: p.status || "",
+                pedido: p.pedido || "",
+                doc: p.doc || "",
+                totalUsd: String(p.totalUsd || "0"),
+                totalBrasilUsd: String(p.totalBrasilUsd || "0"),
+                totalParaguaiUsd: String(p.totalParaguaiUsd || "0"),
+                brasilUsd: String(p.brasilUsd || "0"),
+                paraguaiUsd: String(p.paraguaiUsd || "0"),
+                totalPago: String(p.totalPago || "0"),
+                saldoDevedorBrasil: String(p.saldoDevedorBrasil || "0"),
+                saldoDevedorParaguai: String(p.saldoDevedorParaguai || "0"),
+                saldoDevedorTotal: String(p.saldoDevedorTotal || "0"),
+                rastreio: p.rastreio || "",
+                arrivalDate: (p as any).arrivalDate || "",
+              },
+            }))}
+            onColumnsChange={(cols) => {
+              updateConfigMut.mutate({
+                supplierId,
+                sectionTitle: sectionTitle || undefined,
+                columns: cols,
+              });
+            }}
+            onCellChange={(rowId, cells) => {
+              updateCellsMut.mutate({ id: rowId, cells });
+            }}
+            onAddRow={() => {
+              addRowMut.mutate({
+                supplierId,
+                sectionTitle: sectionTitle || undefined,
+                cells: {},
+              });
+            }}
+            onDeleteRow={(rowId) => {
+              deletePaymentMut.mutate({ id: rowId });
+            }}
+            currency={currency}
+            exchangeRate={exchangeRate}
+            rmbRate={rmbRate}
+          />
+        </div>
+      ) : spreadsheetMode && !spreadsheetConfig.data ? (
+        <div className="px-4 py-8 text-center text-slate-400 text-xs">
+          Carregando configuração da planilha...
+        </div>
+      ) : (
+      /* Original table mode */
+      <>
       {/* Table - scrollable on mobile */}
       <div className="overflow-x-auto -mx-2 px-2 pb-1">
       <table className={`${isWinnie ? 'min-w-[1150px]' : 'min-w-[1050px]'} w-full text-[11px] border-collapse`}>
@@ -985,6 +1079,8 @@ function SectionTable({
             Adicionar Pedido
           </button>
         </div>
+      )}
+      </>
       )}
     </div>
   );

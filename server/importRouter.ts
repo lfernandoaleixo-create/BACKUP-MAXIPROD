@@ -1,7 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems, purchaseOrderItems, productCatalog } from "../drizzle/schema";
+import { importSuppliers, importPayments, importSpreadsheetConfig, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems, purchaseOrderItems, productCatalog } from "../drizzle/schema";
+import type { SpreadsheetColumn } from "../drizzle/schema";
 import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
@@ -254,6 +255,128 @@ export const importRouter = router({
           )
         );
       return { success: true };
+    }),
+
+  // ===== SPREADSHEET CONFIG (flexible columns per supplier) =====
+  getSpreadsheetConfig: publicProcedure
+    .input(z.object({ supplierId: z.number(), sectionTitle: z.string().nullable().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const conditions = [eq(importSpreadsheetConfig.supplierId, input.supplierId)];
+      if (input.sectionTitle) {
+        conditions.push(eq(importSpreadsheetConfig.sectionTitle, input.sectionTitle));
+      } else {
+        conditions.push(sql`${importSpreadsheetConfig.sectionTitle} IS NULL`);
+      }
+      const [config] = await db.select().from(importSpreadsheetConfig).where(and(...conditions)).limit(1);
+      return config || null;
+    }),
+
+  getAllSpreadsheetConfigs: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(importSpreadsheetConfig);
+  }),
+
+  updateSpreadsheetConfig: publicProcedure
+    .input(z.object({
+      supplierId: z.number(),
+      sectionTitle: z.string().nullable().optional(),
+      columns: z.array(z.object({
+        key: z.string(),
+        name: z.string(),
+        type: z.enum(['text', 'number', 'date']),
+        group: z.union([z.string(), z.object({})]),
+        width: z.number(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const sectionTitle = input.sectionTitle || null;
+      // Upsert: try update first, then insert
+      const conditions = [eq(importSpreadsheetConfig.supplierId, input.supplierId)];
+      if (sectionTitle) {
+        conditions.push(eq(importSpreadsheetConfig.sectionTitle, sectionTitle));
+      } else {
+        conditions.push(sql`${importSpreadsheetConfig.sectionTitle} IS NULL`);
+      }
+      const [existing] = await db.select().from(importSpreadsheetConfig).where(and(...conditions)).limit(1);
+      if (existing) {
+        await db.update(importSpreadsheetConfig).set({ columns: input.columns as SpreadsheetColumn[] }).where(eq(importSpreadsheetConfig.id, existing.id));
+      } else {
+        await db.insert(importSpreadsheetConfig).values({
+          supplierId: input.supplierId,
+          sectionTitle: sectionTitle,
+          columns: input.columns as SpreadsheetColumn[],
+        });
+      }
+      return { success: true };
+    }),
+
+  // ===== SPREADSHEET CELL UPDATE =====
+  updatePaymentCells: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      cells: z.record(z.string(), z.string()),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importPayments).set({ cells: input.cells }).where(eq(importPayments.id, input.id));
+      // Also sync back to fixed columns for backward compatibility
+      const updateData: Record<string, any> = {};
+      if (input.cells.status !== undefined) updateData.status = input.cells.status;
+      if (input.cells.pedido !== undefined) updateData.pedido = input.cells.pedido;
+      if (input.cells.doc !== undefined) updateData.doc = input.cells.doc;
+      if (input.cells.totalUsd !== undefined) updateData.totalUsd = input.cells.totalUsd || "0";
+      if (input.cells.totalBrasilUsd !== undefined) updateData.totalBrasilUsd = input.cells.totalBrasilUsd || "0";
+      if (input.cells.totalParaguaiUsd !== undefined) updateData.totalParaguaiUsd = input.cells.totalParaguaiUsd || "0";
+      if (input.cells.brasilUsd !== undefined) updateData.brasilUsd = input.cells.brasilUsd || "0";
+      if (input.cells.paraguaiUsd !== undefined) updateData.paraguaiUsd = input.cells.paraguaiUsd || "0";
+      if (input.cells.totalPago !== undefined) updateData.totalPago = input.cells.totalPago || "0";
+      if (input.cells.saldoDevedorBrasil !== undefined) updateData.saldoDevedorBrasil = input.cells.saldoDevedorBrasil || "0";
+      if (input.cells.saldoDevedorParaguai !== undefined) updateData.saldoDevedorParaguai = input.cells.saldoDevedorParaguai || "0";
+      if (input.cells.saldoDevedorTotal !== undefined) updateData.saldoDevedorTotal = input.cells.saldoDevedorTotal || "0";
+      if (input.cells.rastreio !== undefined) updateData.rastreio = input.cells.rastreio || null;
+      if (input.cells.arrivalDate !== undefined) updateData.arrivalDate = input.cells.arrivalDate || null;
+      if (Object.keys(updateData).length > 0) {
+        await db.update(importPayments).set(updateData).where(eq(importPayments.id, input.id));
+      }
+      return { success: true };
+    }),
+
+  // ===== SPREADSHEET ADD ROW =====
+  addSpreadsheetRow: publicProcedure
+    .input(z.object({
+      supplierId: z.number(),
+      sectionTitle: z.string().nullable().optional(),
+      cells: z.record(z.string(), z.string()),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [result] = await db.insert(importPayments).values({
+        supplierId: input.supplierId,
+        sectionTitle: input.sectionTitle || null,
+        status: input.cells.status || "",
+        pedido: input.cells.pedido || "",
+        doc: input.cells.doc || "",
+        totalUsd: input.cells.totalUsd || "0",
+        totalBrasilUsd: input.cells.totalBrasilUsd || "0",
+        totalParaguaiUsd: input.cells.totalParaguaiUsd || "0",
+        brasilUsd: input.cells.brasilUsd || "0",
+        paraguaiUsd: input.cells.paraguaiUsd || "0",
+        totalPago: input.cells.totalPago || "0",
+        saldoDevedorBrasil: input.cells.saldoDevedorBrasil || "0",
+        saldoDevedorParaguai: input.cells.saldoDevedorParaguai || "0",
+        saldoDevedorTotal: input.cells.saldoDevedorTotal || "0",
+        rastreio: input.cells.rastreio || null,
+        arrivalDate: input.cells.arrivalDate || null,
+        cells: input.cells,
+      });
+      return { id: result.insertId };
     }),
 
   // ===== EXCHANGE RATE (USD/BRL) =====
