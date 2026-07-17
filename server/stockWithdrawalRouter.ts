@@ -71,7 +71,10 @@ export const stockWithdrawalRouter = router({
 
       // Validações de negócio
       if (input.motivo === "outro" && (!input.motivoDescricao || input.motivoDescricao.trim() === "")) {
-        throw new Error("Descrição do motivo é obrigatória quando o motivo é 'Outro'");
+        throw new Error("Descri\u00e7\u00e3o do motivo \u00e9 obrigat\u00f3ria quando o motivo \u00e9 'Outro'");
+      }
+      if (input.motivo === "avaria_perda" && (!input.motivoDescricao || input.motivoDescricao.trim() === "")) {
+        throw new Error("Descri\u00e7\u00e3o do motivo \u00e9 obrigat\u00f3ria para Avaria/Perda");
       }
       if (input.motivo === "reembalagem") {
         if (!input.produtoDestinoCode || !input.produtoDestinoName || !input.quantidadeDestino) {
@@ -316,6 +319,38 @@ export const stockWithdrawalRouter = router({
       // Apagar a solicitação
       await db.delete(stockWithdrawalRequests).where(eq(stockWithdrawalRequests.id, input.id));
       return { success: true };
+    }),
+
+  /**
+   * Atualizar observação de uma solicitação existente (retroativo para avaria/perda)
+   * Qualquer operador pode adicionar observação (Maria, Erica, etc.)
+   */
+  updateObservacao: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      motivoDescricao: z.string().min(1),
+      senha: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Validar senha e identificar operador
+      const [op] = await db.select().from(operators)
+        .where(and(eq(operators.password, input.senha), eq(operators.active, true)));
+      if (!op) throw new Error("Senha inv\u00e1lida.");
+
+      // Verificar que a solicita\u00e7\u00e3o existe e \u00e9 avaria_perda
+      const [existing] = await db.select().from(stockWithdrawalRequests)
+        .where(eq(stockWithdrawalRequests.id, input.id));
+      if (!existing) throw new Error("Solicita\u00e7\u00e3o n\u00e3o encontrada");
+      if (existing.motivo !== "avaria_perda") throw new Error("Observa\u00e7\u00e3o retroativa s\u00f3 permitida para Avaria/Perda");
+
+      await db.update(stockWithdrawalRequests)
+        .set({ motivoDescricao: input.motivoDescricao.trim() })
+        .where(eq(stockWithdrawalRequests.id, input.id));
+
+      return { success: true, operatorName: op.name };
     }),
 
   /**

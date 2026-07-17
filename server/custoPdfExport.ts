@@ -15,6 +15,11 @@ const formatMoney = (val: string | number | null | undefined, symbol: string, ra
 
 /**
  * Generates a PDF report of Custo da Mercadoria (all suppliers, POs, and products).
+ * Spreadsheet-style layout with proper grid lines, full product descriptions,
+ * and correct freight calculations.
+ * 
+ * Columns: PO | Produto | Qtd | NCM | Vlr USD | PO Cheia | PO Menor | Frete/Cx | Frete Tot | Impostos | Total BRL
+ * 
  * GET /api/import/export-custo-pdf
  */
 export async function custoPdfExportHandler(req: Request, res: Response) {
@@ -42,7 +47,7 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
     const doc = new PDFDocument({
       size: "A4",
       layout: "landscape",
-      margins: { top: 40, bottom: 40, left: 25, right: 25 },
+      margins: { top: 35, bottom: 35, left: 20, right: 20 },
     });
 
     // Set response headers
@@ -52,100 +57,188 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     doc.pipe(res);
 
-    // ===== HEADER =====
-    doc.fontSize(16).font("Helvetica-Bold").fillColor("#1e293b")
+    // Page dimensions
+    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const tableLeft = doc.page.margins.left;
+
+    // Column definitions - optimized widths for landscape A4
+    // Total available: ~802px (A4 landscape minus margins)
+    const colWidths = [42, 195, 35, 62, 58, 58, 58, 62, 62, 58, 62];
+    const headers = ["PO", "Produto", "Qtd", "NCM", "Vlr USD", "PO Cheia", "PO Menor", "Frete/Cx", "Frete Tot", "Impostos", "Total BRL"];
+    const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+    const ROW_HEIGHT = 14;
+    const HEADER_HEIGHT = 18;
+
+    // ===== TITLE HEADER =====
+    doc.fontSize(14).font("Helvetica-Bold").fillColor("#1e293b")
       .text("GRUPO FOX - Custo da Mercadoria", { align: "center" });
-    doc.moveDown(0.3);
-    doc.fontSize(9).font("Helvetica").fillColor("#64748b")
+    doc.moveDown(0.2);
+    doc.fontSize(8).font("Helvetica").fillColor("#64748b")
       .text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} | Moeda: ${currencyLabel} | Cotação: 1 USD = R$ ${exchangeRate.toFixed(2)}`, { align: "center" });
-    doc.moveDown(1);
+    doc.moveDown(0.8);
+
+    // Helper: draw table header row with background
+    const drawTableHeader = (y: number): number => {
+      // Dark header background
+      doc.save();
+      doc.rect(tableLeft, y, tableWidth, HEADER_HEIGHT).fill("#334155");
+      doc.restore();
+
+      // Header text
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#ffffff");
+      let x = tableLeft;
+      for (let i = 0; i < headers.length; i++) {
+        doc.text(headers[i], x + 2, y + 5, {
+          width: colWidths[i] - 4,
+          height: HEADER_HEIGHT - 4,
+          align: i === 1 ? "left" : "center",
+          lineBreak: false,
+        });
+        x += colWidths[i];
+      }
+      doc.fillColor("#1a1a1a");
+      return HEADER_HEIGHT;
+    };
+
+    // Helper: draw a data row with grid lines
+    const drawDataRow = (y: number, values: string[], options?: { bg?: string; bold?: boolean }): number => {
+      // Row background
+      if (options?.bg) {
+        doc.save();
+        doc.rect(tableLeft, y, tableWidth, ROW_HEIGHT).fill(options.bg);
+        doc.restore();
+      }
+
+      // Cell text
+      doc.fontSize(6.5).font(options?.bold ? "Helvetica-Bold" : "Helvetica").fillColor("#334155");
+      let x = tableLeft;
+      for (let i = 0; i < values.length; i++) {
+        const text = values[i] || "";
+        const align = i === 1 ? "left" : (i === 0 ? "left" : "center");
+        // Special color for Total BRL column
+        if (i === 10 && text !== "-") {
+          doc.fillColor("#1e40af");
+        } else {
+          doc.fillColor("#334155");
+        }
+        doc.text(text, x + 2, y + 3.5, {
+          width: colWidths[i] - 4,
+          height: ROW_HEIGHT - 3,
+          align,
+          lineBreak: false,
+          ellipsis: true,
+        });
+        x += colWidths[i];
+      }
+
+      // Horizontal grid line at bottom of row
+      doc.save();
+      doc.strokeColor("#e2e8f0").lineWidth(0.3);
+      doc.moveTo(tableLeft, y + ROW_HEIGHT).lineTo(tableLeft + tableWidth, y + ROW_HEIGHT).stroke();
+      doc.restore();
+
+      // Vertical grid lines
+      doc.save();
+      doc.strokeColor("#e2e8f0").lineWidth(0.2);
+      x = tableLeft;
+      for (let i = 0; i <= colWidths.length; i++) {
+        doc.moveTo(x, y).lineTo(x, y + ROW_HEIGHT).stroke();
+        x += colWidths[i] || 0;
+      }
+      doc.restore();
+
+      return ROW_HEIGHT;
+    };
+
+    // Helper: check page break and re-draw header if needed
+    const checkPageBreak = (currentY: number, neededHeight: number): number => {
+      const maxY = doc.page.height - doc.page.margins.bottom;
+      if (currentY + neededHeight > maxY) {
+        doc.addPage();
+        let newY = doc.page.margins.top;
+        newY += drawTableHeader(newY);
+        return newY;
+      }
+      return currentY;
+    };
 
     // ===== ITERATE SUPPLIERS =====
+    let currentY = doc.y;
+
     for (const supplier of suppliers) {
       const supplierPos = allPos.filter(p => p.supplierId === supplier.id);
       if (supplierPos.length === 0) continue;
 
+      // Count total products for this supplier
+      const totalProducts = supplierPos.reduce((sum, po) => {
+        return sum + allProducts.filter(p => p.poId === po.id).length;
+      }, 0);
+      if (totalProducts === 0) continue;
+
+      // Check if we need a new page for supplier header + at least a few rows
+      currentY = checkPageBreak(currentY, HEADER_HEIGHT + ROW_HEIGHT * 3 + 30);
+
       // Supplier header
-      if (doc.y > 480) doc.addPage();
-      doc.fontSize(12).font("Helvetica-Bold").fillColor("#1e40af")
-        .text(`${supplier.name}`, 25);
-      doc.fontSize(8).font("Helvetica").fillColor("#64748b")
-        .text(`${supplier.category || 'Fornecedor'} • ${supplierPos.length} POs`);
-      doc.moveDown(0.5);
+      doc.fontSize(11).font("Helvetica-Bold").fillColor("#1e40af")
+        .text(supplier.displayName || supplier.name, tableLeft, currentY);
+      currentY += 14;
+      doc.fontSize(7.5).font("Helvetica").fillColor("#64748b")
+        .text(`${supplier.category || 'Fornecedor'} • ${supplierPos.length} POs`, tableLeft, currentY);
+      currentY += 14;
 
-      // Table header
-      const tableLeft = 25;
-      const colWidths = [50, 130, 55, 55, 60, 60, 55, 55, 55, 55, 55];
-      // Columns: PO | Produto | Qtd | NCM | Vlr USD | PO Cheia | PO Menor | Frete/Cx | Frete Total | Impostos | Total BRL
-      const headers = ["PO", "Produto", "Qtd", "NCM", "Vlr USD", "PO Cheia", "PO Menor", "Frete/Cx", "Frete Tot", "Impostos", "Total BRL"];
+      // Draw table header
+      currentY += drawTableHeader(currentY);
 
-      let x = tableLeft;
-      doc.fontSize(7).font("Helvetica-Bold").fillColor("#334155");
-      for (let i = 0; i < headers.length; i++) {
-        doc.text(headers[i], x, doc.y, { width: colWidths[i], align: "center", continued: false });
-        x += colWidths[i];
-      }
-      doc.moveDown(0.3);
+      // Draw products for each PO (sorted by PO number descending - newest first)
+      const sortedPos = [...supplierPos].sort((a, b) => {
+        const numA = parseInt((a.poNumber || "0").replace(/\D/g, "")) || 0;
+        const numB = parseInt((b.poNumber || "0").replace(/\D/g, "")) || 0;
+        return numB - numA;
+      });
 
-      // Draw header line
-      doc.moveTo(tableLeft, doc.y).lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), doc.y).stroke("#cbd5e1");
-      doc.moveDown(0.2);
-
-      // Products per PO
-      for (const po of supplierPos) {
+      for (const po of sortedPos) {
         const products = allProducts.filter(p => p.poId === po.id);
         if (products.length === 0) continue;
 
-        for (const product of products) {
-          if (doc.y > 520) {
-            doc.addPage();
-            // Re-draw header on new page
-            x = tableLeft;
-            doc.fontSize(7).font("Helvetica-Bold").fillColor("#334155");
-            for (let i = 0; i < headers.length; i++) {
-              doc.text(headers[i], x, doc.y, { width: colWidths[i], align: "center", continued: false });
-              x += colWidths[i];
-            }
-            doc.moveDown(0.3);
-            doc.moveTo(tableLeft, doc.y).lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), doc.y).stroke("#cbd5e1");
-            doc.moveDown(0.2);
-          }
+        for (let idx = 0; idx < products.length; idx++) {
+          const product = products[idx];
+          currentY = checkPageBreak(currentY, ROW_HEIGHT + 2);
 
-          const rowY = doc.y;
-          x = tableLeft;
-          doc.fontSize(6.5).font("Helvetica").fillColor("#475569");
+          // Calculate Frete/Cx = (PO Cheia - Vlr USD) per box
+          const valorUsd = parseFloat(product.valorUsd || "0");
+          const valorPoCheia = parseFloat(product.valorPoCheia || "0");
+          const valorPoMenor = parseFloat(product.valorPoMenor || "0");
+          const quantidade = product.quantidade || 0;
+          const fretePorCaixa = valorPoCheia > 0 && valorUsd > 0 ? (valorPoCheia - valorUsd) : 0;
+          // Frete Tot = Frete/Cx * Quantidade
+          const freteTotal = fretePorCaixa > 0 && quantidade > 0 ? fretePorCaixa * quantidade : 0;
 
-          const vals = [
+          const values = [
             po.poNumber || "",
-            (product.description || "").substring(0, 25),
-            product.quantidade ? String(product.quantidade) : "-",
+            product.description || "",
+            quantidade ? String(quantidade) : "-",
             product.ncm || "-",
             formatMoney(product.valorUsd, currencySymbol, conversionRate),
             formatMoney(product.valorPoCheia, currencySymbol, conversionRate),
             formatMoney(product.valorPoMenor, currencySymbol, conversionRate),
-            formatMoney(product.totalFreightUsd, currencySymbol, conversionRate),
-            formatMoney(product.totalFreightUsd, currencySymbol, conversionRate),
+            fretePorCaixa > 0 ? formatMoney(fretePorCaixa, currencySymbol, conversionRate) : "-",
+            freteTotal > 0 ? formatMoney(freteTotal, currencySymbol, conversionRate) : "-",
             formatMoney(product.totalImpostos, "R$", 1),
             formatMoney(product.valorCaixaBrl, "R$", 1),
           ];
 
-          for (let i = 0; i < vals.length; i++) {
-            doc.text(vals[i], x, rowY, { width: colWidths[i], align: "center" });
-            x += colWidths[i];
-          }
-          doc.moveDown(0.1);
+          const bg = idx % 2 === 0 ? undefined : "#f8fafc";
+          currentY += drawDataRow(currentY, values, { bg });
         }
       }
 
-      // Separator between suppliers
-      doc.moveDown(0.5);
-      doc.moveTo(tableLeft, doc.y).lineTo(780, doc.y).stroke("#e2e8f0");
-      doc.moveDown(0.5);
+      // Spacing between suppliers
+      currentY += 16;
     }
 
-    // ===== FOOTER =====
+    // ===== FOOTER on last page =====
     doc.fontSize(7).font("Helvetica").fillColor("#94a3b8")
-      .text("Grupo Fox - Dashboard de Estoque | Relatório gerado automaticamente", 25, doc.page.height - 30, { align: "center" });
+      .text("Grupo Fox - Dashboard de Estoque | Relatório gerado automaticamente", tableLeft, doc.page.height - 28, { align: "center", width: pageWidth });
 
     doc.end();
   } catch (error) {

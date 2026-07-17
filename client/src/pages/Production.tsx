@@ -306,7 +306,7 @@ function LotControlButton({ viewMode, onClick, operatorName }: { viewMode: strin
 }
 
 export default function Production() {
-  const { hasAccess, operator } = useOperator();
+  const { hasAccess, operator, hasGranularAccess } = useOperator();
   const [, setLocation] = useLocation();
 
   // Guard: redirecionar se não tem acesso à produção
@@ -966,15 +966,21 @@ export default function Production() {
             <button onClick={() => setViewMode("lancamento")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lancamento" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <Save className="w-4 h-4" /> Lançamento
             </button>
+            {hasGranularAccess("prod.historico") && (
             <button onClick={() => setViewMode("historico")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "historico" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <History className="w-4 h-4" /> Histórico
             </button>
+            )}
+            {hasGranularAccess("prod.pirografia") && (
             <button onClick={() => setViewMode("pirografia")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "pirografia" ? "bg-orange-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <Flame className="w-4 h-4" /> Pirografia
             </button>
+            )}
+            {hasGranularAccess("prod.graficos") && (
             <button onClick={() => setViewMode("graficos")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "graficos" ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <BarChart3 className="w-4 h-4" /> Gráficos
             </button>
+            )}
             <button onClick={() => setViewMode("checklist")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "checklist" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>

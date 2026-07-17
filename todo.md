@@ -5742,3 +5742,9 @@
 
 - [ ] Importação - Planilhas editáveis estilo Excel (criar/remover colunas, renomear colunas, criar/remover linhas)
 - [ ] Preservar todos os dados já preenchidos na migração para planilha flexível
+- [x] Avaria/Perda: mostrar campo de observações quando ticado (igual ao "Outros")
+- [x] Avaria/Perda: botão para adicionar observação retroativamente em itens do histórico
+- [x] Documentos/Catálogos: permitir renomear pastas e PDFs
+- [x] Importação: corrigir Exportar PDF das POs - formato planilha perfeito com todas informações mesmo com card fechado
+- [x] Hericles: não pode ver valorização do estoque na aba Estoque
+- [x] Hericles: na aba Produção só pode ver "Lançamento" (somente observar) e "Checklist" (liberdade total)

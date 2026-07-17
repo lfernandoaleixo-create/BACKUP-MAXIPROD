@@ -1981,6 +1981,8 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
   const [uploading, setUploading] = useState(false);
   const [movingFileId, setMovingFileId] = useState<number | null>(null);
   const [movingFileName, setMovingFileName] = useState("");
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameText, setRenameText] = useState("");
 
   const matrixQuery = trpc.sales.getCatalogMatrix.useQuery({ gestorName, parentId: currentParentId });
   const foldersQuery = trpc.sales.getCatalogFolders.useQuery(undefined, { enabled: movingFileId !== null });
@@ -2009,6 +2011,13 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
       matrixQuery.refetch();
       setMovingFileId(null);
       setMovingFileName("");
+    },
+  });
+  const renameMutation = trpc.sales.renameCatalogItem.useMutation({
+    onSuccess: () => {
+      matrixQuery.refetch();
+      setRenamingId(null);
+      setRenameText("");
     },
   });
 
@@ -2139,13 +2148,43 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
             <div
               key={folder.id}
               className="group relative flex items-center gap-2 p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20 cursor-pointer transition-colors"
-              onClick={() => setCurrentParentId(folder.id)}
+              onClick={() => { if (renamingId !== folder.id) setCurrentParentId(folder.id); }}
             >
               <FolderOpen className="w-5 h-5 text-purple-500 dark:text-purple-400 flex-shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-purple-800 dark:text-purple-200 truncate">{folder.name}</p>
-                <p className="text-[10px] text-purple-500 dark:text-purple-400">{folder.itemCount} {folder.itemCount === 1 ? "item" : "itens"}</p>
+                {renamingId === folder.id ? (
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="text"
+                      value={renameText}
+                      onChange={(e) => setRenameText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && renameText.trim()) {
+                          renameMutation.mutate({ id: folder.id, name: renameText.trim() });
+                        } else if (e.key === "Escape") {
+                          setRenamingId(null); setRenameText("");
+                        }
+                      }}
+                      autoFocus
+                      className="w-full px-1.5 py-0.5 text-xs border border-purple-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                    <button onClick={() => { if (renameText.trim()) renameMutation.mutate({ id: folder.id, name: renameText.trim() }); }} className="p-0.5 text-green-600 hover:text-green-800"><Check className="w-3 h-3" /></button>
+                    <button onClick={() => { setRenamingId(null); setRenameText(""); }} className="p-0.5 text-slate-400 hover:text-slate-600"><X className="w-3 h-3" /></button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold text-purple-800 dark:text-purple-200 truncate">{folder.name}</p>
+                    <p className="text-[10px] text-purple-500 dark:text-purple-400">{folder.itemCount} {folder.itemCount === 1 ? "item" : "itens"}</p>
+                  </>
+                )}
               </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setRenamingId(folder.id); setRenameText(folder.name); }}
+                className="absolute top-1 right-7 p-1 rounded opacity-0 group-hover:opacity-100 text-purple-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+                title="Renomear pasta"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: folder.id }); }}
                 className="absolute top-1 right-1 p-1 rounded opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
@@ -2186,20 +2225,48 @@ function CatalogMatrixView({ gestorName }: { gestorName: string }) {
                     <td className="px-4 py-3 sticky left-0 bg-inherit z-10">
                       <div className="flex items-center gap-2 group">
                         <FileText className="w-3.5 h-3.5 text-purple-400 dark:text-purple-500 flex-shrink-0" />
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-slate-700 dark:text-slate-200 leading-tight text-[11px] hover:text-purple-600 dark:hover:text-purple-400 hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {file.name}
-                        </a>
+                        {renamingId === file.id ? (
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={renameText}
+                              onChange={(e) => setRenameText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && renameText.trim()) {
+                                  renameMutation.mutate({ id: file.id, name: renameText.trim() });
+                                } else if (e.key === "Escape") {
+                                  setRenamingId(null); setRenameText("");
+                                }
+                              }}
+                              autoFocus
+                              className="px-1.5 py-0.5 text-[11px] border border-purple-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 w-40"
+                            />
+                            <button onClick={() => { if (renameText.trim()) renameMutation.mutate({ id: file.id, name: renameText.trim() }); }} className="p-0.5 text-green-600 hover:text-green-800"><Check className="w-3 h-3" /></button>
+                            <button onClick={() => { setRenamingId(null); setRenameText(""); }} className="p-0.5 text-slate-400 hover:text-slate-600"><X className="w-3 h-3" /></button>
+                          </div>
+                        ) : (
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-700 dark:text-slate-200 leading-tight text-[11px] hover:text-purple-600 dark:hover:text-purple-400 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {file.name}
+                          </a>
+                        )}
                         {file.fileSize && (
                           <span className="text-[9px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
                             {file.fileSize < 1024 ? `${file.fileSize}B` : file.fileSize < 1048576 ? `${(file.fileSize / 1024).toFixed(0)}KB` : `${(file.fileSize / 1048576).toFixed(1)}MB`}
                           </span>
                         )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setRenamingId(file.id); setRenameText(file.name); }}
+                          className="p-0.5 rounded opacity-0 group-hover:opacity-100 text-purple-400 hover:text-purple-600 transition-all"
+                          title="Renomear arquivo"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setMovingFileId(file.id); setMovingFileName(file.name); }}
                           className="p-0.5 rounded opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-600 transition-all"
