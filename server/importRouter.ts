@@ -270,7 +270,29 @@ export const importRouter = router({
         conditions.push(sql`${importSpreadsheetConfig.sectionTitle} IS NULL`);
       }
       const [config] = await db.select().from(importSpreadsheetConfig).where(and(...conditions)).limit(1);
-      return config || null;
+      if (config) return config;
+      // Auto-create default config if none exists
+      const defaultColumns = [
+        { key: 'status', name: 'Status', type: 'text' as const, group: null, width: 80 },
+        { key: 'pedido', name: 'Pedido', type: 'text' as const, group: null, width: 80 },
+        { key: 'doc', name: 'Doc', type: 'text' as const, group: null, width: 80 },
+        { key: 'totalBrasilUsd', name: 'Brasil', type: 'number' as const, group: 'TOTAL A PAGAR', width: 100 },
+        { key: 'totalParaguaiUsd', name: 'Paraguai', type: 'number' as const, group: 'TOTAL A PAGAR', width: 100 },
+        { key: 'brasilUsd', name: 'Brasil', type: 'number' as const, group: 'O QUE PAGOU', width: 100 },
+        { key: 'paraguaiUsd', name: 'Paraguai', type: 'number' as const, group: 'O QUE PAGOU', width: 100 },
+        { key: 'totalPago', name: 'Total', type: 'number' as const, group: 'O QUE PAGOU', width: 100 },
+        { key: 'saldoDevedorBrasil', name: 'Brasil', type: 'number' as const, group: 'O QUE FALTA PAGAR', width: 100 },
+        { key: 'saldoDevedorParaguai', name: 'Paraguai', type: 'number' as const, group: 'O QUE FALTA PAGAR', width: 100 },
+        { key: 'saldoDevedorTotal', name: 'Total', type: 'number' as const, group: 'O QUE FALTA PAGAR', width: 100 },
+        { key: 'rastreio', name: 'Rastreio', type: 'text' as const, group: null, width: 120 },
+      ];
+      await db.insert(importSpreadsheetConfig).values({
+        supplierId: input.supplierId,
+        sectionTitle: input.sectionTitle || null,
+        columns: defaultColumns as any,
+      });
+      const [newConfig] = await db.select().from(importSpreadsheetConfig).where(and(...conditions)).limit(1);
+      return newConfig || null;
     }),
 
   getAllSpreadsheetConfigs: publicProcedure.query(async () => {
@@ -288,6 +310,7 @@ export const importRouter = router({
         name: z.string(),
         type: z.enum(['text', 'number', 'date']),
         group: z.union([z.string(), z.object({})]),
+        groupColor: z.string().optional(),
         width: z.number(),
       })),
     }))

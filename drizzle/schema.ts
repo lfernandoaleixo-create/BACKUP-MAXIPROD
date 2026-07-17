@@ -2562,6 +2562,7 @@ export type SpreadsheetColumn = {
   name: string;
   type: 'text' | 'number' | 'date';
   group: string | Record<string, never>; // string for group name, {} for no group
+  groupColor?: string;
   width: number;
 };
 

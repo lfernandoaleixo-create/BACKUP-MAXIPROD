@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, Trash2, GripVertical, MoreHorizontal, Pencil, X, Check } from "lucide-react";
-import { trpc } from "@/lib/trpc";
+import { useState, useRef, useEffect } from "react";
+import { Plus, Trash2, MoreHorizontal, Pencil, Palette } from "lucide-react";
 
 type ColumnDef = {
   key: string;
   name: string;
   type: "text" | "number" | "date";
   group: string | Record<string, never>;
+  groupColor?: string;
   width: number;
 };
 
@@ -28,6 +28,31 @@ type SpreadsheetTableProps = {
   exchangeRate: number;
   rmbRate: number;
 };
+
+const GROUP_COLORS: { name: string; bg: string; text: string; border: string; cellBg: string }[] = [
+  { name: "Azul", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-400", cellBg: "bg-blue-50/30" },
+  { name: "Verde", bg: "bg-green-50", text: "text-green-700", border: "border-green-400", cellBg: "bg-green-50/30" },
+  { name: "Vermelho", bg: "bg-red-50", text: "text-red-600", border: "border-red-400", cellBg: "bg-red-50/30" },
+  { name: "Roxo", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-400", cellBg: "bg-purple-50/30" },
+  { name: "Laranja", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-400", cellBg: "bg-orange-50/30" },
+  { name: "Rosa", bg: "bg-pink-50", text: "text-pink-700", border: "border-pink-400", cellBg: "bg-pink-50/30" },
+  { name: "Amarelo", bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-400", cellBg: "bg-yellow-50/30" },
+  { name: "Cinza", bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-400", cellBg: "bg-slate-50/50" },
+];
+
+function getGroupColor(groupName: string | null, groupColor?: string): typeof GROUP_COLORS[0] | null {
+  if (!groupName) return null;
+  if (groupColor) {
+    const found = GROUP_COLORS.find(c => c.name === groupColor);
+    if (found) return found;
+  }
+  // Default colors for legacy group names
+  const lower = groupName.toLowerCase();
+  if (lower.includes("pagar") && lower.includes("total")) return GROUP_COLORS[0]; // Azul
+  if (lower.includes("pagou")) return GROUP_COLORS[1]; // Verde
+  if (lower.includes("falta")) return GROUP_COLORS[2]; // Vermelho
+  return GROUP_COLORS[3]; // Roxo default
+}
 
 function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
   const num = parseFloat(value) || 0;
@@ -59,6 +84,10 @@ export function SpreadsheetTable({
   const [newColName, setNewColName] = useState("");
   const [newColType, setNewColType] = useState<"text" | "number">("text");
   const [newColGroup, setNewColGroup] = useState("");
+  const [newColGroupColor, setNewColGroupColor] = useState("Azul");
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupColor, setEditGroupColor] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -112,7 +141,6 @@ export function SpreadsheetTable({
     } else if (e.key === "Tab") {
       e.preventDefault();
       commitEdit();
-      // Move to next cell
       if (editingCell) {
         const colIdx = columns.findIndex((c) => c.key === editingCell.colKey);
         const rowIdx = rows.findIndex((r) => r.id === editingCell.rowId);
@@ -160,11 +188,6 @@ export function SpreadsheetTable({
     setRenameValue("");
   };
 
-  const insertColumnAfter = (colKey: string) => {
-    setColumnMenu(null);
-    setAddingColumn(true);
-  };
-
   const addNewColumn = () => {
     if (!newColName.trim()) return;
     const key = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -173,22 +196,46 @@ export function SpreadsheetTable({
       name: newColName.trim(),
       type: newColType,
       group: newColGroup.trim() || {},
-      width: 80,
+      groupColor: newColGroup.trim() ? newColGroupColor : undefined,
+      width: 100,
     };
     onColumnsChange([...columns, newCol]);
     setAddingColumn(false);
     setNewColName("");
     setNewColType("text");
     setNewColGroup("");
+    setNewColGroupColor("Azul");
+  };
+
+  // Edit group name/color
+  const startEditGroup = (groupName: string) => {
+    setEditingGroup(groupName);
+    setEditGroupName(groupName);
+    const firstCol = columns.find(c => typeof c.group === "string" && c.group === groupName);
+    setEditGroupColor(firstCol?.groupColor || "Azul");
+  };
+
+  const commitGroupEdit = () => {
+    if (!editingGroup) return;
+    const newCols = columns.map((c) => {
+      if (typeof c.group === "string" && c.group === editingGroup) {
+        return { ...c, group: editGroupName.trim() || editingGroup, groupColor: editGroupColor };
+      }
+      return c;
+    });
+    onColumnsChange(newCols);
+    setEditingGroup(null);
+    setEditGroupName("");
+    setEditGroupColor("");
   };
 
   // Group columns by group name for header
-  const groups: { name: string | null; cols: ColumnDef[] }[] = [];
-  let currentGroup: { name: string | null; cols: ColumnDef[] } | null = null;
+  const groups: { name: string | null; cols: ColumnDef[]; color?: string }[] = [];
+  let currentGroup: { name: string | null; cols: ColumnDef[]; color?: string } | null = null;
   for (const col of columns) {
     const groupName = typeof col.group === "string" && col.group ? col.group : null;
     if (!currentGroup || currentGroup.name !== groupName) {
-      currentGroup = { name: groupName, cols: [col] };
+      currentGroup = { name: groupName, cols: [col], color: col.groupColor };
       groups.push(currentGroup);
     } else {
       currentGroup.cols.push(col);
@@ -203,74 +250,111 @@ export function SpreadsheetTable({
           {/* Group header row */}
           <thead>
             <tr>
-              {groups.map((g, gIdx) => (
-                <th
-                  key={gIdx}
-                  colSpan={g.cols.length}
-                  className={`px-1 py-1 text-center font-bold text-[10px] uppercase tracking-wider whitespace-nowrap ${
-                    g.name === "Total a pagar"
-                      ? "bg-blue-50 text-blue-700 border-b-2 border-blue-400"
-                      : g.name === "O que pagou"
-                      ? "bg-green-50 text-green-700 border-b-2 border-green-400"
-                      : g.name === "O que falta pagar"
-                      ? "bg-red-50 text-red-600 border-b-2 border-red-400"
-                      : g.name
-                      ? "bg-purple-50 text-purple-700 border-b-2 border-purple-400"
-                      : "bg-white"
-                  }`}
-                >
-                  {g.name || ""}
-                </th>
-              ))}
-              <th className="bg-white w-[60px]"></th>
+              {groups.map((g, gIdx) => {
+                const colorDef = getGroupColor(g.name, g.color);
+                return (
+                  <th
+                    key={gIdx}
+                    colSpan={g.cols.length}
+                    className={`px-1 py-1 text-center font-bold text-[10px] uppercase tracking-wider whitespace-nowrap border-b-2 ${
+                      colorDef
+                        ? `${colorDef.bg} ${colorDef.text} ${colorDef.border}`
+                        : "bg-white border-transparent"
+                    }`}
+                  >
+                    {g.name ? (
+                      <div className="flex items-center justify-center gap-1">
+                        {editingGroup === g.name ? (
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={editGroupName}
+                              onChange={(e) => setEditGroupName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitGroupEdit();
+                                if (e.key === "Escape") setEditingGroup(null);
+                              }}
+                              className="px-2 py-0.5 text-[10px] border rounded bg-white text-slate-800 normal-case w-[120px]"
+                              autoFocus
+                            />
+                            <div className="flex gap-0.5">
+                              {GROUP_COLORS.map((c) => (
+                                <button
+                                  key={c.name}
+                                  onClick={() => setEditGroupColor(c.name)}
+                                  className={`w-4 h-4 rounded-full ${c.bg} border-2 ${
+                                    editGroupColor === c.name ? "border-slate-800 ring-1 ring-slate-400" : "border-transparent"
+                                  }`}
+                                  title={c.name}
+                                />
+                              ))}
+                            </div>
+                            <button
+                              onClick={commitGroupEdit}
+                              className="px-2 py-0.5 text-[9px] bg-blue-600 text-white rounded hover:bg-blue-700"
+                            >
+                              OK
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className="cursor-pointer hover:underline"
+                            onDoubleClick={() => startEditGroup(g.name!)}
+                            title="Duplo clique para editar nome/cor do grupo"
+                          >
+                            {g.name}
+                          </span>
+                        )}
+                      </div>
+                    ) : ""}
+                  </th>
+                );
+              })}
+              <th className="bg-white w-[60px] border-b-2 border-transparent"></th>
             </tr>
             {/* Column names row */}
             <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-2 py-2 font-semibold whitespace-nowrap cursor-pointer hover:bg-slate-100 transition-colors relative group ${
-                    col.type === "number" ? "text-center" : "text-left"
-                  } ${
-                    typeof col.group === "string" && col.group === "Total a pagar"
-                      ? "bg-blue-50/50"
-                      : typeof col.group === "string" && col.group === "O que pagou"
-                      ? "bg-green-50/50"
-                      : typeof col.group === "string" && col.group === "O que falta pagar"
-                      ? "bg-red-50/50"
-                      : ""
-                  }`}
-                  style={{ minWidth: col.width }}
-                  onContextMenu={(e) => openColumnMenu(col.key, e)}
-                >
-                  {renamingCol === col.key ? (
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") commitRename();
-                          if (e.key === "Escape") setRenamingCol(null);
-                        }}
-                        onBlur={commitRename}
-                        className="w-full px-1 py-0.5 text-[10px] border rounded bg-white text-slate-800 normal-case"
-                        autoFocus
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <span>{col.name}</span>
-                      <button
-                        onClick={(e) => openColumnMenu(col.key, e)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-slate-200"
-                      >
-                        <MoreHorizontal className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const groupName = typeof col.group === "string" && col.group ? col.group : null;
+                const colorDef = getGroupColor(groupName, col.groupColor);
+                return (
+                  <th
+                    key={col.key}
+                    className={`px-2 py-2 font-semibold whitespace-nowrap cursor-pointer hover:bg-slate-100 transition-colors relative group ${
+                      col.type === "number" ? "text-center" : "text-left"
+                    } ${colorDef ? colorDef.cellBg : ""}`}
+                    style={{ minWidth: col.width }}
+                    onContextMenu={(e) => openColumnMenu(col.key, e)}
+                  >
+                    {renamingCol === col.key ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitRename();
+                            if (e.key === "Escape") setRenamingCol(null);
+                          }}
+                          onBlur={commitRename}
+                          className="w-full px-1 py-0.5 text-[10px] border rounded bg-white text-slate-800 normal-case"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span>{col.name}</span>
+                        <button
+                          onClick={(e) => openColumnMenu(col.key, e)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-slate-200"
+                        >
+                          <MoreHorizontal className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </th>
+                );
+              })}
               <th className="px-1 py-2 text-center font-semibold w-[60px]">
                 <button
                   onClick={() => setAddingColumn(true)}
@@ -293,28 +377,22 @@ export function SpreadsheetTable({
                 {columns.map((col) => {
                   const isEditing = editingCell?.rowId === row.id && editingCell?.colKey === col.key;
                   const cellValue = row.cells[col.key] || "";
+                  const groupName = typeof col.group === "string" && col.group ? col.group : null;
+                  const colorDef = getGroupColor(groupName, col.groupColor);
 
                   return (
                     <td
                       key={col.key}
                       className={`px-2 py-1.5 cursor-pointer border-r border-slate-100 ${
                         col.type === "number" ? "text-right font-mono" : "text-left"
-                      } ${
-                        typeof col.group === "string" && col.group === "Total a pagar"
-                          ? "bg-blue-50/30"
-                          : typeof col.group === "string" && col.group === "O que pagou"
-                          ? "bg-green-50/30"
-                          : typeof col.group === "string" && col.group === "O que falta pagar"
-                          ? "bg-red-50/30"
-                          : ""
-                      }`}
+                      } ${colorDef ? colorDef.cellBg : ""}`}
                       style={{ minWidth: col.width }}
                       onClick={() => !isEditing && startEdit(row.id, col.key, cellValue)}
                     >
                       {isEditing ? (
                         <input
                           ref={inputRef}
-                          type={col.type === "number" ? "text" : "text"}
+                          type="text"
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onBlur={commitEdit}
@@ -381,7 +459,7 @@ export function SpreadsheetTable({
             Renomear coluna
           </button>
           <button
-            onClick={() => insertColumnAfter(columnMenu.colKey)}
+            onClick={() => { setColumnMenu(null); setAddingColumn(true); }}
             className="w-full px-3 py-2 text-left text-xs hover:bg-slate-100 flex items-center gap-2"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -401,7 +479,7 @@ export function SpreadsheetTable({
       {/* Add column modal */}
       {addingColumn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-xl shadow-2xl p-5 w-[320px]">
+          <div className="bg-white rounded-xl shadow-2xl p-5 w-[340px]">
             <h3 className="text-sm font-bold text-slate-800 mb-3">Nova Coluna</h3>
             <div className="space-y-3">
               <div>
@@ -437,6 +515,25 @@ export function SpreadsheetTable({
                   placeholder="Ex: Total a pagar"
                 />
               </div>
+              {newColGroup.trim() && (
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase">Cor do grupo</label>
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {GROUP_COLORS.map((c) => (
+                      <button
+                        key={c.name}
+                        onClick={() => setNewColGroupColor(c.name)}
+                        className={`w-7 h-7 rounded-lg ${c.bg} border-2 flex items-center justify-center transition-all ${
+                          newColGroupColor === c.name ? "border-slate-800 scale-110 shadow-sm" : "border-transparent hover:border-slate-300"
+                        }`}
+                        title={c.name}
+                      >
+                        {newColGroupColor === c.name && <span className={`text-[8px] font-bold ${c.text}`}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button
