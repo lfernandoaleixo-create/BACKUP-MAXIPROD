@@ -2530,7 +2530,8 @@ export default function ReceivablesTab() {
                         { id: "LINHA_12", num: 7, label: "Cheque Linha 12", desc: "Já foi 2 vezes na conta do cliente e não tinha saldo", icon: Ban, color: "rose" },
                         { id: "VOLTOU_OUTROS", num: 8, label: "Cheque Voltou Outros Motivos", desc: "Voltaram por vários motivos (rasuras, assinaturas, etc.)", icon: AlertTriangle, color: "orange" },
                         { id: "FACTORING_SAMONEY", num: 9, label: "Cheque Factoring Samoney", desc: "Cheques disponíveis na Samoney", icon: Scissors, color: "amber" },
-                        { id: "FACTORING_FINANZA", num: 10, label: "Cheque Factoring Finanza", desc: "Cheques disponíveis na Finanza", icon: Scissors, color: "violet" },
+                        { id: "FACTORING_CIFRAS", num: 10, label: "Cheque Factoring Cifras", desc: "Cheques disponíveis na Cifras (CMI)", icon: Scissors, color: "pink" },
+                        { id: "FACTORING_FINANZA", num: 11, label: "Cheque Factoring Finanza", desc: "Cheques disponíveis na Finanza", icon: Scissors, color: "violet" },
                       ].map((state) => {
                         const isActive = chequeSelectedFilter === state.id;
                         const colorMap: Record<string, { bg: string; activeBg: string; border: string; activeBorder: string; iconBg: string; activeIconBg: string; text: string; activeText: string; num: string; activeNum: string }> = {
@@ -2543,6 +2544,7 @@ export default function ReceivablesTab() {
                           rose: { bg: "bg-white", activeBg: "bg-rose-50", border: "border-slate-200", activeBorder: "border-rose-400", iconBg: "bg-rose-100 text-rose-600", activeIconBg: "bg-rose-500 text-white", text: "text-slate-700", activeText: "text-rose-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-rose-500 text-white" },
                           orange: { bg: "bg-white", activeBg: "bg-orange-50", border: "border-slate-200", activeBorder: "border-orange-400", iconBg: "bg-orange-100 text-orange-600", activeIconBg: "bg-orange-500 text-white", text: "text-slate-700", activeText: "text-orange-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-orange-500 text-white" },
                           amber: { bg: "bg-white", activeBg: "bg-amber-50", border: "border-slate-200", activeBorder: "border-amber-400", iconBg: "bg-amber-100 text-amber-600", activeIconBg: "bg-amber-500 text-white", text: "text-slate-700", activeText: "text-amber-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-amber-500 text-white" },
+                          pink: { bg: "bg-white", activeBg: "bg-pink-50", border: "border-slate-200", activeBorder: "border-pink-400", iconBg: "bg-pink-100 text-pink-600", activeIconBg: "bg-pink-500 text-white", text: "text-slate-700", activeText: "text-pink-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-pink-500 text-white" },
                         };
                         const c = colorMap[state.color] || colorMap.amber;
                         const StateIcon = state.icon;
