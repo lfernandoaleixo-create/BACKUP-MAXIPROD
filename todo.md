@@ -5752,3 +5752,4 @@
 - [x] Importação: valores digitados devem ser na moeda selecionada (USD/BRL/RMB) - converter de volta para USD ao salvar
 - [x] Importação: corrigir salvamento de células na planilha (SpreadsheetTable)
 - [x] Moeda: conversão bidirecional correta - valores armazenados em USD, exibidos na moeda selecionada, digitados na moeda selecionada e convertidos de volta para USD ao salvar
+- [ ] Importação: toolbar (Exportar PDF + conversor moeda) e 3 cards de resumo devem ser sticky (fixos no topo ao fazer scroll)
