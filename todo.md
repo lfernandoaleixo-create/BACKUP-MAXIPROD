@@ -5751,3 +5751,4 @@
 - [x] Importação - Planilha: padrão iniciar em modo "Visualização" (mais bonito)
 - [x] Importação: valores digitados devem ser na moeda selecionada (USD/BRL/RMB) - converter de volta para USD ao salvar
 - [x] Importação: corrigir salvamento de células na planilha (SpreadsheetTable)
+- [x] Moeda: remover conversão - valor digitado é armazenado exatamente como digitou na moeda selecionada

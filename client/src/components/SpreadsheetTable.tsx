@@ -54,36 +54,14 @@ function getGroupColor(groupName: string | null, groupColor?: string): typeof GR
   return GROUP_COLORS[3];
 }
 
-const BRL_SPREAD = 0.20;
-
-function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
+// No conversion - values are stored exactly as entered in the selected currency
+// The currency symbol is just for display
+function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB"): string {
   const num = parseFloat(value) || 0;
   if (num === 0) return "";
-  const effectiveRate = exchangeRate + BRL_SPREAD;
-  // Convert stored USD value to display currency
   if (currency === "USD") return `$ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (currency === "BRL") return `R$ ${(num * effectiveRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  return `¥ ${(num * rmbRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-// Convert stored USD value to the display currency for editing
-function usdToDisplayCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
-  const num = parseFloat(value) || 0;
-  if (num === 0) return "";
-  const effectiveRate = exchangeRate + BRL_SPREAD;
-  if (currency === "USD") return num.toFixed(2);
-  if (currency === "BRL") return (num * effectiveRate).toFixed(2);
-  return (num * rmbRate).toFixed(2);
-}
-
-// Convert user-entered value (in display currency) back to USD for storage
-function displayCurrencyToUsd(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
-  const num = parseFloat(value) || 0;
-  if (num === 0) return "0";
-  const effectiveRate = exchangeRate + BRL_SPREAD;
-  if (currency === "USD") return num.toFixed(2);
-  if (currency === "BRL") return (num / effectiveRate).toFixed(2);
-  return (num / rmbRate).toFixed(2);
+  if (currency === "BRL") return `R$ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `¥ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function SpreadsheetTable({
@@ -141,28 +119,17 @@ export function SpreadsheetTable({
     }
   }, [editingCell]);
 
-  const startEdit = (rowId: number, colKey: string, currentValue: string, colType?: string) => {
+    const startEdit = (rowId: number, colKey: string, currentValue: string, _colType?: string) => {
     setEditingCell({ rowId, colKey });
-    // For number columns, show the value converted to the display currency
-    if (colType === "number" && currentValue) {
-      const displayVal = usdToDisplayCurrency(currentValue, currency, exchangeRate, rmbRate);
-      setEditValue(displayVal || currentValue);
-    } else {
-      setEditValue(currentValue || "");
-    }
+    // No conversion - show the stored value as-is for editing
+    setEditValue(currentValue || "");
   };
-
   const commitEdit = () => {
     if (!editingCell) return;
     const row = rows.find((r) => r.id === editingCell.rowId);
     if (row) {
-      const col = columns.find((c) => c.key === editingCell.colKey);
-      let valueToStore = editValue;
-      // For number columns, convert the entered value (in display currency) back to USD for storage
-      if (col?.type === "number" && editValue) {
-        valueToStore = displayCurrencyToUsd(editValue, currency, exchangeRate, rmbRate);
-      }
-      const newCells = { ...row.cells, [editingCell.colKey]: valueToStore };
+      // Store the value exactly as entered - no conversion
+      const newCells = { ...row.cells, [editingCell.colKey]: editValue };
       onCellChange(editingCell.rowId, newCells);
     }
     setEditingCell(null);
@@ -480,7 +447,7 @@ export function SpreadsheetTable({
                       ) : (
                         <span className="block truncate text-[11px]">
                           {col.type === "number" && cellValue
-                            ? formatCurrency(cellValue, currency, exchangeRate, rmbRate)
+                            ? formatCurrency(cellValue, currency)
                             : cellValue}
                         </span>
                       )}

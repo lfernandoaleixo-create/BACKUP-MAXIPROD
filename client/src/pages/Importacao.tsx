@@ -136,13 +136,8 @@ function PagamentosFornecedores() {
 
   const exchangeRate = exchangeData?.rate || 5.50;
   const rmbRate = (exchangeData as any)?.rmbRate || 7.25;
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
-  const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
-    if (currency === "RMB") return val * rmbRate;
-    return val;
-  };
+  // No conversion - values are stored in the selected currency
+  const convertValue = (val: number) => val;
   const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const currencyLabel = currency === "USD" ? "USD" : currency === "BRL" ? "BRL" : "RMB";
 
@@ -404,11 +399,8 @@ interface SupplierData {
 
 function SupplierSection({ supplier, onRefetch, currency, exchangeRate, rmbRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void }) {
   const effectiveRate = exchangeRate + 0.20;
-  const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
-    if (currency === "RMB") return val * rmbRate;
-    return val;
-  };
+  // No conversion - values are stored in the selected currency
+  const convertValue = (val: number) => val;
   const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const [expanded, setExpanded] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
@@ -782,11 +774,8 @@ function SectionTable({
   isWinnie?: boolean;
 }) {
   const effectiveRate = exchangeRate + 0.20;
-  const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
-    if (currency === "RMB") return val * rmbRate;
-    return val;
-  };
+  // No conversion - values are stored in the selected currency
+  const convertValue = (val: number) => val;
   const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const [showAddRow, setShowAddRow] = useState(false);
   const [spreadsheetMode, setSpreadsheetMode] = useState(false); // Default to visualização mode
@@ -1099,13 +1088,8 @@ function SectionTable({
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
 function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, rmbRate, isWinnie = false }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; isWinnie?: boolean }) {
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
-  const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
-    if (currency === "RMB") return val * rmbRate;
-    return val;
-  };
+  // No conversion - values are stored in the selected currency
+  const convertValue = (val: number) => val;
   const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
 
   const deletePayment = trpc.import.deletePayment.useMutation({
@@ -1243,37 +1227,20 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
 // ===== EDIT PAYMENT ROW (all fields 100% manual, no auto-calculation) =====
 
 function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
-  // Convert USD value to display currency
-  const toDisplay = (usdVal: string) => {
-    const n = parseFloat(usdVal) || 0;
-    if (n === 0) return "0";
-    if (currency === "USD") return String(n);
-    if (currency === "BRL") return (n * effectiveRate).toFixed(2);
-    return (n * rmbRate).toFixed(2);
-  };
-  // Convert display currency value back to USD
-  const toUsd = (displayVal: string) => {
-    const n = parseFloat(displayVal) || 0;
-    if (n === 0) return "0";
-    if (currency === "USD") return String(n);
-    if (currency === "BRL") return (n / effectiveRate).toFixed(2);
-    return (n / rmbRate).toFixed(2);
-  };
+  // No conversion - values are stored exactly as entered
   const [form, setForm] = useState({
     status: payment.status,
     pedido: payment.pedido,
     doc: payment.doc,
-    totalUsd: toDisplay(String(payment.totalUsd)),
-    totalBrasilUsd: toDisplay(String(payment.totalBrasilUsd || "0")),
-    totalParaguaiUsd: toDisplay(String(payment.totalParaguaiUsd || "0")),
-    brasilUsd: toDisplay(String(payment.brasilUsd)),
-    paraguaiUsd: toDisplay(String(payment.paraguaiUsd)),
-    totalPago: toDisplay(String(payment.totalPago)),
-    saldoDevedorBrasil: toDisplay(String(payment.saldoDevedorBrasil)),
-    saldoDevedorParaguai: toDisplay(String(payment.saldoDevedorParaguai)),
-    saldoDevedorTotal: toDisplay(String(payment.saldoDevedorTotal)),
+    totalUsd: String(payment.totalUsd || "0"),
+    totalBrasilUsd: String(payment.totalBrasilUsd || "0"),
+    totalParaguaiUsd: String(payment.totalParaguaiUsd || "0"),
+    brasilUsd: String(payment.brasilUsd || "0"),
+    paraguaiUsd: String(payment.paraguaiUsd || "0"),
+    totalPago: String(payment.totalPago || "0"),
+    saldoDevedorBrasil: String(payment.saldoDevedorBrasil || "0"),
+    saldoDevedorParaguai: String(payment.saldoDevedorParaguai || "0"),
+    saldoDevedorTotal: String(payment.saldoDevedorTotal || "0"),
     rastreio: payment.rastreio || "",
     trackingUuid: payment.trackingUuid || "",
     blNumber: payment.blNumber || "",
@@ -1371,7 +1338,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
-            onClick={() => updatePayment.mutate({ id: payment.id, status: form.status, pedido: form.pedido, doc: form.doc, totalUsd: toUsd(form.totalUsd), totalBrasilUsd: toUsd(form.totalBrasilUsd), totalParaguaiUsd: toUsd(form.totalParaguaiUsd), brasilUsd: toUsd(form.brasilUsd), paraguaiUsd: toUsd(form.paraguaiUsd), totalPago: toUsd(form.totalPago), saldoDevedorBrasil: toUsd(form.saldoDevedorBrasil), saldoDevedorParaguai: toUsd(form.saldoDevedorParaguai), saldoDevedorTotal: toUsd(form.saldoDevedorTotal), rastreio: form.rastreio || undefined, blNumber: form.blNumber || undefined, trackingUuid: form.trackingUuid || undefined, armador: form.armador || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
+            onClick={() => updatePayment.mutate({ id: payment.id, status: form.status, pedido: form.pedido, doc: form.doc, totalUsd: form.totalUsd, totalBrasilUsd: form.totalBrasilUsd, totalParaguaiUsd: form.totalParaguaiUsd, brasilUsd: form.brasilUsd, paraguaiUsd: form.paraguaiUsd, totalPago: form.totalPago, saldoDevedorBrasil: form.saldoDevedorBrasil, saldoDevedorParaguai: form.saldoDevedorParaguai, saldoDevedorTotal: form.saldoDevedorTotal, rastreio: form.rastreio || undefined, blNumber: form.blNumber || undefined, trackingUuid: form.trackingUuid || undefined, armador: form.armador || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
             className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <Check className="w-3 h-3" />
@@ -1388,16 +1355,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
 // ===== INLINE ADD PAYMENT ROW (all fields 100% manual) =====
 
 function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
-  // Convert display currency value back to USD for storage
-  const toUsd = (displayVal: string) => {
-    const n = parseFloat(displayVal) || 0;
-    if (n === 0) return "0";
-    if (currency === "USD") return String(n);
-    if (currency === "BRL") return (n / effectiveRate).toFixed(2);
-    return (n / rmbRate).toFixed(2);
-  };
+  // No conversion - values are stored exactly as entered in the selected currency
   const [form, setForm] = useState({
     status: "",
     pedido: "",
@@ -1518,15 +1476,15 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
                 status: form.status,
                 pedido: form.pedido,
                 doc: form.doc,
-                totalUsd: toUsd(form.totalUsd),
-                totalBrasilUsd: toUsd(form.totalBrasilUsd) || undefined,
-                totalParaguaiUsd: toUsd(form.totalParaguaiUsd) || undefined,
-                brasilUsd: toUsd(form.brasilUsd) || undefined,
-                paraguaiUsd: toUsd(form.paraguaiUsd) || undefined,
-                totalPago: toUsd(form.totalPago) || undefined,
-                saldoDevedorBrasil: toUsd(form.saldoDevedorBrasil) || undefined,
-                saldoDevedorParaguai: toUsd(form.saldoDevedorParaguai) || undefined,
-                saldoDevedorTotal: toUsd(form.saldoDevedorTotal) || undefined,
+                totalUsd: form.totalUsd,
+                totalBrasilUsd: form.totalBrasilUsd || undefined,
+                totalParaguaiUsd: form.totalParaguaiUsd || undefined,
+                brasilUsd: form.brasilUsd || undefined,
+                paraguaiUsd: form.paraguaiUsd || undefined,
+                totalPago: form.totalPago || undefined,
+                saldoDevedorBrasil: form.saldoDevedorBrasil || undefined,
+                saldoDevedorParaguai: form.saldoDevedorParaguai || undefined,
+                saldoDevedorTotal: form.saldoDevedorTotal || undefined,
                 rastreio: form.rastreio || undefined,
                 trackingUuid: form.trackingUuid || undefined,
                 blNumber: form.blNumber || undefined,
