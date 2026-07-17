@@ -136,10 +136,8 @@ function PagamentosFornecedores() {
 
   const exchangeRate = exchangeData?.rate || 5.50;
   const rmbRate = (exchangeData as any)?.rmbRate || 7.25;
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
   const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "BRL") return val * exchangeRate;
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
@@ -403,9 +401,9 @@ interface SupplierData {
 }
 
 function SupplierSection({ supplier, onRefetch, currency, exchangeRate, rmbRate, onTrack, onTrackBl, onTrackAi }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void; onTrackAi: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void }) {
-  const effectiveRate = exchangeRate + 0.20;
+  
   const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "BRL") return val * exchangeRate;
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
@@ -781,9 +779,9 @@ function SectionTable({
   onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void;
   isWinnie?: boolean;
 }) {
-  const effectiveRate = exchangeRate + 0.20;
+  
   const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "BRL") return val * exchangeRate;
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
@@ -1099,9 +1097,9 @@ function SectionTable({
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
 function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, rmbRate, isWinnie = false }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; isWinnie?: boolean }) {
-  const effectiveRate = exchangeRate + 0.20;
+  
   const convertValue = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "BRL") return val * exchangeRate;
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
@@ -1242,18 +1240,18 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
 // ===== EDIT PAYMENT ROW (all fields 100% manual, no auto-calculation) =====
 
 function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
+  
+  
   // Convert USD to display currency
   const fromUsd = (val: number) => {
-    if (currency === "BRL") return val * effectiveRate;
+    if (currency === "BRL") return val * exchangeRate;
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
   // Convert display currency back to USD
   const toUsd = (val: string) => {
     const num = parseFloat(val) || 0;
-    if (currency === "BRL") return String(Math.round((num / effectiveRate) * 1000000) / 1000000);
+    if (currency === "BRL") return String(Math.round((num / exchangeRate) * 1000000) / 1000000);
     if (currency === "RMB") return String(Math.round((num / rmbRate) * 1000000) / 1000000);
     return String(num);
   };
@@ -1389,12 +1387,12 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
 // ===== INLINE ADD PAYMENT ROW (all fields 100% manual) =====
 
 function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
+  
+  
   // Convert display currency back to USD for storage
   const toUsd = (val: string) => {
     const num = parseFloat(val) || 0;
-    if (currency === "BRL") return String(Math.round((num / effectiveRate) * 1000000) / 1000000);
+    if (currency === "BRL") return String(Math.round((num / exchangeRate) * 1000000) / 1000000);
     if (currency === "RMB") return String(Math.round((num / rmbRate) * 1000000) / 1000000);
     return String(num);
   };

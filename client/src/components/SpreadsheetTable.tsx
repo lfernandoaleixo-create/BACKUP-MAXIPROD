@@ -58,10 +58,10 @@ function getGroupColor(groupName: string | null, groupColor?: string): typeof GR
 function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
   const num = parseFloat(value) || 0;
   if (num === 0) return "";
-  const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
+  
+  
   let converted = num;
-  if (currency === "BRL") converted = num * effectiveRate;
+  if (currency === "BRL") converted = num * exchangeRate;
   else if (currency === "RMB") converted = num * rmbRate;
   if (currency === "USD") return `$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (currency === "BRL") return `R$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -123,8 +123,8 @@ export function SpreadsheetTable({
     }
   }, [editingCell]);
 
-    const SPREAD = 0.20;
-  const effectiveRate = exchangeRate + SPREAD;
+    
+  
 
   const startEdit = (rowId: number, colKey: string, currentValue: string, colType?: string) => {
     setEditingCell({ rowId, colKey });
@@ -132,7 +132,7 @@ export function SpreadsheetTable({
     if (colType === "number" && currentValue) {
       const num = parseFloat(currentValue) || 0;
       let converted = num;
-      if (currency === "BRL") converted = num * effectiveRate;
+      if (currency === "BRL") converted = num * exchangeRate;
       else if (currency === "RMB") converted = num * rmbRate;
       setEditValue(converted ? String(Math.round(converted * 100) / 100) : "");
     } else {
@@ -149,7 +149,7 @@ export function SpreadsheetTable({
       if (col?.type === "number" && editValue) {
         const num = parseFloat(editValue) || 0;
         let usdVal = num;
-        if (currency === "BRL") usdVal = num / effectiveRate;
+        if (currency === "BRL") usdVal = num / exchangeRate;
         else if (currency === "RMB") usdVal = num / rmbRate;
         valueToStore = String(Math.round(usdVal * 1000000) / 1000000);
       }
