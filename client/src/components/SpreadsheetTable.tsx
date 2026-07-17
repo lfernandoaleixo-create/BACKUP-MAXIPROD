@@ -54,12 +54,36 @@ function getGroupColor(groupName: string | null, groupColor?: string): typeof GR
   return GROUP_COLORS[3];
 }
 
+const BRL_SPREAD = 0.20;
+
 function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
   const num = parseFloat(value) || 0;
   if (num === 0) return "";
+  const effectiveRate = exchangeRate + BRL_SPREAD;
+  // Convert stored USD value to display currency
   if (currency === "USD") return `$ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (currency === "BRL") return `R$ ${(num * exchangeRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (currency === "BRL") return `R$ ${(num * effectiveRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return `¥ ${(num * rmbRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// Convert stored USD value to the display currency for editing
+function usdToDisplayCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
+  const num = parseFloat(value) || 0;
+  if (num === 0) return "";
+  const effectiveRate = exchangeRate + BRL_SPREAD;
+  if (currency === "USD") return num.toFixed(2);
+  if (currency === "BRL") return (num * effectiveRate).toFixed(2);
+  return (num * rmbRate).toFixed(2);
+}
+
+// Convert user-entered value (in display currency) back to USD for storage
+function displayCurrencyToUsd(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
+  const num = parseFloat(value) || 0;
+  if (num === 0) return "0";
+  const effectiveRate = exchangeRate + BRL_SPREAD;
+  if (currency === "USD") return num.toFixed(2);
+  if (currency === "BRL") return (num / effectiveRate).toFixed(2);
+  return (num / rmbRate).toFixed(2);
 }
 
 export function SpreadsheetTable({
@@ -117,16 +141,28 @@ export function SpreadsheetTable({
     }
   }, [editingCell]);
 
-  const startEdit = (rowId: number, colKey: string, currentValue: string) => {
+  const startEdit = (rowId: number, colKey: string, currentValue: string, colType?: string) => {
     setEditingCell({ rowId, colKey });
-    setEditValue(currentValue || "");
+    // For number columns, show the value converted to the display currency
+    if (colType === "number" && currentValue) {
+      const displayVal = usdToDisplayCurrency(currentValue, currency, exchangeRate, rmbRate);
+      setEditValue(displayVal || currentValue);
+    } else {
+      setEditValue(currentValue || "");
+    }
   };
 
   const commitEdit = () => {
     if (!editingCell) return;
     const row = rows.find((r) => r.id === editingCell.rowId);
     if (row) {
-      const newCells = { ...row.cells, [editingCell.colKey]: editValue };
+      const col = columns.find((c) => c.key === editingCell.colKey);
+      let valueToStore = editValue;
+      // For number columns, convert the entered value (in display currency) back to USD for storage
+      if (col?.type === "number" && editValue) {
+        valueToStore = displayCurrencyToUsd(editValue, currency, exchangeRate, rmbRate);
+      }
+      const newCells = { ...row.cells, [editingCell.colKey]: valueToStore };
       onCellChange(editingCell.rowId, newCells);
     }
     setEditingCell(null);
@@ -152,11 +188,11 @@ export function SpreadsheetTable({
         if (colIdx < columns.length - 1) {
           const nextCol = columns[colIdx + 1];
           const row = rows[rowIdx];
-          if (row) startEdit(row.id, nextCol.key, row.cells[nextCol.key] || "");
+          if (row) startEdit(row.id, nextCol.key, row.cells[nextCol.key] || "", nextCol.type);
         } else if (rowIdx < rows.length - 1) {
           const nextRow = rows[rowIdx + 1];
           const firstCol = columns[0];
-          if (nextRow && firstCol) startEdit(nextRow.id, firstCol.key, nextRow.cells[firstCol.key] || "");
+          if (nextRow && firstCol) startEdit(nextRow.id, firstCol.key, nextRow.cells[firstCol.key] || "", firstCol.type);
         }
       }
     }
@@ -429,7 +465,7 @@ export function SpreadsheetTable({
                       className={`px-2 py-1.5 cursor-text hover:bg-blue-50/50 transition-colors ${
                         col.type === "number" ? "text-right font-mono" : "text-left"
                       } ${colorDef ? colorDef.cellBg : ""}`}
-                      onClick={() => !isEditing && startEdit(row.id, col.key, cellValue)}
+                      onClick={() => !isEditing && startEdit(row.id, col.key, cellValue, col.type)}
                     >
                       {isEditing ? (
                         <input

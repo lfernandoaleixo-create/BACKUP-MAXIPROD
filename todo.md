@@ -5749,3 +5749,5 @@
 - [x] Hericles: não pode ver valorização do estoque na aba Estoque
 - [x] Hericles: na aba Produção só pode ver "Lançamento" (somente observar) e "Checklist" (liberdade total)
 - [x] Importação - Planilha: padrão iniciar em modo "Visualização" (mais bonito)
+- [x] Importação: valores digitados devem ser na moeda selecionada (USD/BRL/RMB) - converter de volta para USD ao salvar
+- [x] Importação: corrigir salvamento de células na planilha (SpreadsheetTable)

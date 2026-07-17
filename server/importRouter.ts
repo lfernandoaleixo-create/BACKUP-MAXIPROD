@@ -309,7 +309,7 @@ export const importRouter = router({
         key: z.string(),
         name: z.string(),
         type: z.enum(['text', 'number', 'date']),
-        group: z.union([z.string(), z.object({})]),
+        group: z.union([z.string(), z.object({}), z.null()]),
         groupColor: z.string().optional(),
         width: z.number(),
       })),
