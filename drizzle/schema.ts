@@ -2520,16 +2520,16 @@ export const importPayments = mysqlTable("import_payments", {
   status: varchar("status", { length: 200 }).notNull(), // "Doc ok - navegando", "Produção", "Aguardando Pagamento", etc.
   pedido: varchar("pedido", { length: 100 }).notNull(), // código do pedido (PO062, ZYZ2026-018, etc.)
   doc: varchar("doc", { length: 20 }).notNull(), // CI = Commercial Invoice, PI = Proforma Invoice
-  totalUsd: decimal("total_usd", { precision: 18, scale: 2 }).notNull(),
-  halfValue: decimal("half_value", { precision: 18, scale: 2 }), // DEPRECATED - mantido por compatibilidade
-  totalBrasilUsd: decimal("total_brasil_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Brasil na seção "Total a pagar" (azul)
-  totalParaguaiUsd: decimal("total_paraguai_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Paraguai na seção "Total a pagar" (azul)
-  brasilUsd: decimal("brasil_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Brasil na seção "O que pagou" (verde)
-  paraguaiUsd: decimal("paraguai_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Paraguai na seção "O que pagou" (verde)
-  totalPago: decimal("total_pago", { precision: 18, scale: 2 }).default("0").notNull(),
-  saldoDevedorBrasil: decimal("saldo_devedor_brasil", { precision: 18, scale: 2 }).default("0").notNull(),
-  saldoDevedorParaguai: decimal("saldo_devedor_paraguai", { precision: 18, scale: 2 }).default("0").notNull(),
-  saldoDevedorTotal: decimal("saldo_devedor_total", { precision: 18, scale: 2 }).default("0").notNull(),
+  totalUsd: decimal("total_usd", { precision: 18, scale: 6 }).notNull(),
+  halfValue: decimal("half_value", { precision: 18, scale: 6 }), // DEPRECATED - mantido por compatibilidade
+  totalBrasilUsd: decimal("total_brasil_usd", { precision: 18, scale: 6 }).default("0").notNull(), // Brasil na seção "Total a pagar" (azul)
+  totalParaguaiUsd: decimal("total_paraguai_usd", { precision: 18, scale: 6 }).default("0").notNull(), // Paraguai na seção "Total a pagar" (azul)
+  brasilUsd: decimal("brasil_usd", { precision: 18, scale: 6 }).default("0").notNull(), // Brasil na seção "O que pagou" (verde)
+  paraguaiUsd: decimal("paraguai_usd", { precision: 18, scale: 6 }).default("0").notNull(), // Paraguai na seção "O que pagou" (verde)
+  totalPago: decimal("total_pago", { precision: 18, scale: 6 }).default("0").notNull(),
+  saldoDevedorBrasil: decimal("saldo_devedor_brasil", { precision: 18, scale: 6 }).default("0").notNull(),
+  saldoDevedorParaguai: decimal("saldo_devedor_paraguai", { precision: 18, scale: 6 }).default("0").notNull(),
+  saldoDevedorTotal: decimal("saldo_devedor_total", { precision: 18, scale: 6 }).default("0").notNull(),
   arrivalDate: varchar("arrival_date", { length: 50 }), // data de chegada (usado apenas para Winnie)
   alertDaysBefore: int("alert_days_before"), // dias de antecedência para alerta de pagamento (ex: 15)
   alertDismissed: boolean("alert_dismissed").default(false).notNull(), // se o alerta foi dispensado manualmente pela Larissa
