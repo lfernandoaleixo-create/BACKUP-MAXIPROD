@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { importSuppliers, importPayments, importSpreadsheetConfig, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems, purchaseOrderItems, productCatalog } from "../drizzle/schema";
 import type { SpreadsheetColumn } from "../drizzle/schema";
-import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, ne } from "drizzle-orm";
+import { eq, asc, and, desc, like, sql, or, inArray, isNotNull, isNull, ne } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
 import { fetchLogcomexAiTracking, ARMADORES } from "./logcomexAiTracking";
@@ -402,6 +402,37 @@ export const importRouter = router({
       return { id: result.insertId };
     }),
 
+  moveSpreadsheetRow: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      direction: z.enum(["up", "down"]),
+      supplierId: z.number(),
+      sectionTitle: z.string().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      // Get all rows for this supplier/section ordered by sortOrder
+      const allRows = await db.select({ id: importPayments.id, sortOrder: importPayments.sortOrder })
+        .from(importPayments)
+        .where(
+          input.sectionTitle
+            ? and(eq(importPayments.supplierId, input.supplierId), eq(importPayments.sectionTitle, input.sectionTitle))
+            : and(eq(importPayments.supplierId, input.supplierId), isNull(importPayments.sectionTitle))
+        )
+        .orderBy(asc(importPayments.sortOrder), asc(importPayments.id));
+      const idx = allRows.findIndex(r => r.id === input.id);
+      if (idx === -1) return { success: false };
+      const swapIdx = input.direction === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= allRows.length) return { success: false };
+      // Swap sortOrder values
+      const currentRow = allRows[idx];
+      const swapRow = allRows[swapIdx];
+      await db.update(importPayments).set({ sortOrder: swapRow.sortOrder }).where(eq(importPayments.id, currentRow.id));
+      await db.update(importPayments).set({ sortOrder: currentRow.sortOrder }).where(eq(importPayments.id, swapRow.id));
+      return { success: true };
+    }),
+
   // ===== EXCHANGE RATE (USD/BRL) =====
   getExchangeRate: publicProcedure.query(async () => {
     // Cache em memória para evitar chamadas excessivas (TTL: 30 minutos)
@@ -511,7 +542,7 @@ export const importRouter = router({
   getActiveAlerts: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
-    const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
+    const payments = await db.select().from(importPayments).orderBy(asc(importPayments.sortOrder), asc(importPayments.id));
     const suppliers = await db.select().from(importSuppliers)
       .where(or(eq(importSuppliers.context, 'pagamentos'), eq(importSuppliers.context, 'both')))
       .orderBy(asc(importSuppliers.displayOrder));
@@ -955,7 +986,7 @@ export const importRouter = router({
     const suppliers = await db.select().from(importSuppliers)
       .where(or(eq(importSuppliers.context, 'pagamentos'), eq(importSuppliers.context, 'both')))
       .orderBy(asc(importSuppliers.displayOrder));
-    const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
+    const payments = await db.select().from(importPayments).orderBy(asc(importPayments.sortOrder), asc(importPayments.id));
     return suppliers.map((supplier) => ({
       ...supplier,
       payments: payments.filter((p) => p.supplierId === supplier.id),

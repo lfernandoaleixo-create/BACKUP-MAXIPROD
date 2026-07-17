@@ -789,7 +789,7 @@ function SectionTable({
   };
   const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
   const [showAddRow, setShowAddRow] = useState(false);
-  const [spreadsheetMode, setSpreadsheetMode] = useState(true); // Default to spreadsheet mode
+  const [spreadsheetMode, setSpreadsheetMode] = useState(false); // Default to visualização mode
   const [editingSectionTitle, setEditingSectionTitle] = useState(false);
   const [editSectionName, setEditSectionName] = useState("");
   const [editSectionSubtitle, setEditSectionSubtitle] = useState("");
@@ -810,6 +810,9 @@ function SectionTable({
   });
   const deletePaymentMut = trpc.import.deletePayment.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Linha removida"); },
+  });
+  const moveRowMut = trpc.import.moveSpreadsheetRow.useMutation({
+    onSuccess: () => onRefetch(),
   });
 
   // Section totals (all manual values, just summed for display)
@@ -980,6 +983,9 @@ function SectionTable({
             }}
             onDeleteRow={(rowId) => {
               deletePaymentMut.mutate({ id: rowId });
+            }}
+            onMoveRow={(rowId, direction) => {
+              moveRowMut.mutate({ id: rowId, direction, supplierId, sectionTitle: sectionTitle || undefined });
             }}
             currency={currency}
             exchangeRate={exchangeRate}

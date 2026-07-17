@@ -5740,7 +5740,7 @@
 - [x] Alertas de estoque: item 00084 VARETA AROMATIZADOR não deve gerar alerta (sem registros de estoque)
 - [x] Alertas de estoque: remover debug logs do maxiprodSync.ts
 
-- [ ] Importação - Planilhas editáveis estilo Excel (criar/remover colunas, renomear colunas, criar/remover linhas)
+- [x] Importação - Planilhas editáveis estilo Excel (criar/remover colunas, renomear colunas, criar/remover linhas, mover colunas/linhas)
 - [ ] Preservar todos os dados já preenchidos na migração para planilha flexível
 - [x] Avaria/Perda: mostrar campo de observações quando ticado (igual ao "Outros")
 - [x] Avaria/Perda: botão para adicionar observação retroativamente em itens do histórico
@@ -5748,3 +5748,4 @@
 - [x] Importação: corrigir Exportar PDF das POs - formato planilha perfeito com todas informações mesmo com card fechado
 - [x] Hericles: não pode ver valorização do estoque na aba Estoque
 - [x] Hericles: na aba Produção só pode ver "Lançamento" (somente observar) e "Checklist" (liberdade total)
+- [x] Importação - Planilha: padrão iniciar em modo "Visualização" (mais bonito)

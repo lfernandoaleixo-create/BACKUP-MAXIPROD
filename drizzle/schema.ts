@@ -2539,6 +2539,7 @@ export const importPayments = mysqlTable("import_payments", {
   armador: varchar("armador", { length: 50 }), // Nome do armador/carrier para rastreamento via Logcomex AI (ex: ONE, MSC, MAERSK)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   cells: json("cells").$type<Record<string, string>>(), // Flexible cell data as key-value pairs
+  sortOrder: int("sort_order").default(0).notNull(), // For row reordering
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 export type ImportPayment = typeof importPayments.$inferSelect;

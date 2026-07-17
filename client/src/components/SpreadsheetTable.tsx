@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Trash2, MoreHorizontal, Pencil, Palette } from "lucide-react";
+import { Plus, Trash2, MoreHorizontal, Pencil, Palette, ChevronUp, ChevronDown, ArrowLeft, ArrowRight } from "lucide-react";
 
 type ColumnDef = {
   key: string;
@@ -24,6 +24,7 @@ type SpreadsheetTableProps = {
   onCellChange: (rowId: number, cells: Record<string, string>) => void;
   onAddRow: () => void;
   onDeleteRow: (rowId: number) => void;
+  onMoveRow?: (rowId: number, direction: "up" | "down") => void;
   currency: "USD" | "BRL" | "RMB";
   exchangeRate: number;
   rmbRate: number;
@@ -46,12 +47,11 @@ function getGroupColor(groupName: string | null, groupColor?: string): typeof GR
     const found = GROUP_COLORS.find(c => c.name === groupColor);
     if (found) return found;
   }
-  // Default colors for legacy group names
   const lower = groupName.toLowerCase();
-  if (lower.includes("pagar") && lower.includes("total")) return GROUP_COLORS[0]; // Azul
-  if (lower.includes("pagou")) return GROUP_COLORS[1]; // Verde
-  if (lower.includes("falta")) return GROUP_COLORS[2]; // Vermelho
-  return GROUP_COLORS[3]; // Roxo default
+  if (lower.includes("pagar") && lower.includes("total")) return GROUP_COLORS[0];
+  if (lower.includes("pagou")) return GROUP_COLORS[1];
+  if (lower.includes("falta")) return GROUP_COLORS[2];
+  return GROUP_COLORS[3];
 }
 
 function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchangeRate: number, rmbRate: number): string {
@@ -71,6 +71,7 @@ export function SpreadsheetTable({
   onCellChange,
   onAddRow,
   onDeleteRow,
+  onMoveRow,
   currency,
   exchangeRate,
   rmbRate,
@@ -78,6 +79,7 @@ export function SpreadsheetTable({
   const [editingCell, setEditingCell] = useState<{ rowId: number; colKey: string } | null>(null);
   const [editValue, setEditValue] = useState("");
   const [columnMenu, setColumnMenu] = useState<{ colKey: string; x: number; y: number } | null>(null);
+  const [rowMenu, setRowMenu] = useState<{ rowId: number; x: number; y: number } | null>(null);
   const [renamingCol, setRenamingCol] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [addingColumn, setAddingColumn] = useState(false);
@@ -90,21 +92,24 @@ export function SpreadsheetTable({
   const [editGroupColor, setEditGroupColor] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close column menu on outside click
+  // Close menus on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (columnMenu && menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setColumnMenu(null);
       }
+      if (rowMenu && rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) {
+        setRowMenu(null);
+      }
     }
-    if (columnMenu) {
+    if (columnMenu || rowMenu) {
       document.addEventListener("mousedown", handleClick);
       return () => document.removeEventListener("mousedown", handleClick);
     }
-  }, [columnMenu]);
+  }, [columnMenu, rowMenu]);
 
-  // Focus input when editing
   useEffect(() => {
     if (editingCell && inputRef.current) {
       inputRef.current.focus();
@@ -161,10 +166,29 @@ export function SpreadsheetTable({
     e.preventDefault();
     e.stopPropagation();
     setColumnMenu({ colKey, x: e.clientX, y: e.clientY });
+    setRowMenu(null);
+  };
+
+  const openRowMenu = (rowId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setRowMenu({ rowId, x: e.clientX, y: e.clientY });
+    setColumnMenu(null);
   };
 
   const deleteColumn = (colKey: string) => {
     const newCols = columns.filter((c) => c.key !== colKey);
+    onColumnsChange(newCols);
+    setColumnMenu(null);
+  };
+
+  const moveColumn = (colKey: string, direction: "left" | "right") => {
+    const idx = columns.findIndex((c) => c.key === colKey);
+    if (idx === -1) return;
+    const swapIdx = direction === "left" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= columns.length) return;
+    const newCols = [...columns];
+    [newCols[idx], newCols[swapIdx]] = [newCols[swapIdx], newCols[idx]];
     onColumnsChange(newCols);
     setColumnMenu(null);
   };
@@ -207,7 +231,6 @@ export function SpreadsheetTable({
     setNewColGroupColor("Azul");
   };
 
-  // Edit group name/color
   const startEditGroup = (groupName: string) => {
     setEditingGroup(groupName);
     setEditGroupName(groupName);
@@ -244,12 +267,12 @@ export function SpreadsheetTable({
 
   return (
     <div className="relative">
-      {/* Table */}
       <div className="overflow-x-auto -mx-2 px-2 pb-1">
         <table className="w-full text-[11px] border-collapse min-w-[800px]">
-          {/* Group header row */}
           <thead>
+            {/* Group header row */}
             <tr>
+              <th className="bg-white w-[40px] border-b-2 border-transparent"></th>
               {groups.map((g, gIdx) => {
                 const colorDef = getGroupColor(g.name, g.color);
                 return (
@@ -314,6 +337,7 @@ export function SpreadsheetTable({
             </tr>
             {/* Column names row */}
             <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
+              <th className="px-1 py-2 text-center font-semibold w-[40px]"></th>
               {columns.map((col) => {
                 const groupName = typeof col.group === "string" && col.group ? col.group : null;
                 const colorDef = getGroupColor(groupName, col.groupColor);
@@ -346,7 +370,7 @@ export function SpreadsheetTable({
                         <span>{col.name}</span>
                         <button
                           onClick={(e) => openColumnMenu(col.key, e)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-slate-200"
+                          className="opacity-60 hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-slate-200"
                         >
                           <MoreHorizontal className="w-3 h-3" />
                         </button>
@@ -361,7 +385,7 @@ export function SpreadsheetTable({
                   className="p-1 rounded hover:bg-blue-100 text-blue-600 transition-colors"
                   title="Adicionar coluna"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </th>
             </tr>
@@ -370,29 +394,47 @@ export function SpreadsheetTable({
             {rows.map((row, rowIdx) => (
               <tr
                 key={row.id}
-                className={`border-b border-slate-100 hover:bg-blue-50/30 transition-colors ${
-                  rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50/30"
-                }`}
+                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group/row"
+                onContextMenu={(e) => openRowMenu(row.id, e)}
               >
+                {/* Row actions column */}
+                <td className="px-0.5 py-1.5 text-center">
+                  <div className="flex flex-col items-center gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => onMoveRow?.(row.id, "up")}
+                      disabled={rowIdx === 0}
+                      className="p-0.5 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Mover para cima"
+                    >
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => onMoveRow?.(row.id, "down")}
+                      disabled={rowIdx === rows.length - 1}
+                      className="p-0.5 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Mover para baixo"
+                    >
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                </td>
                 {columns.map((col) => {
-                  const isEditing = editingCell?.rowId === row.id && editingCell?.colKey === col.key;
                   const cellValue = row.cells[col.key] || "";
+                  const isEditing = editingCell?.rowId === row.id && editingCell?.colKey === col.key;
                   const groupName = typeof col.group === "string" && col.group ? col.group : null;
                   const colorDef = getGroupColor(groupName, col.groupColor);
-
                   return (
                     <td
                       key={col.key}
-                      className={`px-2 py-1.5 cursor-pointer border-r border-slate-100 ${
+                      className={`px-2 py-1.5 cursor-text hover:bg-blue-50/50 transition-colors ${
                         col.type === "number" ? "text-right font-mono" : "text-left"
                       } ${colorDef ? colorDef.cellBg : ""}`}
-                      style={{ minWidth: col.width }}
                       onClick={() => !isEditing && startEdit(row.id, col.key, cellValue)}
                     >
                       {isEditing ? (
                         <input
                           ref={inputRef}
-                          type="text"
+                          type={col.type === "number" ? "text" : "text"}
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onBlur={commitEdit}
@@ -424,7 +466,7 @@ export function SpreadsheetTable({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={columns.length + 1} className="text-center py-6 text-slate-400 text-xs italic">
+                <td colSpan={columns.length + 2} className="text-center py-6 text-slate-400 text-xs italic">
                   Nenhum registro. Clique em "+" para adicionar.
                 </td>
               </tr>
@@ -448,7 +490,7 @@ export function SpreadsheetTable({
       {columnMenu && (
         <div
           ref={menuRef}
-          className="fixed z-50 bg-white rounded-lg shadow-xl border border-slate-200 py-1 min-w-[160px]"
+          className="fixed z-50 bg-white rounded-lg shadow-xl border border-slate-200 py-1 min-w-[180px]"
           style={{ left: columnMenu.x, top: columnMenu.y }}
         >
           <button
@@ -467,11 +509,84 @@ export function SpreadsheetTable({
           </button>
           <hr className="my-1 border-slate-200" />
           <button
+            onClick={() => moveColumn(columnMenu.colKey, "left")}
+            disabled={columns.findIndex(c => c.key === columnMenu.colKey) === 0}
+            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-100 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Mover para esquerda
+          </button>
+          <button
+            onClick={() => moveColumn(columnMenu.colKey, "right")}
+            disabled={columns.findIndex(c => c.key === columnMenu.colKey) === columns.length - 1}
+            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-100 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+            Mover para direita
+          </button>
+          <hr className="my-1 border-slate-200" />
+          <button
+            onClick={() => {
+              const col = columns.find(c => c.key === columnMenu.colKey);
+              if (col) {
+                const groupName = typeof col.group === "string" && col.group ? col.group : null;
+                if (groupName) {
+                  startEditGroup(groupName);
+                }
+              }
+              setColumnMenu(null);
+            }}
+            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-100 flex items-center gap-2"
+          >
+            <Palette className="w-3.5 h-3.5" />
+            Alterar cor do grupo
+          </button>
+          <hr className="my-1 border-slate-200" />
+          <button
             onClick={() => deleteColumn(columnMenu.colKey)}
             className="w-full px-3 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Excluir coluna
+          </button>
+        </div>
+      )}
+
+      {/* Row context menu */}
+      {rowMenu && (
+        <div
+          ref={rowMenuRef}
+          className="fixed z-50 bg-white rounded-lg shadow-xl border border-slate-200 py-1 min-w-[180px]"
+          style={{ left: rowMenu.x, top: rowMenu.y }}
+        >
+          <button
+            onClick={() => { onMoveRow?.(rowMenu.rowId, "up"); setRowMenu(null); }}
+            disabled={rows.findIndex(r => r.id === rowMenu.rowId) === 0}
+            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-100 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+            Mover para cima
+          </button>
+          <button
+            onClick={() => { onMoveRow?.(rowMenu.rowId, "down"); setRowMenu(null); }}
+            disabled={rows.findIndex(r => r.id === rowMenu.rowId) === rows.length - 1}
+            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-100 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+            Mover para baixo
+          </button>
+          <hr className="my-1 border-slate-200" />
+          <button
+            onClick={() => {
+              if (confirm("Remover esta linha?")) {
+                onDeleteRow(rowMenu.rowId);
+              }
+              setRowMenu(null);
+            }}
+            className="w-full px-3 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Excluir linha
           </button>
         </div>
       )}
