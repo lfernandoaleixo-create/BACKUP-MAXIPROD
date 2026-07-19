@@ -331,6 +331,83 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
     };
   }
 
+  // BL 274102504 - MAERSK WALLIS (Dalian → Busan → Santos) - WINNIE - HARBIN pedido ZY2026-027
+  if (cleanBl === '274102504') {
+    const now = new Date();
+    
+    const allEvents: OneTrackingEvent[] = [
+      { date: '2026-07-10', location: 'DALIAN, CHINA', terminal: 'DCT (DALIAN CONTAINER TERMINAL)', description: 'Container vazio retirado', hasOccurred: true },
+      { date: '2026-07-14', location: 'DALIAN, CHINA', terminal: 'DCT (DALIAN CONTAINER TERMINAL)', description: 'Entrada no terminal (cheio)', hasOccurred: true },
+      { date: '2026-07-17', location: 'DALIAN, CHINA', terminal: 'DCT (DALIAN CONTAINER TERMINAL)', description: 'Carregado no navio', vessel: 'MAERSK WALLIS', hasOccurred: true },
+      { date: '2026-07-17', location: 'DALIAN, CHINA', terminal: 'DCT (DALIAN CONTAINER TERMINAL)', description: 'Partida do porto de origem', vessel: 'MAERSK WALLIS', hasOccurred: true },
+      { date: '2026-07-21', location: 'BUSAN, SOUTH KOREA', terminal: 'BUSAN NEW PORT', description: 'Chegada no porto de transbordo', vessel: 'MAERSK WALLIS', hasOccurred: false },
+      { date: '2026-07-22', location: 'BUSAN, SOUTH KOREA', terminal: 'BUSAN NEW PORT', description: 'Partida do transbordo', vessel: 'MAERSK WALLIS', hasOccurred: false },
+      { date: '2026-08-29', location: 'SANTOS, BRAZIL', terminal: 'SANTOS BRASIL SA', description: 'Chegada no porto de destino', vessel: 'MAERSK WALLIS', hasOccurred: false },
+      { date: '2026-08-29', location: 'SANTOS, BRAZIL', terminal: 'SANTOS BRASIL SA', description: 'Descarregado no destino', vessel: 'MAERSK WALLIS', hasOccurred: false },
+      { date: '2026-08-29', location: 'SANTOS, BRAZIL', terminal: 'SANTOS BRASIL SA', description: 'Liberado para entrega', vessel: 'MAERSK WALLIS', hasOccurred: false },
+    ];
+
+    for (const event of allEvents) {
+      const eventDate = new Date(event.date);
+      event.hasOccurred = now >= eventDate;
+    }
+
+    // Vessel position: MAERSK WALLIS departed Dalian 2026-07-17, ETA Santos 2026-08-29
+    const vesselPosition = calculateVesselPosition(
+      '2026-07-17T12:07:00Z',
+      '2026-08-29T00:00:00Z',
+      [...ROUTE_DALIAN_BUSAN, ...ROUTE_BUSAN_SANTOS.slice(1)]
+    );
+
+    let currentStatus = 'Em trânsito';
+    const lastOccurred = allEvents.filter(e => e.hasOccurred).pop();
+    if (lastOccurred) {
+      currentStatus = lastOccurred.description;
+    }
+
+    // Full route: Dalian → Busan → Santos (same water route)
+    const fullRoute = [...ROUTE_DALIAN_BUSAN, ...ROUTE_BUSAN_SANTOS.slice(1)];
+
+    return {
+      blNumber: '274102504',
+      bookingRef: '274102504',
+      containerNo: 'MNBU3920011',
+      containerType: "40'DV (Dry Van)",
+      containerWeight: '25,000 KGS',
+      placeOfReceipt: 'DALIAN, CHINA',
+      placeOfDelivery: 'SANTOS, BRAZIL',
+      latestEvent: currentStatus,
+      latestEventTime: lastOccurred?.date || '',
+      podArrival: '2026-08-29',
+      sailingLegs: [
+        {
+          vessel: 'MAERSK WALLIS',
+          vesselCode: '',
+          portOfLoading: 'DALIAN, CHINA',
+          departureDate: '2026-07-17',
+          portOfDischarging: 'BUSAN, SOUTH KOREA',
+          arrivalTime: '2026-07-21',
+        },
+        {
+          vessel: 'MAERSK WALLIS',
+          vesselCode: '',
+          portOfLoading: 'BUSAN, SOUTH KOREA',
+          departureDate: '2026-07-22',
+          portOfDischarging: 'SANTOS, BRAZIL',
+          arrivalTime: '2026-08-29',
+        },
+      ],
+      events: allEvents,
+      currentStatus,
+      progress: calculateVoyageProgress('2026-07-17T12:07:00Z', '2026-08-29T00:00:00Z', vesselPosition, fullRoute),
+      vesselPosition,
+      routeCoordinates: fullRoute,
+      origin: { lat: 38.92, lng: 121.63, name: 'DALIAN' },
+      destination: { lat: -23.95, lng: -46.30, name: 'SANTOS' },
+      transshipments: [{ lat: 35.1, lng: 129.03, name: 'BUSAN' }],
+    };
+  }
+
   // BL HKGG45910500 - Winnie (Dalian → Busan → Santos) - Data from FindTEU
   if (cleanBl === 'HKGG45910500') {
     const now = new Date();

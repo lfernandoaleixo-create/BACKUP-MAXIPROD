@@ -5761,3 +5761,7 @@
 - [x] Conversão BRL na aba Pagamentos Fornecedores: remover spread (+0,20) - usar cotação pura (spread só se aplica na aba Custo da Mercadoria)
 - [x] Cotação em tempo real: reduzir cache TTL de 30min para 5min para manter cotação mais atualizada
 - [x] Fix divergência de centavos RMB→BRL: aumentar precisão DB de 6 para 10 casas decimais + remover arredondamento intermediário na conversão + taxa cruzada direta crossRateBrl
+- [x] Rastreio em Conjunto: rotas dos navios lado a lado sem sobreposição (offset lateral nas polylines)
+- [x] Rastreio em Conjunto: navio azul (MAERSK WALLIS) deve ter rota pela água (Dalian→Busan→Santos), não cortar continentes
+- [x] Rastreio em Conjunto: ajustar tamanho dos ícones de navio no mapa
+- [x] Rastreio em Conjunto: preencher todos os detalhes corretamente (nome navio, %, ETA)

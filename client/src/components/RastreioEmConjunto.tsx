@@ -165,10 +165,9 @@ function ContainerTracker({ container, onDataReadyRef }: {
           vesselPosition = originPosition;
         }
       } else {
-        // No ONE Line data - interpolate along great circle from known ports
-        // Use well-known port coordinates for common routes
+        // No ONE Line data - use maritime shipping lanes (water-only routes)
         const portCoords: Record<string, { lat: number; lng: number }> = {
-          'DALIAN': { lat: 38.92, lng: 121.65 },
+          'DALIAN': { lat: 38.92, lng: 121.63 },
           'SANTOS': { lat: -23.95, lng: -46.30 },
           'SHANGHAI': { lat: 31.23, lng: 121.47 },
           'NINGBO': { lat: 29.87, lng: 121.89 },
@@ -178,20 +177,165 @@ function ContainerTracker({ container, onDataReadyRef }: {
           'PARANAGUA': { lat: -25.52, lng: -48.51 },
           'ITAJAI': { lat: -26.91, lng: -48.67 },
           'NAVEGANTES': { lat: -26.90, lng: -48.65 },
+          'XIAMEN': { lat: 24.47, lng: 118.08 },
         };
-        const originKey = (d.origin_port || '').toUpperCase();
-        const destKey = (d.destination_port || '').toUpperCase();
+
+        // Known maritime routes (water-only, no overland shortcuts)
+        const MARITIME_ROUTES: Record<string, Array<{ lat: number; lng: number }>> = {
+          'DALIAN_SANTOS': [
+            { lat: 38.92, lng: 121.63 }, // Dalian
+            { lat: 37.5, lng: 123.0 },
+            { lat: 36.0, lng: 125.0 },
+            { lat: 35.1, lng: 129.03 }, // Busan
+            { lat: 30.0, lng: 125.0 },
+            { lat: 25.0, lng: 120.0 },
+            { lat: 18.0, lng: 114.0 },
+            { lat: 10.0, lng: 108.0 },
+            { lat: 4.0, lng: 104.0 },
+            { lat: 1.0, lng: 103.5 },   // Singapore Strait
+            { lat: -1.0, lng: 101.0 },
+            { lat: -4.0, lng: 95.0 },
+            { lat: -8.0, lng: 85.0 },
+            { lat: -12.0, lng: 75.0 },
+            { lat: -16.0, lng: 65.0 },
+            { lat: -20.0, lng: 55.0 },
+            { lat: -25.0, lng: 45.0 },
+            { lat: -30.0, lng: 38.0 },
+            { lat: -33.0, lng: 32.0 },
+            { lat: -35.0, lng: 25.0 },
+            { lat: -36.0, lng: 20.0 },  // Cape of Good Hope
+            { lat: -35.5, lng: 15.0 },
+            { lat: -34.0, lng: 8.0 },
+            { lat: -32.0, lng: 0.0 },
+            { lat: -30.0, lng: -8.0 },
+            { lat: -28.0, lng: -16.0 },
+            { lat: -26.0, lng: -24.0 },
+            { lat: -25.0, lng: -32.0 },
+            { lat: -24.5, lng: -38.0 },
+            { lat: -24.0, lng: -43.0 },
+            { lat: -23.95, lng: -46.30 }, // Santos
+          ],
+          'SHANGHAI_SANTOS': [
+            { lat: 31.23, lng: 121.47 }, // Shanghai
+            { lat: 25.0, lng: 120.0 },
+            { lat: 18.0, lng: 114.0 },
+            { lat: 10.0, lng: 108.0 },
+            { lat: 4.0, lng: 104.0 },
+            { lat: 1.0, lng: 103.5 },
+            { lat: -1.0, lng: 101.0 },
+            { lat: -4.0, lng: 95.0 },
+            { lat: -8.0, lng: 85.0 },
+            { lat: -12.0, lng: 75.0 },
+            { lat: -16.0, lng: 65.0 },
+            { lat: -20.0, lng: 55.0 },
+            { lat: -25.0, lng: 45.0 },
+            { lat: -30.0, lng: 38.0 },
+            { lat: -33.0, lng: 32.0 },
+            { lat: -35.0, lng: 25.0 },
+            { lat: -36.0, lng: 20.0 },
+            { lat: -35.5, lng: 15.0 },
+            { lat: -34.0, lng: 8.0 },
+            { lat: -32.0, lng: 0.0 },
+            { lat: -30.0, lng: -8.0 },
+            { lat: -28.0, lng: -16.0 },
+            { lat: -26.0, lng: -24.0 },
+            { lat: -25.0, lng: -32.0 },
+            { lat: -24.5, lng: -38.0 },
+            { lat: -24.0, lng: -43.0 },
+            { lat: -23.95, lng: -46.30 }, // Santos
+          ],
+          'NINGBO_SANTOS': [
+            { lat: 29.87, lng: 121.89 }, // Ningbo
+            { lat: 25.0, lng: 120.0 },
+            { lat: 18.0, lng: 114.0 },
+            { lat: 10.0, lng: 108.0 },
+            { lat: 4.0, lng: 104.0 },
+            { lat: 1.0, lng: 103.5 },
+            { lat: -1.0, lng: 101.0 },
+            { lat: -4.0, lng: 95.0 },
+            { lat: -8.0, lng: 85.0 },
+            { lat: -12.0, lng: 75.0 },
+            { lat: -16.0, lng: 65.0 },
+            { lat: -20.0, lng: 55.0 },
+            { lat: -25.0, lng: 45.0 },
+            { lat: -30.0, lng: 38.0 },
+            { lat: -33.0, lng: 32.0 },
+            { lat: -35.0, lng: 25.0 },
+            { lat: -36.0, lng: 20.0 },
+            { lat: -35.5, lng: 15.0 },
+            { lat: -34.0, lng: 8.0 },
+            { lat: -32.0, lng: 0.0 },
+            { lat: -30.0, lng: -8.0 },
+            { lat: -28.0, lng: -16.0 },
+            { lat: -26.0, lng: -24.0 },
+            { lat: -25.0, lng: -32.0 },
+            { lat: -24.5, lng: -38.0 },
+            { lat: -24.0, lng: -43.0 },
+            { lat: -23.95, lng: -46.30 }, // Santos
+          ],
+          'XIAMEN_SANTOS': [
+            { lat: 24.47, lng: 118.08 }, // Xiamen
+            { lat: 22.5, lng: 116.0 },
+            { lat: 18.0, lng: 113.0 },
+            { lat: 12.0, lng: 110.0 },
+            { lat: 7.0, lng: 107.0 },
+            { lat: 3.0, lng: 105.0 },
+            { lat: 1.26, lng: 103.85 },  // Singapore
+            { lat: -1.0, lng: 101.0 },
+            { lat: -4.0, lng: 95.0 },
+            { lat: -8.0, lng: 85.0 },
+            { lat: -12.0, lng: 75.0 },
+            { lat: -16.0, lng: 65.0 },
+            { lat: -20.0, lng: 55.0 },
+            { lat: -25.0, lng: 45.0 },
+            { lat: -30.0, lng: 38.0 },
+            { lat: -33.0, lng: 32.0 },
+            { lat: -35.0, lng: 25.0 },
+            { lat: -36.0, lng: 20.0 },
+            { lat: -35.5, lng: 15.0 },
+            { lat: -34.0, lng: 8.0 },
+            { lat: -32.0, lng: 0.0 },
+            { lat: -30.0, lng: -8.0 },
+            { lat: -28.0, lng: -16.0 },
+            { lat: -26.0, lng: -24.0 },
+            { lat: -25.0, lng: -32.0 },
+            { lat: -24.5, lng: -38.0 },
+            { lat: -24.0, lng: -43.0 },
+            { lat: -23.95, lng: -46.30 }, // Santos
+          ],
+        };
+
+        const originKey = (d.origin_port || '').toUpperCase().split(',')[0].trim();
+        const destKey = (d.destination_port || '').toUpperCase().split(',')[0].trim();
         const originCoord = portCoords[originKey] || null;
         const destCoord = portCoords[destKey] || null;
         originPosition = originCoord;
         destPosition = destCoord;
-        
-        if (originCoord && destCoord && progress > 0 && progress < 100) {
-          // Interpolate along a simplified great circle (linear for display)
+
+        // Try to find a known maritime route
+        const routeKey = `${originKey}_${destKey}`;
+        const knownRoute = MARITIME_ROUTES[routeKey];
+
+        if (knownRoute) {
+          routeCoordinates = knownRoute;
+        } else if (originCoord && destCoord) {
+          // Fallback: still use a 2-point line (better than nothing)
+          routeCoordinates = [originCoord, destCoord];
+        } else {
+          routeCoordinates = [];
+        }
+
+        if (routeCoordinates.length > 1 && progress > 0 && progress < 100) {
+          // Interpolate vessel position along the maritime route
           const fraction = progress / 100;
+          const totalPoints = routeCoordinates.length - 1;
+          const exactIndex = fraction * totalPoints;
+          const lowerIndex = Math.floor(exactIndex);
+          const upperIndex = Math.min(lowerIndex + 1, totalPoints);
+          const segFraction = exactIndex - lowerIndex;
           vesselPosition = {
-            lat: originCoord.lat + (destCoord.lat - originCoord.lat) * fraction,
-            lng: originCoord.lng + (destCoord.lng - originCoord.lng) * fraction,
+            lat: routeCoordinates[lowerIndex].lat + (routeCoordinates[upperIndex].lat - routeCoordinates[lowerIndex].lat) * segFraction,
+            lng: routeCoordinates[lowerIndex].lng + (routeCoordinates[upperIndex].lng - routeCoordinates[lowerIndex].lng) * segFraction,
           };
         } else if (progress >= 100 && destCoord) {
           vesselPosition = destCoord;
@@ -202,7 +346,6 @@ function ContainerTracker({ container, onDataReadyRef }: {
           const cachedLng = container.vesselLng ? parseFloat(container.vesselLng) : null;
           vesselPosition = (cachedLat && cachedLng) ? { lat: cachedLat, lng: cachedLng } : null;
         }
-        routeCoordinates = (originCoord && destCoord) ? [originCoord, destCoord] : [];
       }
     } else if (isOneTracking) {
       const d = oneData;
@@ -318,6 +461,47 @@ export function RastreioEmConjunto() {
     // Track positions to detect overlaps and offset them
     const positionMap = new Map<string, number>();
 
+    // Helper: offset a route laterally (perpendicular to direction of travel)
+    // so multiple routes on the same path don't overlap
+    function offsetRoute(
+      coords: Array<{ lat: number; lng: number }>,
+      offsetDeg: number
+    ): Array<{ lat: number; lng: number }> {
+      if (coords.length < 2 || offsetDeg === 0) return coords;
+      return coords.map((pt, i) => {
+        // Calculate perpendicular direction from the segment
+        let dx: number, dy: number;
+        if (i === 0) {
+          dx = coords[1].lng - coords[0].lng;
+          dy = coords[1].lat - coords[0].lat;
+        } else if (i === coords.length - 1) {
+          dx = coords[i].lng - coords[i - 1].lng;
+          dy = coords[i].lat - coords[i - 1].lat;
+        } else {
+          dx = coords[i + 1].lng - coords[i - 1].lng;
+          dy = coords[i + 1].lat - coords[i - 1].lat;
+        }
+        // Perpendicular (rotate 90 degrees): (-dy, dx), normalized
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        const perpLat = -dx / len;
+        const perpLng = dy / len;
+        return {
+          lat: pt.lat + perpLat * offsetDeg,
+          lng: pt.lng + perpLng * offsetDeg,
+        };
+      });
+    }
+
+    // Determine offset for each container to avoid overlap
+    // If multiple containers share similar routes, offset them
+    const totalContainers = containers.length;
+    const routeOffsets = containers.map((_, idx) => {
+      if (totalContainers <= 1) return 0;
+      // Spread routes: first at -1.2 deg, second at +1.2 deg, etc.
+      const spread = 1.2;
+      return (idx - (totalContainers - 1) / 2) * spread;
+    });
+
     containers.forEach((container, index) => {
       const live = liveTrackingData.get(container.id);
       
@@ -338,19 +522,20 @@ export function RastreioEmConjunto() {
 
       const color = colors[index % colors.length];
 
-      // Draw route polyline
+      // Draw route polyline with lateral offset so routes are side-by-side
       if (routeCoordinates && routeCoordinates.length > 1) {
+        const offsetPath = offsetRoute(routeCoordinates, routeOffsets[index]);
         const polyline = new google.maps.Polyline({
-          path: routeCoordinates,
+          path: offsetPath,
           geodesic: true,
           strokeColor: color,
-          strokeOpacity: 0.7,
-          strokeWeight: 3,
+          strokeOpacity: 0.8,
+          strokeWeight: 3.5,
           map,
         });
         polylinesRef.current.push(polyline);
 
-        // Add route coordinates to bounds
+        // Add route coordinates to bounds (use original, not offset)
         routeCoordinates.forEach((coord) => {
           bounds.extend(coord);
           hasAnyPosition = true;
@@ -415,29 +600,38 @@ export function RastreioEmConjunto() {
         markerEl.className = "vessel-marker-container";
         markerEl.style.cursor = "pointer";
 
+        // Get vessel name for label
+        const vesselName = live?.vessel || container.vesselName || '';
+        
         if (isDelivered) {
           // Delivered: anchor icon, green color, 'Em Santos' label
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:24px;height:24px;background:#16a34a33;border-radius:50%;"></div>
-              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px #16a34a88;">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zm-4 2V9H5c-1.1 0-2 .9-2 2v10l4-4h6c1.1 0 2-.9 2-2z" fill="none" stroke="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <div style="position:absolute;width:32px;height:32px;background:#16a34a33;border-radius:50%;"></div>
+              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px #16a34a88;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
-              <div style="margin-top:2px;background:#16a34a;color:white;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
-                ${container.supplierName} • Em Santos
+              <div style="margin-top:3px;background:#16a34a;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:150px;overflow:hidden;text-overflow:ellipsis;">
+                ${container.supplierName} • 100%
+              </div>
+              <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 4px;border-radius:3px;white-space:nowrap;">
+                ${vesselName || 'Em Santos'}
               </div>
             </div>
           `;
         } else {
-          // In transit: ship emoji with color
+          // In transit: ship icon with color - larger and more visible
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:26px;height:26px;background:${color}22;border-radius:50%;animation:pulse 2s infinite;"></div>
-              <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px ${color}99;">
-                <span style="font-size:11px;line-height:1;">\u{1F6A2}</span>
+              <div style="position:absolute;width:34px;height:34px;background:${color}22;border-radius:50%;animation:pulse 2s infinite;"></div>
+              <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px ${color}99;">
+                <span style="font-size:14px;line-height:1;">\u{1F6A2}</span>
               </div>
-              <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
+              <div style="margin-top:3px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:150px;overflow:hidden;text-overflow:ellipsis;">
                 ${container.supplierName} • ${progress || 0}%
+              </div>
+              <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 4px;border-radius:3px;white-space:nowrap;">
+                ${vesselName}
               </div>
             </div>
           `;
