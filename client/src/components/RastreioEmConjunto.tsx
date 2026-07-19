@@ -497,8 +497,8 @@ export function RastreioEmConjunto() {
     const totalContainers = containers.length;
     const routeOffsets = containers.map((_, idx) => {
       if (totalContainers <= 1) return 0;
-      // Spread routes: first at -1.2 deg, second at +1.2 deg, etc.
-      const spread = 1.2;
+      // Spread routes slightly so they don't overlap but stay close to origin
+      const spread = 0.4;
       return (idx - (totalContainers - 1) / 2) * spread;
     });
 
@@ -618,33 +618,33 @@ export function RastreioEmConjunto() {
         const vesselName = live?.vessel || container.vesselName || '';
         
         if (isDelivered) {
-          // Delivered: anchor icon, green color, 'Em Santos' label
+          // Delivered: green checkmark, compact
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:32px;height:32px;background:#16a34a33;border-radius:50%;"></div>
-              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px #16a34a88;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <div style="position:relative;background:#16a34a;border:2px solid white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #16a34a88;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
-              <div style="margin-top:3px;background:#16a34a;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:150px;overflow:hidden;text-overflow:ellipsis;">
+              <div style="margin-top:2px;background:#16a34a;color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
                 ${container.supplierName} • 100%
               </div>
-              <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 4px;border-radius:3px;white-space:nowrap;">
+              <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 3px;border-radius:2px;white-space:nowrap;">
                 ${vesselName || 'Em Santos'}
               </div>
             </div>
           `;
         } else {
-          // In transit: ship icon with color - larger and more visible
+          // In transit: realistic ship icon, compact and proportional
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:absolute;width:34px;height:34px;background:${color}22;border-radius:50%;animation:pulse 2s infinite;"></div>
-              <div style="position:relative;background:${color};border:2px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px ${color}99;">
-                <span style="font-size:14px;line-height:1;">\u{1F6A2}</span>
+              <div style="position:relative;width:20px;height:20px;display:flex;align-items:center;justify-content:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z" stroke="white" stroke-width="0.5"/>
+                </svg>
               </div>
-              <div style="margin-top:3px;background:${color};color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);max-width:150px;overflow:hidden;text-overflow:ellipsis;">
+              <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
                 ${container.supplierName} • ${progress || 0}%
               </div>
-              <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 4px;border-radius:3px;white-space:nowrap;">
+              <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 3px;border-radius:2px;white-space:nowrap;">
                 ${vesselName}
               </div>
             </div>
