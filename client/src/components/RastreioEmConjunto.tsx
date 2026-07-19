@@ -578,23 +578,37 @@ export function RastreioEmConjunto() {
         hasAnyPosition = true;
       }
 
-      // Add vessel marker (with offset if overlapping)
+      // Add vessel marker - position it ON the offset route (same lateral offset as polyline)
       // For delivered containers, show at destination (Santos) with anchor icon
       const isDelivered = container.status === 'Entregue';
       const markerPosition = isDelivered && destPosition ? destPosition : vesselPosition;
 
       if (markerPosition) {
-        const posKey = `${markerPosition.lat.toFixed(1)},${markerPosition.lng.toFixed(1)}`;
-        const overlapCount = positionMap.get(posKey) || 0;
-        positionMap.set(posKey, overlapCount + 1);
-
-        // Offset overlapping markers slightly
-        const offsetLat = overlapCount * 1.5;
-        const offsetLng = overlapCount * 1.5;
-        const adjustedPosition = {
-          lat: markerPosition.lat + offsetLat,
-          lng: markerPosition.lng + offsetLng,
-        };
+        // Apply the same lateral offset as the polyline so the ship sits on its colored route
+        const routeOffset = routeOffsets[index];
+        let adjustedPosition = markerPosition;
+        if (routeOffset !== 0 && routeCoordinates.length >= 2) {
+          // Find the closest segment to determine perpendicular direction
+          let closestIdx = 0;
+          let minDist = Infinity;
+          for (let i = 0; i < routeCoordinates.length - 1; i++) {
+            const midLat = (routeCoordinates[i].lat + routeCoordinates[i + 1].lat) / 2;
+            const midLng = (routeCoordinates[i].lng + routeCoordinates[i + 1].lng) / 2;
+            const dist = Math.pow(markerPosition.lat - midLat, 2) + Math.pow(markerPosition.lng - midLng, 2);
+            if (dist < minDist) { minDist = dist; closestIdx = i; }
+          }
+          const seg = routeCoordinates[closestIdx];
+          const segNext = routeCoordinates[Math.min(closestIdx + 1, routeCoordinates.length - 1)];
+          const dx = segNext.lng - seg.lng;
+          const dy = segNext.lat - seg.lat;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          const perpLat = -dx / len;
+          const perpLng = dy / len;
+          adjustedPosition = {
+            lat: markerPosition.lat + perpLat * routeOffset,
+            lng: markerPosition.lng + perpLng * routeOffset,
+          };
+        }
 
         const markerEl = document.createElement("div");
         markerEl.className = "vessel-marker-container";
