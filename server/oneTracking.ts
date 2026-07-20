@@ -86,40 +86,60 @@ const ROUTE_SINGAPORE_SANTOS: Array<{ lat: number; lng: number }> = [
 ];
 
 const ROUTE_DALIAN_BUSAN: Array<{ lat: number; lng: number }> = [
-  { lat: 38.92, lng: 121.63 }, // Dalian
-  { lat: 37.5, lng: 123.0 },
-  { lat: 36.0, lng: 125.0 },
-  { lat: 35.1, lng: 129.03 }, // Busan
+  { lat: 38.92, lng: 121.63 }, // Dalian port
+  { lat: 38.5, lng: 122.5 },   // Exit Dalian bay
+  { lat: 37.8, lng: 123.5 },   // Yellow Sea
+  { lat: 36.5, lng: 124.5 },   // Yellow Sea open water
+  { lat: 35.5, lng: 126.0 },   // West of Korea (open sea)
+  { lat: 34.8, lng: 127.5 },   // South of Korea (water)
+  { lat: 34.5, lng: 128.5 },   // Korea Strait
+  { lat: 35.1, lng: 129.03 },  // Busan
 ];
 
 const ROUTE_BUSAN_SANTOS: Array<{ lat: number; lng: number }> = [
-  { lat: 35.1, lng: 129.03 }, // Busan
-  { lat: 30.0, lng: 125.0 },
-  { lat: 25.0, lng: 120.0 },
-  { lat: 18.0, lng: 114.0 },  // South China Sea
-  { lat: 10.0, lng: 108.0 },  // Off Vietnam
-  { lat: 4.0, lng: 104.0 },   // Near Singapore
-  { lat: 1.0, lng: 103.5 },   // Singapore Strait
-  { lat: -1.0, lng: 101.0 },  // Strait of Malacca exit
-  { lat: -4.0, lng: 95.0 },   // Off Sumatra west coast
-  { lat: -8.0, lng: 85.0 },   // Indian Ocean
-  { lat: -12.0, lng: 75.0 },  // Central Indian Ocean
-  { lat: -16.0, lng: 65.0 },  // Indian Ocean
-  { lat: -20.0, lng: 55.0 },  // East of Madagascar
-  { lat: -25.0, lng: 45.0 },  // Mozambique Channel
-  { lat: -30.0, lng: 38.0 },  // South of Mozambique
-  { lat: -33.0, lng: 32.0 },  // Off Durban
-  { lat: -35.0, lng: 25.0 },  // South Africa coast
-  { lat: -36.0, lng: 20.0 },  // Cape of Good Hope
-  { lat: -35.5, lng: 15.0 },  // West of Cape Town
-  { lat: -34.0, lng: 8.0 },   // South Atlantic
-  { lat: -32.0, lng: 0.0 },   // Mid Atlantic
-  { lat: -30.0, lng: -8.0 },  // Atlantic
-  { lat: -28.0, lng: -16.0 }, // Atlantic
-  { lat: -26.0, lng: -24.0 }, // Mid South Atlantic
-  { lat: -25.0, lng: -32.0 }, // Approaching Brazil
-  { lat: -24.5, lng: -38.0 }, // Brazilian coast
-  { lat: -24.0, lng: -43.0 }, // Near Santos
+  { lat: 35.1, lng: 129.03 },  // Busan
+  { lat: 33.5, lng: 128.5 },   // South of Japan
+  { lat: 31.0, lng: 127.0 },   // East China Sea
+  { lat: 28.0, lng: 125.0 },   // East China Sea
+  { lat: 25.0, lng: 122.0 },   // Off Taiwan (east side)
+  { lat: 22.0, lng: 119.0 },   // South of Taiwan
+  { lat: 18.0, lng: 116.0 },   // South China Sea (open water)
+  { lat: 14.0, lng: 114.0 },   // South China Sea
+  { lat: 10.0, lng: 111.0 },   // Off Vietnam coast (well offshore)
+  { lat: 7.0, lng: 108.0 },    // South China Sea
+  { lat: 4.0, lng: 105.5 },    // Approaching Singapore
+  { lat: 2.0, lng: 104.5 },    // East of Singapore
+  { lat: 1.2, lng: 103.8 },    // Singapore Strait
+  { lat: 0.5, lng: 103.0 },    // Strait of Malacca entrance
+  { lat: -0.5, lng: 101.5 },   // Strait of Malacca
+  { lat: -1.5, lng: 99.5 },    // Strait of Malacca
+  { lat: -3.0, lng: 97.0 },    // Exit Malacca Strait
+  { lat: -5.0, lng: 93.0 },    // Off Sumatra west coast
+  { lat: -7.0, lng: 87.0 },    // Indian Ocean
+  { lat: -9.0, lng: 80.0 },    // Indian Ocean
+  { lat: -11.0, lng: 73.0 },   // Central Indian Ocean
+  { lat: -14.0, lng: 65.0 },   // Indian Ocean
+  { lat: -17.0, lng: 57.0 },   // Indian Ocean
+  { lat: -20.0, lng: 50.0 },   // East of Madagascar (well offshore)
+  { lat: -24.0, lng: 44.0 },   // East of Madagascar
+  { lat: -28.0, lng: 40.0 },   // South of Madagascar (offshore)
+  { lat: -32.0, lng: 35.0 },   // Off Durban (well offshore)
+  { lat: -34.5, lng: 30.0 },   // South Africa east coast (offshore)
+  { lat: -36.0, lng: 24.0 },   // South of Africa
+  { lat: -36.5, lng: 20.0 },   // Cape Agulhas
+  { lat: -36.0, lng: 17.0 },   // Cape of Good Hope
+  { lat: -35.0, lng: 14.0 },   // West of Cape Town
+  { lat: -34.0, lng: 10.0 },   // South Atlantic
+  { lat: -33.0, lng: 5.0 },    // South Atlantic
+  { lat: -32.0, lng: 0.0 },    // Mid Atlantic
+  { lat: -31.0, lng: -5.0 },   // Atlantic
+  { lat: -30.0, lng: -10.0 },  // Atlantic
+  { lat: -29.0, lng: -16.0 },  // Atlantic
+  { lat: -27.5, lng: -22.0 },  // Mid South Atlantic
+  { lat: -26.0, lng: -28.0 },  // Atlantic
+  { lat: -25.0, lng: -34.0 },  // Approaching Brazil
+  { lat: -24.5, lng: -39.0 },  // Brazilian coast
+  { lat: -24.0, lng: -43.0 },  // Near Santos
   { lat: -23.95, lng: -46.30 }, // Santos
 ];
 

@@ -183,125 +183,187 @@ function ContainerTracker({ container, onDataReadyRef }: {
         // Known maritime routes (water-only, no overland shortcuts)
         const MARITIME_ROUTES: Record<string, Array<{ lat: number; lng: number }>> = {
           'DALIAN_SANTOS': [
-            { lat: 38.92, lng: 121.63 }, // Dalian
-            { lat: 37.5, lng: 123.0 },
-            { lat: 36.0, lng: 125.0 },
-            { lat: 35.1, lng: 129.03 }, // Busan
-            { lat: 30.0, lng: 125.0 },
-            { lat: 25.0, lng: 120.0 },
-            { lat: 18.0, lng: 114.0 },
-            { lat: 10.0, lng: 108.0 },
-            { lat: 4.0, lng: 104.0 },
-            { lat: 1.0, lng: 103.5 },   // Singapore Strait
-            { lat: -1.0, lng: 101.0 },
-            { lat: -4.0, lng: 95.0 },
-            { lat: -8.0, lng: 85.0 },
-            { lat: -12.0, lng: 75.0 },
-            { lat: -16.0, lng: 65.0 },
-            { lat: -20.0, lng: 55.0 },
-            { lat: -25.0, lng: 45.0 },
-            { lat: -30.0, lng: 38.0 },
-            { lat: -33.0, lng: 32.0 },
-            { lat: -35.0, lng: 25.0 },
-            { lat: -36.0, lng: 20.0 },  // Cape of Good Hope
-            { lat: -35.5, lng: 15.0 },
-            { lat: -34.0, lng: 8.0 },
+            { lat: 38.92, lng: 121.63 },
+            { lat: 38.5, lng: 122.5 },
+            { lat: 37.8, lng: 123.5 },
+            { lat: 36.5, lng: 124.5 },
+            { lat: 35.5, lng: 126.0 },
+            { lat: 34.8, lng: 127.5 },
+            { lat: 34.5, lng: 128.5 },
+            { lat: 33.5, lng: 128.5 },
+            { lat: 31.0, lng: 127.0 },
+            { lat: 28.0, lng: 125.0 },
+            { lat: 25.0, lng: 122.0 },
+            { lat: 22.0, lng: 119.0 },
+            { lat: 18.0, lng: 116.0 },
+            { lat: 14.0, lng: 114.0 },
+            { lat: 10.0, lng: 111.0 },
+            { lat: 7.0, lng: 108.0 },
+            { lat: 4.0, lng: 105.5 },
+            { lat: 2.0, lng: 104.5 },
+            { lat: 1.2, lng: 103.8 },
+            { lat: 0.5, lng: 103.0 },
+            { lat: -0.5, lng: 101.5 },
+            { lat: -1.5, lng: 99.5 },
+            { lat: -3.0, lng: 97.0 },
+            { lat: -5.0, lng: 93.0 },
+            { lat: -7.0, lng: 87.0 },
+            { lat: -9.0, lng: 80.0 },
+            { lat: -11.0, lng: 73.0 },
+            { lat: -14.0, lng: 65.0 },
+            { lat: -17.0, lng: 57.0 },
+            { lat: -20.0, lng: 50.0 },
+            { lat: -24.0, lng: 44.0 },
+            { lat: -28.0, lng: 40.0 },
+            { lat: -32.0, lng: 35.0 },
+            { lat: -34.5, lng: 30.0 },
+            { lat: -36.0, lng: 24.0 },
+            { lat: -36.5, lng: 20.0 },
+            { lat: -36.0, lng: 17.0 },
+            { lat: -35.0, lng: 14.0 },
+            { lat: -34.0, lng: 10.0 },
+            { lat: -33.0, lng: 5.0 },
             { lat: -32.0, lng: 0.0 },
-            { lat: -30.0, lng: -8.0 },
-            { lat: -28.0, lng: -16.0 },
-            { lat: -26.0, lng: -24.0 },
-            { lat: -25.0, lng: -32.0 },
-            { lat: -24.5, lng: -38.0 },
+            { lat: -31.0, lng: -5.0 },
+            { lat: -30.0, lng: -10.0 },
+            { lat: -29.0, lng: -16.0 },
+            { lat: -27.5, lng: -22.0 },
+            { lat: -26.0, lng: -28.0 },
+            { lat: -25.0, lng: -34.0 },
+            { lat: -24.5, lng: -39.0 },
             { lat: -24.0, lng: -43.0 },
-            { lat: -23.95, lng: -46.30 }, // Santos
+            { lat: -23.95, lng: -46.30 },
           ],
           'SHANGHAI_SANTOS': [
-            { lat: 31.23, lng: 121.47 }, // Shanghai
-            { lat: 25.0, lng: 120.0 },
-            { lat: 18.0, lng: 114.0 },
-            { lat: 10.0, lng: 108.0 },
-            { lat: 4.0, lng: 104.0 },
-            { lat: 1.0, lng: 103.5 },
-            { lat: -1.0, lng: 101.0 },
-            { lat: -4.0, lng: 95.0 },
-            { lat: -8.0, lng: 85.0 },
-            { lat: -12.0, lng: 75.0 },
-            { lat: -16.0, lng: 65.0 },
-            { lat: -20.0, lng: 55.0 },
-            { lat: -25.0, lng: 45.0 },
-            { lat: -30.0, lng: 38.0 },
-            { lat: -33.0, lng: 32.0 },
-            { lat: -35.0, lng: 25.0 },
-            { lat: -36.0, lng: 20.0 },
-            { lat: -35.5, lng: 15.0 },
-            { lat: -34.0, lng: 8.0 },
+            { lat: 31.23, lng: 121.47 },
+            { lat: 28.0, lng: 122.0 },
+            { lat: 25.0, lng: 121.0 },
+            { lat: 22.0, lng: 119.0 },
+            { lat: 18.0, lng: 116.0 },
+            { lat: 14.0, lng: 114.0 },
+            { lat: 10.0, lng: 111.0 },
+            { lat: 7.0, lng: 108.0 },
+            { lat: 4.0, lng: 105.5 },
+            { lat: 2.0, lng: 104.5 },
+            { lat: 1.2, lng: 103.8 },
+            { lat: 0.5, lng: 103.0 },
+            { lat: -0.5, lng: 101.5 },
+            { lat: -1.5, lng: 99.5 },
+            { lat: -3.0, lng: 97.0 },
+            { lat: -5.0, lng: 93.0 },
+            { lat: -7.0, lng: 87.0 },
+            { lat: -9.0, lng: 80.0 },
+            { lat: -11.0, lng: 73.0 },
+            { lat: -14.0, lng: 65.0 },
+            { lat: -17.0, lng: 57.0 },
+            { lat: -20.0, lng: 50.0 },
+            { lat: -24.0, lng: 44.0 },
+            { lat: -28.0, lng: 40.0 },
+            { lat: -32.0, lng: 35.0 },
+            { lat: -34.5, lng: 30.0 },
+            { lat: -36.0, lng: 24.0 },
+            { lat: -36.5, lng: 20.0 },
+            { lat: -36.0, lng: 17.0 },
+            { lat: -35.0, lng: 14.0 },
+            { lat: -34.0, lng: 10.0 },
+            { lat: -33.0, lng: 5.0 },
             { lat: -32.0, lng: 0.0 },
-            { lat: -30.0, lng: -8.0 },
-            { lat: -28.0, lng: -16.0 },
-            { lat: -26.0, lng: -24.0 },
-            { lat: -25.0, lng: -32.0 },
-            { lat: -24.5, lng: -38.0 },
+            { lat: -31.0, lng: -5.0 },
+            { lat: -30.0, lng: -10.0 },
+            { lat: -29.0, lng: -16.0 },
+            { lat: -27.5, lng: -22.0 },
+            { lat: -26.0, lng: -28.0 },
+            { lat: -25.0, lng: -34.0 },
+            { lat: -24.5, lng: -39.0 },
             { lat: -24.0, lng: -43.0 },
-            { lat: -23.95, lng: -46.30 }, // Santos
+            { lat: -23.95, lng: -46.30 },
           ],
           'NINGBO_SANTOS': [
-            { lat: 29.87, lng: 121.89 }, // Ningbo
-            { lat: 25.0, lng: 120.0 },
-            { lat: 18.0, lng: 114.0 },
-            { lat: 10.0, lng: 108.0 },
-            { lat: 4.0, lng: 104.0 },
-            { lat: 1.0, lng: 103.5 },
-            { lat: -1.0, lng: 101.0 },
-            { lat: -4.0, lng: 95.0 },
-            { lat: -8.0, lng: 85.0 },
-            { lat: -12.0, lng: 75.0 },
-            { lat: -16.0, lng: 65.0 },
-            { lat: -20.0, lng: 55.0 },
-            { lat: -25.0, lng: 45.0 },
-            { lat: -30.0, lng: 38.0 },
-            { lat: -33.0, lng: 32.0 },
-            { lat: -35.0, lng: 25.0 },
-            { lat: -36.0, lng: 20.0 },
-            { lat: -35.5, lng: 15.0 },
-            { lat: -34.0, lng: 8.0 },
+            { lat: 29.87, lng: 121.89 },
+            { lat: 27.0, lng: 122.0 },
+            { lat: 25.0, lng: 121.0 },
+            { lat: 22.0, lng: 119.0 },
+            { lat: 18.0, lng: 116.0 },
+            { lat: 14.0, lng: 114.0 },
+            { lat: 10.0, lng: 111.0 },
+            { lat: 7.0, lng: 108.0 },
+            { lat: 4.0, lng: 105.5 },
+            { lat: 2.0, lng: 104.5 },
+            { lat: 1.2, lng: 103.8 },
+            { lat: 0.5, lng: 103.0 },
+            { lat: -0.5, lng: 101.5 },
+            { lat: -1.5, lng: 99.5 },
+            { lat: -3.0, lng: 97.0 },
+            { lat: -5.0, lng: 93.0 },
+            { lat: -7.0, lng: 87.0 },
+            { lat: -9.0, lng: 80.0 },
+            { lat: -11.0, lng: 73.0 },
+            { lat: -14.0, lng: 65.0 },
+            { lat: -17.0, lng: 57.0 },
+            { lat: -20.0, lng: 50.0 },
+            { lat: -24.0, lng: 44.0 },
+            { lat: -28.0, lng: 40.0 },
+            { lat: -32.0, lng: 35.0 },
+            { lat: -34.5, lng: 30.0 },
+            { lat: -36.0, lng: 24.0 },
+            { lat: -36.5, lng: 20.0 },
+            { lat: -36.0, lng: 17.0 },
+            { lat: -35.0, lng: 14.0 },
+            { lat: -34.0, lng: 10.0 },
+            { lat: -33.0, lng: 5.0 },
             { lat: -32.0, lng: 0.0 },
-            { lat: -30.0, lng: -8.0 },
-            { lat: -28.0, lng: -16.0 },
-            { lat: -26.0, lng: -24.0 },
-            { lat: -25.0, lng: -32.0 },
-            { lat: -24.5, lng: -38.0 },
+            { lat: -31.0, lng: -5.0 },
+            { lat: -30.0, lng: -10.0 },
+            { lat: -29.0, lng: -16.0 },
+            { lat: -27.5, lng: -22.0 },
+            { lat: -26.0, lng: -28.0 },
+            { lat: -25.0, lng: -34.0 },
+            { lat: -24.5, lng: -39.0 },
             { lat: -24.0, lng: -43.0 },
-            { lat: -23.95, lng: -46.30 }, // Santos
+            { lat: -23.95, lng: -46.30 },
           ],
           'XIAMEN_SANTOS': [
-            { lat: 24.47, lng: 118.08 }, // Xiamen
-            { lat: 22.5, lng: 116.0 },
-            { lat: 18.0, lng: 113.0 },
-            { lat: 12.0, lng: 110.0 },
-            { lat: 7.0, lng: 107.0 },
-            { lat: 3.0, lng: 105.0 },
-            { lat: 1.26, lng: 103.85 },  // Singapore
-            { lat: -1.0, lng: 101.0 },
-            { lat: -4.0, lng: 95.0 },
-            { lat: -8.0, lng: 85.0 },
-            { lat: -12.0, lng: 75.0 },
-            { lat: -16.0, lng: 65.0 },
-            { lat: -20.0, lng: 55.0 },
-            { lat: -25.0, lng: 45.0 },
-            { lat: -30.0, lng: 38.0 },
-            { lat: -33.0, lng: 32.0 },
-            { lat: -35.0, lng: 25.0 },
-            { lat: -36.0, lng: 20.0 },
-            { lat: -35.5, lng: 15.0 },
-            { lat: -34.0, lng: 8.0 },
+            { lat: 24.47, lng: 118.08 },
+            { lat: 22.5, lng: 117.0 },
+            { lat: 20.0, lng: 115.5 },
+            { lat: 18.0, lng: 114.5 },
+            { lat: 14.0, lng: 113.0 },
+            { lat: 10.0, lng: 111.0 },
+            { lat: 7.0, lng: 108.0 },
+            { lat: 4.0, lng: 105.5 },
+            { lat: 2.0, lng: 104.5 },
+            { lat: 1.2, lng: 103.8 },
+            { lat: 0.5, lng: 103.0 },
+            { lat: -0.5, lng: 101.5 },
+            { lat: -1.5, lng: 99.5 },
+            { lat: -3.0, lng: 97.0 },
+            { lat: -5.0, lng: 93.0 },
+            { lat: -7.0, lng: 87.0 },
+            { lat: -9.0, lng: 80.0 },
+            { lat: -11.0, lng: 73.0 },
+            { lat: -14.0, lng: 65.0 },
+            { lat: -17.0, lng: 57.0 },
+            { lat: -20.0, lng: 50.0 },
+            { lat: -24.0, lng: 44.0 },
+            { lat: -28.0, lng: 40.0 },
+            { lat: -32.0, lng: 35.0 },
+            { lat: -34.5, lng: 30.0 },
+            { lat: -36.0, lng: 24.0 },
+            { lat: -36.5, lng: 20.0 },
+            { lat: -36.0, lng: 17.0 },
+            { lat: -35.0, lng: 14.0 },
+            { lat: -34.0, lng: 10.0 },
+            { lat: -33.0, lng: 5.0 },
             { lat: -32.0, lng: 0.0 },
-            { lat: -30.0, lng: -8.0 },
-            { lat: -28.0, lng: -16.0 },
-            { lat: -26.0, lng: -24.0 },
-            { lat: -25.0, lng: -32.0 },
-            { lat: -24.5, lng: -38.0 },
+            { lat: -31.0, lng: -5.0 },
+            { lat: -30.0, lng: -10.0 },
+            { lat: -29.0, lng: -16.0 },
+            { lat: -27.5, lng: -22.0 },
+            { lat: -26.0, lng: -28.0 },
+            { lat: -25.0, lng: -34.0 },
+            { lat: -24.5, lng: -39.0 },
             { lat: -24.0, lng: -43.0 },
-            { lat: -23.95, lng: -46.30 }, // Santos
+            { lat: -23.95, lng: -46.30 },
           ],
         };
 
@@ -498,7 +560,7 @@ export function RastreioEmConjunto() {
     const routeOffsets = containers.map((_, idx) => {
       if (totalContainers <= 1) return 0;
       // Spread routes slightly so they don't overlap but stay close to origin
-      const spread = 0.4;
+      const spread = 0.12;
       return (idx - (totalContainers - 1) / 2) * spread;
     });
 
@@ -633,16 +695,31 @@ export function RastreioEmConjunto() {
             </div>
           `;
         } else {
-          // In transit: realistic ship icon, compact and proportional
+          // In transit: front-facing cargo ship with waves, colorized
           markerEl.innerHTML = `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:relative;width:20px;height:20px;display:flex;align-items:center;justify-content:center;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z" stroke="white" stroke-width="0.5"/>
+              <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));">
+                <svg width="24" height="24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Ship hull -->
+                  <path d="M12 42 L18 52 L46 52 L52 42 L42 42 L38 36 L26 36 L22 42 Z" fill="#1e3a5f" stroke="#0f2640" stroke-width="1.5"/>
+                  <!-- Ship bridge/cabin -->
+                  <rect x="24" y="24" width="16" height="12" rx="1" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/>
+                  <!-- Windows -->
+                  <rect x="27" y="27" width="3" height="3" rx="0.5" fill="#ffeaa7"/>
+                  <rect x="32" y="27" width="3" height="3" rx="0.5" fill="#ffeaa7"/>
+                  <rect x="37" y="27" width="3" height="3" rx="0.5" fill="#ffeaa7"/>
+                  <!-- Chimney -->
+                  <rect x="29" y="16" width="6" height="8" fill="#2c3e50" stroke="#1a252f" stroke-width="1"/>
+                  <rect x="28" y="14" width="8" height="3" fill="#e74c3c"/>
+                  <!-- Mast -->
+                  <line x1="32" y1="10" x2="32" y2="14" stroke="#555" stroke-width="1.5"/>
+                  <!-- Waves -->
+                  <path d="M8 54 Q12 51 16 54 Q20 57 24 54 Q28 51 32 54 Q36 57 40 54 Q44 51 48 54 Q52 57 56 54" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M10 58 Q14 55 18 58 Q22 61 26 58 Q30 55 34 58 Q38 61 42 58 Q46 55 50 58 Q54 61 58 58" fill="none" stroke="#2980b9" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
               </div>
               <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
-                ${container.supplierName} • ${progress || 0}%
+                ${container.supplierName} \u2022 ${progress || 0}%
               </div>
               <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 3px;border-radius:2px;white-space:nowrap;">
                 ${vesselName}
