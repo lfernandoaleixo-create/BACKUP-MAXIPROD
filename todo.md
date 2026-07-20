@@ -5773,3 +5773,6 @@
 - [x] Rastreio em Conjunto: aumentar ícone do navio de 24px para 36px para melhor visibilidade
 - [x] Rastreio em Conjunto: atualizar todas as rotas (DALIAN_SANTOS, SHANGHAI_SANTOS, NINGBO_SANTOS, XIAMEN_SANTOS) com waypoints precisos pelo Estreito de Taiwan e Estreito de Singapura
 - [x] Server oneTracking.ts: criar ROUTE_DALIAN_SANTOS_DIRECT com 85 waypoints e atualizar handlers dos BLs 274102504 e HKGG45910500
+- [x] Rastreio em Conjunto: animação do ícone do navio se movendo suavemente ao longo dos waypoints com controles de play/pause
+- [x] Rastreio em Conjunto: tooltip interativo ao passar mouse sobre navio ou waypoints principais (nome do local + tempo estimado)
+- [x] Rastreio em Conjunto: menu de filtros para alternar visibilidade de cada rota específica no mapa

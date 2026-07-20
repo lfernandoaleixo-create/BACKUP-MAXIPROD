@@ -18,6 +18,12 @@ import {
   Anchor,
   CheckCircle2,
   X,
+  Play,
+  Pause,
+  Eye,
+  EyeOff,
+  Filter,
+  MapPin,
 } from "lucide-react";
 
 interface ContainerData {
@@ -659,6 +665,187 @@ export function RastreioEmConjunto() {
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
   const mapReadyRef = useRef(false);
 
+  // Animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationSpeed, setAnimationSpeed] = useState(1); // 1x, 2x, 4x
+  const animationFrameRef = useRef<number | null>(null);
+  const animationProgressRef = useRef<Map<number, number>>(new Map()); // containerId -> progress (0-1)
+  const animationMarkersRef = useRef<Map<number, any>>(new Map()); // animated ship markers
+
+  // Filter state - which routes are visible
+  const [visibleRoutes, setVisibleRoutes] = useState<Set<number>>(new Set());
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  // Tooltip state
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+
+  // Initialize visibleRoutes when containers load
+  useEffect(() => {
+    if (containers && containers.length > 0 && visibleRoutes.size === 0) {
+      setVisibleRoutes(new Set(containers.map(c => c.id)));
+    }
+  }, [containers]);
+
+  // Animation logic
+  const startAnimation = useCallback(() => {
+    if (!containers || !mapRef.current) return;
+    setIsAnimating(true);
+    // Initialize progress for all visible containers
+    const initProgress = new Map<number, number>();
+    containers.forEach(c => {
+      if (visibleRoutes.has(c.id)) {
+        initProgress.set(c.id, 0);
+      }
+    });
+    animationProgressRef.current = initProgress;
+  }, [containers, visibleRoutes]);
+
+  const stopAnimation = useCallback(() => {
+    setIsAnimating(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    // Remove animation markers
+    animationMarkersRef.current.forEach(marker => {
+      if (marker.setMap) marker.setMap(null);
+      else marker.map = null;
+    });
+    animationMarkersRef.current.clear();
+  }, []);
+
+  // Animation frame loop
+  useEffect(() => {
+    if (!isAnimating || !mapRef.current || !containers) return;
+
+    const map = mapRef.current;
+    const colors = ['#ff6b35', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+    let lastTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const deltaTime = (currentTime - lastTime) / 1000; // seconds
+      lastTime = currentTime;
+
+      // Speed: complete route in ~15s at 1x, ~7.5s at 2x, ~3.75s at 4x
+      const speedFactor = animationSpeed * 0.067; // ~15 seconds for full route at 1x
+
+      let allDone = true;
+      containers.forEach((container, index) => {
+        if (!visibleRoutes.has(container.id)) return;
+        const live = liveTrackingData.get(container.id);
+        const routeCoordinates = live?.routeCoordinates || [];
+        if (routeCoordinates.length < 2) return;
+
+        const currentProgress = animationProgressRef.current.get(container.id) || 0;
+        const newProgress = Math.min(1, currentProgress + deltaTime * speedFactor);
+        animationProgressRef.current.set(container.id, newProgress);
+
+        if (newProgress < 1) allDone = false;
+
+        // Calculate position along route
+        const totalPoints = routeCoordinates.length - 1;
+        const exactIndex = newProgress * totalPoints;
+        const segIndex = Math.min(Math.floor(exactIndex), totalPoints - 1);
+        const segFraction = exactIndex - segIndex;
+
+        const p1 = routeCoordinates[segIndex];
+        const p2 = routeCoordinates[Math.min(segIndex + 1, routeCoordinates.length - 1)];
+        const animPos = {
+          lat: p1.lat + (p2.lat - p1.lat) * segFraction,
+          lng: p1.lng + (p2.lng - p1.lng) * segFraction,
+        };
+
+        // Update or create animated marker
+        const existingMarker = animationMarkersRef.current.get(container.id);
+        if (existingMarker) {
+          existingMarker.position = animPos;
+        } else {
+          const color = colors[index % colors.length];
+          const el = document.createElement('div');
+          el.innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:28px;height:28px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}88;animation:pulse 1.5s infinite;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/></svg>
+              </div>
+              <div style="margin-top:2px;background:${color};color:white;font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;">
+                ${Math.round(newProgress * 100)}%
+              </div>
+            </div>
+          `;
+          try {
+            const marker = new google.maps.marker.AdvancedMarkerElement({
+              map,
+              position: animPos,
+              content: el,
+              zIndex: 1000,
+            });
+            animationMarkersRef.current.set(container.id, marker);
+          } catch (e) {
+            // fallback
+          }
+        }
+
+        // Update label
+        const marker = animationMarkersRef.current.get(container.id);
+        if (marker && marker.content) {
+          const label = marker.content.querySelector('div > div:last-child');
+          if (label) label.textContent = `${Math.round(newProgress * 100)}%`;
+        }
+      });
+
+      if (allDone) {
+        // Reset and loop
+        setTimeout(() => {
+          containers.forEach(c => {
+            if (visibleRoutes.has(c.id)) {
+              animationProgressRef.current.set(c.id, 0);
+            }
+          });
+        }, 1000);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isAnimating, animationSpeed, containers, visibleRoutes, liveTrackingData]);
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationMarkersRef.current.forEach(marker => {
+        if (marker.setMap) marker.setMap(null);
+        else marker.map = null;
+      });
+    };
+  }, []);
+
+  // Helper: show tooltip/infowindow on map
+  const showTooltip = useCallback((position: google.maps.LatLngLiteral, content: string) => {
+    if (!mapRef.current) return;
+    if (!infoWindowRef.current) {
+      infoWindowRef.current = new google.maps.InfoWindow();
+    }
+    infoWindowRef.current.setContent(`<div style="font-size:12px;padding:4px 8px;max-width:200px;">${content}</div>`);
+    infoWindowRef.current.setPosition(position);
+    infoWindowRef.current.open(mapRef.current);
+  }, []);
+
+  const hideTooltip = useCallback(() => {
+    if (infoWindowRef.current) {
+      infoWindowRef.current.close();
+    }
+  }, []);
+
   // Use a ref-based callback to avoid triggering re-renders in ContainerTracker's useEffect deps
   const handleDataReadyRef = useRef<(id: number, data: LiveData) => void>((id, data) => {
     setLiveTrackingData(prev => {
@@ -741,6 +928,9 @@ export function RastreioEmConjunto() {
     });
 
     containers.forEach((container, index) => {
+      // Skip if route is hidden by filter
+      if (!visibleRoutes.has(container.id)) return;
+
       const live = liveTrackingData.get(container.id);
       
       // Use live data if available, otherwise fallback to cached data from getActiveContainers
@@ -783,7 +973,7 @@ export function RastreioEmConjunto() {
       // Add origin port marker
       if (originPosition) {
         const originEl = document.createElement("div");
-        originEl.style.cursor = "default";
+        originEl.style.cursor = "pointer";
         originEl.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:center;">
             <div style="background:${color};border:2px solid white;border-radius:4px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
@@ -794,6 +984,12 @@ export function RastreioEmConjunto() {
             </div>
           </div>
         `;
+
+        // Add tooltip to origin marker
+        originEl.addEventListener('mouseenter', () => {
+          showTooltip(originPosition!, `<div style="font-family:system-ui;"><div style="font-weight:700;font-size:12px;">\u{2693} Porto de Origem</div><div style="font-size:11px;color:#555;">${originName || 'Origem'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${container.supplierName}</div></div>`);
+        });
+        originEl.addEventListener('mouseleave', () => hideTooltip());
 
         try {
           const originMarker = new google.maps.marker.AdvancedMarkerElement({
@@ -904,19 +1100,35 @@ export function RastreioEmConjunto() {
           `;
         }
 
-        // Add hover/click events
+        // Add hover/click events with tooltip
         markerEl.addEventListener("mouseenter", () => {
           setHoveredContainer(container.id);
           markerEl.style.transform = "scale(1.2)";
           markerEl.style.zIndex = "1000";
+          // Show tooltip with vessel info
+          const etaStr = live?.eta || container.eta;
+          const vesselStr = live?.vessel || container.vesselName || '';
+          const progressStr = progress || container.progress || 0;
+          const tooltipHtml = `
+            <div style="font-family:system-ui;">
+              <div style="font-weight:700;font-size:13px;margin-bottom:4px;">${container.supplierName}</div>
+              ${vesselStr ? `<div style="font-size:11px;color:#555;">\u{1F6A2} ${vesselStr}</div>` : ''}
+              <div style="font-size:11px;color:#555;">\u{1F4CD} ${originName?.split(',')[0] || '?'} \u2192 ${destName?.split(',')[0] || '?'}</div>
+              <div style="font-size:11px;color:#555;">\u{1F4CA} Progresso: <b>${progressStr}%</b></div>
+              ${etaStr ? `<div style="font-size:11px;color:#555;">\u{1F4C5} ETA: <b>${etaStr}</b></div>` : ''}
+            </div>
+          `;
+          showTooltip(adjustedPosition, tooltipHtml);
         });
         markerEl.addEventListener("mouseleave", () => {
           setHoveredContainer(null);
           markerEl.style.transform = "scale(1)";
           markerEl.style.zIndex = "";
+          hideTooltip();
         });
         markerEl.addEventListener("click", () => {
           setSelectedContainer(prev => prev === container.id ? null : container.id);
+          hideTooltip();
         });
 
         try {
@@ -943,7 +1155,7 @@ export function RastreioEmConjunto() {
       // Add destination marker (skip for delivered containers since vessel marker is already at dest)
       if (destPosition && !isDelivered) {
         const destEl = document.createElement("div");
-        destEl.style.cursor = "default";
+        destEl.style.cursor = "pointer";
         destEl.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:center;">
             <div style="background:#ef4444;border:2px solid white;border-radius:4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
@@ -954,6 +1166,13 @@ export function RastreioEmConjunto() {
             </div>
           </div>
         `;
+
+        // Add tooltip to destination marker
+        destEl.addEventListener('mouseenter', () => {
+          const etaStr = live?.eta || container.eta;
+          showTooltip(destPosition!, `<div style="font-family:system-ui;"><div style="font-weight:700;font-size:12px;">\u{1F3C1} Porto de Destino</div><div style="font-size:11px;color:#555;">${destName || 'Destino'}</div>${etaStr ? `<div style="font-size:10px;color:#888;margin-top:2px;">ETA: ${etaStr}</div>` : ''}</div>`);
+        });
+        destEl.addEventListener('mouseleave', () => hideTooltip());
 
         try {
           const destMarker = new google.maps.marker.AdvancedMarkerElement({
@@ -987,7 +1206,7 @@ export function RastreioEmConjunto() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containers, liveDataSize, mapReady]);
+  }, [containers, liveDataSize, mapReady, visibleRoutes]);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -1073,6 +1292,116 @@ export function RastreioEmConjunto() {
           <RefreshCw className="w-3.5 h-3.5" />
           Atualizar
         </button>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Animation Controls */}
+        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-sm">
+          <button
+            onClick={() => isAnimating ? stopAnimation() : startAnimation()}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition ${
+              isAnimating
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+            }`}
+          >
+            {isAnimating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+            {isAnimating ? 'Pausar' : 'Animar'}
+          </button>
+          {isAnimating && (
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 4].map(speed => (
+                <button
+                  key={speed}
+                  onClick={() => setAnimationSpeed(speed)}
+                  className={`px-1.5 py-0.5 text-[10px] font-bold rounded transition ${
+                    animationSpeed === speed
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Filter Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-sm"
+          >
+            <Filter className="w-3.5 h-3.5" />
+            Filtros
+            {visibleRoutes.size < (containers?.length || 0) && (
+              <span className="bg-indigo-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {visibleRoutes.size}
+              </span>
+            )}
+          </button>
+          {showFilterMenu && containers && (
+            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-700">Visibilidade das Rotas</span>
+                <button
+                  onClick={() => {
+                    if (visibleRoutes.size === containers.length) {
+                      setVisibleRoutes(new Set());
+                    } else {
+                      setVisibleRoutes(new Set(containers.map(c => c.id)));
+                    }
+                  }}
+                  className="text-[10px] text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                  {visibleRoutes.size === containers.length ? 'Ocultar Todas' : 'Mostrar Todas'}
+                </button>
+              </div>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {containers.map((container, index) => {
+                  const colors = ['#ff6b35', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+                  const color = colors[index % colors.length];
+                  const isVisible = visibleRoutes.has(container.id);
+                  return (
+                    <button
+                      key={container.id}
+                      onClick={() => {
+                        setVisibleRoutes(prev => {
+                          const next = new Set(prev);
+                          if (next.has(container.id)) {
+                            next.delete(container.id);
+                          } else {
+                            next.add(container.id);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition ${
+                        isVisible ? 'bg-slate-50 hover:bg-slate-100' : 'bg-slate-100/50 opacity-50 hover:opacity-75'
+                      }`}
+                    >
+                      <div
+                        className="w-3 h-3 rounded-sm shrink-0"
+                        style={{ background: isVisible ? color : '#cbd5e1' }}
+                      />
+                      {isVisible ? (
+                        <Eye className="w-3 h-3 text-slate-500 shrink-0" />
+                      ) : (
+                        <EyeOff className="w-3 h-3 text-slate-400 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-semibold text-slate-700 truncate">{container.supplierName}</p>
+                        <p className="text-[9px] text-slate-500 truncate">{container.containerName || container.poNumber}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Map Container */}
