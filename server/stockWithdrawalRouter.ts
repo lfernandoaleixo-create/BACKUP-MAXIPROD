@@ -319,13 +319,19 @@ export const stockWithdrawalRouter = router({
         })
         .where(eq(stockWithdrawalRequests.id, input.id));
 
-      // Expirar alertas de estoque insuficiente vinculados ao mesmo produto
-      // Isso remove o alerta do card de insuficiência na aba Faturamento
+      // Expirar alertas de estoque insuficiente vinculados ao produto de ORIGEM ou DESTINO
+      // O alerta de insuficiência é criado para o produto de DESTINO (ex: 00047)
+      // A baixa é feita no produto de ORIGEM (ex: 00046) com destino para 00047
+      // Então precisamos verificar AMBOS os códigos
+      const codesToExpire = [request.productCode];
+      if (request.produtoDestinoCode) {
+        codesToExpire.push(request.produtoDestinoCode);
+      }
       await db.update(stockInsufficientAlerts)
         .set({ status: "expirado" })
         .where(and(
-          eq(stockInsufficientAlerts.codigoItem, request.productCode),
-          eq(stockInsufficientAlerts.status, "aceito")
+          inArray(stockInsufficientAlerts.codigoItem, codesToExpire),
+          inArray(stockInsufficientAlerts.status, ["aceito", "pendente"])
         ));
 
       return { success: true };
