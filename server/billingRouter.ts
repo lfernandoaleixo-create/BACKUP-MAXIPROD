@@ -1039,23 +1039,18 @@ export const billingRouter = router({
         const states = pedidoStates.get(pedido);
         // PROTEÇÃO: Se o pedido não existe em sales_orders, NÃO remover autorização.
         // Pode ser uma condição temporária durante a sincronização (delete + re-insert atômico).
-        // Só remover se o pedido EXISTE e TODOS os itens estão "Faturado".
-        if (states && states.size === 1 && states.has("Faturado")) {
+        if (!states) continue;
+        
+        // ÚNICA REGRA: Só remover autorização quando TODOS os itens do pedido estão
+        // completamente "Faturado" (100% faturado, nada mais a fazer).
+        // Em TODOS os outros casos, a autorização deve ser PRESERVADA:
+        // - "A faturar" = autorizado mas ainda não faturou → manter
+        // - "Faturado parcial" = parte faturada, parte pendente → manter (precisa continuar faturando)
+        // - Mix de "Faturado" + "A faturar" = parte completa, parte pendente → manter
+        // - "Faturado c/ entrega futura" = faturado aguardando entrega → manter
+        if (states.size === 1 && states.has("Faturado")) {
           toRemove.push(pedido);
         }
-        // REGRA FATURAMENTO PARCIAL: só remover autorização se o pedido TEM itens já faturados
-        // E TAMBÉM tem itens pendentes (mistura real de faturado + a faturar).
-        // NÃO remover se o pedido está 100% "A faturar" — isso significa que foi autorizado
-        // mas ainda não faturou nada, e a autorização deve ser preservada.
-        // Também remover se tem "Faturado parcial" (item parcialmente faturado).
-        if (states && states.has("Faturado parcial")) {
-          toRemove.push(pedido);
-        } else if (states && states.has("Faturado") && states.has("A faturar")) {
-          // Mistura real: parte faturada, parte pendente — precisa re-autorizar
-          toRemove.push(pedido);
-        }
-        // NÃO remover se states só tem "A faturar" ou "Faturado c/ entrega futura"
-        // — esses pedidos foram autorizados e ainda não faturaram, autorização deve persistir
       }
 
       if (toRemove.length > 0) {
