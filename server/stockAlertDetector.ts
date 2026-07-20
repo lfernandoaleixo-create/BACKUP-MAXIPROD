@@ -205,16 +205,62 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
  * o alerta sai automaticamente do card de insuficiência na aba Faturamento.
  */
 async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentInsufficient?: PedidoItem[]) {
+  // Importar tabela de solicitações de baixa para verificar quais destinos já foram concluídos
+  const { stockWithdrawalRequests } = await import("../drizzle/schema");
+  
+  // Buscar todos os produto_destino_code de baixas concluídas
+  const concludedWithdrawals = await db.select({
+    produtoDestinoCode: stockWithdrawalRequests.produtoDestinoCode,
+    productCode: stockWithdrawalRequests.productCode,
+  })
+    .from(stockWithdrawalRequests)
+    .where(eq(stockWithdrawalRequests.status, "concluida"));
+  
+  const concludedDestinoCodes = new Set(
+    concludedWithdrawals
+      .filter((w: any) => w.produtoDestinoCode)
+      .map((w: any) => w.produtoDestinoCode)
+  );
+  const concludedSourceCodes = new Set(
+    concludedWithdrawals.map((w: any) => w.productCode)
+  );
+
   if (!currentPedidos || currentPedidos.size === 0) {
-    // Nenhum pedido A aprovar → expirar todos os pendentes E aceitos criados pelo sistema
+    // Nenhum pedido A aprovar → expirar PENDENTES do sistema
+    // Para ACEITOS: só expirar se houver baixa concluída correspondente
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(
         and(
-          inArray(stockInsufficientAlerts.status, ["pendente", "aceito"]),
+          eq(stockInsufficientAlerts.status, "pendente"),
           eq(stockInsufficientAlerts.criadoPor, "sistema")
         )
       );
+    
+    // Agora verificar aceitos individualmente
+    const alertasAceitos = await db.select({
+      id: stockInsufficientAlerts.id,
+      codigoItem: stockInsufficientAlerts.codigoItem,
+      criadoPor: stockInsufficientAlerts.criadoPor,
+    })
+      .from(stockInsufficientAlerts)
+      .where(eq(stockInsufficientAlerts.status, "aceito"));
+    
+    const aceitosToExpire: number[] = [];
+    for (const alerta of alertasAceitos) {
+      if (alerta.criadoPor === 'manual') continue;
+      // Só expirar aceito se há baixa concluída com destino = código do alerta
+      if (concludedDestinoCodes.has(alerta.codigoItem) || concludedSourceCodes.has(alerta.codigoItem)) {
+        aceitosToExpire.push(alerta.id);
+      }
+    }
+    
+    if (aceitosToExpire.length > 0) {
+      await db.update(stockInsufficientAlerts)
+        .set({ status: "expirado" })
+        .where(inArray(stockInsufficientAlerts.id, aceitosToExpire));
+      console.log(`[StockAlert] ${aceitosToExpire.length} alerta(s) aceito(s) expirado(s) (baixa concluída no Maxiprod)`);
+    }
     return;
   }
 
@@ -240,11 +286,17 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
     if (alerta.criadoPor === 'manual') continue;
     const key = `${alerta.pedidoNumero}-${alerta.codigoItem}`;
     
-    // Para alertas "pendente": expirar se não é mais insuficiente
-    // Para alertas "aceito": expirar se o pedido saiu de A aprovar OU item não é mais insuficiente
-    //   (isso cobre o caso da baixa ser dada direto no Maxiprod sem clicar Concluir)
-    if (!insufficientSet.has(key)) {
-      idsToExpire.push(alerta.id);
+    if (alerta.status === "pendente") {
+      // Para alertas "pendente": expirar se não é mais insuficiente
+      if (!insufficientSet.has(key)) {
+        idsToExpire.push(alerta.id);
+      }
+    } else if (alerta.status === "aceito") {
+      // Para alertas "aceito": SÓ expirar se houver baixa concluída correspondente
+      // (não expirar apenas porque o pedido saiu de A aprovar)
+      if (concludedDestinoCodes.has(alerta.codigoItem) || concludedSourceCodes.has(alerta.codigoItem)) {
+        idsToExpire.push(alerta.id);
+      }
     }
   }
 
@@ -252,6 +304,6 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(inArray(stockInsufficientAlerts.id, idsToExpire));
-    console.log(`[StockAlert] ${idsToExpire.length} alerta(s) expirado(s) (pedido não mais insuficiente/A aprovar)`);
+    console.log(`[StockAlert] ${idsToExpire.length} alerta(s) expirado(s) (baixa concluída ou item não mais insuficiente)`);
   }
 }
