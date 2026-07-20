@@ -66,137 +66,264 @@ const ROUTE_XIAMEN_SINGAPORE: Array<{ lat: number; lng: number }> = [
 
 const ROUTE_SINGAPORE_SANTOS: Array<{ lat: number; lng: number }> = [
   { lat: 1.26, lng: 103.85 },  // Singapore
-  { lat: 1.5, lng: 103.0 },    // Exit Singapore westward
+  { lat: 1.2, lng: 103.3 },    // Exit Singapore westward
+  { lat: 1.3, lng: 103.0 },
   // Malacca Strait - between Malay Peninsula and Sumatra
-  { lat: 2.2, lng: 101.8 },
-  { lat: 3.0, lng: 100.5 },
-  { lat: 4.0, lng: 99.0 },
-  { lat: 5.0, lng: 97.5 },
-  { lat: 5.8, lng: 95.5 },     // Exit Malacca into Andaman Sea
-  // Indian Ocean
-  { lat: 4.0, lng: 92.0 },
-  { lat: 2.0, lng: 88.0 },
-  { lat: 0.0, lng: 84.0 },
-  { lat: -2.0, lng: 79.0 },    // South of Sri Lanka
-  { lat: -4.0, lng: 74.0 },
-  { lat: -7.0, lng: 68.0 },
-  { lat: -10.0, lng: 62.0 },
-  { lat: -13.0, lng: 56.0 },
+  { lat: 1.6, lng: 102.2 },
+  { lat: 2.1, lng: 101.8 },
+  { lat: 2.4, lng: 101.4 },
+  { lat: 2.9, lng: 100.8 },
+  { lat: 3.5, lng: 100.0 },
+  { lat: 4.0, lng: 99.4 },
+  { lat: 4.7, lng: 98.8 },
+  { lat: 5.4, lng: 98.3 },
+  { lat: 5.8, lng: 97.5 },     // Exit Malacca into Andaman Sea
+  // Andaman Sea / Indian Ocean
+  { lat: 6.3, lng: 95.0 },
+  { lat: 6.0, lng: 92.0 },
+  { lat: 5.5, lng: 88.0 },
+  { lat: 5.5, lng: 84.0 },
+  { lat: 5.0, lng: 80.0 },     // South of Sri Lanka
+  { lat: 4.5, lng: 77.0 },
+  { lat: 3.0, lng: 73.0 },
+  { lat: 0.0, lng: 67.0 },
+  { lat: -3.0, lng: 61.0 },
+  { lat: -6.0, lng: 56.0 },
   // EAST of Madagascar (lng > 51 until past lat -26)
-  { lat: -16.0, lng: 53.0 },
-  { lat: -19.0, lng: 52.0 },
-  { lat: -22.0, lng: 51.5 },
-  { lat: -25.0, lng: 51.0 },
+  { lat: -9.0, lng: 53.0 },
+  { lat: -12.0, lng: 52.0 },
+  { lat: -15.0, lng: 52.0 },
+  { lat: -18.0, lng: 52.0 },
+  { lat: -21.0, lng: 52.0 },
+  { lat: -24.0, lng: 51.5 },
   // SOUTH of Madagascar (ends at ~lat -25.5)
-  { lat: -27.0, lng: 49.0 },
-  { lat: -28.5, lng: 45.0 },
+  { lat: -26.5, lng: 50.0 },
+  { lat: -28.0, lng: 46.0 },
   { lat: -30.0, lng: 40.0 },
   { lat: -32.0, lng: 35.0 },
   { lat: -33.5, lng: 30.0 },
   // Cape of Good Hope
-  { lat: -34.5, lng: 26.0 },
-  { lat: -35.5, lng: 22.0 },
-  { lat: -36.0, lng: 19.0 },
-  { lat: -35.5, lng: 17.0 },   // Cape Agulhas
-  { lat: -34.5, lng: 15.0 },
-  { lat: -33.5, lng: 12.0 },
-  { lat: -33.0, lng: 8.0 },
-  { lat: -32.5, lng: 4.0 },
-  { lat: -32.0, lng: 0.0 },    // Mid Atlantic
+  { lat: -34.5, lng: 27.0 },
+  { lat: -35.0, lng: 24.0 },
+  { lat: -35.5, lng: 21.0 },
+  { lat: -35.8, lng: 19.0 },   // Cape Agulhas
+  { lat: -35.5, lng: 18.0 },
+  { lat: -34.5, lng: 17.0 },
+  { lat: -33.5, lng: 16.0 },
+  { lat: -33.0, lng: 14.0 },
   // South Atlantic
-  { lat: -31.0, lng: -5.0 },
-  { lat: -30.0, lng: -10.0 },
-  { lat: -29.0, lng: -16.0 },
-  { lat: -28.0, lng: -22.0 },
-  { lat: -27.0, lng: -28.0 },
-  { lat: -26.0, lng: -33.0 },
-  { lat: -25.0, lng: -37.0 },
-  { lat: -24.5, lng: -40.0 },
-  { lat: -24.0, lng: -43.0 },
+  { lat: -32.0, lng: 10.0 },
+  { lat: -31.0, lng: 5.0 },
+  { lat: -30.0, lng: 0.0 },
+  { lat: -29.0, lng: -5.0 },
+  { lat: -28.0, lng: -10.0 },
+  { lat: -27.5, lng: -15.0 },
+  { lat: -27.0, lng: -20.0 },
+  { lat: -26.5, lng: -25.0 },
+  { lat: -26.0, lng: -30.0 },
+  { lat: -25.5, lng: -35.0 },
+  { lat: -25.0, lng: -38.0 },
+  { lat: -24.5, lng: -41.0 },
+  { lat: -24.0, lng: -44.0 },
+  { lat: -23.95, lng: -46.30 }, // Santos
+];
+
+// Full route from Dalian directly to Santos (via Taiwan Strait, Singapore, Malacca, Cape of Good Hope)
+// This is used when a ship goes Dalian → Santos without stopping at Busan
+const ROUTE_DALIAN_SANTOS_DIRECT: Array<{ lat: number; lng: number }> = [
+  { lat: 38.92, lng: 121.63 }, // Dalian port
+  { lat: 38.5, lng: 121.5 },
+  { lat: 37.8, lng: 122.0 },
+  // Yellow Sea
+  { lat: 37.0, lng: 122.5 },
+  { lat: 36.0, lng: 123.0 },
+  { lat: 35.0, lng: 123.5 },
+  { lat: 34.0, lng: 124.0 },
+  { lat: 33.0, lng: 124.5 },
+  // East China Sea
+  { lat: 31.0, lng: 125.0 },
+  { lat: 29.0, lng: 125.5 },
+  { lat: 27.5, lng: 123.5 },
+  { lat: 26.0, lng: 122.0 },
+  // Taiwan Strait
+  { lat: 25.5, lng: 120.5 },
+  { lat: 24.5, lng: 119.8 },
+  { lat: 23.5, lng: 119.5 },
+  { lat: 22.5, lng: 119.0 },
+  // South China Sea
+  { lat: 21.0, lng: 117.5 },
+  { lat: 19.0, lng: 116.0 },
+  { lat: 17.0, lng: 114.5 },
+  { lat: 15.0, lng: 113.0 },
+  { lat: 13.0, lng: 112.0 },
+  { lat: 11.0, lng: 110.5 },
+  { lat: 9.0, lng: 109.0 },
+  { lat: 7.5, lng: 107.5 },
+  // Approaching Singapore
+  { lat: 5.5, lng: 106.0 },
+  { lat: 4.0, lng: 105.5 },
+  { lat: 3.0, lng: 105.0 },
+  // Singapore Strait
+  { lat: 2.0, lng: 104.5 },
+  { lat: 1.4, lng: 104.3 },
+  { lat: 1.25, lng: 103.9 },
+  { lat: 1.18, lng: 103.5 },
+  { lat: 1.2, lng: 103.3 },
+  { lat: 1.3, lng: 103.0 },
+  // Malacca Strait
+  { lat: 1.6, lng: 102.2 },
+  { lat: 2.1, lng: 101.8 },
+  { lat: 2.4, lng: 101.4 },
+  { lat: 2.9, lng: 100.8 },
+  { lat: 3.5, lng: 100.0 },
+  { lat: 4.0, lng: 99.4 },
+  { lat: 4.7, lng: 98.8 },
+  { lat: 5.4, lng: 98.3 },
+  { lat: 5.8, lng: 97.5 },
+  // Andaman Sea / Indian Ocean
+  { lat: 6.3, lng: 95.0 },
+  { lat: 6.0, lng: 92.0 },
+  { lat: 5.5, lng: 88.0 },
+  { lat: 5.5, lng: 84.0 },
+  { lat: 5.0, lng: 80.0 },
+  { lat: 4.5, lng: 77.0 },
+  { lat: 3.0, lng: 73.0 },
+  { lat: 0.0, lng: 67.0 },
+  { lat: -3.0, lng: 61.0 },
+  { lat: -6.0, lng: 56.0 },
+  // East of Madagascar
+  { lat: -9.0, lng: 53.0 },
+  { lat: -12.0, lng: 52.0 },
+  { lat: -15.0, lng: 52.0 },
+  { lat: -18.0, lng: 52.0 },
+  { lat: -21.0, lng: 52.0 },
+  { lat: -24.0, lng: 51.5 },
+  { lat: -26.5, lng: 50.0 },
+  { lat: -28.0, lng: 46.0 },
+  // Cape of Good Hope
+  { lat: -30.0, lng: 40.0 },
+  { lat: -32.0, lng: 35.0 },
+  { lat: -33.5, lng: 30.0 },
+  { lat: -34.5, lng: 27.0 },
+  { lat: -35.0, lng: 24.0 },
+  { lat: -35.5, lng: 21.0 },
+  { lat: -35.8, lng: 19.0 },
+  { lat: -35.5, lng: 18.0 },
+  { lat: -34.5, lng: 17.0 },
+  { lat: -33.5, lng: 16.0 },
+  { lat: -33.0, lng: 14.0 },
+  // South Atlantic
+  { lat: -32.0, lng: 10.0 },
+  { lat: -31.0, lng: 5.0 },
+  { lat: -30.0, lng: 0.0 },
+  { lat: -29.0, lng: -5.0 },
+  { lat: -28.0, lng: -10.0 },
+  { lat: -27.5, lng: -15.0 },
+  { lat: -27.0, lng: -20.0 },
+  { lat: -26.5, lng: -25.0 },
+  { lat: -26.0, lng: -30.0 },
+  { lat: -25.5, lng: -35.0 },
+  { lat: -25.0, lng: -38.0 },
+  { lat: -24.5, lng: -41.0 },
+  { lat: -24.0, lng: -44.0 },
   { lat: -23.95, lng: -46.30 }, // Santos
 ];
 
 const ROUTE_DALIAN_BUSAN: Array<{ lat: number; lng: number }> = [
   { lat: 38.92, lng: 121.63 }, // Dalian port
-  { lat: 38.0, lng: 121.8 },   // Exit Bohai Sea
-  { lat: 37.0, lng: 122.8 },   // Yellow Sea (east of Shandong)
-  { lat: 36.0, lng: 123.5 },   // Yellow Sea open water
-  { lat: 35.0, lng: 124.5 },   // Yellow Sea (WEST of Korea)
+  { lat: 38.5, lng: 121.5 },
+  { lat: 37.8, lng: 122.0 },
+  { lat: 37.0, lng: 122.5 },
+  { lat: 36.0, lng: 123.0 },
+  { lat: 35.0, lng: 124.0 },
   // Korea Strait - pass between Korea and Japan
-  { lat: 34.2, lng: 126.5 },   // Approaching Korea Strait
-  { lat: 33.8, lng: 128.5 },   // Korea Strait (water channel)
-  { lat: 34.5, lng: 129.0 },   // North toward Busan
+  { lat: 34.2, lng: 126.5 },
+  { lat: 33.8, lng: 128.5 },
+  { lat: 34.5, lng: 129.0 },
   { lat: 35.1, lng: 129.03 },  // Busan
 ];
 
 const ROUTE_BUSAN_SANTOS: Array<{ lat: number; lng: number }> = [
   { lat: 35.1, lng: 129.03 },  // Busan
-  { lat: 33.0, lng: 129.5 },   // South of Japan (in water)
+  { lat: 33.0, lng: 129.5 },   // South of Japan
   { lat: 31.5, lng: 129.0 },   // East China Sea
-  { lat: 29.5, lng: 128.0 },   // East China Sea
-  { lat: 27.0, lng: 126.5 },   // East of Ryukyu Islands
-  // East of Taiwan (Pacific side)
-  { lat: 24.5, lng: 123.0 },
-  // South of Taiwan into South China Sea
-  { lat: 21.5, lng: 119.5 },
-  // South China Sea - EAST of Vietnam coast (lng > 115)
-  { lat: 18.0, lng: 117.0 },
-  { lat: 14.5, lng: 116.0 },
-  { lat: 11.0, lng: 115.0 },
-  { lat: 8.0, lng: 112.0 },    // Spratly area
-  { lat: 5.5, lng: 108.0 },    // North of Natuna
-  { lat: 3.5, lng: 106.0 },    // Approaching Singapore
-  { lat: 2.5, lng: 105.0 },    // East of Singapore
+  { lat: 29.5, lng: 127.0 },
+  { lat: 27.0, lng: 124.0 },
+  // East of Taiwan (Pacific side, Bashi Channel)
+  { lat: 24.5, lng: 122.5 },
+  { lat: 22.0, lng: 120.0 },
+  // South China Sea
+  { lat: 19.0, lng: 117.0 },
+  { lat: 15.0, lng: 114.0 },
+  { lat: 11.0, lng: 110.5 },
+  { lat: 9.0, lng: 109.0 },
+  { lat: 7.5, lng: 107.5 },
+  { lat: 5.5, lng: 106.0 },
+  { lat: 4.0, lng: 105.5 },
+  { lat: 3.0, lng: 105.0 },
   // Singapore Strait
-  { lat: 1.3, lng: 104.0 },
-  { lat: 1.2, lng: 103.6 },
-  { lat: 1.5, lng: 103.0 },    // Exit into Malacca Strait
+  { lat: 2.0, lng: 104.5 },
+  { lat: 1.4, lng: 104.3 },
+  { lat: 1.25, lng: 103.9 },
+  { lat: 1.18, lng: 103.5 },
+  { lat: 1.2, lng: 103.3 },
+  { lat: 1.3, lng: 103.0 },
   // Malacca Strait
-  { lat: 2.2, lng: 101.8 },
-  { lat: 3.0, lng: 100.5 },
-  { lat: 4.0, lng: 99.0 },
-  { lat: 5.0, lng: 97.5 },
-  { lat: 5.8, lng: 95.5 },     // Exit Malacca into Andaman Sea
-  // Indian Ocean
-  { lat: 4.0, lng: 92.0 },
-  { lat: 2.0, lng: 88.0 },
-  { lat: 0.0, lng: 84.0 },
-  { lat: -2.0, lng: 79.0 },    // South of Sri Lanka
-  { lat: -4.0, lng: 74.0 },
-  { lat: -7.0, lng: 68.0 },
-  { lat: -10.0, lng: 62.0 },
-  { lat: -13.0, lng: 56.0 },
-  // EAST of Madagascar (stay lng > 51 until past lat -26)
-  { lat: -16.0, lng: 53.0 },
-  { lat: -19.0, lng: 52.0 },
-  { lat: -22.0, lng: 51.5 },
-  { lat: -25.0, lng: 51.0 },
-  // SOUTH of Madagascar (ends at ~lat -25.5)
-  { lat: -27.0, lng: 49.0 },
-  { lat: -28.5, lng: 45.0 },
+  { lat: 1.6, lng: 102.2 },
+  { lat: 2.1, lng: 101.8 },
+  { lat: 2.4, lng: 101.4 },
+  { lat: 2.9, lng: 100.8 },
+  { lat: 3.5, lng: 100.0 },
+  { lat: 4.0, lng: 99.4 },
+  { lat: 4.7, lng: 98.8 },
+  { lat: 5.4, lng: 98.3 },
+  { lat: 5.8, lng: 97.5 },
+  // Andaman Sea / Indian Ocean
+  { lat: 6.3, lng: 95.0 },
+  { lat: 6.0, lng: 92.0 },
+  { lat: 5.5, lng: 88.0 },
+  { lat: 5.5, lng: 84.0 },
+  { lat: 5.0, lng: 80.0 },
+  { lat: 4.5, lng: 77.0 },
+  { lat: 3.0, lng: 73.0 },
+  { lat: 0.0, lng: 67.0 },
+  { lat: -3.0, lng: 61.0 },
+  { lat: -6.0, lng: 56.0 },
+  // East of Madagascar
+  { lat: -9.0, lng: 53.0 },
+  { lat: -12.0, lng: 52.0 },
+  { lat: -15.0, lng: 52.0 },
+  { lat: -18.0, lng: 52.0 },
+  { lat: -21.0, lng: 52.0 },
+  { lat: -24.0, lng: 51.5 },
+  { lat: -26.5, lng: 50.0 },
+  { lat: -28.0, lng: 46.0 },
+  // Cape of Good Hope
   { lat: -30.0, lng: 40.0 },
   { lat: -32.0, lng: 35.0 },
   { lat: -33.5, lng: 30.0 },
-  // Cape of Good Hope
-  { lat: -34.5, lng: 26.0 },
-  { lat: -35.5, lng: 22.0 },
-  { lat: -36.0, lng: 19.0 },
-  { lat: -35.5, lng: 17.0 },   // Cape Agulhas
-  { lat: -34.5, lng: 15.0 },
-  { lat: -33.5, lng: 12.0 },
-  { lat: -33.0, lng: 8.0 },
-  { lat: -32.5, lng: 4.0 },
-  { lat: -32.0, lng: 0.0 },    // Mid Atlantic
+  { lat: -34.5, lng: 27.0 },
+  { lat: -35.0, lng: 24.0 },
+  { lat: -35.5, lng: 21.0 },
+  { lat: -35.8, lng: 19.0 },
+  { lat: -35.5, lng: 18.0 },
+  { lat: -34.5, lng: 17.0 },
+  { lat: -33.5, lng: 16.0 },
+  { lat: -33.0, lng: 14.0 },
   // South Atlantic
-  { lat: -31.0, lng: -5.0 },
-  { lat: -30.0, lng: -10.0 },
-  { lat: -29.0, lng: -16.0 },
-  { lat: -28.0, lng: -22.0 },
-  { lat: -27.0, lng: -28.0 },
-  { lat: -26.0, lng: -33.0 },
-  { lat: -25.0, lng: -37.0 },
-  { lat: -24.5, lng: -40.0 },
-  { lat: -24.0, lng: -43.0 },
+  { lat: -32.0, lng: 10.0 },
+  { lat: -31.0, lng: 5.0 },
+  { lat: -30.0, lng: 0.0 },
+  { lat: -29.0, lng: -5.0 },
+  { lat: -28.0, lng: -10.0 },
+  { lat: -27.5, lng: -15.0 },
+  { lat: -27.0, lng: -20.0 },
+  { lat: -26.5, lng: -25.0 },
+  { lat: -26.0, lng: -30.0 },
+  { lat: -25.5, lng: -35.0 },
+  { lat: -25.0, lng: -38.0 },
+  { lat: -24.5, lng: -41.0 },
+  { lat: -24.0, lng: -44.0 },
   { lat: -23.95, lng: -46.30 }, // Santos
 ];
 
@@ -433,7 +560,7 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
     const vesselPosition = calculateVesselPosition(
       '2026-07-17T12:07:00Z',
       '2026-08-29T00:00:00Z',
-      [...ROUTE_DALIAN_BUSAN, ...ROUTE_BUSAN_SANTOS.slice(1)]
+      ROUTE_DALIAN_SANTOS_DIRECT
     );
 
     let currentStatus = 'Em trânsito';
@@ -442,8 +569,8 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       currentStatus = lastOccurred.description;
     }
 
-    // Full route: Dalian → Busan → Santos (same water route)
-    const fullRoute = [...ROUTE_DALIAN_BUSAN, ...ROUTE_BUSAN_SANTOS.slice(1)];
+    // Full route: Dalian → Santos (direct, via Taiwan Strait)
+    const fullRoute = ROUTE_DALIAN_SANTOS_DIRECT;
 
     return {
       blNumber: '274102504',
@@ -524,8 +651,8 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       currentStatus = lastOccurred.description;
     }
 
-    // Full route: Dalian → Busan → Santos
-    const fullRoute = [...ROUTE_DALIAN_BUSAN, ...ROUTE_BUSAN_SANTOS.slice(1)];
+    // Full route: Dalian → Santos (direct route via Taiwan Strait)
+    const fullRoute = ROUTE_DALIAN_SANTOS_DIRECT;
 
     return {
       blNumber: 'ONEYHKGG45910500',

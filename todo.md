@@ -5768,3 +5768,8 @@
 - [x] Rastreio em Conjunto: rota marítima precisa - contornar Coreia pelo Estreito da Coreia, leste do Vietnã, Estreito de Malaca, leste de Madagascar, Cabo da Boa Esperança
 - [x] Rastreio em Conjunto: ícone de navio colorido (não na cor da linha) - navio cargueiro visto de frente
 - [x] Espelhar barra de Comissão por Desconto Médio para manter mesma sequência de cores da barra de Reputação
+- [x] Rastreio em Conjunto: rota com 85 waypoints precisos (Dalian→Taiwan Strait→Singapore→Malacca→Indian Ocean→East Madagascar→Cape of Good Hope→Santos) - 100% pela água
+- [x] Rastreio em Conjunto: reduzir offset lateral de 0.12° para 0.05° para evitar empurrar rotas para terra perto de costas
+- [x] Rastreio em Conjunto: aumentar ícone do navio de 24px para 36px para melhor visibilidade
+- [x] Rastreio em Conjunto: atualizar todas as rotas (DALIAN_SANTOS, SHANGHAI_SANTOS, NINGBO_SANTOS, XIAMEN_SANTOS) com waypoints precisos pelo Estreito de Taiwan e Estreito de Singapura
+- [x] Server oneTracking.ts: criar ROUTE_DALIAN_SANTOS_DIRECT com 85 waypoints e atualizar handlers dos BLs 274102504 e HKGG45910500
