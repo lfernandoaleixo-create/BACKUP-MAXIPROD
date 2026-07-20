@@ -5814,3 +5814,6 @@
 - [x] BUG Importação: coluna "CRÉDITO" aparece na tabela normal mas não aparece quando clica em "Planilha" (modo planilha não inclui a coluna crédito) - corrigido com propagação automática de colunas custom entre seções
 - [x] BUG Faturamento: pedidos de baixa com "Baixa dada no Maxiprod" continuam aparecendo no card de insuficiência - devem ir apenas para o histórico
 - [x] BUG Importação: coluna CRÉDITO não aparece no formulário de editar/incluir pedido (modo normal, não planilha)
+- [x] Inadimplência: criar card "Rafael - Especial sem cobrança" que puxa automaticamente clientes cujo representante 2 é RAFAEL LEONEL de Londrina
+- [x] Inadimplência: mostrar "RAFAEL LEONEL" como vendedor nos títulos do card Rafael
+- [x] Inadimplência: excluir títulos do Rafael dos contadores/stats gerais (só aparecem no card próprio)

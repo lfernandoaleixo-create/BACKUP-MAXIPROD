@@ -48,6 +48,8 @@ const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
 let vendedorCacheMap: Record<string, string> = {};
 let vendedorCacheTimestamp = 0;
 const VENDEDOR_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+// Cache para mapeamento cliente → representante/vendedor 2 (ex: RAFAEL LEONEL)
+let representante2CacheMap: Record<string, string> = {};
 
 // Cache para mapeamento cliente → categoria de produto (madeira vs bambu)
 let clienteProductCacheMap: Record<string, 'madeira' | 'bambu' | 'ambos' | 'outro'> = {};
@@ -232,6 +234,7 @@ async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
           items {
             cliente { nomeFantasia razaoSocial }
             representanteOuVendedor1 { nomeFantasia razaoSocial }
+            representanteOuVendedor2 { nomeFantasia razaoSocial apelido }
             responsavelUsuario { nome }
             itensDoPedidoDeVenda {
               item { descricao grupoDescricao }
@@ -283,6 +286,17 @@ async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
         if (vendedor) {
           if (nomeFantasia && !map[nomeFantasia]) map[nomeFantasia] = vendedor;
           if (razaoSocial && !map[razaoSocial]) map[razaoSocial] = vendedor;
+        }
+
+        // Track representante2 (ex: RAFAEL LEONEL)
+        const rep2 = p.representanteOuVendedor2;
+        if (rep2) {
+          const rep2Name = rep2.apelido || rep2.nomeFantasia || rep2.razaoSocial || "";
+          if (rep2Name) {
+            const rep2Normalized = normalizeVendedorName(rep2Name);
+            if (nomeFantasia && !representante2CacheMap[nomeFantasia]) representante2CacheMap[nomeFantasia] = rep2Normalized;
+            if (razaoSocial && !representante2CacheMap[razaoSocial]) representante2CacheMap[razaoSocial] = rep2Normalized;
+          }
         }
 
         // Track product categories for fallback assignment
@@ -341,6 +355,11 @@ async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
   }
 
   return vendedorCacheMap;
+}
+
+/** Retorna o mapa de representante2 (populado junto com o vendedor cache) */
+function getRepresentante2Map(): Record<string, string> {
+  return representante2CacheMap;
 }
 
 /**
@@ -3224,7 +3243,10 @@ export const financialRouter = router({
         // diasAtraso agora é sempre em dias ÚTEIS para exibição
         const diasAtraso = businessDaysOverdue;
         const action = actionsMap[row.id];
-        const vendedor = graphqlMap[row.cliente || ""] || "";
+        const rep2Map = getRepresentante2Map();
+        const rep2 = rep2Map[row.cliente || ""] || "";
+        // Se tem representante2 = RAFAEL LEONEL, usar ele como vendedor
+        const vendedor = rep2.toUpperCase().includes("RAFAEL LEONEL") ? "RAFAEL LEONEL" : (graphqlMap[row.cliente || ""] || "");
         const clienteName = (row.cliente || "").trim();
         // Prioridade: campo direto do DB (sincronizado do Maxiprod via camposAdicionais do cliente)
         // Fallback: mapa de decisão por nome (fetchCobrancaDecisionMap)
@@ -3253,6 +3275,7 @@ export const financialRouter = router({
           formaCobranca: row.formaCobranca || "",
           observacoesMaxiprod: row.observacoes || "",
           anotacoes: row.anotacoes || "",
+          isRafaelClient: rep2.toUpperCase().includes("RAFAEL LEONEL"),
           // Dados de cobrança
           cobranca: action ? {
             status: action.status,
@@ -3314,18 +3337,18 @@ export const financialRouter = router({
           titles.sort((a, b) => (b.businessDaysOverdue - a.businessDaysOverdue));
       }
 
-      // Estatísticas
+            // Estatísticas (excluir títulos do Rafael dos totais gerais)
+      const nonRafaelTitles = titles.filter(t => !t.isRafaelClient);
       const byStatus: Record<string, number> = {};
       let totalValue = 0;
-      for (const t of titles) {
+      for (const t of nonRafaelTitles) {
         const st = t.cobranca?.status || "pendente";
         byStatus[st] = (byStatus[st] || 0) + 1;
         totalValue += t.valorAReceber;
       }
-
       return {
         titles,
-        stats: { total: totalValue, count: titles.length, byStatus },
+        stats: { total: totalValue, count: nonRafaelTitles.length, byStatus },
       };
     }),
 

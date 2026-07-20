@@ -448,6 +448,7 @@ type Title = {
   formaCobranca: string;
   observacoesMaxiprod: string;
   anotacoes: string;
+  isRafaelClient: boolean;
   cobranca: {
     status: string;
     promessaData: string | null;
@@ -663,6 +664,8 @@ export default function InadimplenciaTab() {
   const [resolvedSortDir, setResolvedSortDir] = useState<'asc' | 'desc'>('desc');
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: resolvedSortOrder, sortBy: resolvedSortBy, sortDir: resolvedSortDir });
   const [showResolved, setShowResolved] = useState(false);
+  const [showRafael, setShowRafael] = useState(false);
+  const [rafaelCardActive, setRafaelCardActive] = useState(false);
   const [resolvedSearch, setResolvedSearch] = useState('');
   const [resolvedChecked, setResolvedChecked] = useState<Set<number>>(new Set());
 
@@ -813,9 +816,19 @@ export default function InadimplenciaTab() {
     return Array.from(set).sort();
   }, [titles]);
 
+  // Separar títulos do Rafael (representante2 = RAFAEL LEONEL)
+  const rafaelTitles = useMemo(() => titles.filter(t => t.isRafaelClient), [titles]);
+  const rafaelStats = useMemo(() => ({
+    count: rafaelTitles.length,
+    total: rafaelTitles.reduce((sum, t) => sum + t.valorAReceber, 0),
+  }), [rafaelTitles]);
+
   // Filtro por faixa de atraso + vendedor + forma cobrança + decisão cobrança
   const filteredTitles = useMemo(() => {
-    let result = titles;
+    // Se o card Rafael está ativo, mostrar apenas títulos do Rafael
+    if (rafaelCardActive) return rafaelTitles;
+    // Caso contrário, excluir títulos do Rafael da lista principal
+    let result = titles.filter(t => !t.isRafaelClient);
     if (agingFilter) {
       const range = AGING_RANGES.find(r => r.key === agingFilter);
       if (range) result = result.filter(t => t.diasAtraso >= range.min && t.diasAtraso <= range.max);
@@ -830,15 +843,15 @@ export default function InadimplenciaTab() {
       result = result.filter(t => decisaoCobrancaFilter.includes(getDecisaoLabel(t.decisaoCobranca || '')));
     }
     return result;
-  }, [titles, agingFilter, vendedorFilter, formaCobrancaFilter, decisaoCobrancaFilter]);
-
+    }, [titles, agingFilter, vendedorFilter, formaCobrancaFilter, decisaoCobrancaFilter, rafaelCardActive, rafaelTitles]);
   // Status counts
   const statusCounts = useMemo(() => {
     const counts: Record<string, { count: number; total: number }> = {};
     for (const s of STATUS_OPTIONS) {
       counts[s.value] = { count: 0, total: 0 };
     }
-    for (const t of titles) {
+    // Excluir títulos do Rafael dos contadores de status
+    for (const t of titles.filter(t => !t.isRafaelClient)) {
       const st = t.cobranca?.status || "pendente";
       if (!counts[st]) counts[st] = { count: 0, total: 0 };
       counts[st].count++;
@@ -853,7 +866,7 @@ export default function InadimplenciaTab() {
     for (const r of AGING_RANGES) {
       counts[r.key] = { count: 0, total: 0 };
     }
-    for (const t of titles) {
+    for (const t of titles.filter(t => !t.isRafaelClient)) {
       const range = AGING_RANGES.find(r => t.diasAtraso >= r.min && t.diasAtraso <= r.max);
       if (range) {
         counts[range.key].count++;
@@ -1168,7 +1181,7 @@ export default function InadimplenciaTab() {
           return (
             <button
               key={r.key}
-              onClick={() => setAgingFilter(isActive ? null : r.key)}
+              onClick={() => { setAgingFilter(isActive ? null : r.key); setRafaelCardActive(false); }}
               className={`rounded-lg border p-3 text-left transition-all hover:shadow-md min-w-[140px] md:min-w-0 shrink-0 md:shrink ${r.color} ${
                 isActive ? "ring-2 ring-blue-500 shadow-md" : ""
               }`}
@@ -1189,7 +1202,7 @@ export default function InadimplenciaTab() {
           return (
             <button
               key={s.value}
-              onClick={() => setStatusFilter(isActive ? "todos" : s.value)}
+              onClick={() => { setStatusFilter(isActive ? "todos" : s.value); setRafaelCardActive(false); }}
               className={`rounded-lg border p-2.5 text-left transition-all hover:shadow-md min-w-[120px] md:min-w-0 shrink-0 md:shrink ${
                 isActive ? "ring-2 ring-blue-500 shadow-md" : ""
               } ${s.color}`}
@@ -1202,6 +1215,42 @@ export default function InadimplenciaTab() {
         })}
       </div>
 
+      {/* Card Rafael - Especial sem cobrança */}
+      {rafaelTitles.length > 0 && (
+        <div className={`rounded-xl border-2 overflow-hidden transition-all ${
+          rafaelCardActive
+            ? "border-purple-500 bg-gradient-to-r from-purple-50 via-violet-50 to-indigo-50 ring-2 ring-purple-400 shadow-lg"
+            : "border-purple-300 bg-gradient-to-r from-purple-50 via-violet-50 to-indigo-50"
+        }`}>
+          <button
+            onClick={() => {
+              setRafaelCardActive(!rafaelCardActive);
+              if (!rafaelCardActive) {
+                setStatusFilter("todos");
+                setAgingFilter(null);
+              }
+            }}
+            className="w-full flex items-center justify-between p-4 hover:bg-purple-100/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-md">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-purple-900 font-bold text-sm flex items-center gap-2">
+                  Rafael - Especial sem cobrança
+                  <span className="bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{rafaelStats.count}</span>
+                </h3>
+                <p className="text-purple-700 text-xs">Clientes do representante 2 RAFAEL LEONEL • {formatCurrency(rafaelStats.total)}</p>
+              </div>
+            </div>
+            {rafaelCardActive
+              ? <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded">Filtro ativo</span>
+              : <ChevronRight className="w-5 h-5 text-purple-600" />
+            }
+          </button>
+        </div>
+      )}
       {/* Card de Pagos/Resolvidos */}
       {resolvedData && resolvedData.titles.length > 0 && (
         <div className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 overflow-hidden">
@@ -1361,9 +1410,9 @@ export default function InadimplenciaTab() {
               </button>
             )}
           </div>
-          {(statusFilter !== "todos" || agingFilter || vendedorFilter.length > 0 || formaCobrancaFilter.length > 0 || decisaoCobrancaFilter.length > 0) && (
+          {(statusFilter !== "todos" || agingFilter || vendedorFilter.length > 0 || formaCobrancaFilter.length > 0 || decisaoCobrancaFilter.length > 0 || rafaelCardActive) && (
             <button
-              onClick={() => { setStatusFilter("todos"); setAgingFilter(null); setVendedorFilter([]); setFormaCobrancaFilter([]); setDecisaoCobrancaFilter([]); }}
+              onClick={() => { setStatusFilter("todos"); setAgingFilter(null); setVendedorFilter([]); setFormaCobrancaFilter([]); setDecisaoCobrancaFilter([]); setRafaelCardActive(false); }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 shrink-0"
             >
               <X className="w-3.5 h-3.5" />
