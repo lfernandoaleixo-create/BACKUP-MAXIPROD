@@ -336,6 +336,49 @@ export const importRouter = router({
           columns: input.columns as SpreadsheetColumn[],
         });
       }
+
+      // Propagate custom columns to all other configs of the same supplier
+      // This ensures that when a user adds a column (like CRÉDITO) in one view,
+      // it appears in all sections of the same supplier
+      const customCols = input.columns.filter((c) => c.key.startsWith("custom_"));
+      const allConfigs = await db.select().from(importSpreadsheetConfig)
+        .where(eq(importSpreadsheetConfig.supplierId, input.supplierId));
+      
+      for (const otherConfig of allConfigs) {
+        // Skip the config we just updated
+        const isSame = sectionTitle
+          ? otherConfig.sectionTitle === sectionTitle
+          : otherConfig.sectionTitle === null;
+        if (isSame) continue;
+
+        const otherCols = (otherConfig.columns || []) as SpreadsheetColumn[];
+        const existingCustomKeys = new Set(otherCols.filter(c => c.key.startsWith("custom_")).map(c => c.key));
+        
+        // Add any new custom columns that don't exist in this config
+        let changed = false;
+        const updatedCols = [...otherCols];
+        for (const customCol of customCols) {
+          if (!existingCustomKeys.has(customCol.key)) {
+            updatedCols.push(customCol as SpreadsheetColumn);
+            changed = true;
+          }
+        }
+        
+        // Remove custom columns that were removed from the source
+        const currentCustomKeys = new Set(customCols.map(c => c.key));
+        const filteredCols = updatedCols.filter(c => {
+          if (!c.key.startsWith("custom_")) return true;
+          return currentCustomKeys.has(c.key);
+        });
+        if (filteredCols.length !== updatedCols.length) changed = true;
+        
+        if (changed) {
+          await db.update(importSpreadsheetConfig)
+            .set({ columns: filteredCols })
+            .where(eq(importSpreadsheetConfig.id, otherConfig.id));
+        }
+      }
+
       return { success: true };
     }),
 
