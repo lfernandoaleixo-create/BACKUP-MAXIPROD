@@ -5810,3 +5810,4 @@
 - [x] BUG: "Produto de Destino" na Nova Solicitação de Baixa não mostra o código do produto nos resultados da busca (ex: 00639)
 - [x] Inadimplência/Clientes: badge "Pagos" deve ser clicável e abrir modal/card com detalhes completos dos títulos resolvidos (valor, data, documento, dias de atraso, etc.)
 - [x] Mobile: suportar rotação de tela (landscape) para aproveitar espaço extra quando o celular é virado na horizontal
+- [x] Gestão Comercial/Frete: integrar transportadora Flor de Minas na simulação de frete (cálculo baseado em planilha: valor por faixa de peso + taxa entrega R$95 + pedágio R$12,30 + seguro 0,7% sobre NF, com tabela de cidades atendidas SP/MG)

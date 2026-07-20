@@ -8,6 +8,7 @@ import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
 import { quoteAllSswCnpjs } from "./sswApi";
 import { quoteAllRodonavesCnpjs, RODONAVES_CNPJS } from "./rodonavesApi";
+import { quoteFlordeMinas } from "./florDeminasApi";
 import { consultaCnpjCompleta } from "./sintegraApi";
 
 /**
@@ -2095,8 +2096,8 @@ export const salesOrderRouter = router({
       tipoContribuinte: z.string().default("Contribuinte"),
     }))
     .mutation(async ({ input }) => {
-      // Quote from all 4 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves
-      const [braspressResults, alfaResults, sswResults, rodonavesResults] = await Promise.allSettled([
+      // Quote from all 5 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves + Flor de Minas
+      const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
         cotarTodosCnpjs({
           cnpjDestinatario: input.cnpjDestinatario || "00000000000000",
           cepOrigem: input.cepOrigem,
@@ -2134,6 +2135,11 @@ export const salesOrderRouter = router({
           peso: input.peso,
           volumes: input.volumes,
           cnpjDestinatario: input.cnpjDestinatario,
+        }),
+        quoteFlordeMinas({
+          cepDestino: input.cepDestino,
+          valorMercadoria: input.valorMercadoria,
+          pesoKg: input.peso,
         }),
       ]);
 
@@ -2226,6 +2232,26 @@ export const salesOrderRouter = router({
           totalFrete: 0,
           prazo: "N/A",
           error: rodonavesResults.reason?.message || "Erro ao cotar Rodonaves",
+        });
+      }
+
+      // Process Flor de Minas result
+      if (florDeMinasResult.status === "fulfilled") {
+        const r = florDeMinasResult.value;
+        carriers.push({
+          transportadora: r.transportadora,
+          cnpj: r.cnpj,
+          totalFrete: r.totalFrete,
+          prazo: r.prazo,
+          error: r.error,
+        });
+      } else {
+        carriers.push({
+          transportadora: "Flor de Minas",
+          cnpj: "",
+          totalFrete: 0,
+          prazo: "N/A",
+          error: florDeMinasResult.reason?.message || "Erro ao cotar Flor de Minas",
         });
       }
 
