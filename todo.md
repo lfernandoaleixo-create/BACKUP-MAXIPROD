@@ -5800,3 +5800,4 @@
 - [x] Container card: traduzir status "checked"/"pending"/"current" para português
 - [x] Container card: corrigir mapeamento de campos do evento (description vs translatedStatus vs h.date vs h.dateTime)
 - [x] Container card: hover abre card, click trava, click novamente destrava
+- [x] Inadimplência/Clientes: adicionar coluna "Pagos/Resolvidos" na tabela, logo após o nome do cliente, mostrando quantidade de títulos resolvidos por cliente

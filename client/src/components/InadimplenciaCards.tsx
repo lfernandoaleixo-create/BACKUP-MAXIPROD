@@ -466,6 +466,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
     return Object.keys(params).length > 0 ? params : undefined;
   }, [grupo, crmSegmento]);
   const { data: clientes, isLoading } = trpc.financial.getClientesInadimplentes.useQuery(queryInput);
+  const { data: resolvedAllData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: 'resolvedAt', sortDir: 'desc' });
   const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
@@ -476,6 +477,17 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
     if (!clientes) return 0;
     return clientes.reduce((sum: number, c: any) => sum + c.total, 0);
   }, [clientes]);
+
+  // Map of client name -> resolved count
+  const resolvedCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!resolvedAllData?.titles) return map;
+    for (const t of resolvedAllData.titles) {
+      const name = (t.cliente || '').toUpperCase().trim();
+      map.set(name, (map.get(name) || 0) + 1);
+    }
+    return map;
+  }, [resolvedAllData]);
 
   // Lista de vendedores atualiza automaticamente com novos vendedores do Maxiprod
   // GILSON sempre aparece no filtro mesmo que não tenha clientes inadimplentes ainda
@@ -618,6 +630,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
             <tr>
               <th className="px-4 py-2 text-left text-slate-500 font-semibold w-8">#</th>
               <th className="px-3 py-2 text-left text-slate-500 font-semibold">Cliente</th>
+              <th className="px-3 py-2 text-center text-emerald-600 font-semibold whitespace-nowrap">Pagos</th>
               <th className="px-3 py-2 text-left text-slate-500 font-semibold cursor-pointer hover:text-red-600 select-none" onClick={() => handleSort("vendedor")}>
                 Vendedor <SortIcon field="vendedor" />
               </th>
@@ -652,6 +665,16 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                         <ChevronRight className={`w-4 h-4 text-red-600 transition-transform flex-shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
                         <span className="font-medium text-slate-800 truncate max-w-[240px]" title={c.cliente}>{c.cliente}</span>
                       </div>
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      {(() => {
+                        const count = resolvedCountMap.get(c.cliente.toUpperCase().trim()) || 0;
+                        return count > 0 ? (
+                          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">{count}</span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-2.5">
                       {c.vendedor ? (
@@ -690,7 +713,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan={7} className="p-0">
+                      <td colSpan={8} className="p-0">
                         <div className="bg-red-50/60 border-t border-red-100 px-6 py-3">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="text-[11px] font-bold text-red-700">
