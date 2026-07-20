@@ -52,94 +52,151 @@ export interface OneTrackingResult {
 // Known shipping routes (coordinates for common lanes)
 const ROUTE_XIAMEN_SINGAPORE: Array<{ lat: number; lng: number }> = [
   { lat: 24.47, lng: 118.08 }, // Xiamen
-  { lat: 22.5, lng: 116.0 },
-  { lat: 18.0, lng: 113.0 },
-  { lat: 12.0, lng: 110.0 },
-  { lat: 7.0, lng: 107.0 },
-  { lat: 3.0, lng: 105.0 },
-  { lat: 1.26, lng: 103.85 }, // Singapore
+  { lat: 22.5, lng: 118.5 },   // South along coast (in water)
+  { lat: 20.0, lng: 117.5 },   // South China Sea
+  { lat: 18.0, lng: 117.0 },   // East of Vietnam (open water)
+  { lat: 14.5, lng: 116.0 },   // South China Sea
+  { lat: 11.0, lng: 115.0 },   // South China Sea
+  { lat: 8.0, lng: 112.0 },    // Spratly area
+  { lat: 5.5, lng: 108.0 },    // North of Natuna
+  { lat: 3.5, lng: 106.0 },    // Approaching Singapore
+  { lat: 2.5, lng: 105.0 },    // East of Singapore
+  { lat: 1.26, lng: 103.85 },  // Singapore
 ];
 
 const ROUTE_SINGAPORE_SANTOS: Array<{ lat: number; lng: number }> = [
-  { lat: 1.26, lng: 103.85 }, // Singapore
-  { lat: -1.0, lng: 101.0 },  // Strait of Malacca exit
-  { lat: -4.0, lng: 95.0 },   // Off Sumatra west coast
-  { lat: -8.0, lng: 85.0 },   // Indian Ocean
-  { lat: -12.0, lng: 75.0 },  // Central Indian Ocean
-  { lat: -16.0, lng: 65.0 },  // Indian Ocean
-  { lat: -20.0, lng: 55.0 },  // East of Madagascar
-  { lat: -25.0, lng: 45.0 },  // Mozambique Channel
-  { lat: -30.0, lng: 38.0 },  // South of Mozambique
-  { lat: -33.0, lng: 32.0 },  // Off Durban
-  { lat: -35.0, lng: 25.0 },  // South Africa coast
-  { lat: -36.0, lng: 20.0 },  // Cape of Good Hope
-  { lat: -35.5, lng: 15.0 },  // West of Cape Town
-  { lat: -34.0, lng: 8.0 },   // South Atlantic
-  { lat: -32.0, lng: 0.0 },   // Mid Atlantic
-  { lat: -30.0, lng: -8.0 },  // Atlantic
-  { lat: -28.0, lng: -16.0 }, // Atlantic
-  { lat: -26.0, lng: -24.0 }, // Mid South Atlantic
-  { lat: -25.0, lng: -32.0 }, // Approaching Brazil
-  { lat: -24.5, lng: -38.0 }, // Brazilian coast
-  { lat: -24.0, lng: -43.0 }, // Near Santos
+  { lat: 1.26, lng: 103.85 },  // Singapore
+  { lat: 1.5, lng: 103.0 },    // Exit Singapore westward
+  // Malacca Strait - between Malay Peninsula and Sumatra
+  { lat: 2.2, lng: 101.8 },
+  { lat: 3.0, lng: 100.5 },
+  { lat: 4.0, lng: 99.0 },
+  { lat: 5.0, lng: 97.5 },
+  { lat: 5.8, lng: 95.5 },     // Exit Malacca into Andaman Sea
+  // Indian Ocean
+  { lat: 4.0, lng: 92.0 },
+  { lat: 2.0, lng: 88.0 },
+  { lat: 0.0, lng: 84.0 },
+  { lat: -2.0, lng: 79.0 },    // South of Sri Lanka
+  { lat: -4.0, lng: 74.0 },
+  { lat: -7.0, lng: 68.0 },
+  { lat: -10.0, lng: 62.0 },
+  { lat: -13.0, lng: 56.0 },
+  // EAST of Madagascar (lng > 51 until past lat -26)
+  { lat: -16.0, lng: 53.0 },
+  { lat: -19.0, lng: 52.0 },
+  { lat: -22.0, lng: 51.5 },
+  { lat: -25.0, lng: 51.0 },
+  // SOUTH of Madagascar (ends at ~lat -25.5)
+  { lat: -27.0, lng: 49.0 },
+  { lat: -28.5, lng: 45.0 },
+  { lat: -30.0, lng: 40.0 },
+  { lat: -32.0, lng: 35.0 },
+  { lat: -33.5, lng: 30.0 },
+  // Cape of Good Hope
+  { lat: -34.5, lng: 26.0 },
+  { lat: -35.5, lng: 22.0 },
+  { lat: -36.0, lng: 19.0 },
+  { lat: -35.5, lng: 17.0 },   // Cape Agulhas
+  { lat: -34.5, lng: 15.0 },
+  { lat: -33.5, lng: 12.0 },
+  { lat: -33.0, lng: 8.0 },
+  { lat: -32.5, lng: 4.0 },
+  { lat: -32.0, lng: 0.0 },    // Mid Atlantic
+  // South Atlantic
+  { lat: -31.0, lng: -5.0 },
+  { lat: -30.0, lng: -10.0 },
+  { lat: -29.0, lng: -16.0 },
+  { lat: -28.0, lng: -22.0 },
+  { lat: -27.0, lng: -28.0 },
+  { lat: -26.0, lng: -33.0 },
+  { lat: -25.0, lng: -37.0 },
+  { lat: -24.5, lng: -40.0 },
+  { lat: -24.0, lng: -43.0 },
   { lat: -23.95, lng: -46.30 }, // Santos
 ];
 
 const ROUTE_DALIAN_BUSAN: Array<{ lat: number; lng: number }> = [
   { lat: 38.92, lng: 121.63 }, // Dalian port
-  { lat: 38.5, lng: 122.5 },   // Exit Dalian bay
-  { lat: 37.8, lng: 123.5 },   // Yellow Sea
-  { lat: 36.5, lng: 124.5 },   // Yellow Sea open water
-  { lat: 35.5, lng: 126.0 },   // West of Korea (open sea)
-  { lat: 34.8, lng: 127.5 },   // South of Korea (water)
-  { lat: 34.5, lng: 128.5 },   // Korea Strait
+  { lat: 38.0, lng: 121.8 },   // Exit Bohai Sea
+  { lat: 37.0, lng: 122.8 },   // Yellow Sea (east of Shandong)
+  { lat: 36.0, lng: 123.5 },   // Yellow Sea open water
+  { lat: 35.0, lng: 124.5 },   // Yellow Sea (WEST of Korea)
+  // Korea Strait - pass between Korea and Japan
+  { lat: 34.2, lng: 126.5 },   // Approaching Korea Strait
+  { lat: 33.8, lng: 128.5 },   // Korea Strait (water channel)
+  { lat: 34.5, lng: 129.0 },   // North toward Busan
   { lat: 35.1, lng: 129.03 },  // Busan
 ];
 
 const ROUTE_BUSAN_SANTOS: Array<{ lat: number; lng: number }> = [
   { lat: 35.1, lng: 129.03 },  // Busan
-  { lat: 33.5, lng: 128.5 },   // South of Japan
-  { lat: 31.0, lng: 127.0 },   // East China Sea
-  { lat: 28.0, lng: 125.0 },   // East China Sea
-  { lat: 25.0, lng: 122.0 },   // Off Taiwan (east side)
-  { lat: 22.0, lng: 119.0 },   // South of Taiwan
-  { lat: 18.0, lng: 116.0 },   // South China Sea (open water)
-  { lat: 14.0, lng: 114.0 },   // South China Sea
-  { lat: 10.0, lng: 111.0 },   // Off Vietnam coast (well offshore)
-  { lat: 7.0, lng: 108.0 },    // South China Sea
-  { lat: 4.0, lng: 105.5 },    // Approaching Singapore
-  { lat: 2.0, lng: 104.5 },    // East of Singapore
-  { lat: 1.2, lng: 103.8 },    // Singapore Strait
-  { lat: 0.5, lng: 103.0 },    // Strait of Malacca entrance
-  { lat: -0.5, lng: 101.5 },   // Strait of Malacca
-  { lat: -1.5, lng: 99.5 },    // Strait of Malacca
-  { lat: -3.0, lng: 97.0 },    // Exit Malacca Strait
-  { lat: -5.0, lng: 93.0 },    // Off Sumatra west coast
-  { lat: -7.0, lng: 87.0 },    // Indian Ocean
-  { lat: -9.0, lng: 80.0 },    // Indian Ocean
-  { lat: -11.0, lng: 73.0 },   // Central Indian Ocean
-  { lat: -14.0, lng: 65.0 },   // Indian Ocean
-  { lat: -17.0, lng: 57.0 },   // Indian Ocean
-  { lat: -20.0, lng: 50.0 },   // East of Madagascar (well offshore)
-  { lat: -24.0, lng: 44.0 },   // East of Madagascar
-  { lat: -28.0, lng: 40.0 },   // South of Madagascar (offshore)
-  { lat: -32.0, lng: 35.0 },   // Off Durban (well offshore)
-  { lat: -34.5, lng: 30.0 },   // South Africa east coast (offshore)
-  { lat: -36.0, lng: 24.0 },   // South of Africa
-  { lat: -36.5, lng: 20.0 },   // Cape Agulhas
-  { lat: -36.0, lng: 17.0 },   // Cape of Good Hope
-  { lat: -35.0, lng: 14.0 },   // West of Cape Town
-  { lat: -34.0, lng: 10.0 },   // South Atlantic
-  { lat: -33.0, lng: 5.0 },    // South Atlantic
+  { lat: 33.0, lng: 129.5 },   // South of Japan (in water)
+  { lat: 31.5, lng: 129.0 },   // East China Sea
+  { lat: 29.5, lng: 128.0 },   // East China Sea
+  { lat: 27.0, lng: 126.5 },   // East of Ryukyu Islands
+  // East of Taiwan (Pacific side)
+  { lat: 24.5, lng: 123.0 },
+  // South of Taiwan into South China Sea
+  { lat: 21.5, lng: 119.5 },
+  // South China Sea - EAST of Vietnam coast (lng > 115)
+  { lat: 18.0, lng: 117.0 },
+  { lat: 14.5, lng: 116.0 },
+  { lat: 11.0, lng: 115.0 },
+  { lat: 8.0, lng: 112.0 },    // Spratly area
+  { lat: 5.5, lng: 108.0 },    // North of Natuna
+  { lat: 3.5, lng: 106.0 },    // Approaching Singapore
+  { lat: 2.5, lng: 105.0 },    // East of Singapore
+  // Singapore Strait
+  { lat: 1.3, lng: 104.0 },
+  { lat: 1.2, lng: 103.6 },
+  { lat: 1.5, lng: 103.0 },    // Exit into Malacca Strait
+  // Malacca Strait
+  { lat: 2.2, lng: 101.8 },
+  { lat: 3.0, lng: 100.5 },
+  { lat: 4.0, lng: 99.0 },
+  { lat: 5.0, lng: 97.5 },
+  { lat: 5.8, lng: 95.5 },     // Exit Malacca into Andaman Sea
+  // Indian Ocean
+  { lat: 4.0, lng: 92.0 },
+  { lat: 2.0, lng: 88.0 },
+  { lat: 0.0, lng: 84.0 },
+  { lat: -2.0, lng: 79.0 },    // South of Sri Lanka
+  { lat: -4.0, lng: 74.0 },
+  { lat: -7.0, lng: 68.0 },
+  { lat: -10.0, lng: 62.0 },
+  { lat: -13.0, lng: 56.0 },
+  // EAST of Madagascar (stay lng > 51 until past lat -26)
+  { lat: -16.0, lng: 53.0 },
+  { lat: -19.0, lng: 52.0 },
+  { lat: -22.0, lng: 51.5 },
+  { lat: -25.0, lng: 51.0 },
+  // SOUTH of Madagascar (ends at ~lat -25.5)
+  { lat: -27.0, lng: 49.0 },
+  { lat: -28.5, lng: 45.0 },
+  { lat: -30.0, lng: 40.0 },
+  { lat: -32.0, lng: 35.0 },
+  { lat: -33.5, lng: 30.0 },
+  // Cape of Good Hope
+  { lat: -34.5, lng: 26.0 },
+  { lat: -35.5, lng: 22.0 },
+  { lat: -36.0, lng: 19.0 },
+  { lat: -35.5, lng: 17.0 },   // Cape Agulhas
+  { lat: -34.5, lng: 15.0 },
+  { lat: -33.5, lng: 12.0 },
+  { lat: -33.0, lng: 8.0 },
+  { lat: -32.5, lng: 4.0 },
   { lat: -32.0, lng: 0.0 },    // Mid Atlantic
-  { lat: -31.0, lng: -5.0 },   // Atlantic
-  { lat: -30.0, lng: -10.0 },  // Atlantic
-  { lat: -29.0, lng: -16.0 },  // Atlantic
-  { lat: -27.5, lng: -22.0 },  // Mid South Atlantic
-  { lat: -26.0, lng: -28.0 },  // Atlantic
-  { lat: -25.0, lng: -34.0 },  // Approaching Brazil
-  { lat: -24.5, lng: -39.0 },  // Brazilian coast
-  { lat: -24.0, lng: -43.0 },  // Near Santos
+  // South Atlantic
+  { lat: -31.0, lng: -5.0 },
+  { lat: -30.0, lng: -10.0 },
+  { lat: -29.0, lng: -16.0 },
+  { lat: -28.0, lng: -22.0 },
+  { lat: -27.0, lng: -28.0 },
+  { lat: -26.0, lng: -33.0 },
+  { lat: -25.0, lng: -37.0 },
+  { lat: -24.5, lng: -40.0 },
+  { lat: -24.0, lng: -43.0 },
   { lat: -23.95, lng: -46.30 }, // Santos
 ];
 

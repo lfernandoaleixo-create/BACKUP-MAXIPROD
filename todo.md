@@ -5765,3 +5765,6 @@
 - [x] Rastreio em Conjunto: navio azul (MAERSK WALLIS) deve ter rota pela água (Dalian→Busan→Santos), não cortar continentes
 - [x] Rastreio em Conjunto: ajustar tamanho dos ícones de navio no mapa
 - [x] Rastreio em Conjunto: preencher todos os detalhes corretamente (nome navio, %, ETA)
+- [x] Rastreio em Conjunto: rota marítima precisa - contornar Coreia pelo Estreito da Coreia, leste do Vietnã, Estreito de Malaca, leste de Madagascar, Cabo da Boa Esperança
+- [x] Rastreio em Conjunto: ícone de navio colorido (não na cor da linha) - navio cargueiro visto de frente
+- [x] Espelhar barra de Comissão por Desconto Médio para manter mesma sequência de cores da barra de Reputação
