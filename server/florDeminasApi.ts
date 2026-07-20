@@ -4,7 +4,7 @@
  * 
  * Fórmula: Valor da Faixa de Peso + Taxa de Entrega (R$95) + Pedágio (R$12,30) + Seguro (0,7% do valor NF)
  * 
- * Para peso acima de 250kg: valor = peso × R$22,41 (por kg)
+ * Para peso acima de 250kg: valor = peso × R$0,747 (por kg)
  * 
  * Cidades atendidas: SP (Grande SP) e MG (região de Lavras/Varginha/BH)
  * Prazos: 24h ou 48h dependendo da cidade
@@ -15,10 +15,10 @@ const FAIXAS_PESO = [
   { min: 0, max: 50, valor: 103.03, ref: 1 },
   { min: 51, max: 150, valor: 160.27, ref: 2 },
   { min: 151, max: 250, valor: 186.00, ref: 3 },
-  // Acima de 250kg: R$ 22,41 por kg
+  // Acima de 250kg: R$ 0,747 por kg
 ];
 
-const VALOR_POR_KG_ACIMA_250 = 22.41;
+const VALOR_POR_KG_ACIMA_250 = 0.747;
 const TAXA_ENTREGA = 95.00;
 const PEDAGIO = 12.30;
 const SEGURO_PERCENTUAL = 0.007; // 0,7%
