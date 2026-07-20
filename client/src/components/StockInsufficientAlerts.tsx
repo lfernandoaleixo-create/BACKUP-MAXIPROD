@@ -57,27 +57,25 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
     });
   };
 
-  if (alerts.length === 0 && !showHistory) return null;
-
   return (
     <div className="space-y-4">
       {/* Main Alerts Card */}
-      <div className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden ${pendingAlerts.length > 0 ? 'border-red-400 animate-pulse-border' : 'border-red-200'}`}>
+      <div className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden ${pendingAlerts.length > 0 ? 'border-red-400 animate-pulse-border' : alerts.length > 0 ? 'border-red-200' : 'border-gray-200'}`}>
         {/* Header */}
         <div
-          className="flex items-center justify-between px-5 py-3 bg-red-50 cursor-pointer"
-          onClick={() => setExpanded(!expanded)}
+          className={`flex items-center justify-between px-5 py-3 cursor-pointer ${alerts.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}
+          onClick={() => alerts.length > 0 && setExpanded(!expanded)}
         >
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${pendingAlerts.length > 0 ? 'bg-red-200' : 'bg-red-100'}`}>
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div className={`p-2 rounded-lg ${pendingAlerts.length > 0 ? 'bg-red-200' : alerts.length > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
+              <AlertTriangle className={`w-5 h-5 ${alerts.length > 0 ? 'text-red-600' : 'text-gray-400'}`} />
             </div>
             <div>
-              <h3 className="font-semibold text-red-900 text-sm">
+              <h3 className={`font-semibold text-sm ${alerts.length > 0 ? 'text-red-900' : 'text-gray-700'}`}>
                 Alertas de Estoque Insuficiente
               </h3>
-              <p className="text-xs text-red-600">
-                Itens em pedidos "A aprovar" sem estoque disponível
+              <p className={`text-xs ${alerts.length > 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                {alerts.length > 0 ? 'Itens em pedidos "A aprovar" sem estoque disponível' : 'Nenhum alerta ativo no momento'}
               </p>
             </div>
             {pendingCount > 0 && (
@@ -90,16 +88,16 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
             {/* History shortcut icon */}
             <button
               onClick={(e) => { e.stopPropagation(); setShowHistory(!showHistory); }}
-              className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+              className={`p-1.5 rounded-lg transition-colors ${alerts.length > 0 ? 'hover:bg-red-100' : 'hover:bg-gray-200'}`}
               title={showHistory ? "Ocultar Histórico" : "Ver Histórico"}
             >
-              <History className={`w-4 h-4 ${showHistory ? 'text-red-700' : 'text-red-400'}`} />
+              <History className={`w-4 h-4 ${showHistory ? (alerts.length > 0 ? 'text-red-700' : 'text-gray-700') : (alerts.length > 0 ? 'text-red-400' : 'text-gray-400')}`} />
             </button>
-            {expanded ? (
+            {alerts.length > 0 && (expanded ? (
               <ChevronUp className="w-5 h-5 text-red-400" />
             ) : (
               <ChevronDown className="w-5 h-5 text-red-400" />
-            )}
+            ))}
           </div>
         </div>
 
