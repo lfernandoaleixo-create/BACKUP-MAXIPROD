@@ -5802,3 +5802,7 @@
 - [x] Container card: hover abre card, click trava, click novamente destrava
 - [x] Inadimplência/Clientes: adicionar coluna "Pagos/Resolvidos" na tabela, logo após o nome do cliente, mostrando quantidade de títulos resolvidos por cliente
 - [x] Container card: corrigir flicker/piscar ao passar mouse sobre o navio no mapa (debounce no mouseleave)
+- [x] Faturamento: card "Histórico de Alertas de Estoque" deve começar recolhido/fechado por padrão
+- [x] Faturamento: card "Alertas de Estoque Insuficiente" deve começar recolhido/fechado por padrão
+- [x] Faturamento: card de alertas deve piscar quando houver alertas pendentes (sem resposta), parar de piscar quando todos forem respondidos
+- [x] Faturamento: ícone de relógio (histórico) ao lado do card recolhido para acesso rápido

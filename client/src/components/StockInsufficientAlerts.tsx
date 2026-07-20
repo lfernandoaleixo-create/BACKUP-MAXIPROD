@@ -12,7 +12,7 @@ interface StockInsufficientAlertsProps {
 }
 
 export default function StockInsufficientAlerts({ operatorName, canRespond = false }: StockInsufficientAlertsProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [observacao, setObservacao] = useState("");
@@ -62,14 +62,14 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
   return (
     <div className="space-y-4">
       {/* Main Alerts Card */}
-      <div className="bg-white rounded-xl border-2 border-red-200 shadow-sm overflow-hidden">
+      <div className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden ${pendingAlerts.length > 0 ? 'border-red-400 animate-pulse-border' : 'border-red-200'}`}>
         {/* Header */}
         <div
           className="flex items-center justify-between px-5 py-3 bg-red-50 cursor-pointer"
           onClick={() => setExpanded(!expanded)}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
+            <div className={`p-2 rounded-lg ${pendingAlerts.length > 0 ? 'bg-red-200' : 'bg-red-100'}`}>
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <div>
@@ -86,11 +86,21 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
               </Badge>
             )}
           </div>
-          {expanded ? (
-            <ChevronUp className="w-5 h-5 text-red-400" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-red-400" />
-          )}
+          <div className="flex items-center gap-2">
+            {/* History shortcut icon */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowHistory(!showHistory); }}
+              className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+              title={showHistory ? "Ocultar Histórico" : "Ver Histórico"}
+            >
+              <History className={`w-4 h-4 ${showHistory ? 'text-red-700' : 'text-red-400'}`} />
+            </button>
+            {expanded ? (
+              <ChevronUp className="w-5 h-5 text-red-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-red-400" />
+            )}
+          </div>
         </div>
 
         {/* Content */}
