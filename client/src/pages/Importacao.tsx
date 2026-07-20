@@ -392,6 +392,7 @@ interface PaymentData {
   arrivalDate: string | null;
   alertDaysBefore: number | null;
   alertDismissed: boolean;
+  cells?: Record<string, string> | null;
 }
 
 interface SupplierData {
@@ -794,10 +795,9 @@ function SectionTable({
   const [editSectionName, setEditSectionName] = useState("");
   const [editSectionSubtitle, setEditSectionSubtitle] = useState("");
 
-  // Spreadsheet config query
+  // Spreadsheet config query - always enabled so custom columns show in visualization mode too
   const spreadsheetConfig = trpc.import.getSpreadsheetConfig.useQuery(
-    { supplierId, sectionTitle: sectionTitle || undefined },
-    { enabled: spreadsheetMode }
+    { supplierId, sectionTitle: sectionTitle || undefined }
   );
   const updateConfigMut = trpc.import.updateSpreadsheetConfig.useMutation({
     onSuccess: () => spreadsheetConfig.refetch(),
@@ -1009,7 +1009,7 @@ function SectionTable({
             <th colSpan={3} className="bg-blue-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-blue-700 border-b-2 border-blue-400 whitespace-nowrap">Total a pagar</th>
             <th colSpan={3} className="bg-green-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-green-700 border-b-2 border-green-400 whitespace-nowrap">O que pagou</th>
             <th colSpan={3} className="bg-red-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-red-600 border-b-2 border-red-400 whitespace-nowrap">O que falta pagar</th>
-            <th colSpan={2} className="bg-white"></th>
+            <th colSpan={1 + (spreadsheetConfig.data?.columns?.filter((c: any) => c.key.startsWith('custom_')).length || 0) + 1} className="bg-white"></th>
           </tr>
           <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[80px]">Status</th>
@@ -1026,15 +1026,19 @@ function SectionTable({
             <th className="px-2 py-2 text-center font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
             <th className="px-2 py-2 text-center font-semibold bg-red-50/50 whitespace-nowrap min-w-[70px]">Total</th>
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Rastreio</th>
+            {/* Custom columns from spreadsheet config */}
+            {spreadsheetConfig.data?.columns?.filter((c: any) => c.key.startsWith('custom_')).map((col: any) => (
+              <th key={col.key} className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[70px] bg-yellow-50/50">{col.name}</th>
+            ))}
             <th className="px-1 py-2 text-center font-semibold min-w-[30px]"></th>
           </tr>
         </thead>
         <tbody>
           {payments.map(payment => (
             editingId === payment.id ? (
-              <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} />
+              <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} customColumns={spreadsheetConfig.data?.columns?.filter((c: any) => c.key.startsWith('custom_')) || []} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} supplierName={supplierName} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} onTrackAi={onTrackAi} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} isWinnie={isWinnie} />
+              <PaymentRow key={payment.id} payment={payment} supplierName={supplierName} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} onTrackAi={onTrackAi} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} isWinnie={isWinnie} customColumns={spreadsheetConfig.data?.columns?.filter((c: any) => c.key.startsWith('custom_')) || []} />
             )
           ))}
           {payments.length === 0 && (
@@ -1056,6 +1060,7 @@ function SectionTable({
               currency={currency}
               exchangeRate={exchangeRate}
               rmbRate={rmbRate}
+              customColumns={spreadsheetConfig.data?.columns?.filter((c: any) => c.key.startsWith('custom_')) || []}
             />
           )}
           {/* Totals row */}
@@ -1072,6 +1077,10 @@ function SectionTable({
               <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol} ${convertValue(sectionTotals.saldoDevedorParaguai || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</td>
               <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{`${currencySymbol} ${convertValue(sectionTotals.saldoDevedorTotal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</td>
               <td className="px-2 py-2"></td>
+              {/* Empty cells for custom columns */}
+              {spreadsheetConfig.data?.columns?.filter((c: any) => c.key.startsWith('custom_')).map((col: any) => (
+                <td key={col.key} className="px-2 py-2"></td>
+              ))}
               <td className="px-1 py-2"></td>
             </tr>
           )}
@@ -1098,7 +1107,7 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, rmbRate, isWinnie = false }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; isWinnie?: boolean }) {
+function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrackBl, onTrackAi, currency, exchangeRate, rmbRate, isWinnie = false, customColumns = [] }: { payment: PaymentData; supplierName?: string; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; onTrackAi?: (container: string, armador: string | null, bl?: string | null, supplierName?: string | null, poNumber?: string | null, products?: Array<{ description: string; quantidade?: number | null }> | null) => void; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate: number; isWinnie?: boolean; customColumns?: Array<{ key: string; name: string; type: string }> }) {
   
   const convertValue = (val: number) => {
     if (currency === "BRL") return val * exchangeRate;
@@ -1222,6 +1231,12 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
           )}
         </div>
       </td>
+      {/* Custom columns */}
+      {customColumns.map(col => (
+        <td key={col.key} className="px-2 py-2 text-center bg-yellow-50/30 whitespace-nowrap">
+          <span className="text-[11px] text-slate-700">{payment.cells?.[col.key] || <span className="text-slate-300">-</span>}</span>
+        </td>
+      ))}
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button onClick={onEdit} className="p-1 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
@@ -1241,7 +1256,7 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
 
 // ===== EDIT PAYMENT ROW (all fields 100% manual, no auto-calculation) =====
 
-function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
+function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25, customColumns = [] }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number; customColumns?: Array<{ key: string; name: string; type: string }> }) {
   
   
   // Convert USD to display currency
@@ -1283,10 +1298,22 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
     alertDaysBefore: payment.alertDaysBefore !== null ? String(payment.alertDaysBefore) : "",
     sectionTitle: payment.sectionTitle || "",
   });
+  // Custom column values from cells JSON
+  const [customCells, setCustomCells] = useState<Record<string, string>>(() => {
+    const cells = payment.cells || {};
+    const result: Record<string, string> = {};
+    for (const col of customColumns) {
+      result[col.key] = cells[col.key] || "";
+    }
+    return result;
+  });
 
   const updatePayment = trpc.import.updatePayment.useMutation({
     onSuccess: () => { onRefetch(); onCancel(); toast.success("Pedido atualizado!"); },
     onError: () => toast.error("Erro ao atualizar"),
+  });
+  const updateCellsMut = trpc.import.updatePaymentCells.useMutation({
+    onSuccess: () => onRefetch(),
   });
 
   const inputClass = "w-full px-1.5 py-1 border border-blue-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white";
@@ -1369,10 +1396,24 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
           }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (opcional)" />
         </div>
       </td>
+      {/* Custom columns */}
+      {customColumns.map(col => (
+        <td key={col.key} className="px-1 py-1.5">
+          <input value={customCells[col.key] || ""} onChange={e => setCustomCells({ ...customCells, [col.key]: e.target.value })} className={`${inputClass} text-center`} placeholder={col.name} />
+        </td>
+      ))}
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
-            onClick={() => updatePayment.mutate({ id: payment.id, status: form.status, pedido: form.pedido, doc: form.doc, totalUsd: toUsd(form.totalUsd), totalBrasilUsd: toUsd(form.totalBrasilUsd), totalParaguaiUsd: toUsd(form.totalParaguaiUsd), brasilUsd: toUsd(form.brasilUsd), paraguaiUsd: toUsd(form.paraguaiUsd), totalPago: toUsd(form.totalPago), saldoDevedorBrasil: toUsd(form.saldoDevedorBrasil), saldoDevedorParaguai: toUsd(form.saldoDevedorParaguai), saldoDevedorTotal: toUsd(form.saldoDevedorTotal), rastreio: form.rastreio || undefined, blNumber: form.blNumber || undefined, trackingUuid: form.trackingUuid || undefined, armador: form.armador || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
+            onClick={() => {
+              updatePayment.mutate({ id: payment.id, status: form.status, pedido: form.pedido, doc: form.doc, totalUsd: toUsd(form.totalUsd), totalBrasilUsd: toUsd(form.totalBrasilUsd), totalParaguaiUsd: toUsd(form.totalParaguaiUsd), brasilUsd: toUsd(form.brasilUsd), paraguaiUsd: toUsd(form.paraguaiUsd), totalPago: toUsd(form.totalPago), saldoDevedorBrasil: toUsd(form.saldoDevedorBrasil), saldoDevedorParaguai: toUsd(form.saldoDevedorParaguai), saldoDevedorTotal: toUsd(form.saldoDevedorTotal), rastreio: form.rastreio || undefined, blNumber: form.blNumber || undefined, trackingUuid: form.trackingUuid || undefined, armador: form.armador || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null });
+              // Save custom cells if any custom columns exist
+              if (customColumns.length > 0) {
+                const existingCells = payment.cells || {};
+                const mergedCells = { ...existingCells, ...customCells };
+                updateCellsMut.mutate({ id: payment.id, cells: mergedCells });
+              }
+            }}
             className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <Check className="w-3 h-3" />
@@ -1388,7 +1429,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false, curren
 
 // ===== INLINE ADD PAYMENT ROW (all fields 100% manual) =====
 
-function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25 }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number }) {
+function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, isWinnie = false, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25, customColumns = [] }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number; customColumns?: Array<{ key: string; name: string; type: string }> }) {
   
   
   // Convert display currency back to USD for storage (full precision to avoid cent discrepancies)
@@ -1417,6 +1458,14 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
     armador: "",
     arrivalDate: "",
     alertDaysBefore: "",
+  });
+  // Custom column values
+  const [customCells, setCustomCells] = useState<Record<string, string>>(() => {
+    const result: Record<string, string> = {};
+    for (const col of customColumns) {
+      result[col.key] = "";
+    }
+    return result;
   });
 
   const createPayment = trpc.import.createPayment.useMutation({
@@ -1504,6 +1553,12 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
           }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (opcional)" />
         </div>
       </td>
+      {/* Custom columns */}
+      {customColumns.map(col => (
+        <td key={col.key} className="px-1 py-1.5">
+          <input value={customCells[col.key] || ""} onChange={e => setCustomCells({ ...customCells, [col.key]: e.target.value })} className={`${inputClass} text-center`} placeholder={col.name} />
+        </td>
+      ))}
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
@@ -1512,6 +1567,8 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
                 toast.error("Preencha Status, Pedido e Total USD");
                 return;
               }
+              // Include custom cells in the cells field
+              const hasCustomData = Object.values(customCells).some(v => v.trim() !== "");
               createPayment.mutate({
                 supplierId,
                 sectionTitle: sectionTitle || undefined,
@@ -1533,6 +1590,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
                 armador: form.armador || undefined,
                 arrivalDate: form.arrivalDate || undefined,
                 alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null,
+                ...(hasCustomData ? { cells: customCells } : {}),
               });
             }}
             className="p-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors"
@@ -1836,7 +1894,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
 
   const allCosts = costs || [];
   const filtered = searchTerm
-    ? allCosts.filter(c => c.codigoItem.toLowerCase().includes(searchTerm.toLowerCase()) || c.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
+    ? allCosts.filter((c: any) => c.codigoItem.toLowerCase().includes(searchTerm.toLowerCase()) || c.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
     : allCosts;
 
   const SPREAD = 0.20; // R$ 0,20 de spread na conversão USD→BRL
@@ -1962,7 +2020,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
             </tr>
           </thead>
           <tbody>
-            {filtered.map((item) => (
+            {filtered.map((item: any) => (
               <>
                 <tr
                   key={item.codigoItem}
@@ -2028,7 +2086,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                           )}
                           {item.breakdownReal.length > 0 ? (
                             <div className="space-y-1.5">
-                              {item.breakdownReal.map((b, idx) => (
+                              {item.breakdownReal.map((b: any, idx: number) => (
                                 <div key={idx} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-emerald-100/50">
                                   <div className="flex items-center gap-3">
                                     <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">{b.poNumber}</span>
@@ -2059,7 +2117,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                               <h4 className="text-sm font-semibold text-amber-800">Custo Projetado (POs Chegou no Pátio)</h4>
                             </div>
                             <div className="space-y-1.5">
-                              {item.breakdownProjetado.map((b, idx) => (
+                              {item.breakdownProjetado.map((b: any, idx: number) => (
                                 <div key={idx} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-amber-100/50">
                                   <div className="flex items-center gap-3">
                                     <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">{b.poNumber}</span>
@@ -2086,7 +2144,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                               <h4 className="text-sm font-semibold text-blue-800">Estimativa (POs Navegando)</h4>
                             </div>
                             <div className="space-y-1.5">
-                              {item.breakdownEstimativa.map((b, idx) => (
+                              {item.breakdownEstimativa.map((b: any, idx: number) => (
                                 <div key={idx} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-blue-100/50">
                                   <div className="flex items-center gap-3">
                                     <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{b.poNumber}</span>

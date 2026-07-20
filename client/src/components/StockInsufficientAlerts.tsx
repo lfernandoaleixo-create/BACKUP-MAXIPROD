@@ -19,7 +19,7 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
 
   const { data: alerts = [], refetch } = trpc.stockAlert.getAlerts.useQuery({});
   const { data: historyAlerts = [], refetch: refetchHistory } = trpc.stockAlert.getAlerts.useQuery(
-    { status: "todos" },
+    { status: "historico" },
     { enabled: showHistory }
   );
   const { data: pendingCount = 0 } = trpc.stockAlert.countPending.useQuery();
@@ -39,9 +39,9 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
   const pendingAlerts = alerts.filter((a: any) => a.status === "pendente");
   const resolvedAlerts = alerts.filter((a: any) => a.status !== "pendente");
 
-  // History: all resolved (aceito/recusado) alerts
+  // History: all resolved (aceito/recusado/expirado) alerts
   const historyResolved = historyAlerts.filter(
-    (a: any) => a.status === "aceito" || a.status === "recusado"
+    (a: any) => a.status === "aceito" || a.status === "recusado" || a.status === "expirado"
   );
 
   const handleRespond = (alertId: number, status: "aceito" | "recusado") => {
@@ -337,14 +337,16 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
                             className={`text-xs ${
                               alert.status === "aceito"
                                 ? "bg-green-100 text-green-700"
+                                : alert.status === "expirado"
+                                ? "bg-gray-100 text-gray-600"
                                 : "bg-red-100 text-red-700"
                             }`}
                           >
-                            {alert.status === "aceito" ? "✓ Aceito" : "✗ Recusado"}
+                            {alert.status === "aceito" ? "✓ Aceito" : alert.status === "expirado" ? "→ Baixa realizada" : "✗ Recusado"}
                           </Badge>
                         </td>
                         <td className="py-2 pr-3 text-gray-600">
-                          {alert.respondidoPor || "—"}
+                          {alert.respondidoPor || (alert.status === "expirado" ? "Sistema" : "—")}
                         </td>
                         <td className="py-2 pr-3 text-gray-500 max-w-[150px] truncate" title={alert.respostaObservacao || ""}>
                           {alert.respostaObservacao || "—"}

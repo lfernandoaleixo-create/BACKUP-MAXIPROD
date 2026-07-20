@@ -5812,3 +5812,5 @@
 - [x] Mobile: suportar rotação de tela (landscape) para aproveitar espaço extra quando o celular é virado na horizontal
 - [x] Gestão Comercial/Frete: integrar transportadora Flor de Minas na simulação de frete (cálculo baseado em planilha: valor por faixa de peso + taxa entrega R$95 + pedágio R$12,30 + seguro 0,7% sobre NF, com tabela de cidades atendidas SP/MG)
 - [x] BUG Importação: coluna "CRÉDITO" aparece na tabela normal mas não aparece quando clica em "Planilha" (modo planilha não inclui a coluna crédito) - corrigido com propagação automática de colunas custom entre seções
+- [x] BUG Faturamento: pedidos de baixa com "Baixa dada no Maxiprod" continuam aparecendo no card de insuficiência - devem ir apenas para o histórico
+- [x] BUG Importação: coluna CRÉDITO não aparece no formulário de editar/incluir pedido (modo normal, não planilha)

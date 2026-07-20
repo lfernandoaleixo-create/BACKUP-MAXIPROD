@@ -20,7 +20,7 @@ export const stockAlertRouter = router({
    */
   getAlerts: publicProcedure
     .input(z.object({
-      status: z.enum(["pendente", "aceito", "recusado", "expirado", "todos"]).optional(),
+      status: z.enum(["pendente", "aceito", "recusado", "expirado", "todos", "historico"]).optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -29,10 +29,13 @@ export const stockAlertRouter = router({
       const statusFilter = input?.status || "todos";
       
       let conditions: any[] = [];
-      if (statusFilter !== "todos") {
+      if (statusFilter === "historico") {
+        // Histórico: mostrar tudo (aceito, recusado, expirado) - para a seção de histórico completo
+        conditions.push(inArray(stockInsufficientAlerts.status, ["aceito", "recusado", "expirado"]));
+      } else if (statusFilter !== "todos") {
         conditions.push(eq(stockInsufficientAlerts.status, statusFilter));
       } else {
-        // Por padrão, não mostrar expirados
+        // Por padrão, não mostrar expirados (card principal)
         conditions.push(sql`${stockInsufficientAlerts.status} != 'expirado'`);
       }
       

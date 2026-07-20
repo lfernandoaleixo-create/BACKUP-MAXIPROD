@@ -194,31 +194,40 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
 }
 
 /**
- * Remove alertas pendentes que não correspondem mais a itens insuficientes em pedidos "A aprovar".
+ * Remove alertas pendentes E aceitos que não correspondem mais a itens insuficientes em pedidos "A aprovar".
+ * 
+ * Lógica:
+ * - Alertas "pendente": expirar se o item não é mais insuficiente ou pedido saiu de A aprovar
+ * - Alertas "aceito": expirar se o pedido saiu de A aprovar (baixa já foi dada no Maxiprod)
+ *   OU se o item não é mais insuficiente (estoque foi reposto)
+ * 
+ * Isso garante que quando a Larissa dá a baixa direto no Maxiprod (sem clicar Concluir no dashboard),
+ * o alerta sai automaticamente do card de insuficiência na aba Faturamento.
  */
 async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentInsufficient?: PedidoItem[]) {
   if (!currentPedidos || currentPedidos.size === 0) {
-    // Nenhum pedido A aprovar → expirar todos os pendentes criados pelo sistema (não manuais)
+    // Nenhum pedido A aprovar → expirar todos os pendentes E aceitos criados pelo sistema
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(
         and(
-          eq(stockInsufficientAlerts.status, "pendente"),
+          inArray(stockInsufficientAlerts.status, ["pendente", "aceito"]),
           eq(stockInsufficientAlerts.criadoPor, "sistema")
         )
       );
     return;
   }
 
-  // Buscar alertas pendentes criados pelo sistema (não expirar manuais)
-  const pendentes = await db.select({
+  // Buscar alertas pendentes E aceitos (ambos devem ser verificados)
+  const alertasAtivos = await db.select({
     id: stockInsufficientAlerts.id,
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,
     codigoItem: stockInsufficientAlerts.codigoItem,
     criadoPor: stockInsufficientAlerts.criadoPor,
+    status: stockInsufficientAlerts.status,
   })
     .from(stockInsufficientAlerts)
-    .where(eq(stockInsufficientAlerts.status, "pendente"));
+    .where(inArray(stockInsufficientAlerts.status, ["pendente", "aceito"]));
 
   // Criar set dos itens que REALMENTE são insuficientes agora
   const insufficientSet = new Set(
@@ -226,11 +235,14 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
   );
 
   const idsToExpire: number[] = [];
-  for (const alerta of pendentes) {
+  for (const alerta of alertasAtivos) {
     // Não expirar alertas criados manualmente - só expirar os do sistema
     if (alerta.criadoPor === 'manual') continue;
     const key = `${alerta.pedidoNumero}-${alerta.codigoItem}`;
-    // Expirar se o pedido não está mais em A aprovar OU se o item não é mais insuficiente
+    
+    // Para alertas "pendente": expirar se não é mais insuficiente
+    // Para alertas "aceito": expirar se o pedido saiu de A aprovar OU item não é mais insuficiente
+    //   (isso cobre o caso da baixa ser dada direto no Maxiprod sem clicar Concluir)
     if (!insufficientSet.has(key)) {
       idsToExpire.push(alerta.id);
     }

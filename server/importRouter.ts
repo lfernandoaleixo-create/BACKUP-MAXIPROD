@@ -128,6 +128,7 @@ export const importRouter = router({
       armador: z.string().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
+      cells: z.record(z.string(), z.string()).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -154,6 +155,7 @@ export const importRouter = router({
         armador: input.armador || null,
         arrivalDate: input.arrivalDate || null,
         alertDaysBefore: input.alertDaysBefore ?? null,
+        cells: input.cells || null,
       });
       return { id: result.insertId };
     }),

@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { stockWithdrawalRequests, productCatalog, operators, withdrawalDeletionHistory, stockItems } from "../drizzle/schema";
+import { stockWithdrawalRequests, productCatalog, operators, withdrawalDeletionHistory, stockItems, stockInsufficientAlerts } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte, count, inArray } from "drizzle-orm";
 
 /**
@@ -302,6 +302,14 @@ export const stockWithdrawalRouter = router({
       if (!op) throw new Error("Senha inválida.");
       if (op.name !== "Larissa") throw new Error("Apenas a Larissa pode confirmar a conclusão.");
 
+      // Get the request details before completing
+      const [request] = await db.select().from(stockWithdrawalRequests)
+        .where(and(
+          eq(stockWithdrawalRequests.id, input.id),
+          eq(stockWithdrawalRequests.status, "aprovada")
+        ));
+      if (!request) throw new Error("Solicitação não encontrada ou já concluída.");
+
       await db.update(stockWithdrawalRequests)
         .set({
           status: "concluida",
@@ -309,9 +317,15 @@ export const stockWithdrawalRouter = router({
           fiscalId: op.id,
           fiscalName: op.name,
         })
+        .where(eq(stockWithdrawalRequests.id, input.id));
+
+      // Expirar alertas de estoque insuficiente vinculados ao mesmo produto
+      // Isso remove o alerta do card de insuficiência na aba Faturamento
+      await db.update(stockInsufficientAlerts)
+        .set({ status: "expirado" })
         .where(and(
-          eq(stockWithdrawalRequests.id, input.id),
-          eq(stockWithdrawalRequests.status, "aprovada")
+          eq(stockInsufficientAlerts.codigoItem, request.productCode),
+          eq(stockInsufficientAlerts.status, "aceito")
         ));
 
       return { success: true };
