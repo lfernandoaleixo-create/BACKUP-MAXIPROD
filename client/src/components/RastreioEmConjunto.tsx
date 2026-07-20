@@ -1166,16 +1166,23 @@ export function RastreioEmConjunto() {
         }
 
         // Add hover/click events - hover opens card, click locks/unlocks
+        // Use a debounce timeout to prevent flicker from rapid mouseenter/mouseleave cycles
+        // (Google Maps AdvancedMarkerElement can cause rapid re-fires when repositioning DOM)
+        let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
         markerEl.addEventListener("mouseenter", () => {
+          if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null; }
           setHoveredContainer(container.id);
           markerEl.style.transform = "scale(1.15)";
           markerEl.style.zIndex = "1000";
         });
         markerEl.addEventListener("mouseleave", () => {
-          // Only clear hover if not locked (selectedContainer)
-          setHoveredContainer(prev => prev === container.id ? null : prev);
-          markerEl.style.transform = "scale(1)";
-          markerEl.style.zIndex = "";
+          // Debounce mouseleave to prevent flicker
+          hoverTimeout = setTimeout(() => {
+            setHoveredContainer(prev => prev === container.id ? null : prev);
+            markerEl.style.transform = "scale(1)";
+            markerEl.style.zIndex = "";
+            hoverTimeout = null;
+          }, 150);
         });
         markerEl.addEventListener("click", () => {
           // Click locks/unlocks the card (toggle selectedContainer)
@@ -1619,7 +1626,7 @@ export function RastreioEmConjunto() {
               key={container.id}
               className={`bg-white rounded-xl border-l-4 ${colors[index % colors.length]} border border-slate-200 p-3 hover:shadow-md transition cursor-pointer ${selectedContainer === container.id ? 'ring-2 ring-indigo-300' : ''}`}
               onMouseEnter={() => { if (!selectedContainer) setHoveredContainer(container.id); }}
-              onMouseLeave={() => { if (!selectedContainer) setHoveredContainer(null); }}
+              onMouseLeave={() => { if (!selectedContainer) setTimeout(() => setHoveredContainer(prev => prev === container.id ? null : prev), 100); }}
               onClick={() => {
                 setSelectedContainer(prev => {
                   if (prev === container.id) {
