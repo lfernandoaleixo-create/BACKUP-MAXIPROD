@@ -60,6 +60,7 @@ interface LiveData {
   vessel: string;
   eta: string | null;
   currentStatus: string;
+  events?: Array<{ date?: string; timestamp?: string; description?: string; status?: string; location?: string; event?: string; has_occurred?: boolean }>;
 }
 
 /**
@@ -618,6 +619,25 @@ function ContainerTracker({ container, onDataReadyRef }: {
       currentStatus = d.currentStatus || d.translatedStatus || '';
     }
 
+    // Extract events for route history
+    let events: LiveData['events'] = undefined;
+    if (isAiTracking && aiData?.events) {
+      events = aiData.events;
+    } else if (isOneTracking && oneData?.sailingLegs) {
+      events = oneData.sailingLegs.map((leg: any) => ({
+        description: `${leg.vessel || 'Vessel'} - ${leg.departurePort || ''} → ${leg.arrivalPort || ''}`,
+        date: leg.departure || leg.arrival || '',
+        location: leg.arrivalPort || leg.departurePort || '',
+      }));
+    } else if (uuidData?.historic) {
+      events = uuidData.historic.map((h: any) => ({
+        description: h.translatedStatus || h.status || '',
+        date: h.date || '',
+        location: h.location || '',
+        has_occurred: h.hasOccurred,
+      }));
+    }
+
     const liveData: LiveData = {
       vesselPosition,
       progress,
@@ -629,6 +649,7 @@ function ContainerTracker({ container, onDataReadyRef }: {
       vessel,
       eta,
       currentStatus,
+      events,
     };
 
     // Only report if data actually changed (compare a fingerprint)
@@ -678,6 +699,9 @@ export function RastreioEmConjunto() {
 
   // Tooltip state
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+
+  // Modal state for route history
+  const [modalContainerId, setModalContainerId] = useState<number | null>(null);
 
   // Initialize visibleRoutes when containers load
   useEffect(() => {
@@ -1064,12 +1088,18 @@ export function RastreioEmConjunto() {
             </div>
           `;
         } else {
-          // In transit: front-facing cargo ship with waves, colorized + rocking animation
+          // Dynamic color based on delivery status/progress
+          const statusColor = progress >= 80 ? '#16a34a' : progress >= 50 ? '#0891b2' : progress >= 25 ? '#f59e0b' : '#ef4444';
+          const hullColor = progress >= 80 ? '#0f5132' : progress >= 50 ? '#164e63' : progress >= 25 ? '#78350f' : '#7f1d1d';
+          const cabinColor = progress >= 80 ? '#22c55e' : progress >= 50 ? '#06b6d4' : progress >= 25 ? '#eab308' : '#ef4444';
+          const cabinStroke = progress >= 80 ? '#15803d' : progress >= 50 ? '#0e7490' : progress >= 25 ? '#ca8a04' : '#dc2626';
+          
+          // In transit: front-facing cargo ship with waves, rocking animation, water trail, dynamic color
           markerEl.innerHTML = `
             <style>
               @keyframes shipRock {
                 0%, 100% { transform: rotate(-3deg) translateY(0px); }
-                25% { transform: rotate(2deg) translateY(-1px); }
+                25% { transform: rotate(2deg) translateY(-1.5px); }
                 50% { transform: rotate(-2deg) translateY(1px); }
                 75% { transform: rotate(3deg) translateY(-0.5px); }
               }
@@ -1078,23 +1108,44 @@ export function RastreioEmConjunto() {
                 50% { transform: translateX(3px); }
                 100% { transform: translateX(0px); }
               }
+              @keyframes trailFade {
+                0% { opacity: 0.6; transform: translateY(0) scaleX(1); }
+                100% { opacity: 0; transform: translateY(12px) scaleX(0.3); }
+              }
+              @keyframes bubbles {
+                0% { opacity: 0.8; transform: translate(0, 0) scale(1); }
+                50% { opacity: 0.4; transform: translate(-3px, 8px) scale(0.6); }
+                100% { opacity: 0; transform: translate(-5px, 16px) scale(0.2); }
+              }
             </style>
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));animation:shipRock 3s ease-in-out infinite;transform-origin:center bottom;">
-                <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Ship hull -->
-                  <path d="M12 42 L18 52 L46 52 L52 42 L42 42 L38 36 L26 36 L22 42 Z" fill="#1e3a5f" stroke="#0f2640" stroke-width="1.5"/>
-                  <!-- Ship bridge/cabin -->
-                  <rect x="24" y="24" width="16" height="12" rx="1" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/>
+              <!-- Water trail behind ship -->
+              <div style="position:absolute;top:32px;left:50%;transform:translateX(-50%);width:30px;height:20px;pointer-events:none;">
+                <div style="position:absolute;width:100%;height:4px;background:linear-gradient(90deg,transparent,rgba(59,130,246,0.4),transparent);border-radius:50%;animation:trailFade 2s ease-out infinite;"></div>
+                <div style="position:absolute;top:4px;width:80%;left:10%;height:3px;background:linear-gradient(90deg,transparent,rgba(59,130,246,0.3),transparent);border-radius:50%;animation:trailFade 2s ease-out infinite 0.4s;"></div>
+                <div style="position:absolute;top:8px;width:60%;left:20%;height:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,0.2),transparent);border-radius:50%;animation:trailFade 2s ease-out infinite 0.8s;"></div>
+                <!-- Bubbles -->
+                <div style="position:absolute;top:2px;left:8px;width:3px;height:3px;background:rgba(147,197,253,0.7);border-radius:50%;animation:bubbles 1.5s ease-out infinite;"></div>
+                <div style="position:absolute;top:0px;right:10px;width:2px;height:2px;background:rgba(147,197,253,0.5);border-radius:50%;animation:bubbles 1.8s ease-out infinite 0.5s;"></div>
+                <div style="position:absolute;top:4px;left:14px;width:2.5px;height:2.5px;background:rgba(147,197,253,0.6);border-radius:50%;animation:bubbles 2s ease-out infinite 1s;"></div>
+              </div>
+              <div style="position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.5));animation:shipRock 3s ease-in-out infinite;transform-origin:center bottom;">
+                <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Ship hull - dynamic color -->
+                  <path d="M12 42 L18 52 L46 52 L52 42 L42 42 L38 36 L26 36 L22 42 Z" fill="${hullColor}" stroke="#0f2640" stroke-width="1.5"/>
+                  <!-- Ship bridge/cabin - dynamic color -->
+                  <rect x="24" y="24" width="16" height="12" rx="1" fill="${cabinColor}" stroke="${cabinStroke}" stroke-width="1"/>
                   <!-- Windows -->
                   <rect x="27" y="27" width="3" height="3" rx="0.5" fill="#ffeaa7"/>
                   <rect x="32" y="27" width="3" height="3" rx="0.5" fill="#ffeaa7"/>
                   <rect x="37" y="27" width="3" height="3" rx="0.5" fill="#ffeaa7"/>
                   <!-- Chimney -->
                   <rect x="29" y="16" width="6" height="8" fill="#2c3e50" stroke="#1a252f" stroke-width="1"/>
-                  <rect x="28" y="14" width="8" height="3" fill="#e74c3c"/>
+                  <rect x="28" y="14" width="8" height="3" fill="${cabinColor}"/>
                   <!-- Mast -->
                   <line x1="32" y1="10" x2="32" y2="14" stroke="#555" stroke-width="1.5"/>
+                  <!-- Status indicator light -->
+                  <circle cx="32" cy="10" r="2" fill="${statusColor}" opacity="0.9"/>
                   <!-- Waves (animated) -->
                   <g style="animation:waveMove 2s ease-in-out infinite;">
                     <path d="M8 54 Q12 51 16 54 Q20 57 24 54 Q28 51 32 54 Q36 57 40 54 Q44 51 48 54 Q52 57 56 54" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round"/>
@@ -1104,7 +1155,7 @@ export function RastreioEmConjunto() {
                   </g>
                 </svg>
               </div>
-              <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
+              <div style="margin-top:2px;background:${statusColor};color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
                 ${container.supplierName} \u2022 ${progress || 0}%
               </div>
               <div style="margin-top:1px;background:rgba(0,0,0,0.7);color:white;font-size:7px;font-weight:500;padding:1px 3px;border-radius:2px;white-space:nowrap;">
@@ -1126,7 +1177,7 @@ export function RastreioEmConjunto() {
           markerEl.style.zIndex = "";
         });
         markerEl.addEventListener("click", () => {
-          setSelectedContainer(prev => prev === container.id ? null : container.id);
+          setModalContainerId(container.id);
         });
 
         try {
@@ -1418,87 +1469,118 @@ export function RastreioEmConjunto() {
           />
         ))}
 
-        {/* Hover/Selected Card Overlay */}
+        {/* Hover/Selected Card Overlay - Complete cargo details */}
         {activeContainer && (activeLive || activeContainer.vesselName || activeContainer.origin) && (
-          <div className="absolute top-2 right-2 w-52 sm:top-4 sm:right-4 sm:w-72 max-h-[55%] overflow-y-auto bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl p-2.5 sm:p-4 z-50 pointer-events-auto">
+          <div className="absolute top-2 right-2 w-72 sm:top-3 sm:right-3 sm:w-80 max-h-[85%] overflow-y-auto bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl p-3 sm:p-4 z-50 pointer-events-auto">
             {/* Close button */}
             <button
               onClick={(e) => { e.stopPropagation(); setSelectedContainer(null); setHoveredContainer(null); }}
-              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white transition z-10"
+              className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white transition z-10"
             >
               <X className="w-3.5 h-3.5" />
             </button>
-            <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3 pr-6">
-              <div className="w-7 h-7 sm:w-9 sm:h-9 bg-indigo-600/30 border border-indigo-500/50 rounded-lg flex items-center justify-center shrink-0">
-                <Ship className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-300" />
+
+            {/* Header: Supplier name + progress badge */}
+            <div className="flex items-start justify-between mb-3 pr-6">
+              <div className="flex items-start gap-2.5">
+                <div className="w-9 h-9 bg-indigo-600/30 border border-indigo-500/50 rounded-lg flex items-center justify-center shrink-0">
+                  <Ship className="w-4 h-4 text-indigo-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">{activeContainer.supplierName}</h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {activeContainer.poNumber} {activeContainer.pedido ? `• ${activeContainer.pedido}` : ''}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <h4 className="text-xs sm:text-sm font-bold text-white truncate">{activeContainer.supplierName}</h4>
-                <p className="text-[9px] sm:text-[10px] text-slate-400">
-                  {activeContainer.containerName || activeContainer.poNumber} • {activeContainer.pedido}
-                </p>
-              </div>
+              <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-md shrink-0">
+                {activeLive?.progress || activeContainer.progress || 0}%
+              </span>
             </div>
 
-            {/* Progress bar */}
-            <div className="mb-2 sm:mb-3">
-              <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400 mb-1">
-                <span>{activeLive?.originName || activeContainer.origin || '—'}</span>
-                <span>{activeLive?.destName || activeContainer.destination || '—'}</span>
+            {/* Route: Origin → Destination */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span className="font-medium">{activeLive?.originName || activeContainer.origin || '—'}</span>
+                <span className="text-slate-600 mx-1">→</span>
+                <span className="font-medium">{activeLive?.destName || activeContainer.destination || '—'}</span>
               </div>
-              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-500"
                   style={{ width: `${activeLive?.progress || activeContainer.progress || 0}%` }}
                 />
               </div>
-              <div className="text-center mt-1">
-                <span className="text-xs font-bold text-indigo-300">{activeLive?.progress || activeContainer.progress || 0}%</span>
-              </div>
             </div>
 
-            {/* Info grid */}
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[9px] sm:text-[10px]">
+            {/* Info grid - all details visible */}
+            <div className="grid grid-cols-2 gap-2 text-[10px] mb-3">
               {(activeLive?.vessel || activeContainer.vesselName) && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
-                  <span className="text-slate-500 uppercase tracking-wider">Navio</span>
-                  <p className="text-white font-medium mt-0.5 truncate">{activeLive?.vessel || activeContainer.vesselName}</p>
+                  <span className="text-slate-500 uppercase tracking-wider text-[9px]">Navio</span>
+                  <p className="text-white font-medium mt-0.5 break-words">{activeLive?.vessel || activeContainer.vesselName}</p>
                 </div>
               )}
               {(activeLive?.eta || activeContainer.eta) && (
                 <div className="bg-slate-800/60 rounded-lg p-2">
-                  <span className="text-slate-500 uppercase tracking-wider">ETA</span>
+                  <span className="text-slate-500 uppercase tracking-wider text-[9px]">ETA</span>
                   <p className="text-white font-medium mt-0.5">{formatDate(activeLive?.eta || activeContainer.eta)}</p>
                 </div>
               )}
-              {(activeLive?.currentStatus || activeContainer.trackingStatus) && (
-                <div className="col-span-2 bg-slate-800/60 rounded-lg p-2">
-                  <span className="text-slate-500 uppercase tracking-wider">Status</span>
-                  <p className="text-emerald-300 font-medium mt-0.5 truncate">{activeLive?.currentStatus || activeContainer.trackingStatus}</p>
+              {activeContainer.armador && (
+                <div className="bg-slate-800/60 rounded-lg p-2">
+                  <span className="text-slate-500 uppercase tracking-wider text-[9px]">Armador</span>
+                  <p className="text-white font-medium mt-0.5 break-words">{activeContainer.armador}</p>
+                </div>
+              )}
+              {activeContainer.containerName && (
+                <div className="bg-slate-800/60 rounded-lg p-2">
+                  <span className="text-slate-500 uppercase tracking-wider text-[9px]">Container</span>
+                  <p className="text-white font-medium mt-0.5 font-mono text-[9px]">{activeContainer.containerName}</p>
+                </div>
+              )}
+              {activeContainer.etd && (
+                <div className="bg-slate-800/60 rounded-lg p-2">
+                  <span className="text-slate-500 uppercase tracking-wider text-[9px]">ETD</span>
+                  <p className="text-white font-medium mt-0.5">{formatDate(activeContainer.etd)}</p>
+                </div>
+              )}
+              {activeContainer.poNumber && (
+                <div className="bg-slate-800/60 rounded-lg p-2">
+                  <span className="text-slate-500 uppercase tracking-wider text-[9px]">PO</span>
+                  <p className="text-white font-medium mt-0.5 break-words">{activeContainer.poNumber}</p>
                 </div>
               )}
             </div>
 
-            {/* Products */}
+            {/* Status */}
+            {(activeLive?.currentStatus || activeContainer.trackingStatus || activeContainer.status) && (
+              <div className="bg-slate-800/60 rounded-lg p-2 mb-3">
+                <span className="text-slate-500 uppercase tracking-wider text-[9px]">Status</span>
+                <p className="text-emerald-300 font-medium mt-0.5">{activeLive?.currentStatus || activeContainer.trackingStatus || activeContainer.status}</p>
+              </div>
+            )}
+
+            {/* Products - show ALL without truncation */}
             {activeContainer.products.length > 0 && (
-              <div className="mt-3 border-t border-slate-700/50 pt-2">
+              <div className="border-t border-slate-700/50 pt-2">
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                  <Package className="w-3 h-3" /> Produtos ({activeContainer.products.length})
+                  <Package className="w-3 h-3" /> {activeContainer.products.length} Produto{activeContainer.products.length !== 1 ? 's' : ''}
                 </p>
-                <div className="space-y-1 max-h-24 overflow-y-auto">
-                  {activeContainer.products.slice(0, 5).map((prod, i) => (
-                    <div key={i} className="flex items-center justify-between text-[10px]">
-                      <span className="text-slate-300 truncate max-w-[160px]">{prod.description}</span>
-                      {prod.quantidade && (
-                        <span className="text-slate-500 shrink-0 ml-2">{prod.quantidade} cx</span>
-                      )}
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {activeContainer.products.map((prod, i) => (
+                    <div key={i} className="flex items-start justify-between text-[10px] gap-2">
+                      <span className="text-slate-300 break-words leading-tight">{prod.description}</span>
+                      <div className="shrink-0 text-right">
+                        {prod.quantidade && (
+                          <span className="text-slate-400 font-medium">{prod.quantidade.toLocaleString('pt-BR')} cx</span>
+                        )}
+                        {prod.valorUsd && (
+                          <p className="text-[9px] text-slate-500">US$ {prod.valorUsd}</p>
+                        )}
+                      </div>
                     </div>
                   ))}
-                  {activeContainer.products.length > 5 && (
-                    <p className="text-[9px] text-slate-500 italic">
-                      +{activeContainer.products.length - 5} outros produtos
-                    </p>
-                  )}
                 </div>
               </div>
             )}
@@ -1506,7 +1588,8 @@ export function RastreioEmConjunto() {
             {/* BL Number */}
             {activeContainer.blNumber && (
               <div className="mt-2 pt-2 border-t border-slate-700/50">
-                <p className="text-[9px] text-slate-500 font-mono">{activeContainer.blNumber}</p>
+                <span className="text-slate-500 uppercase tracking-wider text-[9px]">BL</span>
+                <p className="text-[10px] text-slate-300 font-mono mt-0.5">{activeContainer.blNumber}</p>
               </div>
             )}
           </div>
@@ -1626,6 +1709,153 @@ export function RastreioEmConjunto() {
           );
         })}
       </div>
+      {/* Route History Modal */}
+      {modalContainerId && (() => {
+        const mc = containers.find(c => c.id === modalContainerId);
+        const ml = liveTrackingData.get(modalContainerId);
+        if (!mc) return null;
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setModalContainerId(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-slate-200 p-4 rounded-t-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Ship className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">{mc.supplierName}</h3>
+                    <p className="text-xs text-slate-500">{mc.poNumber} {mc.pedido ? `\u2022 ${mc.pedido}` : ''}</p>
+                  </div>
+                </div>
+                <button onClick={() => setModalContainerId(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition">
+                  <X className="w-5 h-5 text-slate-500" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-4 space-y-4">
+                {/* Progress Section */}
+                <div className="bg-gradient-to-r from-indigo-50 to-cyan-50 rounded-xl p-4">
+                  <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
+                    <span className="font-medium">{ml?.originName || mc.origin || '\u2014'}</span>
+                    <span className="text-slate-400">\u2192</span>
+                    <span className="font-medium">{ml?.destName || mc.destination || '\u2014'}</span>
+                  </div>
+                  <div className="h-3 bg-white/80 rounded-full overflow-hidden shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all" style={{ width: `${ml?.progress || mc.progress || 0}%` }} />
+                  </div>
+                  <p className="text-center mt-2 text-lg font-bold text-indigo-600">{ml?.progress || mc.progress || 0}%</p>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {(ml?.vessel || mc.vesselName) && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Navio</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5">{ml?.vessel || mc.vesselName}</p>
+                    </div>
+                  )}
+                  {mc.armador && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Armador</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5">{mc.armador}</p>
+                    </div>
+                  )}
+                  {(ml?.eta || mc.eta) && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">ETA</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5">{formatDate(ml?.eta || mc.eta)}</p>
+                    </div>
+                  )}
+                  {mc.etd && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">ETD</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5">{formatDate(mc.etd)}</p>
+                    </div>
+                  )}
+                  {mc.containerName && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Container</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5 font-mono">{mc.containerName}</p>
+                    </div>
+                  )}
+                  {mc.blNumber && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">BL</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5 font-mono">{mc.blNumber}</p>
+                    </div>
+                  )}
+                  {mc.poNumber && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">PO</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5">{mc.poNumber}</p>
+                    </div>
+                  )}
+                  {mc.pedido && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Pedido</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-0.5">{mc.pedido}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status */}
+                {(ml?.currentStatus || mc.trackingStatus || mc.status) && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                    <p className="text-[10px] text-emerald-600 uppercase tracking-wider">Status Atual</p>
+                    <p className="text-sm font-semibold text-emerald-700 mt-0.5">{ml?.currentStatus || mc.trackingStatus || mc.status}</p>
+                  </div>
+                )}
+
+                {/* Route History */}
+                {ml?.events && ml.events.length > 0 && (
+                  <div className="border-t border-slate-200 pt-3">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" /> Hist\u00f3rico da Rota
+                    </h4>
+                    <div className="space-y-0 relative">
+                      <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-slate-200" />
+                      {ml.events.map((evt: any, i: number) => (
+                        <div key={i} className="flex items-start gap-3 relative py-2">
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 z-10 ${i === 0 ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-slate-300'}`} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-slate-800">{evt.description || evt.status || '\u2014'}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">
+                              {evt.location && <span>{evt.location} \u2022 </span>}
+                              {evt.date || evt.timestamp || ''}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Products */}
+                {mc.products && mc.products.length > 0 && (
+                  <div className="border-t border-slate-200 pt-3">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5" /> Produtos ({mc.products.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {mc.products.map((prod, i) => (
+                        <div key={i} className="bg-slate-50 rounded-lg p-3 flex items-start justify-between gap-3">
+                          <p className="text-xs text-slate-700 break-words leading-relaxed flex-1">{prod.description}</p>
+                          <div className="shrink-0 text-right">
+                            {prod.quantidade && <p className="text-xs font-bold text-slate-800">{Number(prod.quantidade).toLocaleString('pt-BR')} cx</p>}
+                            {prod.valorUsd && <p className="text-[10px] text-slate-500">US$ {Number(prod.valorUsd).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

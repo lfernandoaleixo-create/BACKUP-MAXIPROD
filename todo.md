@@ -5778,3 +5778,7 @@
 - [x] Rastreio em Conjunto: menu de filtros para alternar visibilidade de cada rota específica no mapa
 - [x] Rastreio em Conjunto: corrigir tooltip piscando ao passar cursor sobre o navio (flickering do InfoWindow)
 - [x] Rastreio em Conjunto: adicionar animação de balanço (rocking) ao ícone do navio simulando ondas do mar
+- [x] Rastreio em Conjunto: ao passar cursor sobre navio, card mostra TODAS informações (fornecedor, PO, armador, progresso, ETA, produtos, status) sem cortar texto
+- [x] Rastreio em Conjunto: clique no navio abre modal com histórico da rota e detalhes completos da carga
+- [x] Rastreio em Conjunto: efeito visual de rastro de água atrás do navio simulando navegação
+- [x] Rastreio em Conjunto: cor do ícone do navio muda dinamicamente com base no status atual da entrega
