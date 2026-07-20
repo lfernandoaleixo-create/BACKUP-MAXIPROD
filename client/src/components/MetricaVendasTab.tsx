@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, ChevronRight, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package, Eye } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package, Eye, ShieldCheck, Check } from "lucide-react";
 import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf, exportInadimplenciaDetailPdf, exportBestSellerPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -83,10 +83,13 @@ export default function MetricaVendasTab() {
 
   const { data: ranking, isLoading: loadingRanking } = trpc.salesMetrics.getVendedorRanking.useQuery({ startDate, endDate });
   const { data: inadimplencia, isLoading: loadingInadimplencia } = trpc.salesMetrics.getInadimplenciaPorVendedor.useQuery();
+  const { data: resolvidosPorVendedor } = trpc.salesMetrics.getResolvidosPorVendedor.useQuery();
   const { data: vendedorDetail, isLoading: loadingDetail } = trpc.salesMetrics.getVendedorDetail.useQuery(
     { vendedor: selectedVendedor, startDate, endDate },
     { enabled: !!selectedVendedor && view === "detail" }
   );
+
+  const [showResolvidosVendedor, setShowResolvidosVendedor] = useState(false);
 
   const totalVendas = ranking?.reduce((sum, v) => sum + v.totalVendas, 0) || 0;
   const totalPedidos = ranking?.reduce((sum, v) => sum + v.qtdPedidos, 0) || 0;
@@ -673,6 +676,7 @@ export default function MetricaVendasTab() {
 
       {/* Inadimplência Detail View - Clientes do vendedor com valores */}
       {view === "inadimplenciaDetail" && (
+        <>
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           {(() => {
             const vendedorData = inadimplencia?.find(v => v.vendedor === selectedVendedor);
@@ -748,7 +752,78 @@ export default function MetricaVendasTab() {
             );
           })()}
         </div>
-      )}
+
+        {/* Pagos/Resolvidos - Clientes que pagaram e saíram da inadimplência deste vendedor */}
+        {(() => {
+          const resolvidosVendedor = resolvidosPorVendedor?.find(v => v.vendedor === selectedVendedor);
+          if (!resolvidosVendedor || resolvidosVendedor.clientes.length === 0) return null;
+          return (
+            <div className="mt-4 rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 overflow-hidden">
+              <button
+                onClick={() => setShowResolvidosVendedor(!showResolvidosVendedor)}
+                className="w-full flex items-center justify-between p-4 hover:bg-emerald-100/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md">
+                    <ShieldCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-emerald-900 font-bold text-sm flex items-center gap-2">
+                      Pagos / Resolvidos
+                      <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{resolvidosVendedor.qtdClientes}</span>
+                    </h3>
+                    <p className="text-emerald-700 text-xs">Clientes que pagaram e saíram da inadimplência</p>
+                  </div>
+                </div>
+                {showResolvidosVendedor ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-emerald-600" />}
+              </button>
+              {showResolvidosVendedor && (
+                <div className="border-t border-emerald-200 divide-y divide-emerald-100 max-h-[400px] overflow-y-auto">
+                  {resolvidosVendedor.clientes.map((cliente) => (
+                    <div key={cliente.nome} className="px-4 py-3 hover:bg-emerald-50/80 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{cliente.nome}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                            <span className="text-emerald-600 font-medium">{cliente.totalResolved} título{cliente.totalResolved > 1 ? 's' : ''} resolvido{cliente.totalResolved > 1 ? 's' : ''}</span>
+                            {cliente.titlesStillOverdue > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="text-red-500 font-medium">{cliente.titlesStillOverdue} ainda em aberto ({formatCurrency(cliente.valorStillOverdue)})</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-bold text-emerald-700">{formatCurrency(cliente.valorResolved)}</p>
+                          <p className="text-[10px] text-emerald-600">recuperado</p>
+                        </div>
+                      </div>
+                      {/* Detalhes dos títulos resolvidos */}
+                      <div className="mt-2 space-y-1">
+                        {cliente.titulos.map((titulo, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-[11px] bg-emerald-50/70 rounded px-2 py-1">
+                            <div className="flex items-center gap-2">
+                              <Check className="w-3 h-3 text-emerald-500" />
+                              <span className="text-slate-600">
+                                Resolvido em {titulo.resolvedAt ? new Date(titulo.resolvedAt).toLocaleDateString('pt-BR') : '-'}
+                              </span>
+                              <span className="text-slate-400">•</span>
+                              <span className="text-slate-500">{titulo.diasAtraso}d de atraso</span>
+                            </div>
+                            <span className="font-semibold text-emerald-700">{formatCurrency(titulo.valor)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+        </>)
+      }
 
       {/* Best Seller View */}
       {view === "bestSeller" && (

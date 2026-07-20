@@ -5792,3 +5792,6 @@
 - [x] Inadimplência Pagos/Resolvidos: adicionar barra de pesquisa por nome do cliente
 - [x] Inadimplência Pagos/Resolvidos: adicionar checkbox em cada registro + calculadora automática mostrando valor total dos itens selecionados
 - [x] Inadimplência Pagos/Resolvidos: auditar e corrigir duplicatas no valor total (81 duplicatas removidas + CLIENTE PEDIDO VENDA removido)
+- [x] Vendas/Vendedores: adicionar card "Pagos/Resolvidos" (verde) na seção de inadimplência de cada vendedor
+- [x] Vendas/Vendedores: mostrar detalhes por cliente (data resolução, valor, títulos resolvidos vs pendentes)
+- [x] Vendas/Vendedores: backend endpoint para buscar resolvidos por vendedor com detalhes por cliente

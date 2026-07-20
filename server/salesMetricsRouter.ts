@@ -12,7 +12,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, accountsReceivable, sellerMonthlyTargets, sellerPermissions } from "../drizzle/schema";
+import { salesOrders, accountsReceivable, sellerMonthlyTargets, sellerPermissions, resolvedReceivables } from "../drizzle/schema";
 import { sql, and, gte, lte, ne, eq, desc, asc, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { normalizeVendedorName } from "./maxiprodGraphQL";
@@ -605,6 +605,147 @@ export const salesMetricsRouter = router({
             .sort((a, b) => b.totalDevido - a.totalDevido),
         }))
         .sort((a, b) => b.totalDevido - a.totalDevido);
+    }),
+
+  /**
+   * Pagos/Resolvidos por Vendedor - Títulos que saíram da inadimplência
+   * Agrupa por vendedor → cliente, mostrando detalhes dos títulos resolvidos
+   * e quantos títulos ainda permanecem em aberto por cliente.
+   * Regra: só conta títulos com 3+ dias de atraso na resolução.
+   */
+  getResolvidosPorVendedor: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+
+      // Buscar todos os títulos resolvidos
+      const resolved = await db.select()
+        .from(resolvedReceivables)
+        .orderBy(desc(resolvedReceivables.resolvedAt));
+
+      // Filtrar clientes de teste
+      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA', '__TEST_PROPOSTA_EXCLUSION__', '__TEST_CLIENT_SUMMARY__', 'CLIENTE PEDIDO VENDA'];
+      const filteredResolved = resolved.filter(row => {
+        const name = (row.cliente || '').toUpperCase().trim();
+        if (TEST_CLIENT_NAMES.includes(name)) return false;
+        if (name.startsWith('__TEST') || name.includes('_TEST_')) return false;
+        return true;
+      });
+
+      // Regra dos 3 dias: só títulos com 3+ dias de atraso
+      const RECUPERACAO_THRESHOLD_DAYS = 3;
+      const qualifiedResolved = filteredResolved.filter(row => (row.diasAtrasoNaResolucao || 0) >= RECUPERACAO_THRESHOLD_DAYS);
+
+      // Deduplicação por receivableId (manter o mais antigo)
+      const seenReceivableIds = new Set<number>();
+      const dedupedResolved = qualifiedResolved.filter(row => {
+        if (seenReceivableIds.has(row.receivableId)) return false;
+        seenReceivableIds.add(row.receivableId);
+        return true;
+      });
+
+      // Buscar vendedorMap (mesma lógica de getInadimplenciaPorVendedor)
+      const vendedorMap = await fetchVendedorMap();
+
+      // Also get from local sales_orders as fallback
+      const vendedorRows = await db.select({
+        cliente: salesOrders.cliente,
+        clienteApelido: salesOrders.clienteApelido,
+        razaoSocial: salesOrders.razaoSocial,
+        representante: salesOrders.representante,
+      }).from(salesOrders)
+        .where(sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`);
+
+      const localMap: Record<string, string> = {};
+      for (const vr of vendedorRows) {
+        const rep = vr.representante || "";
+        if (!rep || isEditorNaoVendedor(rep)) continue;
+        const names = [vr.cliente, vr.clienteApelido, vr.razaoSocial].filter(Boolean) as string[];
+        for (const nome of names) {
+          if (nome && !localMap[nome]) localMap[nome] = rep;
+        }
+      }
+
+      const mergedMap: Record<string, string> = { ...localMap, ...vendedorMap };
+      for (const key of Object.keys(mergedMap)) {
+        if (isClienteGrupoFox(key)) mergedMap[key] = "Grupo Fox";
+      }
+
+      // Buscar títulos AINDA em aberto (inadimplentes) para saber quantos restam por cliente
+      const cutoff = getPreviousBusinessDay();
+      const overdueRows = await db.select({
+        cliente: accountsReceivable.cliente,
+        valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+      }).from(accountsReceivable)
+        .where(and(
+          eq(accountsReceivable.estado, "EMITIDO"),
+          inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+          lte(accountsReceivable.vencimentoData, cutoff + "T23:59:59")
+        ));
+
+      // Contar títulos ainda em aberto por cliente
+      const overdueByClient: Record<string, { qtd: number; valor: number }> = {};
+      for (const row of overdueRows) {
+        const clienteName = (row.cliente || "").trim();
+        if (!clienteName) continue;
+        const valorAberto = (Number(row.valorLiquido) || 0) - (Number(row.valorRecebidoLiquido) || 0);
+        if (valorAberto <= 0) continue;
+        if (!overdueByClient[clienteName]) overdueByClient[clienteName] = { qtd: 0, valor: 0 };
+        overdueByClient[clienteName].qtd += 1;
+        overdueByClient[clienteName].valor += valorAberto;
+      }
+
+      // Agrupar resolvidos por vendedor → cliente
+      const vendedorResolvidos: Record<string, {
+        clientes: Map<string, {
+          titulos: Array<{ resolvedAt: string; valor: number; diasAtraso: number }>;
+        }>;
+      }> = {};
+
+      for (const row of dedupedResolved) {
+        const clienteName = (row.cliente || "").trim();
+        if (!clienteName) continue;
+
+        const vendedor = mergedMap[clienteName] || "Não identificado";
+        const valor = Number(row.valorAReceber) || 0;
+        const resolvedAt = row.resolvedAt?.toISOString() || "";
+        const diasAtraso = row.diasAtrasoNaResolucao || 0;
+
+        if (!vendedorResolvidos[vendedor]) {
+          vendedorResolvidos[vendedor] = { clientes: new Map() };
+        }
+
+        const existing = vendedorResolvidos[vendedor].clientes.get(clienteName) || { titulos: [] };
+        existing.titulos.push({ resolvedAt, valor, diasAtraso });
+        vendedorResolvidos[vendedor].clientes.set(clienteName, existing);
+      }
+
+      return Object.entries(vendedorResolvidos)
+        .map(([vendedor, data]) => {
+          const clientes = Array.from(data.clientes.entries())
+            .map(([nome, info]) => {
+              const totalResolved = info.titulos.length;
+              const valorResolved = Math.round(info.titulos.reduce((sum, t) => sum + t.valor, 0) * 100) / 100;
+              const overdue = overdueByClient[nome] || { qtd: 0, valor: 0 };
+              return {
+                nome,
+                titulos: info.titulos.sort((a, b) => b.resolvedAt.localeCompare(a.resolvedAt)),
+                totalResolved,
+                valorResolved,
+                titlesStillOverdue: overdue.qtd,
+                valorStillOverdue: Math.round(overdue.valor * 100) / 100,
+              };
+            })
+            .sort((a, b) => b.valorResolved - a.valorResolved);
+          return {
+            vendedor,
+            qtdClientes: clientes.length,
+            totalValorResolved: Math.round(clientes.reduce((sum, c) => sum + c.valorResolved, 0) * 100) / 100,
+            clientes,
+          };
+        })
+        .sort((a, b) => b.totalValorResolved - a.totalValorResolved);
     }),
 
   /**
