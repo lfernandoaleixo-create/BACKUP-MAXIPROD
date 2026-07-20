@@ -5782,3 +5782,6 @@
 - [x] Rastreio em Conjunto: clique no navio abre modal com histórico da rota e detalhes completos da carga
 - [x] Rastreio em Conjunto: efeito visual de rastro de água atrás do navio simulando navegação
 - [x] Rastreio em Conjunto: cor do ícone do navio muda dinamicamente com base no status atual da entrega
+- [x] Regra Representante 2: quando pedido de venda do Maxiprod tiver representante2 preenchido, esse é o vendedor real e a comissão vai para ele
+- [x] Regra Representante 2: atribuir retroativamente os 3 pedidos do Rafael Leonel (1477, 1496, 1503) - 4º pedido (PAULO HENRIQUE) ainda não lançado
+- [x] Regra Representante 2: métricas do Rafael Leonel atualizadas automaticamente (dados no banco)

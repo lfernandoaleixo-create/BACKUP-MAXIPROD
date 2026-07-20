@@ -221,6 +221,7 @@ export const salesOrders = mysqlTable("sales_orders", {
   empresa: varchar("empresa", { length: 100 }),
   representante: varchar("representante", { length: 200 }),
   vendedorReal: varchar("vendedorReal", { length: 200 }), // Vendedor real do Maxiprod (antes do override Grupo Fox)
+  representante2: varchar("representante2", { length: 200 }), // Representante/vendedor 2 do Maxiprod - quando preenchido, é o vendedor real
   segmento: varchar("segmento", { length: 100 }),
   regiao: varchar("regiao", { length: 100 }),
   // Novos campos (detalhes do pedido)

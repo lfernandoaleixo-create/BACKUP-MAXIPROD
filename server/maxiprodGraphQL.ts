@@ -360,6 +360,7 @@ async function fetchOpenSalesOrderItems(): Promise<any[]> {
           ultimaAlteracaoData
           ultimaAlteracaoUsuario { nome }
           representanteOuVendedor1 { nomeFantasia razaoSocial }
+          representanteOuVendedor2 { nomeFantasia razaoSocial }
           responsavelUsuario { nome }
         }
       }
@@ -434,6 +435,7 @@ async function fetchAllSalesOrderItems(): Promise<any[]> {
           ultimaAlteracaoData
           ultimaAlteracaoUsuario { nome }
           representanteOuVendedor1 { nomeFantasia razaoSocial }
+          representanteOuVendedor2 { nomeFantasia razaoSocial }
           responsavelUsuario { nome }
         }
       }
@@ -716,6 +718,7 @@ const VENDEDOR_NAME_ALIASES: Record<string, string> = {
   "ROMERA REPRESENTACAO COMERCIAL DE PRODUTOS DESCARTAVEIS LTDA": "ROMERA REPRESENTACOES",
   "LUIZ MATIAS DE SOUZA": "LUIZ MATIAS",
   "LUIZ ANTONIO MATIAS": "LUIZ MATIAS",
+  "RAFAEL LEONEL": "RAFAEL LEONEL",
 };
 
 export function normalizeVendedorName(name: string): string {
@@ -757,30 +760,40 @@ export function normalizeVendedorName(name: string): string {
  * Returns { representante, vendedorReal } where vendedorReal is the actual seller
  * (useful when representante is overridden to "Grupo Fox")
  */
-function resolveRepresentante(pv: any): { representante: string; vendedorReal: string } {
-  // Resolve the real seller first (before any override)
-  let vendedorReal = pv.representanteOuVendedor1?.nomeFantasia 
+function resolveRepresentante(pv: any): { representante: string; vendedorReal: string; representante2: string } {
+  // ═══ REGRA REPRESENTANTE 2 (a partir de 20/07/2026) ═══
+  // Se o pedido tiver representanteOuVendedor2 preenchido, ELE é o vendedor real
+  // e a comissão vai para ele. O representante1 é apenas o "cadastro" original.
+  const rep2Nome = pv.representanteOuVendedor2?.nomeFantasia 
+    || pv.representanteOuVendedor2?.razaoSocial 
+    || "";
+  const representante2 = normalizeVendedorName(rep2Nome);
+
+  // Resolve representante1 (seller original)
+  let vendedorOriginal = pv.representanteOuVendedor1?.nomeFantasia 
     || pv.representanteOuVendedor1?.razaoSocial 
     || "";
   
-  if (!vendedorReal) {
+  if (!vendedorOriginal) {
     const responsavel = pv.responsavelUsuario?.nome || "";
     if (responsavel && !isEditorNaoVendedorSync(responsavel)) {
-      vendedorReal = responsavel;
+      vendedorOriginal = responsavel;
     }
   }
 
+  vendedorOriginal = normalizeVendedorName(vendedorOriginal);
+
+  // Se representante2 está preenchido, ele é o vendedor real
+  const vendedorReal = representante2 || vendedorOriginal;
+
   const clienteNome = pv.cliente?.nomeFantasia || pv.cliente?.razaoSocial || "";
-  
-  // Normalize vendedor name
-  vendedorReal = normalizeVendedorName(vendedorReal);
   
   // Override manual: clientes Johnson e Keure → "Grupo Fox"
   if (clienteNome && isClienteGrupoFoxSync(clienteNome)) {
-    return { representante: "Grupo Fox", vendedorReal };
+    return { representante: "Grupo Fox", vendedorReal, representante2 };
   }
   
-  return { representante: vendedorReal, vendedorReal };
+  return { representante: vendedorReal, vendedorReal, representante2 };
 }
 
 /**
@@ -811,8 +824,8 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       CANCELADO: "Cancelado",
     };
 
-    // Resolve representante with fallback logic
-    const { representante, vendedorReal } = resolveRepresentante(pv);
+    // Resolve representante with fallback logic (includes representante2 rule)
+    const { representante, vendedorReal, representante2 } = resolveRepresentante(pv);
     
     // Resolve transportadora with razaoSocial fallback
     const transportadoraNome = pv.transportadora?.nomeFantasia 
@@ -840,6 +853,7 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       empresa: getCompanyName(pv.minhaEmpresaId),
       representante: representante,
       vendedorReal: vendedorReal || null,
+      representante2: representante2 || null,
       segmento: cliente.crmSegmento?.descricao || "",
       regiao: uf || "",
       // Novos campos
