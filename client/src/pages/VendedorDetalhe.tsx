@@ -7057,11 +7057,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 return { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-300', label: 'Crítico' };
               };
               const dColor = getDiscountColor(discount);
-              // Bar: 0% to 40% discount range
+              // Bar: 0% to 40% discount range (mirrored: Red left, Blue right)
               const barMin = 0;
               const barMax = 40;
               const clamped = Math.max(barMin, Math.min(barMax, discount));
-              const pos = ((clamped - barMin) / (barMax - barMin)) * 100;
+              const pos = 100 - (((clamped - barMin) / (barMax - barMin)) * 100);
               return (
                 <div className="rounded-lg p-3 border-2 bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 mt-2">
                   <div className="flex items-center justify-between mb-1.5">
@@ -7076,16 +7076,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <div className="relative w-full">
                     <div className="relative h-6 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
                       <div className="absolute inset-0 rounded-full overflow-hidden flex">
-                        <div className="h-full bg-blue-500" style={{ width: "50%" }} />
-                        <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
-                        <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
-                        <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
                         <div className="h-full bg-red-500" style={{ width: "20%" }} />
+                        <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
+                        <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
+                        <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
+                        <div className="h-full bg-blue-500" style={{ width: "50%" }} />
                       </div>
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "20%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "32.5%" }} />
+                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "42.5%" }} />
                       <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "50%" }} />
-                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "57.5%" }} />
-                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "67.5%" }} />
-                      <div className="absolute top-0 bottom-0 w-[2px] bg-white/90" style={{ left: "80%" }} />
                       <div
                         className="absolute flex flex-col items-center"
                         style={{ left: `${pos}%`, transform: "translateX(-50%)", top: "-6px", bottom: "-2px" }}
@@ -7095,10 +7095,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       </div>
                     </div>
                     <div className="relative w-full h-3 mt-0.5">
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "20%", transform: "translateX(-50%)" }}>32%</span>
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "32.5%", transform: "translateX(-50%)" }}>27%</span>
+                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "42.5%", transform: "translateX(-50%)" }}>23%</span>
                       <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
-                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
-                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
-                      <span className="absolute text-[8px] font-bold text-purple-400" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[10px]">

@@ -37,20 +37,20 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
 
   const zone = getZone(desconto);
 
-  // Calculate indicator position on the bar
-  // Bar represents 0% to 40% discount range
-  // Segments: Blue(0-20) | Green(20-23) | Yellow(23-27) | Orange(27-32) | Red(32-40)
+  // Calculate indicator position on the bar (mirrored: Red left, Blue right)
+  // Bar represents 0% to 40% discount range, but displayed right-to-left
+  // Segments: Red(32-40) | Orange(27-32) | Yellow(23-27) | Green(20-23) | Blue(0-20)
   const barMin = 0;
   const barMax = 40;
   const clampedDesc = Math.max(barMin, Math.min(barMax, desconto));
-  const position = (clampedDesc / barMax) * 100;
+  const position = 100 - ((clampedDesc / barMax) * 100);
 
-  // Segment widths (proportional to their discount range within 0-40):
-  // Blue: 0-20 = 20/40 = 50%
-  // Green: 20-23 = 3/40 = 7.5%
-  // Yellow: 23-27 = 4/40 = 10%
-  // Orange: 27-32 = 5/40 = 12.5%
+  // Segment widths (mirrored - proportional to their discount range within 0-40):
   // Red: 32-40 = 8/40 = 20%
+  // Orange: 27-32 = 5/40 = 12.5%
+  // Yellow: 23-27 = 4/40 = 10%
+  // Green: 20-23 = 3/40 = 7.5%
+  // Blue: 0-20 = 20/40 = 50%
 
   return (
     <div className="flex items-center gap-2.5 min-w-0">
@@ -71,17 +71,17 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
         <div className="relative h-7 rounded-full overflow-visible border-2 border-slate-300 dark:border-slate-500 shadow-sm">
           {/* Solid color segments */}
           <div className="absolute inset-0 rounded-full overflow-hidden flex">
-            <div className="h-full bg-blue-500" style={{ width: "50%" }} />
-            <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
-            <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
-            <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
             <div className="h-full bg-red-500" style={{ width: "20%" }} />
+            <div className="h-full bg-orange-500" style={{ width: "12.5%" }} />
+            <div className="h-full bg-yellow-400" style={{ width: "10%" }} />
+            <div className="h-full bg-green-500" style={{ width: "7.5%" }} />
+            <div className="h-full bg-blue-500" style={{ width: "50%" }} />
           </div>
-          {/* Divider lines with numbers inside */}
+          {/* Divider lines (mirrored positions: 20%=80%, 32.5%=67.5%, 42.5%=57.5%, 50%=50%) */}
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "20%" }} />
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "32.5%" }} />
+          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "42.5%" }} />
           <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "50%" }} />
-          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "57.5%" }} />
-          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "67.5%" }} />
-          <div className="absolute top-0 bottom-0 w-[2px] bg-white/90 dark:bg-slate-900/70" style={{ left: "80%" }} />
 
           {/* Indicator arrow - bigger and more visible */}
           <div
@@ -92,12 +92,12 @@ export function ProductMarginBar({ desconto, showValues = true }: ProductMarginB
             <div className="w-[3px] flex-1 bg-slate-900 dark:bg-white rounded-full" />
           </div>
         </div>
-        {/* Discount numbers below the bar at divider positions - always visible for everyone */}
+        {/* Discount numbers below the bar at mirrored divider positions */}
         <div className="relative w-full h-4 mt-0.5">
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "20%", transform: "translateX(-50%)" }}>32%</span>
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "32.5%", transform: "translateX(-50%)" }}>27%</span>
+          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "42.5%", transform: "translateX(-50%)" }}>23%</span>
           <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "50%", transform: "translateX(-50%)" }}>20%</span>
-          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "57.5%", transform: "translateX(-50%)" }}>23%</span>
-          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "67.5%", transform: "translateX(-50%)" }}>27%</span>
-          <span className="absolute text-[9px] font-black text-slate-600 dark:text-slate-300" style={{ left: "80%", transform: "translateX(-50%)" }}>32%</span>
         </div>
       </div>
       {/* Current discount value - only shown if allowed */}
