@@ -5785,3 +5785,7 @@
 - [x] Regra Representante 2: quando pedido de venda do Maxiprod tiver representante2 preenchido, esse é o vendedor real e a comissão vai para ele
 - [x] Regra Representante 2: atribuir retroativamente os 3 pedidos do Rafael Leonel (1477, 1496, 1503) - 4º pedido (PAULO HENRIQUE) ainda não lançado
 - [x] Regra Representante 2: métricas do Rafael Leonel atualizadas automaticamente (dados no banco)
+- [x] Inadimplência: remover todos os registros de teste (__TEST_PROPOSTA_EXCLUSION__) do banco de dados
+- [x] Inadimplência: garantir regra de 3+ dias para Pagos/Resolvidos (já implementado na linha 5136-5137 do financialRouter)
+- [x] Inadimplência: ordenar Pagos/Resolvidos por data mais recente primeiro (default: desc por resolvedAt)
+- [x] Inadimplência: garantir que filtros funcionem corretamente na aba Pagos/Resolvidos

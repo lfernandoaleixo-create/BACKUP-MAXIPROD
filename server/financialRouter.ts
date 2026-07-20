@@ -5129,8 +5129,13 @@ ${acoesTexto}
         .orderBy(orderCol);
 
       // Filtrar clientes de teste
-      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
-      const filteredRows = rows.filter(row => !TEST_CLIENT_NAMES.includes((row.cliente || '').toUpperCase().trim()));
+      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA', '__TEST_PROPOSTA_EXCLUSION__', '__TEST_CLIENT_SUMMARY__'];
+      const filteredRows = rows.filter(row => {
+        const name = (row.cliente || '').toUpperCase().trim();
+        if (TEST_CLIENT_NAMES.includes(name)) return false;
+        if (name.startsWith('__TEST') || name.includes('_TEST_')) return false;
+        return true;
+      });
 
       // REGRA: Só considerar como "recuperado da inadimplência" se o título tinha 3+ dias úteis de atraso.
       const RECUPERACAO_THRESHOLD_DAYS = 3;
