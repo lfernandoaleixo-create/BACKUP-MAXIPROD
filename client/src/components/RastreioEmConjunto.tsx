@@ -985,11 +985,8 @@ export function RastreioEmConjunto() {
           </div>
         `;
 
-        // Add tooltip to origin marker
-        originEl.addEventListener('mouseenter', () => {
-          showTooltip(originPosition!, `<div style="font-family:system-ui;"><div style="font-weight:700;font-size:12px;">\u{2693} Porto de Origem</div><div style="font-size:11px;color:#555;">${originName || 'Origem'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${container.supplierName}</div></div>`);
-        });
-        originEl.addEventListener('mouseleave', () => hideTooltip());
+        // Hover effect on origin marker (no InfoWindow - uses title attribute instead)
+        originEl.title = `\u2693 ${originName || 'Origem'} - ${container.supplierName}`;
 
         try {
           const originMarker = new google.maps.marker.AdvancedMarkerElement({
@@ -1067,11 +1064,24 @@ export function RastreioEmConjunto() {
             </div>
           `;
         } else {
-          // In transit: front-facing cargo ship with waves, colorized
+          // In transit: front-facing cargo ship with waves, colorized + rocking animation
           markerEl.innerHTML = `
+            <style>
+              @keyframes shipRock {
+                0%, 100% { transform: rotate(-3deg) translateY(0px); }
+                25% { transform: rotate(2deg) translateY(-1px); }
+                50% { transform: rotate(-2deg) translateY(1px); }
+                75% { transform: rotate(3deg) translateY(-0.5px); }
+              }
+              @keyframes waveMove {
+                0% { transform: translateX(0px); }
+                50% { transform: translateX(3px); }
+                100% { transform: translateX(0px); }
+              }
+            </style>
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;transition:transform 0.2s;">
-              <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));animation:shipRock 3s ease-in-out infinite;transform-origin:center bottom;">
+                <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <!-- Ship hull -->
                   <path d="M12 42 L18 52 L46 52 L52 42 L42 42 L38 36 L26 36 L22 42 Z" fill="#1e3a5f" stroke="#0f2640" stroke-width="1.5"/>
                   <!-- Ship bridge/cabin -->
@@ -1085,9 +1095,13 @@ export function RastreioEmConjunto() {
                   <rect x="28" y="14" width="8" height="3" fill="#e74c3c"/>
                   <!-- Mast -->
                   <line x1="32" y1="10" x2="32" y2="14" stroke="#555" stroke-width="1.5"/>
-                  <!-- Waves -->
-                  <path d="M8 54 Q12 51 16 54 Q20 57 24 54 Q28 51 32 54 Q36 57 40 54 Q44 51 48 54 Q52 57 56 54" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round"/>
-                  <path d="M10 58 Q14 55 18 58 Q22 61 26 58 Q30 55 34 58 Q38 61 42 58 Q46 55 50 58 Q54 61 58 58" fill="none" stroke="#2980b9" stroke-width="1.5" stroke-linecap="round"/>
+                  <!-- Waves (animated) -->
+                  <g style="animation:waveMove 2s ease-in-out infinite;">
+                    <path d="M8 54 Q12 51 16 54 Q20 57 24 54 Q28 51 32 54 Q36 57 40 54 Q44 51 48 54 Q52 57 56 54" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round"/>
+                  </g>
+                  <g style="animation:waveMove 2.5s ease-in-out infinite 0.3s;">
+                    <path d="M10 58 Q14 55 18 58 Q22 61 26 58 Q30 55 34 58 Q38 61 42 58 Q46 55 50 58 Q54 61 58 58" fill="none" stroke="#2980b9" stroke-width="1.5" stroke-linecap="round"/>
+                  </g>
                 </svg>
               </div>
               <div style="margin-top:2px;background:${color};color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">
@@ -1100,35 +1114,19 @@ export function RastreioEmConjunto() {
           `;
         }
 
-        // Add hover/click events with tooltip
+        // Add hover/click events - tooltip uses the side card overlay (no InfoWindow to avoid flickering)
         markerEl.addEventListener("mouseenter", () => {
           setHoveredContainer(container.id);
-          markerEl.style.transform = "scale(1.2)";
+          markerEl.style.transform = "scale(1.15)";
           markerEl.style.zIndex = "1000";
-          // Show tooltip with vessel info
-          const etaStr = live?.eta || container.eta;
-          const vesselStr = live?.vessel || container.vesselName || '';
-          const progressStr = progress || container.progress || 0;
-          const tooltipHtml = `
-            <div style="font-family:system-ui;">
-              <div style="font-weight:700;font-size:13px;margin-bottom:4px;">${container.supplierName}</div>
-              ${vesselStr ? `<div style="font-size:11px;color:#555;">\u{1F6A2} ${vesselStr}</div>` : ''}
-              <div style="font-size:11px;color:#555;">\u{1F4CD} ${originName?.split(',')[0] || '?'} \u2192 ${destName?.split(',')[0] || '?'}</div>
-              <div style="font-size:11px;color:#555;">\u{1F4CA} Progresso: <b>${progressStr}%</b></div>
-              ${etaStr ? `<div style="font-size:11px;color:#555;">\u{1F4C5} ETA: <b>${etaStr}</b></div>` : ''}
-            </div>
-          `;
-          showTooltip(adjustedPosition, tooltipHtml);
         });
         markerEl.addEventListener("mouseleave", () => {
           setHoveredContainer(null);
           markerEl.style.transform = "scale(1)";
           markerEl.style.zIndex = "";
-          hideTooltip();
         });
         markerEl.addEventListener("click", () => {
           setSelectedContainer(prev => prev === container.id ? null : container.id);
-          hideTooltip();
         });
 
         try {
@@ -1167,12 +1165,9 @@ export function RastreioEmConjunto() {
           </div>
         `;
 
-        // Add tooltip to destination marker
-        destEl.addEventListener('mouseenter', () => {
-          const etaStr = live?.eta || container.eta;
-          showTooltip(destPosition!, `<div style="font-family:system-ui;"><div style="font-weight:700;font-size:12px;">\u{1F3C1} Porto de Destino</div><div style="font-size:11px;color:#555;">${destName || 'Destino'}</div>${etaStr ? `<div style="font-size:10px;color:#888;margin-top:2px;">ETA: ${etaStr}</div>` : ''}</div>`);
-        });
-        destEl.addEventListener('mouseleave', () => hideTooltip());
+        // Title tooltip for destination (no InfoWindow to avoid flickering)
+        const etaForTitle = live?.eta || container.eta;
+        destEl.title = `\u{1F3C1} ${destName || 'Destino'}${etaForTitle ? ` - ETA: ${etaForTitle}` : ''}`;
 
         try {
           const destMarker = new google.maps.marker.AdvancedMarkerElement({

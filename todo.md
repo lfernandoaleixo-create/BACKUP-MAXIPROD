@@ -5776,3 +5776,5 @@
 - [x] Rastreio em Conjunto: animação do ícone do navio se movendo suavemente ao longo dos waypoints com controles de play/pause
 - [x] Rastreio em Conjunto: tooltip interativo ao passar mouse sobre navio ou waypoints principais (nome do local + tempo estimado)
 - [x] Rastreio em Conjunto: menu de filtros para alternar visibilidade de cada rota específica no mapa
+- [x] Rastreio em Conjunto: corrigir tooltip piscando ao passar cursor sobre o navio (flickering do InfoWindow)
+- [x] Rastreio em Conjunto: adicionar animação de balanço (rocking) ao ícone do navio simulando ondas do mar
