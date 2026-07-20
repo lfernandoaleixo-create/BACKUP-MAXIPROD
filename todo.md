@@ -5789,3 +5789,6 @@
 - [x] Inadimplência: garantir regra de 3+ dias para Pagos/Resolvidos (já implementado na linha 5136-5137 do financialRouter)
 - [x] Inadimplência: ordenar Pagos/Resolvidos por data mais recente primeiro (default: desc por resolvedAt)
 - [x] Inadimplência: garantir que filtros funcionem corretamente na aba Pagos/Resolvidos
+- [x] Inadimplência Pagos/Resolvidos: adicionar barra de pesquisa por nome do cliente
+- [x] Inadimplência Pagos/Resolvidos: adicionar checkbox em cada registro + calculadora automática mostrando valor total dos itens selecionados
+- [x] Inadimplência Pagos/Resolvidos: auditar e corrigir duplicatas no valor total (81 duplicatas removidas + CLIENTE PEDIDO VENDA removido)

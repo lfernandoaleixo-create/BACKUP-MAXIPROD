@@ -3271,7 +3271,7 @@ export const financialRouter = router({
       // O threshold de 3 dias úteis aplica-se apenas ao quadro "Pagos/Resolvidos" (recuperação)
 
       // Filtrar clientes de teste
-      const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
+      const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA', 'CLIENTE PEDIDO VENDA'];
       titles = titles.filter(t => !TEST_CLIENTS.includes(t.cliente.toUpperCase().trim()));
 
       // Filtro de busca
@@ -5129,7 +5129,7 @@ ${acoesTexto}
         .orderBy(orderCol);
 
       // Filtrar clientes de teste
-      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA', '__TEST_PROPOSTA_EXCLUSION__', '__TEST_CLIENT_SUMMARY__'];
+      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA', '__TEST_PROPOSTA_EXCLUSION__', '__TEST_CLIENT_SUMMARY__', 'CLIENTE PEDIDO VENDA'];
       const filteredRows = rows.filter(row => {
         const name = (row.cliente || '').toUpperCase().trim();
         if (TEST_CLIENT_NAMES.includes(name)) return false;

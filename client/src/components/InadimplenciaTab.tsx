@@ -663,6 +663,8 @@ export default function InadimplenciaTab() {
   const [resolvedSortDir, setResolvedSortDir] = useState<'asc' | 'desc'>('desc');
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: resolvedSortOrder, sortBy: resolvedSortBy, sortDir: resolvedSortDir });
   const [showResolved, setShowResolved] = useState(false);
+  const [resolvedSearch, setResolvedSearch] = useState('');
+  const [resolvedChecked, setResolvedChecked] = useState<Set<number>>(new Set());
 
   const upsertAction = trpc.financial.upsertCollectionAction.useMutation({
     onSuccess: () => refetch(),
@@ -1223,87 +1225,118 @@ export default function InadimplenciaTab() {
           </button>
           {showResolved && (
             <div className="border-t border-emerald-200">
-              {/* Filtros de ordenação */}
-              <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-emerald-50/50 border-b border-emerald-200">
-                <span className="text-[10px] text-emerald-700 font-medium uppercase tracking-wider mr-1">Ordenar:</span>
-                {/* Data de devolução */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (resolvedSortBy === 'resolvedAt') {
-                      setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setResolvedSortBy('resolvedAt');
-                      setResolvedSortDir('desc');
-                    }
-                  }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'resolvedAt' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
-                >
-                  {resolvedSortBy === 'resolvedAt' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
-                  Data
-                </button>
-                {/* Dias de atraso */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (resolvedSortBy === 'diasAtraso') {
-                      setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setResolvedSortBy('diasAtraso');
-                      setResolvedSortDir('desc');
-                    }
-                  }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'diasAtraso' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
-                >
-                  {resolvedSortBy === 'diasAtraso' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
-                  Dias Atraso
-                </button>
-                {/* Valor */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (resolvedSortBy === 'valor') {
-                      setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setResolvedSortBy('valor');
-                      setResolvedSortDir('desc');
-                    }
-                  }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'valor' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
-                >
-                  {resolvedSortBy === 'valor' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
-                  Valor
-                </button>
+              {/* Search bar + Calculator */}
+              <div className="px-4 py-3 bg-emerald-50/50 border-b border-emerald-200 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-500" />
+                    <input
+                      type="text"
+                      placeholder="Pesquisar por nome do cliente..."
+                      value={resolvedSearch}
+                      onChange={(e) => setResolvedSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-sm text-slate-800 placeholder:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    />
+                    {resolvedSearch && (
+                      <button onClick={() => setResolvedSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                      </button>
+                    )}
+                  </div>
+                  {resolvedChecked.size > 0 && (
+                    <button onClick={() => setResolvedChecked(new Set())} className="text-[10px] text-emerald-600 hover:text-emerald-800 whitespace-nowrap underline">
+                      Limpar seleção
+                    </button>
+                  )}
+                </div>
+                {/* Sort buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] text-emerald-700 font-medium uppercase tracking-wider mr-1">Ordenar:</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (resolvedSortBy === 'resolvedAt') { setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } else { setResolvedSortBy('resolvedAt'); setResolvedSortDir('desc'); } }}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'resolvedAt' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                  >
+                    {resolvedSortBy === 'resolvedAt' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                    Data
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (resolvedSortBy === 'diasAtraso') { setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } else { setResolvedSortBy('diasAtraso'); setResolvedSortDir('desc'); } }}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'diasAtraso' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                  >
+                    {resolvedSortBy === 'diasAtraso' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                    Dias Atraso
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (resolvedSortBy === 'valor') { setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } else { setResolvedSortBy('valor'); setResolvedSortDir('desc'); } }}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'valor' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                  >
+                    {resolvedSortBy === 'valor' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                    Valor
+                  </button>
+                </div>
+                {/* Calculator bar */}
+                {resolvedChecked.size > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-emerald-200/60 rounded-lg border border-emerald-300">
+                    <DollarSign className="w-4 h-4 text-emerald-700" />
+                    <span className="text-xs font-medium text-emerald-800">
+                      {resolvedChecked.size} selecionado{resolvedChecked.size !== 1 ? 's' : ''}
+                    </span>
+                    <span className="text-xs text-emerald-600">•</span>
+                    <span className="text-sm font-bold text-emerald-900">
+                      Total: {formatCurrency(
+                        resolvedData!.titles
+                          .filter(t => resolvedChecked.has(t.id))
+                          .reduce((sum, t) => sum + (t.valorAReceber || 0), 0)
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="divide-y divide-emerald-100">
-              {resolvedData.titles.map((t) => (
-                <div key={t.id} className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50/80">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-4 h-4 text-emerald-600" />
+              <div className="divide-y divide-emerald-100 max-h-[400px] overflow-y-auto">
+                {resolvedData!.titles
+                  .filter(t => !resolvedSearch || t.cliente.toLowerCase().includes(resolvedSearch.toLowerCase()))
+                  .map((t) => (
+                  <div key={t.id} className={`flex items-center justify-between px-4 py-3 hover:bg-emerald-50/80 transition-colors ${resolvedChecked.has(t.id) ? 'bg-emerald-100/60' : ''}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        onClick={() => {
+                          setResolvedChecked(prev => {
+                            const next = new Set(prev);
+                            if (next.has(t.id)) next.delete(t.id);
+                            else next.add(t.id);
+                            return next;
+                          });
+                        }}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          resolvedChecked.has(t.id)
+                            ? 'bg-emerald-500 border-emerald-500'
+                            : 'border-emerald-300 hover:border-emerald-500'
+                        }`}
+                      >
+                        {resolvedChecked.has(t.id) && <Check className="w-3 h-3 text-white" />}
+                      </button>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{t.cliente}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          {t.documento && <span>NF {t.documento}</span>}
+                          {t.empresa && <span>• {t.empresa}</span>}
+                          <span>• {t.totalContatos} contato{t.totalContatos !== 1 ? 's' : ''} registrado{t.totalContatos !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{t.cliente}</p>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                        {t.documento && <span>NF {t.documento}</span>}
-                        {t.empresa && <span>• {t.empresa}</span>}
-                        <span>• {t.totalContatos} contato{t.totalContatos !== 1 ? 's' : ''} registrado{t.totalContatos !== 1 ? 's' : ''}</span>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-emerald-700">{formatCurrency(t.valorAReceber)}</p>
+                        <p className="text-[10px] text-slate-500">Venc: {t.vencimento ? new Date(t.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-emerald-600 font-medium">Resolvido em</p>
+                        <p className="text-xs font-semibold text-emerald-800">{t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('pt-BR') : '-'}</p>
+                        <p className="text-[10px] text-slate-500">{t.diasAtrasoNaResolucao}d de atraso</p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-700">{formatCurrency(t.valorAReceber)}</p>
-                      <p className="text-[10px] text-slate-500">Venc: {t.vencimento ? new Date(t.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-emerald-600 font-medium">Resolvido em</p>
-                      <p className="text-xs font-semibold text-emerald-800">{t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('pt-BR') : '-'}</p>
-                      <p className="text-[10px] text-slate-500">{t.diasAtrasoNaResolucao}d de atraso</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           )}
