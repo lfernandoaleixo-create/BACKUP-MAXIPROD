@@ -4,7 +4,7 @@
  * Usado tanto na aba Financeiro quanto na aba Vendas
  */
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { useOperator } from "@/contexts/OperatorContext";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,14 @@ import {
   ClipboardList,
   ChevronUp,
   CheckCircle2,
+  DollarSign,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
@@ -472,6 +479,15 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortFieldClientes>("valor");
   const [sortDir, setSortDir] = useState<SortDirClientes>("desc");
+  const [pagosDialogCliente, setPagosDialogCliente] = useState<string | null>(null);
+
+  // Resolved titles for the selected client in the dialog
+  const pagosDialogTitles = useMemo(() => {
+    if (!pagosDialogCliente || !resolvedAllData?.titles) return [];
+    const normalizedName = pagosDialogCliente.toUpperCase().trim();
+    return resolvedAllData.titles.filter(t => (t.cliente || '').toUpperCase().trim() === normalizedName);
+  }, [pagosDialogCliente, resolvedAllData]);
+  const pagosDialogTotal = useMemo(() => pagosDialogTitles.reduce((sum, t) => sum + t.valorAReceber, 0), [pagosDialogTitles]);
 
   const totalGeral = useMemo(() => {
     if (!clientes) return 0;
@@ -670,7 +686,11 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                       {(() => {
                         const count = resolvedCountMap.get(c.cliente.toUpperCase().trim()) || 0;
                         return count > 0 ? (
-                          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">{count}</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPagosDialogCliente(c.cliente); }}
+                            className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 hover:border-emerald-300 hover:scale-110 transition-all cursor-pointer"
+                            title={`Ver ${count} título(s) pago(s) de ${c.cliente}`}
+                          >{count}</button>
                         ) : (
                           <span className="text-slate-300">—</span>
                         );
@@ -775,6 +795,70 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
           {vendedorFilter !== "all" && <> (vendedor: {vendedorFilter === "__sem_vendedor__" ? "sem vendedor" : vendedorFilter})</>}
         </p>
       )}
+
+      {/* Dialog de Títulos Pagos/Resolvidos */}
+      <Dialog open={!!pagosDialogCliente} onOpenChange={(open) => { if (!open) setPagosDialogCliente(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <CheckCircle2 className="w-5 h-5" />
+              Títulos Pagos — {pagosDialogCliente}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            {pagosDialogTitles.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-8">Nenhum título resolvido encontrado.</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-1 py-2 mb-2">
+                  <span className="text-xs text-emerald-600 font-medium">
+                    {pagosDialogTitles.length} título{pagosDialogTitles.length !== 1 ? 's' : ''} recuperado{pagosDialogTitles.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-sm font-bold text-emerald-700">
+                    Total: {formatCurrency(pagosDialogTotal)}
+                  </span>
+                </div>
+                <div className="bg-white rounded-lg border border-emerald-200 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-emerald-50 border-b border-emerald-100">
+                        <th className="px-3 py-2 text-left text-emerald-700 font-semibold">Data Resolução</th>
+                        <th className="px-3 py-2 text-left text-emerald-700 font-semibold">Vencimento</th>
+                        <th className="px-3 py-2 text-center text-emerald-700 font-semibold">Dias Atraso</th>
+                        <th className="px-3 py-2 text-right text-emerald-700 font-semibold">Valor</th>
+                        <th className="px-3 py-2 text-left text-emerald-700 font-semibold">Documento</th>
+                        <th className="px-3 py-2 text-left text-emerald-700 font-semibold">Empresa</th>
+                        <th className="px-3 py-2 text-left text-emerald-700 font-semibold">Vendedor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-emerald-50">
+                      {pagosDialogTitles.map((t, i) => (
+                        <tr key={i} className="hover:bg-emerald-50/50">
+                          <td className="px-3 py-2 text-emerald-800 font-medium">
+                            {t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('pt-BR') : '—'}
+                          </td>
+                          <td className="px-3 py-2 text-slate-600">
+                            {t.vencimento ? formatDate(t.vencimento) : '—'}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <span className="inline-flex items-center justify-center min-w-[28px] px-1 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                              {t.diasAtrasoNaResolucao || 0}d
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-right font-semibold text-emerald-700">{formatCurrency(t.valorAReceber)}</td>
+                          <td className="px-3 py-2 text-slate-500 truncate max-w-[120px]" title={t.documento || ''}>{t.documento || '—'}</td>
+                          <td className="px-3 py-2 text-slate-500 truncate max-w-[100px]" title={t.empresa || ''}>{t.empresa || '—'}</td>
+                          <td className="px-3 py-2 text-slate-500 truncate max-w-[100px]" title={t.vendedor || ''}>{t.vendedor || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

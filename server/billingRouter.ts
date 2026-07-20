@@ -1037,15 +1037,25 @@ export const billingRouter = router({
       const toRemove: string[] = [];
       for (const pedido of pedidoNums) {
         const states = pedidoStates.get(pedido);
-        // Remove if all items are "Faturado" or if pedido no longer exists in sales_orders
-        if (!states || (states.size === 1 && states.has("Faturado"))) {
+        // PROTEÇÃO: Se o pedido não existe em sales_orders, NÃO remover autorização.
+        // Pode ser uma condição temporária durante a sincronização (delete + re-insert atômico).
+        // Só remover se o pedido EXISTE e TODOS os itens estão "Faturado".
+        if (states && states.size === 1 && states.has("Faturado")) {
           toRemove.push(pedido);
         }
-        // REGRA FATURAMENTO PARCIAL: se o pedido tem itens "Faturado parcial" ou "A faturar",
-        // remover autorização para que volte para "Pedidos em Aberto" (precisa ser re-autorizado)
-        if (states && (states.has("Faturado parcial") || (states.has("Faturado") && states.has("A faturar")))) {
+        // REGRA FATURAMENTO PARCIAL: só remover autorização se o pedido TEM itens já faturados
+        // E TAMBÉM tem itens pendentes (mistura real de faturado + a faturar).
+        // NÃO remover se o pedido está 100% "A faturar" — isso significa que foi autorizado
+        // mas ainda não faturou nada, e a autorização deve ser preservada.
+        // Também remover se tem "Faturado parcial" (item parcialmente faturado).
+        if (states && states.has("Faturado parcial")) {
+          toRemove.push(pedido);
+        } else if (states && states.has("Faturado") && states.has("A faturar")) {
+          // Mistura real: parte faturada, parte pendente — precisa re-autorizar
           toRemove.push(pedido);
         }
+        // NÃO remover se states só tem "A faturar" ou "Faturado c/ entrega futura"
+        // — esses pedidos foram autorizados e ainda não faturaram, autorização deve persistir
       }
 
       if (toRemove.length > 0) {
@@ -1186,7 +1196,10 @@ export const billingRouter = router({
       const toRemove: string[] = [];
       for (const pedido of pedidoNums) {
         const states = pedidoStates.get(pedido);
-        if (!states || (states.size === 1 && states.has("Faturado"))) {
+        // PROTEÇÃO: Se o pedido não existe em sales_orders, NÃO remover aceite.
+        // Pode ser condição temporária durante sincronização.
+        // Só remover se o pedido EXISTE e TODOS os itens estão "Faturado".
+        if (states && states.size === 1 && states.has("Faturado")) {
           toRemove.push(pedido);
         }
       }

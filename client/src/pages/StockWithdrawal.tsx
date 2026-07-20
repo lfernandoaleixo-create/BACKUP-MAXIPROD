@@ -212,7 +212,7 @@ function SolicitarBaixaForm() {
     { query: productSearch },
     { enabled: productSearch.length >= 2 }
   );
-  const { data: destinoProducts } = trpc.stockWithdrawal.searchProducts.useQuery(
+  const { data: destinoProducts } = trpc.stockWithdrawal.searchDestinoProducts.useQuery(
     { query: produtoDestinoSearch },
     { enabled: produtoDestinoSearch.length >= 2 && motivo === "reembalagem" }
   );

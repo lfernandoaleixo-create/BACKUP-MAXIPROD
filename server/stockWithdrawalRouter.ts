@@ -46,6 +46,49 @@ export const stockWithdrawalRouter = router({
     }),
 
   /**
+   * Buscar produtos para o campo "Produto de Destino" (reembalagem)
+   * Busca em TODOS os produtos do catálogo + sales_orders, sem filtro de superGrupo
+   */
+  searchDestinoProducts: publicProcedure
+    .input(z.object({ query: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const q = input.query.toUpperCase();
+      // Buscar no catálogo de produtos (sem filtro de superGrupo)
+      const catalogResults = await db.select({
+        codigoItem: productCatalog.codigoItem,
+        descricaoItem: productCatalog.descricaoItem,
+      })
+        .from(productCatalog)
+        .where(
+          sql`(${productCatalog.codigoItem} LIKE ${`%${q}%`} OR UPPER(${productCatalog.descricaoItem}) LIKE ${`%${q}%`})`
+        )
+        .limit(20);
+      
+      // Se não encontrou no catálogo, buscar também em sales_orders (produtos que existem no Maxiprod mas não estão no catálogo local)
+      if (catalogResults.length === 0) {
+        const { salesOrders } = await import("../drizzle/schema");
+        const salesResults = await db.selectDistinct({
+          codigoItem: salesOrders.codigoItem,
+          descricaoItem: salesOrders.descricaoItem,
+        })
+          .from(salesOrders)
+          .where(
+            sql`(${salesOrders.codigoItem} LIKE ${`%${q}%`} OR UPPER(${salesOrders.descricaoItem}) LIKE ${`%${q}%`})`
+          )
+          .limit(20);
+        // Filter out nulls
+        return salesResults.filter(r => r.codigoItem && r.descricaoItem).map(r => ({
+          codigoItem: r.codigoItem!,
+          descricaoItem: r.descricaoItem!,
+        }));
+      }
+      
+      return catalogResults;
+    }),
+
+  /**
    * Criar nova solicitação de baixa (Líder) - exige senha do operador
    */
   create: publicProcedure

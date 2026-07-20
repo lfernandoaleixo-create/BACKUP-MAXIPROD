@@ -5806,3 +5806,6 @@
 - [x] Faturamento: card "Alertas de Estoque Insuficiente" deve começar recolhido/fechado por padrão
 - [x] Faturamento: card de alertas deve piscar quando houver alertas pendentes (sem resposta), parar de piscar quando todos forem respondidos
 - [x] Faturamento: ícone de relógio (histórico) ao lado do card recolhido para acesso rápido
+- [x] BUG CRÍTICO: Pedido AJ - status "Autorizado a Faturar" reverte para "Pedidos em Aberto" após sync com MaxiProd. O sync NÃO pode sobrescrever status local quando já está em "autorizado_faturar" ou superior
+- [x] BUG: "Produto de Destino" na Nova Solicitação de Baixa não mostra o código do produto nos resultados da busca (ex: 00639)
+- [x] Inadimplência/Clientes: badge "Pagos" deve ser clicável e abrir modal/card com detalhes completos dos títulos resolvidos (valor, data, documento, dias de atraso, etc.)
