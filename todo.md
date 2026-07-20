@@ -5809,3 +5809,4 @@
 - [x] BUG CRÍTICO: Pedido AJ - status "Autorizado a Faturar" reverte para "Pedidos em Aberto" após sync com MaxiProd. O sync NÃO pode sobrescrever status local quando já está em "autorizado_faturar" ou superior
 - [x] BUG: "Produto de Destino" na Nova Solicitação de Baixa não mostra o código do produto nos resultados da busca (ex: 00639)
 - [x] Inadimplência/Clientes: badge "Pagos" deve ser clicável e abrir modal/card com detalhes completos dos títulos resolvidos (valor, data, documento, dias de atraso, etc.)
+- [x] Mobile: suportar rotação de tela (landscape) para aproveitar espaço extra quando o celular é virado na horizontal
