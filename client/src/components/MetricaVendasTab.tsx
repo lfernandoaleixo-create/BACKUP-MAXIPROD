@@ -67,6 +67,65 @@ function formatDate(dateStr: string) {
   return dateStr;
 }
 
+/**
+ * Componente de linha de cliente resolvido - clicável para expandir detalhes
+ */
+function ResolvidoClienteRow({ cliente }: { cliente: {
+  nome: string;
+  titulos: Array<{ resolvedAt: string; valor: number; diasAtraso: number }>;
+  totalResolved: number;
+  valorResolved: number;
+  titlesStillOverdue: number;
+  valorStillOverdue: number;
+} }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="hover:bg-emerald-50/80 transition-colors">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-slate-800 truncate">{cliente.nome}</p>
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+            <span className="text-emerald-600 font-medium">{cliente.totalResolved} título{cliente.totalResolved > 1 ? 's' : ''} resolvido{cliente.totalResolved > 1 ? 's' : ''}</span>
+            {cliente.titlesStillOverdue > 0 && (
+              <>
+                <span>•</span>
+                <span className="text-red-500 font-medium">{cliente.titlesStillOverdue} ainda em aberto ({formatCurrency(cliente.valorStillOverdue)})</span>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="text-right">
+            <p className="text-sm font-bold text-emerald-700">{formatCurrency(cliente.valorResolved)}</p>
+            <p className="text-[10px] text-emerald-600">recuperado</p>
+          </div>
+          {expanded ? <ChevronUp className="w-4 h-4 text-emerald-500" /> : <ChevronDown className="w-4 h-4 text-emerald-500" />}
+        </div>
+      </button>
+      {expanded && (
+        <div className="px-4 pb-3 space-y-1">
+          {cliente.titulos.map((titulo, idx) => (
+            <div key={idx} className="flex items-center justify-between text-[11px] bg-emerald-100/60 rounded px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <Check className="w-3 h-3 text-emerald-500" />
+                <span className="text-slate-700">
+                  {titulo.resolvedAt ? new Date(titulo.resolvedAt).toLocaleDateString('pt-BR') : '-'}
+                </span>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-500">{titulo.diasAtraso} dias de atraso</span>
+              </div>
+              <span className="font-semibold text-emerald-700">{formatCurrency(titulo.valor)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MetricaVendasTab() {
   const [period, setPeriod] = useState("current");
   const [customMonth, setCustomMonth] = useState<{ year: number; month: number }>(() => {
@@ -780,42 +839,7 @@ export default function MetricaVendasTab() {
               {showResolvidosVendedor && (
                 <div className="border-t border-emerald-200 divide-y divide-emerald-100 max-h-[400px] overflow-y-auto">
                   {resolvidosVendedor.clientes.map((cliente) => (
-                    <div key={cliente.nome} className="px-4 py-3 hover:bg-emerald-50/80 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{cliente.nome}</p>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
-                            <span className="text-emerald-600 font-medium">{cliente.totalResolved} título{cliente.totalResolved > 1 ? 's' : ''} resolvido{cliente.totalResolved > 1 ? 's' : ''}</span>
-                            {cliente.titlesStillOverdue > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="text-red-500 font-medium">{cliente.titlesStillOverdue} ainda em aberto ({formatCurrency(cliente.valorStillOverdue)})</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold text-emerald-700">{formatCurrency(cliente.valorResolved)}</p>
-                          <p className="text-[10px] text-emerald-600">recuperado</p>
-                        </div>
-                      </div>
-                      {/* Detalhes dos títulos resolvidos */}
-                      <div className="mt-2 space-y-1">
-                        {cliente.titulos.map((titulo, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-[11px] bg-emerald-50/70 rounded px-2 py-1">
-                            <div className="flex items-center gap-2">
-                              <Check className="w-3 h-3 text-emerald-500" />
-                              <span className="text-slate-600">
-                                Resolvido em {titulo.resolvedAt ? new Date(titulo.resolvedAt).toLocaleDateString('pt-BR') : '-'}
-                              </span>
-                              <span className="text-slate-400">•</span>
-                              <span className="text-slate-500">{titulo.diasAtraso}d de atraso</span>
-                            </div>
-                            <span className="font-semibold text-emerald-700">{formatCurrency(titulo.valor)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <ResolvidoClienteRow key={cliente.nome} cliente={cliente} />
                   ))}
                 </div>
               )}

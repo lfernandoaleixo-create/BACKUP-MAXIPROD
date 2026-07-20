@@ -5795,3 +5795,4 @@
 - [x] Vendas/Vendedores: adicionar card "Pagos/Resolvidos" (verde) na seção de inadimplência de cada vendedor
 - [x] Vendas/Vendedores: mostrar detalhes por cliente (data resolução, valor, títulos resolvidos vs pendentes)
 - [x] Vendas/Vendedores: backend endpoint para buscar resolvidos por vendedor com detalhes por cliente
+- [x] Inadimplência/Clientes: ao expandir um cliente na tabela, mostrar seção verde "Pagos/Resolvidos" com títulos que saíram da inadimplência (data resolução, valor, dias atraso, documento)

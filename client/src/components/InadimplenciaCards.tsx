@@ -30,6 +30,8 @@ import {
   Eye,
   ExternalLink,
   ClipboardList,
+  ChevronUp,
+  CheckCircle2,
 } from "lucide-react";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 
@@ -373,6 +375,86 @@ function EvolucaoTab({ chartFilter, setChartFilter, searchInput, setSearchInput,
 }
 
 /* ---- Aba Clientes (tabela ranqueada) ---- */
+/**
+ * Seção de títulos resolvidos/pagos para um cliente específico.
+ * Busca dados do getResolvedTitles e filtra pelo nome do cliente.
+ */
+function ClienteResolvedSection({ clienteName }: { clienteName: string }) {
+  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: 'resolvedAt', sortDir: 'desc' });
+  const [expanded, setExpanded] = useState(false);
+
+  const clienteResolved = useMemo(() => {
+    if (!resolvedData?.titles) return [];
+    const normalizedName = clienteName.toUpperCase().trim();
+    return resolvedData.titles.filter(t => (t.cliente || '').toUpperCase().trim() === normalizedName);
+  }, [resolvedData, clienteName]);
+
+  if (clienteResolved.length === 0) return null;
+
+  const totalValor = clienteResolved.reduce((sum, t) => sum + t.valorAReceber, 0);
+
+  return (
+    <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-emerald-100/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span className="text-[11px] font-bold text-emerald-800">Pagos / Resolvidos</span>
+          <span className="bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{clienteResolved.length}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold text-emerald-700">{formatCurrency(totalValor)}</span>
+          {expanded ? <ChevronUp className="w-3.5 h-3.5 text-emerald-500" /> : <ChevronDown className="w-3.5 h-3.5 text-emerald-500" />}
+        </div>
+      </button>
+      {expanded && (
+        <div className="border-t border-emerald-200">
+          <div className="bg-white rounded-b overflow-hidden">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="bg-emerald-50 border-b border-emerald-100">
+                  <th className="px-3 py-1.5 text-left text-emerald-700 font-semibold">Data Resolução</th>
+                  <th className="px-3 py-1.5 text-left text-emerald-700 font-semibold">Vencimento</th>
+                  <th className="px-3 py-1.5 text-center text-emerald-700 font-semibold">Dias Atraso</th>
+                  <th className="px-3 py-1.5 text-right text-emerald-700 font-semibold">Valor</th>
+                  <th className="px-3 py-1.5 text-left text-emerald-700 font-semibold">Documento</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-emerald-50">
+                {clienteResolved.map((t, i) => (
+                  <tr key={i} className="hover:bg-emerald-50/50">
+                    <td className="px-3 py-1.5 text-emerald-800 font-medium">
+                      {t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('pt-BR') : '-'}
+                    </td>
+                    <td className="px-3 py-1.5 text-slate-600">
+                      {t.vencimento ? formatDate(t.vencimento) : '-'}
+                    </td>
+                    <td className="px-3 py-1.5 text-center">
+                      <span className="inline-flex items-center justify-center min-w-[28px] px-1 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                        {t.diasAtrasoNaResolucao || 0}d
+                      </span>
+                    </td>
+                    <td className="px-3 py-1.5 text-right font-semibold text-emerald-700">{formatCurrency(t.valorAReceber)}</td>
+                    <td className="px-3 py-1.5 text-slate-500 truncate max-w-[150px]">{t.documento || t.empresa || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2 bg-emerald-50/80 border-t border-emerald-100 flex items-center justify-between">
+            <span className="text-[10px] text-emerald-600">
+              {clienteResolved.length} título{clienteResolved.length !== 1 ? 's' : ''} recuperado{clienteResolved.length !== 1 ? 's' : ''} da inadimplência
+            </span>
+            <span className="text-[10px] font-bold text-emerald-700">Total: {formatCurrency(totalValor)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type SortFieldClientes = "valor" | "data" | "titulos" | "vendedor";
 type SortDirClientes = "asc" | "desc";
 
@@ -651,6 +733,8 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                               </tbody>
                             </table>
                           </div>
+                          {/* Pagos/Resolvidos deste cliente */}
+                          <ClienteResolvedSection clienteName={c.cliente} />
                         </div>
                       </td>
                     </tr>
