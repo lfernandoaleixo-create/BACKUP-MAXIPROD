@@ -5796,3 +5796,7 @@
 - [x] Vendas/Vendedores: mostrar detalhes por cliente (data resolução, valor, títulos resolvidos vs pendentes)
 - [x] Vendas/Vendedores: backend endpoint para buscar resolvidos por vendedor com detalhes por cliente
 - [x] Inadimplência/Clientes: ao expandir um cliente na tabela, mostrar seção verde "Pagos/Resolvidos" com títulos que saíram da inadimplência (data resolução, valor, dias atraso, documento)
+- [x] Container card: corrigir encoding Unicode (HIST\U00F3RICO → Histórico, \u2022 → •)
+- [x] Container card: traduzir status "checked"/"pending"/"current" para português
+- [x] Container card: corrigir mapeamento de campos do evento (description vs translatedStatus vs h.date vs h.dateTime)
+- [x] Container card: hover abre card, click trava, click novamente destrava

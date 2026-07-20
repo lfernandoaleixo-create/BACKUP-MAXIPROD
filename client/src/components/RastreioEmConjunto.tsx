@@ -631,8 +631,8 @@ function ContainerTracker({ container, onDataReadyRef }: {
       }));
     } else if (uuidData?.historic) {
       events = uuidData.historic.map((h: any) => ({
-        description: h.translatedStatus || h.status || '',
-        date: h.date || '',
+        description: h.description || h.event || '',
+        date: h.dateTime || h.date || '',
         location: h.location || '',
         has_occurred: h.hasOccurred,
       }));
@@ -701,7 +701,7 @@ export function RastreioEmConjunto() {
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
   // Modal state for route history
-  const [modalContainerId, setModalContainerId] = useState<number | null>(null);
+  // Side panel now uses selectedContainer/hoveredContainer instead of modalContainerId
 
   // Initialize visibleRoutes when containers load
   useEffect(() => {
@@ -1165,19 +1165,21 @@ export function RastreioEmConjunto() {
           `;
         }
 
-        // Add hover/click events - tooltip uses the side card overlay (no InfoWindow to avoid flickering)
+        // Add hover/click events - hover opens card, click locks/unlocks
         markerEl.addEventListener("mouseenter", () => {
           setHoveredContainer(container.id);
           markerEl.style.transform = "scale(1.15)";
           markerEl.style.zIndex = "1000";
         });
         markerEl.addEventListener("mouseleave", () => {
-          setHoveredContainer(null);
+          // Only clear hover if not locked (selectedContainer)
+          setHoveredContainer(prev => prev === container.id ? null : prev);
           markerEl.style.transform = "scale(1)";
           markerEl.style.zIndex = "";
         });
         markerEl.addEventListener("click", () => {
-          setModalContainerId(container.id);
+          // Click locks/unlocks the card (toggle selectedContainer)
+          setSelectedContainer(prev => prev === container.id ? null : container.id);
         });
 
         try {
@@ -1616,10 +1618,18 @@ export function RastreioEmConjunto() {
             <div
               key={container.id}
               className={`bg-white rounded-xl border-l-4 ${colors[index % colors.length]} border border-slate-200 p-3 hover:shadow-md transition cursor-pointer ${selectedContainer === container.id ? 'ring-2 ring-indigo-300' : ''}`}
-              onMouseEnter={() => setHoveredContainer(container.id)}
-              onMouseLeave={() => setHoveredContainer(null)}
+              onMouseEnter={() => { if (!selectedContainer) setHoveredContainer(container.id); }}
+              onMouseLeave={() => { if (!selectedContainer) setHoveredContainer(null); }}
               onClick={() => {
-                setSelectedContainer(prev => prev === container.id ? null : container.id);
+                setSelectedContainer(prev => {
+                  if (prev === container.id) {
+                    // Unlock: deselect and clear hover
+                    setHoveredContainer(null);
+                    return null;
+                  }
+                  // Lock: select this container
+                  return container.id;
+                });
                 // Pan map to this container's position
                 const panPos = container.status === 'Entregue' && live?.destPosition
                   ? live.destPosition
@@ -1710,13 +1720,14 @@ export function RastreioEmConjunto() {
         })}
       </div>
       {/* Route History Modal */}
-      {modalContainerId && (() => {
-        const mc = containers.find(c => c.id === modalContainerId);
-        const ml = liveTrackingData.get(modalContainerId);
+      {(selectedContainer || hoveredContainer) && (() => {
+        const showId = selectedContainer || hoveredContainer;
+        const mc = containers.find(c => c.id === showId);
+        const ml = liveTrackingData.get(showId!);
         if (!mc) return null;
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setModalContainerId(null)}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="fixed top-0 right-0 h-full w-[380px] max-w-[90vw] bg-white shadow-2xl z-[9999] overflow-y-auto border-l border-slate-200 animate-in slide-in-from-right duration-200" onClick={e => e.stopPropagation()}>
+            <div>
               {/* Modal Header */}
               <div className="sticky top-0 bg-white border-b border-slate-200 p-4 rounded-t-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1728,9 +1739,14 @@ export function RastreioEmConjunto() {
                     <p className="text-xs text-slate-500">{mc.poNumber} {mc.pedido ? `\u2022 ${mc.pedido}` : ''}</p>
                   </div>
                 </div>
-                <button onClick={() => setModalContainerId(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition">
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
+                <div className="flex items-center gap-1">
+                  {selectedContainer && (
+                    <span className="text-[9px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Travado</span>
+                  )}
+                  <button onClick={() => { setSelectedContainer(null); setHoveredContainer(null); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition">
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body */}
@@ -1739,7 +1755,7 @@ export function RastreioEmConjunto() {
                 <div className="bg-gradient-to-r from-indigo-50 to-cyan-50 rounded-xl p-4">
                   <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
                     <span className="font-medium">{ml?.originName || mc.origin || '\u2014'}</span>
-                    <span className="text-slate-400">\u2192</span>
+                    <span className="text-slate-400">{"\u2192"}</span>
                     <span className="font-medium">{ml?.destName || mc.destination || '\u2014'}</span>
                   </div>
                   <div className="h-3 bg-white/80 rounded-full overflow-hidden shadow-inner">
@@ -1812,17 +1828,17 @@ export function RastreioEmConjunto() {
                 {ml?.events && ml.events.length > 0 && (
                   <div className="border-t border-slate-200 pt-3">
                     <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" /> Hist\u00f3rico da Rota
+                      <Clock className="w-3.5 h-3.5" /> Histórico da Rota
                     </h4>
                     <div className="space-y-0 relative">
                       <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-slate-200" />
                       {ml.events.map((evt: any, i: number) => (
                         <div key={i} className="flex items-start gap-3 relative py-2">
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 z-10 ${i === 0 ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-slate-300'}`} />
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 z-10 ${evt.has_occurred || evt.status === 'checked' || evt.status === 'current' ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-slate-300'}`} />
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-slate-800">{evt.description || evt.status || '\u2014'}</p>
+                            <p className="text-xs font-medium text-slate-800">{evt.description || evt.event || (evt.status === 'checked' ? 'Concluído' : evt.status === 'current' ? 'Em andamento' : evt.status === 'pending' ? 'Pendente' : evt.status) || '\u2014'}</p>
                             <p className="text-[10px] text-slate-500 mt-0.5">
-                              {evt.location && <span>{evt.location} \u2022 </span>}
+                              {evt.location && <span>{evt.location} {"\u2022"} </span>}
                               {evt.date || evt.timestamp || ''}
                             </p>
                           </div>
