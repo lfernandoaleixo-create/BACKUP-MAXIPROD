@@ -1997,14 +1997,14 @@ export default function InadimplenciaTab() {
               <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
                 <div className="text-sm font-bold text-red-800 dark:text-red-300">{acionarVendedorDialog.cliente}</div>
                 <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  {acionarVendedorDialog.count} t\u00edtulo{acionarVendedorDialog.count !== 1 ? "s" : ""} \u2022 {formatCurrency(acionarVendedorDialog.total)} \u2022 m\u00e1x {acionarVendedorDialog.maxDias}d atraso
+                  {acionarVendedorDialog.count} título{acionarVendedorDialog.count !== 1 ? "s" : ""} • {formatCurrency(acionarVendedorDialog.total)} • máx {acionarVendedorDialog.maxDias}d atraso
                 </div>
               </div>
 
               {/* Vendedor selection */}
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
-                  Vendedor respons\u00e1vel {!acionarVendedorDialog.vendedor && <span className="text-red-500">*</span>}
+                  Vendedor responsável {!acionarVendedorDialog.vendedor && <span className="text-red-500">*</span>}
                 </label>
                 {acionarVendedorDialog.vendedor ? (
                   <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
@@ -2044,10 +2044,10 @@ export default function InadimplenciaTab() {
               {/* Etapa selection */}
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
-                  Etapa atual da cobran\u00e7a
+                  Etapa atual da cobrança
                 </label>
                 <div className="flex gap-2">
-                  {[{v: "1", label: "1\u00aa Cobran\u00e7a"}, {v: "2", label: "2\u00aa Cobran\u00e7a"}, {v: "3", label: "3\u00aa Cobran\u00e7a"}].map(opt => (
+                  {[{v: "1", label: "1ª Cobrança"}, {v: "2", label: "2ª Cobrança"}, {v: "3", label: "3ª Cobrança"}].map(opt => (
                     <button
                       key={opt.v}
                       onClick={() => setAcionarEtapa(opt.v)}
@@ -2061,14 +2061,14 @@ export default function InadimplenciaTab() {
                     </button>
                   ))}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">Selecionado automaticamente com base no hist\u00f3rico. Ajuste se necess\u00e1rio.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Selecionado automaticamente com base no histórico. Ajuste se necessário.</p>
               </div>
 
               {/* History summary */}
               {acionarVendedorDialog.titulos && acionarVendedorDialog.titulos.some(t => t.cobranca?.contatoHistorico?.length) && (
                 <div>
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
-                    Hist\u00f3rico de cobran\u00e7a (\u00faltimas a\u00e7\u00f5es)
+                    Histórico de cobrança (últimas ações)
                   </label>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 p-2 max-h-32 overflow-y-auto space-y-1">
                     {acionarVendedorDialog.titulos
@@ -2095,10 +2095,10 @@ export default function InadimplenciaTab() {
                 <textarea
                   value={acionarMensagem}
                   onChange={(e) => setAcionarMensagem(e.target.value)}
-                  placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor fa\u00e7a..."
+                  placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor faça..."
                   className="w-full h-28 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Ex: "Cliente n\u00e3o atende liga\u00e7\u00f5es h\u00e1 3 dias. Sugerimos que o vendedor entre em contato pessoalmente."</p>
+                <p className="text-[10px] text-slate-400 mt-1">Ex: "Cliente não atende ligações há 3 dias. Sugerimos que o vendedor entre em contato pessoalmente."</p>
               </div>
 
               <DialogFooter>
@@ -2109,7 +2109,7 @@ export default function InadimplenciaTab() {
                   onClick={() => {
                     const vendedorFinal = acionarVendedorDialog.vendedor || acionarVendedorName.trim();
                     if (!vendedorFinal) {
-                      toast.error("Informe o vendedor respons\u00e1vel.");
+                      toast.error("Informe o vendedor responsável.");
                       return;
                     }
                     if (!acionarMensagem.trim()) {
@@ -2119,7 +2119,7 @@ export default function InadimplenciaTab() {
                     createSellerAlertMutation.mutate({
                       empresa: acionarVendedorDialog.cliente,
                       vendedor: vendedorFinal,
-                      mensagem: `[Etapa: ${acionarEtapa}\u00aa Cobran\u00e7a] ${acionarMensagem.trim()}`,
+                      mensagem: `[Etapa: ${acionarEtapa}ª Cobrança] ${acionarMensagem.trim()}`,
                       criadoPor: operator?.name || "Financeiro",
                       valorTotal: acionarVendedorDialog.total,
                       titulosVencidos: acionarVendedorDialog.count,
@@ -2156,7 +2156,7 @@ export default function InadimplenciaTab() {
                   Cancelar o acionamento do vendedor <strong>{cancelAlertDialog.vendedor}</strong> para o cliente <strong>{cancelAlertDialog.empresa}</strong>?
                 </p>
                 <p className="text-xs text-orange-600 mt-1">
-                  O vendedor n\u00e3o ver\u00e1 mais este alerta. Uma nota ser\u00e1 registrada no hist\u00f3rico.
+                  O vendedor não verá mais este alerta. Uma nota será registrada no histórico.
                 </p>
               </div>
               <div>
@@ -2164,7 +2164,7 @@ export default function InadimplenciaTab() {
                 <textarea
                   value={cancelReason}
                   onChange={e => setCancelReason(e.target.value)}
-                  placeholder="Ex: Resolvido diretamente, erro de acionamento, cliente j\u00e1 pagou..."
+                  placeholder="Ex: Resolvido diretamente, erro de acionamento, cliente já pagou..."
                   className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none h-20 focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -2195,7 +2195,7 @@ export default function InadimplenciaTab() {
     </div>
   );
 }
-/* ---- Componente PhoneIcon com anima\u00e7\u00e3o ---- */
+/* ---- Componente PhoneIcon com animação ---- */
 function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document" | "muted"; onClick: () => void }) {
   const baseClasses = "p-1 rounded-md transition-colors cursor-pointer";
 

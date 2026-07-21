@@ -2569,7 +2569,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   Cancelar o acionamento do vendedor <strong>{cancelAlertDialog.vendedor}</strong> para o cliente <strong>{cancelAlertDialog.empresa}</strong>?
                 </p>
                 <p className="text-xs text-orange-600 mt-1">
-                  O vendedor n\u00e3o ver\u00e1 mais este alerta. Uma nota ser\u00e1 registrada no hist\u00f3rico.
+                  O vendedor não verá mais este alerta. Uma nota será registrada no histórico.
                 </p>
               </div>
               <div>
@@ -2577,7 +2577,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                 <textarea
                   value={cancelReason}
                   onChange={e => setCancelReason(e.target.value)}
-                  placeholder="Ex: Resolvido diretamente, erro de acionamento, cliente j\u00e1 pagou..."
+                  placeholder="Ex: Resolvido diretamente, erro de acionamento, cliente já pagou..."
                   className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none h-20 focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -2606,17 +2606,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </Dialog>
       )}
 
-      {/* ==================== HIST\u00d3RICO DE ACIONAMENTOS ==================== */}
+      {/* ==================== HISTÓRICO DE ACIONAMENTOS ==================== */}
       {showAlertsHistory && (
         <Dialog open={true} onOpenChange={() => setShowAlertsHistory(false)}>
           <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <History className="w-5 h-5 text-blue-600" /> Hist\u00f3rico de Acionamentos de Vendedores
+                <History className="w-5 h-5 text-blue-600" /> Histórico de Acionamentos de Vendedores
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* M\u00e9tricas */}
+              {/* Métricas */}
               {alertsHistoryData?.metrics && (
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                   <div className="bg-slate-50 rounded-lg p-3 text-center">
@@ -2641,7 +2641,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-blue-700">{alertsHistoryData.metrics.tempoMedioResolucaoHoras}h</div>
-                    <div className="text-[10px] text-blue-500">Tempo M\u00e9dio</div>
+                    <div className="text-[10px] text-blue-500">Tempo Médio</div>
                   </div>
                 </div>
               )}
@@ -2664,7 +2664,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                             'bg-orange-200 text-orange-800'
                           }`}>{alert.status.toUpperCase()}</span>
                           <span className="font-semibold text-slate-800 truncate">{alert.empresa}</span>
-                          <span className="text-slate-400">\u2192</span>
+                          <span className="text-slate-400">→</span>
                           <span className="text-blue-700 font-medium">{alert.vendedor}</span>
                         </div>
                         <p className="text-xs text-slate-600 mt-1 line-clamp-2">{alert.mensagem}</p>
@@ -2728,13 +2728,13 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <div className="text-sm font-bold text-red-800">{acionarVendedorDialog.item.empresa}</div>
                 <div className="text-xs text-red-600 mt-1">
-                  {formatCurrency(parseFloat(String(acionarVendedorDialog.item.valor || 0)))} \u2022 {acionarVendedorDialog.item.diasVencidos || 0}d atraso \u2022 {acionarVendedorDialog.item.documento || ""}
+                  {formatCurrency(parseFloat(String(acionarVendedorDialog.item.valor || 0)))} • {acionarVendedorDialog.item.diasVencidos || 0}d atraso • {acionarVendedorDialog.item.documento || ""}
                 </div>
               </div>
               {/* Vendedor */}
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-1.5">
-                  Vendedor respons\u00e1vel
+                  Vendedor responsável
                 </label>
                 {acionarVendedorDialog.vendedorName ? (
                   <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
@@ -2774,10 +2774,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               {/* Etapa selection */}
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-1.5">
-                  Etapa da cobran\u00e7a
+                  Etapa da cobrança
                 </label>
                 <div className="flex gap-2">
-                  {[{ v: "1", label: "1\u00aa Cobran\u00e7a" }, { v: "2", label: "2\u00aa Cobran\u00e7a" }, { v: "3", label: "3\u00aa Cobran\u00e7a" }].map(opt => (
+                  {[{ v: "1", label: "1ª Cobrança" }, { v: "2", label: "2ª Cobrança" }, { v: "3", label: "3ª Cobrança" }].map(opt => (
                     <button
                       key={opt.v}
                       onClick={() => setAcionarEtapa(opt.v)}
@@ -2796,30 +2796,30 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               {/* Etapa history from the item */}
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-1.5">
-                  Hist\u00f3rico de etapas
+                  Histórico de etapas
                 </label>
                 <div className="bg-slate-50 rounded-lg border border-slate-200 p-2 space-y-1 max-h-28 overflow-y-auto">
                   {acionarVendedorDialog.item.primeiraCobranca && (
                     <div className="flex items-center gap-2 text-[11px] py-0.5">
-                      <span className="font-bold text-green-700">1\u00aa Cob:</span>
+                      <span className="font-bold text-green-700">1ª Cob:</span>
                       <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.primeiraCobranca)}</span>
                     </div>
                   )}
                   {acionarVendedorDialog.item.segundaCobranca && (
                     <div className="flex items-center gap-2 text-[11px] py-0.5">
-                      <span className="font-bold text-amber-700">2\u00aa Cob:</span>
+                      <span className="font-bold text-amber-700">2ª Cob:</span>
                       <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.segundaCobranca)}</span>
                     </div>
                   )}
                   {acionarVendedorDialog.item.terceiraCobranca && (
                     <div className="flex items-center gap-2 text-[11px] py-0.5">
-                      <span className="font-bold text-red-700">3\u00aa Cob:</span>
+                      <span className="font-bold text-red-700">3ª Cob:</span>
                       <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.terceiraCobranca)}</span>
                     </div>
                   )}
                   {acionarVendedorDialog.item.acaoFinal && (
                     <div className="flex items-center gap-2 text-[11px] py-0.5">
-                      <span className="font-bold text-purple-700">A\u00e7\u00e3o Final:</span>
+                      <span className="font-bold text-purple-700">Ação Final:</span>
                       <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.acaoFinal)}</span>
                     </div>
                   )}
@@ -2842,10 +2842,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                 <textarea
                   value={acionarMensagem}
                   onChange={(e) => setAcionarMensagem(e.target.value)}
-                  placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor fa\u00e7a..."
+                  placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor faça..."
                   className="w-full h-28 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Ex: \"Cliente n\u00e3o atende liga\u00e7\u00f5es h\u00e1 3 dias. Sugerimos que o vendedor entre em contato pessoalmente.\"</p>
+                <p className="text-[10px] text-slate-400 mt-1">Ex: &quot;Cliente não atende ligações há 3 dias. Sugerimos que o vendedor entre em contato pessoalmente.&quot;</p>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); setAcionarVendedorName(""); }}>
@@ -2855,7 +2855,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   onClick={() => {
                     const vendedorFinal = acionarVendedorDialog.vendedorName || acionarVendedorName.trim();
                     if (!vendedorFinal) {
-                      toast.error("Informe o vendedor respons\u00e1vel.");
+                      toast.error("Informe o vendedor responsável.");
                       return;
                     }
                     if (!acionarMensagem.trim()) {
@@ -2866,7 +2866,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       empresa: acionarVendedorDialog.item.empresa,
                       cnpj: acionarVendedorDialog.item.cnpjCpf || null,
                       vendedor: vendedorFinal,
-                      mensagem: `[Etapa: ${acionarEtapa}\u00aa Cobran\u00e7a] ${acionarMensagem.trim()}`,
+                      mensagem: `[Etapa: ${acionarEtapa}ª Cobrança] ${acionarMensagem.trim()}`,
                       criadoPor: operator?.name || "Financeiro",
                       valorTotal: parseFloat(String(acionarVendedorDialog.item.valor || 0)),
                       titulosVencidos: 1,
@@ -2891,7 +2891,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     </div>
   );
 }
-/** Sub-componente: Di\u00e1logo de observa\u00e7\u00f5es por etapa */
+/** Sub-componente: Diálogo de observações por etapa */
 function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClose }: {
   planilhaId: number; etapa: string; label: string; canEdit: boolean; operatorName: string; onClose: () => void;
 }) {
