@@ -618,11 +618,16 @@ function BillingObservationSection({ pedido, observation, onSetObservation }: {
 
 /* ---- Transport History Popover ---- */
 function TransportHistoryPopover({ pedido }: { pedido: string }) {
+  const { operator } = useOperator();
   const [open, setOpen] = useState(false);
   const { data: history, isLoading } = trpc.billing.getTransportHistory.useQuery(
     { pedido },
     { enabled: open }
   );
+
+  // Only visible for Bruno, Fernando, and Guilherme
+  const allowedNames = ["Bruno", "Fernando", "Guilherme"];
+  if (!operator || !allowedNames.includes(operator.name)) return null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
