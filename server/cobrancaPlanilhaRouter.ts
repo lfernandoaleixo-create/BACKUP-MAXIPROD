@@ -1878,7 +1878,7 @@ export const cobrancaPlanilhaRouter = router({
       if (!db) return [];
       const conditions = [];
       if (!input?.includeResolved) {
-        conditions.push(sql`${sellerAlerts.status} != 'resolvido'`);
+        conditions.push(sql`${sellerAlerts.status} NOT IN ('resolvido', 'cancelado')`);
       }
       const result = await db.select()
         .from(sellerAlerts)
@@ -1886,5 +1886,78 @@ export const cobrancaPlanilhaRouter = router({
         .orderBy(desc(sellerAlerts.createdAt))
         .limit(200);
       return result;
+    }),
+  /**
+   * Cancelar/remover alerta pelo financeiro (Flávio, Thalita, Guilherme)
+   */
+  cancelAlertByFinanceiro: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      cancelledBy: z.string(),
+      cancelReason: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [alert] = await db.select().from(sellerAlerts).where(eq(sellerAlerts.id, input.id));
+      if (!alert) throw new Error("Alerta n\u00e3o encontrado");
+      if (alert.status === 'cancelado') throw new Error("Alerta j\u00e1 foi cancelado");
+      if (alert.status === 'resolvido') throw new Error("Alerta j\u00e1 foi resolvido pelo vendedor");
+      await db.update(sellerAlerts)
+        .set({
+          status: 'cancelado',
+          cancelledBy: input.cancelledBy,
+          cancelReason: input.cancelReason || null,
+          cancelledAt: new Date(),
+        })
+        .where(eq(sellerAlerts.id, input.id));
+      // Add note in cobranca history
+      const nota = input.cancelReason
+        ? `[ALERTA CANCELADO] ${input.cancelledBy} cancelou o acionamento do vendedor ${alert.vendedor}. Motivo: ${input.cancelReason}`
+        : `[ALERTA CANCELADO] ${input.cancelledBy} cancelou o acionamento do vendedor ${alert.vendedor}.`;
+      if (alert.planilhaId) {
+        await db.insert(cobrancaEtapaObs).values({
+          planilhaId: alert.planilhaId,
+          etapa: "intervencaoVendedor",
+          observacao: nota,
+          registradoPor: input.cancelledBy,
+        });
+      }
+      return { success: true };
+    }),
+  /**
+   * Histórico completo de acionamentos com métricas
+   */
+  getAlertsHistory: publicProcedure
+    .input(z.object({
+      limit: z.number().optional().default(500),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { alerts: [], metrics: { total: 0, pendentes: 0, vistos: 0, resolvidos: 0, cancelados: 0, tempoMedioResolucaoHoras: 0 } };
+      const allAlerts = await db.select()
+        .from(sellerAlerts)
+        .orderBy(desc(sellerAlerts.createdAt))
+        .limit(input?.limit || 500);
+      // Calculate metrics
+      const total = allAlerts.length;
+      const pendentes = allAlerts.filter(a => a.status === 'pendente').length;
+      const vistos = allAlerts.filter(a => a.status === 'visto').length;
+      const resolvidos = allAlerts.filter(a => a.status === 'resolvido').length;
+      const cancelados = allAlerts.filter(a => a.status === 'cancelado').length;
+      // Average resolution time
+      const resolvedAlerts = allAlerts.filter(a => a.status === 'resolvido' && a.resolvedAt && a.createdAt);
+      let tempoMedioResolucaoHoras = 0;
+      if (resolvedAlerts.length > 0) {
+        const totalHours = resolvedAlerts.reduce((sum, a) => {
+          const diff = new Date(a.resolvedAt!).getTime() - new Date(a.createdAt).getTime();
+          return sum + diff / (1000 * 60 * 60);
+        }, 0);
+        tempoMedioResolucaoHoras = Math.round((totalHours / resolvedAlerts.length) * 10) / 10;
+      }
+      return {
+        alerts: allAlerts,
+        metrics: { total, pendentes, vistos, resolvidos, cancelados, tempoMedioResolucaoHoras },
+      };
     }),
 });

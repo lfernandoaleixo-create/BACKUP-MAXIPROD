@@ -3193,9 +3193,13 @@ export const sellerAlerts = mysqlTable("seller_alerts", {
   // Quem acionou
   criadoPor: varchar("criado_por", { length: 200 }).notNull(),
   // Status do alerta
-  status: varchar("status", { length: 20 }).notNull().default("pendente"), // pendente, visto, resolvido
+  status: varchar("status", { length: 20 }).notNull().default("pendente"), // pendente, visto, resolvido, cancelado
   // Resposta do vendedor (opcional)
   respostaVendedor: text("resposta_vendedor"),
+  // Cancelamento pelo financeiro
+  cancelledBy: varchar("cancelled_by", { length: 200 }),
+  cancelReason: text("cancel_reason"),
+  cancelledAt: timestamp("cancelled_at"),
   // Timestamps
   viewedAt: timestamp("viewed_at"),
   resolvedAt: timestamp("resolved_at"),

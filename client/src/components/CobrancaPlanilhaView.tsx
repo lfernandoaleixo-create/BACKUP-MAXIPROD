@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import {
-  X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
+  X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare, BellOff,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
   History, Plus, Paperclip, Pencil, Trash2, Check, FileDown, User, CreditCard,
@@ -304,14 +304,29 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   });
 
   const [acionadosFilter, setAcionadosFilter] = useState(false);
+  // Cancel alert state
+  const [cancelAlertDialog, setCancelAlertDialog] = useState<{ id: number; empresa: string; vendedor: string } | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [showAlertsHistory, setShowAlertsHistory] = useState(false);
+  const cancelAlert = trpc.cobrancaPlanilha.cancelAlertByFinanceiro.useMutation({
+    onSuccess: () => {
+      toast.success("Alerta cancelado com sucesso.");
+      setCancelAlertDialog(null);
+      setCancelReason("");
+      utils.cobrancaPlanilha.getAllSellerAlerts.invalidate();
+      utils.cobrancaPlanilha.getAlertsHistory.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Erro ao cancelar alerta."),
+  });
+  const utils = trpc.useUtils();
   // Queries que dependem dos estados acima
   const { data: allSellerAlerts } = trpc.cobrancaPlanilha.getAllSellerAlerts.useQuery({ includeResolved: true });
+  const { data: alertsHistoryData } = trpc.cobrancaPlanilha.getAlertsHistory.useQuery(undefined, { enabled: showAlertsHistory });
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: resolvedSortBy, sortDir: resolvedSortDir });
   const { data: decisionPdfsData } = trpc.financial.listAllDecisionPdfs.useQuery();
   const deletePdf = trpc.financial.deleteDecisionPdf.useMutation();
   const markPaid = trpc.financial.markDecisionPdfsPaid.useMutation();
   const saveDecisionPdf = trpc.financial.saveDecisionPdf.useMutation();
-  const utils = trpc.useUtils();
   const [syncResult, setSyncResult] = useState<{ updated: number; added: number; statusUpdated: number; deactivated: number; notInInadimplencia: number; inadimplenciaTotal: number; totalAfter: number } | null>(null);
   const syncFromInadimplencia = trpc.cobrancaPlanilha.syncFromInadimplencia.useMutation({
     onSuccess: (data) => {
@@ -1589,19 +1604,21 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       )}
 
       {/* Filtro Acionados */}
-      {allSellerAlerts && allSellerAlerts.length > 0 && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setAcionadosFilter(!acionadosFilter)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              acionadosFilter
-                ? "bg-red-600 text-white shadow-md"
-                : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-            }`}
-          >
-            <Bell className="w-3 h-3" />
-            Vendedor Acionado ({allSellerAlerts.filter(a => a.status !== 'resolvido').length} pendentes)
-          </button>
+      {allSellerAlerts && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {allSellerAlerts.length > 0 && (
+            <button
+              onClick={() => setAcionadosFilter(!acionadosFilter)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                acionadosFilter
+                  ? "bg-red-600 text-white shadow-md"
+                  : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+              }`}
+            >
+              <Bell className="w-3 h-3" />
+              Vendedor Acionado ({allSellerAlerts.filter(a => a.status !== 'resolvido' && a.status !== 'cancelado').length} pendentes)
+            </button>
+          )}
           {acionadosFilter && (
             <button
               onClick={() => setAcionadosFilter(false)}
@@ -1610,6 +1627,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               Limpar filtro
             </button>
           )}
+          {/* Botão Histórico */}
+          <button
+            onClick={() => setShowAlertsHistory(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all"
+          >
+            <History className="w-3 h-3" />
+            Histórico de Acionamentos
+          </button>
         </div>
       )}
       {/* Search */}
@@ -1818,24 +1843,38 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           >
                             <Stamp className="w-3.5 h-3.5" />
                           </button>
-                          {canEdit && (
-                            <button
-                              onClick={() => {
-                                // Determine current etapa based on filled cobrança steps
-                                let currentEtapa = "1";
-                                if (item.terceiraCobranca) currentEtapa = "3";
-                                else if (item.segundaCobranca) currentEtapa = "2";
-                                setAcionarEtapa(currentEtapa);
-                                setAcionarVendedorName(item.vendedor || "");
-                                setAcionarMensagem("");
-                                setAcionarVendedorDialog({ item, vendedorName: item.vendedor || "", etapa: currentEtapa, mensagem: "" });
-                              }}
-                              className="p-1 rounded-md hover:bg-red-100 text-red-600 transition-colors"
-                              title="Acionar Vendedor"
-                            >
-                              <Bell className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          {canEdit && (() => {
+                            const activeAlert = allSellerAlerts?.find(a => a.empresa.toUpperCase().trim() === (item.empresa || "").toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
+                            return (
+                              <>
+                                {activeAlert ? (
+                                  <button
+                                    onClick={() => setCancelAlertDialog({ id: activeAlert.id, empresa: activeAlert.empresa, vendedor: activeAlert.vendedor })}
+                                    className="p-1 rounded-md hover:bg-orange-100 text-orange-600 transition-colors animate-pulse"
+                                    title={`Cancelar alerta para ${activeAlert.vendedor}`}
+                                  >
+                                    <BellOff className="w-3.5 h-3.5" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      let currentEtapa = "1";
+                                      if (item.terceiraCobranca) currentEtapa = "3";
+                                      else if (item.segundaCobranca) currentEtapa = "2";
+                                      setAcionarEtapa(currentEtapa);
+                                      setAcionarVendedorName(item.vendedor || "");
+                                      setAcionarMensagem("");
+                                      setAcionarVendedorDialog({ item, vendedorName: item.vendedor || "", etapa: currentEtapa, mensagem: "" });
+                                    }}
+                                    className="p-1 rounded-md hover:bg-red-100 text-red-600 transition-colors"
+                                    title="Acionar Vendedor"
+                                  >
+                                    <Bell className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>
@@ -2515,6 +2554,165 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     </DialogContent>
         </Dialog>
       )}
+      {/* ==================== CANCELAR ALERTA DIALOG ==================== */}
+      {cancelAlertDialog && (
+        <Dialog open={true} onOpenChange={() => setCancelAlertDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-orange-700">
+                <BellOff className="w-5 h-5" /> Cancelar Alerta
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm text-orange-800">
+                  Cancelar o acionamento do vendedor <strong>{cancelAlertDialog.vendedor}</strong> para o cliente <strong>{cancelAlertDialog.empresa}</strong>?
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  O vendedor n\u00e3o ver\u00e1 mais este alerta. Uma nota ser\u00e1 registrada no hist\u00f3rico.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700">Motivo do cancelamento (opcional)</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder="Ex: Resolvido diretamente, erro de acionamento, cliente j\u00e1 pagou..."
+                  className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none h-20 focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCancelAlertDialog(null)}>Voltar</Button>
+                <Button
+                  onClick={() => {
+                    cancelAlert.mutate({
+                      id: cancelAlertDialog.id,
+                      cancelledBy: operator?.name || "Financeiro",
+                      cancelReason: cancelReason.trim() || undefined,
+                    });
+                  }}
+                  disabled={cancelAlert.isPending}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {cancelAlert.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cancelando...</>
+                  ) : (
+                    <><BellOff className="w-4 h-4 mr-2" /> Confirmar Cancelamento</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ==================== HIST\u00d3RICO DE ACIONAMENTOS ==================== */}
+      {showAlertsHistory && (
+        <Dialog open={true} onOpenChange={() => setShowAlertsHistory(false)}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-blue-600" /> Hist\u00f3rico de Acionamentos de Vendedores
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* M\u00e9tricas */}
+              {alertsHistoryData?.metrics && (
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  <div className="bg-slate-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-slate-800">{alertsHistoryData.metrics.total}</div>
+                    <div className="text-[10px] text-slate-500">Total</div>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-red-700">{alertsHistoryData.metrics.pendentes}</div>
+                    <div className="text-[10px] text-red-500">Pendentes</div>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-amber-700">{alertsHistoryData.metrics.vistos}</div>
+                    <div className="text-[10px] text-amber-500">Vistos</div>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-green-700">{alertsHistoryData.metrics.resolvidos}</div>
+                    <div className="text-[10px] text-green-500">Resolvidos</div>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-orange-700">{alertsHistoryData.metrics.cancelados}</div>
+                    <div className="text-[10px] text-orange-500">Cancelados</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-blue-700">{alertsHistoryData.metrics.tempoMedioResolucaoHoras}h</div>
+                    <div className="text-[10px] text-blue-500">Tempo M\u00e9dio</div>
+                  </div>
+                </div>
+              )}
+              {/* Lista de alertas */}
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                {alertsHistoryData?.alerts.map(alert => (
+                  <div key={alert.id} className={`border rounded-lg p-3 text-sm ${
+                    alert.status === 'pendente' ? 'border-red-200 bg-red-50/50' :
+                    alert.status === 'visto' ? 'border-amber-200 bg-amber-50/50' :
+                    alert.status === 'resolvido' ? 'border-green-200 bg-green-50/50' :
+                    'border-orange-200 bg-orange-50/50'
+                  }`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            alert.status === 'pendente' ? 'bg-red-200 text-red-800' :
+                            alert.status === 'visto' ? 'bg-amber-200 text-amber-800' :
+                            alert.status === 'resolvido' ? 'bg-green-200 text-green-800' :
+                            'bg-orange-200 text-orange-800'
+                          }`}>{alert.status.toUpperCase()}</span>
+                          <span className="font-semibold text-slate-800 truncate">{alert.empresa}</span>
+                          <span className="text-slate-400">\u2192</span>
+                          <span className="text-blue-700 font-medium">{alert.vendedor}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">{alert.mensagem}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-slate-400">
+                          <span>Criado por: {alert.criadoPor}</span>
+                          <span>{new Date(alert.createdAt).toLocaleString('pt-BR')}</span>
+                          {alert.valorTotal && <span>R$ {Number(alert.valorTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
+                          {alert.diasAtrasoMax && <span>{alert.diasAtrasoMax} dias atraso</span>}
+                        </div>
+                      </div>
+                      {/* Cancel button for pending/visto alerts */}
+                      {(alert.status === 'pendente' || alert.status === 'visto') && canEdit && (
+                        <button
+                          onClick={() => setCancelAlertDialog({ id: alert.id, empresa: alert.empresa, vendedor: alert.vendedor })}
+                          className="p-1.5 rounded-md hover:bg-orange-100 text-orange-600 transition-colors flex-shrink-0"
+                          title="Cancelar este alerta"
+                        >
+                          <BellOff className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    {/* Resposta do vendedor */}
+                    {alert.respostaVendedor && (
+                      <div className="mt-2 bg-green-100 border border-green-200 rounded-md p-2">
+                        <p className="text-[10px] font-bold text-green-700">Resposta do Vendedor:</p>
+                        <p className="text-xs text-green-800">{alert.respostaVendedor}</p>
+                        {alert.resolvedAt && <p className="text-[9px] text-green-500 mt-0.5">Resolvido em: {new Date(alert.resolvedAt).toLocaleString('pt-BR')}</p>}
+                      </div>
+                    )}
+                    {/* Cancelamento */}
+                    {alert.status === 'cancelado' && (
+                      <div className="mt-2 bg-orange-100 border border-orange-200 rounded-md p-2">
+                        <p className="text-[10px] font-bold text-orange-700">Cancelado por: {alert.cancelledBy || 'N/A'}</p>
+                        {alert.cancelReason && <p className="text-xs text-orange-800">Motivo: {alert.cancelReason}</p>}
+                        {alert.cancelledAt && <p className="text-[9px] text-orange-500 mt-0.5">Em: {new Date(alert.cancelledAt).toLocaleString('pt-BR')}</p>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {(!alertsHistoryData?.alerts || alertsHistoryData.alerts.length === 0) && (
+                  <div className="text-center py-8 text-slate-400 text-sm">Nenhum acionamento registrado.</div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* ==================== ACIONAR VENDEDOR DIALOG ==================== */}
       {acionarVendedorDialog && (
         <Dialog open onOpenChange={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); setAcionarVendedorName(""); }}>

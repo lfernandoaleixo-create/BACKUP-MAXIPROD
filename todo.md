@@ -5858,3 +5858,8 @@
 - [x] Card do cliente pisca na aba Vendas quando vendedor é acionado
 - [x] Vendedor pode responder ao acionamento e marcar intervenção como concluída na aba Vendas
 - [x] Filtro na aba financeiro para ver quais clientes já tiveram vendedores acionados
+- [x] Backend: Procedure cancelAlertByFinanceiro para Flávio/Thalita/Guilherme cancelarem alertas
+- [x] Backend: Procedure getAlertsHistory com histórico completo (solicitações, resoluções, respostas, cancelamentos)
+- [x] Frontend: Botão cancelar/remover alerta na CobrancaPlanilhaView (visível para operadores com permissão)
+- [x] Frontend: Botão cancelar/remover alerta na InadimplenciaTab
+- [x] Frontend: Painel de Histórico de Acionamentos com métricas (total, resolvidos, pendentes, cancelados, respostas)

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp, Bell } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp, Bell, BellOff } from "lucide-react";
 import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
 import CobrancaPlanilhaView from "@/components/CobrancaPlanilhaView";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
@@ -566,10 +566,25 @@ export default function InadimplenciaTab() {
       toast.success("Vendedor acionado com sucesso! Ele receberá o alerta na tela.");
       setAcionarVendedorDialog(null);
       setAcionarMensagem("");
+      inadimUtils.cobrancaPlanilha.getAllSellerAlerts.invalidate();
     },
     onError: () => {
       toast.error("Erro ao acionar vendedor. Tente novamente.");
     },
+  });
+  // Cancel alert
+  const inadimUtils = trpc.useUtils();
+  const { data: inadimSellerAlerts } = trpc.cobrancaPlanilha.getAllSellerAlerts.useQuery({ includeResolved: false });
+  const [cancelAlertDialog, setCancelAlertDialog] = useState<{ id: number; empresa: string; vendedor: string } | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const cancelAlertMutation = trpc.cobrancaPlanilha.cancelAlertByFinanceiro.useMutation({
+    onSuccess: () => {
+      toast.success("Alerta cancelado.");
+      setCancelAlertDialog(null);
+      setCancelReason("");
+      inadimUtils.cobrancaPlanilha.getAllSellerAlerts.invalidate();
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao cancelar."),
   });
   const [clientSortBy, setClientSortBy] = useState<"valor" | "vencimento" | "dias">("dias");
   const [clientSortDir, setClientSortDir] = useState<"asc" | "desc">("desc");
@@ -1516,33 +1531,49 @@ export default function InadimplenciaTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const titulos = group.titulos;
-                        // Determine current etapa based on cobranca history
-                        let currentEtapa = "1";
-                        const allHistory = titulos.flatMap(t => t.cobranca?.contatoHistorico || []);
-                        if (allHistory.length >= 4) currentEtapa = "3";
-                        else if (allHistory.length >= 2) currentEtapa = "2";
-                        setAcionarEtapa(currentEtapa);
-                        setAcionarVendedorName(group.vendedor || "");
-                        setAcionarMensagem("");
-                        setAcionarVendedorDialog({
-                          cliente: group.cliente,
-                          vendedor: group.vendedor || "",
-                          total: group.total,
-                          count: group.count,
-                          maxDias: group.maxDias,
-                          titulos: titulos,
-                        });
-                      }}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
-                      title="Acionar vendedor para intervir neste cliente"
-                    >
-                      <Bell className="w-3.5 h-3.5" />
-                      Acionar
-                    </div>
+                    {(() => {
+                      const activeAlert = inadimSellerAlerts?.find(a => a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
+                      return activeAlert ? (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCancelAlertDialog({ id: activeAlert.id, empresa: activeAlert.empresa, vendedor: activeAlert.vendedor });
+                          }}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500 text-white text-[11px] font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm cursor-pointer animate-pulse"
+                          title={`Cancelar alerta para ${activeAlert.vendedor}`}
+                        >
+                          <BellOff className="w-3.5 h-3.5" />
+                          Cancelar
+                        </div>
+                      ) : (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const titulos = group.titulos;
+                            let currentEtapa = "1";
+                            const allHistory = titulos.flatMap(t => t.cobranca?.contatoHistorico || []);
+                            if (allHistory.length >= 4) currentEtapa = "3";
+                            else if (allHistory.length >= 2) currentEtapa = "2";
+                            setAcionarEtapa(currentEtapa);
+                            setAcionarVendedorName(group.vendedor || "");
+                            setAcionarMensagem("");
+                            setAcionarVendedorDialog({
+                              cliente: group.cliente,
+                              vendedor: group.vendedor || "",
+                              total: group.total,
+                              count: group.count,
+                              maxDias: group.maxDias,
+                              titulos: titulos,
+                            });
+                          }}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
+                          title="Acionar vendedor para intervir neste cliente"
+                        >
+                          <Bell className="w-3.5 h-3.5" />
+                          Acionar
+                        </div>
+                      );
+                    })()}
                     <span className={`font-bold text-sm ${getAgingColor(group.maxDias)}`}>{formatCurrency(group.total)}</span>
                     {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
@@ -2109,10 +2140,62 @@ export default function InadimplenciaTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Cancelar Alerta */}
+      {cancelAlertDialog && (
+        <Dialog open={true} onOpenChange={() => setCancelAlertDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-orange-700">
+                <BellOff className="w-5 h-5" /> Cancelar Alerta
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm text-orange-800">
+                  Cancelar o acionamento do vendedor <strong>{cancelAlertDialog.vendedor}</strong> para o cliente <strong>{cancelAlertDialog.empresa}</strong>?
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  O vendedor n\u00e3o ver\u00e1 mais este alerta. Uma nota ser\u00e1 registrada no hist\u00f3rico.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700">Motivo do cancelamento (opcional)</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder="Ex: Resolvido diretamente, erro de acionamento, cliente j\u00e1 pagou..."
+                  className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none h-20 focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCancelAlertDialog(null)}>Voltar</Button>
+                <Button
+                  onClick={() => {
+                    cancelAlertMutation.mutate({
+                      id: cancelAlertDialog.id,
+                      cancelledBy: operator?.name || "Financeiro",
+                      cancelReason: cancelReason.trim() || undefined,
+                    });
+                  }}
+                  disabled={cancelAlertMutation.isPending}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {cancelAlertMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cancelando...</>
+                  ) : (
+                    <><BellOff className="w-4 h-4 mr-2" /> Confirmar Cancelamento</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
-/* ---- Componente PhoneIcon com animação ---- */
+/* ---- Componente PhoneIcon com anima\u00e7\u00e3o ---- */
 function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document" | "muted"; onClick: () => void }) {
   const baseClasses = "p-1 rounded-md transition-colors cursor-pointer";
 
