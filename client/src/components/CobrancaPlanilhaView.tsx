@@ -2650,7 +2650,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             <div className="space-y-4">
               {/* Métricas */}
               {alertsHistoryData?.metrics && (
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
                   <div className="bg-slate-50 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-slate-800">{alertsHistoryData.metrics.total}</div>
                     <div className="text-[10px] text-slate-500">Total</div>
@@ -2663,6 +2663,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     <div className="text-lg font-bold text-amber-700">{alertsHistoryData.metrics.vistos}</div>
                     <div className="text-[10px] text-amber-500">Vistos</div>
                   </div>
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-blue-700">{alertsHistoryData.metrics.emAndamento}</div>
+                    <div className="text-[10px] text-blue-500">Em Andamento</div>
+                  </div>
                   <div className="bg-green-50 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-green-700">{alertsHistoryData.metrics.resolvidos}</div>
                     <div className="text-[10px] text-green-500">Resolvidos</div>
@@ -2671,9 +2675,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     <div className="text-lg font-bold text-orange-700">{alertsHistoryData.metrics.cancelados}</div>
                     <div className="text-[10px] text-orange-500">Cancelados</div>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-3 text-center">
-                    <div className="text-lg font-bold text-blue-700">{alertsHistoryData.metrics.tempoMedioResolucaoHoras}h</div>
-                    <div className="text-[10px] text-blue-500">Tempo Médio</div>
+                  <div className="bg-indigo-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-indigo-700">{alertsHistoryData.metrics.tempoMedioResolucaoHoras}h</div>
+                    <div className="text-[10px] text-indigo-500">Tempo Médio</div>
                   </div>
                 </div>
               )}
@@ -2697,6 +2701,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   <option value="todos">Todos os status</option>
                   <option value="pendente">Pendente</option>
                   <option value="visto">Visto</option>
+                  <option value="em_andamento">Em Andamento</option>
                   <option value="resolvido">Resolvido</option>
                   <option value="cancelado">Cancelado</option>
                 </select>
@@ -2796,8 +2801,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   <div key={alert.id} className={`border rounded-lg p-3 text-sm ${
                     alert.status === 'pendente' ? 'border-red-200 bg-red-50/50' :
                     alert.status === 'visto' ? 'border-amber-200 bg-amber-50/50' :
+                    alert.status === 'em_andamento' ? 'border-blue-200 bg-blue-50/50' :
                     alert.status === 'resolvido' ? 'border-green-200 bg-green-50/50' :
-                    'border-orange-200 bg-orange-50/50'
+                    alert.status === 'cancelado' ? 'border-orange-200 bg-orange-50/50' :
+                    'border-slate-200 bg-slate-50/50'
                   }`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -2805,9 +2812,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             alert.status === 'pendente' ? 'bg-red-200 text-red-800' :
                             alert.status === 'visto' ? 'bg-amber-200 text-amber-800' :
+                            alert.status === 'em_andamento' ? 'bg-blue-200 text-blue-800' :
                             alert.status === 'resolvido' ? 'bg-green-200 text-green-800' :
                             'bg-orange-200 text-orange-800'
-                          }`}>{alert.status.toUpperCase()}</span>
+                          }`}>{alert.status === 'em_andamento' ? 'EM ANDAMENTO' : alert.status.toUpperCase()}</span>
                           <span className="font-semibold text-slate-800 truncate">{alert.empresa}</span>
                           <span className="text-slate-400">→</span>
                           <span className="text-blue-700 font-medium">{alert.vendedor}</span>
@@ -2821,7 +2829,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                         </div>
                       </div>
                       {/* Cancel button for pending/visto alerts */}
-                      {(alert.status === 'pendente' || alert.status === 'visto') && canEdit && (
+                      {(alert.status === 'pendente' || alert.status === 'visto' || alert.status === 'em_andamento') && canEdit && (
                         <button
                           onClick={() => setCancelAlertDialog({ id: alert.id, empresa: alert.empresa, vendedor: alert.vendedor })}
                           className="p-1.5 rounded-md hover:bg-orange-100 text-orange-600 transition-colors flex-shrink-0"

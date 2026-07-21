@@ -1973,7 +1973,7 @@ export const cobrancaPlanilhaRouter = router({
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return { alerts: [], metrics: { total: 0, pendentes: 0, vistos: 0, resolvidos: 0, cancelados: 0, tempoMedioResolucaoHoras: 0 } };
+      if (!db) return { alerts: [], metrics: { total: 0, pendentes: 0, vistos: 0, emAndamento: 0, resolvidos: 0, cancelados: 0, tempoMedioResolucaoHoras: 0 } };
       const allAlerts = await db.select()
         .from(sellerAlerts)
         .orderBy(desc(sellerAlerts.createdAt))
@@ -1983,6 +1983,7 @@ export const cobrancaPlanilhaRouter = router({
       const pendentes = allAlerts.filter(a => a.status === 'pendente').length;
       const vistos = allAlerts.filter(a => a.status === 'visto').length;
       const resolvidos = allAlerts.filter(a => a.status === 'resolvido').length;
+      const emAndamento = allAlerts.filter(a => a.status === 'em_andamento').length;
       const cancelados = allAlerts.filter(a => a.status === 'cancelado').length;
       // Average resolution time
       const resolvedAlerts = allAlerts.filter(a => a.status === 'resolvido' && a.resolvedAt && a.createdAt);
@@ -1996,7 +1997,7 @@ export const cobrancaPlanilhaRouter = router({
       }
       return {
         alerts: allAlerts,
-        metrics: { total, pendentes, vistos, resolvidos, cancelados, tempoMedioResolucaoHoras },
+        metrics: { total, pendentes, vistos, emAndamento, resolvidos, cancelados, tempoMedioResolucaoHoras },
       };
     }),
 });
