@@ -198,7 +198,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
         { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
         { id: "catalogos", label: "Documentos/Catálogos", icon: FolderOpen },
         { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
-        { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
+        { id: "vendas", label: "Vendas", icon: BarChart3 },
       ];
 
   const tabs = allTabs;
