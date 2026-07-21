@@ -5881,3 +5881,5 @@
 - [x] Bug CRÍTICO: Alerta criado na aba Financeiro > Inadimplência > Planilha de Cobrança NÃO faz a aba Vendas do vendedor piscar com bolinha vermelha - CAUSA: senha compartilhada logava como JUVENAL (0 alertas). Fix: seletor multi-vendedor + refetchInterval 10s
 - [x] Bug: Aba Vendas do vendedor não enxerga a planilha de cobrança puxada em tempo real da aba Financeiro > Inadimplência - JÁ IMPLEMENTADO: SellerCobrancaView puxa getByVendedor + getSellerAlerts a cada 10s
 - [x] Bug URGENTE: Vendedor Rafael não consegue concluir pedido - validação de UF bloqueava com alert() nativo que causava scroll no tablet. Fix: UF agora é opcional para vendedores (pedidos vão para revisão do gestor)
+- [x] Bug: Alertas de cobrança não aparecem para Jordão no painel gestor (login OAuth) - aba Vendas não pisca, card inadimplência não mostra alertas. Fix: adicionado mapping operator->seller no TopNav + SellerCobrancaView no Sales.tsx
+- [x] Feature: Botão "Planilha de Cobranças" visível no card INADIMPLÊNCIA da aba Vendas do gestor para abrir a planilha filtrada por vendedor

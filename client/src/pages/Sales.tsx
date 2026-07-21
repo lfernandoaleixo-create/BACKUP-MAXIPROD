@@ -76,6 +76,7 @@ import {
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
+import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { generateSalesPDF } from "@/lib/salesPdfExport";
 import { generatePeriodPDF } from "@/lib/periodPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -4001,6 +4002,17 @@ export default function Sales() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
+  // Map operator names to seller names for cobrança alerts
+  const OPERATOR_TO_SELLER_SALES: Record<string, string> = {
+    "Jordao": "JORDÃO LAINE",
+    "Juvenal": "JUVENAL TEIXEIRA",
+    "Paula": "ANA PAULA ALEIXO",
+    "Pedro": "PEDRO AUGUSTO",
+    "Patrick": "PATRICK LUCIO",
+    "Gilson": "GILSON ALEIXO",
+    "Renato": "RENATO LEDESMA",
+  };
+  const sellerNameForCobranca = operator?.name ? OPERATOR_TO_SELLER_SALES[operator.name] : undefined;
   const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
   const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
   const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes">("vendas");
@@ -5166,6 +5178,11 @@ export default function Sales() {
             {/* Card EXTRA: A Faturar (Completo) - Pesquisa rápida últimos 90 dias */}
             {showAFaturarCompleto && allUnbilled && allUnbilled.orders.length > 0 && (
               <UnifiedUnbilledCard months={allUnbilled.months} orders={allUnbilled.orders} totalValue={allUnbilled.totalValue} />
+            )}
+
+            {/* Seller Cobrança Alerts - for operators who are also sellers */}
+            {sellerNameForCobranca && (
+              <SellerCobrancaView sellerName={sellerNameForCobranca} />
             )}
 
             {/* Cards de Inadimplência - compartilhados com aba Financeiro */}

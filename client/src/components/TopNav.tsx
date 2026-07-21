@@ -89,6 +89,23 @@ export default function TopNav({ rightContent }: TopNavProps) {
   });
   const hasPendingRetroactive = isRetroApprover && (pendingRetroData?.pending ?? 0) > 0;
 
+  // Blink Vendas tab for sellers with pending cobrança alerts
+  const OPERATOR_TO_SELLER: Record<string, string> = {
+    "Jordao": "JORDÃO LAINE",
+    "Juvenal": "JUVENAL TEIXEIRA",
+    "Paula": "ANA PAULA ALEIXO",
+    "Pedro": "PEDRO AUGUSTO",
+    "Patrick": "PATRICK LUCIO",
+    "Gilson": "GILSON ALEIXO",
+    "Renato": "RENATO LEDESMA",
+  };
+  const sellerNameForAlerts = operator?.name ? OPERATOR_TO_SELLER[operator.name] : undefined;
+  const { data: pendingSellerAlerts } = trpc.cobrancaPlanilha.countPendingAlerts.useQuery(
+    { vendedor: sellerNameForAlerts || "" },
+    { enabled: !!sellerNameForAlerts, refetchInterval: 10000 }
+  );
+  const hasSellerCobrancaAlert = !!sellerNameForAlerts && (pendingSellerAlerts?.count ?? 0) > 0;
+
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
     return location.startsWith(href);
@@ -209,8 +226,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
 
               const shouldBlinkProducao = item.section === "producao" && (hasPendingStock || hasPendingRetroactive);
               const shouldBlinkGestao = item.section === "gestao-comercial" && hasGestaoAlert;
+              const shouldBlinkVendas = item.section === "vendas" && hasSellerCobrancaAlert;
 
-              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao;
+              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao || shouldBlinkVendas;
 
               return (
                 <button
@@ -239,6 +257,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
                   )}
                   {shouldBlinkGestao && (
                     <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                  )}
+                  {shouldBlinkVendas && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.6)]">{pendingSellerAlerts?.count || 1}</span>
                   )}
                   {shouldBlinkFinanceiro && (
                     <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
@@ -280,8 +301,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
 
               const shouldBlinkProducao = item.section === "producao" && (hasPendingStock || hasPendingRetroactive);
               const shouldBlinkGestao = item.section === "gestao-comercial" && hasGestaoAlert;
+              const shouldBlinkVendas = item.section === "vendas" && hasSellerCobrancaAlert;
 
-              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao;
+              const shouldBlink = shouldBlinkFinanceiro || shouldBlinkProducao || shouldBlinkGestao || shouldBlinkVendas;
 
               return (
                 <button
@@ -313,6 +335,10 @@ export default function TopNav({ rightContent }: TopNavProps) {
                   {/* Gestão Comercial alert indicator dot (teal for gestores/Vitória) */}
                   {shouldBlinkGestao && (
                     <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_6px_rgba(20,184,166,0.6)]" />
+                  )}
+                  {/* Seller cobrança alert indicator badge (red for vendedores) */}
+                  {shouldBlinkVendas && (
+                    <span className="absolute -top-1 right-0 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]">{pendingSellerAlerts?.count || 1}</span>
                   )}
                   {/* Discount alert indicator dot */}
                   {shouldBlinkFinanceiro && (
