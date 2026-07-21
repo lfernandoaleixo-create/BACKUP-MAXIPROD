@@ -438,10 +438,16 @@ export const cobrancaPlanilhaRouter = router({
     let rafaelValor = 0;
     for (const item of all) {
       const valor = item.valor ? parseFloat(String(item.valor)) : 0;
-      // Exclude Rafael items from main stats
+      // Track Rafael items separately but ALSO include in byStatus for the small card
       if ((item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL") || item.status === "Rafael - Especial s/ cobrança") {
         rafaelCount++;
         rafaelValor += valor;
+        // Add to byStatus under the Rafael status key so the small card appears
+        const rafStatus = "Rafael - Especial s/ cobrança";
+        if (!byStatus[rafStatus]) byStatus[rafStatus] = { count: 0, valor: 0 };
+        byStatus[rafStatus].count++;
+        byStatus[rafStatus].valor += valor;
+        // Do NOT add to totalValor or byCenter (keep separate from main stats)
         continue;
       }
       const status = item.status || "Pendente";

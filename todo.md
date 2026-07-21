@@ -5825,3 +5825,4 @@
 - [x] Fix: reativados os 6 títulos de Fundo Perdido (IDs: 780010-780013, 1230003, 1320001)
 - [x] Fix: proteger status manuais (Fundo Perdido, Especial s/ cobrança, Protestado, Protesto em Análise) de serem desativados pelo sync automático
 - [x] Criar status "Rafael - Especial s/ cobrança" no dropdown de status (CobrancaPlanilhaView + InadimplenciaTab + backend STATUS_MAP)
+- [x] Adicionar card de status "Rafael - Especial s/ cobrança" na fileira de cards de status no topo (ao lado de Fundo Perdido, Protestado, etc.)
