@@ -70,6 +70,7 @@ const STATUS_MAP: Record<string, string> = {
   nao_atendeu: "Não atendeu",
   juridico: "Jurídico",
   fundo_perdido: "Fundo Perdido",
+  rafael_especial: "Rafael - Especial s/ cobrança",
 };
 
 /** Retorna a data de hoje em Brasília como string YYYY-MM-DD */
@@ -438,7 +439,7 @@ export const cobrancaPlanilhaRouter = router({
     for (const item of all) {
       const valor = item.valor ? parseFloat(String(item.valor)) : 0;
       // Exclude Rafael items from main stats
-      if ((item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL")) {
+      if ((item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL") || item.status === "Rafael - Especial s/ cobrança") {
         rafaelCount++;
         rafaelValor += valor;
         continue;
@@ -1229,7 +1230,7 @@ export const cobrancaPlanilhaRouter = router({
           );
           // HERANÇA DE STATUS FORTE: Se a empresa tem títulos (ativos ou inativos) com status forte,
           // novos títulos herdam esse status automaticamente (evita perda de status por troca de arId)
-          const STRONG_STATUSES_SYNC = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança", "Contatado", "Em negociação", "Promessa de Pgto"];
+          const STRONG_STATUSES_SYNC = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança", "Rafael - Especial s/ cobrança", "Contatado", "Em negociação", "Promessa de Pgto"];
           if (inad.status === "Pendente") {
             const strongMatch = planilhaAtual.find(
               p => p.empresa === inad.empresa && p.status && STRONG_STATUSES_SYNC.includes(p.status)
@@ -1302,7 +1303,7 @@ export const cobrancaPlanilhaRouter = router({
       // 8. Para títulos da planilha que NÃO foram matched (não estão mais na inadimplência)
       // Marcar como inativos (pago/resolvido) — NÃO deletar
       // EXCETO: Fundo Perdido e Especial s/ cobrança — esses são gerenciados manualmente e NUNCA devem ser desativados pelo sync
-      const PROTECTED_STATUSES = ["Fundo Perdido", "Especial s/ cobrança", "Protestado", "Protesto em Análise"];
+      const PROTECTED_STATUSES = ["Fundo Perdido", "Especial s/ cobrança", "Rafael - Especial s/ cobrança", "Protestado", "Protesto em Análise"];
       let notInInadimplencia = 0;
       let deactivated = 0;
       for (const item of planilhaAtual) {

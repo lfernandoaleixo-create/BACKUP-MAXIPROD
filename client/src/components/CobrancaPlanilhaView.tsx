@@ -106,6 +106,13 @@ const PLANILHA_STATUS_CONFIG: Record<string, { label: string; bg: string; text: 
     border: "border-stone-400",
     icon: <Flame className="w-3 h-3" />,
   },
+  "Rafael - Especial s/ cobrança": {
+    label: "Rafael - Especial s/ cobrança",
+    bg: "bg-violet-50",
+    text: "text-violet-700",
+    border: "border-violet-400",
+    icon: <UserCheck className="w-3 h-3" />,
+  },
 };
 
 const ALL_STATUSES = Object.keys(PLANILHA_STATUS_CONFIG);
@@ -309,9 +316,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const filteredItems = useMemo(() => {
     if (!items) return [];
     // Exclude Fundo Perdido, Especial s/ cobrança, Protestado, and Rafael from main list (unless specifically filtered)
-    let result = statusFilter === "Fundo Perdido" || statusFilter === "Especial s/ cobrança" || statusFilter === "Protestado"
+    let result = statusFilter === "Fundo Perdido" || statusFilter === "Especial s/ cobrança" || statusFilter === "Protestado" || statusFilter === "Rafael - Especial s/ cobrança"
       ? [...items]
-      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança" && item.status !== "Protestado" && !(item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL"));
+      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança" && item.status !== "Protestado" && item.status !== "Rafael - Especial s/ cobrança" && !(item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL"));
 
     // Search
     if (search.trim()) {
@@ -391,7 +398,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   // Items do Rafael (vendedor = RAFAEL LEONEL)
   const rafaelItems = useMemo(() => {
     if (!items) return [];
-    return items.filter(item => (item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL"));
+    return items.filter(item => (item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL") || item.status === "Rafael - Especial s/ cobrança");
   }, [items]);
   const rafaelTotal = rafaelItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
   const rafaelClients = useMemo(() => new Set(rafaelItems.map(i => getClientKey(i.empresa))), [rafaelItems]);

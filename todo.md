@@ -5824,3 +5824,4 @@
 - [x] Bug: Fundo Perdido zerou após sync - títulos foram desativados incorretamente (ativo=0)
 - [x] Fix: reativados os 6 títulos de Fundo Perdido (IDs: 780010-780013, 1230003, 1320001)
 - [x] Fix: proteger status manuais (Fundo Perdido, Especial s/ cobrança, Protestado, Protesto em Análise) de serem desativados pelo sync automático
+- [x] Criar status "Rafael - Especial s/ cobrança" no dropdown de status (CobrancaPlanilhaView + InadimplenciaTab + backend STATUS_MAP)
