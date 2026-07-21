@@ -4895,7 +4895,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         grupo: "",
         disponivel: "",
       })));
-      setIsSimulation(order.isSimulation || false);
+      setIsSimulation((order as any).isSimulation || false);
       setStep("produtos");
       setEditDataLoaded(true);
     }
@@ -5093,7 +5093,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const itemsBelowMin = items.filter(item => item.precoMinimo !== null && item.precoUnitario < item.precoMinimo);
 
   const doSubmitOrder = (forceSubmitBelowMin?: boolean) => {
-    if (!isSimulation && !uf.trim()) {
+    // UF validation: only block in gestor mode. Sellers' orders go to gestor review,
+    // so the gestor can add UF before processing in Maxiprod.
+    if (!isSimulation && !uf.trim() && isGestorMode) {
       alert("Preencha a UF (estado) do cliente antes de finalizar o pedido. A UF é obrigatória para o cálculo correto de impostos.");
       return;
     }
