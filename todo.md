@@ -5878,3 +5878,5 @@
 - [x] Renomear aba "Métrica de Vendas" para "Vendas" no portal do vendedor
 - [x] Adicionar ícone/botão "Planilha de Cobrança" no card INADIMPLÊNCIA da aba Vendas do vendedor, puxando dados em tempo real da planilha de cobrança do financeiro
 - [x] Bug: Modal de títulos pagos não permite scroll horizontal no tablet - corrigir overflow
+- [x] Bug CRÍTICO: Alerta criado na aba Financeiro > Inadimplência > Planilha de Cobrança NÃO faz a aba Vendas do vendedor piscar com bolinha vermelha - CAUSA: senha compartilhada logava como JUVENAL (0 alertas). Fix: seletor multi-vendedor + refetchInterval 10s
+- [x] Bug: Aba Vendas do vendedor não enxerga a planilha de cobrança puxada em tempo real da aba Financeiro > Inadimplência - JÁ IMPLEMENTADO: SellerCobrancaView puxa getByVendedor + getSellerAlerts a cada 10s

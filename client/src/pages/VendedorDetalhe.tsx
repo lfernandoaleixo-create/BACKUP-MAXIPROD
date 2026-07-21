@@ -144,7 +144,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
   // Always-on query to check for pending alerts (even when not on clientes tab)
   const sellerAlertsQuery = trpc.cobrancaPlanilha.getSellerAlerts.useQuery(
     { vendedor: sellerNameForAlerts },
-    { enabled: !!sellerNameForAlerts, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
+    { enabled: !!sellerNameForAlerts, staleTime: 5 * 1000, refetchInterval: 10 * 1000 }
   );
   useEffect(() => {
     if (sellerAlertsQuery.data) {
