@@ -279,7 +279,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const hasAlert = tab.id === "clientes" && sellerAlertCount > 0;
+            const hasAlert = (tab.id === "clientes" || tab.id === "vendas") && sellerAlertCount > 0;
             return (
               <button
                 key={tab.id}

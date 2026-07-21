@@ -5871,3 +5871,5 @@
 - [x] Bug: Alerta não aparece na tela do vendedor - mismatch de nome (JORDAO vs JORDÃO LAINE) - usar matching fuzzy
 - [x] Notificação visual (toast/pop-up) na tela do vendedor quando alerta é gerado (polling rápido)
 - [x] Opção para vendedor marcar alerta como "visto" ou "em andamento" na sua tela
+- [x] Aba Vendas pisca em vermelho quando vendedor tem alertas pendentes (não só aba Clientes)
+- [x] Guilherme pode excluir alertas do histórico de acionamentos (botão lixeira exclusivo)

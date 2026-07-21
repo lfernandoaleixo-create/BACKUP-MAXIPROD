@@ -2000,4 +2000,22 @@ export const cobrancaPlanilhaRouter = router({
         metrics: { total, pendentes, vistos, emAndamento, resolvidos, cancelados, tempoMedioResolucaoHoras },
       };
     }),
+
+  /**
+   * Excluir um alerta do histórico (apenas Guilherme)
+   */
+  deleteAlert: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      operador: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      // Apenas Guilherme pode excluir
+      const allowed = input.operador.toLowerCase().includes('guilherme');
+      if (!allowed) throw new Error("Apenas Guilherme pode excluir alertas do histórico.");
+      await db.delete(sellerAlerts).where(eq(sellerAlerts.id, input.id));
+      return { success: true };
+    }),
 });

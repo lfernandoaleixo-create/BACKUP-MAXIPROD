@@ -322,6 +322,15 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     },
     onError: (err) => toast.error(err.message || "Erro ao cancelar alerta."),
   });
+  const deleteAlertMutation = trpc.cobrancaPlanilha.deleteAlert.useMutation({
+    onSuccess: () => {
+      toast.success("Alerta excluído do histórico.");
+      utils.cobrancaPlanilha.getAlertsHistory.invalidate();
+      utils.cobrancaPlanilha.getAllSellerAlerts.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Erro ao excluir alerta."),
+  });
+  const isGuilherme = operator?.name?.toLowerCase().includes('guilherme');
   const utils = trpc.useUtils();
   // Queries que dependem dos estados acima
   const { data: allSellerAlerts } = trpc.cobrancaPlanilha.getAllSellerAlerts.useQuery({ includeResolved: true });
@@ -2828,16 +2837,32 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           {alert.diasAtrasoMax && <span>{alert.diasAtrasoMax} dias atraso</span>}
                         </div>
                       </div>
-                      {/* Cancel button for pending/visto alerts */}
-                      {(alert.status === 'pendente' || alert.status === 'visto' || alert.status === 'em_andamento') && canEdit && (
-                        <button
-                          onClick={() => setCancelAlertDialog({ id: alert.id, empresa: alert.empresa, vendedor: alert.vendedor })}
-                          className="p-1.5 rounded-md hover:bg-orange-100 text-orange-600 transition-colors flex-shrink-0"
-                          title="Cancelar este alerta"
-                        >
-                          <BellOff className="w-4 h-4" />
-                        </button>
-                      )}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {/* Cancel button for pending/visto alerts */}
+                        {(alert.status === 'pendente' || alert.status === 'visto' || alert.status === 'em_andamento') && canEdit && (
+                          <button
+                            onClick={() => setCancelAlertDialog({ id: alert.id, empresa: alert.empresa, vendedor: alert.vendedor })}
+                            className="p-1.5 rounded-md hover:bg-orange-100 text-orange-600 transition-colors"
+                            title="Cancelar este alerta"
+                          >
+                            <BellOff className="w-4 h-4" />
+                          </button>
+                        )}
+                        {/* Delete button - only Guilherme */}
+                        {isGuilherme && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Excluir permanentemente este alerta de ${alert.empresa}?`)) {
+                                deleteAlertMutation.mutate({ id: alert.id, operador: operator?.name || '' });
+                              }
+                            }}
+                            className="p-1.5 rounded-md hover:bg-red-100 text-red-500 transition-colors"
+                            title="Excluir permanentemente (apenas Guilherme)"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {/* Resposta do vendedor */}
                     {alert.respostaVendedor && (
