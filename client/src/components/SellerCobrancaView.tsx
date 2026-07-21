@@ -322,6 +322,10 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
             <div className="flex items-center gap-2">
               <AlertTriangle className={`w-5 h-5 text-red-600 ${pendingAlerts.length > 0 ? 'animate-bounce' : ''}`} />
               <h3 className="text-sm font-bold text-red-700 dark:text-red-400 uppercase">INADIMPLÊNCIA</h3>
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-red-200/60 dark:bg-red-800/40 rounded text-[9px] font-semibold text-red-600 dark:text-red-400 uppercase">
+                <FileText className="w-3 h-3" />
+                Planilha de Cobrança
+              </span>
             </div>
             <div className="flex items-center gap-3 text-xs">
               {/* Filtro rápido: apenas com alertas pendentes */}
@@ -439,7 +443,8 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                         </div>
 
                         {/* Etapas de cobrança */}
-                        <div className="grid grid-cols-7 gap-1 mb-2">
+                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <div className="grid grid-cols-7 gap-1 mb-2 min-w-[500px]">
                           {[
                             { label: "1ª Cob", value: item.primeiraCobranca },
                             { label: "S/A 1", value: item.semAcao1 },
@@ -457,7 +462,7 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                             </div>
                           ))}
                         </div>
-
+                        </div>
                         {/* Observações do título */}
                         {item.observacoes && (
                           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-2 border border-amber-100 dark:border-amber-800">

@@ -640,8 +640,8 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
           </div>
         )}
       </div>
-      <div className="max-h-[500px] overflow-y-auto">
-        <table className="w-full text-xs">
+      <div className="max-h-[500px] overflow-y-auto overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <table className="min-w-[600px] w-full text-xs">
           <thead className="bg-slate-50 sticky top-0 z-10">
             <tr>
               <th className="px-4 py-2 text-left text-slate-500 font-semibold w-8">#</th>
@@ -743,8 +743,8 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                               {c.count} título(s) • Total: {formatCurrency(c.total)}
                             </span>
                           </div>
-                          <div className="bg-white rounded border border-red-100 overflow-hidden">
-                            <table className="w-full text-[11px]">
+                          <div className="bg-white rounded border border-red-100 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <table className="min-w-[500px] w-full text-[11px]">
                               <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
                                   <th className="px-3 py-1.5 text-left text-slate-500 font-semibold">Vencimento</th>
@@ -818,8 +818,8 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                     Total: {formatCurrency(pagosDialogTotal)}
                   </span>
                 </div>
-                <div className="bg-white rounded-lg border border-emerald-200 overflow-hidden">
-                  <table className="w-full text-xs">
+                <div className="bg-white rounded-lg border border-emerald-200 overflow-x-auto -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <table className="min-w-[700px] w-full text-xs">
                     <thead>
                       <tr className="bg-emerald-50 border-b border-emerald-100">
                         <th className="px-3 py-2 text-left text-emerald-700 font-semibold">Data Resolução</th>

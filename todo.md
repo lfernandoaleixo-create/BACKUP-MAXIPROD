@@ -5875,3 +5875,5 @@
 - [x] Guilherme pode excluir alertas do histórico de acionamentos (botão lixeira exclusivo)
 - [x] Bug: Login com senha compartilhada (123456) logava como vendedor errado - implementar seletor de perfil quando múltiplos vendedores têm a mesma senha
 - [x] Bug: Alerta deve aparecer na aba VENDAS (piscando vermelho), não na aba Cadastro de Cliente. Ao abrir Vendas, o card INADIMPLÊNCIA deve piscar em vermelho para guiar o vendedor
+- [x] Adicionar ícone/botão "Planilha de Cobrança" no card INADIMPLÊNCIA da aba Vendas do vendedor, puxando dados em tempo real da planilha de cobrança do financeiro
+- [x] Bug: Modal de títulos pagos não permite scroll horizontal no tablet - corrigir overflow
