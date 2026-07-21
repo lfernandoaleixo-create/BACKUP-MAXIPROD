@@ -5873,3 +5873,4 @@
 - [x] Opção para vendedor marcar alerta como "visto" ou "em andamento" na sua tela
 - [x] Aba Vendas pisca em vermelho quando vendedor tem alertas pendentes (não só aba Clientes)
 - [x] Guilherme pode excluir alertas do histórico de acionamentos (botão lixeira exclusivo)
+- [x] Bug: Login com senha compartilhada (123456) logava como vendedor errado - implementar seletor de perfil quando múltiplos vendedores têm a mesma senha

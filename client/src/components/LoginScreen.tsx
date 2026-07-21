@@ -132,6 +132,11 @@ export default function LoginScreen() {
           toast.success(`Bem-vindo, ${result.seller.name}!`);
           window.location.href = "/vendedor";
           return;
+        } else if ((result as any).loginType === "seller_multiple" || (result as any).multipleMatches) {
+          // Multiple sellers share the same password - redirect to /vendedor for selection
+          toast.info("Selecione seu perfil na pr\u00f3xima tela");
+          window.location.href = "/vendedor";
+          return;
         } else if (result.error) {
           toast.error(result.error);
           setPassword("");

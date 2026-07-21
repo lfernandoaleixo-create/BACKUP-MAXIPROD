@@ -3574,23 +3574,35 @@ export const salesRouter = router({
    * Login do vendedor (app mobile)
    * Verifica senha e se está autorizado pelo gestor.
    */
-  sellerLogin: publicProcedure
-    .input(z.object({ password: z.string() }))
+    sellerLogin: publicProcedure
+    .input(z.object({ password: z.string(), sellerId: z.number().optional() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-
       // Buscar vendedor pela senha
       const sellers = await db.select().from(sellerPermissions)
         .where(eq(sellerPermissions.password, input.password));
-
       if (sellers.length === 0) {
-        return { success: false, error: "Senha inválida" };
+        return { success: false, error: "Senha inv\u00e1lida" };
       }
-
-      const seller = sellers[0];
+      // Filter to only authorized sellers
+      const authorizedSellers = sellers.filter(s => s.authorized);
+      if (authorizedSellers.length === 0) {
+        return { success: false, error: "Acesso n\u00e3o autorizado. Aguarde libera\u00e7\u00e3o do gestor." };
+      }
+      // If multiple sellers share the same password, let the user choose
+      if (authorizedSellers.length > 1 && !input.sellerId) {
+        return {
+          success: false,
+          multipleMatches: authorizedSellers.map(s => ({ id: s.id, name: s.sellerName, gestor: s.gestorName })),
+        };
+      }
+      // Select the specific seller (by id if provided, otherwise first/only match)
+      const seller = input.sellerId
+        ? authorizedSellers.find(s => s.id === input.sellerId) || authorizedSellers[0]
+        : authorizedSellers[0];
       if (!seller.authorized) {
-        return { success: false, error: "Acesso não autorizado. Aguarde liberação do gestor." };
+        return { success: false, error: "Acesso n\u00e3o autorizado. Aguarde libera\u00e7\u00e3o do gestor." };
       }
 
       // Buscar produtos visíveis (manual overrides + price table)

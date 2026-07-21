@@ -48,19 +48,21 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [hubChoice, setHubChoice] = useState<"hub" | "gestor" | "vendedor" | null>(null);
+  const [multipleMatches, setMultipleMatches] = useState<{id: number; name: string; gestor: string}[] | null>(null);
 
   const loginMutation = trpc.sales.sellerLogin.useMutation();
 
-  const handleLogin = () => {
-    if (!password.trim()) {
+  const handleLogin = (sellerId?: number) => {
+    const pw = password.trim();
+    if (!pw) {
       setError("Digite sua senha");
       return;
     }
     setError("");
     loginMutation.mutate(
-      { password: password.trim() },
+      { password: pw, ...(sellerId ? { sellerId } : {}) },
       {
-        onSuccess: (result) => {
+        onSuccess: (result: any) => {
           if (result.success && result.seller) {
             const sess = {
               id: result.seller.id,
@@ -68,13 +70,16 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
               gestor: result.seller.gestor,
             };
             sessionStorage.setItem("sellerSession", JSON.stringify(sess));
+            setMultipleMatches(null);
             setSession(sess);
+          } else if (result.multipleMatches && result.multipleMatches.length > 1) {
+            setMultipleMatches(result.multipleMatches);
           } else {
             setError(result.error || "Erro ao fazer login");
           }
         },
         onError: (err) => {
-          setError(err.message || "Erro de conexão");
+          setError(err.message || "Erro de conex\u00e3o");
         },
       }
     );
@@ -97,7 +102,47 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
   }
 
   if (!session) {
-    return <LoginView password={password} setPassword={setPassword} error={error} onLogin={handleLogin} isPending={loginMutation.isPending} />;
+    // Show seller selector when multiple sellers share the same password
+    if (multipleMatches && multipleMatches.length > 1) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+            <div className="text-center mb-4">
+              <Users className="w-10 h-10 text-teal-600 mx-auto mb-2" />
+              <h2 className="text-lg font-bold text-slate-800">Quem está acessando?</h2>
+              <p className="text-xs text-slate-500 mt-1">Selecione seu nome para continuar</p>
+            </div>
+            <div className="space-y-2">
+              {multipleMatches.map((match) => (
+                <button
+                  key={match.id}
+                  onClick={() => handleLogin(match.id)}
+                  disabled={loginMutation.isPending}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-400 hover:bg-teal-50 transition-colors text-left cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-teal-700 font-bold text-sm">{match.name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{match.name}</p>
+                    {match.gestor && match.gestor !== match.name && (
+                      <p className="text-[10px] text-slate-400">Gestor: {match.gestor}</p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { setMultipleMatches(null); setPassword(""); }}
+              className="mt-4 w-full text-center text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+            >
+              ← Voltar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return <LoginView password={password} setPassword={setPassword} error={error} onLogin={() => handleLogin()} isPending={loginMutation.isPending} />;
   }
 
   // Se é Renato ou Juvenal e ainda não escolheu, mostra o hub

@@ -841,10 +841,23 @@ export const settingsRouter = router({
       const sellers = await db.select().from(sellerPermissions)
         .where(eq(sellerPermissions.password, input.password));
       if (sellers.length > 0) {
-        const seller = sellers[0];
-        if (!seller.authorized) {
-          return { success: false, loginType: "seller" as const, operator: null, granularPermissions: {} as Record<string, boolean>, seller: null, error: "Acesso não autorizado. Aguarde liberação do gestor." };
+        const authorizedSellers = sellers.filter(s => s.authorized);
+        if (authorizedSellers.length === 0) {
+          return { success: false, loginType: "seller" as const, operator: null, granularPermissions: {} as Record<string, boolean>, seller: null, error: "Acesso n\u00e3o autorizado. Aguarde libera\u00e7\u00e3o do gestor." };
         }
+        // If multiple authorized sellers share the same password, redirect to /vendedor for selection
+        if (authorizedSellers.length > 1) {
+          // Store the matches info in the session so the seller page can show the selector
+          return {
+            success: true,
+            loginType: "seller_multiple" as const,
+            operator: null,
+            granularPermissions: {} as Record<string, boolean>,
+            seller: null,
+            multipleMatches: authorizedSellers.map(s => ({ id: s.id, name: s.sellerName, gestor: s.gestorName })),
+          };
+        }
+        const seller = authorizedSellers[0];
         // Fetch visible products
         const products = await db.select().from(sellerProductVisibility)
           .where(eq(sellerProductVisibility.sellerId, seller.id));
