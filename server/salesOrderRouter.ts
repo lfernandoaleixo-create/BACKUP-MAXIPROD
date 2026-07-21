@@ -1236,6 +1236,7 @@ export const salesOrderRouter = router({
     .input(z.object({
       orderId: z.number(),
       aprovadoPor: z.string(),
+      observacaoAprovacao: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1246,6 +1247,7 @@ export const salesOrderRouter = router({
           status: "aprovado",
           aprovadoPor: input.aprovadoPor,
           dataAprovacao: new Date(),
+          observacaoAprovacao: input.observacaoAprovacao || null,
         })
         .where(eq(salesOrderRequests.id, input.orderId));
 

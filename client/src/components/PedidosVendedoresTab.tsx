@@ -50,6 +50,8 @@ export default function PedidosVendedoresTab() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [approvalObs, setApprovalObs] = useState("");
   const [maxiprodNumber, setMaxiprodNumber] = useState("");
   const [showProcessDialog, setShowProcessDialog] = useState(false);
 
@@ -790,17 +792,12 @@ export default function PedidosVendedoresTab() {
               {detailsQuery.data.order.status === "pendente" && (
                 <div className="flex gap-2 pt-2">
                   <Button
-                    onClick={() => {
-                      approveMutation.mutate({
-                        orderId: selectedOrderId!,
-                        aprovadoPor: operator?.name || "Gestor",
-                      });
-                    }}
+                    onClick={() => { setShowApproveDialog(true); setApprovalObs(""); }}
                     disabled={approveMutation.isPending}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {approveMutation.isPending ? "Aprovando..." : "Aprovar"}
+                    Aprovar
                   </Button>
                   <Button
                     onClick={() => setShowRejectDialog(true)}
@@ -810,6 +807,21 @@ export default function PedidosVendedoresTab() {
                     <XCircle className="w-4 h-4 mr-1" />
                     Rejeitar
                   </Button>
+                </div>
+              )}
+
+              {/* Approval info */}
+              {detailsQuery.data.order.status === "aprovado" && detailsQuery.data.order.aprovadoPor && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                  <p className="text-xs text-green-600 font-medium">Aprovado</p>
+                  <p className="text-sm text-green-700">
+                    Por: {detailsQuery.data.order.aprovadoPor} em {formatDate(detailsQuery.data.order.dataAprovacao)}
+                  </p>
+                  {(detailsQuery.data.order as any).observacaoAprovacao && (
+                    <p className="text-sm text-green-700 mt-1 italic">
+                      \u201c{(detailsQuery.data.order as any).observacaoAprovacao}\u201d
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -883,6 +895,45 @@ export default function PedidosVendedoresTab() {
                 {rejectMutation.isPending ? "Rejeitando..." : "Confirmar Rejeição"}
               </Button>
               <Button variant="outline" onClick={() => setShowRejectDialog(false)} className="flex-1">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve Dialog */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Autorizar Pedido</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">Observação de aprovação (opcional):</p>
+            <textarea
+              value={approvalObs}
+              onChange={(e) => setApprovalObs(e.target.value)}
+              placeholder="Justifique a aprovação e/ou o preço praticado... (ex: cliente estratégico, volume alto, negociação especial)"
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  approveMutation.mutate({
+                    orderId: selectedOrderId!,
+                    aprovadoPor: operator?.name || "Gestor",
+                    observacaoAprovacao: approvalObs.trim() || undefined,
+                  });
+                  setShowApproveDialog(false);
+                  setApprovalObs("");
+                }}
+                disabled={approveMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {approveMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowApproveDialog(false)} className="flex-1">
                 Cancelar
               </Button>
             </div>

@@ -2226,6 +2226,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   // Aprovação
   aprovadoPor: varchar("aprovado_por", { length: 100 }),
   dataAprovacao: timestamp("data_aprovacao"),
+  observacaoAprovacao: text("observacao_aprovacao"), // Justificativa do gestor ao aprovar (preço, motivo, etc.)
   motivoRejeicao: text("motivo_rejeicao"),
   
   // Processamento (Vitória)

@@ -68,6 +68,8 @@ export default function VitoriaOrders() {
   const exportMaxiprodMutation = trpc.salesOrders.exportClientMaxiprod.useMutation();
   const exportOrderMutation = trpc.salesOrders.exportOrderMaxiprod.useMutation();
   const utils = trpc.useUtils();
+  const [approvingOrderId, setApprovingOrderId] = useState<number | null>(null);
+  const [approvalObs, setApprovalObs] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [exportingOrderId, setExportingOrderId] = useState<number | null>(null);
   const [exportingPedidoId, setExportingPedidoId] = useState<number | null>(null);
@@ -176,12 +178,20 @@ export default function VitoriaOrders() {
   };
 
   const handleApproveOrder = (orderId: number) => {
+    setApprovingOrderId(orderId);
+    setApprovalObs("");
+  };
+
+  const confirmApproveOrder = () => {
+    if (approvingOrderId === null) return;
     approveOrderMutation.mutate(
-      { orderId, aprovadoPor: operator?.name || "Gestor" },
+      { orderId: approvingOrderId, aprovadoPor: operator?.name || "Gestor", observacaoAprovacao: approvalObs.trim() || undefined },
       {
         onSuccess: () => {
           toast.success("Pedido aprovado com sucesso!");
           utils.salesOrders.getOrdersForOperator.invalidate();
+          setApprovingOrderId(null);
+          setApprovalObs("");
         },
         onError: (err) => {
           toast.error(err.message || "Erro ao aprovar pedido");
@@ -685,14 +695,42 @@ export default function VitoriaOrders() {
                                   {/* Approve button for pending */}
                                   {isPendente && (
                                     <div className="mt-4">
-                                      <button
-                                        onClick={() => handleApproveOrder(order.id)}
-                                        disabled={approveOrderMutation.isPending}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
-                                      >
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        {approveOrderMutation.isPending ? "Aprovando..." : "Aprovar Pedido"}
-                                      </button>
+                                      {approvingOrderId === order.id ? (
+                                        <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                          <label className="text-xs font-bold text-green-700 block">Observação de aprovação (opcional):</label>
+                                          <textarea
+                                            value={approvalObs}
+                                            onChange={(e) => setApprovalObs(e.target.value)}
+                                            placeholder="Justifique a aprovação e/ou o preço praticado..."
+                                            rows={2}
+                                            className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                                          />
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={confirmApproveOrder}
+                                              disabled={approveOrderMutation.isPending}
+                                              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                            >
+                                              {approveOrderMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
+                                            </button>
+                                            <button
+                                              onClick={() => { setApprovingOrderId(null); setApprovalObs(""); }}
+                                              className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
+                                            >
+                                              Cancelar
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => handleApproveOrder(order.id)}
+                                          disabled={approveOrderMutation.isPending}
+                                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                                        >
+                                          <CheckCircle2 className="w-4 h-4" />
+                                          Aprovar Pedido
+                                        </button>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -822,6 +860,18 @@ export default function VitoriaOrders() {
                           <span className={isLancado ? "text-green-600" : ""}>Lançado</span>
                         </div>
                       </div>
+
+                      {/* Approval observation */}
+                      {order.status !== "pendente" && (order as any).observacaoAprovacao && (
+                        <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="text-[10px] text-green-700 dark:text-green-400 font-medium">
+                            Obs. aprovação ({(order as any).aprovadoPor || "Gestor"}):
+                          </p>
+                          <p className="text-[11px] text-green-600 dark:text-green-300 italic mt-0.5">
+                            \u201c{(order as any).observacaoAprovacao}\u201d
+                          </p>
+                        </div>
+                      )}
 
                       {/* Order Items */}
                       {orderDetails && orderDetails.order.id === order.id && (
@@ -1403,14 +1453,42 @@ export default function VitoriaOrders() {
                               Pedido aguardando aprovação do gestor
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleApproveOrder(order.id)}
-                            disabled={approveOrderMutation.isPending}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            {approveOrderMutation.isPending ? "Aprovando..." : "✓ Aprovar Pedido"}
-                          </button>
+                          {approvingOrderId === order.id ? (
+                            <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <label className="text-xs font-bold text-green-700 block">Observação de aprovação (opcional):</label>
+                              <textarea
+                                value={approvalObs}
+                                onChange={(e) => setApprovalObs(e.target.value)}
+                                placeholder="Justifique a aprovação e/ou o preço praticado..."
+                                rows={2}
+                                className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={confirmApproveOrder}
+                                  disabled={approveOrderMutation.isPending}
+                                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  {approveOrderMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
+                                </button>
+                                <button
+                                  onClick={() => { setApprovingOrderId(null); setApprovalObs(""); }}
+                                  className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleApproveOrder(order.id)}
+                              disabled={approveOrderMutation.isPending}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              ✓ Aprovar Pedido
+                            </button>
+                          )}
                         </div>
                       )}
 

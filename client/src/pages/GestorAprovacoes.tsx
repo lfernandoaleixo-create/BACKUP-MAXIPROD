@@ -113,6 +113,8 @@ export default function GestorAprovacoes(props: any = {}) {
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [approvingOrder, setApprovingOrder] = useState<number | null>(null);
+  const [approvalObs, setApprovalObs] = useState("");
 
   // Fetch orders - filtered by gestorName if provided (for Renato/Juvenal individual view)
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
@@ -157,12 +159,24 @@ export default function GestorAprovacoes(props: any = {}) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const handleApprove = (orderId: number) => {
+    setApprovingOrder(orderId);
+    setApprovalObs("");
+  };
+
+  const confirmApprove = () => {
+    if (approvingOrder === null) return;
     approveMutation.mutate(
-      { orderId, aprovadoPor: "Gestor" },
+      {
+        orderId: approvingOrder,
+        aprovadoPor: gestorName || "Gestor",
+        observacaoAprovacao: approvalObs.trim() || undefined,
+      },
       {
         onSuccess: () => {
           utils.salesOrders.listOrders.invalidate();
           utils.salesOrders.getOrdersForGestor.invalidate();
+          setApprovingOrder(null);
+          setApprovalObs("");
         },
       }
     );
@@ -918,6 +932,34 @@ export default function GestorAprovacoes(props: any = {}) {
                                 </button>
                               </div>
                             </div>
+                          ) : approvingOrder === order.id ? (
+                            <div className="space-y-2 w-full">
+                              <label className="text-[10px] font-bold text-green-700 dark:text-green-400 block">
+                                Observação de aprovação (opcional):
+                              </label>
+                              <textarea
+                                value={approvalObs}
+                                onChange={(e) => setApprovalObs(e.target.value)}
+                                placeholder="Justifique a aprovação e/ou o preço praticado... (ex: cliente estratégico, volume alto, negociação especial)"
+                                rows={3}
+                                className="w-full px-3 py-2 text-xs border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => { setApprovingOrder(null); setApprovalObs(""); }}
+                                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={confirmApprove}
+                                  disabled={approveMutation.isPending}
+                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  {approveMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
+                                </button>
+                              </div>
+                            </div>
                           ) : (
                             <>
                               <button
@@ -926,7 +968,7 @@ export default function GestorAprovacoes(props: any = {}) {
                                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
-                                {approveMutation.isPending ? "Aprovando..." : "Autorizar Pedido"}
+                                Autorizar Pedido
                               </button>
                               <button
                                 onClick={() => setRejectingOrder(order.id)}
@@ -958,6 +1000,11 @@ export default function GestorAprovacoes(props: any = {}) {
                             Aprovado por: <strong>{order.aprovadoPor}</strong>
                             {order.dataAprovacao && ` em ${new Date(order.dataAprovacao as string).toLocaleDateString("pt-BR")}`}
                           </p>
+                          {(order as any).observacaoAprovacao && (
+                            <p className="text-[11px] text-green-600 dark:text-green-300 mt-1 italic">
+                              “{(order as any).observacaoAprovacao}”
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

@@ -373,6 +373,8 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [approvingOrder, setApprovingOrder] = useState<number | null>(null);
+  const [approvalObs, setApprovalObs] = useState("");
 
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
     { status: filter === "todos" ? "todos" : filter, gestorName },
@@ -389,11 +391,19 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
   const utils = trpc.useUtils();
 
   const handleApprove = (orderId: number) => {
+    setApprovingOrder(orderId);
+    setApprovalObs("");
+  };
+
+  const confirmApprove = () => {
+    if (approvingOrder === null) return;
     approveMutation.mutate(
-      { orderId, aprovadoPor: gestorName },
+      { orderId: approvingOrder, aprovadoPor: gestorName, observacaoAprovacao: approvalObs.trim() || undefined },
       {
         onSuccess: () => {
           utils.salesOrders.listOrders.invalidate();
+          setApprovingOrder(null);
+          setApprovalObs("");
         },
       }
     );
@@ -552,6 +562,32 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                             </button>
                             <button
                               onClick={() => { setRejectingOrder(null); setRejectReason(""); }}
+                              className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : approvingOrder === order.id ? (
+                        <div className="flex-1 space-y-2">
+                          <label className="text-[10px] font-bold text-green-700 block">Observação de aprovação (opcional):</label>
+                          <textarea
+                            value={approvalObs}
+                            onChange={(e) => setApprovalObs(e.target.value)}
+                            placeholder="Justifique a aprovação e/ou o preço praticado..."
+                            rows={2}
+                            className="w-full px-3 py-2 border border-green-200 rounded-lg text-xs bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={confirmApprove}
+                              disabled={approveMutation.isPending}
+                              className="flex-1 px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
+                            >
+                              {approveMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
+                            </button>
+                            <button
+                              onClick={() => { setApprovingOrder(null); setApprovalObs(""); }}
                               className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
                             >
                               Cancelar
