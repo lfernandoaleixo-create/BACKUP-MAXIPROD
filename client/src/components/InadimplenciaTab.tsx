@@ -557,8 +557,10 @@ export default function InadimplenciaTab() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
-  const [acionarVendedorDialog, setAcionarVendedorDialog] = useState<{ cliente: string; vendedor: string; total: number; count: number; maxDias: number } | null>(null);
+  const [acionarVendedorDialog, setAcionarVendedorDialog] = useState<{ cliente: string; vendedor: string; total: number; count: number; maxDias: number; titulos?: Title[] } | null>(null);
   const [acionarMensagem, setAcionarMensagem] = useState("");
+  const [acionarEtapa, setAcionarEtapa] = useState<string>("1");
+  const [acionarVendedorName, setAcionarVendedorName] = useState("");
   const createSellerAlertMutation = trpc.cobrancaPlanilha.createSellerAlert.useMutation({
     onSuccess: () => {
       toast.success("Vendedor acionado com sucesso! Ele receberá o alerta na tela.");
@@ -1514,6 +1516,33 @@ export default function InadimplenciaTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const titulos = group.titulos;
+                        // Determine current etapa based on cobranca history
+                        let currentEtapa = "1";
+                        const allHistory = titulos.flatMap(t => t.cobranca?.contatoHistorico || []);
+                        if (allHistory.length >= 4) currentEtapa = "3";
+                        else if (allHistory.length >= 2) currentEtapa = "2";
+                        setAcionarEtapa(currentEtapa);
+                        setAcionarVendedorName(group.vendedor || "");
+                        setAcionarMensagem("");
+                        setAcionarVendedorDialog({
+                          cliente: group.cliente,
+                          vendedor: group.vendedor || "",
+                          total: group.total,
+                          count: group.count,
+                          maxDias: group.maxDias,
+                          titulos: titulos,
+                        });
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
+                      title="Acionar vendedor para intervir neste cliente"
+                    >
+                      <Bell className="w-3.5 h-3.5" />
+                      Acionar
+                    </div>
                     <span className={`font-bold text-sm ${getAgingColor(group.maxDias)}`}>{formatCurrency(group.total)}</span>
                     {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
@@ -1521,28 +1550,6 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700">
-                    {/* Botão Acionar Vendedor */}
-                    {group.vendedor && (
-                      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-600 bg-red-50/50 dark:bg-red-900/10 flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAcionarVendedorDialog({
-                              cliente: group.cliente,
-                              vendedor: group.vendedor,
-                              total: group.total,
-                              count: group.count,
-                              maxDias: group.maxDias,
-                            });
-                          }}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
-                        >
-                          <Bell className="w-3.5 h-3.5" />
-                          Acionar Vendedor ({group.vendedor})
-                        </button>
-                        <span className="text-[10px] text-red-500/70">Notificar o vendedor para intervir neste cliente</span>
-                      </div>
-                    )}
                     <div className="overflow-x-auto">
                     <div className="min-w-[850px]">
                     <div className="grid grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] bg-slate-50 dark:bg-slate-800/50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300 dark:border-slate-600">
@@ -1942,8 +1949,8 @@ export default function InadimplenciaTab() {
             </Dialog>
 
       {/* Dialog Acionar Vendedor */}
-      <Dialog open={!!acionarVendedorDialog} onOpenChange={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); }}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={!!acionarVendedorDialog} onOpenChange={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); setAcionarVendedorName(""); }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Bell className="w-5 h-5" />
@@ -1955,15 +1962,101 @@ export default function InadimplenciaTab() {
           </DialogHeader>
           {acionarVendedorDialog && (
             <div className="space-y-4">
+              {/* Client info */}
               <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
                 <div className="text-sm font-bold text-red-800 dark:text-red-300">{acionarVendedorDialog.cliente}</div>
                 <div className="text-xs text-red-600 dark:text-red-400 mt-1">
                   {acionarVendedorDialog.count} t\u00edtulo{acionarVendedorDialog.count !== 1 ? "s" : ""} \u2022 {formatCurrency(acionarVendedorDialog.total)} \u2022 m\u00e1x {acionarVendedorDialog.maxDias}d atraso
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  Vendedor: <span className="font-bold text-blue-600">{acionarVendedorDialog.vendedor}</span>
-                </div>
               </div>
+
+              {/* Vendedor selection */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Vendedor respons\u00e1vel {!acionarVendedorDialog.vendedor && <span className="text-red-500">*</span>}
+                </label>
+                {acionarVendedorDialog.vendedor ? (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-300">{acionarVendedorDialog.vendedor}</span>
+                    <span className="text-[10px] text-blue-500">(detectado automaticamente)</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Input
+                      value={acionarVendedorName}
+                      onChange={(e) => setAcionarVendedorName(e.target.value)}
+                      placeholder="Digite o nome do vendedor..."
+                      className="text-sm"
+                    />
+                    {vendedorOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {vendedorOptions.map(v => (
+                          <button
+                            key={v}
+                            onClick={() => setAcionarVendedorName(v)}
+                            className={`px-2 py-1 text-[10px] rounded-md border transition-colors ${
+                              acionarVendedorName === v
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-600 dark:text-slate-300"
+                            }`}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Etapa selection */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Etapa atual da cobran\u00e7a
+                </label>
+                <div className="flex gap-2">
+                  {[{v: "1", label: "1\u00aa Cobran\u00e7a"}, {v: "2", label: "2\u00aa Cobran\u00e7a"}, {v: "3", label: "3\u00aa Cobran\u00e7a"}].map(opt => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setAcionarEtapa(opt.v)}
+                      className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border-2 transition-all ${
+                        acionarEtapa === opt.v
+                          ? "bg-red-600 text-white border-red-600 shadow-md"
+                          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-red-400"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Selecionado automaticamente com base no hist\u00f3rico. Ajuste se necess\u00e1rio.</p>
+              </div>
+
+              {/* History summary */}
+              {acionarVendedorDialog.titulos && acionarVendedorDialog.titulos.some(t => t.cobranca?.contatoHistorico?.length) && (
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Hist\u00f3rico de cobran\u00e7a (\u00faltimas a\u00e7\u00f5es)
+                  </label>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 p-2 max-h-32 overflow-y-auto space-y-1">
+                    {acionarVendedorDialog.titulos
+                      .flatMap(t => (t.cobranca?.contatoHistorico || []).map(h => ({ ...h, titulo: t.referenteA || t.documento })))
+                      .sort((a, b) => b.data.localeCompare(a.data))
+                      .slice(0, 10)
+                      .map((h, i) => (
+                        <div key={i} className="flex items-start gap-2 text-[11px] py-1 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                          <span className="text-slate-400 shrink-0">{formatDate(h.data)}</span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300 shrink-0">{h.tipo}</span>
+                          <span className="text-slate-500 dark:text-slate-400 truncate">{h.resumo}</span>
+                          {h.usuario && <span className="text-blue-500 shrink-0">({h.usuario})</span>}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Message */}
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
                   Mensagem para o vendedor <span className="text-red-500">*</span>
@@ -1972,31 +2065,37 @@ export default function InadimplenciaTab() {
                   value={acionarMensagem}
                   onChange={(e) => setAcionarMensagem(e.target.value)}
                   placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor fa\u00e7a..."
-                  className="w-full h-32 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                  className="w-full h-28 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Ex: \"Cliente n\u00e3o atende liga\u00e7\u00f5es h\u00e1 3 dias. Sugerimos que o vendedor entre em contato pessoalmente.\"</p>
+                <p className="text-[10px] text-slate-400 mt-1">Ex: "Cliente n\u00e3o atende liga\u00e7\u00f5es h\u00e1 3 dias. Sugerimos que o vendedor entre em contato pessoalmente."</p>
               </div>
+
               <DialogFooter>
-                <Button variant="outline" onClick={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); }}>
+                <Button variant="outline" onClick={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); setAcionarVendedorName(""); }}>
                   Cancelar
                 </Button>
                 <Button
                   onClick={() => {
+                    const vendedorFinal = acionarVendedorDialog.vendedor || acionarVendedorName.trim();
+                    if (!vendedorFinal) {
+                      toast.error("Informe o vendedor respons\u00e1vel.");
+                      return;
+                    }
                     if (!acionarMensagem.trim()) {
                       toast.error("Escreva uma mensagem para o vendedor.");
                       return;
                     }
                     createSellerAlertMutation.mutate({
                       empresa: acionarVendedorDialog.cliente,
-                      vendedor: acionarVendedorDialog.vendedor,
-                      mensagem: acionarMensagem.trim(),
+                      vendedor: vendedorFinal,
+                      mensagem: `[Etapa: ${acionarEtapa}\u00aa Cobran\u00e7a] ${acionarMensagem.trim()}`,
                       criadoPor: operator?.name || "Financeiro",
                       valorTotal: acionarVendedorDialog.total,
                       titulosVencidos: acionarVendedorDialog.count,
                       diasAtrasoMax: acionarVendedorDialog.maxDias,
                     });
                   }}
-                  disabled={createSellerAlertMutation.isPending || !acionarMensagem.trim()}
+                  disabled={createSellerAlertMutation.isPending || !acionarMensagem.trim() || (!acionarVendedorDialog.vendedor && !acionarVendedorName.trim())}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   {createSellerAlertMutation.isPending ? (

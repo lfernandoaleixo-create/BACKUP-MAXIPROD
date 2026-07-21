@@ -5850,3 +5850,7 @@
 - [ ] Campo de resposta no alerta para vendedor enviar resultado da negociação ao financeiro
 - [ ] Filtro rápido na aba vendas para listar apenas clientes com alertas pendentes
 - [ ] Botão Resolvido adiciona nota automática no histórico de cobrança do financeiro
+- [x] Acionar Vendedor: mover botão para fora do isOpen (visível sem expandir)
+- [ ] Acionar Vendedor: auto-preencher vendedor ou permitir digitar se não tiver
+- [ ] Acionar Vendedor: mostrar etapas (1ª/2ª/3ª) com a atual pré-selecionada
+- [ ] Acionar Vendedor: puxar histórico completo no dialog
