@@ -1301,10 +1301,17 @@ export const cobrancaPlanilhaRouter = router({
 
       // 8. Para títulos da planilha que NÃO foram matched (não estão mais na inadimplência)
       // Marcar como inativos (pago/resolvido) — NÃO deletar
+      // EXCETO: Fundo Perdido e Especial s/ cobrança — esses são gerenciados manualmente e NUNCA devem ser desativados pelo sync
+      const PROTECTED_STATUSES = ["Fundo Perdido", "Especial s/ cobrança", "Protestado", "Protesto em Análise"];
       let notInInadimplencia = 0;
       let deactivated = 0;
       for (const item of planilhaAtual) {
         if (!matchedPlanilhaIds.has(item.id)) {
+          // Proteger títulos com status manual (Fundo Perdido, Especial s/ cobrança)
+          if (PROTECTED_STATUSES.includes(item.status || "")) {
+            notInInadimplencia++;
+            continue; // NÃO desativar
+          }
           // Marcar como inativo — título não está mais na inadimplência (pago ou removido)
           await db.update(cobrancaPlanilha)
             .set({ ativo: false, updatedBy: `Sync: ${input.updatedBy} (pago/resolvido)` })
