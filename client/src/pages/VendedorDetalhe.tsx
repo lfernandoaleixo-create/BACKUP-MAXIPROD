@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
+import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft,
@@ -130,14 +131,27 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
   const [activeTab, setActiveTab] = useState<TabType>(urlTab && validTabs.includes(urlTab) ? urlTab : defaultTab);
   // Section filter for configuracoes tab: shows only the relevant sub-section
   const [configSection] = useState<string | null>(urlSection);
+  // Seller alert count for blinking effect on "clientes" tab
+  const [sellerAlertCount, setSellerAlertCount] = useState(0);
 
   // Buscar dados do vendedor
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
   });
 
-  const seller = permissionsQuery.data?.find((p: any) => p.id === sellerId);
-
+    const seller = permissionsQuery.data?.find((p: any) => p.id === sellerId);
+  const sellerNameForAlerts = seller?.sellerName || "";
+  // Always-on query to check for pending alerts (even when not on clientes tab)
+  const sellerAlertsQuery = trpc.cobrancaPlanilha.getSellerAlerts.useQuery(
+    { vendedor: sellerNameForAlerts },
+    { enabled: !!sellerNameForAlerts, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
+  );
+  useEffect(() => {
+    if (sellerAlertsQuery.data) {
+      const pending = sellerAlertsQuery.data.filter((a: any) => a.status === "pendente");
+      setSellerAlertCount(pending.length);
+    }
+  }, [sellerAlertsQuery.data]);
   if (permissionsQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -265,18 +279,26 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const hasAlert = tab.id === "clientes" && sellerAlertCount > 0;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex-shrink-0 ${
-                  isActive
+                  hasAlert && !isActive
+                    ? "bg-red-100 text-red-700 animate-pulse ring-2 ring-red-400 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+                    : isActive
                     ? "bg-teal-600 text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+                <Icon className={`w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 ${hasAlert && !isActive ? 'animate-bounce' : ''}`} />
                 <span>{tab.label}</span>
+                {hasAlert && (
+                  <span className="ml-1 w-5 h-5 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce">
+                    {sellerAlertCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -289,6 +311,10 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
 
         {activeTab === "clientes" && (
           <SellerClientsView sellerId={sellerId} sellerName={seller.sellerName} />
+        )}
+
+        {activeTab === "clientes" && (
+          <SellerCobrancaView sellerName={seller.sellerName} onAlertCount={setSellerAlertCount} />
         )}
 
         {activeTab === "tabela_precos" && (

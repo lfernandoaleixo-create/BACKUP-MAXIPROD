@@ -5831,3 +5831,19 @@
 - [x] FIX APAGÕES: Histórico de etapas (cobranca_etapa_obs) migrado para novos registros automaticamente
 - [x] FIX APAGÕES: Fundo Perdido manual não é mais desativado pelo sync da conta 571
 - [x] FIX APAGÕES: Removida proteção baseada em horário (17:15) - agora proteção é permanente 24h
+- [ ] Aba Vendas: Planilha de Cobrança no card inadimplência do vendedor (mesma view da aba financeiro, filtrada por vendedor)
+- [ ] Aba Vendas: Proteção contra perda de dados (status, histórico, observações, etapas) na view do vendedor
+- [ ] DB: Criar tabela seller_alerts para armazenar acionamentos de vendedor (vendedor, empresa, mensagem, status, timestamps)
+- [ ] Backend: Procedure para criar alerta de vendedor (acionar vendedor)
+- [ ] Backend: Procedure para listar alertas pendentes de um vendedor
+- [ ] Backend: Procedure para marcar alerta como visto/resolvido
+- [ ] Aba Financeiro-Inadimplência: Botão "Acionar Vendedor" vermelho em cada cliente inadimplente
+- [ ] Aba Financeiro-Inadimplência: Modal/campo para descrever o caso ao acionar vendedor
+- [ ] Aba Vendas: Card inadimplência pisca quando há alerta pendente
+- [ ] Aba Vendas: Mensagem de intervenção necessária ao clicar no card piscando
+- [ ] Aba Vendas: Direcionar vendedor ao cliente específico com histórico completo + observação da cobrança
+- [x] Aba Vendas: Planilha de Cobrança completa para vendedores (SellerCobrancaView)
+- [x] Botão "Acionar Vendedor" na aba Financeiro-Inadimplência com dialog de mensagem
+- [x] Sistema de notificação visual: tab "Cadastro de Cliente" pisca com badge vermelho quando há alertas pendentes
+- [x] SellerCobrancaView mostra alertas com mensagem da cobrança, botões "Marcar como Visto" e "Resolvido"
+- [x] Proteção de dados: mesma lógica de proteção contra perda de status/histórico/observações aplicada

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp, Bell } from "lucide-react";
 import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
 import CobrancaPlanilhaView from "@/components/CobrancaPlanilhaView";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
@@ -557,6 +557,18 @@ export default function InadimplenciaTab() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
+  const [acionarVendedorDialog, setAcionarVendedorDialog] = useState<{ cliente: string; vendedor: string; total: number; count: number; maxDias: number } | null>(null);
+  const [acionarMensagem, setAcionarMensagem] = useState("");
+  const createSellerAlertMutation = trpc.cobrancaPlanilha.createSellerAlert.useMutation({
+    onSuccess: () => {
+      toast.success("Vendedor acionado com sucesso! Ele receberá o alerta na tela.");
+      setAcionarVendedorDialog(null);
+      setAcionarMensagem("");
+    },
+    onError: () => {
+      toast.error("Erro ao acionar vendedor. Tente novamente.");
+    },
+  });
   const [clientSortBy, setClientSortBy] = useState<"valor" | "vencimento" | "dias">("dias");
   const [clientSortDir, setClientSortDir] = useState<"asc" | "desc">("desc");
   function toggleClientSort(field: typeof clientSortBy) {
@@ -1508,7 +1520,30 @@ export default function InadimplenciaTab() {
                 </button>
 
                 {isOpen && (
-                  <div className="bg-white/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 overflow-x-auto">
+                  <div className="bg-white/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700">
+                    {/* Botão Acionar Vendedor */}
+                    {group.vendedor && (
+                      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-600 bg-red-50/50 dark:bg-red-900/10 flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAcionarVendedorDialog({
+                              cliente: group.cliente,
+                              vendedor: group.vendedor,
+                              total: group.total,
+                              count: group.count,
+                              maxDias: group.maxDias,
+                            });
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <Bell className="w-3.5 h-3.5" />
+                          Acionar Vendedor ({group.vendedor})
+                        </button>
+                        <span className="text-[10px] text-red-500/70">Notificar o vendedor para intervir neste cliente</span>
+                      </div>
+                    )}
+                    <div className="overflow-x-auto">
                     <div className="min-w-[850px]">
                     <div className="grid grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] bg-slate-50 dark:bg-slate-800/50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300 dark:border-slate-600">
                       <span className="flex items-center justify-start px-3 py-2 border-r border-slate-300">Referência / Documento</span>
@@ -1557,6 +1592,7 @@ export default function InadimplenciaTab() {
                           onOpenDecisaoTutorial={(cn, vn) => setDecisaoTutorialData({ clienteName: cn, vendedorName: vn })}
                         />
                       ))}
+                    </div>
                     </div>
                     </div>
                   </div>
@@ -1903,11 +1939,80 @@ export default function InadimplenciaTab() {
             </DialogFooter>
           </form>
         </DialogContent>
+            </Dialog>
+
+      {/* Dialog Acionar Vendedor */}
+      <Dialog open={!!acionarVendedorDialog} onOpenChange={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Bell className="w-5 h-5" />
+              Acionar Vendedor
+            </DialogTitle>
+            <DialogDescription>
+              Enviar alerta para o vendedor intervir no cliente inadimplente.
+            </DialogDescription>
+          </DialogHeader>
+          {acionarVendedorDialog && (
+            <div className="space-y-4">
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                <div className="text-sm font-bold text-red-800 dark:text-red-300">{acionarVendedorDialog.cliente}</div>
+                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  {acionarVendedorDialog.count} t\u00edtulo{acionarVendedorDialog.count !== 1 ? "s" : ""} \u2022 {formatCurrency(acionarVendedorDialog.total)} \u2022 m\u00e1x {acionarVendedorDialog.maxDias}d atraso
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Vendedor: <span className="font-bold text-blue-600">{acionarVendedorDialog.vendedor}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Mensagem para o vendedor <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={acionarMensagem}
+                  onChange={(e) => setAcionarMensagem(e.target.value)}
+                  placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor fa\u00e7a..."
+                  className="w-full h-32 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Ex: \"Cliente n\u00e3o atende liga\u00e7\u00f5es h\u00e1 3 dias. Sugerimos que o vendedor entre em contato pessoalmente.\"</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); }}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!acionarMensagem.trim()) {
+                      toast.error("Escreva uma mensagem para o vendedor.");
+                      return;
+                    }
+                    createSellerAlertMutation.mutate({
+                      empresa: acionarVendedorDialog.cliente,
+                      vendedor: acionarVendedorDialog.vendedor,
+                      mensagem: acionarMensagem.trim(),
+                      criadoPor: operator?.name || "Financeiro",
+                      valorTotal: acionarVendedorDialog.total,
+                      titulosVencidos: acionarVendedorDialog.count,
+                      diasAtrasoMax: acionarVendedorDialog.maxDias,
+                    });
+                  }}
+                  disabled={createSellerAlertMutation.isPending || !acionarMensagem.trim()}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {createSellerAlertMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
+                  ) : (
+                    <><Bell className="w-4 h-4 mr-2" /> Acionar Vendedor</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
       </Dialog>
     </div>
   );
 }
-
 /* ---- Componente PhoneIcon com animação ---- */
 function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document" | "muted"; onClick: () => void }) {
   const baseClasses = "p-1 rounded-md transition-colors cursor-pointer";

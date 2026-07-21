@@ -1,7 +1,7 @@
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
+import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders, sellerAlerts } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull, like, or, gte } from "drizzle-orm";
 import { gql, normalizeVendedorName } from "./maxiprodGraphQL";
 
@@ -1687,5 +1687,145 @@ export const cobrancaPlanilhaRouter = router({
           createdAt: o.createdAt,
         })),
       };
+    }),
+
+  // ============ SELLER ALERTS (Acionar Vendedor) ============
+
+  /**
+   * Criar alerta para vendedor (acionado pelo financeiro)
+   */
+  createSellerAlert: publicProcedure
+    .input(z.object({
+      empresa: z.string(),
+      cnpj: z.string().nullable().optional(),
+      vendedor: z.string(),
+      mensagem: z.string(),
+      valorTotal: z.number().nullable().optional(),
+      titulosVencidos: z.number().nullable().optional(),
+      diasAtrasoMax: z.number().nullable().optional(),
+      criadoPor: z.string(),
+      planilhaId: z.number().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [result] = await db.insert(sellerAlerts).values({
+        empresa: input.empresa,
+        cnpj: input.cnpj || null,
+        vendedor: input.vendedor,
+        mensagem: input.mensagem,
+        valorTotal: input.valorTotal?.toString() || null,
+        titulosVencidos: input.titulosVencidos || null,
+        diasAtrasoMax: input.diasAtrasoMax || null,
+        criadoPor: input.criadoPor,
+        planilhaId: input.planilhaId || null,
+      });
+      return { success: true, id: result.insertId };
+    }),
+
+  /**
+   * Listar alertas pendentes para um vendedor específico
+   */
+  getSellerAlerts: publicProcedure
+    .input(z.object({
+      vendedor: z.string(),
+      includeResolved: z.boolean().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const conditions = [eq(sellerAlerts.vendedor, input.vendedor)];
+      if (!input.includeResolved) {
+        conditions.push(sql`${sellerAlerts.status} != 'resolvido'`);
+      }
+      return db.select()
+        .from(sellerAlerts)
+        .where(and(...conditions))
+        .orderBy(desc(sellerAlerts.createdAt));
+    }),
+
+  /**
+   * Contar alertas pendentes por vendedor (para badge/piscar)
+   */
+  countPendingAlerts: publicProcedure
+    .input(z.object({
+      vendedor: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { count: 0 };
+      const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+        .from(sellerAlerts)
+        .where(and(
+          eq(sellerAlerts.vendedor, input.vendedor),
+          eq(sellerAlerts.status, 'pendente')
+        ));
+      return { count: result?.count || 0 };
+    }),
+
+  /**
+   * Marcar alerta como visto pelo vendedor
+   */
+  markAlertViewed: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(sellerAlerts)
+        .set({ status: 'visto', viewedAt: new Date() })
+        .where(eq(sellerAlerts.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Marcar alerta como resolvido pelo vendedor
+   */
+  markAlertResolved: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      respostaVendedor: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(sellerAlerts)
+        .set({
+          status: 'resolvido',
+          resolvedAt: new Date(),
+          respostaVendedor: input.respostaVendedor || null,
+        })
+        .where(eq(sellerAlerts.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Obter dados da planilha de cobrança filtrados por vendedor
+   * (para exibir na aba de vendas do vendedor)
+   */
+  getByVendedor: publicProcedure
+    .input(z.object({
+      vendedor: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { items: [], etapasObs: [] };
+      const items = await db.select()
+        .from(cobrancaPlanilha)
+        .where(and(
+          eq(cobrancaPlanilha.ativo, true),
+          eq(cobrancaPlanilha.vendedor, input.vendedor)
+        ))
+        .orderBy(desc(cobrancaPlanilha.diasVencidos));
+      
+      // Also get etapa observations for these items
+      const planilhaIds = items.map(i => i.id);
+      let etapasObs: any[] = [];
+      if (planilhaIds.length > 0) {
+        etapasObs = await db.select()
+          .from(cobrancaEtapaObs)
+          .where(inArray(cobrancaEtapaObs.planilhaId, planilhaIds))
+          .orderBy(desc(cobrancaEtapaObs.createdAt));
+      }
+      return { items, etapasObs };
     }),
 });

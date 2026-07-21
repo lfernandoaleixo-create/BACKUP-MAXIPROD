@@ -3169,3 +3169,38 @@ export const stockInsufficientAlerts = mysqlTable("stock_insufficient_alerts", {
 });
 export type StockInsufficientAlert = typeof stockInsufficientAlerts.$inferSelect;
 export type InsertStockInsufficientAlert = typeof stockInsufficientAlerts.$inferInsert;
+
+/**
+ * Alertas de acionamento de vendedor pelo setor de cobrança.
+ * Quando o financeiro (Flávio/Thalita) não consegue contato com um cliente,
+ * eles acionam o vendedor responsável para intervir.
+ * O alerta aparece na aba de vendas do vendedor com piscar visual.
+ */
+export const sellerAlerts = mysqlTable("seller_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  // Dados do cliente inadimplente
+  planilhaId: int("planilha_id"), // FK para cobranca_planilha.id (opcional)
+  empresa: varchar("empresa", { length: 300 }).notNull(),
+  cnpj: varchar("cnpj", { length: 20 }),
+  // Vendedor acionado
+  vendedor: varchar("vendedor", { length: 200 }).notNull(),
+  // Mensagem do setor de cobrança
+  mensagem: text("mensagem").notNull(), // Descrição do caso e sugestão para o vendedor
+  // Dados financeiros para contexto
+  valorTotal: decimal("valor_total", { precision: 18, scale: 2 }),
+  titulosVencidos: int("titulos_vencidos"),
+  diasAtrasoMax: int("dias_atraso_max"),
+  // Quem acionou
+  criadoPor: varchar("criado_por", { length: 200 }).notNull(),
+  // Status do alerta
+  status: varchar("status", { length: 20 }).notNull().default("pendente"), // pendente, visto, resolvido
+  // Resposta do vendedor (opcional)
+  respostaVendedor: text("resposta_vendedor"),
+  // Timestamps
+  viewedAt: timestamp("viewed_at"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SellerAlert = typeof sellerAlerts.$inferSelect;
+export type InsertSellerAlert = typeof sellerAlerts.$inferInsert;
