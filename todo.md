@@ -5887,3 +5887,5 @@
 - [x] Bug Financeiro/Inadimplência: Cliente "BRASILIENSE INDUSTRIA E COMERCIO D..." (PRIMICIA ESPETUS E PETISCOS) aparece na planilha de cobrança com R$ 0,00 e COM PROTESTO, mas no Maxiprod não tem nenhuma pendência (Contas a Receber = "Nenhum registro encontrado"). Fix: sync agora desativa títulos quando valorAReceber chega a 0 (totalmente pago), independente do status. Desativados 4 registros com valor=0 que estavam ativos.
 - [x] Feature: Campo de observação na aprovação de pedidos - gestor pode justificar aprovação e preço praticado
 - [x] Feature: Observação de aprovação fica registrada e visível para todos com acesso à aba (Vitória, Guilherme, Fernando, Bruno, Gilson, Luis, Juvenal)
+- [x] Feature: Permitir editar observação de aprovação após já ter aprovado o pedido (gestor esqueceu de colocar na hora)
+- [x] Bug: Card inadimplência na aba Vendas do vendedor pisca apenas o cliente com alerta (removido pulse do container inteiro, destaque per-client com fundo vermelho claro + badge ALERTA + bolinha pulsando)

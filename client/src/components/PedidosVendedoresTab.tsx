@@ -121,6 +121,16 @@ export default function PedidosVendedoresTab() {
     },
   });
 
+  const updateObsMutation = trpc.salesOrders.updateObservacaoAprovacao.useMutation({
+    onSuccess: () => {
+      detailsQuery.refetch();
+      setEditingObsOrderId(null);
+      setEditingObsText("");
+    },
+  });
+  const [editingObsOrderId, setEditingObsOrderId] = useState<number | null>(null);
+  const [editingObsText, setEditingObsText] = useState("");
+
   const orders = ordersQuery.data || [];
 
   const statusCounts = {
@@ -817,10 +827,50 @@ export default function PedidosVendedoresTab() {
                   <p className="text-sm text-green-700">
                     Por: {detailsQuery.data.order.aprovadoPor} em {formatDate(detailsQuery.data.order.dataAprovacao)}
                   </p>
-                  {(detailsQuery.data.order as any).observacaoAprovacao && (
-                    <p className="text-sm text-green-700 mt-1 italic">
-                      \u201c{(detailsQuery.data.order as any).observacaoAprovacao}\u201d
-                    </p>
+                  {editingObsOrderId === detailsQuery.data.order.id ? (
+                    <div className="mt-1.5 space-y-1.5">
+                      <textarea
+                        value={editingObsText}
+                        onChange={(e) => setEditingObsText(e.target.value)}
+                        placeholder="Justifique a aprovação e/ou o preço praticado..."
+                        rows={2}
+                        className="w-full px-2 py-1.5 text-xs border border-green-200 rounded bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => updateObsMutation.mutate({ orderId: detailsQuery.data!.order.id, observacaoAprovacao: editingObsText.trim() })}
+                          disabled={updateObsMutation.isPending}
+                          className="px-2 py-1 bg-green-600 text-white text-[10px] font-medium rounded hover:bg-green-700 cursor-pointer"
+                        >
+                          {updateObsMutation.isPending ? "Salvando..." : "Salvar"}
+                        </button>
+                        <button
+                          onClick={() => { setEditingObsOrderId(null); setEditingObsText(""); }}
+                          className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-medium rounded cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-1 mt-1">
+                      {(detailsQuery.data.order as any).observacaoAprovacao ? (
+                        <p className="text-sm text-green-700 italic flex-1">
+                          \u201c{(detailsQuery.data.order as any).observacaoAprovacao}\u201d
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic flex-1">Sem observação</p>
+                      )}
+                      {isGestor && (
+                        <button
+                          onClick={() => { setEditingObsOrderId(detailsQuery.data!.order.id); setEditingObsText((detailsQuery.data!.order as any).observacaoAprovacao || ""); }}
+                          className="text-[9px] text-green-600 hover:text-green-800 underline cursor-pointer whitespace-nowrap"
+                        >
+                          {(detailsQuery.data.order as any).observacaoAprovacao ? "editar" : "+ obs"}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

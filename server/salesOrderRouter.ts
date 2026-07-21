@@ -1254,6 +1254,25 @@ export const salesOrderRouter = router({
       return { success: true };
     }),
 
+  /** Update approval observation (gestor can edit after approving) */
+  updateObservacaoAprovacao: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      observacaoAprovacao: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      await db.update(salesOrderRequests)
+        .set({
+          observacaoAprovacao: input.observacaoAprovacao || null,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+
+      return { success: true };
+    }),
+
   /** Reject an order (gestor) */
   rejectOrder: publicProcedure
     .input(z.object({

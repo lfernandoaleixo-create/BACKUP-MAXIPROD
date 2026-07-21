@@ -138,10 +138,11 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
     onAlertCount?.(pendingAlerts.length);
   }, [pendingAlerts.length, onAlertCount]);
 
-  // Get empresas that have pending alerts (for filter)
+  // Get empresas that have any active alerts (pendente, em_andamento, or visto)
   const alertEmpresas = useMemo(() => {
-    return new Set(pendingAlerts.map(a => a.empresa));
-  }, [pendingAlerts]);
+    if (!alerts) return new Set<string>();
+    return new Set(alerts.filter(a => a.status === "pendente" || a.status === "em_andamento" || a.status === "visto").map(a => a.empresa));
+  }, [alerts]);
 
   // Group items by empresa
   const clientGroups = useMemo(() => {
@@ -316,8 +317,8 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
       )}
 
       {/* Resumo geral + Filtro rápido */}
-      <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden ${pendingAlerts.length > 0 ? 'border-2 border-red-500 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border border-red-200 dark:border-red-700'}`}>
-        <div className={`px-4 py-3 border-b ${pendingAlerts.length > 0 ? 'bg-red-100 dark:bg-red-900/40 border-red-200 dark:border-red-700' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800'}`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-red-200 dark:border-red-700`}>
+        <div className={`px-4 py-3 border-b bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className={`w-5 h-5 text-red-600 ${pendingAlerts.length > 0 ? 'animate-bounce' : ''}`} />
@@ -356,7 +357,7 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
               {/* Client header - clickable to expand */}
               <button
                 onClick={() => setExpandedClient(expandedClient === group.empresa ? null : group.empresa)}
-                className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                className={`w-full px-4 py-3 flex items-center justify-between transition-colors text-left ${group.hasAlert ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full ${group.hasAlert ? 'bg-red-500 animate-pulse' : group.maxDias > 30 ? 'bg-red-500' : group.maxDias > 15 ? 'bg-amber-500' : 'bg-yellow-400'}`} />

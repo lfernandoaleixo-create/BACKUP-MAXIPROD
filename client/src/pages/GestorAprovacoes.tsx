@@ -154,9 +154,12 @@ export default function GestorAprovacoes(props: any = {}) {
   const rejectMutation = trpc.salesOrders.rejectOrder.useMutation();
   const resetMutation = trpc.salesOrders.resetOrderNumbers.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
+  const updateObsMutation = trpc.salesOrders.updateObservacaoAprovacao.useMutation();
   const utils = trpc.useUtils();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [editingObsOrderId, setEditingObsOrderId] = useState<number | null>(null);
+  const [editingObsText, setEditingObsText] = useState("");
 
   const handleApprove = (orderId: number) => {
     setApprovingOrder(orderId);
@@ -1000,10 +1003,53 @@ export default function GestorAprovacoes(props: any = {}) {
                             Aprovado por: <strong>{order.aprovadoPor}</strong>
                             {order.dataAprovacao && ` em ${new Date(order.dataAprovacao as string).toLocaleDateString("pt-BR")}`}
                           </p>
-                          {(order as any).observacaoAprovacao && (
-                            <p className="text-[11px] text-green-600 dark:text-green-300 mt-1 italic">
-                              “{(order as any).observacaoAprovacao}”
-                            </p>
+                          {editingObsOrderId === order.id ? (
+                            <div className="mt-1.5 space-y-1.5">
+                              <textarea
+                                value={editingObsText}
+                                onChange={(e) => setEditingObsText(e.target.value)}
+                                placeholder="Justifique a aprovação e/ou o preço praticado..."
+                                rows={2}
+                                className="w-full px-2 py-1.5 text-[11px] border border-green-200 rounded bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                                autoFocus
+                              />
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    updateObsMutation.mutate(
+                                      { orderId: order.id, observacaoAprovacao: editingObsText.trim() },
+                                      { onSuccess: () => { utils.salesOrders.getOrdersForGestor.invalidate(); setEditingObsOrderId(null); setEditingObsText(""); } }
+                                    );
+                                  }}
+                                  disabled={updateObsMutation.isPending}
+                                  className="px-2 py-1 bg-green-600 text-white text-[10px] font-medium rounded hover:bg-green-700 cursor-pointer"
+                                >
+                                  {updateObsMutation.isPending ? "Salvando..." : "Salvar"}
+                                </button>
+                                <button
+                                  onClick={() => { setEditingObsOrderId(null); setEditingObsText(""); }}
+                                  className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-medium rounded cursor-pointer"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start gap-1 mt-1">
+                              {(order as any).observacaoAprovacao ? (
+                                <p className="text-[11px] text-green-600 dark:text-green-300 italic flex-1">
+                                  \u201c{(order as any).observacaoAprovacao}\u201d
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-slate-400 italic flex-1">Sem observação</p>
+                              )}
+                              <button
+                                onClick={() => { setEditingObsOrderId(order.id); setEditingObsText((order as any).observacaoAprovacao || ""); }}
+                                className="text-[9px] text-green-600 hover:text-green-800 underline cursor-pointer whitespace-nowrap"
+                              >
+                                {(order as any).observacaoAprovacao ? "editar" : "+ obs"}
+                              </button>
+                            </div>
                           )}
                         </div>
                       )}
