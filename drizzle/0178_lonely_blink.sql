@@ -1,0 +1,1 @@
+ALTER TABLE `seller_alerts` ADD `financeiro_acknowledged_at` timestamp;

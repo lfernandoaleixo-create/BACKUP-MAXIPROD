@@ -3220,6 +3220,7 @@ export const sellerAlerts = mysqlTable("seller_alerts", {
   // Timestamps
   viewedAt: timestamp("viewed_at"),
   resolvedAt: timestamp("resolved_at"),
+  financeiroAcknowledgedAt: timestamp("financeiro_acknowledged_at"), // When financeiro clicked the bell to confirm they saw the seller's response
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

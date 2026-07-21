@@ -575,6 +575,13 @@ export default function InadimplenciaTab() {
   // Cancel alert
   const inadimUtils = trpc.useUtils();
   const { data: inadimSellerAlerts } = trpc.cobrancaPlanilha.getAllSellerAlerts.useQuery({ includeResolved: false });
+  const { data: unacknowledgedAlerts } = trpc.cobrancaPlanilha.getUnacknowledgedAlerts.useQuery(undefined, { refetchInterval: 30000 });
+  const acknowledgeMutation = trpc.cobrancaPlanilha.acknowledgeSellerResponse.useMutation({
+    onSuccess: () => {
+      inadimUtils.cobrancaPlanilha.getUnacknowledgedAlerts.invalidate();
+      toast.success("Devolutiva confirmada.");
+    },
+  });
   const [cancelAlertDialog, setCancelAlertDialog] = useState<{ id: number; empresa: string; vendedor: string } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const cancelAlertMutation = trpc.cobrancaPlanilha.cancelAlertByFinanceiro.useMutation({
@@ -1511,8 +1518,9 @@ export default function InadimplenciaTab() {
           )}
           {clienteGroups.map(group => {
             const isOpen = expandedCliente === group.cliente;
+            const unackAlert = unacknowledgedAlerts?.find(a => a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim());
             return (
-              <div key={group.cliente} className={`rounded-xl border overflow-hidden transition-all ${getAgingBg(group.maxDias)}`}>
+              <div key={group.cliente} className={`rounded-xl border overflow-hidden transition-all ${getAgingBg(group.maxDias)} ${unackAlert ? 'ring-2 ring-green-500 animate-pulse' : ''}`}>
                 <button
                   onClick={() => setExpandedCliente(isOpen ? null : group.cliente)}
                   className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/30 transition-all cursor-pointer"
@@ -1528,9 +1536,30 @@ export default function InadimplenciaTab() {
                         <span className={`font-medium ${getAgingColor(group.maxDias)}`}>máx {group.maxDias}d atraso</span>
                         {group.vendedor && <span className="text-blue-500">{group.vendedor}</span>}
                       </div>
+                      {unackAlert && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">
+                            Vendedor respondeu: {unackAlert.status === 'visto' ? 'Visto' : unackAlert.status === 'em_andamento' ? 'Em andamento' : 'Resolvido'}
+                          </span>
+                          {unackAlert.respostaVendedor && <span className="text-[10px] text-green-600 italic truncate max-w-[200px]">— {unackAlert.respostaVendedor}</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
+                    {unackAlert && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          acknowledgeMutation.mutate({ id: unackAlert.id });
+                        }}
+                        className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white text-[11px] font-bold rounded-lg hover:bg-green-700 transition-colors shadow-sm cursor-pointer animate-bounce"
+                        title="Confirmar que viu a devolutiva do vendedor"
+                      >
+                        <Bell className="w-3.5 h-3.5" />
+                        Confirmar
+                      </div>
+                    )}
                     {(() => {
                       const activeAlert = inadimSellerAlerts?.find(a => a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
                       return activeAlert ? (
@@ -1672,9 +1701,11 @@ export default function InadimplenciaTab() {
                 <p>Nenhum título encontrado</p>
               </div>
             )}
-            {filteredTitles.map((title) => (
+            {filteredTitles.map((title) => {
+              const titleUnackAlert = unacknowledgedAlerts?.find(a => a.empresa.toUpperCase().trim() === title.cliente.toUpperCase().trim());
+              return (
+              <div key={title.id} className={titleUnackAlert ? 'ring-2 ring-green-500 animate-pulse rounded-lg' : ''}>
               <TitleRow
-                key={title.id}
                 title={title}
                 isExpanded={expandedId === title.id}
                 onToggle={() => setExpandedId(expandedId === title.id ? null : title.id)}
@@ -1706,7 +1737,20 @@ export default function InadimplenciaTab() {
                 pendingDays={pendingActionsMap?.[title.id]?.pendingDays || []}
                 onGenerateDecisionPdf={() => setDecisionPdfTitleId(title.id)}
               />
-            ))}
+              {titleUnackAlert && (
+                <div className="flex items-center justify-between px-3 py-1.5 bg-green-50 border-t border-green-200">
+                  <span className="text-[10px] font-bold text-green-700">Vendedor respondeu: {titleUnackAlert.status === 'visto' ? 'Visto' : titleUnackAlert.status === 'em_andamento' ? 'Em andamento' : 'Resolvido'}{titleUnackAlert.respostaVendedor ? ` — ${titleUnackAlert.respostaVendedor}` : ''}</span>
+                  <button
+                    onClick={() => acknowledgeMutation.mutate({ id: titleUnackAlert.id })}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 transition-colors cursor-pointer"
+                  >
+                    <Bell className="w-3 h-3" />
+                    Confirmar
+                  </button>
+                </div>
+              )}
+              </div>
+            );})}
           </div>
           </div>
         </div>

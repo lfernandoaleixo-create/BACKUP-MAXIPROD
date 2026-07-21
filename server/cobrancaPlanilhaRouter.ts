@@ -2018,4 +2018,37 @@ export const cobrancaPlanilhaRouter = router({
       await db.delete(sellerAlerts).where(eq(sellerAlerts.id, input.id));
       return { success: true };
     }),
+
+  /**
+   * Financeiro confirma que viu a devolutiva do vendedor (clica no sininho)
+   * Isso para de piscar o cliente na aba Inadimplência
+   */
+  acknowledgeSellerResponse: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(sellerAlerts)
+        .set({ financeiroAcknowledgedAt: new Date() })
+        .where(eq(sellerAlerts.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Buscar alertas que o vendedor respondeu mas o financeiro ainda não confirmou
+   * (status != pendente && financeiroAcknowledgedAt IS NULL)
+   */
+  getUnacknowledgedAlerts: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const result = await db.select()
+        .from(sellerAlerts)
+        .where(and(
+          sql`${sellerAlerts.status} IN ('visto', 'em_andamento', 'resolvido')`,
+          sql`${sellerAlerts.financeiroAcknowledgedAt} IS NULL`
+        ))
+        .orderBy(desc(sellerAlerts.updatedAt));
+      return result;
+    }),
 });
