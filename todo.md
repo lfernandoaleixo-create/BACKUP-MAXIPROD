@@ -5847,3 +5847,6 @@
 - [x] Sistema de notificação visual: tab "Cadastro de Cliente" pisca com badge vermelho quando há alertas pendentes
 - [x] SellerCobrancaView mostra alertas com mensagem da cobrança, botões "Marcar como Visto" e "Resolvido"
 - [x] Proteção de dados: mesma lógica de proteção contra perda de status/histórico/observações aplicada
+- [ ] Campo de resposta no alerta para vendedor enviar resultado da negociação ao financeiro
+- [ ] Filtro rápido na aba vendas para listar apenas clientes com alertas pendentes
+- [ ] Botão Resolvido adiciona nota automática no histórico de cobrança do financeiro

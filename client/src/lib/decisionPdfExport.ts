@@ -380,6 +380,7 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
       terceiraCobranca: "3ª Cobrança",
       semAcao3: "Intervalo 3",
       acaoFinal: "Ação Final",
+      intervencaoVendedor: "Intervenção Vendedor",
     };
     obsText = input.planilhaCobranca.observacoes
       .map(o => `[${ETAPA_LABELS_OBS[o.etapa] || o.etapa}] ${o.observacao}`)

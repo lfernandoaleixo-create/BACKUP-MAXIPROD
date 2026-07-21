@@ -4,6 +4,9 @@
  * com todas as informações: status, etapas, histórico e observações.
  * 
  * Também mostra alertas do setor de cobrança (sistema "Acionar Vendedor").
+ * - Campo de resposta para o vendedor informar resultado da negociação
+ * - Filtro rápido para listar apenas clientes com alertas pendentes
+ * - Botão "Resolvido" adiciona nota no histórico de cobrança do financeiro
  */
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +23,8 @@ import {
   CheckCircle2,
   Bell,
   Eye,
+  Send,
+  Filter,
 } from "lucide-react";
 
 interface SellerCobrancaViewProps {
@@ -42,6 +47,8 @@ function formatDate(dateStr: string | null): string {
 export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerCobrancaViewProps) {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [expandedAlert, setExpandedAlert] = useState<number | null>(null);
+  const [respostaTexts, setRespostaTexts] = useState<Record<number, string>>({});
+  const [filterAlertOnly, setFilterAlertOnly] = useState(false);
 
   // Fetch cobrança data for this seller
   const { data: cobrancaData, isLoading } = trpc.cobrancaPlanilha.getByVendedor.useQuery(
@@ -73,6 +80,11 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
     onAlertCount?.(pendingAlerts.length);
   }, [pendingAlerts.length, onAlertCount]);
 
+  // Get empresas that have pending alerts (for filter)
+  const alertEmpresas = useMemo(() => {
+    return new Set(pendingAlerts.map(a => a.empresa));
+  }, [pendingAlerts]);
+
   // Group items by empresa
   const clientGroups = useMemo(() => {
     if (!cobrancaData?.items) return [];
@@ -82,18 +94,37 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
     }
-    return Object.entries(groups).map(([empresa, items]) => ({
+    let result = Object.entries(groups).map(([empresa, items]) => ({
       empresa,
       items,
       totalValor: items.reduce((sum, i) => sum + parseFloat(String(i.valor || "0")), 0),
       maxDias: Math.max(...items.map(i => i.diasVencidos || 0)),
       cnpj: items[0]?.cnpjCpf || "",
+      hasAlert: alertEmpresas.has(empresa),
     })).sort((a, b) => b.maxDias - a.maxDias);
-  }, [cobrancaData]);
+
+    // Apply filter
+    if (filterAlertOnly) {
+      result = result.filter(g => g.hasAlert);
+    }
+
+    return result;
+  }, [cobrancaData, alertEmpresas, filterAlertOnly]);
 
   // Get etapa observations for a specific item
   const getEtapaObs = (planilhaId: number) => {
     return cobrancaData?.etapasObs?.filter(o => o.planilhaId === planilhaId) || [];
+  };
+
+  // Handle "Resolvido" with response text
+  const handleResolved = (alertId: number) => {
+    const resposta = respostaTexts[alertId]?.trim();
+    markResolvedMutation.mutate({
+      id: alertId,
+      respostaVendedor: resposta || undefined,
+    });
+    // Clear the text
+    setRespostaTexts(prev => ({ ...prev, [alertId]: "" }));
   };
 
   if (isLoading) {
@@ -162,11 +193,27 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                   </div>
                 </div>
                 {expandedAlert === alert.id && (
-                  <div className="mt-3 pt-3 border-t border-red-100 dark:border-red-800">
+                  <div className="mt-3 pt-3 border-t border-red-100 dark:border-red-800" onClick={(e) => e.stopPropagation()}>
                     <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Mensagem da cobrança:</p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 bg-red-50 dark:bg-red-900/30 p-2 rounded-lg whitespace-pre-wrap">
                       {alert.mensagem}
                     </p>
+
+                    {/* Campo de resposta do vendedor */}
+                    <div className="mt-3">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                        Sua resposta ao financeiro (resultado da negociação):
+                      </label>
+                      <textarea
+                        value={respostaTexts[alert.id] || ""}
+                        onChange={(e) => setRespostaTexts(prev => ({ ...prev, [alert.id]: e.target.value }))}
+                        placeholder="Descreva o resultado do contato com o cliente... Ex: Liguei para o cliente, ele disse que vai pagar dia 25/07."
+                        className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                        rows={3}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+
                     <div className="flex items-center gap-2 mt-3">
                       <button
                         onClick={(e) => {
@@ -180,12 +227,18 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          markResolvedMutation.mutate({ id: alert.id });
+                          handleResolved(alert.id);
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-lg hover:bg-emerald-200 transition-colors"
+                        disabled={markResolvedMutation.isPending}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50"
                       >
                         <CheckCircle2 className="w-3 h-3" /> Resolvido
                       </button>
+                      {respostaTexts[alert.id]?.trim() && (
+                        <span className="text-[9px] text-blue-500 flex items-center gap-0.5">
+                          <Send className="w-2.5 h-2.5" /> Resposta será enviada ao financeiro
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -195,7 +248,7 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
         </div>
       )}
 
-      {/* Resumo geral */}
+      {/* Resumo geral + Filtro rápido */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-700 shadow-sm overflow-hidden">
         <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-800">
           <div className="flex items-center justify-between">
@@ -204,6 +257,20 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
               <h3 className="text-sm font-bold text-red-700 dark:text-red-400">Planilha de Cobrança</h3>
             </div>
             <div className="flex items-center gap-3 text-xs">
+              {/* Filtro rápido: apenas com alertas pendentes */}
+              {pendingAlerts.length > 0 && (
+                <button
+                  onClick={() => setFilterAlertOnly(!filterAlertOnly)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                    filterAlertOnly
+                      ? "bg-red-600 text-white shadow-sm"
+                      : "bg-red-100 text-red-600 hover:bg-red-200"
+                  }`}
+                >
+                  <Filter className="w-3 h-3" />
+                  Com alerta ({alertEmpresas.size})
+                </button>
+              )}
               <span className="text-red-600 font-medium">{clientGroups.length} cliente(s)</span>
               <span className="text-red-600 font-medium">{totalItems} título(s)</span>
               <span className="text-red-700 font-bold">{formatCurrency(totalValor)}</span>
@@ -221,9 +288,16 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                 className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${group.maxDias > 30 ? 'bg-red-500' : group.maxDias > 15 ? 'bg-amber-500' : 'bg-yellow-400'}`} />
+                  <div className={`w-2 h-2 rounded-full ${group.hasAlert ? 'bg-red-500 animate-pulse' : group.maxDias > 30 ? 'bg-red-500' : group.maxDias > 15 ? 'bg-amber-500' : 'bg-yellow-400'}`} />
                   <div>
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{group.empresa}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{group.empresa}</p>
+                      {group.hasAlert && (
+                        <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-[8px] font-bold rounded animate-pulse">
+                          ALERTA
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-slate-400">
                       {group.items.length} título(s) • máx {group.maxDias}d atraso
                       {group.cnpj && ` • ${group.cnpj}`}
@@ -339,7 +413,7 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                               {obs.slice(0, 5).map((o, idx) => (
                                 <div key={idx} className="flex items-start gap-2 text-[10px]">
                                   <span className="text-blue-500 font-medium whitespace-nowrap">
-                                    {o.etapa?.replace("Cobranca", " Cob").replace("semAcao", "S/A ").replace("primeira", "1ª").replace("segunda", "2ª").replace("terceira", "3ª").replace("acaoFinal", "Ação Final") || "—"}:
+                                    {o.etapa === "intervencaoVendedor" ? "Vendedor" : o.etapa?.replace("Cobranca", " Cob").replace("semAcao", "S/A ").replace("primeira", "1ª").replace("segunda", "2ª").replace("terceira", "3ª").replace("acaoFinal", "Ação Final") || "—"}:
                                   </span>
                                   <span className="text-slate-600 dark:text-slate-400">{o.observacao}</span>
                                   <span className="text-slate-300 whitespace-nowrap ml-auto">
@@ -369,18 +443,27 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
           <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Alertas Anteriores</p>
           <div className="space-y-2">
             {alerts.filter(a => a.status !== "pendente").map((alert) => (
-              <div key={alert.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-xs">
-                <div>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">{alert.empresa}</span>
-                  <span className="text-slate-400 ml-2">
-                    {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
+              <div key={alert.id} className="px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-xs">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{alert.empresa}</span>
+                    <span className="text-slate-400 ml-2">
+                      {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                    alert.status === "visto" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                  }`}>
+                    {alert.status === "visto" ? "Visto" : "Resolvido"}
                   </span>
                 </div>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                  alert.status === "visto" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
-                }`}>
-                  {alert.status === "visto" ? "Visto" : "Resolvido"}
-                </span>
+                {/* Show seller response if available */}
+                {alert.respostaVendedor && (
+                  <div className="mt-1.5 pl-2 border-l-2 border-blue-300">
+                    <p className="text-[10px] text-blue-600 font-medium">Resposta do vendedor:</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400">{alert.respostaVendedor}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

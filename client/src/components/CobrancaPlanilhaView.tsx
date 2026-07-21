@@ -2608,6 +2608,7 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
     terceiraCobranca: "3ª Cobrança",
     semAcao3: "Intervalo 3",
     acaoFinal: "Ação Final",
+    intervencaoVendedor: "Intervenção Vendedor",
   };
 
   return (

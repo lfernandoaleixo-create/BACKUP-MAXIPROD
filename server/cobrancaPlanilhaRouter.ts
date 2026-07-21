@@ -1788,6 +1788,12 @@ export const cobrancaPlanilhaRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // Get the alert details first
+      const [alert] = await db.select().from(sellerAlerts).where(eq(sellerAlerts.id, input.id));
+      if (!alert) throw new Error("Alert not found");
+
+      // Mark as resolved
       await db.update(sellerAlerts)
         .set({
           status: 'resolvido',
@@ -1795,6 +1801,38 @@ export const cobrancaPlanilhaRouter = router({
           respostaVendedor: input.respostaVendedor || null,
         })
         .where(eq(sellerAlerts.id, input.id));
+
+      // Add a note in the cobrança history for the financeiro to see
+      const nota = input.respostaVendedor
+        ? `[VENDEDOR ATUOU] ${alert.vendedor} resolveu o alerta. Resposta: ${input.respostaVendedor}`
+        : `[VENDEDOR ATUOU] ${alert.vendedor} marcou o alerta como resolvido.`;
+
+      if (alert.planilhaId) {
+        await db.insert(cobrancaEtapaObs).values({
+          planilhaId: alert.planilhaId,
+          etapa: "intervencaoVendedor",
+          observacao: nota,
+          registradoPor: alert.vendedor,
+        });
+      } else {
+        // If no planilhaId, try to find by empresa
+        const [planilhaRecord] = await db.select({ id: cobrancaPlanilha.id })
+          .from(cobrancaPlanilha)
+          .where(and(
+            eq(cobrancaPlanilha.empresa, alert.empresa),
+            eq(cobrancaPlanilha.ativo, true),
+          ))
+          .limit(1);
+        if (planilhaRecord) {
+          await db.insert(cobrancaEtapaObs).values({
+            planilhaId: planilhaRecord.id,
+            etapa: "intervencaoVendedor",
+            observacao: nota,
+            registradoPor: alert.vendedor,
+          });
+        }
+      }
+
       return { success: true };
     }),
 
