@@ -5889,3 +5889,5 @@
 - [x] Feature: Observação de aprovação fica registrada e visível para todos com acesso à aba (Vitória, Guilherme, Fernando, Bruno, Gilson, Luis, Juvenal)
 - [x] Feature: Permitir editar observação de aprovação após já ter aprovado o pedido (gestor esqueceu de colocar na hora)
 - [x] Bug: Card inadimplência na aba Vendas do vendedor pisca apenas o cliente com alerta (removido pulse do container inteiro, destaque per-client com fundo vermelho claro + badge ALERTA + bolinha pulsando)
+- [x] Feature: Histórico de trocas de transportadora na aba Faturamento - registrar quem trocou (login), data/hora, transportadora anterior e nova
+- [x] Feature: Exibir histórico de trocas de transportadora no pedido (visível para todos) - popover com ícone de relógio ao lado do seletor

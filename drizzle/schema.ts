@@ -655,6 +655,22 @@ export type TransportSelection = typeof transportSelection.$inferSelect;
 export type InsertTransportSelection = typeof transportSelection.$inferInsert;
 
 /**
+ * Histórico de trocas de transportadora.
+ * Registra cada alteração: quem trocou (operador), data/hora, transportadora anterior e nova.
+ */
+export const transportSelectionHistory = mysqlTable("transport_selection_history", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull(),
+  transportadoraAnterior: varchar("transportadora_anterior", { length: 100 }),
+  transportadoraNova: varchar("transportadora_nova", { length: 100 }).notNull(),
+  alteradoPor: varchar("alterado_por", { length: 200 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type TransportSelectionHistory = typeof transportSelectionHistory.$inferSelect;
+export type InsertTransportSelectionHistory = typeof transportSelectionHistory.$inferInsert;
+
+/**
  * Agendamento de coleta para pedidos faturados.
  * Seletor de data e horário (hora em hora). Aparece entre Coletado e Itens no card Faturados.
  * Protegido por senha.

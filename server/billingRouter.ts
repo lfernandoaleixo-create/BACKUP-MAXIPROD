@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, billingAuthorizations, appSettings, productionAcceptance, productionNotes, productionStatus, collectionStatus, transportSelection, pickupSchedule, operators, billingObservations, trackingLinks, operatorGranularPermissions } from "../drizzle/schema";
+import { salesOrders, billingAuthorizations, appSettings, productionAcceptance, productionNotes, productionStatus, collectionStatus, transportSelection, transportSelectionHistory, pickupSchedule, operators, billingObservations, trackingLinks, operatorGranularPermissions } from "../drizzle/schema";
 import { sql, and, desc, eq, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { estadoToGrupo, GRUPO_LABELS, GRUPO_LABELS_SHORT, isOutros, isDigitacao, isAprovadoOuFaturado, getTipoEspecial, isAmostraBonificacao, inferGrupoFromItems, getAmostraBonificacaoLabel, type GrupoKey, type TipoEspecialPedido } from "../shared/grupoClassification";
@@ -1702,6 +1702,20 @@ export const billingRouter = router({
     }),
 
   /**
+   * Get transport selection history for a pedido
+   */
+  getTransportHistory: publicProcedure
+    .input(z.object({ pedido: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db.select().from(transportSelectionHistory)
+        .where(eq(transportSelectionHistory.pedido, input.pedido))
+        .orderBy(desc(transportSelectionHistory.createdAt));
+      return rows;
+    }),
+
+  /**
    * Set transport selection for a pedido (password-protected)
    */
   setTransportSelection: publicProcedure
@@ -1719,20 +1733,56 @@ export const billingRouter = router({
         throw new Error("Senha incorreta");
       }
 
+      // Identify who is making the change (operator name from password)
+      let operatorName = "Desconhecido";
+      const opRows = await db.select().from(operators).where(and(eq(operators.password, input.password), eq(operators.active, true))).limit(1);
+      if (opRows.length > 0) {
+        operatorName = opRows[0].name;
+      } else {
+        const adminRow = await db.select().from(appSettings).where(eq(appSettings.settingKey, "admin_password")).limit(1);
+        if (adminRow.length > 0 && adminRow[0].settingValue === input.password) {
+          operatorName = "Admin";
+        } else {
+          const billingRow = await db.select().from(appSettings).where(eq(appSettings.settingKey, "billing_auth_password")).limit(1);
+          if (billingRow.length > 0 && billingRow[0].settingValue === input.password) {
+            operatorName = "Faturamento";
+          }
+        }
+      }
+
+      // Get previous transportadora (if any)
+      const existingRows = await db.select().from(transportSelection).where(eq(transportSelection.pedido, input.pedido)).limit(1);
+      const transportadoraAnterior = existingRows.length > 0 ? existingRows[0].transportadora : null;
+
+      // Only record history if there's actually a change
+      const isChange = transportadoraAnterior !== input.transportadora;
+
+      // Insert or update the transport selection
       try {
         await db.insert(transportSelection).values({
           pedido: input.pedido,
           transportadora: input.transportadora,
+          updatedBy: operatorName,
         });
       } catch (err: any) {
         const isDuplicate = err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate") || err?.cause?.message?.includes("Duplicate");
         if (isDuplicate) {
           await db.update(transportSelection)
-            .set({ transportadora: input.transportadora, updatedAt: new Date() })
+            .set({ transportadora: input.transportadora, updatedBy: operatorName, updatedAt: new Date() })
             .where(eq(transportSelection.pedido, input.pedido));
         } else {
           throw err;
         }
+      }
+
+      // Record in history (always, even first time)
+      if (isChange) {
+        await db.insert(transportSelectionHistory).values({
+          pedido: input.pedido,
+          transportadoraAnterior: transportadoraAnterior,
+          transportadoraNova: input.transportadora,
+          alteradoPor: operatorName,
+        });
       }
 
       return { success: true };
