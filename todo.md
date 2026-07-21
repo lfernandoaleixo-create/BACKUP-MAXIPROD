@@ -5863,3 +5863,8 @@
 - [x] Frontend: Botão cancelar/remover alerta na CobrancaPlanilhaView (visível para operadores com permissão)
 - [x] Frontend: Botão cancelar/remover alerta na InadimplenciaTab
 - [x] Frontend: Painel de Histórico de Acionamentos com métricas (total, resolvidos, pendentes, cancelados, respostas)
+- [x] Histórico de Acionamentos: filtros por vendedor, status de resolução e data
+- [x] Histórico de Acionamentos: exportar para CSV
+- [x] Histórico de Acionamentos: exportar para Excel
+- [x] Histórico de Acionamentos: exportar para PDF
+- [x] Modal de confirmação antes de remover alerta (já implementado - verificar)

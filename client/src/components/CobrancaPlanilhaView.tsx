@@ -308,6 +308,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [cancelAlertDialog, setCancelAlertDialog] = useState<{ id: number; empresa: string; vendedor: string } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [showAlertsHistory, setShowAlertsHistory] = useState(false);
+  const [historyFilterVendedor, setHistoryFilterVendedor] = useState("");
+  const [historyFilterStatus, setHistoryFilterStatus] = useState<string>("todos");
+  const [historyFilterDateFrom, setHistoryFilterDateFrom] = useState("");
+  const [historyFilterDateTo, setHistoryFilterDateTo] = useState("");
   const cancelAlert = trpc.cobrancaPlanilha.cancelAlertByFinanceiro.useMutation({
     onSuccess: () => {
       toast.success("Alerta cancelado com sucesso.");
@@ -343,6 +347,30 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const canEdit = operator && ["Guilherme", "Flavio", "Thalita"].includes(operator.name);
   const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
+
+  // Helper: filtrar alertas do histórico
+  const getFilteredAlerts = () => {
+    if (!alertsHistoryData?.alerts) return [];
+    return alertsHistoryData.alerts.filter(alert => {
+      // Filtro por vendedor/empresa
+      if (historyFilterVendedor) {
+        const q = historyFilterVendedor.toLowerCase();
+        if (!alert.vendedor.toLowerCase().includes(q) && !alert.empresa.toLowerCase().includes(q)) return false;
+      }
+      // Filtro por status
+      if (historyFilterStatus !== "todos" && alert.status !== historyFilterStatus) return false;
+      // Filtro por data
+      if (historyFilterDateFrom) {
+        const alertDate = new Date(alert.createdAt).toISOString().slice(0, 10);
+        if (alertDate < historyFilterDateFrom) return false;
+      }
+      if (historyFilterDateTo) {
+        const alertDate = new Date(alert.createdAt).toISOString().slice(0, 10);
+        if (alertDate > historyFilterDateTo) return false;
+      }
+      return true;
+    });
+  };
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
@@ -2645,9 +2673,122 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   </div>
                 </div>
               )}
+              {/* Filtros */}
+              <div className="flex flex-wrap items-center gap-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
+                <div className="flex items-center gap-1.5">
+                  <Search className="w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={historyFilterVendedor}
+                    onChange={e => setHistoryFilterVendedor(e.target.value)}
+                    placeholder="Buscar vendedor ou empresa..."
+                    className="px-2 py-1 text-xs border border-slate-200 rounded-md w-48 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  />
+                </div>
+                <select
+                  value={historyFilterStatus}
+                  onChange={e => setHistoryFilterStatus(e.target.value)}
+                  className="px-2 py-1 text-xs border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value="todos">Todos os status</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="visto">Visto</option>
+                  <option value="resolvido">Resolvido</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="date"
+                    value={historyFilterDateFrom}
+                    onChange={e => setHistoryFilterDateFrom(e.target.value)}
+                    className="px-2 py-1 text-xs border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-400"
+                  />
+                  <span className="text-xs text-slate-400">até</span>
+                  <input
+                    type="date"
+                    value={historyFilterDateTo}
+                    onChange={e => setHistoryFilterDateTo(e.target.value)}
+                    className="px-2 py-1 text-xs border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+                {(historyFilterVendedor || historyFilterStatus !== "todos" || historyFilterDateFrom || historyFilterDateTo) && (
+                  <button
+                    onClick={() => { setHistoryFilterVendedor(""); setHistoryFilterStatus("todos"); setHistoryFilterDateFrom(""); setHistoryFilterDateTo(""); }}
+                    className="px-2 py-1 text-xs bg-slate-200 hover:bg-slate-300 rounded-md transition-colors"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
+                <div className="ml-auto flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      const filtered = getFilteredAlerts();
+                      const csv = ["Status,Empresa,Vendedor,Mensagem,Criado por,Data,Valor,Dias Atraso,Resposta,Cancelado por,Motivo Cancelamento"];
+                      filtered.forEach(a => {
+                        csv.push([a.status, a.empresa, a.vendedor, `"${(a.mensagem || '').replace(/"/g, '""')}"`, a.criadoPor, new Date(a.createdAt).toLocaleString('pt-BR'), a.valorTotal || '', a.diasAtrasoMax || '', `"${(a.respostaVendedor || '').replace(/"/g, '""')}"`, a.cancelledBy || '', `"${(a.cancelReason || '').replace(/"/g, '""')}"`].join(','));
+                      });
+                      const blob = new Blob(["\uFEFF" + csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = `historico_acionamentos_${new Date().toISOString().slice(0,10)}.csv`;
+                      a.click(); URL.revokeObjectURL(url);
+                    }}
+                    className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-md transition-colors flex items-center gap-1"
+                    title="Exportar CSV"
+                  >
+                    <Download className="w-3 h-3" /> CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      const filtered = getFilteredAlerts();
+                      let html = '<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px;text-align:left;font-size:11px}th{background:#f0f0f0;font-weight:bold}</style></head><body>';
+                      html += '<h2>Histórico de Acionamentos de Vendedores</h2>';
+                      html += `<p>Exportado em: ${new Date().toLocaleString('pt-BR')} | Total: ${filtered.length} registros</p>`;
+                      html += '<table><tr><th>Status</th><th>Empresa</th><th>Vendedor</th><th>Mensagem</th><th>Criado por</th><th>Data</th><th>Valor</th><th>Dias Atraso</th><th>Resposta</th><th>Cancelado por</th><th>Motivo</th></tr>';
+                      filtered.forEach(a => {
+                        html += `<tr><td>${a.status}</td><td>${a.empresa}</td><td>${a.vendedor}</td><td>${a.mensagem || ''}</td><td>${a.criadoPor}</td><td>${new Date(a.createdAt).toLocaleString('pt-BR')}</td><td>${a.valorTotal ? 'R$ ' + Number(a.valorTotal).toLocaleString('pt-BR', {minimumFractionDigits:2}) : ''}</td><td>${a.diasAtrasoMax || ''}</td><td>${a.respostaVendedor || ''}</td><td>${a.cancelledBy || ''}</td><td>${a.cancelReason || ''}</td></tr>`;
+                      });
+                      html += '</table></body></html>';
+                      const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = `historico_acionamentos_${new Date().toISOString().slice(0,10)}.xls`;
+                      a.click(); URL.revokeObjectURL(url);
+                    }}
+                    className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors flex items-center gap-1"
+                    title="Exportar Excel"
+                  >
+                    <FileDown className="w-3 h-3" /> Excel
+                  </button>
+                  <button
+                    onClick={() => {
+                      const filtered = getFilteredAlerts();
+                      const printWin = window.open('', '_blank');
+                      if (!printWin) return;
+                      let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Histórico de Acionamentos</title>';
+                      html += '<style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}h1{font-size:16px;color:#1e40af}table{border-collapse:collapse;width:100%;margin-top:10px}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}th{background:#e2e8f0;font-weight:600}.status-pendente{color:#dc2626;font-weight:bold}.status-visto{color:#d97706;font-weight:bold}.status-resolvido{color:#16a34a;font-weight:bold}.status-cancelado{color:#ea580c;font-weight:bold}.meta{color:#64748b;margin-bottom:15px}@media print{body{padding:10px}}</style>';
+                      html += '</head><body>';
+                      html += '<h1>Histórico de Acionamentos de Vendedores</h1>';
+                      html += `<p class="meta">Grupo Fox | Exportado em: ${new Date().toLocaleString('pt-BR')} | Total: ${filtered.length} registros</p>`;
+                      html += '<table><thead><tr><th>Status</th><th>Empresa</th><th>Vendedor</th><th>Mensagem</th><th>Criado por</th><th>Data</th><th>Valor</th><th>Dias</th><th>Resposta</th></tr></thead><tbody>';
+                      filtered.forEach(a => {
+                        html += `<tr><td class="status-${a.status}">${a.status.toUpperCase()}</td><td>${a.empresa}</td><td>${a.vendedor}</td><td>${a.mensagem || ''}</td><td>${a.criadoPor}</td><td>${new Date(a.createdAt).toLocaleString('pt-BR')}</td><td>${a.valorTotal ? 'R$ ' + Number(a.valorTotal).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-'}</td><td>${a.diasAtrasoMax || '-'}</td><td>${a.respostaVendedor || (a.status === 'cancelado' ? `Cancelado por ${a.cancelledBy || 'N/A'}${a.cancelReason ? ': ' + a.cancelReason : ''}` : '-')}</td></tr>`;
+                      });
+                      html += '</tbody></table></body></html>';
+                      printWin.document.write(html);
+                      printWin.document.close();
+                      setTimeout(() => { printWin.print(); }, 500);
+                    }}
+                    className="px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md transition-colors flex items-center gap-1"
+                    title="Exportar PDF (imprimir)"
+                  >
+                    <Download className="w-3 h-3" /> PDF
+                  </button>
+                </div>
+              </div>
               {/* Lista de alertas */}
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {alertsHistoryData?.alerts.map(alert => (
+                {getFilteredAlerts().map(alert => (
                   <div key={alert.id} className={`border rounded-lg p-3 text-sm ${
                     alert.status === 'pendente' ? 'border-red-200 bg-red-50/50' :
                     alert.status === 'visto' ? 'border-amber-200 bg-amber-50/50' :
@@ -2704,8 +2845,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     )}
                   </div>
                 ))}
-                {(!alertsHistoryData?.alerts || alertsHistoryData.alerts.length === 0) && (
-                  <div className="text-center py-8 text-slate-400 text-sm">Nenhum acionamento registrado.</div>
+                {getFilteredAlerts().length === 0 && (
+                  <div className="text-center py-8 text-slate-400 text-sm">{alertsHistoryData?.alerts?.length ? 'Nenhum resultado para os filtros aplicados.' : 'Nenhum acionamento registrado.'}</div>
                 )}
               </div>
             </div>
