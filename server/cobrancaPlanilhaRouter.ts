@@ -1795,6 +1795,21 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /**
+   * Marcar alerta como "em andamento" pelo vendedor
+   * Indica que o vendedor está trabalhando no caso mas ainda não resolveu
+   */
+  markAlertInProgress: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(sellerAlerts)
+        .set({ status: 'em_andamento', viewedAt: new Date() })
+        .where(eq(sellerAlerts.id, input.id));
+      return { success: true };
+    }),
+
+  /**
    * Marcar alerta como resolvido pelo vendedor
    */
   markAlertResolved: publicProcedure

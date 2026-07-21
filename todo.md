@@ -5869,3 +5869,5 @@
 - [x] Histórico de Acionamentos: exportar para PDF
 - [x] Modal de confirmação antes de remover alerta (já implementado - verificar)
 - [x] Bug: Alerta não aparece na tela do vendedor - mismatch de nome (JORDAO vs JORDÃO LAINE) - usar matching fuzzy
+- [x] Notificação visual (toast/pop-up) na tela do vendedor quando alerta é gerado (polling rápido)
+- [x] Opção para vendedor marcar alerta como "visto" ou "em andamento" na sua tela

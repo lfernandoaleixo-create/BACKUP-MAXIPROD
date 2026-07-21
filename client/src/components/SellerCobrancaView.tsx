@@ -8,8 +8,9 @@
  * - Filtro rápido para listar apenas clientes com alertas pendentes
  * - Botão "Resolvido" adiciona nota no histórico de cobrança do financeiro
  */
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ChevronDown,
@@ -56,23 +57,80 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
     { staleTime: 60 * 1000 }
   );
 
-  // Fetch pending alerts for this seller
+  // Fetch pending alerts for this seller (polling every 15s for real-time notifications)
   const { data: alerts, refetch: refetchAlerts } = trpc.cobrancaPlanilha.getSellerAlerts.useQuery(
     { vendedor: sellerName },
-    { staleTime: 10 * 1000 }
+    { staleTime: 5 * 1000, refetchInterval: 15 * 1000 }
   );
 
+  // Request browser notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Track previous alert IDs to detect new alerts and show toast notification
+  const prevAlertIdsRef = useRef<Set<number>>(new Set());
+  const isInitialLoadRef = useRef(true);
+
+  useEffect(() => {
+    if (!alerts) return;
+    const currentIds = new Set(alerts.map(a => a.id));
+    
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      prevAlertIdsRef.current = currentIds;
+      return;
+    }
+
+    // Detect new alerts that weren't in the previous set
+    const newAlerts = alerts.filter(a => !prevAlertIdsRef.current.has(a.id) && a.status === 'pendente');
+    
+    if (newAlerts.length > 0) {
+      for (const alert of newAlerts) {
+        toast.error(`🔔 Novo alerta de cobrança!`, {
+          description: `${alert.empresa} - ${alert.mensagem?.substring(0, 100)}${(alert.mensagem?.length || 0) > 100 ? '...' : ''}`,
+          duration: 15000,
+        });
+      }
+      // Also play a sound effect via browser notification if possible
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Alerta de Cobrança - Grupo Fox', {
+            body: `${newAlerts.length} novo(s) alerta(s) do setor financeiro`,
+            icon: '/favicon.ico',
+          });
+        }
+      } catch (e) { /* ignore */ }
+    }
+    prevAlertIdsRef.current = currentIds;
+  }, [alerts]);
+
   const markViewedMutation = trpc.cobrancaPlanilha.markAlertViewed.useMutation({
-    onSuccess: () => refetchAlerts(),
+    onSuccess: () => {
+      refetchAlerts();
+      toast.success('Alerta marcado como visto');
+    },
+  });
+
+  const markInProgressMutation = trpc.cobrancaPlanilha.markAlertInProgress.useMutation({
+    onSuccess: () => {
+      refetchAlerts();
+      toast.info('Alerta marcado como "Em Andamento"');
+    },
   });
 
   const markResolvedMutation = trpc.cobrancaPlanilha.markAlertResolved.useMutation({
-    onSuccess: () => refetchAlerts(),
+    onSuccess: () => {
+      refetchAlerts();
+      toast.success('Alerta resolvido! Resposta enviada ao financeiro.');
+    },
   });
 
-  // Notify parent about alert count
+  // Notify parent about alert count (pendente + em_andamento both need attention)
   const pendingAlerts = useMemo(() => {
-    return alerts?.filter(a => a.status === "pendente") || [];
+    return alerts?.filter(a => a.status === "pendente" || a.status === "em_andamento") || [];
   }, [alerts]);
 
   // Notify parent about alert count via useEffect (not during render)
@@ -214,7 +272,7 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                       />
                     </div>
 
-                    <div className="flex items-center gap-2 mt-3">
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -222,7 +280,16 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                         }}
                         className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 text-[11px] font-medium rounded-lg hover:bg-amber-200 transition-colors"
                       >
-                        <Eye className="w-3 h-3" /> Marcar como Visto
+                        <Eye className="w-3 h-3" /> Visto
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markInProgressMutation.mutate({ id: alert.id });
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 text-[11px] font-medium rounded-lg hover:bg-blue-200 transition-colors"
+                      >
+                        <Clock className="w-3 h-3" /> Em Andamento
                       </button>
                       <button
                         onClick={(e) => {
@@ -438,11 +505,11 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
       </div>
 
       {/* Viewed/resolved alerts history */}
-      {alerts && alerts.filter(a => a.status !== "pendente").length > 0 && (
+      {alerts && alerts.filter(a => a.status !== "pendente" && a.status !== "em_andamento").length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Alertas Anteriores</p>
           <div className="space-y-2">
-            {alerts.filter(a => a.status !== "pendente").map((alert) => (
+            {alerts.filter(a => a.status !== "pendente" && a.status !== "em_andamento").map((alert) => (
               <div key={alert.id} className="px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-xs">
                 <div className="flex items-center justify-between">
                   <div>
@@ -452,9 +519,11 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                     </span>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                    alert.status === "visto" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                    alert.status === "visto" ? "bg-amber-100 text-amber-700" :
+                    alert.status === "resolvido" ? "bg-emerald-100 text-emerald-700" :
+                    "bg-slate-100 text-slate-600"
                   }`}>
-                    {alert.status === "visto" ? "Visto" : "Resolvido"}
+                    {alert.status === "visto" ? "Visto" : alert.status === "resolvido" ? "Resolvido" : alert.status}
                   </span>
                 </div>
                 {/* Show seller response if available */}
