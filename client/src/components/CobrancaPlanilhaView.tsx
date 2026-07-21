@@ -326,6 +326,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   // Queries que dependem dos estados acima
   const { data: allSellerAlerts } = trpc.cobrancaPlanilha.getAllSellerAlerts.useQuery({ includeResolved: true });
   const { data: alertsHistoryData } = trpc.cobrancaPlanilha.getAlertsHistory.useQuery(undefined, { enabled: showAlertsHistory });
+  const { data: acionarDialogObs } = trpc.cobrancaPlanilha.getAllEtapaObs.useQuery(
+    { planilhaId: acionarVendedorDialog?.item?.id ?? 0 },
+    { enabled: !!acionarVendedorDialog }
+  );
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: resolvedSortBy, sortDir: resolvedSortDir });
   const { data: decisionPdfsData } = trpc.financial.listAllDecisionPdfs.useQuery();
   const deletePdf = trpc.financial.deleteDecisionPdf.useMutation();
@@ -2975,6 +2979,48 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                   )}
                 </div>
               </div>
+              {/* Histórico de observações de cobrança */}
+              {acionarDialogObs && acionarDialogObs.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1.5">
+                    Histórico de cobrança (últimas ações)
+                  </label>
+                  <div className="bg-slate-50 rounded-lg border border-slate-200 p-2 max-h-40 overflow-y-auto space-y-1.5">
+                    {acionarDialogObs
+                      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+                      .map((obs, i) => {
+                        const ETAPA_LABELS: Record<string, string> = {
+                          primeiraCobranca: "1ª Cobrança",
+                          semAcao1: "Intervalo 1",
+                          segundaCobranca: "2ª Cobrança",
+                          semAcao2: "Intervalo 2",
+                          terceiraCobranca: "3ª Cobrança",
+                          semAcao3: "Intervalo 3",
+                          acaoFinal: "Ação Final",
+                          intervencaoVendedor: "Intervenção Vendedor",
+                        };
+                        return (
+                          <div key={obs.id || i} className="bg-white rounded-md p-2 border border-slate-100">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                {ETAPA_LABELS[obs.etapa] || obs.etapa}
+                              </span>
+                              {obs.registradoPor && (
+                                <span className="text-[10px] text-slate-400">{obs.registradoPor}</span>
+                              )}
+                              {obs.createdAt && (
+                                <span className="text-[10px] text-slate-400 ml-auto">
+                                  {new Date(obs.createdAt).toLocaleDateString('pt-BR')}, {new Date(obs.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-700 leading-relaxed">{obs.observacao}</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
               {/* Message */}
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-1.5">
