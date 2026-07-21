@@ -6,7 +6,7 @@ import {
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
   History, Plus, Paperclip, Pencil, Trash2, Check, FileDown, User, CreditCard,
-  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers, BookOpen
+  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers, BookOpen, UserCheck
 } from "lucide-react";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import { generateDecisionPdf, type DecisionPdfInput } from "@/lib/decisionPdfExport";
@@ -278,6 +278,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [showFundoPerdido, setShowFundoPerdido] = useState(false);
   const [showEspecialSemCobranca, setShowEspecialSemCobranca] = useState(false);
   const [showProtestados, setShowProtestados] = useState(false);
+  const [showRafael, setShowRafael] = useState(false);
   const [editingVendedorId, setEditingVendedorId] = useState<number | null>(null);
   const [editingVendedorValue, setEditingVendedorValue] = useState("");
 
@@ -307,10 +308,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
-    // Exclude Fundo Perdido, Especial s/ cobrança, and Protestado from main list (unless specifically filtered)
+    // Exclude Fundo Perdido, Especial s/ cobrança, Protestado, and Rafael from main list (unless specifically filtered)
     let result = statusFilter === "Fundo Perdido" || statusFilter === "Especial s/ cobrança" || statusFilter === "Protestado"
       ? [...items]
-      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança" && item.status !== "Protestado");
+      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança" && item.status !== "Protestado" && !(item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL"));
 
     // Search
     if (search.trim()) {
@@ -386,6 +387,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     if (!items) return [];
     return items.filter(item => item.status === "Especial s/ cobrança");
   }, [items]);
+
+  // Items do Rafael (vendedor = RAFAEL LEONEL)
+  const rafaelItems = useMemo(() => {
+    if (!items) return [];
+    return items.filter(item => (item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL"));
+  }, [items]);
+  const rafaelTotal = rafaelItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
+  const rafaelClients = useMemo(() => new Set(rafaelItems.map(i => getClientKey(i.empresa))), [rafaelItems]);
 
   const fundoPerdidoTotal = fundoPerdidoItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
   const fundoPerdidoClients = useMemo(() => new Set(fundoPerdidoItems.map(i => getClientKey(i.empresa))), [fundoPerdidoItems]);
@@ -1242,8 +1251,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
-      {/* Cards Protestados, Fundo Perdido e Especial s/ Cobrança */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+      {/* Cards Protestados, Fundo Perdido, Especial s/ Cobrança e Rafael */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
         {/* Card Protestados */}
         <div className="rounded-xl border-2 border-red-400 bg-gradient-to-br from-red-50 via-rose-50 to-red-50 overflow-hidden transition-all hover:shadow-lg">
           <button
@@ -1450,6 +1459,77 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             </div>
           )}
         </div>
+
+        {/* Card Rafael - Especial sem cobrança */}
+        {rafaelItems.length > 0 && (
+          <div className="rounded-xl border-2 border-purple-400 bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 overflow-hidden transition-all hover:shadow-lg">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowRafael(prev => !prev); }}
+              className="w-full p-4 text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-md">
+                    <UserCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-purple-900">Rafael - Especial s/ Cobrança</h3>
+                    <p className="text-xs text-purple-600">{rafaelClients.size} cliente{rafaelClients.size !== 1 ? "s" : ""} • {rafaelItems.length} título{rafaelItems.length !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-purple-800">{formatCurrency(rafaelTotal)}</span>
+                  {showRafael ? <ChevronUp className="w-5 h-5 text-purple-500" /> : <ChevronDown className="w-5 h-5 text-purple-500" />}
+                </div>
+              </div>
+            </button>
+            {showRafael && rafaelItems.length > 0 && (
+              <div className="border-t border-purple-300 divide-y divide-purple-200 max-h-[400px] overflow-y-auto">
+                {rafaelItems.map((item) => {
+                  return (
+                    <div key={item.id} className="px-4 py-3 hover:bg-white/60 transition-colors space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-full min-h-[40px] rounded-full bg-purple-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-slate-800 truncate flex-1">{item.empresa}</p>
+                            <span className={`inline-flex items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                              (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                              (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                              "bg-blue-100 text-blue-700"
+                            }`}>
+                              {item.diasVencidos || 0}d
+                            </span>
+                          </div>
+                          {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600">({(item as any).apelido})</p>}
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 mt-0.5">
+                            <span className="font-bold text-purple-800 text-xs">{formatCurrency(parseFloat(String(item.valor || 0)))}</span>
+                            <span>Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</span>
+                            {item.vendedor && <span className="text-slate-600">{item.vendedor}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      {canEdit && (
+                        <div className="pl-4">
+                          <select
+                            value={item.status}
+                            onChange={e => handleStatusChange(item.id, e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-purple-50 text-purple-700 border-purple-400 cursor-pointer focus:ring-2 focus:ring-blue-400 w-full max-w-[180px]"
+                          >
+                            {ALL_STATUSES.map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Centro de Custos filter pills */}

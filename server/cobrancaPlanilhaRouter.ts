@@ -426,33 +426,34 @@ export const cobrancaPlanilhaRouter = router({
   /**
    * Obter resumo/estatísticas da planilha
    */
-  getSummary: publicProcedure.query(async () => {
+    getSummary: publicProcedure.query(async () => {
     const db = await getDb();
-    if (!db) return { total: 0, byStatus: {}, byCenter: {}, totalValor: 0 };
-    
+    if (!db) return { total: 0, byStatus: {}, byCenter: {}, totalValor: 0, rafaelCount: 0, rafaelValor: 0 };
     const all = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
-    
     const byStatus: Record<string, { count: number; valor: number }> = {};
     const byCenter: Record<string, { count: number; valor: number }> = {};
     let totalValor = 0;
-    
+    let rafaelCount = 0;
+    let rafaelValor = 0;
     for (const item of all) {
+      const valor = item.valor ? parseFloat(String(item.valor)) : 0;
+      // Exclude Rafael items from main stats
+      if ((item.vendedor || "").toUpperCase().includes("RAFAEL LEONEL")) {
+        rafaelCount++;
+        rafaelValor += valor;
+        continue;
+      }
       const status = item.status || "Pendente";
       const center = item.centroCustos || "Outros";
-      const valor = item.valor ? parseFloat(String(item.valor)) : 0;
-      
       if (!byStatus[status]) byStatus[status] = { count: 0, valor: 0 };
       byStatus[status].count++;
       byStatus[status].valor += valor;
-      
       if (!byCenter[center]) byCenter[center] = { count: 0, valor: 0 };
       byCenter[center].count++;
       byCenter[center].valor += valor;
-      
       totalValor += valor;
     }
-    
-    return { total: all.length, byStatus, byCenter, totalValor };
+    return { total: all.length - rafaelCount, byStatus, byCenter, totalValor, rafaelCount, rafaelValor };
   }),
 
   /**
@@ -801,6 +802,43 @@ export const cobrancaPlanilhaRouter = router({
         console.error("[Sync] Erro ao buscar vendedores:", e);
       }
 
+      // 4c2. Buscar representante/vendedor 2 dos pedidos de venda (ex: RAFAEL LEONEL)
+      const representante2Map: Record<string, string> = {};
+      try {
+        const PAGE_SIZE = 200;
+        let skip = 0;
+        let total = 0;
+        do {
+          const resp = await gql<any>(`{
+            pedidosDeVenda(skip: ${skip}, take: ${PAGE_SIZE}, where: { representanteOuVendedor2: { razaoSocial: { neq: null } } }) {
+              totalCount
+              items {
+                cliente { nomeFantasia razaoSocial }
+                representanteOuVendedor2 { nomeFantasia razaoSocial apelido }
+              }
+            }
+          }`);
+          if (!resp?.pedidosDeVenda) break;
+          total = resp.pedidosDeVenda.totalCount;
+          for (const p of resp.pedidosDeVenda.items) {
+            const rep2 = p.representanteOuVendedor2;
+            if (!rep2) continue;
+            const rep2Name = rep2.apelido || rep2.nomeFantasia || rep2.razaoSocial || "";
+            if (!rep2Name) continue;
+            const rep2Normalized = normalizeVendedorName(rep2Name);
+            const clienteNome = p.cliente?.nomeFantasia || p.cliente?.razaoSocial || "";
+            if (clienteNome) {
+              const normCliente = normalizeName(clienteNome);
+              if (!representante2Map[normCliente]) representante2Map[normCliente] = rep2Normalized;
+            }
+          }
+          skip += PAGE_SIZE;
+        } while (skip < total);
+        console.log(`[Sync] Representante2 map: ${Object.keys(representante2Map).length} clientes com rep2`);
+      } catch (e) {
+        console.error("[Sync] Erro ao buscar representante2:", e);
+      }
+
       // 4d. Buscar contatos extras (múltiplos telefones) e email do endereço de cada cliente via GraphQL
       const contatosExtrasMap: Record<string, string[]> = {};
       const emailEnderecoMap: Record<string, string> = {};
@@ -1037,8 +1075,9 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
         // Vendedor, apelido, forma de cobrança e contatos extras (sempre atualizar)
-        // REGRA: Se cliente é Keure/Johnson → vendedor = "Grupo Fox"
-        const vendedor = isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : vendedorMap[empresaNorm];
+        // REGRA: Se representante2 é RAFAEL LEONEL → vendedor = "RAFAEL LEONEL"
+        const rep2 = representante2Map[empresaNorm] || "";
+        const vendedor = rep2.toUpperCase().includes("RAFAEL LEONEL") ? "RAFAEL LEONEL" : (isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : vendedorMap[empresaNorm]);
         if (vendedor) updateData.vendedor = vendedor;
         const apelidoVal = apelidoMap[empresaNorm];
         if (apelidoVal) updateData.apelido = apelidoVal;
@@ -1157,8 +1196,9 @@ export const cobrancaPlanilhaRouter = router({
 
           // Vendedor, apelido, forma de cobrança e contatos extras
           const empresaNorm2 = normalizeName(inad.empresa);
-          // REGRA: Se cliente é Keure/Johnson → vendedor = "Grupo Fox"
-          const vendedor2 = isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : vendedorMap[empresaNorm2];
+          // REGRA: Se representante2 é RAFAEL LEONEL → vendedor = "RAFAEL LEONEL"
+          const rep2b = representante2Map[empresaNorm2] || "";
+          const vendedor2 = rep2b.toUpperCase().includes("RAFAEL LEONEL") ? "RAFAEL LEONEL" : (isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : vendedorMap[empresaNorm2]);
           if (vendedor2) updateData.vendedor = vendedor2;
           const apelidoVal2 = apelidoMap[empresaNorm2];
           if (apelidoVal2) updateData.apelido = apelidoVal2;

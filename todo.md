@@ -5817,3 +5817,7 @@
 - [x] Inadimplência: criar card "Rafael - Especial sem cobrança" que puxa automaticamente clientes cujo representante 2 é RAFAEL LEONEL de Londrina
 - [x] Inadimplência: mostrar "RAFAEL LEONEL" como vendedor nos títulos do card Rafael
 - [x] Inadimplência: excluir títulos do Rafael dos contadores/stats gerais (só aparecem no card próprio)
+- [x] CobrancaPlanilhaView: adicionar card "Rafael - Especial s/ Cobrança" (purple, com ícone UserCheck, expandível com lista de títulos)
+- [x] CobrancaPlanilhaView: excluir títulos do Rafael da lista principal e dos status cards (summary)
+- [x] Backend cobrancaPlanilhaRouter: representante2Map query para detectar RAFAEL LEONEL e setar vendedor automaticamente no sync
+- [x] Backend getSummary: excluir Rafael dos contadores byStatus/byCenter (retorna rafaelCount/rafaelValor separados)
