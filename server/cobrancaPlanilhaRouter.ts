@@ -1734,9 +1734,20 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      const conditions = [eq(sellerAlerts.vendedor, input.vendedor)];
+      // Normalize: remove accents for matching (seller_permissions has "JORDÃO LAINE", planilha has "JORDAO")
+      const normalized = normalizeName(input.vendedor);
+      const firstName = normalized.split(' ')[0];
+      // Match by: exact, normalized first name starts with, or COLLATE accent-insensitive
+      const conditions: any[] = [
+        sql`(
+          UPPER(${sellerAlerts.vendedor}) COLLATE utf8mb4_general_ci = ${normalized}
+          OR UPPER(${sellerAlerts.vendedor}) COLLATE utf8mb4_general_ci LIKE ${firstName + '%'}
+          OR ${sellerAlerts.vendedor} = ${input.vendedor}
+        )`
+      ];
       if (!input.includeResolved) {
         conditions.push(sql`${sellerAlerts.status} != 'resolvido'`);
+        conditions.push(sql`${sellerAlerts.status} != 'cancelado'`);
       }
       return db.select()
         .from(sellerAlerts)
@@ -1754,10 +1765,16 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { count: 0 };
+      const normalized = normalizeName(input.vendedor);
+      const firstName = normalized.split(' ')[0];
       const [result] = await db.select({ count: sql<number>`COUNT(*)` })
         .from(sellerAlerts)
         .where(and(
-          eq(sellerAlerts.vendedor, input.vendedor),
+          sql`(
+            UPPER(${sellerAlerts.vendedor}) COLLATE utf8mb4_general_ci = ${normalized}
+            OR UPPER(${sellerAlerts.vendedor}) COLLATE utf8mb4_general_ci LIKE ${firstName + '%'}
+            OR ${sellerAlerts.vendedor} = ${input.vendedor}
+          )`,
           eq(sellerAlerts.status, 'pendente')
         ));
       return { count: result?.count || 0 };
@@ -1847,11 +1864,18 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { items: [], etapasObs: [] };
+      // Normalize for accent-insensitive matching (JORDÃO LAINE vs JORDAO)
+      const normalized = normalizeName(input.vendedor);
+      const firstName = normalized.split(' ')[0];
       const items = await db.select()
         .from(cobrancaPlanilha)
         .where(and(
           eq(cobrancaPlanilha.ativo, true),
-          eq(cobrancaPlanilha.vendedor, input.vendedor)
+          sql`(
+            UPPER(${cobrancaPlanilha.vendedor}) COLLATE utf8mb4_general_ci = ${normalized}
+            OR UPPER(${cobrancaPlanilha.vendedor}) COLLATE utf8mb4_general_ci LIKE ${firstName + '%'}
+            OR ${cobrancaPlanilha.vendedor} = ${input.vendedor}
+          )`
         ))
         .orderBy(desc(cobrancaPlanilha.diasVencidos));
       

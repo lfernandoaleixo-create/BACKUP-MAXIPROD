@@ -5868,3 +5868,4 @@
 - [x] Histórico de Acionamentos: exportar para Excel
 - [x] Histórico de Acionamentos: exportar para PDF
 - [x] Modal de confirmação antes de remover alerta (já implementado - verificar)
+- [x] Bug: Alerta não aparece na tela do vendedor - mismatch de nome (JORDAO vs JORDÃO LAINE) - usar matching fuzzy
