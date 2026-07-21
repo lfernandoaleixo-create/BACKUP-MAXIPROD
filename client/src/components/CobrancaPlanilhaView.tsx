@@ -2266,6 +2266,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         <HistoryObsDialog
           planilhaId={historyDialog}
           empresa={items?.find(i => i.id === historyDialog)?.empresa || ""}
+          operatorName={operator?.name || ""}
           onClose={() => setHistoryDialog(null)}
         />
       )}
@@ -3239,8 +3240,8 @@ function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClo
 }
 
 /** Sub-componente: Diálogo de histórico completo de observações */
-function HistoryObsDialog({ planilhaId, empresa, onClose }: {
-  planilhaId: number; empresa: string; onClose: () => void;
+function HistoryObsDialog({ planilhaId, empresa, operatorName, onClose }: {
+  planilhaId: number; empresa: string; operatorName: string; onClose: () => void;
 }) {
   const { data: allObs, isLoading, refetch } = trpc.cobrancaPlanilha.getAllEtapaObs.useQuery({ planilhaId });
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -3327,7 +3328,7 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
                           <span>•</span>
                           <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => { setEditingId(obs.id); setEditText(obs.observacao); }}
                             className="p-1 rounded hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-colors"
@@ -3335,13 +3336,15 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
-                          <button
-                            onClick={() => { if (confirm("Excluir esta observação?")) deleteObs.mutate({ id: obs.id }); }}
-                            className="p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          {operatorName.toLowerCase().includes('guilherme') && (
+                            <button
+                              onClick={() => { if (confirm("Excluir esta observação permanentemente?")) deleteObs.mutate({ id: obs.id }); }}
+                              className="p-1 rounded hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors"
+                              title="Excluir (apenas Guilherme)"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </>
