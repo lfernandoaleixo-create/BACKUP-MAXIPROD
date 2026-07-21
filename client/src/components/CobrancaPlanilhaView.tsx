@@ -6,7 +6,7 @@ import {
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
   History, Plus, Paperclip, Pencil, Trash2, Check, FileDown, User, CreditCard,
-  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers, BookOpen, UserCheck
+  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers, BookOpen, UserCheck, Bell
 } from "lucide-react";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import { generateDecisionPdf, type DecisionPdfInput } from "@/lib/decisionPdfExport";
@@ -288,8 +288,24 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [showRafael, setShowRafael] = useState(false);
   const [editingVendedorId, setEditingVendedorId] = useState<number | null>(null);
   const [editingVendedorValue, setEditingVendedorValue] = useState("");
+  // Acionar Vendedor
+  const [acionarVendedorDialog, setAcionarVendedorDialog] = useState<{ item: NonNullable<typeof items>[0]; vendedorName: string; etapa: string; mensagem: string } | null>(null);
+  const [acionarMensagem, setAcionarMensagem] = useState("");
+  const [acionarVendedorName, setAcionarVendedorName] = useState("");
+  const [acionarEtapa, setAcionarEtapa] = useState("1");
+  const createSellerAlert = trpc.cobrancaPlanilha.createSellerAlert.useMutation({
+    onSuccess: () => {
+      toast.success("Vendedor acionado com sucesso! Ele receberá o alerta na tela.");
+      setAcionarVendedorDialog(null);
+      setAcionarMensagem("");
+      setAcionarVendedorName("");
+    },
+    onError: () => toast.error("Erro ao acionar vendedor. Tente novamente."),
+  });
 
+  const [acionadosFilter, setAcionadosFilter] = useState(false);
   // Queries que dependem dos estados acima
+  const { data: allSellerAlerts } = trpc.cobrancaPlanilha.getAllSellerAlerts.useQuery({ includeResolved: true });
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: resolvedSortBy, sortDir: resolvedSortDir });
   const { data: decisionPdfsData } = trpc.financial.listAllDecisionPdfs.useQuery();
   const deletePdf = trpc.financial.deleteDecisionPdf.useMutation();
@@ -342,11 +358,15 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       result = result.filter(item => item.status === statusFilter);
     }
 
-    // Center filter
+        // Center filter
     if (centerFilter !== "todos") {
       result = result.filter(item => item.centroCustos === centerFilter);
     }
-
+    // Acionados filter: show only clients that have seller alerts
+    if (acionadosFilter && allSellerAlerts && allSellerAlerts.length > 0) {
+      const acionadosEmpresas = new Set(allSellerAlerts.map(a => a.empresa.toUpperCase().trim()));
+      result = result.filter(item => acionadosEmpresas.has((item.empresa || "").toUpperCase().trim()));
+    }
     // Sort
     result.sort((a, b) => {
       let cmp = 0;
@@ -368,7 +388,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     });
 
     return result;
-  }, [items, search, statusFilter, centerFilter, sortBy, sortDir]);
+  }, [items, search, statusFilter, centerFilter, sortBy, sortDir, acionadosFilter, allSellerAlerts]);
 
   const totalValor = filteredItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
   const uniqueClients = useMemo(() => new Set(filteredItems.map(i => getClientKey(i.empresa))), [filteredItems]);
@@ -1568,6 +1588,30 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
+      {/* Filtro Acionados */}
+      {allSellerAlerts && allSellerAlerts.length > 0 && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAcionadosFilter(!acionadosFilter)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              acionadosFilter
+                ? "bg-red-600 text-white shadow-md"
+                : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+            }`}
+          >
+            <Bell className="w-3 h-3" />
+            Vendedor Acionado ({allSellerAlerts.filter(a => a.status !== 'resolvido').length} pendentes)
+          </button>
+          {acionadosFilter && (
+            <button
+              onClick={() => setAcionadosFilter(false)}
+              className="text-[10px] text-red-500 hover:text-red-700 underline"
+            >
+              Limpar filtro
+            </button>
+          )}
+        </div>
+      )}
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -1774,6 +1818,24 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           >
                             <Stamp className="w-3.5 h-3.5" />
                           </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => {
+                                // Determine current etapa based on filled cobrança steps
+                                let currentEtapa = "1";
+                                if (item.terceiraCobranca) currentEtapa = "3";
+                                else if (item.segundaCobranca) currentEtapa = "2";
+                                setAcionarEtapa(currentEtapa);
+                                setAcionarVendedorName(item.vendedor || "");
+                                setAcionarMensagem("");
+                                setAcionarVendedorDialog({ item, vendedorName: item.vendedor || "", etapa: currentEtapa, mensagem: "" });
+                              }}
+                              className="p-1 rounded-md hover:bg-red-100 text-red-600 transition-colors"
+                              title="Acionar Vendedor"
+                            >
+                              <Bell className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -2450,14 +2512,188 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               operatorName={operator?.name || "Operador"}
               clienteNames={Array.from(new Set((items || []).map(i => i.empresa).filter(Boolean)))}
             />
+                    </DialogContent>
+        </Dialog>
+      )}
+      {/* ==================== ACIONAR VENDEDOR DIALOG ==================== */}
+      {acionarVendedorDialog && (
+        <Dialog open onOpenChange={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); setAcionarVendedorName(""); }}>
+          <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-700">
+                <Bell className="w-5 h-5" />
+                Acionar Vendedor
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {/* Client info */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="text-sm font-bold text-red-800">{acionarVendedorDialog.item.empresa}</div>
+                <div className="text-xs text-red-600 mt-1">
+                  {formatCurrency(parseFloat(String(acionarVendedorDialog.item.valor || 0)))} \u2022 {acionarVendedorDialog.item.diasVencidos || 0}d atraso \u2022 {acionarVendedorDialog.item.documento || ""}
+                </div>
+              </div>
+              {/* Vendedor */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">
+                  Vendedor respons\u00e1vel
+                </label>
+                {acionarVendedorDialog.vendedorName ? (
+                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-bold text-blue-700">{acionarVendedorDialog.vendedorName}</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Input
+                      value={acionarVendedorName}
+                      onChange={(e) => setAcionarVendedorName(e.target.value)}
+                      placeholder="Digite o nome do vendedor..."
+                      className="text-sm"
+                    />
+                    {/* Suggestions */}
+                    {acionarVendedorName.length > 0 && (() => {
+                      const allVendedores = Array.from(new Set((items || []).map(i => i.vendedor).filter(Boolean) as string[]));
+                      const suggestions = allVendedores.filter(v => v.toLowerCase().includes(acionarVendedorName.toLowerCase()));
+                      if (suggestions.length === 0) return null;
+                      return (
+                        <div className="flex flex-wrap gap-1">
+                          {suggestions.slice(0, 5).map(v => (
+                            <button
+                              key={v}
+                              onClick={() => setAcionarVendedorName(v)}
+                              className="text-[10px] px-2 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                            >
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+              {/* Etapa selection */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">
+                  Etapa da cobran\u00e7a
+                </label>
+                <div className="flex gap-2">
+                  {[{ v: "1", label: "1\u00aa Cobran\u00e7a" }, { v: "2", label: "2\u00aa Cobran\u00e7a" }, { v: "3", label: "3\u00aa Cobran\u00e7a" }].map(opt => (
+                    <button
+                      key={opt.v}
+                      onClick={() => setAcionarEtapa(opt.v)}
+                      className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border-2 transition-all ${
+                        acionarEtapa === opt.v
+                          ? "bg-red-600 text-white border-red-600 shadow-md"
+                          : "bg-white text-slate-600 border-slate-300 hover:border-red-400"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Selecionado automaticamente com base nas etapas preenchidas.</p>
+              </div>
+              {/* Etapa history from the item */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">
+                  Hist\u00f3rico de etapas
+                </label>
+                <div className="bg-slate-50 rounded-lg border border-slate-200 p-2 space-y-1 max-h-28 overflow-y-auto">
+                  {acionarVendedorDialog.item.primeiraCobranca && (
+                    <div className="flex items-center gap-2 text-[11px] py-0.5">
+                      <span className="font-bold text-green-700">1\u00aa Cob:</span>
+                      <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.primeiraCobranca)}</span>
+                    </div>
+                  )}
+                  {acionarVendedorDialog.item.segundaCobranca && (
+                    <div className="flex items-center gap-2 text-[11px] py-0.5">
+                      <span className="font-bold text-amber-700">2\u00aa Cob:</span>
+                      <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.segundaCobranca)}</span>
+                    </div>
+                  )}
+                  {acionarVendedorDialog.item.terceiraCobranca && (
+                    <div className="flex items-center gap-2 text-[11px] py-0.5">
+                      <span className="font-bold text-red-700">3\u00aa Cob:</span>
+                      <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.terceiraCobranca)}</span>
+                    </div>
+                  )}
+                  {acionarVendedorDialog.item.acaoFinal && (
+                    <div className="flex items-center gap-2 text-[11px] py-0.5">
+                      <span className="font-bold text-purple-700">A\u00e7\u00e3o Final:</span>
+                      <span className="text-slate-600">{formatDate(acionarVendedorDialog.item.acaoFinal)}</span>
+                    </div>
+                  )}
+                  {!acionarVendedorDialog.item.primeiraCobranca && !acionarVendedorDialog.item.segundaCobranca && !acionarVendedorDialog.item.terceiraCobranca && !acionarVendedorDialog.item.acaoFinal && (
+                    <div className="text-[11px] text-slate-400 italic">Nenhuma etapa registrada ainda.</div>
+                  )}
+                  {acionarVendedorDialog.item.observacoes && (
+                    <div className="mt-1 pt-1 border-t border-slate-200">
+                      <span className="text-[10px] font-medium text-slate-500">Obs:</span>
+                      <span className="text-[10px] text-slate-600 ml-1">{acionarVendedorDialog.item.observacoes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Message */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">
+                  Mensagem para o vendedor <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={acionarMensagem}
+                  onChange={(e) => setAcionarMensagem(e.target.value)}
+                  placeholder="Descreva o motivo do acionamento e o que sugere que o vendedor fa\u00e7a..."
+                  className="w-full h-28 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Ex: \"Cliente n\u00e3o atende liga\u00e7\u00f5es h\u00e1 3 dias. Sugerimos que o vendedor entre em contato pessoalmente.\"</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setAcionarVendedorDialog(null); setAcionarMensagem(""); setAcionarVendedorName(""); }}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    const vendedorFinal = acionarVendedorDialog.vendedorName || acionarVendedorName.trim();
+                    if (!vendedorFinal) {
+                      toast.error("Informe o vendedor respons\u00e1vel.");
+                      return;
+                    }
+                    if (!acionarMensagem.trim()) {
+                      toast.error("Escreva uma mensagem para o vendedor.");
+                      return;
+                    }
+                    createSellerAlert.mutate({
+                      empresa: acionarVendedorDialog.item.empresa,
+                      cnpj: acionarVendedorDialog.item.cnpjCpf || null,
+                      vendedor: vendedorFinal,
+                      mensagem: `[Etapa: ${acionarEtapa}\u00aa Cobran\u00e7a] ${acionarMensagem.trim()}`,
+                      criadoPor: operator?.name || "Financeiro",
+                      valorTotal: parseFloat(String(acionarVendedorDialog.item.valor || 0)),
+                      titulosVencidos: 1,
+                      diasAtrasoMax: acionarVendedorDialog.item.diasVencidos || 0,
+                      planilhaId: acionarVendedorDialog.item.id,
+                    });
+                  }}
+                  disabled={createSellerAlert.isPending || !acionarMensagem.trim() || (!acionarVendedorDialog.vendedorName && !acionarVendedorName.trim())}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {createSellerAlert.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
+                  ) : (
+                    <><Bell className="w-4 h-4 mr-2" /> Acionar Vendedor</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       )}
     </div>
   );
 }
-
-/** Sub-componente: Diálogo de observações por etapa */
+/** Sub-componente: Di\u00e1logo de observa\u00e7\u00f5es por etapa */
 function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClose }: {
   planilhaId: number; etapa: string; label: string; canEdit: boolean; operatorName: string; onClose: () => void;
 }) {

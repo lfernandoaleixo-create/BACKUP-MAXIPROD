@@ -1866,4 +1866,25 @@ export const cobrancaPlanilhaRouter = router({
       }
       return { items, etapasObs };
     }),
+  /**
+   * Listar todos os alertas de vendedor (para o financeiro ver quais clientes foram acionados)
+   */
+  getAllSellerAlerts: publicProcedure
+    .input(z.object({
+      includeResolved: z.boolean().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const conditions = [];
+      if (!input?.includeResolved) {
+        conditions.push(sql`${sellerAlerts.status} != 'resolvido'`);
+      }
+      const result = await db.select()
+        .from(sellerAlerts)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(sellerAlerts.createdAt))
+        .limit(200);
+      return result;
+    }),
 });
