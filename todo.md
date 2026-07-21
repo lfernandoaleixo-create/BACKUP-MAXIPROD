@@ -5826,3 +5826,8 @@
 - [x] Fix: proteger status manuais (Fundo Perdido, Especial s/ cobrança, Protestado, Protesto em Análise) de serem desativados pelo sync automático
 - [x] Criar status "Rafael - Especial s/ cobrança" no dropdown de status (CobrancaPlanilhaView + InadimplenciaTab + backend STATUS_MAP)
 - [x] Adicionar card de status "Rafael - Especial s/ cobrança" na fileira de cards de status no topo (ao lado de Fundo Perdido, Protestado, etc.)
+- [x] FIX APAGÕES: Proteção absoluta - títulos com status != Pendente NUNCA são desativados pelo sync (auto e manual)
+- [x] FIX APAGÕES: Observações (campo observacoes) agora são herdadas quando novo título é criado
+- [x] FIX APAGÕES: Histórico de etapas (cobranca_etapa_obs) migrado para novos registros automaticamente
+- [x] FIX APAGÕES: Fundo Perdido manual não é mais desativado pelo sync da conta 571
+- [x] FIX APAGÕES: Removida proteção baseada em horário (17:15) - agora proteção é permanente 24h

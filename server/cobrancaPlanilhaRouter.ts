@@ -1302,24 +1302,51 @@ export const cobrancaPlanilhaRouter = router({
             etapasHerdadasDeDoc: etapasValidas ? (existingOfSameEmpresa?.documento || null) : null,
             updatedBy: `Sync: ${input.updatedBy}`,
           });
+          
+          // FIX APAGÕES - MIGRAR HISTÓRICO DE ETAPAS no sync manual também:
+          if (existingOfSameEmpresa && etapasValidas && existingOfSameEmpresa.id) {
+            // Buscar o ID do registro recém-inserido
+            const lastInserted = await db.select({ id: cobrancaPlanilha.id })
+              .from(cobrancaPlanilha)
+              .where(eq(cobrancaPlanilha.arId, inad.arId))
+              .orderBy(desc(cobrancaPlanilha.id))
+              .limit(1);
+            if (lastInserted.length > 0) {
+              const newId = lastInserted[0].id;
+              const donorObs = await db.select().from(cobrancaEtapaObs)
+                .where(eq(cobrancaEtapaObs.planilhaId, existingOfSameEmpresa.id));
+              if (donorObs.length > 0) {
+                for (const obs of donorObs) {
+                  await db.insert(cobrancaEtapaObs).values({
+                    planilhaId: newId,
+                    etapa: obs.etapa,
+                    observacao: obs.observacao,
+                    registradoPor: obs.registradoPor,
+                  });
+                }
+                console.log(`[Sync] Histórico de etapas migrado: ${donorObs.length} registros de ID ${existingOfSameEmpresa.id} → ID ${newId} (${inad.empresa})`);
+              }
+            }
+          }
           added++;
         }
       }
 
       // 8. Para títulos da planilha que NÃO foram matched (não estão mais na inadimplência)
       // Marcar como inativos (pago/resolvido) — NÃO deletar
-      // EXCETO: Fundo Perdido e Especial s/ cobrança — esses são gerenciados manualmente e NUNCA devem ser desativados pelo sync
-      const PROTECTED_STATUSES = ["Fundo Perdido", "Especial s/ cobrança", "Rafael - Especial s/ cobrança", "Protestado", "Protesto em Análise"];
+      //
+      // REGRA CRÍTICA (FIX APAGÕES): NUNCA desativar títulos com status diferente de "Pendente".
+      // Se o financeiro trabalhou o título, ele JAMAIS pode ser desativado automaticamente.
       let notInInadimplencia = 0;
       let deactivated = 0;
       for (const item of planilhaAtual) {
         if (!matchedPlanilhaIds.has(item.id)) {
-          // Proteger títulos com status manual (Fundo Perdido, Especial s/ cobrança)
-          if (PROTECTED_STATUSES.includes(item.status || "")) {
+          // PROTEÇÃO ABSOLUTA: NUNCA desativar títulos com status diferente de "Pendente"
+          if (item.status && item.status !== "Pendente") {
             notInInadimplencia++;
-            continue; // NÃO desativar
+            continue; // NÃO desativar - título foi trabalhado pelo financeiro
           }
-          // Marcar como inativo — título não está mais na inadimplência (pago ou removido)
+          // Marcar como inativo — título Pendente que não está mais na inadimplência (pago ou removido)
           await db.update(cobrancaPlanilha)
             .set({ ativo: false, updatedBy: `Sync: ${input.updatedBy} (pago/resolvido)` })
             .where(eq(cobrancaPlanilha.id, item.id));

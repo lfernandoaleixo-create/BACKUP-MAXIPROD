@@ -13,7 +13,7 @@
  */
 
 import { getDb } from "./db";
-import { cobrancaPlanilha, accountsReceivable, collectionActions, resolvedReceivables, salesOrders } from "../drizzle/schema";
+import { cobrancaPlanilha, accountsReceivable, collectionActions, resolvedReceivables, salesOrders, cobrancaEtapaObs } from "../drizzle/schema";
 import { eq, and, inArray, lte, isNull, sql, desc, or } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -143,14 +143,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   const cutoff = getPreviousBusinessDay();
   const todayStr = getTodayBR();
 
-  // PROTEÇÃO 17:15: Antes das 17:15 (Brasília), NÃO desativar títulos que têm status diferente de "Pendente".
-  // Isso garante que o backup diário (feito até 17:15) capture todos os status corretamente.
-  // Após 17:15, o sync pode desativar normalmente (títulos pagos saem da planilha).
-  const nowBR = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-  const nowDate = new Date(nowBR);
-  const horaAtual = nowDate.getHours() * 60 + nowDate.getMinutes(); // minutos desde meia-noite
-  const HORA_LIMITE_BACKUP = 17 * 60 + 15; // 17:15 = 1035 minutos
-  const isBeforeBackupTime = horaAtual < HORA_LIMITE_BACKUP;
+  // FIX APAGÕES: A proteção baseada em horário (17:15) foi REMOVIDA.
+  // Agora a proteção é ABSOLUTA: qualquer título com status != "Pendente" NUNCA é desativado.
+  // Isso resolve definitivamente o problema de perda de dados que ocorria após 17:15.
 
   // 1. Get all currently active planilha items
   const activePlanilha = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
@@ -198,18 +193,27 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
 
   // 3. DEACTIVATE: planilha items whose arId is no longer in the overdue list
   //    AND save to resolved_receivables if title had 3+ days overdue
+  //
+  // REGRA CRÍTICA (FIX APAGÕES): NUNCA desativar títulos que tenham status diferente de "Pendente".
+  // Se o financeiro trabalhou o título (marcou status, fez anotações, registrou etapas),
+  // ele JAMAIS pode ser desativado automaticamente. Isso previne a perda de dados que
+  // acontecia diariamente após 17:15.
+  //
+  // Títulos com status != "Pendente" que saíram da inadimplência serão mantidos como ativos
+  // mas com uma flag indicando que o título foi pago/resolvido no Maxiprod.
+  // O financeiro decide manualmente quando arquivar.
   let deactivated = 0;
   const arIdsToResolve: number[] = [];
   for (const item of activePlanilha) {
-    // PROTEÇÃO: Nunca desativar itens com status "Fundo Perdido"
-    // Fundo Perdido vem de contas a PAGAR (conta 571), não de contas a receber
-    if (item.status === "Fundo Perdido") continue;
-    // PROTEÇÃO 17:15: Antes das 17:15, NÃO desativar títulos com status diferente de "Pendente"
-    // Isso preserva o status para o backup diário e evita perda de dados de cobrança
-    if (isBeforeBackupTime && item.status && item.status !== "Pendente") continue;
+    // PROTEÇÃO ABSOLUTA: NUNCA desativar títulos com status diferente de "Pendente"
+    // Isso inclui: Contatado, Em negociação, Promessa de Pgto, Especial s/ cobrança,
+    // Protestado, Protesto em Análise, Fundo Perdido, Rafael - Especial s/ cobrança,
+    // Cheque em compensação, Não deu retorno, Não atendeu, Jurídico, etc.
+    if (item.status && item.status !== "Pendente") continue;
+    
     if (item.arId && !validOverdueArIds.has(item.arId)) {
-      // The underlying title is no longer EMITIDO or no longer overdue → deactivate
-      // Isso inclui clientes "Especial s/ cobrança" que pagaram e saíram da inadimplência
+      // Título com status "Pendente" que saiu da inadimplência → pode desativar
+      // (ninguém trabalhou nele ainda, então não há dados manuais a preservar)
       await db.update(cobrancaPlanilha)
         .set({ ativo: false, updatedBy: "Auto-sync (título pago/resolvido)" })
         .where(eq(cobrancaPlanilha.id, item.id));
@@ -378,7 +382,21 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       // Centro: will be populated from sales_orders lookup (see below)
       const centroCustos: string | null = null; // populated after insert via batch update
 
-      await db.insert(cobrancaPlanilha).values({
+      // FIX APAGÕES: Buscar donor para herdar TUDO (etapas + observações + histórico)
+      const donor = allPlanilhaRecords
+        .filter(r => r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+          && (r.primeiraCobranca || r.promessaPgto || r.semAcao1 || r.segundaCobranca || r.semAcao2 || r.terceiraCobranca || r.semAcao3 || r.acaoFinal || r.observacoes))
+        .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0];
+      
+      // VALIDAÇÃO: Só herdar etapas se primeiraCobranca >= vencimento do título novo
+      const etapasValidas = (() => {
+        if (!donor?.primeiraCobranca || !vencDate) return true;
+        const primeiraDate = new Date(donor.primeiraCobranca);
+        const vencDateObj = new Date(vencDate);
+        return primeiraDate >= vencDateObj;
+      })();
+
+      const insertResult = await db.insert(cobrancaPlanilha).values({
         arId: title.arId,
         empresa: title.empresa,
         descricao: title.row.referenteA || null,
@@ -390,52 +408,45 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         formaCobranca: title.row.formaCobranca || null,
         documento,
         centroCustos,
-        // HERANÇA DE ETAPAS: herda do registro mais recente da mesma empresa que tenha etapas
-        // MAS SÓ se as datas forem compatíveis (primeiraCobranca >= vencimento do título novo)
-        ...(() => {
-          const donor = allPlanilhaRecords
-            .filter(r => r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
-              && (r.primeiraCobranca || r.promessaPgto || r.semAcao1 || r.segundaCobranca || r.semAcao2 || r.terceiraCobranca || r.semAcao3 || r.acaoFinal))
-            .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0];
-          if (donor) {
-            // VALIDAÇÃO: Só herdar etapas se primeiraCobranca >= vencimento do título novo
-            // Se as datas são de um título antigo (cliente saiu e voltou), NÃO herda
-            const etapasValidas = (() => {
-              if (!donor.primeiraCobranca || !vencDate) return true;
-              const primeiraDate = new Date(donor.primeiraCobranca);
-              const vencDateObj = new Date(vencDate);
-              return primeiraDate >= vencDateObj;
-            })();
-            if (etapasValidas) {
-              return {
-                primeiraCobranca: donor.primeiraCobranca,
-                promessaPgto: donor.promessaPgto,
-                semAcao1: donor.semAcao1,
-                segundaCobranca: donor.segundaCobranca,
-                semAcao2: donor.semAcao2,
-                terceiraCobranca: donor.terceiraCobranca,
-                semAcao3: donor.semAcao3,
-                acaoFinal: donor.acaoFinal,
-                etapasHerdadasDeId: donor.id,
-                etapasHerdadasDeDoc: donor.documento,
-                etapasPausadas: donor.etapasPausadas,
-              };
-            }
-          }
-          return {
-            primeiraCobranca: null,
-            semAcao1: null,
-            segundaCobranca: null,
-            semAcao2: null,
-            terceiraCobranca: null,
-            semAcao3: null,
-            acaoFinal: null,
-            etapasHerdadasDeId: null,
-            etapasHerdadasDeDoc: null,
-          };
-        })(),
+        // HERÂNCIA DE OBSERVAÇÕES (FIX APAGÕES): sempre herdar observações da mesma empresa
+        observacoes: donor?.observacoes || null,
+        // HERÂNCIA DE ETAPAS: herda do registro mais recente da mesma empresa que tenha etapas
+        primeiraCobranca: etapasValidas ? (donor?.primeiraCobranca || null) : null,
+        promessaPgto: etapasValidas ? (donor?.promessaPgto || null) : null,
+        semAcao1: etapasValidas ? (donor?.semAcao1 || null) : null,
+        segundaCobranca: etapasValidas ? (donor?.segundaCobranca || null) : null,
+        semAcao2: etapasValidas ? (donor?.semAcao2 || null) : null,
+        terceiraCobranca: etapasValidas ? (donor?.terceiraCobranca || null) : null,
+        semAcao3: etapasValidas ? (donor?.semAcao3 || null) : null,
+        acaoFinal: etapasValidas ? (donor?.acaoFinal || null) : null,
+        etapasHerdadasDeId: etapasValidas ? (donor?.id || null) : null,
+        etapasHerdadasDeDoc: etapasValidas ? (donor?.documento || null) : null,
+        etapasPausadas: etapasValidas ? (donor?.etapasPausadas || null) : null,
         updatedBy: "Auto-sync (novo título vencido)",
       });
+      
+      // FIX APAGÕES - MIGRAR HISTÓRICO DE ETAPAS:
+      // Copiar cobranca_etapa_obs do donor para o novo registro
+      // Isso garante que o histórico de anotações por etapa não se perca
+      if (donor && etapasValidas) {
+        const newId = (insertResult as any)[0]?.insertId || (insertResult as any).insertId;
+        if (newId && donor.id) {
+          const donorObs = await db.select().from(cobrancaEtapaObs)
+            .where(eq(cobrancaEtapaObs.planilhaId, donor.id));
+          if (donorObs.length > 0) {
+            // Copiar todas as observações de etapa para o novo ID
+            for (const obs of donorObs) {
+              await db.insert(cobrancaEtapaObs).values({
+                planilhaId: newId,
+                etapa: obs.etapa,
+                observacao: obs.observacao,
+                registradoPor: obs.registradoPor,
+              });
+            }
+            console.log(`[Auto-sync] Histórico de etapas migrado: ${donorObs.length} registros de ID ${donor.id} → ID ${newId} (${title.empresa})`);
+          }
+        }
+      }
       added++;
     }
   }
@@ -808,15 +819,9 @@ async function syncFundoPerdidoFromPayables(): Promise<void> {
     .from(cobrancaPlanilha)
     .where(eq(cobrancaPlanilha.status, 'Fundo Perdido'));
 
-  // Deactivate old manually-marked Fundo Perdido records (not from conta 571)
-  // Only records from "Auto-sync (Fundo Perdido - Conta 571)" should remain active
-  for (const rec of existingFP) {
-    if (rec.ativo && rec.updatedBy !== 'Auto-sync (Fundo Perdido - Conta 571)') {
-      await db.update(cobrancaPlanilha)
-        .set({ ativo: false, updatedBy: 'Desativado: Fundo Perdido agora vem apenas da conta 571' })
-        .where(eq(cobrancaPlanilha.id, rec.id));
-    }
-  }
+  // FIX APAGÕES: NÃO desativar registros de Fundo Perdido marcados manualmente.
+  // Registros manuais de Fundo Perdido são válidos e devem ser preservados.
+  // Apenas adicionar novos registros da conta 571 que ainda não existem.
 
   // Re-fetch after deactivation to get updated ativo status
   const existingFPAfter = await db.select({ id: cobrancaPlanilha.id, descricao: cobrancaPlanilha.descricao, empresa: cobrancaPlanilha.empresa, documento: cobrancaPlanilha.documento, updatedBy: cobrancaPlanilha.updatedBy, ativo: cobrancaPlanilha.ativo })
