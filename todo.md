@@ -5874,3 +5874,4 @@
 - [x] Aba Vendas pisca em vermelho quando vendedor tem alertas pendentes (não só aba Clientes)
 - [x] Guilherme pode excluir alertas do histórico de acionamentos (botão lixeira exclusivo)
 - [x] Bug: Login com senha compartilhada (123456) logava como vendedor errado - implementar seletor de perfil quando múltiplos vendedores têm a mesma senha
+- [x] Bug: Alerta deve aparecer na aba VENDAS (piscando vermelho), não na aba Cadastro de Cliente. Ao abrir Vendas, o card INADIMPLÊNCIA deve piscar em vermelho para guiar o vendedor

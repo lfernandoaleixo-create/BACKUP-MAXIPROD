@@ -316,12 +316,12 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
       )}
 
       {/* Resumo geral + Filtro rápido */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-700 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-800">
+      <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden ${pendingAlerts.length > 0 ? 'border-2 border-red-500 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border border-red-200 dark:border-red-700'}`}>
+        <div className={`px-4 py-3 border-b ${pendingAlerts.length > 0 ? 'bg-red-100 dark:bg-red-900/40 border-red-200 dark:border-red-700' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-600" />
-              <h3 className="text-sm font-bold text-red-700 dark:text-red-400">Planilha de Cobrança</h3>
+              <AlertTriangle className={`w-5 h-5 text-red-600 ${pendingAlerts.length > 0 ? 'animate-bounce' : ''}`} />
+              <h3 className="text-sm font-bold text-red-700 dark:text-red-400 uppercase">INADIMPLÊNCIA</h3>
             </div>
             <div className="flex items-center gap-3 text-xs">
               {/* Filtro rápido: apenas com alertas pendentes */}

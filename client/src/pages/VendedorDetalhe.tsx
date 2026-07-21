@@ -279,7 +279,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const hasAlert = (tab.id === "clientes" || tab.id === "vendas") && sellerAlertCount > 0;
+            const hasAlert = tab.id === "vendas" && sellerAlertCount > 0;
             return (
               <button
                 key={tab.id}
@@ -313,9 +313,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           <SellerClientsView sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
-        {activeTab === "clientes" && (
-          <SellerCobrancaView sellerName={seller.sellerName} onAlertCount={setSellerAlertCount} />
-        )}
+
 
         {activeTab === "tabela_precos" && (
           <TabelaPrecosView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
@@ -329,6 +327,10 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
           <SellerOrdersView sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
+
+        {activeTab === "vendas" && (
+          <SellerCobrancaView sellerName={seller.sellerName} onAlertCount={setSellerAlertCount} />
+        )}
 
         {activeTab === "vendas" && (
           <SellerSalesView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
