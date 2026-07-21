@@ -708,22 +708,36 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
     
     // Update planilha items where valor differs from current valorAReceber
     let valorUpdated = 0;
+    let valorZeroDeactivated = 0;
     for (const item of updatedActive) {
       if (item.arId && arValorMap[item.arId] !== undefined) {
         const currentValorAReceber = arValorMap[item.arId];
         const planilhaValor = Number(item.valor) || 0;
         // Only update if there's a meaningful difference (> 0.01)
         if (Math.abs(currentValorAReceber - planilhaValor) > 0.01) {
-          await db.update(cobrancaPlanilha)
-            .set({ valor: String(currentValorAReceber) })
-            .where(eq(cobrancaPlanilha.id, item.id));
-          valorUpdated++;
-          console.log(`[Auto-sync] Valor atualizado: ${item.empresa} - R$ ${planilhaValor.toFixed(2)} → R$ ${currentValorAReceber.toFixed(2)} (pagamento parcial)`);
+          // Se o valor a receber chegou a 0 ou menos, o t\u00edtulo foi totalmente pago.
+          // Desativar independente do status - n\u00e3o h\u00e1 mais nada a cobrar.
+          if (currentValorAReceber <= 0) {
+            await db.update(cobrancaPlanilha)
+              .set({ ativo: false, valor: "0.00", updatedBy: "Sync: Sistema (pago/resolvido)" })
+              .where(eq(cobrancaPlanilha.id, item.id));
+            valorZeroDeactivated++;
+            console.log(`[Auto-sync] T\u00edtulo PAGO desativado: ${item.empresa} - R$ ${planilhaValor.toFixed(2)} \u2192 R$ 0,00 (status: ${item.status})`);
+          } else {
+            await db.update(cobrancaPlanilha)
+              .set({ valor: String(currentValorAReceber) })
+              .where(eq(cobrancaPlanilha.id, item.id));
+            valorUpdated++;
+            console.log(`[Auto-sync] Valor atualizado: ${item.empresa} - R$ ${planilhaValor.toFixed(2)} \u2192 R$ ${currentValorAReceber.toFixed(2)} (pagamento parcial)`);
+          }
         }
       }
     }
     if (valorUpdated > 0) {
-      console.log(`[Auto-sync] ${valorUpdated} títulos com valor atualizado (pagamentos parciais)`);
+      console.log(`[Auto-sync] ${valorUpdated} t\u00edtulos com valor atualizado (pagamentos parciais)`);
+    }
+    if (valorZeroDeactivated > 0) {
+      console.log(`[Auto-sync] ${valorZeroDeactivated} t\u00edtulos desativados (valor zerou - totalmente pagos)`);
     }
   }
 

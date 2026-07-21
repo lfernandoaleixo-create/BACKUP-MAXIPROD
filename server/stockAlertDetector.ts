@@ -197,37 +197,14 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
  * Remove alertas pendentes E aceitos que não correspondem mais a itens insuficientes em pedidos "A aprovar".
  * 
  * Lógica:
- * - Alertas "pendente": expirar se o item não é mais insuficiente ou pedido saiu de A aprovar
- * - Alertas "aceito": expirar se o pedido saiu de A aprovar (baixa já foi dada no Maxiprod)
- *   OU se o item não é mais insuficiente (estoque foi reposto)
- * 
- * Isso garante que quando a Larissa dá a baixa direto no Maxiprod (sem clicar Concluir no dashboard),
- * o alerta sai automaticamente do card de insuficiência na aba Faturamento.
+ * - Alertas "pendente": expirar se o item não é mais insuficiente (pedido saiu de A aprovar ou estoque reposto)
+ * - Alertas "aceito": expirar SOMENTE se o item não é mais insuficiente (pedido saiu de A aprovar ou estoque reposto)
+ *   NÃO expirar baseado em baixas concluídas - uma baixa anterior não resolve necessariamente o pedido atual.
+ *   Isso evita o ciclo infinito: aceitar → expirar por baixa → criar novo pendente → aceitar novamente.
  */
 async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentInsufficient?: PedidoItem[]) {
-  // Importar tabela de solicitações de baixa para verificar quais destinos já foram concluídos
-  const { stockWithdrawalRequests } = await import("../drizzle/schema");
-  
-  // Buscar todos os produto_destino_code de baixas concluídas
-  const concludedWithdrawals = await db.select({
-    produtoDestinoCode: stockWithdrawalRequests.produtoDestinoCode,
-    productCode: stockWithdrawalRequests.productCode,
-  })
-    .from(stockWithdrawalRequests)
-    .where(eq(stockWithdrawalRequests.status, "concluida"));
-  
-  const concludedDestinoCodes = new Set(
-    concludedWithdrawals
-      .filter((w: any) => w.produtoDestinoCode)
-      .map((w: any) => w.produtoDestinoCode)
-  );
-  const concludedSourceCodes = new Set(
-    concludedWithdrawals.map((w: any) => w.productCode)
-  );
-
   if (!currentPedidos || currentPedidos.size === 0) {
     // Nenhum pedido A aprovar → expirar PENDENTES do sistema
-    // Para ACEITOS: só expirar se houver baixa concluída correspondente
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(
@@ -237,30 +214,10 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
         )
       );
     
-    // Agora verificar aceitos individualmente
-    const alertasAceitos = await db.select({
-      id: stockInsufficientAlerts.id,
-      codigoItem: stockInsufficientAlerts.codigoItem,
-      criadoPor: stockInsufficientAlerts.criadoPor,
-    })
-      .from(stockInsufficientAlerts)
-      .where(eq(stockInsufficientAlerts.status, "aceito"));
-    
-    const aceitosToExpire: number[] = [];
-    for (const alerta of alertasAceitos) {
-      if (alerta.criadoPor === 'manual') continue;
-      // Só expirar aceito se há baixa concluída com destino = código do alerta
-      if (concludedDestinoCodes.has(alerta.codigoItem) || concludedSourceCodes.has(alerta.codigoItem)) {
-        aceitosToExpire.push(alerta.id);
-      }
-    }
-    
-    if (aceitosToExpire.length > 0) {
-      await db.update(stockInsufficientAlerts)
-        .set({ status: "expirado" })
-        .where(inArray(stockInsufficientAlerts.id, aceitosToExpire));
-      console.log(`[StockAlert] ${aceitosToExpire.length} alerta(s) aceito(s) expirado(s) (baixa concluída no Maxiprod)`);
-    }
+    // Alertas aceitos NÃO devem ser expirados apenas porque não há pedidos A aprovar.
+    // Eles representam uma decisão humana (Maria aceitou a insuficiência) e devem permanecer
+    // até que o item seja efetivamente resolvido. Não expirar aceitos neste branch.
+    console.log(`[StockAlert] Nenhum pedido A aprovar. Pendentes do sistema expirados. Aceitos mantidos.`);
     return;
   }
 
@@ -292,9 +249,11 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
         idsToExpire.push(alerta.id);
       }
     } else if (alerta.status === "aceito") {
-      // Para alertas "aceito": SÓ expirar se houver baixa concluída correspondente
-      // (não expirar apenas porque o pedido saiu de A aprovar)
-      if (concludedDestinoCodes.has(alerta.codigoItem) || concludedSourceCodes.has(alerta.codigoItem)) {
+      // Para alertas "aceito": SÓ expirar se o item NÃO é mais insuficiente
+      // (ou seja, o pedido saiu de "A aprovar" ou o estoque foi reposto).
+      // NÃO expirar baseado em baixas concluídas - uma baixa concluída não significa
+      // que o problema do pedido atual foi resolvido (pode ser uma baixa anterior).
+      if (!insufficientSet.has(key)) {
         idsToExpire.push(alerta.id);
       }
     }
