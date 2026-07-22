@@ -1945,25 +1945,29 @@ export async function runGraphQLSync(): Promise<{
   try {
     // Sequential fetches to avoid timeout from bandwidth competition
     // Group 1: lightweight queries in parallel
-    const [rawStock, rawOpenOrders, rawPOs] = await Promise.all([
+    let [rawStock, rawOpenOrders, rawPOs] = await Promise.all([
       fetchStock(),
       fetchOpenSalesOrderItems(),
       fetchPurchaseOrderItems(),
     ]);
 
     // Group 2: heavy query alone (1500+ items paginated)
-    const rawAllSales = await fetchAllSalesOrderItems();
+    let rawAllSales = await fetchAllSalesOrderItems();
 
     // Group 3: financial queries in parallel
-    const [rawPayable, rawReceivable] = await Promise.all([
+    let [rawPayable, rawReceivable] = await Promise.all([
       fetchAccountsPayable().catch((e: any) => { console.error("[GraphQL Sync] Payable fetch error:", e.message); return []; }),
       fetchAccountsReceivable().catch((e: any) => { console.error("[GraphQL Sync] Receivable fetch error:", e.message); return []; }),
     ]);
 
+    // Transform and free raw data immediately to reduce memory pressure
     const stockData = transformStockData(rawStock);
+    rawStock = null as any; // free memory
     const orderData = transformOrderItems(rawOpenOrders);
+    rawOpenOrders = null as any; // free memory
 
     const salesData = transformSalesOrders(rawAllSales);
+    rawAllSales = null as any; // free memory
 
     // Extract madeira items from BOTH open orders AND historical sales to get all 60+ products
     const madeiraData = extractMadeiraItemsFromOrders(orderData, salesData);
@@ -2029,13 +2033,14 @@ export async function runGraphQLSync(): Promise<{
       console.log(`[GraphQL Sync] Added ${manualMadeiraAdded} manual madeira e-commerce items to dashboard`);
     }
     const poData = transformPurchaseOrderItems(rawPOs);
+    rawPOs = null as any; // free memory
     const payableData = transformAccountsPayable(rawPayable);
+    rawPayable = null as any; // free memory
     const receivableData = transformAccountsReceivable(rawReceivable);
+    rawReceivable = null as any; // free memory
     // DEBUG: log formaCobranca values
     const withForma = receivableData.filter((r: any) => r.formaCobranca);
     console.log(`[DEBUG] receivableData: ${receivableData.length} total, ${withForma.length} with formaCobranca`);
-    if (withForma.length > 0) console.log(`[DEBUG] Sample formaCobranca: ${withForma[0].formaCobranca}`);
-    if (receivableData.length > 0) console.log(`[DEBUG] First item formaDeCobranca raw:`, JSON.stringify(rawReceivable[0]?.formaDeCobranca));
 
     console.log(`[GraphQL Sync] Fetched: ${stockData.length}est ${orderData.length}ped ${salesData.length}vnd ${poData.length}po ${payableData.length}pg ${receivableData.length}rc`);
 

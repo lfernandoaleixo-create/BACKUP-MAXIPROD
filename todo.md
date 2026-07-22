@@ -5894,3 +5894,4 @@
 - [x] Feature: Restringir visualização do histórico de transportadora apenas para Bruno, Fernando e Guilherme
 - [x] Feature: Quando vendedor responder alerta de inadimplência (visto/resolvido/etc), piscar o cliente na aba Financeiro-Inadimplência
 - [x] Feature: Piscar até o financeiro clicar no sininho para confirmar que viu a devolutiva
+- [x] Bug: Sincronização Maxiprod falhando por JavaScript heap out of memory (252MB/259MB) durante saveAllData com 6141 contas a receber - aumentado heap para 384MB e liberando raw arrays após transform
