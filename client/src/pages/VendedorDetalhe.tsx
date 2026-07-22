@@ -508,10 +508,11 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                     </p>
                     <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                       order.status === "pendente" ? "bg-amber-100 text-amber-700"
+                      : order.status === "aprovado_subgestor" ? "bg-orange-100 text-orange-700"
                       : order.status === "aprovado" ? "bg-emerald-100 text-emerald-700"
                       : "bg-red-100 text-red-700"
                     }`}>
-                      {order.status === "pendente" ? "AGUARDANDO" : order.status === "aprovado" ? "APROVADO" : "REJEITADO"}
+                      {order.status === "pendente" ? "AGUARDANDO" : order.status === "aprovado_subgestor" ? "AGUARDANDO GESTOR" : order.status === "aprovado" ? "APROVADO" : "REJEITADO"}
                     </span>
                   </div>
                 </div>

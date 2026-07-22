@@ -2143,7 +2143,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   sellerId: int("seller_id").notNull(), // FK seller_permissions.id
   sellerName: varchar("seller_name", { length: 200 }).notNull(),
   gestorName: varchar("gestor_name", { length: 200 }),
-  status: mysqlEnum("status", ["pendente", "aprovado", "rejeitado", "processado", "simulacao"]).default("pendente").notNull(),
+  status: mysqlEnum("status", ["pendente", "aprovado", "aprovado_subgestor", "rejeitado", "processado", "simulacao"]).default("pendente").notNull(),
   
   // Dados do cliente
   cnpjCpf: varchar("cnpj_cpf", { length: 20 }).notNull(),

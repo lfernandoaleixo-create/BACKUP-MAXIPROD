@@ -5913,3 +5913,13 @@
 - [x] Cada etapa deve mostrar: data, status, texto/observação escrita, quem registrou
 - [x] Não perder nenhuma informação - tudo que foi escrito em cada etapa deve aparecer
 - [x] Manter formato legível e organizado no PDF
+
+## Fluxo Aprovação Juvenal (22/07/2026)
+- [x] Backend: novo status intermediário "aprovado_subgestor" para pedidos aprovados pelo Renato
+- [x] Backend: procedure gestorApproveSubgestorOrder para Juvenal aprovar (senha "Juvenal")
+- [x] Backend: procedure gestorRejectSubgestorOrder para Juvenal rejeitar
+- [x] Backend: filtrar pedidos "aprovado_subgestor" para não aparecerem para Vitória
+- [x] Frontend: seção/aba para Juvenal ver e aprovar pedidos pendentes do Renato (GestorAprovacoes)
+- [x] Frontend: badge "AGUARDANDO GESTOR" nos cards de pedido com status aprovado_subgestor
+- [x] Frontend: vendedor vê status "AGUARDANDO GESTOR" no histórico de pedidos
+- [x] Regra: apenas pedidos do Renato (subgestor do Rafael) passam por essa etapa extra

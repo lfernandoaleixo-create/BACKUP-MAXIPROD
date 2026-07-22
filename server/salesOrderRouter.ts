@@ -1008,7 +1008,7 @@ export const salesOrderRouter = router({
   /** List orders with filters (for gestor/Vitória) */
   listOrders: publicProcedure
     .input(z.object({
-      status: z.enum(["pendente", "aprovado", "rejeitado", "processado", "todos"]).optional(),
+      status: z.enum(["pendente", "aprovado", "aprovado_subgestor", "rejeitado", "processado", "todos"]).optional(),
       sellerId: z.number().optional(),
       gestorName: z.string().optional(),
       comissaoTravada: z.boolean().optional(), // Filter for orders with commission locked at 4%
@@ -1158,9 +1158,10 @@ export const salesOrderRouter = router({
         // Top gestores see everything except simulations
         conditions.push(sql`${salesOrderRequests.status} != 'simulacao'`);
       } else if (isJuvenal) {
-        // Juvenal sees pending (his sellers) + approved + processed
+        // Juvenal sees pending (his sellers) + aprovado_subgestor (needs his approval) + approved + processed
         conditions.push(or(
           eq(salesOrderRequests.status, "pendente"),
+          eq(salesOrderRequests.status, "aprovado_subgestor"),
           eq(salesOrderRequests.status, "aprovado"),
           eq(salesOrderRequests.status, "processado")
         ));
@@ -1242,16 +1243,111 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) throw new Error("DB not available");
 
+      // Check if Renato is approving one of his own sellers' orders
+      const isRenatoApproving = input.aprovadoPor.toUpperCase().includes("RENATO");
+      let needsGestorApproval = false;
+      if (isRenatoApproving) {
+        const [order] = await db.select({ gestorName: salesOrderRequests.gestorName })
+          .from(salesOrderRequests)
+          .where(eq(salesOrderRequests.id, input.orderId));
+        if (order?.gestorName === "RENATO LEDESMA") {
+          needsGestorApproval = true;
+        }
+      }
+
       await db.update(salesOrderRequests)
         .set({
-          status: "aprovado",
+          status: needsGestorApproval ? "aprovado_subgestor" : "aprovado",
           aprovadoPor: input.aprovadoPor,
           dataAprovacao: new Date(),
           observacaoAprovacao: input.observacaoAprovacao || null,
         })
         .where(eq(salesOrderRequests.id, input.orderId));
 
+      return { success: true, needsGestorApproval };
+    }),
+
+  /** Gestor (Juvenal) approves orders pre-approved by subgestor (Renato) */
+  gestorApproveSubgestorOrder: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      password: z.string(),
+      observacaoGestor: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      if (input.password !== "Juvenal") {
+        throw new Error("Senha incorreta");
+      }
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido n\u00e3o encontrado");
+      if (order.status !== "aprovado_subgestor") {
+        throw new Error("Este pedido n\u00e3o est\u00e1 aguardando aprova\u00e7\u00e3o do gestor");
+      }
+      const existingObs = order.observacaoAprovacao || "";
+      const gestorObs = input.observacaoGestor ? `\n[Juvenal]: ${input.observacaoGestor}` : "";
+      await db.update(salesOrderRequests)
+        .set({
+          status: "aprovado",
+          observacaoAprovacao: existingObs + gestorObs || null,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
       return { success: true };
+    }),
+
+  /** Gestor (Juvenal) rejects orders pre-approved by subgestor (Renato) */
+  gestorRejectSubgestorOrder: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      password: z.string(),
+      motivoRejeicao: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      if (input.password !== "Juvenal") {
+        throw new Error("Senha incorreta");
+      }
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido n\u00e3o encontrado");
+      if (order.status !== "aprovado_subgestor") {
+        throw new Error("Este pedido n\u00e3o est\u00e1 aguardando aprova\u00e7\u00e3o do gestor");
+      }
+      await db.update(salesOrderRequests)
+        .set({
+          status: "rejeitado",
+          motivoRejeicao: `[Juvenal rejeitou]: ${input.motivoRejeicao}`,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+      return { success: true };
+    }),
+
+  /** Get orders pending gestor (Juvenal) approval */
+  getOrdersPendingGestorApproval: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const orders = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.status, "aprovado_subgestor"))
+        .orderBy(desc(salesOrderRequests.createdAt));
+      const orderIds = orders.map(o => o.id);
+      let allItems: any[] = [];
+      if (orderIds.length > 0) {
+        allItems = await db.select().from(salesOrderRequestItems)
+          .where(inArray(salesOrderRequestItems.orderId, orderIds));
+      }
+      const itemsByOrder = new Map<number, typeof allItems>();
+      for (const item of allItems) {
+        if (!itemsByOrder.has(item.orderId)) itemsByOrder.set(item.orderId, []);
+        itemsByOrder.get(item.orderId)!.push(item);
+      }
+      return orders.map(order => ({
+        ...order,
+        items: itemsByOrder.get(order.id) || [],
+      }));
     }),
 
   /** Update approval observation (gestor can edit after approving) */

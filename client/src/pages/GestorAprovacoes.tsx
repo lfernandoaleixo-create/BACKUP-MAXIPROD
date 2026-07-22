@@ -109,12 +109,19 @@ export default function GestorAprovacoes(props: any = {}) {
   const urlParams = new URLSearchParams(window.location.search);
   const gestorName = gestorNameProp || urlParams.get("gestor") || undefined;
 
-  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado">("todos");
+  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "aprovado_subgestor" | "rejeitado">("todos");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [approvingOrder, setApprovingOrder] = useState<number | null>(null);
   const [approvalObs, setApprovalObs] = useState("");
+  // Juvenal gestor approval state
+  const [gestorApprovingOrder, setGestorApprovingOrder] = useState<number | null>(null);
+  const [gestorPassword, setGestorPassword] = useState("");
+  const [gestorObs, setGestorObs] = useState("");
+  const [gestorRejectingOrder, setGestorRejectingOrder] = useState<number | null>(null);
+  const [gestorRejectReason, setGestorRejectReason] = useState("");
+  const [gestorPasswordReject, setGestorPasswordReject] = useState("");
 
   // Fetch orders - filtered by gestorName if provided (for Renato/Juvenal individual view)
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
@@ -152,6 +159,8 @@ export default function GestorAprovacoes(props: any = {}) {
 
   const approveMutation = trpc.salesOrders.approveOrder.useMutation();
   const rejectMutation = trpc.salesOrders.rejectOrder.useMutation();
+  const gestorApproveMutation = trpc.salesOrders.gestorApproveSubgestorOrder.useMutation();
+  const gestorRejectMutation = trpc.salesOrders.gestorRejectSubgestorOrder.useMutation();
   const resetMutation = trpc.salesOrders.resetOrderNumbers.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const updateObsMutation = trpc.salesOrders.updateObservacaoAprovacao.useMutation();
@@ -200,12 +209,55 @@ export default function GestorAprovacoes(props: any = {}) {
     );
   };
 
+  // Gestor (Juvenal) approval handlers
+  const handleGestorApprove = () => {
+    if (gestorApprovingOrder === null || !gestorPassword.trim()) return;
+    gestorApproveMutation.mutate(
+      { orderId: gestorApprovingOrder, password: gestorPassword.trim(), observacaoGestor: gestorObs.trim() || undefined },
+      {
+        onSuccess: () => {
+          utils.salesOrders.listOrders.invalidate();
+          utils.salesOrders.getOrdersForGestor.invalidate();
+          utils.salesOrders.getOrdersPendingGestorApproval.invalidate();
+          setGestorApprovingOrder(null);
+          setGestorPassword("");
+          setGestorObs("");
+        },
+        onError: (err: any) => {
+          alert(err.message || "Erro ao aprovar");
+        },
+      }
+    );
+  };
+  const handleGestorReject = () => {
+    if (gestorRejectingOrder === null || !gestorPasswordReject.trim() || !gestorRejectReason.trim()) return;
+    gestorRejectMutation.mutate(
+      { orderId: gestorRejectingOrder, password: gestorPasswordReject.trim(), motivoRejeicao: gestorRejectReason.trim() },
+      {
+        onSuccess: () => {
+          utils.salesOrders.listOrders.invalidate();
+          utils.salesOrders.getOrdersForGestor.invalidate();
+          utils.salesOrders.getOrdersPendingGestorApproval.invalidate();
+          setGestorRejectingOrder(null);
+          setGestorPasswordReject("");
+          setGestorRejectReason("");
+        },
+        onError: (err: any) => {
+          alert(err.message || "Erro ao rejeitar");
+        },
+      }
+    );
+  };
+
+  const isJuvenalViewing = gestorName === "JUVENAL TEIXEIRA";
+
   const stats = useMemo(() => {
-    if (!orders) return { pendentes: 0, aprovados: 0, rejeitados: 0, total: 0 };
+    if (!orders) return { pendentes: 0, aprovados: 0, rejeitados: 0, aguardandoGestor: 0, total: 0 };
     return {
       pendentes: orders.filter((o: any) => o.status === "pendente").length,
-      aprovados: orders.filter((o: any) => o.status === "aprovado").length,
+      aprovados: orders.filter((o: any) => o.status === "aprovado" || o.status === "processado").length,
       rejeitados: orders.filter((o: any) => o.status === "rejeitado").length,
+      aguardandoGestor: orders.filter((o: any) => o.status === "aprovado_subgestor").length,
       total: orders.length,
     };
   }, [orders]);
@@ -345,17 +397,17 @@ export default function GestorAprovacoes(props: any = {}) {
         {/* Filter Tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
           <Filter className="w-4 h-4 text-slate-400 ml-2" />
-          {(["todos", "pendente", "aprovado", "rejeitado"] as const).map((f) => (
+          {(["todos", "pendente", ...(isJuvenalViewing ? ["aprovado_subgestor" as const] : []), "aprovado", "rejeitado"] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => setFilter(f as any)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 filter === f
-                  ? "bg-teal-600 text-white shadow-sm"
+                  ? f === "aprovado_subgestor" ? "bg-amber-500 text-white shadow-sm" : "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              {f === "todos" ? "Todos" : f === "pendente" ? "Pendentes" : f === "aprovado" ? "Aprovados" : "Recusados"}
+              {f === "todos" ? "Todos" : f === "pendente" ? "Pendentes" : f === "aprovado_subgestor" ? `Aguardando Gestor (${stats.aguardandoGestor})` : f === "aprovado" ? "Aprovados" : "Recusados"}
             </button>
           ))}
         </div>
@@ -468,11 +520,14 @@ export default function GestorAprovacoes(props: any = {}) {
             {(orders as any[]).map((order) => {
               const isExpanded = expandedOrder === order.id;
               const isPending = order.status === "pendente";
+              const isAwaitingGestor = order.status === "aprovado_subgestor";
               const isRed = order.temPrecoAbaixoMinimo;
               const borderColor = isPending && isRed
                 ? "border-l-4 border-l-red-500"
                 : isPending
                 ? "border-l-4 border-l-amber-400"
+                : isAwaitingGestor
+                ? "border-l-4 border-l-orange-500"
                 : order.status === "aprovado"
                 ? "border-l-4 border-l-green-500"
                 : order.status === "rejeitado"
@@ -493,6 +548,7 @@ export default function GestorAprovacoes(props: any = {}) {
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isPending && isRed ? "bg-red-100 dark:bg-red-900/30" :
                       isPending ? "bg-amber-100 dark:bg-amber-900/30" :
+                      isAwaitingGestor ? "bg-orange-100 dark:bg-orange-900/30" :
                       order.status === "aprovado" ? "bg-green-100 dark:bg-green-900/30" :
                       order.status === "rejeitado" ? "bg-slate-100 dark:bg-slate-700" :
                       "bg-blue-50 dark:bg-blue-900/20"
@@ -501,6 +557,8 @@ export default function GestorAprovacoes(props: any = {}) {
                         <AlertTriangle className="w-4.5 h-4.5 text-red-600" />
                       ) : isPending ? (
                         <Clock className="w-4.5 h-4.5 text-amber-600" />
+                      ) : isAwaitingGestor ? (
+                        <Clock className="w-4.5 h-4.5 text-orange-600" />
                       ) : order.status === "aprovado" ? (
                         <CheckCircle2 className="w-4.5 h-4.5 text-green-600" />
                       ) : order.status === "rejeitado" ? (
@@ -521,12 +579,14 @@ export default function GestorAprovacoes(props: any = {}) {
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           isPending && isRed ? "bg-red-100 text-red-700" :
                           isPending ? "bg-amber-100 text-amber-700" :
+                          isAwaitingGestor ? "bg-orange-100 text-orange-700" :
                           order.status === "aprovado" ? "bg-green-50 text-green-600" :
                           order.status === "rejeitado" ? "bg-red-50 text-red-600" :
                           "bg-blue-50 text-blue-600"
                         }`}>
                           {isPending && isRed ? "PREÇO ABAIXO - PENDENTE" :
                            isPending ? "PENDENTE" :
+                           isAwaitingGestor ? "AGUARDANDO GESTOR" :
                            order.status === "aprovado" ? "APROVADO" :
                            order.status === "rejeitado" ? "RECUSADO" :
                            "PROCESSADO"}
@@ -985,6 +1045,114 @@ export default function GestorAprovacoes(props: any = {}) {
                         </div>
                       )}
 
+                      {/* Actions for orders awaiting gestor (Juvenal) approval */}
+                      {order.status === "aprovado_subgestor" && isJuvenalViewing && (
+                        <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                          <p className="text-[10px] font-bold text-orange-700 dark:text-orange-400 mb-2">
+                            ⚠️ Aprovado pelo subgestor Renato — aguardando sua aprovação final
+                          </p>
+                          {order.aprovadoPor && (
+                            <p className="text-[10px] text-orange-600 dark:text-orange-300 mb-2">
+                              Aprovado por: {order.aprovadoPor} em {order.dataAprovacao ? new Date(order.dataAprovacao as string).toLocaleDateString("pt-BR") : "-"}
+                              {order.observacaoAprovacao && <span className="block mt-0.5">Obs: {order.observacaoAprovacao}</span>}
+                            </p>
+                          )}
+                          {gestorApprovingOrder === order.id ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={gestorObs}
+                                onChange={(e) => setGestorObs(e.target.value)}
+                                placeholder="Observação do gestor (opcional)..."
+                                rows={2}
+                                className="w-full px-3 py-2 text-xs border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                              />
+                              <input
+                                type="password"
+                                value={gestorPassword}
+                                onChange={(e) => setGestorPassword(e.target.value)}
+                                placeholder="Senha do gestor"
+                                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => { setGestorApprovingOrder(null); setGestorPassword(""); setGestorObs(""); }}
+                                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={handleGestorApprove}
+                                  disabled={!gestorPassword.trim() || gestorApproveMutation.isPending}
+                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  {gestorApproveMutation.isPending ? "Aprovando..." : "Confirmar Aprovação"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : gestorRejectingOrder === order.id ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={gestorRejectReason}
+                                onChange={(e) => setGestorRejectReason(e.target.value)}
+                                placeholder="Motivo da rejeição (obrigatório)..."
+                                rows={2}
+                                className="w-full px-3 py-2 text-xs border border-red-200 dark:border-red-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
+                              />
+                              <input
+                                type="password"
+                                value={gestorPasswordReject}
+                                onChange={(e) => setGestorPasswordReject(e.target.value)}
+                                placeholder="Senha do gestor"
+                                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => { setGestorRejectingOrder(null); setGestorPasswordReject(""); setGestorRejectReason(""); }}
+                                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={handleGestorReject}
+                                  disabled={!gestorPasswordReject.trim() || !gestorRejectReason.trim() || gestorRejectMutation.isPending}
+                                  className="px-4 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  {gestorRejectMutation.isPending ? "Rejeitando..." : "Confirmar Rejeição"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setGestorApprovingOrder(order.id)}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                Aprovar (Gestor)
+                              </button>
+                              <button
+                                onClick={() => setGestorRejectingOrder(order.id)}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Rejeitar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Awaiting gestor info (for non-Juvenal viewers) */}
+                      {order.status === "aprovado_subgestor" && !isJuvenalViewing && (
+                        <div className="mt-3 p-2.5 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                          <p className="text-[10px] font-bold text-orange-700 dark:text-orange-400">
+                            Aguardando aprovação do gestor Juvenal
+                          </p>
+                          <p className="text-[10px] text-orange-600 dark:text-orange-300 mt-0.5">
+                            Aprovado pelo subgestor: {order.aprovadoPor}
+                            {order.dataAprovacao && ` em ${new Date(order.dataAprovacao as string).toLocaleDateString("pt-BR")}`}
+                          </p>
+                        </div>
+                      )}
                       {/* Rejection info */}
                       {order.status === "rejeitado" && order.motivoRejeicao && (
                         <div className="mt-3 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">

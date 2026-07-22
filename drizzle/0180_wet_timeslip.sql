@@ -1,0 +1,1 @@
+ALTER TABLE `sales_order_requests` MODIFY COLUMN `status` enum('pendente','aprovado','aprovado_subgestor','rejeitado','processado','simulacao') NOT NULL DEFAULT 'pendente';

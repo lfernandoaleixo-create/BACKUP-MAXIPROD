@@ -209,7 +209,13 @@ export default function GestaoComercial() {
     { status: "pendente", gestorName: isRenato ? "RENATO LEDESMA" : isJuvenal ? "JUVENAL TEIXEIRA" : undefined },
     { staleTime: 30 * 1000, enabled: showNavigationHub && (isRenato || isJuvenal), refetchInterval: 60 * 1000 }
   );
-  const pendingCount = pendingOrdersQuery.data?.length || 0;
+  // For Juvenal: also count orders pending his approval (aprovado_subgestor from Renato)
+  const subgestorPendingQuery = trpc.salesOrders.getOrdersPendingGestorApproval.useQuery(
+    undefined,
+    { staleTime: 30 * 1000, enabled: showNavigationHub && isJuvenal, refetchInterval: 60 * 1000 }
+  );
+  const subgestorPendingCount = isJuvenal ? (subgestorPendingQuery.data?.length || 0) : 0;
+  const pendingCount = (pendingOrdersQuery.data?.length || 0) + subgestorPendingCount;
 
   // If Vitória, show nothing (redirect will happen)
   if (shouldRedirectToPedidos) return null;
