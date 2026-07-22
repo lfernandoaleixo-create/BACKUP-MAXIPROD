@@ -3178,6 +3178,8 @@ export const stockInsufficientAlerts = mysqlTable("stock_insufficient_alerts", {
   respondidoPor: varchar("respondido_por", { length: 200 }),
   respostaObservacao: text("resposta_observacao"), // Motivo da recusa ou observação do aceite
   respondidoEm: timestamp("respondido_em"),
+  // Tipo do item (para regras diferenciadas de alerta)
+  tipoItem: varchar("tipo_item", { length: 20 }).default("bambu"), // bambu | madeira
   // Controle
   criadoPor: varchar("criado_por", { length: 100 }).default("sistema"), // sistema (auto-detecção)
   visualizadoPor: text("visualizado_por"), // JSON array de nomes que já viram

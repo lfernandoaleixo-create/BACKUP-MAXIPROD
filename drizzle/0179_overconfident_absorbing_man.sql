@@ -1,0 +1,1 @@
+ALTER TABLE `stock_insufficient_alerts` ADD `tipo_item` varchar(20) DEFAULT 'bambu';

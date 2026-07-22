@@ -10,7 +10,7 @@
  * 5. Expira alertas pendentes de pedidos que não estão mais em "A aprovar"
  */
 import { getDb } from "./db";
-import { stockInsufficientAlerts } from "../drizzle/schema";
+import { stockInsufficientAlerts, stockItems } from "../drizzle/schema";
 import { eq, and, inArray, gte } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -22,6 +22,7 @@ interface PedidoItem {
   unidade: string;
   pedidoNumero: string;
   cliente: string;
+  isMadeira: boolean; // true se o item é de madeira (superGrupo 16, grupo 18/19)
 }
 
 /**
@@ -43,7 +44,7 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
           quantidade
           estado
           unidade { codigo }
-          item { codigo descricao estoques { quantidade } }
+          item { codigo descricao estoques { quantidade } grupo { codigo dentroDoGrupo { codigo } } }
           pedidoDeVenda {
             numero
             cliente { razaoSocial nomeFantasia }
@@ -63,15 +64,22 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
         // Item must have at least one stock record to be considered for insufficiency
         return estoques.length > 0;
       })
-      .map((item: any) => ({
-        itemId: item.itemId,
-        codigoItem: item.item?.codigo || "",
-        descricao: item.descricao || item.item?.descricao || "",
-        quantidade: item.quantidade || 0,
-        unidade: item.unidade?.codigo || "CX",
-        pedidoNumero: String(item.pedidoDeVenda?.numero || ""),
-        cliente: item.pedidoDeVenda?.cliente?.razaoSocial || item.pedidoDeVenda?.cliente?.nomeFantasia || "N/A",
-      }));
+      .map((item: any) => {
+        // Identificar se é madeira: superGrupo 16 (dentroDoGrupo.codigo) com grupo 18 ou 19
+        const grupoCodigo = item.item?.grupo?.codigo || "";
+        const superGrupoCodigo = item.item?.grupo?.dentroDoGrupo?.codigo || "";
+        const isMadeira = superGrupoCodigo === "16" && (grupoCodigo === "18" || grupoCodigo === "19");
+        return {
+          itemId: item.itemId,
+          codigoItem: item.item?.codigo || "",
+          descricao: item.descricao || item.item?.descricao || "",
+          quantidade: item.quantidade || 0,
+          unidade: item.unidade?.codigo || "CX",
+          pedidoNumero: String(item.pedidoDeVenda?.numero || ""),
+          cliente: item.pedidoDeVenda?.cliente?.razaoSocial || item.pedidoDeVenda?.cliente?.nomeFantasia || "N/A",
+          isMadeira,
+        };
+      });
   } catch (error: any) {
     console.error("[StockAlert] Erro ao buscar itens A aprovar via GraphQL:", error.message);
     return [];
@@ -158,14 +166,39 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   const alertaSet = new Set(alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`));
 
   // 5. Criar alertas para itens insuficientes que não têm alerta recente
+  // Para MADEIRA: verificar estoque local (card estoque) antes de criar alerta
+  // Se tiver caixas suficientes no estoque local, não cria alerta
   let created = 0;
   const pedidosAtuais = new Set<string>();
+
+  // Buscar estoque local (stock_items) para produtos de madeira
+  const localStockRows = await db.select({
+    codigoItem: stockItems.codigoItem,
+    quantidade: stockItems.quantidade,
+  }).from(stockItems);
+  // Agregar por código (pode ter múltiplas linhas por item)
+  const localStockMap = new Map<string, number>();
+  for (const row of localStockRows) {
+    const current = localStockMap.get(row.codigoItem) || 0;
+    localStockMap.set(row.codigoItem, current + parseFloat(row.quantidade));
+  }
 
   for (const item of insufficientItems) {
     pedidosAtuais.add(item.pedidoNumero);
     const key = `${item.pedidoNumero}-${item.codigoItem}`;
     
     if (!alertaSet.has(key)) {
+      // REGRA MADEIRA (a partir de 22/07/2026): verificar estoque local
+      // Se tem caixas suficientes no card de estoque, não cria alerta
+      if (item.isMadeira) {
+        const localQty = localStockMap.get(item.codigoItem) || 0;
+        if (localQty >= item.quantidade) {
+          // Estoque local suficiente para madeira → não criar alerta
+          console.log(`[StockAlert] MADEIRA ${item.codigoItem} - estoque local suficiente (${localQty} >= ${item.quantidade}). Alerta não criado.`);
+          continue;
+        }
+      }
+
       const stock = stockMap.get(item.itemId) || { total: 0, reserved: 0 };
       const available = stock.total - stock.reserved;
 
@@ -178,6 +211,7 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
         unidadeMedida: item.unidade,
         estoqueDisponivel: String(Math.max(0, available)),
         status: "pendente",
+        tipoItem: item.isMadeira ? "madeira" : "bambu",
         criadoPor: "sistema",
       });
       alertaSet.add(key);
@@ -228,21 +262,54 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
     codigoItem: stockInsufficientAlerts.codigoItem,
     criadoPor: stockInsufficientAlerts.criadoPor,
     status: stockInsufficientAlerts.status,
+    tipoItem: stockInsufficientAlerts.tipoItem,
+    quantidadePedida: stockInsufficientAlerts.quantidadePedida,
   })
     .from(stockInsufficientAlerts)
     .where(inArray(stockInsufficientAlerts.status, ["pendente", "aceito"]));
 
-  // Criar set dos itens que REALMENTE são insuficientes agora
+  // Criar set dos itens que REALMENTE são insuficientes agora (segundo Maxiprod)
   const insufficientSet = new Set(
     (currentInsufficient || []).map(i => `${i.pedidoNumero}-${i.codigoItem}`)
   );
 
+  // Para madeira: buscar estoque local para verificar auto-resolução
+  const localStockRows = await db.select({
+    codigoItem: stockItems.codigoItem,
+    quantidade: stockItems.quantidade,
+  }).from(stockItems);
+  const localStockMap = new Map<string, number>();
+  for (const row of localStockRows) {
+    const current = localStockMap.get(row.codigoItem) || 0;
+    localStockMap.set(row.codigoItem, current + parseFloat(row.quantidade));
+  }
+
   const idsToExpire: number[] = [];
+  const idsToAutoResolve: number[] = [];
+
   for (const alerta of alertasAtivos) {
     // Não expirar alertas criados manualmente - só expirar os do sistema
     if (alerta.criadoPor === 'manual') continue;
     const key = `${alerta.pedidoNumero}-${alerta.codigoItem}`;
-    
+
+    // REGRA MADEIRA: auto-resolver quando estoque local fica suficiente
+    if (alerta.tipoItem === "madeira") {
+      const localQty = localStockMap.get(alerta.codigoItem) || 0;
+      const qtdPedida = parseFloat(alerta.quantidadePedida || "0");
+      if (localQty >= qtdPedida) {
+        // Estoque local agora é suficiente → auto-resolver
+        idsToAutoResolve.push(alerta.id);
+        console.log(`[StockAlert] MADEIRA ${alerta.codigoItem} - estoque reposto (${localQty} >= ${qtdPedida}). Auto-resolvido.`);
+        continue;
+      }
+      // Se não está mais no Maxiprod como insuficiente (pedido saiu de A aprovar), expirar
+      if (!insufficientSet.has(key)) {
+        idsToExpire.push(alerta.id);
+      }
+      continue;
+    }
+
+    // REGRA BAMBU (fluxo original)
     if (alerta.status === "pendente") {
       // Para alertas "pendente": expirar se não é mais insuficiente
       if (!insufficientSet.has(key)) {
@@ -250,9 +317,6 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
       }
     } else if (alerta.status === "aceito") {
       // Para alertas "aceito": SÓ expirar se o item NÃO é mais insuficiente
-      // (ou seja, o pedido saiu de "A aprovar" ou o estoque foi reposto).
-      // NÃO expirar baseado em baixas concluídas - uma baixa concluída não significa
-      // que o problema do pedido atual foi resolvido (pode ser uma baixa anterior).
       if (!insufficientSet.has(key)) {
         idsToExpire.push(alerta.id);
       }
@@ -263,6 +327,19 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
     await db.update(stockInsufficientAlerts)
       .set({ status: "expirado" })
       .where(inArray(stockInsufficientAlerts.id, idsToExpire));
-    console.log(`[StockAlert] ${idsToExpire.length} alerta(s) expirado(s) (baixa concluída ou item não mais insuficiente)`);
+    console.log(`[StockAlert] ${idsToExpire.length} alerta(s) expirado(s) (item não mais insuficiente)`);
+  }
+
+  // Auto-resolver alertas de madeira cujo estoque foi reposto
+  if (idsToAutoResolve.length > 0) {
+    await db.update(stockInsufficientAlerts)
+      .set({ 
+        status: "expirado",
+        respostaObservacao: "Auto-resolvido: estoque local reposto (suficiente para o pedido)",
+        respondidoPor: "sistema",
+        respondidoEm: new Date(),
+      })
+      .where(inArray(stockInsufficientAlerts.id, idsToAutoResolve));
+    console.log(`[StockAlert] ${idsToAutoResolve.length} alerta(s) de MADEIRA auto-resolvido(s) (estoque reposto)`);
   }
 }

@@ -5895,3 +5895,7 @@
 - [x] Feature: Quando vendedor responder alerta de inadimplência (visto/resolvido/etc), piscar o cliente na aba Financeiro-Inadimplência
 - [x] Feature: Piscar até o financeiro clicar no sininho para confirmar que viu a devolutiva
 - [x] Bug: Sincronização Maxiprod falhando por JavaScript heap out of memory (252MB/259MB) durante saveAllData com 6141 contas a receber - aumentado heap para 384MB e liberando raw arrays após transform
+- [x] Feature: Produtos de madeira não precisam de aceite manual para alerta de estoque insuficiente
+- [x] Feature: Para madeira, verificar automaticamente se tem caixas suficientes no estoque - se tiver, não mostra alerta
+- [x] Feature: Para madeira, quando estoque for reposto e ficar suficiente, resolver alerta automaticamente (fica só no histórico)
+- [x] Feature: Regra vale a partir de hoje (22/07/2026) - alertas existentes de madeira anteriores a esta data mantém comportamento antigo

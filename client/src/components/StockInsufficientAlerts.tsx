@@ -128,6 +128,11 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
                           <Badge className="bg-red-100 text-red-700 text-xs font-bold">
                             {Number(alert.quantidadePedida).toFixed(0)} {alert.unidadeMedida}
                           </Badge>
+                          {alert.tipoItem === "madeira" && (
+                            <Badge className="bg-amber-100 text-amber-800 text-xs">
+                              MADEIRA (auto)
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-gray-800 mt-1 font-medium">
                           {alert.descricaoItem}
@@ -140,8 +145,15 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
                         </p>
                       </div>
 
-                      {/* Actions */}
-                      {canRespond && (
+                      {/* Info para MADEIRA: auto-resolve */}
+                      {alert.tipoItem === "madeira" && (
+                        <div className="shrink-0">
+                          <span className="text-xs text-amber-700 italic">Resolve ao repor estoque</span>
+                        </div>
+                      )}
+
+                      {/* Actions - Não mostrar para MADEIRA (auto-resolve) */}
+                      {canRespond && alert.tipoItem !== "madeira" && (
                         <div className="flex flex-col gap-1 shrink-0">
                           {respondingId === alert.id ? (
                             <div className="space-y-2">
