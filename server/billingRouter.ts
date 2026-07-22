@@ -2047,4 +2047,119 @@ export const billingRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Track a shipment via Alfa Transportes API
+   * Receives pedido number, resolves NF via Maxiprod, then queries Alfa tracking
+   */
+  trackAlfaShipment: publicProcedure
+    .input(z.object({
+      pedido: z.string(),
+      nfNumero: z.string().optional(), // If NF is already known, skip lookup
+    }))
+    .mutation(async ({ input }) => {
+      const { trackAllAlfaCnpjs } = await import("./alfaApi");
+
+      let nfNumber = input.nfNumero;
+
+      // If NF not provided, resolve from Maxiprod
+      if (!nfNumber) {
+        try {
+          const pedidoNumbers = [`"${input.pedido}"`].join(", ");
+
+          type PedidoItemResult = {
+            id: number;
+            pedidoDeVenda: { numero: string };
+          };
+
+          const pedidoItems = await fetchAllPages<PedidoItemResult>(
+            "itensDosPedidosDeVendas",
+            (skip: number, take: number) => `{
+              itensDosPedidosDeVendas(
+                skip: ${skip}, take: ${take},
+                where: { pedidoDeVenda: { numero: { in: [${pedidoNumbers}] } } }
+              ) {
+                totalCount
+                items {
+                  id
+                  pedidoDeVenda { numero }
+                }
+              }
+            }`
+          );
+
+          if (pedidoItems.length === 0) {
+            return { success: false, error: "Nenhum item de pedido encontrado no Maxiprod" };
+          }
+
+          const itemIds = pedidoItems.map(pi => pi.id);
+          const idsStr = itemIds.slice(0, 100).join(",");
+
+          type NfItemResult = {
+            itemDoPedidoDeVendaId: number;
+            notaFiscal: {
+              numero: string;
+              serie: string;
+              chaveDeAcesso: string | null;
+              emissaoData: string;
+            };
+          };
+
+          const nfItems = await fetchAllPages<NfItemResult>(
+            "itensDasNotasFiscais",
+            (skip: number, take: number) => `{
+              itensDasNotasFiscais(
+                skip: ${skip}, take: ${take},
+                where: {
+                  itemDoPedidoDeVendaId: { in: [${idsStr}] },
+                  notaFiscal: { entradaOuSaida: { eq: SAIDA }, estado: { eq: EMITIDA } }
+                }
+              ) {
+                totalCount
+                items {
+                  itemDoPedidoDeVendaId
+                  notaFiscal {
+                    numero
+                    serie
+                    chaveDeAcesso
+                    emissaoData
+                  }
+                }
+              }
+            }`
+          );
+
+          if (nfItems.length === 0) {
+            return { success: false, error: "Nenhuma NF emitida encontrada para este pedido" };
+          }
+
+          // Use the first NF found
+          nfNumber = nfItems[0].notaFiscal.numero;
+        } catch (err: any) {
+          return { success: false, error: `Erro ao buscar NF: ${err.message}` };
+        }
+      }
+
+      // Now call Alfa tracking API
+      try {
+        const result = await trackAllAlfaCnpjs(nfNumber);
+
+        if (result.success && result.data) {
+          return {
+            success: true,
+            tracking: result.data,
+            cnpjUsed: result.cnpjUsed,
+            nfUsed: nfNumber,
+          };
+        } else {
+          return {
+            success: false,
+            error: result.errors?.map(e => `${e.cnpj}: ${e.error}`).join(" | ") || "NF não encontrada na Alfa",
+            nfUsed: nfNumber,
+          };
+        }
+      } catch (err: any) {
+        return { success: false, error: `Erro na API Alfa: ${err.message}` };
+      }
+    }),
 });

@@ -1,7 +1,7 @@
 /**
  * Alfa Transportes API Integration
- * Cotação de frete via REST/JSON
- * URL Base: https://api.alfatransportes.com.br/cotacao/v1.2/
+ * Cotação de frete via REST/JSON: https://api.alfatransportes.com.br/cotacao/v1.2/
+ * Rastreamento via REST/JSON: https://api.alfatransportes.com.br/rastreamento/v1.3/
  */
 
 interface AlfaQuoteParams {
@@ -98,6 +98,139 @@ export async function quoteAlfaFreight(params: AlfaQuoteParams): Promise<AlfaQuo
 /**
  * Quote freight from Alfa Transportes for all available CNPJs
  */
+// ===== RASTREAMENTO =====
+
+export interface AlfaTrackingResult {
+  id: string;
+  status: {
+    numero: number; // 2 = sucesso, 1 = não concluído, 4/6/8/9 = erros
+    descricao: string;
+  };
+  rastreamento?: {
+    dadosTransportadora?: {
+      nomeTransportadora: string;
+      cnpjTransportadora: string;
+      cidadeTransportadora: string;
+    };
+    dadosRemetente?: {
+      nomeRemetente: string;
+      cnpjRemetente: string;
+    };
+    dadosCte?: {
+      numeroCte: string;
+      valorCte: number;
+      emissaoData: string;
+      dataPrevista: string;
+      nomeDestinatario: string;
+      agenciaInicio: string;
+      agenciaFim: string;
+      cidadeEntrega: string;
+      notas: Array<{ numero: string; serie: string; chave: string }>;
+    };
+    complementar?: {
+      tipoCte: string;
+      numero: string;
+      serie: string;
+      valor: number;
+    };
+    dadosEmbarque?: Array<{
+      cidadeOrigem: string;
+      cidadeDestino: string;
+      codigoViagem: string;
+      horaSaida: string;
+      horaChegada: string;
+    }>;
+    dadosEntrega?: {
+      recebedorMercadoria: string;
+      dataEntrega: string;
+      urlComprovante: string;
+    };
+    ocorrenciasExtras?: Array<{
+      codigoOcorrencia: string;
+      dataOcorrencia: string;
+      descricaoOcorrencia: string;
+    }>;
+  };
+}
+
+/**
+ * Track a shipment via Alfa Transportes Rastreamento API v1.3
+ * @param apiKey - Chave de acesso (idr)
+ * @param merNF - Número da Nota Fiscal
+ * @param tomCnpj - CNPJ (opcional)
+ */
+export async function trackAlfaFreight(params: {
+  apiKey: string;
+  merNF: string;
+  tomCnpj?: string;
+}): Promise<AlfaTrackingResult> {
+  const body: Record<string, any> = {
+    idr: params.apiKey,
+    merNF: params.merNF,
+    modoJson: 1,
+  };
+
+  if (params.tomCnpj) {
+    body.tomCnpj = params.tomCnpj.replace(/\D/g, "");
+  }
+
+  const response = await fetch("https://api.alfatransportes.com.br/rastreamento/v1.3/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Alfa Tracking API error: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Track a shipment trying all available Alfa API keys
+ * Returns the first successful result or all errors
+ */
+export async function trackAllAlfaCnpjs(merNF: string): Promise<{
+  success: boolean;
+  data?: AlfaTrackingResult;
+  cnpjUsed?: string;
+  errors?: Array<{ cnpj: string; error: string }>;
+}> {
+  const configs = [
+    { cnpj: "36562762000129", key: process.env.ALFA_API_KEY_1 || "" },
+    { cnpj: "50128808000127", key: process.env.ALFA_API_KEY_2 || "" },
+  ].filter(c => c.key);
+
+  const errors: Array<{ cnpj: string; error: string }> = [];
+
+  for (const config of configs) {
+    try {
+      const result = await trackAlfaFreight({
+        apiKey: config.key,
+        merNF,
+        tomCnpj: config.cnpj,
+      });
+
+      // Status 2 = RASTREAMENTO CONCLUIDO COM SUCESSO
+      // Status 1 = RASTREAMENTO NAO CONCLUIDO (em trânsito, dados parciais)
+      if (result.status.numero === 2 || result.status.numero === 1) {
+        return { success: true, data: result, cnpjUsed: config.cnpj };
+      }
+
+      errors.push({ cnpj: config.cnpj, error: result.status.descricao });
+    } catch (err: any) {
+      errors.push({ cnpj: config.cnpj, error: err.message || "Erro desconhecido" });
+    }
+  }
+
+  return { success: false, errors };
+}
+
+// ===== COTAÇÃO =====
+
 export async function quoteAllAlfaCnpjs(params: {
   cepDestino: string;
   cepOrigem?: string;

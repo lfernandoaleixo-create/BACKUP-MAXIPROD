@@ -5899,3 +5899,11 @@
 - [x] Feature: Para madeira, verificar automaticamente se tem caixas suficientes no estoque - se tiver, não mostra alerta
 - [x] Feature: Para madeira, quando estoque for reposto e ficar suficiente, resolver alerta automaticamente (fica só no histórico)
 - [x] Feature: Regra vale a partir de hoje (22/07/2026) - alertas existentes de madeira anteriores a esta data mantém comportamento antigo
+
+## Rastreio Alfa Transportes na Gestão Comercial (22/07/2026)
+- [x] Backend: criar helper trackAlfaFreight no alfaApi.ts (consulta API rastreamento Alfa v1.3)
+- [x] Backend: criar procedure tRPC trackOrder (recebe pedido, busca NF via Maxiprod, consulta Alfa)
+- [x] Frontend: botão "Rastrear" ao lado de cada pedido no histórico do vendedor (SellerOrdersView)
+- [x] Frontend: modal/dialog de rastreio com status, trechos, ocorrências, comprovante de entrega
+- [x] Funcionalidade disponível tanto no painel dos vendedores quanto no painel dos gestores
+- [x] NÃO alterar nenhuma outra funcionalidade

@@ -4117,6 +4117,10 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     { staleTime: 60 * 1000 }
   );
 
+  // Alfa Tracking state
+  const [trackingPedido, setTrackingPedido] = useState<string | null>(null);
+  const trackAlfaMutation = trpc.billing.trackAlfaShipment.useMutation();
+
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
@@ -4524,6 +4528,146 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       )}
 
       {/* Lista de pedidos Maxiprod - hidden when new order form is open (tablet optimization) */}
+      {/* Alfa Tracking Modal */}
+      {trackingPedido && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { setTrackingPedido(null); trackAlfaMutation.reset(); }}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Rastreio - Pedido #{trackingPedido}</h3>
+              </div>
+              <button onClick={() => { setTrackingPedido(null); trackAlfaMutation.reset(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              {trackAlfaMutation.isPending && (
+                <div className="flex items-center justify-center gap-2 py-8">
+                  <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
+                  <span className="text-sm text-slate-500">Consultando Alfa Transportes...</span>
+                </div>
+              )}
+              {trackAlfaMutation.isError && (
+                <div className="text-center py-6">
+                  <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                  <p className="text-sm text-red-600 dark:text-red-400">Erro ao consultar rastreio</p>
+                  <p className="text-xs text-slate-400 mt-1">{trackAlfaMutation.error?.message}</p>
+                </div>
+              )}
+              {trackAlfaMutation.isSuccess && !trackAlfaMutation.data.success && (
+                <div className="text-center py-6">
+                  <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                  <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">Rastreio não encontrado</p>
+                  <p className="text-xs text-slate-500 mt-1">{trackAlfaMutation.data.error}</p>
+                  {trackAlfaMutation.data.nfUsed && (
+                    <p className="text-xs text-slate-400 mt-1">NF consultada: {trackAlfaMutation.data.nfUsed}</p>
+                  )}
+                </div>
+              )}
+              {trackAlfaMutation.isSuccess && trackAlfaMutation.data.success && trackAlfaMutation.data.tracking && (() => {
+                const t = trackAlfaMutation.data.tracking;
+                const r = t.rastreamento;
+                const isDelivered = t.status.numero === 2;
+                return (
+                  <div className="space-y-4">
+                    {/* Status geral */}
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                      isDelivered ? "bg-green-50 dark:bg-green-900/20" : "bg-blue-50 dark:bg-blue-900/20"
+                    }`}>
+                      <div className={`w-2.5 h-2.5 rounded-full ${
+                        isDelivered ? "bg-green-500" : "bg-blue-500 animate-pulse"
+                      }`} />
+                      <span className={`text-sm font-bold ${
+                        isDelivered ? "text-green-700 dark:text-green-400" : "text-blue-700 dark:text-blue-400"
+                      }`}>
+                        {isDelivered ? "ENTREGUE" : "EM TR\u00C2NSITO"}
+                      </span>
+                      <span className="text-xs text-slate-500 ml-auto">{t.status.descricao}</span>
+                    </div>
+
+                    {/* CT-e Info */}
+                    {r?.dadosCte && (
+                      <div className="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-3 space-y-1.5">
+                        <p className="text-xs font-bold text-slate-500 uppercase">CT-e</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-slate-400">Número:</span> <span className="text-slate-700 dark:text-slate-200 font-medium">{r.dadosCte.numeroCte}</span></div>
+                          <div><span className="text-slate-400">Valor:</span> <span className="text-slate-700 dark:text-slate-200 font-medium">R$ {Number(r.dadosCte.valorCte).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span></div>
+                          <div><span className="text-slate-400">Emissão:</span> <span className="text-slate-700 dark:text-slate-200">{r.dadosCte.emissaoData}</span></div>
+                          <div><span className="text-slate-400">Previsão:</span> <span className="text-slate-700 dark:text-slate-200 font-medium">{r.dadosCte.dataPrevista || "-"}</span></div>
+                          <div className="col-span-2"><span className="text-slate-400">Destinatário:</span> <span className="text-slate-700 dark:text-slate-200">{r.dadosCte.nomeDestinatario}</span></div>
+                          <div><span className="text-slate-400">Origem:</span> <span className="text-slate-700 dark:text-slate-200">{r.dadosCte.agenciaInicio}</span></div>
+                          <div><span className="text-slate-400">Destino:</span> <span className="text-slate-700 dark:text-slate-200">{r.dadosCte.agenciaFim}</span></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Trechos/Embarque */}
+                    {r?.dadosEmbarque && r.dadosEmbarque.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-slate-500 uppercase">Trechos</p>
+                        <div className="space-y-1">
+                          {r.dadosEmbarque.map((trecho, idx) => (
+                            <div key={idx} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/30 rounded px-3 py-2">
+                              <div className="flex-1 text-xs">
+                                <span className="text-slate-700 dark:text-slate-200 font-medium">{trecho.cidadeOrigem}</span>
+                                <span className="text-slate-400 mx-1">→</span>
+                                <span className="text-slate-700 dark:text-slate-200 font-medium">{trecho.cidadeDestino}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 text-right">
+                                {trecho.horaSaida && <div>Saída: {trecho.horaSaida}</div>}
+                                {trecho.horaChegada && <div>Chegada: {trecho.horaChegada}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Entrega */}
+                    {r?.dadosEntrega && (
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 space-y-1.5">
+                        <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase">Entrega Realizada</p>
+                        <div className="text-xs space-y-1">
+                          <div><span className="text-slate-500">Recebedor:</span> <span className="text-slate-700 dark:text-slate-200 font-medium">{r.dadosEntrega.recebedorMercadoria}</span></div>
+                          <div><span className="text-slate-500">Data:</span> <span className="text-slate-700 dark:text-slate-200 font-medium">{r.dadosEntrega.dataEntrega}</span></div>
+                          {r.dadosEntrega.urlComprovante && (
+                            <a href={r.dadosEntrega.urlComprovante} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline mt-1">
+                              <FileText className="w-3 h-3" />
+                              Ver comprovante de entrega
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ocorrências extras */}
+                    {r?.ocorrenciasExtras && r.ocorrenciasExtras.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-slate-500 uppercase">Ocorrências</p>
+                        <div className="space-y-1">
+                          {r.ocorrenciasExtras.map((oc, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-900/20 rounded px-3 py-1.5">
+                              <span className="text-amber-600 dark:text-amber-400 font-medium">{oc.dataOcorrencia}</span>
+                              <span className="text-slate-600 dark:text-slate-300">{oc.descricaoOcorrencia}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* NF usada */}
+                    {trackAlfaMutation.data.nfUsed && (
+                      <p className="text-[10px] text-slate-400 text-center">NF consultada: {trackAlfaMutation.data.nfUsed} | CNPJ: {trackAlfaMutation.data.cnpjUsed}</p>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
       {!showNewOrder && (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
@@ -4585,6 +4729,21 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       {formatCurrencySales(pedido.valorTotal)}
                     </p>
                   </div>
+                  {/* Botão Rastrear - só para pedidos faturados com transportadora Alfa */}
+                  {(pedido.estadoNota === "Faturado" || pedido.estadoNota === "Faturado c/ entrega futura") && pedido.transportadora && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTrackingPedido(pedido.pedido);
+                        trackAlfaMutation.mutate({ pedido: pedido.pedido });
+                      }}
+                      className="ml-1 px-2 py-1 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1 flex-shrink-0 cursor-pointer"
+                      title="Rastrear entrega via Alfa Transportes"
+                    >
+                      <Truck className="w-3 h-3" />
+                      <span className="hidden sm:inline">Rastrear</span>
+                    </button>
+                  )}
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${
                     expandedPedido === pedido.pedido ? "rotate-180" : ""
                   }`} />
