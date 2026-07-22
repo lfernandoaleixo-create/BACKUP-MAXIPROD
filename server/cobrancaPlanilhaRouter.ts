@@ -1689,6 +1689,30 @@ export const cobrancaPlanilhaRouter = router({
       };
     }),
 
+  /** Buscar TODAS as observações de etapa para múltiplos planilhaIds (para exportação PDF) */
+  getBulkEtapaObs: publicProcedure
+    .input(z.object({ planilhaIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      if (input.planilhaIds.length === 0) return {};
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const rows = await db.select().from(cobrancaEtapaObs)
+        .where(inArray(cobrancaEtapaObs.planilhaId, input.planilhaIds))
+        .orderBy(cobrancaEtapaObs.createdAt);
+      // Group by planilhaId
+      const map: Record<number, Array<{ etapa: string; observacao: string; registradoPor: string; createdAt: Date }>> = {};
+      for (const r of rows) {
+        if (!map[r.planilhaId]) map[r.planilhaId] = [];
+        map[r.planilhaId].push({
+          etapa: r.etapa,
+          observacao: r.observacao,
+          registradoPor: r.registradoPor,
+          createdAt: r.createdAt,
+        });
+      }
+      return map;
+    }),
+
   // ============ SELLER ALERTS (Acionar Vendedor) ============
 
   /**

@@ -5907,3 +5907,9 @@
 - [x] Frontend: modal/dialog de rastreio com status, trechos, ocorrências, comprovante de entrega
 - [x] Funcionalidade disponível tanto no painel dos vendedores quanto no painel dos gestores
 - [x] NÃO alterar nenhuma outra funcionalidade
+
+## Melhoria PDF Planilha de Cobrança - Histórico Completo (22/07/2026)
+- [x] PDF exportado deve incluir histórico completo de cada etapa de cobrança separadamente
+- [x] Cada etapa deve mostrar: data, status, texto/observação escrita, quem registrou
+- [x] Não perder nenhuma informação - tudo que foi escrito em cada etapa deve aparecer
+- [x] Manter formato legível e organizado no PDF

@@ -687,12 +687,33 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     updateField.mutate({ id, field, value: value || null, updatedBy: operator!.name });
   }
 
-  function handleExportPdf() {
+  async function handleExportPdf() {
     if (filteredItems.length === 0) {
       toast.error("Nenhum título para exportar");
       return;
     }
+    setIsGeneratingPdf(true);
     try {
+      // Fetch all etapa observations for all filtered items
+      const allPlanilhaIds = filteredItems.map(i => i.id);
+      let obsMap: Record<number, Array<{ etapa: string; observacao: string; registradoPor: string; createdAt: string }>> = {};
+      try {
+        const rawMap = await utils.cobrancaPlanilha.getBulkEtapaObs.fetch({ planilhaIds: allPlanilhaIds });
+        if (rawMap) {
+          // Normalize createdAt to string
+          for (const [key, arr] of Object.entries(rawMap)) {
+            obsMap[Number(key)] = (arr as any[]).map((o: any) => ({
+              etapa: o.etapa,
+              observacao: o.observacao,
+              registradoPor: o.registradoPor,
+              createdAt: String(o.createdAt || ""),
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn("Não foi possível buscar observações de etapa para PDF:", e);
+      }
+
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
@@ -893,6 +914,152 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         margin: { left: 14, right: 14 },
       });
 
+      // ============ HISTÓRICO DE ETAPAS DE COBRANÇA ============
+      const ETAPA_LABELS_PDF: Record<string, string> = {
+        promessaPgto: "Promessa de Pgto",
+        primeiraCobranca: "1ª Cobrança",
+        semAcao1: "Intervalo 1",
+        segundaCobranca: "2ª Cobrança",
+        semAcao2: "Intervalo 2",
+        terceiraCobranca: "3ª Cobrança",
+        semAcao3: "Intervalo 3",
+        acaoFinal: "Ação Final",
+        intervencaoVendedor: "Intervenção Vendedor",
+      };
+
+      // New page for history section
+      doc.addPage();
+      const pageW2 = doc.internal.pageSize.getWidth();
+      const pageH2 = doc.internal.pageSize.getHeight();
+
+      // Header for history section
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageW2, 28, "F");
+      doc.setFillColor(16, 185, 129);
+      doc.rect(0, 28, pageW2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("HISTÓRICO COMPLETO DE ETAPAS DE COBRANÇA", 14, 12);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(180, 180, 180);
+      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")} — ${filteredItems.length} títulos`, 14, 22);
+
+      let histY = 36;
+
+      for (const item of filteredItems) {
+        const itemObs = obsMap[item.id] || [];
+        // Etapas fields from the item itself
+        const etapasFields = [
+          { key: "promessaPgto", value: (item as any).promessaPgto },
+          { key: "primeiraCobranca", value: item.primeiraCobranca },
+          { key: "semAcao1", value: (item as any).semAcao1 },
+          { key: "segundaCobranca", value: item.segundaCobranca },
+          { key: "semAcao2", value: (item as any).semAcao2 },
+          { key: "terceiraCobranca", value: item.terceiraCobranca },
+          { key: "semAcao3", value: (item as any).semAcao3 },
+          { key: "acaoFinal", value: item.acaoFinal },
+        ];
+        const hasEtapas = etapasFields.some(e => e.value);
+        const hasObs = itemObs.length > 0;
+
+        // Skip items with no history at all
+        if (!hasEtapas && !hasObs) continue;
+
+        // Check if we need a new page (estimate: header ~20mm + at least 30mm content)
+        if (histY > pageH2 - 40) {
+          doc.addPage();
+          histY = 14;
+        }
+
+        // Client header
+        doc.setFillColor(241, 245, 249); // slate-100
+        doc.roundedRect(14, histY, pageW2 - 28, 10, 1.5, 1.5, "F");
+        doc.setDrawColor(148, 163, 184);
+        doc.roundedRect(14, histY, pageW2 - 28, 10, 1.5, 1.5, "S");
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "bold");
+        const clientLabel = `${item.empresa || "-"} — ${item.documento || "-"} — ${formatCurrency(parseFloat(String(item.valor || 0)))} — Venc: ${item.vencimento ? formatDate(item.vencimento) : "-"} — ${item.diasVencidos ?? 0} dias — Status: ${item.status || "-"}`;
+        doc.text(clientLabel, 18, histY + 6.5);
+        histY += 13;
+
+        // Etapas summary row
+        if (hasEtapas) {
+          const etapaSummaryData: string[][] = [];
+          for (const ef of etapasFields) {
+            if (ef.value) {
+              etapaSummaryData.push([ETAPA_LABELS_PDF[ef.key] || ef.key, ef.value]);
+            }
+          }
+          if (etapaSummaryData.length > 0) {
+            autoTable(doc, {
+              startY: histY,
+              head: [["Etapa", "Data/Valor"]],
+              body: etapaSummaryData,
+              theme: "grid",
+              headStyles: {
+                fillColor: [59, 130, 246],
+                textColor: [255, 255, 255],
+                fontSize: 5.5,
+                fontStyle: "bold",
+                cellPadding: 1.2,
+              },
+              bodyStyles: { fontSize: 5.5, cellPadding: 1.2 },
+              columnStyles: {
+                0: { cellWidth: 30, fontStyle: "bold" },
+                1: { cellWidth: "auto" },
+              },
+              margin: { left: 16, right: 16 },
+              tableWidth: pageW2 - 32,
+            });
+            histY = (doc as any).lastAutoTable.finalY + 3;
+          }
+        }
+
+        // Observations detail
+        if (hasObs) {
+          const obsTableData: string[][] = itemObs.map(o => {
+            const etapaLabel = ETAPA_LABELS_PDF[o.etapa] || o.etapa;
+            const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+            return [etapaLabel, o.observacao || "-", o.registradoPor || "-", dateStr];
+          });
+
+          // Check if we need a new page
+          if (histY > pageH2 - 30) {
+            doc.addPage();
+            histY = 14;
+          }
+
+          autoTable(doc, {
+            startY: histY,
+            head: [["Etapa", "Observação", "Registrado por", "Data/Hora"]],
+            body: obsTableData,
+            theme: "grid",
+            headStyles: {
+              fillColor: [180, 120, 20],
+              textColor: [255, 255, 255],
+              fontSize: 5.5,
+              fontStyle: "bold",
+              cellPadding: 1.2,
+            },
+            bodyStyles: { fontSize: 5.5, cellPadding: 1.2 },
+            columnStyles: {
+              0: { cellWidth: 25, fontStyle: "bold" },
+              1: { cellWidth: "auto" },
+              2: { cellWidth: 25 },
+              3: { cellWidth: 28, halign: "center" },
+            },
+            margin: { left: 16, right: 16 },
+            tableWidth: pageW2 - 32,
+          });
+          histY = (doc as any).lastAutoTable.finalY + 6;
+        } else {
+          histY += 3;
+        }
+      }
+
       // Footer on all pages
       const totalPages = doc.getNumberOfPages();
       for (let p = 1; p <= totalPages; p++) {
@@ -911,6 +1078,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
       toast.error("Erro ao gerar PDF");
+    } finally {
+      setIsGeneratingPdf(false);
     }
   }
 
@@ -1008,11 +1177,12 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportPdf}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors shadow-sm"
-            title="Exportar planilha de cobrança como PDF"
+            disabled={isGeneratingPdf}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors shadow-sm disabled:opacity-50"
+            title="Exportar planilha de cobrança como PDF com histórico completo"
           >
-            <FileDown className="w-3.5 h-3.5" />
-            Exportar PDF
+            {isGeneratingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+            {isGeneratingPdf ? "Gerando..." : "Exportar PDF"}
           </button>
           {operator?.name === "Guilherme" && (
             <button
