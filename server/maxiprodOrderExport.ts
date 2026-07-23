@@ -153,10 +153,10 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
       orderData.razaoSocial || "CLIENTE",             // 4. Cliente * (REQUIRED: must match Maxiprod cadastro)
       orderData.operacaoFiscal || "6101",             // 5. Operação fiscal * (REQUIRED: CFOP code)
       orderData.tabelaPrecos || "001",                // 6. Tabela de preços (default: 001)
-      orderData.representante || "NAO INFORMADO",     // 7. Representante/vendedor
+      orderData.representante || "",                    // 7. Representante/vendedor
       orderData.moeda || "R$",                        // 8. Moeda* (REQUIRED: "R$")
       orderData.formaPagamento || "A prazo",          // 9. Forma de pagamento
-      orderData.condicaoPagamento || "A DEFINIR",     // 10. Condição de pagamento
+      orderData.condicaoPagamento || "",              // 10. Condição de pagamento
       item.codigoItem || "00000",                     // 11. Código (product code)
       item.descricaoItem || "PRODUTO",                // 12. Descrição (product description)
       item.quantidade || 1,                           // 13. Quantidade* (REQUIRED: must be > 0)
@@ -168,12 +168,12 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
       0,                                              // 19. Valor de outras despesas
       formatDateBR(orderData.dataEntrega) || todayBR, // 20. Entrega (delivery date)
       formatDateBR(orderData.previsaoEntrega) || todayBR, // 21. Previsão entrega
-      orderData.estadoConfiguravel || "NAO INFORMADO", // 22. Informações adicionais do produto
-      isFirst ? (orderData.observacoes || "Pedido importado via Grupo Fox Dashboard") : "NAO INFORMADO", // 23. Observações técnicas
-      "NAO INFORMADO",                                // 24. Tipo de comissão
+      orderData.estadoConfiguravel || "",              // 22. Informações adicionais do produto
+      isFirst ? (orderData.observacoes || "") : "",     // 23. Observações técnicas
+      "",                                             // 24. Tipo de comissão
       "0",                                            // 25. Valor da comissão
-      "NAO INFORMADO",                                // 26. Pedido do cliente
-      "NAO INFORMADO",                                // 27. Pedido do cliente (Item)
+      "",                                             // 26. Pedido do cliente
+      "",                                             // 27. Pedido do cliente (Item)
       "0",                                            // 28. Item (nº) do pedido do cliente
       "",                                             // 29. Resultado da importação (filled by Maxiprod)
     ];

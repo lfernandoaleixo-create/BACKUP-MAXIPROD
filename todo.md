@@ -5963,3 +5963,8 @@
 - [x] Adicionar botão "Aprovar como Gestor" com senha e observação para pedidos aprovado_subgestor
 - [x] Atualizar badge de status para mostrar "AGUARDANDO GESTOR" para pedidos aprovado_subgestor
 - [x] Implementar em ambos os caminhos de renderização (agrupado e lista)
+
+## Fix: Exportação Maxiprod - campos em branco em vez de "NAO INFORMADO" (23/07/2026)
+- [x] Exportar Cliente (.xlsx): substituir "NAO INFORMADO", "A DEFINIR", "(00)0000-0000", "adefinir@grupofox.com" por campos em branco
+- [x] Exportar Pedido (.xlsx): substituir "NAO INFORMADO", "A DEFINIR" por campos em branco
+- [x] Manter apenas campos obrigatórios (*) com valores default (Apelido, Ativa, Regime tributário, Sim/Não flags)

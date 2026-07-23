@@ -2,9 +2,9 @@
  * Generates an Excel file in Maxiprod "Empresas" import format
  * from vendor_clients data.
  * 
- * IMPORTANT: Maxiprod rejects imports when ANY required field is empty.
- * All fields marked with * MUST have a valid value.
- * Non-required fields should also have sensible defaults to avoid rejection.
+ * IMPORTANT: Only fields marked with * are truly required.
+ * All other fields should be left BLANK (empty string) when no data is available.
+ * Maxiprod handles blank fields better than placeholder text like "NAO INFORMADO".
  */
 import ExcelJS from "exceljs";
 import { getDb } from "./db";
@@ -140,8 +140,8 @@ function formatCnpjCpf(value: string | null | undefined): string {
 
 /**
  * Map a vendor_client row to a Maxiprod row (44 columns)
- * GUARANTEE: No field will be empty - Maxiprod rejects blank cells.
- * All fields get a valid placeholder when the real data is missing.
+ * Fields without data are left BLANK for proper Maxiprod import.
+ * Only truly required fields (marked with *) get default values.
  */
 function mapClientToMaxiprodRow(client: any): string[] {
   const row: string[] = new Array(44).fill("");
@@ -165,47 +165,47 @@ function mapClientToMaxiprodRow(client: any): string[] {
     ? client.inscricaoEstadual
     : "ISENTO";
   // Col 9: IM
-  row[8] = client.inscricaoMunicipal || "NAO INFORMADO";
+  row[8] = client.inscricaoMunicipal || "";
   // Col 10: RNTRC
-  row[9] = "NAO INFORMADO";
+  row[9] = "";
   // Col 11: Website
-  row[10] = client.website || "NAO INFORMADO";
+  row[10] = client.website || "";
   // Col 12: Limite de crédito (R$)
   row[11] = formatCurrency(client.limiteCredito) || "0,00";
   // Col 13: E-mail para envio da NF-e
-  row[12] = client.emailNfe || client.email || "nfe@adefinir.com";
-  // Col 14: CEP - MUST have value
-  row[13] = client.cep || "00000-000";
-  // Col 15: Endereço - MUST have value
-  row[14] = client.logradouro || "A DEFINIR";
+  row[12] = client.emailNfe || client.email || "";
+  // Col 14: CEP
+  row[13] = client.cep || "";
+  // Col 15: Endereço
+  row[14] = client.logradouro || "";
   // Col 16: Número - MUST have value
   row[15] = client.numero || "S/N";
   // Col 17: Complemento
-  row[16] = client.complemento || "NAO INFORMADO";
-  // Col 18: Bairro - MUST have value
-  row[17] = client.bairro || "CENTRO";
+  row[16] = client.complemento || "";
+  // Col 18: Bairro
+  row[17] = client.bairro || "";
   // Col 19: Caixa postal
-  row[18] = "NAO INFORMADO";
-  // Col 20: Município - MUST have value
-  row[19] = client.cidade || "A DEFINIR";
+  row[18] = "";
+  // Col 20: Município
+  row[19] = client.cidade || "";
   // Col 21: UF - MUST have value
   row[20] = client.uf || "PR";
   // Col 22: Região do cliente
-  row[21] = client.regiao || "NAO INFORMADO";
+  row[21] = client.regiao || "";
   // Col 23: Perfil do cliente
-  row[22] = client.perfil || "NAO INFORMADO";
+  row[22] = client.perfil || "";
   // Col 24: Segmento do cliente
-  row[23] = client.segmento || "NAO INFORMADO";
+  row[23] = client.segmento || "";
   // Col 25: Forma de pedido do cliente
-  row[24] = client.formaPedido || "NAO INFORMADO";
-  // Col 26: Fone 1 - MUST have value
-  row[25] = client.telefone1 || "(00)0000-0000";
+  row[24] = client.formaPedido || "";
+  // Col 26: Fone 1
+  row[25] = client.telefone1 || "";
   // Col 27: Fone 2
-  row[26] = client.telefone2 || "(00)0000-0000";
+  row[26] = client.telefone2 || "";
   // Col 28: Fone 3
-  row[27] = "(00)0000-0000";
+  row[27] = "";
   // Col 29: Fone 4
-  row[28] = "(00)0000-0000";
+  row[28] = "";
   // Col 30: É cliente potencial * (REQUIRED)
   row[29] = "Não";
   // Col 31: É cliente * (REQUIRED)
@@ -223,16 +223,16 @@ function mapClientToMaxiprodRow(client: any): string[] {
   // Col 37: É instituição financeira * (REQUIRED)
   row[36] = "Não";
   // Col 38: E-mail
-  row[37] = client.email || "adefinir@grupofox.com";
+  row[37] = client.email || "";
   // Col 39: Representante/Vendedor
-  row[38] = client.sellerName || "NAO INFORMADO";
+  row[38] = client.sellerName || "";
   // Col 40-41: Representante/Vendedor 2, 3
-  row[39] = "NAO INFORMADO";
-  row[40] = "NAO INFORMADO";
+  row[39] = "";
+  row[40] = "";
   // Col 42: Perfil de acesso
-  row[41] = "NAO INFORMADO";
+  row[41] = "";
   // Col 43: Observações
-  row[42] = client.observacoes || "Cadastro importado via Grupo Fox Dashboard";
+  row[42] = client.observacoes || "";
   // Col 44: Resultado da importação (left empty - filled by Maxiprod)
   row[43] = "";
 
