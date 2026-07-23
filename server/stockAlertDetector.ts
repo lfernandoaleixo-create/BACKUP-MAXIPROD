@@ -141,9 +141,17 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   const stockMap = await fetchStockForItems(uniqueItemIds);
 
   // 3. Identificar itens insuficientes (estoque disponível < quantidade pedida)
+  // IMPORTANTE: Se estoquesAgrupados NÃO retorna dados para um item, isso significa que o
+  // Maxiprod NÃO controla estoque agrupado desse item → NÃO deve gerar alerta.
+  // Isso diferencia "estoque é controlado e está em 0" de "estoque não é controlado".
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
-    const stock = stockMap.get(item.itemId) || { total: 0, reserved: 0 };
+    if (!stockMap.has(item.itemId)) {
+      // Item não tem registro em estoquesAgrupados → Maxiprod não controla estoque dele
+      // NÃO criar alerta (ex: Varetas Aromatizador que não têm estoque controlado)
+      continue;
+    }
+    const stock = stockMap.get(item.itemId)!;
     const available = stock.total - stock.reserved;
     if (available < item.quantidade) {
       insufficientItems.push(item);

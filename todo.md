@@ -5987,3 +5987,7 @@
 
 ## Feature: Card "Palitos Premium" na aba Produção (23/07/2026)
 - [x] Adicionar card "Palitos Premium" na seção Anotações Avulsas do item 4 (Seleção Automática), mesmo estilo dos cards Queijo Coalho e Alídio
+
+## BUG: Alerta de estoque insuficiente mostrando produtos que TÊM estoque no Maxiprod (23/07/2026)
+- [x] Investigar por que códigos 00081, 00083, 00090 (Varetas Aromatizador) aparecem com "Estoque disponível: 0 CX" quando no Maxiprod estão com status "A faturar" e não insuficientes
+- [x] Corrigir lógica de verificação de estoque para refletir dados corretos do Maxiprod
