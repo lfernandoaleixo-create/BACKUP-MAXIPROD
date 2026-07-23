@@ -5923,3 +5923,14 @@
 - [x] Frontend: badge "AGUARDANDO GESTOR" nos cards de pedido com status aprovado_subgestor
 - [x] Frontend: vendedor vê status "AGUARDANDO GESTOR" no histórico de pedidos
 - [x] Regra: apenas pedidos do Renato (subgestor do Rafael) passam por essa etapa extra
+
+## PDF Decisão Final (Protesto/Não Protesto) - Histórico Completo (22/07/2026)
+- [x] PDF de decisão final deve incluir histórico completo de todas as etapas de cobrança
+- [x] Cada etapa deve mostrar: data, status, texto/observação, quem registrou
+- [x] Documento completo com todas as informações de cada etapa separadamente
+
+## BUG: Cliente novo na cobrança aparece como "Contatado" em vez de "Pendente" (22/07/2026)
+- [x] Investigar: Maninho e Família Espetinhos (NF 2598) venceu 21/07, deveria aparecer como PENDENTE na 1ª cobrança
+- [x] Porém apareceu direto como "Contatado" - Thalita ajustou manualmente
+- [x] Diagnosticado: STRONG_STATUSES incluía "Contatado", "Em negociação", "Promessa de Pgto" como status herdáveis
+- [x] Corrigido: removidos status de progresso da herança. Agora só herda: Protestado, Protesto em Análise, Fundo Perdido, Especial s/ cobrança

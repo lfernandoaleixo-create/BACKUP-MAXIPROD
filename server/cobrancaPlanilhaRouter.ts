@@ -1236,7 +1236,10 @@ export const cobrancaPlanilhaRouter = router({
           );
           // HERANÇA DE STATUS FORTE: Se a empresa tem títulos (ativos ou inativos) com status forte,
           // novos títulos herdam esse status automaticamente (evita perda de status por troca de arId)
-          const STRONG_STATUSES_SYNC = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança", "Rafael - Especial s/ cobrança", "Contatado", "Em negociação", "Promessa de Pgto"];
+          // STRONG_STATUSES_SYNC: apenas status PERMANENTES/DEFINITIVOS que devem ser herdados.
+          // NÃO incluir status de progresso (Contatado, Em negociação, Promessa de Pgto)
+          // pois novos títulos devem começar como Pendente para serem cobrados normalmente.
+          const STRONG_STATUSES_SYNC = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança", "Rafael - Especial s/ cobrança"];
           if (inad.status === "Pendente") {
             const strongMatch = planilhaAtual.find(
               p => p.empresa === inad.empresa && p.status && STRONG_STATUSES_SYNC.includes(p.status)

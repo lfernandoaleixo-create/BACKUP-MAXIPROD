@@ -332,7 +332,10 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
           } else {
             // Fallback: se a empresa tem títulos inativos recentes com status forte,
             // herdar esse status para novos títulos da mesma empresa
-            const STRONG_STATUSES = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança", "Contatado", "Em negociação", "Promessa de Pgto"];
+            // STRONG_STATUSES: apenas status PERMANENTES/DEFINITIVOS que devem ser herdados por novos títulos.
+            // NÃO incluir status de progresso (Contatado, Em negociação, Promessa de Pgto)
+            // pois novos títulos devem começar como Pendente para serem cobrados normalmente.
+            const STRONG_STATUSES = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança"];
             const recentInactiveOfEmpresa = allPlanilhaRecords
               .filter(r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
                 && r.status && STRONG_STATUSES.includes(r.status))
