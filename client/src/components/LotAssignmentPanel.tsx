@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Package, Plus, Trash2, Loader2, CheckCircle, AlertTriangle, History, Clock } from "lucide-react";
+import { Package, Plus, Trash2, Loader2, CheckCircle, AlertTriangle, History, Clock, Info } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
 
 interface OrderItem {
@@ -101,7 +101,9 @@ export function LotAssignmentPanel({ orderId, pedidoNumero, items, orderStatus }
   }, [quantityComparison]);
 
   const hasAnyAssignment = assignments.length > 0;
-  const hasMismatch = hasAnyAssignment && !allItemsComplete;
+  const isParcialOrder = orderStatus === "Faturado parcial";
+  // For partial invoicing orders, partial lot assignment is expected and OK
+  const hasMismatch = hasAnyAssignment && !allItemsComplete && !isParcialOrder;
 
   // Only show editable panel for orders that can still have lots assigned
   const editableStatuses = ["aprovado", "pendente", "A faturar", "Autorizado", "Faturado parcial"];
@@ -165,7 +167,13 @@ export function LotAssignmentPanel({ orderId, pedidoNumero, items, orderStatus }
                 Completo
               </Badge>
             )}
-            {hasAnyAssignment && !allItemsComplete && (
+            {hasAnyAssignment && !allItemsComplete && isParcialOrder && (
+              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">
+                <Info className="w-2.5 h-2.5 mr-0.5" />
+                Parcial OK
+              </Badge>
+            )}
+            {hasAnyAssignment && !allItemsComplete && !isParcialOrder && (
               <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-[10px]">
                 <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
                 Incompleto
@@ -174,12 +182,36 @@ export function LotAssignmentPanel({ orderId, pedidoNumero, items, orderStatus }
           </div>
         </div>
 
-        {/* Quantity mismatch alert */}
+        {/* Partial invoicing info */}
+        {hasAnyAssignment && !allItemsComplete && isParcialOrder && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[11px] text-blue-700 font-medium flex items-center gap-1">
+              <Info className="w-3.5 h-3.5" />
+              Faturamento parcial — lotes atribuídos por remessa:
+            </p>
+            <div className="space-y-1">
+              {Object.entries(quantityComparison).map(([codigo, comp]) => {
+                const item = items.find(i => i.codigoItem === codigo);
+                const isOk = comp.atribuido >= comp.pedido;
+                return (
+                  <div key={codigo} className={`flex items-center justify-between text-[10px] px-2 py-1 rounded ${isOk ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
+                    <span className="truncate flex-1">{item?.descricaoItem || codigo}</span>
+                    <span className="font-mono font-bold ml-2">
+                      {comp.atribuido}/{comp.pedido} cx
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Quantity mismatch alert (only for non-partial orders) */}
         {hasMismatch && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-2.5 space-y-1.5">
-            <p className="text-[11px] text-yellow-800 font-medium flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Quantidade de lotes difere do pedido:
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[11px] text-yellow-700 font-medium flex items-center gap-1">
+              <Info className="w-3.5 h-3.5" />
+              Lotes atribuídos (parcial permitido):
             </p>
             <div className="space-y-1">
               {Object.entries(quantityComparison).map(([codigo, comp]) => {

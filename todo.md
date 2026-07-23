@@ -5971,3 +5971,9 @@
 
 ## Feature: Gráfico de desconto por produto na visualização do Juvenal (23/07/2026)
 - [x] Adicionar ProductMarginBar (barra de desconto) na visualização de itens do pedido no segundo caminho de renderização (lista) do VitoriaOrders
+
+## Fix: Permitir lotes parciais em faturamento parcial (23/07/2026)
+- [x] Permitir atribuição parcial de lotes para pedidos "Faturado parcial" sem mostrar alerta de erro
+- [x] Badge "Parcial OK" (azul) em vez de "Incompleto" (amarelo) para faturamento parcial
+- [x] Mensagem informativa "Faturamento parcial — lotes atribuídos por remessa" em vez de alerta
+- [x] Para pedidos normais, mensagem menos alarmante: "Lotes atribuídos (parcial permitido)"
