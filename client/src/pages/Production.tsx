@@ -3166,6 +3166,7 @@ interface AnnotationCardsProps {
 const ANNOTATION_TYPES = [
   { tipo: "queijo_coalho", label: "Queijo Coalho", emoji: "🧀", color: "#f59e0b", bgClass: "bg-amber-50", borderClass: "border-amber-200", textClass: "text-amber-700" },
   { tipo: "alidio", label: "Alídio", emoji: "📦", color: "#8b5cf6", bgClass: "bg-violet-50", borderClass: "border-violet-200", textClass: "text-violet-700" },
+  { tipo: "palitos_premium", label: "Palitos Premium", emoji: "🪵", color: "#059669", bgClass: "bg-emerald-50", borderClass: "border-emerald-200", textClass: "text-emerald-700" },
 ];
 
 function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: AnnotationCardsProps) {
@@ -3220,7 +3221,7 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
   const chartData = useMemo(() => {
     if (!weekHistory) return [];
     const validEntries = weekHistory.filter((e: any) => parseFloat(String(e.quantidade)) > 0);
-    const days: { date: string; label: string; queijo_coalho: number; alidio: number }[] = [];
+    const days: { date: string; label: string; queijo_coalho: number; alidio: number; palitos_premium: number }[] = [];
     const end = new Date(selectedDate + "T12:00:00");
     for (let i = 6; i >= 0; i--) {
       const d = new Date(end);
@@ -3229,7 +3230,8 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
       const dayLabel = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" });
       const qc = validEntries.filter((e: any) => e.data === dateStr && e.tipo === "queijo_coalho").reduce((s: number, e: any) => s + parseFloat(String(e.quantidade)), 0);
       const al = validEntries.filter((e: any) => e.data === dateStr && e.tipo === "alidio").reduce((s: number, e: any) => s + parseFloat(String(e.quantidade)), 0);
-      days.push({ date: dateStr, label: dayLabel, queijo_coalho: qc, alidio: al });
+      const pp = validEntries.filter((e: any) => e.data === dateStr && e.tipo === "palitos_premium").reduce((s: number, e: any) => s + parseFloat(String(e.quantidade)), 0);
+      days.push({ date: dateStr, label: dayLabel, queijo_coalho: qc, alidio: al, palitos_premium: pp });
     }
     return days;
   }, [weekHistory, selectedDate]);
@@ -3372,15 +3374,16 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
                   contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }}
                   formatter={(value: number, name: string) => [
                     `${value} cx`,
-                    name === "queijo_coalho" ? "Queijo Coalho" : "Alídio"
+                    name === "queijo_coalho" ? "Queijo Coalho" : name === "alidio" ? "Alídio" : "Palitos Premium"
                   ]}
                 />
                 <RechartsLegend
-                  formatter={(value: string) => value === "queijo_coalho" ? "Queijo Coalho" : "Alídio"}
+                  formatter={(value: string) => value === "queijo_coalho" ? "Queijo Coalho" : value === "alidio" ? "Alídio" : "Palitos Premium"}
                   wrapperStyle={{ fontSize: 10 }}
                 />
                 <Bar dataKey="queijo_coalho" fill="#f59e0b" radius={[4, 4, 0, 0]} name="queijo_coalho" />
                 <Bar dataKey="alidio" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="alidio" />
+                <Bar dataKey="palitos_premium" fill="#059669" radius={[4, 4, 0, 0]} name="palitos_premium" />
               </BarChart>
             </ResponsiveContainer>
           ) : (

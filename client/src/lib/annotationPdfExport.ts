@@ -87,9 +87,10 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
   const types = [
     { tipo: "queijo_coalho", label: "Queijo Coalho", color: [245, 158, 11] as [number, number, number], bgColor: [255, 251, 235] as [number, number, number] },
     { tipo: "alidio", label: "Alídio", color: [139, 92, 246] as [number, number, number], bgColor: [245, 243, 255] as [number, number, number] },
+    { tipo: "palitos_premium", label: "Palitos Premium", color: [5, 150, 105] as [number, number, number], bgColor: [236, 253, 245] as [number, number, number] },
   ];
 
-  const cardW = (contentW - 6) / 2;
+  const cardW = (contentW - 12) / 3;
   const cardH = 22;
 
   types.forEach((t, i) => {
@@ -127,29 +128,33 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
   y += cardH + 8;
 
   // ─── Daily Breakdown Table ───
-  // Build daily data: each row = one day, columns = queijo_coalho total, alidio total
+  // Build daily data: each row = one day, columns = queijo_coalho total, alidio total, palitos_premium total
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const tableData: any[][] = [];
   let grandTotalQC = 0;
   let grandTotalAL = 0;
+  let grandTotalPP = 0;
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     const dayEntries = validEntries.filter(e => e.data === dateStr);
     const qcTotal = dayEntries.filter(e => e.tipo === "queijo_coalho").reduce((s, e) => s + parseFloat(String(e.quantidade)), 0);
     const alTotal = dayEntries.filter(e => e.tipo === "alidio").reduce((s, e) => s + parseFloat(String(e.quantidade)), 0);
+    const ppTotal = dayEntries.filter(e => e.tipo === "palitos_premium").reduce((s, e) => s + parseFloat(String(e.quantidade)), 0);
 
-    if (qcTotal > 0 || alTotal > 0) {
+    if (qcTotal > 0 || alTotal > 0 || ppTotal > 0) {
       const dayOfWeek = new Date(year, month, d).toLocaleDateString("pt-BR", { weekday: "short" });
       const obs = dayEntries.map(e => e.observacoes).filter(Boolean).join("; ");
       tableData.push([
         `${String(d).padStart(2, "0")}/${String(month + 1).padStart(2, "0")} (${dayOfWeek})`,
         qcTotal > 0 ? fmtNum(qcTotal) : "—",
         alTotal > 0 ? fmtNum(alTotal) : "—",
+        ppTotal > 0 ? fmtNum(ppTotal) : "—",
         obs || "—",
       ]);
       grandTotalQC += qcTotal;
       grandTotalAL += alTotal;
+      grandTotalPP += ppTotal;
     }
   }
 
@@ -158,6 +163,7 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
     "TOTAL",
     fmtNum(grandTotalQC),
     fmtNum(grandTotalAL),
+    fmtNum(grandTotalPP),
     "",
   ]);
 
@@ -170,7 +176,7 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [["Data", "Queijo Coalho (cx)", "Alídio (cx)", "Observações"]],
+    head: [["Data", "Queijo Coalho (cx)", "Alídio (cx)", "Palitos Premium (cx)", "Observações"]],
     body: tableData,
     styles: {
       fontSize: 8,
@@ -185,10 +191,11 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
       halign: "center",
     },
     columnStyles: {
-      0: { halign: "left", cellWidth: 35 },
-      1: { halign: "center", cellWidth: 30 },
-      2: { halign: "center", cellWidth: 30 },
-      3: { halign: "left" },
+      0: { halign: "left", cellWidth: 32 },
+      1: { halign: "center", cellWidth: 26 },
+      2: { halign: "center", cellWidth: 22 },
+      3: { halign: "center", cellWidth: 28 },
+      4: { halign: "left" },
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],

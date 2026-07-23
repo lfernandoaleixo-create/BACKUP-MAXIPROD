@@ -5934,3 +5934,6 @@
 - [x] Porém apareceu direto como "Contatado" - Thalita ajustou manualmente
 - [x] Diagnosticado: STRONG_STATUSES incluía "Contatado", "Em negociação", "Promessa de Pgto" como status herdáveis
 - [x] Corrigido: removidos status de progresso da herança. Agora só herda: Protestado, Protesto em Análise, Fundo Perdido, Especial s/ cobrança
+
+## Feature: Card "Palitos Premium" na aba Produção (23/07/2026)
+- [x] Adicionar card "Palitos Premium" na seção Anotações Avulsas do item 4 (Seleção Automática), mesmo estilo dos cards Queijo Coalho e Alídio

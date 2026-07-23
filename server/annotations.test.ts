@@ -7,10 +7,11 @@ import { describe, it, expect } from "vitest";
 
 describe("Annotation Entries Schema", () => {
   it("should define the correct annotation types", () => {
-    const ANNOTATION_TYPES = ["queijo_coalho", "alidio"];
-    expect(ANNOTATION_TYPES).toHaveLength(2);
+    const ANNOTATION_TYPES = ["queijo_coalho", "alidio", "palitos_premium"];
+    expect(ANNOTATION_TYPES).toHaveLength(3);
     expect(ANNOTATION_TYPES).toContain("queijo_coalho");
     expect(ANNOTATION_TYPES).toContain("alidio");
+    expect(ANNOTATION_TYPES).toContain("palitos_premium");
   });
 
   it("should have required fields for annotation entries", () => {
