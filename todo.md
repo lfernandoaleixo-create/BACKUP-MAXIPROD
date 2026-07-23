@@ -5968,3 +5968,6 @@
 - [x] Exportar Cliente (.xlsx): substituir "NAO INFORMADO", "A DEFINIR", "(00)0000-0000", "adefinir@grupofox.com" por campos em branco
 - [x] Exportar Pedido (.xlsx): substituir "NAO INFORMADO", "A DEFINIR" por campos em branco
 - [x] Manter apenas campos obrigatórios (*) com valores default (Apelido, Ativa, Regime tributário, Sim/Não flags)
+
+## Feature: Gráfico de desconto por produto na visualização do Juvenal (23/07/2026)
+- [x] Adicionar ProductMarginBar (barra de desconto) na visualização de itens do pedido no segundo caminho de renderização (lista) do VitoriaOrders

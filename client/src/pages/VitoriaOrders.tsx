@@ -997,28 +997,37 @@ export default function VitoriaOrders() {
                             <Package className="w-3.5 h-3.5" />
                             Itens do Pedido ({orderDetails.items.length})
                           </p>
-                          {orderDetails.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className={`flex items-center justify-between text-xs rounded-lg px-3 py-2 ${
-                                item.abaixoDoMinimo
-                                  ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
-                                  : "bg-slate-50 dark:bg-slate-700/50"
-                              }`}
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                                  {item.codigoItem} - {item.descricaoItem}
-                                </p>
-                                <span className="text-xs text-slate-400">
-                                  {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(Number(item.precoUnitario))}
-                                </span>
+                          {orderDetails.items.map((item) => {
+                            const precoMostrado = orderDetails.priceTableMap?.[item.codigoItem];
+                            const precoVenda = Number(item.precoUnitario);
+                            const descontoDado = precoMostrado && precoMostrado > 0 ? ((precoMostrado - precoVenda) / precoMostrado) * 100 : null;
+                            return (
+                              <div key={item.id} className="space-y-1">
+                                <div className={`flex items-center justify-between text-xs rounded-lg px-3 py-2 ${
+                                  item.abaixoDoMinimo
+                                    ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                                    : "bg-slate-50 dark:bg-slate-700/50"
+                                }`}>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                                      {item.codigoItem} - {item.descricaoItem}
+                                    </p>
+                                    <span className="text-xs text-slate-400">
+                                      {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(precoVenda)}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
+                                    {formatCurrency(Number(item.totalItem))}
+                                  </p>
+                                </div>
+                                {descontoDado !== null && (
+                                  <div className="pl-3">
+                                    <ProductMarginBar desconto={descontoDado} showValues={false} />
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
-                                {formatCurrency(Number(item.totalItem))}
-                              </p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
