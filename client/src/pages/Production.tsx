@@ -21,7 +21,10 @@ import {
 } from "lucide-react";
 import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/productionPdfExport";
 import { generateDailyPdf as generatePiroDailyPdf, generateWeeklyPdf as generatePiroWeeklyPdf, generateMonthlyPdf as generatePiroMonthlyPdf } from "@/lib/pirografiaPdfExport";
-import { generateAnnotationPdf } from "@/lib/annotationPdfExport";
+import { generateAnnotationPdf, type PdfPeriod } from "@/lib/annotationPdfExport";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ProductionCharts from "@/components/ProductionCharts";
 import { ChecklistDesperdicio } from "@/pages/ChecklistDesperdicio";
 import StockWithdrawal from "@/pages/StockWithdrawal";
@@ -3177,6 +3180,7 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
   const [editObs, setEditObs] = useState("");
   const [showChart, setShowChart] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pdfPeriod, setPdfPeriod] = useState<PdfPeriod | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -3201,21 +3205,38 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
     endDate: weekRange.endDate,
   }, { enabled: showChart });
 
-  // Monthly range for PDF export
-  const monthRange = useMemo(() => {
+  // PDF export date ranges
+  const pdfRange = useMemo(() => {
     const d = new Date(selectedDate + "T12:00:00");
     const y = d.getFullYear();
     const m = d.getMonth();
-    const start = `${y}-${String(m + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    const end = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-    return { startDate: start, endDate: end, month: m, year: y };
-  }, [selectedDate]);
+    if (pdfPeriod === "diario") {
+      return { startDate: selectedDate, endDate: selectedDate };
+    } else if (pdfPeriod === "semanal") {
+      // Week: Monday to Sunday containing selectedDate
+      const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon...
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + mondayOffset);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return {
+        startDate: monday.toISOString().slice(0, 10),
+        endDate: sunday.toISOString().slice(0, 10),
+      };
+    } else {
+      // Monthly
+      const start = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+      const lastDay = new Date(y, m + 1, 0).getDate();
+      const end = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      return { startDate: start, endDate: end, month: m, year: y };
+    }
+  }, [selectedDate, pdfPeriod]);
 
-  const { data: monthHistory } = trpc.annotations.getHistory.useQuery({
-    startDate: monthRange.startDate,
-    endDate: monthRange.endDate,
-  }, { enabled: generatingPdf });
+  const { data: pdfHistory } = trpc.annotations.getHistory.useQuery({
+    startDate: pdfRange.startDate,
+    endDate: pdfRange.endDate,
+  }, { enabled: generatingPdf && !!pdfPeriod });
 
   // Build chart data
   const chartData = useMemo(() => {
@@ -3236,28 +3257,40 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
     return days;
   }, [weekHistory, selectedDate]);
 
-  const handleExportPdf = useCallback(async () => {
+  const handleExportPdf = useCallback((period: PdfPeriod) => {
+    setPdfPeriod(period);
     setGeneratingPdf(true);
-    // Small delay to let the query fire
-    await new Promise(r => setTimeout(r, 500));
   }, []);
 
-  // Effect to generate PDF once monthHistory is loaded
+  // Effect to generate PDF once pdfHistory is loaded
   useMemo(() => {
-    if (generatingPdf && monthHistory) {
-      generateAnnotationPdf({
-        entries: monthHistory as any,
-        month: monthRange.month,
-        year: monthRange.year,
-      }).then(() => {
+    if (generatingPdf && pdfHistory && pdfPeriod) {
+      const d = new Date(selectedDate + "T12:00:00");
+      const params: any = {
+        entries: pdfHistory as any,
+        period: pdfPeriod,
+      };
+      if (pdfPeriod === "diario") {
+        params.date = selectedDate;
+      } else if (pdfPeriod === "semanal") {
+        params.weekStart = pdfRange.startDate;
+        params.weekEnd = pdfRange.endDate;
+      } else {
+        params.month = d.getMonth();
+        params.year = d.getFullYear();
+      }
+      generateAnnotationPdf(params).then(() => {
         setGeneratingPdf(false);
-        toast.success("PDF gerado com sucesso!");
+        setPdfPeriod(null);
+        const labels = { diario: "Diário", semanal: "Semanal", mensal: "Mensal" };
+        toast.success(`PDF ${labels[pdfPeriod]} gerado com sucesso!`);
       }).catch((err) => {
         setGeneratingPdf(false);
+        setPdfPeriod(null);
         toast.error("Erro ao gerar PDF: " + err.message);
       });
     }
-  }, [generatingPdf, monthHistory, monthRange]);
+  }, [generatingPdf, pdfHistory, pdfPeriod, pdfRange, selectedDate]);
 
   const createMutation = trpc.annotations.create.useMutation({
     onSuccess: (_data, variables) => {
@@ -3346,14 +3379,32 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
             <TrendingUp className="w-3 h-3" />
             Tendência
           </button>
-          <button
-            onClick={handleExportPdf}
-            disabled={generatingPdf}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-40"
-          >
-            {generatingPdf ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
-            PDF Mensal
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                disabled={generatingPdf}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-40"
+              >
+                {generatingPdf ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+                PDF
+                <ChevronDown className="w-2.5 h-2.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[120px]">
+              <DropdownMenuItem onClick={() => handleExportPdf("diario")} className="text-xs">
+                <Calendar className="w-3 h-3 mr-1.5" />
+                Diário
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportPdf("semanal")} className="text-xs">
+                <BarChart3 className="w-3 h-3 mr-1.5" />
+                Semanal
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportPdf("mensal")} className="text-xs">
+                <FileDown className="w-3 h-3 mr-1.5" />
+                Mensal
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

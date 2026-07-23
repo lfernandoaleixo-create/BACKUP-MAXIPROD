@@ -1,6 +1,6 @@
 /**
- * Anotações Avulsas — Geração de PDF Mensal
- * Relatório de Queijo Coalho e Alídio com totais diários e resumo mensal
+ * Anotações Avulsas — Geração de PDF (Diário, Semanal, Mensal)
+ * Relatório de Queijo Coalho, Alídio e Palitos Premium com totais e resumo
  */
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -28,6 +28,7 @@ function fmtNum(n: number, decimals = 0): string {
 }
 
 const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const WEEKDAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 interface AnnotationEntry {
   id: number;
@@ -40,13 +41,38 @@ interface AnnotationEntry {
   createdAt: Date | string;
 }
 
+export type PdfPeriod = "diario" | "semanal" | "mensal";
+
 interface GenerateAnnotationPdfParams {
   entries: AnnotationEntry[];
-  month: number; // 0-indexed
-  year: number;
+  period: PdfPeriod;
+  /** For monthly: 0-indexed month */
+  month?: number;
+  /** For monthly: year */
+  year?: number;
+  /** For daily: the specific date string YYYY-MM-DD */
+  date?: string;
+  /** For weekly: start date YYYY-MM-DD */
+  weekStart?: string;
+  /** For weekly: end date YYYY-MM-DD */
+  weekEnd?: string;
 }
 
-export async function generateAnnotationPdf({ entries, month, year }: GenerateAnnotationPdfParams) {
+/** Backward-compatible overload for existing callers */
+export async function generateAnnotationPdf(params: GenerateAnnotationPdfParams | { entries: AnnotationEntry[]; month: number; year: number }) {
+  // Normalize old-style params (month/year only) to new format
+  if (!("period" in params)) {
+    return generateAnnotationPdfInternal({
+      entries: params.entries,
+      period: "mensal",
+      month: params.month,
+      year: params.year,
+    });
+  }
+  return generateAnnotationPdfInternal(params);
+}
+
+async function generateAnnotationPdfInternal({ entries, period, month, year, date, weekStart, weekEnd }: GenerateAnnotationPdfParams) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -69,10 +95,28 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
   doc.text("Relatório de Anotações Avulsas", pageW / 2, y + 6, { align: "center" });
   y += 12;
 
+  // Subtitle based on period
+  let subtitle = "";
+  let fileName = "";
+  if (period === "diario" && date) {
+    const d = new Date(date + "T12:00:00");
+    const dayName = WEEKDAY_NAMES[d.getDay()];
+    subtitle = `${d.toLocaleDateString("pt-BR")} (${dayName}) — Seleção Automática`;
+    fileName = `anotacoes_diario_${date}.pdf`;
+  } else if (period === "semanal" && weekStart && weekEnd) {
+    const ws = new Date(weekStart + "T12:00:00");
+    const we = new Date(weekEnd + "T12:00:00");
+    subtitle = `Semana: ${ws.toLocaleDateString("pt-BR")} a ${we.toLocaleDateString("pt-BR")} — Seleção Automática`;
+    fileName = `anotacoes_semanal_${weekStart}_a_${weekEnd}.pdf`;
+  } else if (period === "mensal" && month !== undefined && year !== undefined) {
+    subtitle = `${MONTH_NAMES[month]} / ${year} — Seleção Automática`;
+    fileName = `anotacoes_${MONTH_NAMES[month].toLowerCase()}_${year}.pdf`;
+  }
+
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 116, 139);
-  doc.text(`${MONTH_NAMES[month]} / ${year} — Seleção Automática`, pageW / 2, y + 4, { align: "center" });
+  doc.text(subtitle, pageW / 2, y + 4, { align: "center" });
   y += 10;
 
   doc.setFontSize(8);
@@ -122,31 +166,51 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 116, 139);
-    doc.text(`${daysCount} dias`, x + cardW - 4, y + 16, { align: "right" });
+    doc.text(`${daysCount} dia${daysCount !== 1 ? "s" : ""}`, x + cardW - 4, y + 16, { align: "right" });
   });
 
   y += cardH + 8;
 
   // ─── Daily Breakdown Table ───
-  // Build daily data: each row = one day, columns = queijo_coalho total, alidio total, palitos_premium total
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // Build date range based on period
+  let dateList: string[] = [];
+  if (period === "diario" && date) {
+    dateList = [date];
+  } else if (period === "semanal" && weekStart && weekEnd) {
+    const start = new Date(weekStart + "T12:00:00");
+    const end = new Date(weekEnd + "T12:00:00");
+    const current = new Date(start);
+    while (current <= end) {
+      dateList.push(current.toISOString().slice(0, 10));
+      current.setDate(current.getDate() + 1);
+    }
+  } else if (period === "mensal" && month !== undefined && year !== undefined) {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      dateList.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+    }
+  }
+
   const tableData: any[][] = [];
   let grandTotalQC = 0;
   let grandTotalAL = 0;
   let grandTotalPP = 0;
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  for (const dateStr of dateList) {
     const dayEntries = validEntries.filter(e => e.data === dateStr);
     const qcTotal = dayEntries.filter(e => e.tipo === "queijo_coalho").reduce((s, e) => s + parseFloat(String(e.quantidade)), 0);
     const alTotal = dayEntries.filter(e => e.tipo === "alidio").reduce((s, e) => s + parseFloat(String(e.quantidade)), 0);
     const ppTotal = dayEntries.filter(e => e.tipo === "palitos_premium").reduce((s, e) => s + parseFloat(String(e.quantidade)), 0);
 
     if (qcTotal > 0 || alTotal > 0 || ppTotal > 0) {
-      const dayOfWeek = new Date(year, month, d).toLocaleDateString("pt-BR", { weekday: "short" });
+      const d = new Date(dateStr + "T12:00:00");
+      const dayOfWeek = d.toLocaleDateString("pt-BR", { weekday: "short" });
+      const dayLabel = period === "diario"
+        ? d.toLocaleDateString("pt-BR", { weekday: "long" })
+        : `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} (${dayOfWeek})`;
       const obs = dayEntries.map(e => e.observacoes).filter(Boolean).join("; ");
       tableData.push([
-        `${String(d).padStart(2, "0")}/${String(month + 1).padStart(2, "0")} (${dayOfWeek})`,
+        dayLabel,
         qcTotal > 0 ? fmtNum(qcTotal) : "—",
         alTotal > 0 ? fmtNum(alTotal) : "—",
         ppTotal > 0 ? fmtNum(ppTotal) : "—",
@@ -167,10 +231,11 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
     "",
   ]);
 
+  const tableTitle = period === "diario" ? "Registros do Dia" : "Detalhamento Diário";
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 41, 59);
-  doc.text("Detalhamento Diário", margin, y + 4);
+  doc.text(tableTitle, margin, y + 4);
   y += 8;
 
   autoTable(doc, {
@@ -223,6 +288,5 @@ export async function generateAnnotationPdf({ entries, month, year }: GenerateAn
   );
 
   // Save
-  const fileName = `anotacoes_${MONTH_NAMES[month].toLowerCase()}_${year}.pdf`;
   doc.save(fileName);
 }

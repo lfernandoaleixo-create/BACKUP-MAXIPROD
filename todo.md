@@ -5991,3 +5991,9 @@
 ## BUG: Alerta de estoque insuficiente mostrando produtos que TÊM estoque no Maxiprod (23/07/2026)
 - [x] Investigar por que códigos 00081, 00083, 00090 (Varetas Aromatizador) aparecem com "Estoque disponível: 0 CX" quando no Maxiprod estão com status "A faturar" e não insuficientes
 - [x] Corrigir lógica de verificação de estoque para refletir dados corretos do Maxiprod
+
+## Feature: Filtros de período para PDF de Anotações Avulsas (23/07/2026)
+- [x] Substituir botão "PDF Mensal" por dropdown com opções: Diário, Semanal, Mensal
+- [x] Implementar geração de PDF diário (dados do dia atual)
+- [x] Implementar geração de PDF semanal (dados da semana atual, seg-dom)
+- [x] Manter geração de PDF mensal existente
