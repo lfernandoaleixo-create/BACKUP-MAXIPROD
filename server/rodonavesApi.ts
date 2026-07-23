@@ -5,7 +5,7 @@
  * API Docs: https://dev.paulineris.com.br/reference
  * 
  * Flow:
- * 1. Get city IDs from CEP via DNE API: GET https://dne-api.rte.com.br/api/cities/byzipcode?zipCode={cep}
+ * 1. Get city IDs from CEP via DNE API (with ViaCEP fallback): GET https://dne-api.rte.com.br/api/cities/byzipcode?zipCode={cep}
  * 2. Authenticate: POST https://quotation-apigateway.rte.com.br/token
  * 3. Quote freight: POST https://quotation-apigateway.rte.com.br/api/v1/gera-cotacao
  * 4. Get delivery time: POST https://01wapi.rte.com.br/api/v1/prazo-entrega (separate token)
@@ -64,30 +64,82 @@ interface RodonavesDeliveryTimeResponse {
 let tokenCache: { token: string; expiresAt: number } | null = null;
 let deliveryTokenCache: { token: string; expiresAt: number } | null = null;
 
+// ===== City ID cache =====
+const cityCache = new Map<string, RodonavesCityResponse>();
+
 // ===== Helper functions =====
 
 /**
- * Get city ID from CEP using the DNE API
+ * Get city info from ViaCEP as fallback (returns IBGE code which Rodonaves accepts)
  */
-async function getCityIdFromCep(cep: string): Promise<RodonavesCityResponse> {
+async function getCityFromViaCep(cep: string): Promise<RodonavesCityResponse> {
   const cleanCep = cep.replace(/\D/g, "");
   const response = await fetch(
-    `https://dne-api.rte.com.br/api/cities/byzipcode?zipCode=${cleanCep}`,
-    {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(15000),
-    }
+    `https://viacep.com.br/ws/${cleanCep}/json/`,
+    { signal: AbortSignal.timeout(8000) }
   );
 
   if (!response.ok) {
-    throw new Error(`Rodonaves DNE API error: ${response.status} - Não foi possível buscar cidade para CEP ${cleanCep}`);
+    throw new Error(`ViaCEP error: ${response.status}`);
   }
 
-  const data: RodonavesCityResponse = await response.json();
-  if (!data || !data.Id) {
-    throw new Error(`Rodonaves: CEP ${cleanCep} não encontrado na base DNE`);
+  const data = await response.json();
+  if (data.erro) {
+    throw new Error(`ViaCEP: CEP ${cleanCep} não encontrado`);
   }
-  return data;
+
+  // Return in Rodonaves format using IBGE code
+  return {
+    Id: parseInt(data.ibge) || 0,
+    Description: data.localidade || "",
+    IbgeCityCode: parseInt(data.ibge) || 0,
+  };
+}
+
+/**
+ * Get city ID from CEP using the DNE API with ViaCEP fallback
+ */
+async function getCityIdFromCep(cep: string): Promise<RodonavesCityResponse> {
+  const cleanCep = cep.replace(/\D/g, "");
+  
+  // Check cache first
+  if (cityCache.has(cleanCep)) {
+    return cityCache.get(cleanCep)!;
+  }
+
+  // Try DNE API first (Rodonaves native)
+  try {
+    const response = await fetch(
+      `https://dne-api.rte.com.br/api/cities/byzipcode?zipCode=${cleanCep}`,
+      {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+
+    if (response.ok) {
+      const data: RodonavesCityResponse = await response.json();
+      if (data && data.Id) {
+        cityCache.set(cleanCep, data);
+        return data;
+      }
+    }
+  } catch {
+    // DNE API failed, try fallback
+  }
+
+  // Fallback: use ViaCEP to get IBGE code
+  try {
+    const viaCepData = await getCityFromViaCep(cleanCep);
+    if (viaCepData.Id) {
+      cityCache.set(cleanCep, viaCepData);
+      return viaCepData;
+    }
+  } catch {
+    // Both failed
+  }
+
+  throw new Error(`Rodonaves: Não foi possível buscar cidade para CEP ${cleanCep} (DNE e ViaCEP indisponíveis)`);
 }
 
 /**
@@ -114,7 +166,7 @@ async function getQuotationToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
@@ -156,7 +208,7 @@ async function getDeliveryTimeToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
@@ -205,7 +257,7 @@ export async function quoteRodonavesFreight(params: {
   tipo: string;
   raw: RodonavesQuoteResponse;
 }> {
-  // Step 1: Get city IDs for origin and destination
+  // Step 1: Get city IDs for origin and destination (with fallback)
   const [originCity, destCity] = await Promise.all([
     getCityIdFromCep(params.cepOrigem),
     getCityIdFromCep(params.cepDestino),
@@ -235,7 +287,7 @@ export async function quoteRodonavesFreight(params: {
     "https://quotation-apigateway.rte.com.br/api/v1/gera-cotacao",
     {
       method: "POST",
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(15000),
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -255,7 +307,7 @@ export async function quoteRodonavesFreight(params: {
   // Parse freight value (comes as string like "150.00")
   const freightValue = parseFloat(data.FreightValue) || 0;
 
-  // Step 5: Try to get delivery time
+  // Step 5: Try to get delivery time (optional, don't fail if it doesn't work)
   let prazo = "N/A";
   try {
     const deliveryToken = await getDeliveryTimeToken();
@@ -263,6 +315,7 @@ export async function quoteRodonavesFreight(params: {
       "https://01wapi.rte.com.br/api/v1/prazo-entrega",
       {
         method: "POST",
+        signal: AbortSignal.timeout(8000),
         headers: {
           "Content-Type": "application/json",
           Accept: "*/*",
@@ -270,7 +323,7 @@ export async function quoteRodonavesFreight(params: {
         },
         body: JSON.stringify({
           OriginCityDescription: normalizeCity(originCity.Description),
-          OriginUFDescription: "", // Will be determined by the API from city
+          OriginUFDescription: "",
           DestinationCityDescription: normalizeCity(destCity.Description),
           DestinationUFDescription: "",
         }),
