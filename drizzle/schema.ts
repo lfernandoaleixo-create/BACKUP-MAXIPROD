@@ -3228,3 +3228,18 @@ export const sellerAlerts = mysqlTable("seller_alerts", {
 });
 export type SellerAlert = typeof sellerAlerts.$inferSelect;
 export type InsertSellerAlert = typeof sellerAlerts.$inferInsert;
+
+// ── Histórico de Aprovações de Pedidos ──
+export const orderApprovalHistory = mysqlTable("order_approval_history", {
+  id: int("id").primaryKey().autoincrement(),
+  orderId: int("order_id").notNull(), // FK para sales_order_requests.id
+  pedidoNumero: varchar("pedido_numero", { length: 50 }), // Número do pedido no Maxiprod
+  cliente: varchar("cliente", { length: 300 }),
+  vendedor: varchar("vendedor", { length: 200 }),
+  aprovadoPor: varchar("aprovado_por", { length: 200 }).notNull(), // Quem aprovou
+  tipoAprovacao: varchar("tipo_aprovacao", { length: 50 }).notNull(), // "gestor", "subgestor", "gestor_final"
+  observacao: text("observacao"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type OrderApprovalHistory = typeof orderApprovalHistory.$inferSelect;
+export type InsertOrderApprovalHistory = typeof orderApprovalHistory.$inferInsert;

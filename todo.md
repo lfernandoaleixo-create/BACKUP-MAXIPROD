@@ -5935,5 +5935,55 @@
 - [x] Diagnosticado: STRONG_STATUSES incluía "Contatado", "Em negociação", "Promessa de Pgto" como status herdáveis
 - [x] Corrigido: removidos status de progresso da herança. Agora só herda: Protestado, Protesto em Análise, Fundo Perdido, Especial s/ cobrança
 
+## Senha Obrigatória + Histórico de Aprovações (23/07/2026)
+- [x] Backend: criar tabela order_approval_history (quem aprovou, quando, qual pedido, senha usada)
+- [x] Backend: validar senha (primeiro nome com inicial maiúscula) ao aprovar pedido
+- [x] Backend: registrar cada aprovação no histórico
+- [x] Frontend: input de senha obrigatório no dialog de aprovação (vendedor e gestor)
+- [x] Endpoint getApprovalHistory para consultar histórico de aprovações
+
+## BUG: Login vendedor redireciona + Renato Aleixo (23/07/2026)
+- [ ] Login do vendedor: ao digitar senha e clicar Entrar, deve entrar direto no sistema sem redirecionar para outra tela
+- [ ] Renato deve entrar APENAS como "Renato Ledesma", nunca como "Renato Aleixo"
+
+## BUG: Barra de pesquisa da Planilha de Cobrança não filtra resultados (23/07/2026)
+- [x] Fix: Mover check showCobrancaPlanilha ANTES do check isLoading no InadimplenciaTab (evita desmontagem do componente durante refetch)
+- [x] Fix: Envolver onClose em useCallback para evitar re-renders desnecessários
+- [x] Fix: Envolver CobrancaPlanilhaView em React.memo para estabilidade
+- [x] UX: Adicionar botão de limpar busca (X) e contador de resultados
+- [x] UX: Adicionar campos documento e centroCustos ao filtro de busca
+
+## Ajuste SKUs na Criação de Lotes - Produção (23/07/2026)
+- [x] Adicionar SKU ECP15 para código 00577
+- [x] Adicionar SKU ECP20 para código 00547
+
+## BUG: Juvenal não consegue aprovar pedido (23/07/2026)
+- [x] Adicionar mutation gestorApproveSubgestorOrder no VitoriaOrders
+- [x] Incluir status aprovado_subgestor no filtro "Novos" para Juvenal
+- [x] Adicionar botão "Aprovar como Gestor" com senha e observação para pedidos aprovado_subgestor
+- [x] Atualizar badge de status para mostrar "AGUARDANDO GESTOR" para pedidos aprovado_subgestor
+- [x] Implementar em ambos os caminhos de renderização (agrupado e lista)
+
+## Fix: Exportação Maxiprod - campos em branco em vez de "NAO INFORMADO" (23/07/2026)
+- [x] Exportar Cliente (.xlsx): substituir "NAO INFORMADO", "A DEFINIR", "(00)0000-0000", "adefinir@grupofox.com" por campos em branco
+- [x] Exportar Pedido (.xlsx): substituir "NAO INFORMADO", "A DEFINIR" por campos em branco
+- [x] Manter apenas campos obrigatórios (*) com valores default (Apelido, Ativa, Regime tributário, Sim/Não flags)
+
+## Feature: Gráfico de desconto por produto na visualização do Juvenal (23/07/2026)
+- [x] Adicionar ProductMarginBar (barra de desconto) na visualização de itens do pedido no segundo caminho de renderização (lista) do VitoriaOrders
+
+## Fix: Permitir lotes parciais em faturamento parcial (23/07/2026)
+- [x] Permitir atribuição parcial de lotes para pedidos "Faturado parcial" sem mostrar alerta de erro
+- [x] Badge "Parcial OK" (azul) em vez de "Incompleto" (amarelo) para faturamento parcial
+- [x] Mensagem informativa "Faturamento parcial — lotes atribuídos por remessa" em vez de alerta
+- [x] Para pedidos normais, mensagem menos alarmante: "Lotes atribuídos (parcial permitido)"
+
+## Fix: Cotação de frete não retorna valores (23/07/2026)
+- [x] Fix SSW API: corrigir namespace SOAP e SOAPAction (urn:sswinfbr.sswCotacaoCliente#cotacao)
+- [x] Fix Rodonaves API: adicionar fallback ViaCEP quando dne-api.rte.com.br falhar
+- [x] Adicionar timeouts adequados (10s) em todas as chamadas de API de frete
+- [x] Aumentar Node.js max-old-space-size de 384MB para 512MB
+- [x] Garantir que frontend mostra resultados parciais quando algumas transportadoras falham (já funcionava via Promise.allSettled)
+
 ## Feature: Card "Palitos Premium" na aba Produção (23/07/2026)
 - [x] Adicionar card "Palitos Premium" na seção Anotações Avulsas do item 4 (Seleção Automática), mesmo estilo dos cards Queijo Coalho e Alídio

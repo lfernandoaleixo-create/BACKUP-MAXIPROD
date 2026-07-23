@@ -375,6 +375,8 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
   const [rejectReason, setRejectReason] = useState("");
   const [approvingOrder, setApprovingOrder] = useState<number | null>(null);
   const [approvalObs, setApprovalObs] = useState("");
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [approvalPasswordError, setApprovalPasswordError] = useState("");
 
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
     { status: filter === "todos" ? "todos" : filter, gestorName },
@@ -393,17 +395,33 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
   const handleApprove = (orderId: number) => {
     setApprovingOrder(orderId);
     setApprovalObs("");
+    setApprovalPassword("");
+    setApprovalPasswordError("");
   };
 
   const confirmApprove = () => {
     if (approvingOrder === null) return;
+    if (!approvalPassword.trim()) {
+      setApprovalPasswordError("Digite sua senha para aprovar");
+      return;
+    }
+    setApprovalPasswordError("");
     approveMutation.mutate(
-      { orderId: approvingOrder, aprovadoPor: gestorName, observacaoAprovacao: approvalObs.trim() || undefined },
+      { orderId: approvingOrder, aprovadoPor: gestorName, password: approvalPassword.trim(), observacaoAprovacao: approvalObs.trim() || undefined },
       {
         onSuccess: () => {
           utils.salesOrders.listOrders.invalidate();
           setApprovingOrder(null);
           setApprovalObs("");
+          setApprovalPassword("");
+          setApprovalPasswordError("");
+        },
+        onError: (err) => {
+          if (err.message.includes("Senha incorreta")) {
+            setApprovalPasswordError("Senha incorreta. Use seu primeiro nome com inicial maiúscula.");
+          } else {
+            setApprovalPasswordError(err.message);
+          }
         },
       }
     );
@@ -571,7 +589,18 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                         </div>
                       ) : approvingOrder === order.id ? (
                         <div className="flex-1 space-y-2">
-                          <label className="text-[10px] font-bold text-green-700 block">Observação de aprovação (opcional):</label>
+                          <label className="text-[10px] font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                          <input
+                            type="password"
+                            value={approvalPassword}
+                            onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                            placeholder="Digite sua senha (primeiro nome)"
+                            className="w-full px-3 py-2 border border-green-200 rounded-lg text-xs bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                          />
+                          {approvalPasswordError && (
+                            <p className="text-[10px] text-red-500 font-medium">{approvalPasswordError}</p>
+                          )}
+                          <label className="text-[10px] font-bold text-green-700 block mt-1">Observação de aprovação (opcional):</label>
                           <textarea
                             value={approvalObs}
                             onChange={(e) => setApprovalObs(e.target.value)}
@@ -588,7 +617,7 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                               {approveMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
                             </button>
                             <button
-                              onClick={() => { setApprovingOrder(null); setApprovalObs(""); }}
+                              onClick={() => { setApprovingOrder(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}
                               className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
                             >
                               Cancelar

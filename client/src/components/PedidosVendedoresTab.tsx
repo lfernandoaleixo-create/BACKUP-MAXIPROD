@@ -52,6 +52,8 @@ export default function PedidosVendedoresTab() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [approvalObs, setApprovalObs] = useState("");
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [approvalPasswordError, setApprovalPasswordError] = useState("");
   const [maxiprodNumber, setMaxiprodNumber] = useState("");
   const [showProcessDialog, setShowProcessDialog] = useState(false);
 
@@ -959,6 +961,17 @@ export default function PedidosVendedoresTab() {
             <DialogTitle>Autorizar Pedido</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <p className="text-sm font-medium text-slate-700">Senha de aprovação (obrigatória):</p>
+            <input
+              type="password"
+              value={approvalPassword}
+              onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+              placeholder="Digite sua senha (primeiro nome)"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+            />
+            {approvalPasswordError && (
+              <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>
+            )}
             <p className="text-sm text-slate-600">Observação de aprovação (opcional):</p>
             <textarea
               value={approvalObs}
@@ -970,13 +983,31 @@ export default function PedidosVendedoresTab() {
             <div className="flex gap-2">
               <Button
                 onClick={() => {
+                  if (!approvalPassword.trim()) {
+                    setApprovalPasswordError("Digite sua senha para aprovar");
+                    return;
+                  }
                   approveMutation.mutate({
                     orderId: selectedOrderId!,
                     aprovadoPor: operator?.name || "Gestor",
+                    password: approvalPassword.trim(),
                     observacaoAprovacao: approvalObs.trim() || undefined,
+                  }, {
+                    onSuccess: () => {
+                      setShowApproveDialog(false);
+                      setApprovalObs("");
+                      setApprovalPassword("");
+                      setApprovalPasswordError("");
+                    },
+                    onError: (err) => {
+                      if (err.message.includes("Senha incorreta")) {
+                        setApprovalPasswordError("Senha incorreta. Use seu primeiro nome com inicial mai\u00fascula.");
+                      } else {
+                        setApprovalPasswordError(err.message);
+                      }
+                    }
                   });
-                  setShowApproveDialog(false);
-                  setApprovalObs("");
+                  return;
                 }}
                 disabled={approveMutation.isPending}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"

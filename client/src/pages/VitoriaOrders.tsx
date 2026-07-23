@@ -65,11 +65,19 @@ export default function VitoriaOrders() {
   const markLancadoMutation = trpc.salesOrders.markLancado.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const approveOrderMutation = trpc.salesOrders.approveOrder.useMutation();
+  const gestorApproveMutation = trpc.salesOrders.gestorApproveSubgestorOrder.useMutation();
   const exportMaxiprodMutation = trpc.salesOrders.exportClientMaxiprod.useMutation();
   const exportOrderMutation = trpc.salesOrders.exportOrderMaxiprod.useMutation();
   const utils = trpc.useUtils();
   const [approvingOrderId, setApprovingOrderId] = useState<number | null>(null);
   const [approvalObs, setApprovalObs] = useState("");
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [approvalPasswordError, setApprovalPasswordError] = useState("");
+  // Juvenal gestor-final approval state
+  const [gestorApprovingOrderId, setGestorApprovingOrderId] = useState<number | null>(null);
+  const [gestorPassword, setGestorPassword] = useState("");
+  const [gestorObs, setGestorObs] = useState("");
+  const [gestorPasswordError, setGestorPasswordError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [exportingOrderId, setExportingOrderId] = useState<number | null>(null);
   const [exportingPedidoId, setExportingPedidoId] = useState<number | null>(null);
@@ -177,24 +185,63 @@ export default function VitoriaOrders() {
     );
   };
 
-  const handleApproveOrder = (orderId: number) => {
+    const handleApproveOrder = (orderId: number) => {
     setApprovingOrderId(orderId);
     setApprovalObs("");
+    setApprovalPassword("");
+    setApprovalPasswordError("");
   };
-
   const confirmApproveOrder = () => {
     if (approvingOrderId === null) return;
+    if (!approvalPassword.trim()) {
+      setApprovalPasswordError("Digite sua senha para aprovar");
+      return;
+    }
+    setApprovalPasswordError("");
     approveOrderMutation.mutate(
-      { orderId: approvingOrderId, aprovadoPor: operator?.name || "Gestor", observacaoAprovacao: approvalObs.trim() || undefined },
+      { orderId: approvingOrderId, aprovadoPor: operator?.name || "Gestor", password: approvalPassword.trim(), observacaoAprovacao: approvalObs.trim() || undefined },
       {
         onSuccess: () => {
           toast.success("Pedido aprovado com sucesso!");
           utils.salesOrders.getOrdersForOperator.invalidate();
           setApprovingOrderId(null);
           setApprovalObs("");
+          setApprovalPassword("");
+          setApprovalPasswordError("");
         },
         onError: (err) => {
-          toast.error(err.message || "Erro ao aprovar pedido");
+          if (err.message.includes("Senha incorreta")) {
+            setApprovalPasswordError("Senha incorreta. Use seu primeiro nome com inicial mai\u00fascula.");
+          } else {
+            toast.error(err.message || "Erro ao aprovar pedido");
+          }
+        },
+      }
+    );
+  };
+
+  // Juvenal gestor-final approval
+  const confirmGestorApprove = () => {
+    if (gestorApprovingOrderId === null || !gestorPassword.trim()) return;
+    setGestorPasswordError("");
+    gestorApproveMutation.mutate(
+      { orderId: gestorApprovingOrderId, password: gestorPassword.trim(), observacaoGestor: gestorObs.trim() || undefined },
+      {
+        onSuccess: () => {
+          toast.success("Pedido aprovado pelo gestor com sucesso!");
+          utils.salesOrders.getOrdersForOperator.invalidate();
+          utils.salesOrders.getOrdersPendingGestorApproval.invalidate();
+          setGestorApprovingOrderId(null);
+          setGestorPassword("");
+          setGestorObs("");
+          setGestorPasswordError("");
+        },
+        onError: (err) => {
+          if (err.message.includes("Senha incorreta")) {
+            setGestorPasswordError("Senha incorreta.");
+          } else {
+            toast.error(err.message || "Erro ao aprovar pedido");
+          }
         },
       }
     );
@@ -240,7 +287,7 @@ export default function VitoriaOrders() {
     if (statusFilter === "todos") return true;
     if (statusFilter === "pendente") {
       if (canSeeAguardandoAprovacao) {
-        return (o.status === "pendente" || (o.status === "aprovado" && !o.vitoriaRecebido));
+        return (o.status === "pendente" || o.status === "aprovado_subgestor" || (o.status === "aprovado" && !o.vitoriaRecebido));
       }
       return o.status === "aprovado" && !o.vitoriaRecebido;
     }
@@ -250,7 +297,7 @@ export default function VitoriaOrders() {
   });
 
   const pendingCount = canSeeAguardandoAprovacao
-    ? (orders || []).filter((o: any) => o.status === "pendente" || (o.status === "aprovado" && !o.vitoriaRecebido)).length
+    ? (orders || []).filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor" || (o.status === "aprovado" && !o.vitoriaRecebido)).length
     : (orders || []).filter((o: any) => o.status === "aprovado" && !o.vitoriaRecebido).length;
   const recebidoCount = (orders || []).filter((o: any) => o.vitoriaRecebido && !o.vitoriaLancado).length;
   const lancadoCount = (orders || []).filter((o: any) => o.vitoriaLancado).length;
@@ -579,12 +626,13 @@ export default function VitoriaOrders() {
                           const isLancado = order.vitoriaLancado;
                           const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
                           const isPendente = order.status === "pendente";
+                          const isAwaitingGestor = order.status === "aprovado_subgestor";
                           const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
                           const borderClass = isLancado
                             ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
                             : isRecebido
                               ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
-                              : isPendente
+                              : (isPendente || isAwaitingGestor)
                                 ? "border-orange-200 dark:border-orange-800 border-l-4 border-l-orange-500"
                                 : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
                           const orderMargin = orderMarginsMap.get(order.id);
@@ -600,12 +648,12 @@ export default function VitoriaOrders() {
                                   <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                                     isLancado ? "bg-green-100 dark:bg-green-900/30" :
                                     isRecebido ? "bg-blue-100 dark:bg-blue-900/30" :
-                                    isPendente ? "bg-orange-100 dark:bg-orange-900/30" :
+                                    (isPendente || isAwaitingGestor) ? "bg-orange-100 dark:bg-orange-900/30" :
                                     "bg-amber-100 dark:bg-amber-900/30"
                                   }`}>
                                     {isLancado ? <CheckCheck className="w-4.5 h-4.5 text-green-600" /> :
                                      isRecebido ? <Inbox className="w-4.5 h-4.5 text-blue-600" /> :
-                                     isPendente ? <Clock className="w-4.5 h-4.5 text-orange-600" /> :
+                                     (isPendente || isAwaitingGestor) ? <Clock className="w-4.5 h-4.5 text-orange-600" /> :
                                      <AlertCircle className="w-4.5 h-4.5 text-amber-600" />}
                                   </div>
                                   <div className="min-w-0 flex-1">
@@ -615,10 +663,10 @@ export default function VitoriaOrders() {
                                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                                         isLancado ? "bg-green-50 text-green-600" :
                                         isRecebido ? "bg-blue-50 text-blue-600" :
-                                        isPendente ? "bg-orange-50 text-orange-700" :
+                                        (isPendente || isAwaitingGestor) ? "bg-orange-50 text-orange-700" :
                                         "bg-amber-50 text-amber-700"
                                       }`}>
-                                        {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
+                                        {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isAwaitingGestor ? "AGUARDANDO GESTOR" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
@@ -697,6 +745,17 @@ export default function VitoriaOrders() {
                                     <div className="mt-4">
                                       {approvingOrderId === order.id ? (
                                         <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                          <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                                          <input
+                                            type="password"
+                                            value={approvalPassword}
+                                            onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                            placeholder="Digite sua senha (primeiro nome)"
+                                            className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                          />
+                                          {approvalPasswordError && (
+                                            <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>
+                                          )}
                                           <label className="text-xs font-bold text-green-700 block">Observação de aprovação (opcional):</label>
                                           <textarea
                                             value={approvalObs}
@@ -733,6 +792,64 @@ export default function VitoriaOrders() {
                                       )}
                                     </div>
                                   )}
+                                  {/* GESTOR APPROVE - First rendering path */}
+                                  {isAwaitingGestor && isJuvenalViewer && (
+                                    <div className="mt-4">
+                                      <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg mb-3">
+                                        <p className="text-xs text-purple-700 dark:text-purple-400 font-medium">
+                                          <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
+                                          Aprovado pelo sub-gestor (Renato). Aguardando sua aprovação final.
+                                        </p>
+                                      </div>
+                                      {gestorApprovingOrderId === order.id ? (
+                                        <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                          <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                                          <input
+                                            type="password"
+                                            value={gestorPassword}
+                                            onChange={(e) => { setGestorPassword(e.target.value); setGestorPasswordError(""); }}
+                                            placeholder="Digite sua senha (Juvenal)"
+                                            className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                          />
+                                          {gestorPasswordError && (
+                                            <p className="text-xs text-red-500 font-medium">{gestorPasswordError}</p>
+                                          )}
+                                          <label className="text-xs font-bold text-green-700 block">Observação (opcional):</label>
+                                          <textarea
+                                            value={gestorObs}
+                                            onChange={(e) => setGestorObs(e.target.value)}
+                                            placeholder="Observação do gestor..."
+                                            rows={2}
+                                            className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                                          />
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={confirmGestorApprove}
+                                              disabled={gestorApproveMutation.isPending}
+                                              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                            >
+                                              {gestorApproveMutation.isPending ? "Aprovando..." : "Confirmar Aprovação do Gestor"}
+                                            </button>
+                                            <button
+                                              onClick={() => { setGestorApprovingOrderId(null); setGestorPassword(""); setGestorObs(""); setGestorPasswordError(""); }}
+                                              className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
+                                            >
+                                              Cancelar
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => setGestorApprovingOrderId(order.id)}
+                                          disabled={gestorApproveMutation.isPending}
+                                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                                        >
+                                          <CheckCircle2 className="w-4 h-4" />
+                                          Aprovar como Gestor
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -751,14 +868,14 @@ export default function VitoriaOrders() {
               const isExpanded = expandedOrder === order.id;
               const isLancado = order.vitoriaLancado;
               const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
-              const isPendente = order.status === "pendente";
+                            const isPendente = order.status === "pendente";
+              const isAwaitingGestor = order.status === "aprovado_subgestor";
               const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
-
               const borderClass = isLancado
                 ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
                 : isRecebido
                   ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
-                  : isPendente
+                  : (isPendente || isAwaitingGestor)
                     ? "border-orange-200 dark:border-orange-800 border-l-4 border-l-orange-500"
                     : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
 
@@ -775,7 +892,7 @@ export default function VitoriaOrders() {
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isLancado ? "bg-green-100 dark:bg-green-900/30" :
                       isRecebido ? "bg-blue-100 dark:bg-blue-900/30" :
-                      isPendente ? "bg-orange-100 dark:bg-orange-900/30" :
+                      (isPendente || isAwaitingGestor) ? "bg-orange-100 dark:bg-orange-900/30" :
                       "bg-amber-100 dark:bg-amber-900/30"
                     }`}>
                       {isLancado ? (
@@ -798,10 +915,10 @@ export default function VitoriaOrders() {
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           isLancado ? "bg-green-50 text-green-600" :
                           isRecebido ? "bg-blue-50 text-blue-600" :
-                          isPendente ? "bg-orange-50 text-orange-700" :
+                          (isPendente || isAwaitingGestor) ? "bg-orange-50 text-orange-700" :
                           "bg-amber-50 text-amber-700"
                         }`}>
-                          {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
+                          {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isAwaitingGestor ? "AGUARDANDO GESTOR" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
                         </span>
                         {order.temPrecoAbaixoMinimo && (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-700">
@@ -880,28 +997,37 @@ export default function VitoriaOrders() {
                             <Package className="w-3.5 h-3.5" />
                             Itens do Pedido ({orderDetails.items.length})
                           </p>
-                          {orderDetails.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className={`flex items-center justify-between text-xs rounded-lg px-3 py-2 ${
-                                item.abaixoDoMinimo
-                                  ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
-                                  : "bg-slate-50 dark:bg-slate-700/50"
-                              }`}
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                                  {item.codigoItem} - {item.descricaoItem}
-                                </p>
-                                <span className="text-xs text-slate-400">
-                                  {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(Number(item.precoUnitario))}
-                                </span>
+                          {orderDetails.items.map((item) => {
+                            const precoMostrado = orderDetails.priceTableMap?.[item.codigoItem];
+                            const precoVenda = Number(item.precoUnitario);
+                            const descontoDado = precoMostrado && precoMostrado > 0 ? ((precoMostrado - precoVenda) / precoMostrado) * 100 : null;
+                            return (
+                              <div key={item.id} className="space-y-1">
+                                <div className={`flex items-center justify-between text-xs rounded-lg px-3 py-2 ${
+                                  item.abaixoDoMinimo
+                                    ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                                    : "bg-slate-50 dark:bg-slate-700/50"
+                                }`}>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                                      {item.codigoItem} - {item.descricaoItem}
+                                    </p>
+                                    <span className="text-xs text-slate-400">
+                                      {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(precoVenda)}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
+                                    {formatCurrency(Number(item.totalItem))}
+                                  </p>
+                                </div>
+                                {descontoDado !== null && (
+                                  <div className="pl-3">
+                                    <ProductMarginBar desconto={descontoDado} showValues={false} />
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
-                                {formatCurrency(Number(item.totalItem))}
-                              </p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
@@ -1455,6 +1581,17 @@ export default function VitoriaOrders() {
                           </div>
                           {approvingOrderId === order.id ? (
                             <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                              <input
+                                type="password"
+                                value={approvalPassword}
+                                onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                placeholder="Digite sua senha (primeiro nome)"
+                                className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                              />
+                              {approvalPasswordError && (
+                                <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>
+                              )}
                               <label className="text-xs font-bold text-green-700 block">Observação de aprovação (opcional):</label>
                               <textarea
                                 value={approvalObs}
@@ -1472,7 +1609,7 @@ export default function VitoriaOrders() {
                                   {approveOrderMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
                                 </button>
                                 <button
-                                  onClick={() => { setApprovingOrderId(null); setApprovalObs(""); }}
+                                  onClick={() => { setApprovingOrderId(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}
                                   className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
                                 >
                                   Cancelar
@@ -1487,6 +1624,65 @@ export default function VitoriaOrders() {
                             >
                               <CheckCircle2 className="w-4 h-4" />
                               ✓ Aprovar Pedido
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* GESTOR APPROVE - For aprovado_subgestor orders (Juvenal) */}
+                      {isAwaitingGestor && isJuvenalViewer && (
+                        <div className="mt-4">
+                          <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg mb-3">
+                            <p className="text-xs text-purple-700 dark:text-purple-400 font-medium">
+                              <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
+                              Aprovado pelo sub-gestor (Renato). Aguardando sua aprovação final.
+                            </p>
+                          </div>
+                          {gestorApprovingOrderId === order.id ? (
+                            <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                              <input
+                                type="password"
+                                value={gestorPassword}
+                                onChange={(e) => { setGestorPassword(e.target.value); setGestorPasswordError(""); }}
+                                placeholder="Digite sua senha (Juvenal)"
+                                className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                              />
+                              {gestorPasswordError && (
+                                <p className="text-xs text-red-500 font-medium">{gestorPasswordError}</p>
+                              )}
+                              <label className="text-xs font-bold text-green-700 block">Observação (opcional):</label>
+                              <textarea
+                                value={gestorObs}
+                                onChange={(e) => setGestorObs(e.target.value)}
+                                placeholder="Observação do gestor..."
+                                rows={2}
+                                className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={confirmGestorApprove}
+                                  disabled={gestorApproveMutation.isPending}
+                                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  {gestorApproveMutation.isPending ? "Aprovando..." : "Confirmar Aprovação do Gestor"}
+                                </button>
+                                <button
+                                  onClick={() => { setGestorApprovingOrderId(null); setGestorPassword(""); setGestorObs(""); setGestorPasswordError(""); }}
+                                  className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setGestorApprovingOrderId(order.id)}
+                              disabled={gestorApproveMutation.isPending}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              Aprovar como Gestor
                             </button>
                           )}
                         </div>

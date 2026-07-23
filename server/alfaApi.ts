@@ -80,6 +80,7 @@ export async function quoteAlfaFreight(params: AlfaQuoteParams): Promise<AlfaQuo
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {

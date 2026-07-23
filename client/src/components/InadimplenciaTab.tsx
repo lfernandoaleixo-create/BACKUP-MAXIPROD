@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -1063,6 +1063,12 @@ export default function InadimplenciaTab() {
     return { label: "Não Protestar", color: "bg-blue-100 text-blue-700 border-blue-300" };
   }
 
+  // Show Planilha de Cobrança view (MUST be before isLoading check to prevent unmounting when getOverdueTitles refetches)
+  const handleClosePlanilha = useCallback(() => setShowCobrancaPlanilha(false), []);
+  if (showCobrancaPlanilha) {
+    return <CobrancaPlanilhaView onClose={handleClosePlanilha} />;
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -1074,11 +1080,6 @@ export default function InadimplenciaTab() {
         <div className="h-96 bg-slate-100 rounded-lg animate-pulse" />
       </div>
     );
-  }
-
-  // Show Planilha de Cobrança view
-  if (showCobrancaPlanilha) {
-    return <CobrancaPlanilhaView onClose={() => setShowCobrancaPlanilha(false)} />;
   }
 
   return (

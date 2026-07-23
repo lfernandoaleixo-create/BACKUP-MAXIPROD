@@ -107,6 +107,7 @@ export async function cotarBraspress(input: BraspressQuoteInput): Promise<Braspr
         Authorization: `Basic ${authString}`,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
