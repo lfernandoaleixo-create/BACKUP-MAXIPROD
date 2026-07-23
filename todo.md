@@ -5952,3 +5952,7 @@
 - [x] Fix: Envolver CobrancaPlanilhaView em React.memo para estabilidade
 - [x] UX: Adicionar botão de limpar busca (X) e contador de resultados
 - [x] UX: Adicionar campos documento e centroCustos ao filtro de busca
+
+## Ajuste SKUs na Criação de Lotes - Produção (23/07/2026)
+- [x] Adicionar SKU ECP15 para código 00577
+- [x] Adicionar SKU ECP20 para código 00547

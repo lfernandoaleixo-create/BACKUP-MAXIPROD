@@ -509,6 +509,8 @@ const SKU_CODE_MAP: Record<string, string> = {
   "00112": "AR35",
   "00103": "EC20",
   "00147": "EC25",
+  "00577": "ECP15",
+  "00547": "ECP20",
 };
 
 /** Converte a primeira sequência do código do lote (ex: 00103-160726-12345 → EC20-160726-12345) */
