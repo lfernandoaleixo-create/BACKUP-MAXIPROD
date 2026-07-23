@@ -5934,3 +5934,10 @@
 - [x] Porém apareceu direto como "Contatado" - Thalita ajustou manualmente
 - [x] Diagnosticado: STRONG_STATUSES incluía "Contatado", "Em negociação", "Promessa de Pgto" como status herdáveis
 - [x] Corrigido: removidos status de progresso da herança. Agora só herda: Protestado, Protesto em Análise, Fundo Perdido, Especial s/ cobrança
+
+## Senha Obrigatória + Histórico de Aprovações (23/07/2026)
+- [x] Backend: criar tabela order_approval_history (quem aprovou, quando, qual pedido, senha usada)
+- [x] Backend: validar senha (primeiro nome com inicial maiúscula) ao aprovar pedido
+- [x] Backend: registrar cada aprovação no histórico
+- [x] Frontend: input de senha obrigatório no dialog de aprovação (vendedor e gestor)
+- [x] Endpoint getApprovalHistory para consultar histórico de aprovações

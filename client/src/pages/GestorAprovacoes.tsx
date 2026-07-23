@@ -115,6 +115,8 @@ export default function GestorAprovacoes(props: any = {}) {
   const [rejectReason, setRejectReason] = useState("");
   const [approvingOrder, setApprovingOrder] = useState<number | null>(null);
   const [approvalObs, setApprovalObs] = useState("");
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [approvalPasswordError, setApprovalPasswordError] = useState("");
   // Juvenal gestor approval state
   const [gestorApprovingOrder, setGestorApprovingOrder] = useState<number | null>(null);
   const [gestorPassword, setGestorPassword] = useState("");
@@ -173,14 +175,22 @@ export default function GestorAprovacoes(props: any = {}) {
   const handleApprove = (orderId: number) => {
     setApprovingOrder(orderId);
     setApprovalObs("");
+    setApprovalPassword("");
+    setApprovalPasswordError("");
   };
 
   const confirmApprove = () => {
     if (approvingOrder === null) return;
+    if (!approvalPassword.trim()) {
+      setApprovalPasswordError("Digite sua senha para aprovar");
+      return;
+    }
+    setApprovalPasswordError("");
     approveMutation.mutate(
       {
         orderId: approvingOrder,
         aprovadoPor: gestorName || "Gestor",
+        password: approvalPassword.trim(),
         observacaoAprovacao: approvalObs.trim() || undefined,
       },
       {
@@ -189,6 +199,15 @@ export default function GestorAprovacoes(props: any = {}) {
           utils.salesOrders.getOrdersForGestor.invalidate();
           setApprovingOrder(null);
           setApprovalObs("");
+          setApprovalPassword("");
+          setApprovalPasswordError("");
+        },
+        onError: (err) => {
+          if (err.message.includes("Senha incorreta")) {
+            setApprovalPasswordError("Senha incorreta. Use seu primeiro nome com inicial maiúscula.");
+          } else {
+            setApprovalPasswordError(err.message);
+          }
         },
       }
     );
@@ -998,6 +1017,19 @@ export default function GestorAprovacoes(props: any = {}) {
                           ) : approvingOrder === order.id ? (
                             <div className="space-y-2 w-full">
                               <label className="text-[10px] font-bold text-green-700 dark:text-green-400 block">
+                                Senha de aprovação (obrigatória):
+                              </label>
+                              <input
+                                type="password"
+                                value={approvalPassword}
+                                onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                placeholder="Digite sua senha (primeiro nome)"
+                                className="w-full px-3 py-2 text-xs border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                              />
+                              {approvalPasswordError && (
+                                <p className="text-[10px] text-red-500 font-medium">{approvalPasswordError}</p>
+                              )}
+                              <label className="text-[10px] font-bold text-green-700 dark:text-green-400 block mt-2">
                                 Observação de aprovação (opcional):
                               </label>
                               <textarea
@@ -1009,7 +1041,7 @@ export default function GestorAprovacoes(props: any = {}) {
                               />
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => { setApprovingOrder(null); setApprovalObs(""); }}
+                                  onClick={() => { setApprovingOrder(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}
                                   className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
                                 >
                                   Cancelar

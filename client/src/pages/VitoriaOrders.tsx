@@ -70,6 +70,8 @@ export default function VitoriaOrders() {
   const utils = trpc.useUtils();
   const [approvingOrderId, setApprovingOrderId] = useState<number | null>(null);
   const [approvalObs, setApprovalObs] = useState("");
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [approvalPasswordError, setApprovalPasswordError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [exportingOrderId, setExportingOrderId] = useState<number | null>(null);
   const [exportingPedidoId, setExportingPedidoId] = useState<number | null>(null);
@@ -177,24 +179,36 @@ export default function VitoriaOrders() {
     );
   };
 
-  const handleApproveOrder = (orderId: number) => {
+    const handleApproveOrder = (orderId: number) => {
     setApprovingOrderId(orderId);
     setApprovalObs("");
+    setApprovalPassword("");
+    setApprovalPasswordError("");
   };
-
   const confirmApproveOrder = () => {
     if (approvingOrderId === null) return;
+    if (!approvalPassword.trim()) {
+      setApprovalPasswordError("Digite sua senha para aprovar");
+      return;
+    }
+    setApprovalPasswordError("");
     approveOrderMutation.mutate(
-      { orderId: approvingOrderId, aprovadoPor: operator?.name || "Gestor", observacaoAprovacao: approvalObs.trim() || undefined },
+      { orderId: approvingOrderId, aprovadoPor: operator?.name || "Gestor", password: approvalPassword.trim(), observacaoAprovacao: approvalObs.trim() || undefined },
       {
         onSuccess: () => {
           toast.success("Pedido aprovado com sucesso!");
           utils.salesOrders.getOrdersForOperator.invalidate();
           setApprovingOrderId(null);
           setApprovalObs("");
+          setApprovalPassword("");
+          setApprovalPasswordError("");
         },
         onError: (err) => {
-          toast.error(err.message || "Erro ao aprovar pedido");
+          if (err.message.includes("Senha incorreta")) {
+            setApprovalPasswordError("Senha incorreta. Use seu primeiro nome com inicial mai\u00fascula.");
+          } else {
+            toast.error(err.message || "Erro ao aprovar pedido");
+          }
         },
       }
     );
@@ -697,6 +711,17 @@ export default function VitoriaOrders() {
                                     <div className="mt-4">
                                       {approvingOrderId === order.id ? (
                                         <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                          <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                                          <input
+                                            type="password"
+                                            value={approvalPassword}
+                                            onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                            placeholder="Digite sua senha (primeiro nome)"
+                                            className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                          />
+                                          {approvalPasswordError && (
+                                            <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>
+                                          )}
                                           <label className="text-xs font-bold text-green-700 block">Observação de aprovação (opcional):</label>
                                           <textarea
                                             value={approvalObs}
@@ -1455,6 +1480,17 @@ export default function VitoriaOrders() {
                           </div>
                           {approvingOrderId === order.id ? (
                             <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
+                              <input
+                                type="password"
+                                value={approvalPassword}
+                                onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                placeholder="Digite sua senha (primeiro nome)"
+                                className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                              />
+                              {approvalPasswordError && (
+                                <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>
+                              )}
                               <label className="text-xs font-bold text-green-700 block">Observação de aprovação (opcional):</label>
                               <textarea
                                 value={approvalObs}
@@ -1472,7 +1508,7 @@ export default function VitoriaOrders() {
                                   {approveOrderMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
                                 </button>
                                 <button
-                                  onClick={() => { setApprovingOrderId(null); setApprovalObs(""); }}
+                                  onClick={() => { setApprovingOrderId(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}
                                   className="px-3 py-2 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium cursor-pointer"
                                 >
                                   Cancelar

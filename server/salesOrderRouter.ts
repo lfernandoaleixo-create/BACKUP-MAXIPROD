@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -1237,20 +1237,30 @@ export const salesOrderRouter = router({
     .input(z.object({
       orderId: z.number(),
       aprovadoPor: z.string(),
+      password: z.string(),
       observacaoAprovacao: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
 
+      // Validar senha: primeiro nome com inicial maiúscula
+      const primeiroNome = input.aprovadoPor.split(" ")[0];
+      const senhaEsperada = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1).toLowerCase();
+      if (input.password !== senhaEsperada) {
+        throw new Error("Senha incorreta");
+      }
+
+      // Get order details for history
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido não encontrado");
+
       // Check if Renato is approving one of his own sellers' orders
       const isRenatoApproving = input.aprovadoPor.toUpperCase().includes("RENATO");
       let needsGestorApproval = false;
       if (isRenatoApproving) {
-        const [order] = await db.select({ gestorName: salesOrderRequests.gestorName })
-          .from(salesOrderRequests)
-          .where(eq(salesOrderRequests.id, input.orderId));
-        if (order?.gestorName === "RENATO LEDESMA") {
+        if (order.gestorName === "RENATO LEDESMA") {
           needsGestorApproval = true;
         }
       }
@@ -1263,6 +1273,17 @@ export const salesOrderRouter = router({
           observacaoAprovacao: input.observacaoAprovacao || null,
         })
         .where(eq(salesOrderRequests.id, input.orderId));
+
+      // Registrar no histórico de aprovações
+      await db.insert(orderApprovalHistory).values({
+        orderId: input.orderId,
+        pedidoNumero: order.orderNumber ? String(order.orderNumber) : null,
+        cliente: order.razaoSocial || order.nomeFantasia || null,
+        vendedor: order.sellerName || null,
+        aprovadoPor: input.aprovadoPor,
+        tipoAprovacao: needsGestorApproval ? "subgestor" : "gestor",
+        observacao: input.observacaoAprovacao || null,
+      });
 
       return { success: true, needsGestorApproval };
     }),
@@ -1282,9 +1303,9 @@ export const salesOrderRouter = router({
       }
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
-      if (!order) throw new Error("Pedido n\u00e3o encontrado");
+      if (!order) throw new Error("Pedido não encontrado");
       if (order.status !== "aprovado_subgestor") {
-        throw new Error("Este pedido n\u00e3o est\u00e1 aguardando aprova\u00e7\u00e3o do gestor");
+        throw new Error("Este pedido não está aguardando aprovação do gestor");
       }
       const existingObs = order.observacaoAprovacao || "";
       const gestorObs = input.observacaoGestor ? `\n[Juvenal]: ${input.observacaoGestor}` : "";
@@ -1294,6 +1315,18 @@ export const salesOrderRouter = router({
           observacaoAprovacao: existingObs + gestorObs || null,
         })
         .where(eq(salesOrderRequests.id, input.orderId));
+
+      // Registrar no histórico de aprovações
+      await db.insert(orderApprovalHistory).values({
+        orderId: input.orderId,
+        pedidoNumero: order.orderNumber ? String(order.orderNumber) : null,
+        cliente: order.razaoSocial || order.nomeFantasia || null,
+        vendedor: order.sellerName || null,
+        aprovadoPor: "Juvenal",
+        tipoAprovacao: "gestor_final",
+        observacao: input.observacaoGestor || null,
+      });
+
       return { success: true };
     }),
 
@@ -1348,6 +1381,21 @@ export const salesOrderRouter = router({
         ...order,
         items: itemsByOrder.get(order.id) || [],
       }));
+    }),
+
+  /** Get approval history - all approvals logged */
+  getApprovalHistory: publicProcedure
+    .input(z.object({
+      limit: z.number().optional().default(100),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const limit = input?.limit || 100;
+      const history = await db.select().from(orderApprovalHistory)
+        .orderBy(desc(orderApprovalHistory.createdAt))
+        .limit(limit);
+      return history;
     }),
 
   /** Update approval observation (gestor can edit after approving) */
