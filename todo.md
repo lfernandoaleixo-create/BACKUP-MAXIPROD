@@ -5941,3 +5941,14 @@
 - [x] Backend: registrar cada aprovação no histórico
 - [x] Frontend: input de senha obrigatório no dialog de aprovação (vendedor e gestor)
 - [x] Endpoint getApprovalHistory para consultar histórico de aprovações
+
+## BUG: Login vendedor redireciona + Renato Aleixo (23/07/2026)
+- [ ] Login do vendedor: ao digitar senha e clicar Entrar, deve entrar direto no sistema sem redirecionar para outra tela
+- [ ] Renato deve entrar APENAS como "Renato Ledesma", nunca como "Renato Aleixo"
+
+## BUG: Barra de pesquisa da Planilha de Cobrança não filtra resultados (23/07/2026)
+- [x] Fix: Mover check showCobrancaPlanilha ANTES do check isLoading no InadimplenciaTab (evita desmontagem do componente durante refetch)
+- [x] Fix: Envolver onClose em useCallback para evitar re-renders desnecessários
+- [x] Fix: Envolver CobrancaPlanilhaView em React.memo para estabilidade
+- [x] UX: Adicionar botão de limpar busca (X) e contador de resultados
+- [x] UX: Adicionar campos documento e centroCustos ao filtro de busca

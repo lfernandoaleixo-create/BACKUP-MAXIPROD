@@ -215,7 +215,7 @@ interface CobrancaPlanilhaViewProps {
   onClose: () => void;
 }
 
-export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewProps) {
+function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
   const { operator } = useOperator();
   const { data: items, isLoading, refetch } = trpc.cobrancaPlanilha.getAll.useQuery();
   const { data: summary } = trpc.cobrancaPlanilha.getSummary.useQuery();
@@ -405,7 +405,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         ((item as any).email || "").toLowerCase().includes(s) ||
         (item.vendedor || "").toLowerCase().includes(s) ||
         (item.formaCobranca || "").toLowerCase().includes(s) ||
-        ((item as any).apelido || "").toLowerCase().includes(s)
+        ((item as any).apelido || "").toLowerCase().includes(s) ||
+        (item.documento || "").toLowerCase().includes(s) ||
+        (item.centroCustos || "").toLowerCase().includes(s)
       );
     }
 
@@ -1856,9 +1858,23 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           placeholder="Buscar empresa, CNPJ, município, vendedor, forma de cobrança..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
         />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 transition-colors"
+            title="Limpar busca"
+          >
+            <X className="w-3 h-3 text-slate-600" />
+          </button>
+        )}
       </div>
+      {search.trim() && (
+        <div className="text-xs text-slate-500 -mt-1">
+          {filteredItems.length} {filteredItems.length === 1 ? 'resultado' : 'resultados'} para "{search}"
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm bg-white">
@@ -3909,3 +3925,6 @@ function DiaryPanelContent({ operatorName, clienteNames }: { operatorName: strin
     </div>
   );
 }
+
+const CobrancaPlanilhaView = React.memo(CobrancaPlanilhaViewInner);
+export default CobrancaPlanilhaView;
