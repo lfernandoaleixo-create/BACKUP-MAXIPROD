@@ -5956,3 +5956,10 @@
 ## Ajuste SKUs na Criação de Lotes - Produção (23/07/2026)
 - [x] Adicionar SKU ECP15 para código 00577
 - [x] Adicionar SKU ECP20 para código 00547
+
+## BUG: Juvenal não consegue aprovar pedido (23/07/2026)
+- [x] Adicionar mutation gestorApproveSubgestorOrder no VitoriaOrders
+- [x] Incluir status aprovado_subgestor no filtro "Novos" para Juvenal
+- [x] Adicionar botão "Aprovar como Gestor" com senha e observação para pedidos aprovado_subgestor
+- [x] Atualizar badge de status para mostrar "AGUARDANDO GESTOR" para pedidos aprovado_subgestor
+- [x] Implementar em ambos os caminhos de renderização (agrupado e lista)
