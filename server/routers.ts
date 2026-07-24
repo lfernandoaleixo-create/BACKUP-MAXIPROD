@@ -781,8 +781,8 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("DB not available");
 
-        // Validação de senha para estoque_maxiprod
-        if (input.campo === "estoque_maxiprod") {
+        // Validação de senha para estoque_maxiprod e estoque_processado (apenas Maria)
+        if (input.campo === "estoque_maxiprod" || input.campo === "estoque_processado") {
           if (!input.senha || input.senha.toLowerCase() !== "maria") {
             return { success: false, error: "senha_incorreta" };
           }

@@ -4417,7 +4417,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
   }), [rows]);
 
   const handleStartEdit = (codigo: string, campo: string) => {
-    if (campo === "estoque_maxiprod") {
+    if (campo === "estoque_maxiprod" || campo === "estoque_processado") {
       setPendingEdit({ codigo, campo });
       setShowPasswordModal(true);
       return;
@@ -4431,7 +4431,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
 
   const handlePasswordConfirm = (name: string) => {
     if (name.toLowerCase() !== "maria") {
-      toast.error("Apenas Maria pode editar o Estoque Maxiprod!");
+      toast.error("Apenas Maria pode editar!");
       setShowPasswordModal(false);
       setPendingEdit(null);
       return;
@@ -4439,8 +4439,9 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     setShowPasswordModal(false);
     if (pendingEdit) {
       const stock = qcStockMap.get(pendingEdit.codigo) || { maxiprod: 0, processado: 0, regulador: 0 };
+      const currentVal = pendingEdit.campo === "estoque_maxiprod" ? stock.maxiprod : stock.processado;
       setEditingCell(pendingEdit);
-      setEditValue(String(stock.maxiprod));
+      setEditValue(String(currentVal));
       setPendingEdit(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -4449,14 +4450,15 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
   const handleSave = () => {
     if (!editingCell) return;
     const val = parseNumberBR(editValue) || 0;
-    const operatorName = editingCell.campo === "estoque_maxiprod" ? "Maria" : "Sistema";
+    const isMariaCampo = editingCell.campo === "estoque_maxiprod" || editingCell.campo === "estoque_processado";
+    const operatorName = isMariaCampo ? "Maria" : "Sistema";
     updateMutation.mutate(
       {
         codigoItem: editingCell.codigo,
         campo: editingCell.campo as "estoque_maxiprod" | "estoque_regulador" | "estoque_processado",
         valor: val,
         operatorName,
-        senha: editingCell.campo === "estoque_maxiprod" ? "Maria" : undefined,
+        senha: isMariaCampo ? "Maria" : undefined,
       },
       { onSuccess: () => utils.dashboard.getQueijoCoalhoStock.invalidate() }
     );
@@ -4564,6 +4566,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                     <span className="flex items-center justify-center gap-1">
                       <Package className="w-3 h-3 text-teal-500" />
                       Processado
+                      <Lock className="w-2.5 h-2.5 text-teal-400" />
                     </span>
                   </th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
@@ -4634,11 +4637,28 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                         {formatNumber(row.estoqueProjetado, true)}
                       </span>
                     </td>
-                    {/* Processado */}
+                    {/* Processado (editable by Maria) */}
                     <td className="py-2 px-1 md:px-2 text-center">
-                      <span className="text-xs font-medium text-teal-700">
-                        {formatNumber(row.estoqueProcessado, true)}
-                      </span>
+                      {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_processado" ? (
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={handleSave}
+                          className="w-16 text-center text-xs border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => handleStartEdit(row.codigoItem, "estoque_processado")}
+                          className="inline-flex items-center gap-0.5 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
+                          title="Editar (senha Maria)"
+                        >
+                          {formatNumber(row.estoqueProcessado, true)}
+                          <Pencil className="w-2.5 h-2.5 text-teal-400" />
+                        </button>
+                      )}
                     </td>
                     {/* Pedidos de Venda */}
                     <td className="py-2 px-1 md:px-2 text-center">

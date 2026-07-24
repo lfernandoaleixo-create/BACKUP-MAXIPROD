@@ -25,7 +25,7 @@ describe("Queijo Coalho Stock Logic", () => {
 
   describe("Password Validation", () => {
     const validatePassword = (senha: string | undefined, campo: string): boolean => {
-      if (campo === "estoque_maxiprod") {
+      if (campo === "estoque_maxiprod" || campo === "estoque_processado") {
         return !!senha && senha.toLowerCase() === "maria";
       }
       return true; // other fields don't require password
@@ -48,8 +48,12 @@ describe("Queijo Coalho Stock Logic", () => {
       expect(validatePassword(undefined, "estoque_regulador")).toBe(true);
     });
 
-    it("should allow anyone to edit estoque_processado", () => {
-      expect(validatePassword("Sistema", "estoque_processado")).toBe(true);
+    it("should require Maria to edit estoque_processado", () => {
+      expect(validatePassword("Maria", "estoque_processado")).toBe(true);
+      expect(validatePassword("maria", "estoque_processado")).toBe(true);
+      expect(validatePassword("João", "estoque_processado")).toBe(false);
+      expect(validatePassword("", "estoque_processado")).toBe(false);
+      expect(validatePassword(undefined, "estoque_processado")).toBe(false);
     });
   });
 
