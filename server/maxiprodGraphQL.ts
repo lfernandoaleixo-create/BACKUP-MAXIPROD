@@ -2032,53 +2032,130 @@ export async function runGraphQLSync(): Promise<{
       console.log(`[GraphQL Sync] Added ${manualMadeiraAdded} manual madeira e-commerce items to dashboard`);
     }
 
-    // ─── Produtos manuais de Importação Revenda (Espeto Premium Queijo Coalho) ───
-    // Grupo 26 no Maxiprod (Fabricado) mas classificados como Importação Revenda no dashboard
-    // 00648 é o produto mãe, 00645-00647 são variações (configurado em product_variants)
-    const MANUAL_IMPORTACAO_ESPETO_QUEIJO: Array<{ codigoItem: string; descricaoItem: string }> = [
-      { codigoItem: "00648", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
-      { codigoItem: "00546", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,9 X 200 MM 5.000" },
-      { codigoItem: "00547", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 4,0 X 200 MM 5.000" },
-      { codigoItem: "00577", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,9 X 150 MM 5.000" },
-      { codigoItem: "00645", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
-      { codigoItem: "00646", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
-      { codigoItem: "00647", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
-    ];
-    const existingCodesAfterAll = new Set(stockData.map((s: any) => s.codigoItem));
-    let manualImportacaoAdded = 0;
-    for (const item of MANUAL_IMPORTACAO_ESPETO_QUEIJO) {
-      if (existingCodesAfterAll.has(item.codigoItem)) {
-        // Override grupoCodigo/superGrupoCodigo for existing items to classify as Importação Revenda
-        const existing = stockData.find((s: any) => s.codigoItem === item.codigoItem);
-        if (existing) {
-          existing.grupoCodigo = "20";
-          existing.superGrupoCodigo = "12";
+    // ─── Produtos de Importação Revenda do Grupo 26 (Espeto Premium Queijo Coalho) ───
+    // Estes produtos estão no grupo 26 (Fabricado) no Maxiprod mas devem aparecer como Importação Revenda
+    // 00648 é o produto mãe, 00546/00547/00577/00645-00647 são variações (configurado em product_variants)
+    const ESPETO_QUEIJO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+    try {
+      // Fetch stock from Maxiprod group 26 for these specific items
+      const grupo26Items = await fetchAllPages("estoques", (skip, take) => `{
+        estoques(skip: ${skip}, take: ${take}, where: {
+          tipo: { eq: NORMAL },
+          item: {
+            grupo: { codigo: { eq: "26" } }
+          }
+        }) {
+          totalCount
+          items {
+            itemId
+            quantidade
+            valorTotal
+            minhaEmpresaId
+            item {
+              codigo
+              descricao
+              unidadeDeVendaPossui
+              unidadeDeVendaFatorDeConversao
+              grupoId
+              grupoDescricao
+              pesoBruto
+              descricaoComplementar
+              unidade { codigo descricao }
+              unidadeDeVenda { codigo descricao }
+              grupo { codigo dentroDoGrupoId dentroDoGrupo { codigo } }
+            }
+          }
         }
-      } else {
-        stockData.push({
-          codigoItem: item.codigoItem,
-          descricaoItem: item.descricaoItem,
-          quantidade: "0",
-          unidadeMedida: "un",
-          custoUnitario: "0",
-          custoTotal: "0",
-          codigoGrupo: "",
-          descricaoGrupo: "",
-          codigoSuperGrupo: "",
-          descricaoSuperGrupo: "",
-          grupoCodigo: "20",
-          superGrupoCodigo: "12",
-          empresaDona: "PALITOS INDUSTRIA",
-          estoqueLocal: "Estoque",
-          tipoDecodificado: "Próprio",
-          maxiprodId: null,
-          unidadeDeVendaFator: null,
-        });
-        manualImportacaoAdded++;
+      }`);
+      // Filter only the codes we want and aggregate
+      const grupo26Filtered = grupo26Items.filter((i: any) => {
+        const code = i.item?.codigo || "";
+        return ESPETO_QUEIJO_CODES.includes(code);
+      });
+      // Aggregate by code (same logic as main stock)
+      const grupo26Aggregated = new Map<string, { quantidade: number; valorTotal: number; item: any; itemId: number; minhaEmpresaId: number }>();
+      for (const i of grupo26Filtered as any[]) {
+        const code = i.item?.codigo || "";
+        const qty = Number(i.quantidade) || 0;
+        const val = Number(i.valorTotal) || 0;
+        if (grupo26Aggregated.has(code)) {
+          const agg = grupo26Aggregated.get(code)!;
+          agg.quantidade += qty;
+          agg.valorTotal += val;
+        } else {
+          grupo26Aggregated.set(code, { quantidade: qty, valorTotal: val, item: i.item, itemId: i.itemId, minhaEmpresaId: i.minhaEmpresaId });
+        }
       }
-    }
-    if (manualImportacaoAdded > 0) {
-      console.log(`[GraphQL Sync] Added ${manualImportacaoAdded} manual Espeto Premium Queijo Coalho items (Importação Revenda)`);
+      const existingCodesAfterAll = new Set(stockData.map((s: any) => s.codigoItem));
+      let manualImportacaoAdded = 0;
+      for (const code of ESPETO_QUEIJO_CODES) {
+        const agg = grupo26Aggregated.get(code);
+        if (existingCodesAfterAll.has(code)) {
+          // Override classification and update quantity if we got fresh data
+          const existing = stockData.find((s: any) => s.codigoItem === code);
+          if (existing) {
+            existing.grupoCodigo = "20";
+            existing.superGrupoCodigo = "12";
+            if (agg) {
+              existing.quantidade = String(agg.quantidade);
+              existing.custoUnitario = agg.quantidade > 0 ? String(agg.valorTotal / agg.quantidade) : "0";
+              existing.custoTotal = String(agg.valorTotal);
+            }
+          }
+        } else {
+          const item = agg?.item;
+          stockData.push({
+            codigoItem: code,
+            descricaoItem: item?.descricao || `ESPETO PREMIUM P/ QUEIJO COALHO (${code})`,
+            quantidade: agg ? String(agg.quantidade) : "0",
+            unidadeMedida: item?.unidade?.codigo || "un",
+            custoUnitario: agg && agg.quantidade > 0 ? String(agg.valorTotal / agg.quantidade) : "0",
+            custoTotal: agg ? String(agg.valorTotal) : "0",
+            codigoGrupo: "",
+            descricaoGrupo: "",
+            codigoSuperGrupo: "",
+            descricaoSuperGrupo: "",
+            grupoCodigo: "20",
+            superGrupoCodigo: "12",
+            empresaDona: agg ? getCompanyName(agg.minhaEmpresaId) : "PALITOS INDUSTRIA",
+            estoqueLocal: "Estoque",
+            tipoDecodificado: "Próprio",
+            maxiprodId: agg ? safeMaxiprodId(agg.itemId) : null,
+            unidadeDeVendaFator: item?.unidadeDeVendaFatorDeConversao ? String(item.unidadeDeVendaFatorDeConversao) : null,
+          });
+          manualImportacaoAdded++;
+        }
+      }
+      if (manualImportacaoAdded > 0 || grupo26Filtered.length > 0) {
+        console.log(`[GraphQL Sync] Espeto Queijo Coalho: ${grupo26Filtered.length} items from grupo 26, ${manualImportacaoAdded} added to dashboard`);
+      }
+    } catch (e) {
+      console.warn(`[GraphQL Sync] Failed to fetch grupo 26 items:`, e);
+      // Fallback: add with zero quantity
+      const existingCodesAfterAll = new Set(stockData.map((s: any) => s.codigoItem));
+      for (const code of ESPETO_QUEIJO_CODES) {
+        if (!existingCodesAfterAll.has(code)) {
+          stockData.push({
+            codigoItem: code,
+            descricaoItem: `ESPETO PREMIUM P/ QUEIJO COALHO (${code})`,
+            quantidade: "0",
+            unidadeMedida: "un",
+            custoUnitario: "0",
+            custoTotal: "0",
+            codigoGrupo: "",
+            descricaoGrupo: "",
+            codigoSuperGrupo: "",
+            descricaoSuperGrupo: "",
+            grupoCodigo: "20",
+            superGrupoCodigo: "12",
+            empresaDona: "PALITOS INDUSTRIA",
+            estoqueLocal: "Estoque",
+            tipoDecodificado: "Próprio",
+            maxiprodId: null,
+            unidadeDeVendaFator: null,
+          });
+        }
+      }
     }
 
     const poData = transformPurchaseOrderItems(rawPOs);

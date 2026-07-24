@@ -6012,3 +6012,6 @@
 - [x] Configurar product_variants: 00648 -> 00546, 00547, 00577, 00645, 00646, 00647
 - [x] Reclassificar todos como importacao_revenda (grupoCodigo=20, superGrupoCodigo=12)
 - [x] Adicionar produtos novos (00645-00648) na lista manual do sync (maxiprodGraphQL.ts)
+- [x] Fetch Espeto Premium Queijo Coalho stock from Maxiprod grupo 26 dynamically (not hardcoded)
+- [x] Set 00648 as first item in the list (pinned)
+- [x] Exclude product 00335 (ESPETO DE MADEIRA 3,8*200MM 10.000) from dashboard

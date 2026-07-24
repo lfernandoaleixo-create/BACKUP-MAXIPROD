@@ -647,12 +647,19 @@ export async function processStockData(): Promise<void> {
     childToParent.set(v.childCode, { parentCode: v.parentCode, conversionFactor: factor });
   }
   
+  // ─── Exclusões manuais (produtos que não devem aparecer no dashboard) ───
+  const EXCLUDED_CODES = new Set(["00335"]); // 00335: ESPETO DE MADEIRA 3,8*200MM 10.000 - excluído a pedido
+  // ─── Produtos prioritários (aparecem primeiro na lista da sua aba) ───
+  const PINNED_FIRST_CODES = ["00648"]; // 00648: ESPETO PREMIUM P/ QUEIJO COALHO - primeiro na Importação
+
   // ─── Build processed items ───
   const processed: ProcessedItem[] = [];
   const processedCodes = new Set<string>();
   
   // 1. Process stock items (espelho fiel)
   for (const item of Array.from(stockByCode.values())) {
+    // Skip excluded items
+    if (EXCLUDED_CODES.has(item.codigoItem)) continue;
     const itemUn = parseFloat(item.quantidade);
     // PRIORIDADE: usar unidadeDeVendaFator do Maxiprod (fonte oficial)
     // Fallback: extrair da descrição do produto
@@ -800,6 +807,7 @@ export async function processStockData(): Promise<void> {
   // Esses itens aparecem com estoque = 0 para que as POs sejam visíveis
   for (const [code, poData] of Array.from(poByCode.entries())) {
     if (processedCodes.has(code)) continue; // Já processado via estoque
+    if (EXCLUDED_CODES.has(code)) continue; // Excluído manualmente
     
     // Buscar informações do item a partir da PO
     const poItem = validPOs.find(p => (p.codigoItem || "") === code);
@@ -1298,6 +1306,13 @@ export async function processStockData(): Promise<void> {
     console.log(`[E-Commerce] ${baseName}: mãe=${mother.codigoItem} (${estoqueFisicoCx} cx) + ${variacoes.length} variações (${totalVariacoesCx} cx equiv) = ${estoqueFisicoCx + totalVariacoesCx} cx total | Pedidos E-COM: ${ecommerceTotalCx} cx`);
   }
   
+  // ─── Reordenar: produtos pinados primeiro (dentro de cada grupo) ───
+  const pinnedSet = new Set(PINNED_FIRST_CODES);
+  const pinnedItems = processed.filter(p => pinnedSet.has(p.codigoItem));
+  const unpinnedItems = processed.filter(p => !pinnedSet.has(p.codigoItem));
+  processed.length = 0;
+  processed.push(...pinnedItems, ...unpinnedItems);
+
   // Save processed data to dashboard_data table
   // Usar upsert para evitar tela branca durante sincronização
   const existing = await db.select({ id: dashboardData.id }).from(dashboardData).where(eq(dashboardData.empresa, "TODAS")).limit(1);
