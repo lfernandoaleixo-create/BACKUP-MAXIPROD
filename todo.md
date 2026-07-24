@@ -5997,3 +5997,6 @@
 - [x] Implementar geração de PDF diário (dados do dia atual)
 - [x] Implementar geração de PDF semanal (dados da semana atual, seg-dom)
 - [x] Manter geração de PDF mensal existente
+
+## Feature: Flor de Minas como 5ª opção de cotação no app dos vendedores (24/07/2026)
+- [x] Garantir que Flor de Minas apareça como 5ª opção de cotação de frete no app dos vendedores

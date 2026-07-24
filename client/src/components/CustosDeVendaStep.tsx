@@ -126,6 +126,16 @@ const TRANSPORTADORAS = [
     cor: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800",
     corBadge: "bg-green-100 text-green-700",
   },
+  {
+    nome: "Flor de Minas",
+    tipo: "Planilha/Tabela",
+    cnpjs: [
+      { cnpj: "—", label: "Tabela única (sem CNPJ)" },
+    ],
+    status: "Ativa",
+    cor: "bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800",
+    corBadge: "bg-rose-100 text-rose-700",
+  },
 ];
 
 export default function CustosDeVendaStep({
@@ -735,7 +745,7 @@ export default function CustosDeVendaStep({
                   </div>
                 ))}
               </div>
-              <p className="text-[8px] text-slate-400 italic">Em breve: Flor de Minas e Rodonaves</p>
+
             </div>
 
             {/* Dados da simulação */}
@@ -762,9 +772,9 @@ export default function CustosDeVendaStep({
               className="w-full py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
               {quoteAllMutation.isPending ? (
-                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Consultando 4 transportadoras...</>
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Consultando 5 transportadoras...</>
               ) : (
-                <><Truck className="w-3.5 h-3.5" /> Simular Frete (Braspress + Alfa + Camilo + Rodonaves)</>
+                <><Truck className="w-3.5 h-3.5" /> Simular Frete (Braspress + Alfa + Camilo + Rodonaves + Flor de Minas)</>
               )}
             </button>
 
@@ -779,6 +789,8 @@ export default function CustosDeVendaStep({
                     ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20"
                     : transportadora === "Rodonaves"
                     ? "border-green-300 bg-green-50 dark:bg-green-900/20"
+                    : transportadora === "Flor de Minas"
+                    ? "border-rose-300 bg-rose-50 dark:bg-rose-900/20"
                     : "border-amber-300 bg-amber-50 dark:bg-amber-900/20";
                   return (
                     <div key={transportadora} className={`rounded-lg border ${corHeader} overflow-hidden`}>

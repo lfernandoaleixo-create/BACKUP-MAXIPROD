@@ -1,6 +1,6 @@
 /**
  * FreightStep - Step "Cálculo de Frete" do formulário de pedido
- * Mostra as 3 transportadoras cadastradas (Braspress, Alfa, Camilo dos Santos)
+ * Mostra as 5 transportadoras cadastradas (Braspress, Alfa, Camilo dos Santos, Rodonaves, Flor de Minas)
  * com simulação de frete via API
  */
 import { useState } from "react";
@@ -97,6 +97,16 @@ const TRANSPORTADORAS = [
     status: "Ativa",
     cor: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800",
     corBadge: "bg-green-100 text-green-700",
+  },
+  {
+    nome: "Flor de Minas",
+    tipo: "Planilha/Tabela",
+    cnpjs: [
+      { cnpj: "—", label: "Tabela única (sem CNPJ)" },
+    ],
+    status: "Ativa",
+    cor: "bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800",
+    corBadge: "bg-rose-100 text-rose-700",
   },
 ];
 
@@ -209,9 +219,7 @@ export default function FreightStep({
             </div>
           ))}
         </div>
-        <p className="text-[9px] text-slate-400 italic">
-          Em breve: Flor de Minas e Rodonaves (APIs pendentes)
-        </p>
+
       </div>
 
       {/* Dados para simulação */}
@@ -266,12 +274,12 @@ export default function FreightStep({
         {quoteAllMutation.isPending ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Consultando 4 transportadoras...
+            Consultando 5 transportadoras...
           </>
         ) : (
           <>
             <Truck className="w-4 h-4" />
-            Simular Frete (Braspress + Alfa + Camilo + Rodonaves)
+            Simular Frete (Braspress + Alfa + Camilo + Rodonaves + Flor de Minas)
           </>
         )}
       </button>
@@ -287,6 +295,8 @@ export default function FreightStep({
               ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20"
               : transportadora === "Rodonaves"
               ? "border-green-300 bg-green-50 dark:bg-green-900/20"
+              : transportadora === "Flor de Minas"
+              ? "border-rose-300 bg-rose-50 dark:bg-rose-900/20"
               : "border-amber-300 bg-amber-50 dark:bg-amber-900/20";
 
             return (
