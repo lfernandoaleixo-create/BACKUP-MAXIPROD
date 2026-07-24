@@ -573,9 +573,28 @@ const GRANULAR_FINANCEIRO: GranularPermDef[] = [
   { key: "fin.cobranca", label: "Ações de Cobrança", parentTab: "financeiro" },
 ];
 
+const GRANULAR_IMPORTACAO: GranularPermDef[] = [
+  { key: "imp.pagamentos", label: "Pagamentos Fornecedores", parentTab: "importacao" },
+  { key: "imp.custo", label: "Custo da Mercadoria", parentTab: "importacao" },
+  { key: "imp.rastreio", label: "Rastreio em Conjunto", parentTab: "importacao" },
+  { key: "imp.exportarPdf", label: "Exportar PDF", parentTab: "importacao" },
+  { key: "imp.alertas", label: "Alertas de Pagamento", parentTab: "importacao" },
+  { key: "imp.editarPagamento", label: "Editar Pagamento", parentTab: "importacao" },
+  { key: "imp.adicionarPagamento", label: "Adicionar Pagamento", parentTab: "importacao" },
+  { key: "imp.excluirPagamento", label: "Excluir Pagamento", parentTab: "importacao" },
+  { key: "imp.custoConfig", label: "Config. ICMS/NCM", parentTab: "importacao" },
+];
 const GRANULAR_PRODUCAO: GranularPermDef[] = [
+  { key: "prod.lancamento", label: "Lançamento Diário", parentTab: "producao" },
+  { key: "prod.historico", label: "Histórico", parentTab: "producao" },
+  { key: "prod.pirografia", label: "Pirografia", parentTab: "producao" },
+  { key: "prod.graficos", label: "Gráficos", parentTab: "producao" },
+  { key: "prod.checklist", label: "Checklist", parentTab: "producao" },
+  { key: "prod.movimentacao", label: "Movimentação Estoque", parentTab: "producao" },
+  { key: "prod.lotes", label: "Controle de Lotes", parentTab: "producao" },
   { key: "prod.mov_solicitar", label: "Solicitar Baixa Estoque", parentTab: "producao" },
   { key: "prod.mov_aprovar", label: "Aprovar/Recusar Baixa Estoque", parentTab: "producao" },
+  { key: "prod.exportarPdf", label: "Exportar PDF", parentTab: "producao" },
 ];
 
 const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [
@@ -608,13 +627,14 @@ const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.dados", label: "Dados", parentTab: "configuracoes" },
 ];
 
-const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_GESTAO_COMERCIAL, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
+const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_GESTAO_COMERCIAL, ...GRANULAR_IMPORTACAO, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
 
 const GRANULAR_GROUPS = [
   { parentTab: "estoque", label: "Estoque", color: "bg-teal-500", perms: GRANULAR_ESTOQUE },
   { parentTab: "gestao-comercial", label: "Gestão Comercial", color: "bg-cyan-600", perms: GRANULAR_GESTAO_COMERCIAL },
   { parentTab: "faturamento", label: "Faturamento", color: "bg-violet-500", perms: GRANULAR_FATURAMENTO },
   { parentTab: "financeiro", label: "Financeiro", color: "bg-emerald-500", perms: GRANULAR_FINANCEIRO },
+  { parentTab: "importacao", label: "Importação", color: "bg-sky-500", perms: GRANULAR_IMPORTACAO },
   { parentTab: "producao", label: "Produção", color: "bg-orange-500", perms: GRANULAR_PRODUCAO },
   { parentTab: "configuracoes", label: "Configurações", color: "bg-red-500", perms: GRANULAR_CONFIGURACOES },
 ];

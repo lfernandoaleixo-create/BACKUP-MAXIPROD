@@ -6031,3 +6031,16 @@
 - [x] Painel 2: gc.comissaoPercentual controla Discount-based commission bar em VendedorDetalhe
 - [x] Painel 2: gc.consultaSerasa controla SerasaConsulta e SerasaMetricas
 - [x] Painel 2: gc.exportarMaxiprod controla ExportMaxiprodButton em ambos paineis
+
+## Permissões Granulares - Correções e Expansão
+- [x] Fix: hasGranularAccess retorna TRUE quando não há registro no banco (default=permitido) - já funcionava assim
+- [x] Fix: Guilherme - inseridas todas as permissões gc.*/imp.*/prod.*/cfg.* como enabled no banco
+- [x] Adicionar permissões granulares para Importação (destrinchar todas as funcionalidades)
+- [x] Expandir permissões granulares para Produção (além de solicitar/aprovar baixa)
+- [x] Adicionar controle de visibilidade para aba Configurações (cfg.senhas, cfg.produtos, cfg.alertas, cfg.bancos, cfg.variacoes, cfg.dados)
+- [x] Adicionar coluna Importação e Gestão Comercial no painel principal de módulos (já existia)
+- [x] Atualizar permissões de módulo no DB conforme print da versão antiga (Bruno/Gilson/Fernando/Guilherme = tudo)
+- [x] Adicionar GRANULAR_IMPORTACAO com permissões: pagamentos, custo, rastreio, exportarPdf, alertas, editarPagamento, adicionarPagamento, excluirPagamento, custoConfig
+- [x] Expandir GRANULAR_PRODUCAO com: historico, pirografia, graficos, checklist, movimentacao, lotes, exportarPdf, lancamento
+- [x] Aplicar hasGranularAccess em Importacao.tsx para sub-tabs
+- [x] Aplicar hasGranularAccess em Production.tsx para checklist, lotes, movimentacao, historico, pirografia, graficos, exportarPdf

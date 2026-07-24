@@ -984,17 +984,20 @@ export default function Production() {
               <BarChart3 className="w-4 h-4" /> Gráficos
             </button>
             )}
+            {hasGranularAccess("prod.checklist") && (
             <button onClick={() => setViewMode("checklist")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "checklist" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>
-            {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
+            )}
+            {hasGranularAccess("prod.movimentacao") && (
             <MovimentacaoButton viewMode={viewMode} onClick={() => setViewMode("movimentacao")} operatorName={operator?.name || ""} />
             )}
-            {["Bruno", "Fernando", "Guilherme", "Maria", "Erica", "Larissa"].includes(operator?.name || "") && (
+            {hasGranularAccess("prod.lotes") && (
             <LotControlButton viewMode={viewMode} onClick={() => setViewMode("lotes")} operatorName={operator?.name || ""} />
             )}
 
             {/* ─── PDF Export Menu ─── */}
+            {hasGranularAccess("prod.exportarPdf") && (
             <div className="relative">
               <button
                 onClick={() => setShowPdfMenu(!showPdfMenu)}
@@ -1078,9 +1081,9 @@ export default function Production() {
                 </>
               )}
             </div>
+            )}
           </div>
         </div>
-
         {/* Date selector */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-3 shadow-sm">
           <Calendar className="w-5 h-5 text-teal-600 flex-shrink-0" />

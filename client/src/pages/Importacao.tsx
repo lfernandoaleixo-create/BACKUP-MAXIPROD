@@ -10,6 +10,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import TopNav from "@/components/TopNav";
+import { useOperator } from "@/contexts/OperatorContext";
 import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp, Upload, Anchor, CalendarDays, CheckCircle, Table2 } from "lucide-react";
 import { SpreadsheetTable } from "@/components/SpreadsheetTable";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -21,7 +22,14 @@ import { toast } from "sonner";
 type SubTab = "pagamentos" | "custo" | "rastreio";
 
 export default function Importacao() {
-  const [activeTab, setActiveTab] = useState<SubTab>("pagamentos");
+  const { hasGranularAccess } = useOperator();
+  const [activeTab, setActiveTab] = useState<SubTab>(() => {
+    // Default to first accessible tab
+    if (hasGranularAccess("imp.pagamentos")) return "pagamentos";
+    if (hasGranularAccess("imp.custo")) return "custo";
+    if (hasGranularAccess("imp.rastreio")) return "rastreio";
+    return "pagamentos";
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 pb-24 md:pb-8">
@@ -41,6 +49,7 @@ export default function Importacao() {
 
         {/* Sub-tabs */}
         <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-1 bg-slate-100 p-1.5 sm:p-1 rounded-xl sm:w-fit">
+          {hasGranularAccess("imp.pagamentos") && (
           <button
             onClick={() => setActiveTab("pagamentos")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
@@ -52,6 +61,8 @@ export default function Importacao() {
             <Receipt className="w-4 h-4 shrink-0" />
             <span className="text-left leading-tight">Pagamentos Fornecedores Chineses</span>
           </button>
+          )}
+          {hasGranularAccess("imp.custo") && (
           <button
             onClick={() => setActiveTab("custo")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
@@ -63,6 +74,8 @@ export default function Importacao() {
             <Calculator className="w-4 h-4 shrink-0" />
             <span className="text-left leading-tight">Custo da Mercadoria</span>
           </button>
+          )}
+          {hasGranularAccess("imp.rastreio") && (
           <button
             onClick={() => setActiveTab("rastreio")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
@@ -74,14 +87,15 @@ export default function Importacao() {
             <Navigation className="w-4 h-4 shrink-0" />
             <span className="text-left leading-tight">Rastreio em Conjunto</span>
           </button>
+          )}
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-[1600px] mx-auto px-3 sm:px-4">
-        {activeTab === "pagamentos" && <PagamentosFornecedores />}
-        {activeTab === "custo" && <CustoMercadoria />}
-        {activeTab === "rastreio" && <RastreioEmConjunto />}
+        {activeTab === "pagamentos" && hasGranularAccess("imp.pagamentos") && <PagamentosFornecedores />}
+        {activeTab === "custo" && hasGranularAccess("imp.custo") && <CustoMercadoria />}
+        {activeTab === "rastreio" && hasGranularAccess("imp.rastreio") && <RastreioEmConjunto />}
       </div>
     </div>
   );
