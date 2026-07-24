@@ -88,7 +88,7 @@ function buildSoapEnvelope(params: SSWQuoteParams): string {
       <coletar>${params.coletar || "S"}</coletar>
       <entDificil>${params.entDificil || "N"}</entDificil>
       <destContribuinte>${params.destContribuinte || "S"}</destContribuinte>
-      <cnpjRemetente>${params.cnpjRemetente || params.cnpjPagador}</cnpjRemetente>
+      <cnpjRemetente>${params.cnpjRemetente || ""}</cnpjRemetente>
     </ns1:cotar>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>`;
