@@ -6008,3 +6008,7 @@
 - [x] Fix Alfa API: melhorar detecção de IP bloqueado (403) com mensagem clara para o usuário
 - [x] Fix Alfa API: adicionar tratamento de erros de rede (ECONNREFUSED, timeout) com mensagem sobre bloqueio de IP
 - [ ] Alfa Transportes: solicitar liberação do IP de produção (62.217.129.245) em chamados@alfatransportes.com.br
+- [x] Adicionar produto 00648 (Espeto Premium Queijo Coalho) como mãe na Importação com 6 variações (00546, 00547, 00577, 00645, 00646, 00647)
+- [x] Configurar product_variants: 00648 -> 00546, 00547, 00577, 00645, 00646, 00647
+- [x] Reclassificar todos como importacao_revenda (grupoCodigo=20, superGrupoCodigo=12)
+- [x] Adicionar produtos novos (00645-00648) na lista manual do sync (maxiprodGraphQL.ts)

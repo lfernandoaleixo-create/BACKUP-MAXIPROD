@@ -2032,6 +2032,56 @@ export async function runGraphQLSync(): Promise<{
     if (manualMadeiraAdded > 0) {
       console.log(`[GraphQL Sync] Added ${manualMadeiraAdded} manual madeira e-commerce items to dashboard`);
     }
+
+    // ─── Produtos manuais de Importação Revenda (Espeto Premium Queijo Coalho) ───
+    // Grupo 26 no Maxiprod (Fabricado) mas classificados como Importação Revenda no dashboard
+    // 00648 é o produto mãe, 00645-00647 são variações (configurado em product_variants)
+    const MANUAL_IMPORTACAO_ESPETO_QUEIJO: Array<{ codigoItem: string; descricaoItem: string }> = [
+      { codigoItem: "00648", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
+      { codigoItem: "00546", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,9 X 200 MM 5.000" },
+      { codigoItem: "00547", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 4,0 X 200 MM 5.000" },
+      { codigoItem: "00577", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,9 X 150 MM 5.000" },
+      { codigoItem: "00645", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
+      { codigoItem: "00646", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
+      { codigoItem: "00647", descricaoItem: "ESPETO PREMIUM P/ QUEIJO COALHO 3,8 X 200 MM 5.000" },
+    ];
+    const existingCodesAfterAll = new Set(stockData.map((s: any) => s.codigoItem));
+    let manualImportacaoAdded = 0;
+    for (const item of MANUAL_IMPORTACAO_ESPETO_QUEIJO) {
+      if (existingCodesAfterAll.has(item.codigoItem)) {
+        // Override grupoCodigo/superGrupoCodigo for existing items to classify as Importação Revenda
+        const existing = stockData.find((s: any) => s.codigoItem === item.codigoItem);
+        if (existing) {
+          existing.grupoCodigo = "20";
+          existing.superGrupoCodigo = "12";
+        }
+      } else {
+        stockData.push({
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem,
+          quantidade: "0",
+          unidadeMedida: "un",
+          custoUnitario: "0",
+          custoTotal: "0",
+          codigoGrupo: "",
+          descricaoGrupo: "",
+          codigoSuperGrupo: "",
+          descricaoSuperGrupo: "",
+          grupoCodigo: "20",
+          superGrupoCodigo: "12",
+          empresaDona: "PALITOS INDUSTRIA",
+          estoqueLocal: "Estoque",
+          tipoDecodificado: "Próprio",
+          maxiprodId: null,
+          unidadeDeVendaFator: null,
+        });
+        manualImportacaoAdded++;
+      }
+    }
+    if (manualImportacaoAdded > 0) {
+      console.log(`[GraphQL Sync] Added ${manualImportacaoAdded} manual Espeto Premium Queijo Coalho items (Importação Revenda)`);
+    }
+
     const poData = transformPurchaseOrderItems(rawPOs);
     rawPOs = null as any; // free memory
     const payableData = transformAccountsPayable(rawPayable);
