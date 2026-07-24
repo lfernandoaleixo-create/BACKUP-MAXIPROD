@@ -924,9 +924,8 @@ async function saveAllData(
 
   // Usar transação atômica para evitar dados inconsistentes durante a sincronização
   await db.transaction(async (tx) => {
-    // Save stock items - only delete items that came from Maxiprod (have maxiprodId)
-    // This preserves manually added products (no maxiprodId)
-    await tx.delete(stockItems).where(sql`${stockItems.maxiprodId} IS NOT NULL`);
+    // Save stock items - delete ALL items and re-insert (sync provides complete dataset including madeira/manual items)
+    await tx.delete(stockItems);
     if (stockData.length > 0) {
       for (let i = 0; i < stockData.length; i += 200) {
         await tx.insert(stockItems).values(stockData.slice(i, i + 200));
