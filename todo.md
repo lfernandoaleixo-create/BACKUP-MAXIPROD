@@ -6061,3 +6061,4 @@
 - [x] GESTOR_CARDS dinâmico (carrega do banco via listSalesManagers, fallback para constante)
 - [x] Refatorar painel de permissões Gestão Comercial para estrutura hierárquica expansível (Painel dos Gestores expande gestores, Painel dos Vendedores expande vendedores, sem duplicatas)
 - [x] Aba Estoque Importação: colunas específicas para produto 00648 e variações (Estoque Maxiprod, PO, Projetado, Processado, Pedidos de Venda, Disponível para Venda, Estoque Regulador, Status) + Palitos Premium na Produção + auto-feed processado
+- [x] Queijo Coalho: mover para primeiro card na Importação + usar mesmo layout dos outros cards (descrição completa, variações recolhíveis)

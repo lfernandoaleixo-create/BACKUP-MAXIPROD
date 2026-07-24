@@ -4365,47 +4365,75 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     return map;
   }, [qcStockData]);
 
-  // Filter items for queijo coalho products (parent only)
-  const qcItems = useMemo(() => {
-    return items.filter(i => QUEIJO_COALHO_CODES.includes(i.codigoItem) && !i.isChild);
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+
+  // Get the parent item (00648) from items - it already has variants attached by stockProcessor
+  const parentItem = useMemo(() => {
+    return items.find(i => i.codigoItem === "00648" && !i.isChild);
   }, [items]);
 
-  // If no items found, also check children
-  const qcAllItems = useMemo(() => {
-    if (qcItems.length > 0) return qcItems;
-    return items.filter(i => QUEIJO_COALHO_CODES.includes(i.codigoItem));
-  }, [items, qcItems]);
-
-  // Build rows with computed columns
+  // Build rows: parent first, then variants as expandable children
   const rows = useMemo(() => {
-    return qcAllItems.map(item => {
-      const stock = qcStockMap.get(item.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
-      const poCx = item.poCx ?? 0;
-      const pedidosCx = item.pedidosCx ?? 0;
-      const estoqueProjetado = poCx + stock.maxiprod;
-      const disponivelVenda = stock.processado - pedidosCx;
-      // Status logic
-      let status: "verde" | "amarelo" | "vermelho" = "verde";
-      if (stock.regulador > 0) {
-        if (disponivelVenda <= 0) status = "vermelho";
-        else if (disponivelVenda < stock.regulador) status = "amarelo";
-      }
+    if (!parentItem) return [];
+    const result: Array<{
+      codigoItem: string;
+      descricaoItem: string;
+      estoqueMaxiprod: number;
+      poCx: number;
+      estoqueProjetado: number;
+      estoqueProcessado: number;
+      pedidosCx: number;
+      disponivelVenda: number;
+      estoqueRegulador: number;
+      status: "verde" | "amarelo" | "vermelho";
+      isVariant?: boolean;
+      conversionFactor?: number;
+    }> = [];
+    // Parent row
+    const parentStock = qcStockMap.get(parentItem.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
+    const parentPo = parentItem.poCx ?? 0;
+    const parentPedidos = parentItem.pedidosCx ?? 0;
+    const parentProjetado = parentPo + parentStock.maxiprod;
+    const parentDisponivel = parentStock.processado - parentPedidos;
+    let parentStatus: "verde" | "amarelo" | "vermelho" = "verde";
+    if (parentStock.regulador > 0) {
+      if (parentDisponivel <= 0) parentStatus = "vermelho";
+      else if (parentDisponivel < parentStock.regulador) parentStatus = "amarelo";
+    }
+    result.push({
+      codigoItem: parentItem.codigoItem,
+      descricaoItem: parentItem.descricaoItem,
+      estoqueMaxiprod: parentStock.maxiprod,
+      poCx: parentPo,
+      estoqueProjetado: parentProjetado,
+      estoqueProcessado: parentStock.processado,
+      pedidosCx: parentPedidos,
+      disponivelVenda: parentDisponivel,
+      estoqueRegulador: parentStock.regulador,
+      status: parentStatus,
+    });
+    return result;
+  }, [parentItem, qcStockMap]);
+
+  // Variant rows (from parent's variants array)
+  const variantRows = useMemo(() => {
+    if (!parentItem?.variants) return [];
+    return parentItem.variants.map(v => {
+      const vStock = qcStockMap.get(v.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
+      const vPedidos = v.pedidosCx ?? 0;
       return {
-        codigoItem: item.codigoItem,
-        descricaoItem: item.descricaoItem,
-        estoqueMaxiprod: stock.maxiprod,
-        poCx,
-        estoqueProjetado,
-        estoqueProcessado: stock.processado,
-        pedidosCx,
-        disponivelVenda,
-        estoqueRegulador: stock.regulador,
-        status,
+        codigoItem: v.codigoItem,
+        descricaoItem: v.descricaoItem,
+        conversionFactor: v.conversionFactor,
+        pedidosCx: vPedidos,
+        estoqueMaxiprod: vStock.maxiprod,
+        estoqueProcessado: vStock.processado,
+        estoqueRegulador: vStock.regulador,
       };
     });
-  }, [qcAllItems, qcStockMap]);
+  }, [parentItem, qcStockMap]);
 
-  // Totals
+  // Totals (parent values since variants are included in parent totals)
   const totals = useMemo(() => ({
     maxiprod: rows.reduce((s, r) => s + r.estoqueMaxiprod, 0),
     po: rows.reduce((s, r) => s + r.poCx, 0),
@@ -4415,6 +4443,17 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     disponivel: rows.reduce((s, r) => s + r.disponivelVenda, 0),
     regulador: rows.reduce((s, r) => s + r.estoqueRegulador, 0),
   }), [rows]);
+
+  const hasVariants = variantRows.length > 0;
+  const isExpanded = expandedParents.has("00648");
+  const toggleExpand = () => {
+    setExpandedParents(prev => {
+      const next = new Set(prev);
+      if (next.has("00648")) next.delete("00648");
+      else next.add("00648");
+      return next;
+    });
+  };
 
   const handleStartEdit = (codigo: string, campo: string) => {
     if (campo === "estoque_maxiprod" || campo === "estoque_processado") {
@@ -4520,7 +4559,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
               <div>
                 <div className="flex items-center gap-2 md:gap-3">
                   <h3 className="text-xs md:text-lg font-bold text-slate-800 dark:text-slate-100">Palitos Premium</h3>
-                  <span className="text-[10px] md:text-sm font-extrabold text-orange-700 bg-orange-100 border border-orange-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{rows.length} itens</span>
+                  <span className="text-[10px] md:text-sm font-extrabold text-orange-700 bg-orange-100 border border-orange-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{1 + variantRows.length} itens</span>
                 </div>
                 <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">Espeto Premium p/ Queijo Coalho — Estoque controlado pela Maria</p>
               </div>
@@ -4592,14 +4631,29 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.codigoItem} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                  <React.Fragment key={row.codigoItem}>
+                  <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                     {/* Produto */}
-                    <td className="py-2 px-1 md:px-2">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-slate-800 dark:text-slate-200 text-[10px] md:text-xs leading-tight">
-                          {row.descricaoItem.replace(/ESPETO PREMIUM P\/ QUEIJO COALHO /i, "").replace(/ 5\.?000$/i, "") || row.descricaoItem}
-                        </span>
-                        <span className="text-[9px] md:text-[10px] text-slate-400">{row.codigoItem}</span>
+                    <td className="py-2 px-1 md:px-2" style={{ minWidth: '220px' }}>
+                      <div className="flex items-start gap-1">
+                        {hasVariants && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleExpand(); }}
+                            className="mt-0.5 flex-shrink-0 w-4 h-4 rounded flex items-center justify-center text-orange-600 hover:bg-orange-100 transition-colors"
+                            title={isExpanded ? 'Ocultar variações' : 'Expandir variações'}
+                          >
+                            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          </button>
+                        )}
+                        <div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] md:text-[13px] break-words leading-snug">
+                            {row.descricaoItem}
+                          </div>
+                          <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5">
+                            Cod: {row.codigoItem}
+                            {hasVariants && <span className="ml-2 text-orange-500 font-medium">· {variantRows.length} variações</span>}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     {/* Estoque Maxiprod (editable by Maria) */}
@@ -4702,6 +4756,75 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       </span>
                     </td>
                   </tr>
+                  {/* Expandable variant rows */}
+                  {hasVariants && isExpanded && variantRows.map((variant) => (
+                    <tr key={`${row.codigoItem}-${variant.codigoItem}`} className="bg-orange-50/30 border-l-4 border-orange-300 border-b border-slate-100">
+                      <td className="py-1.5 px-1 md:px-2 pl-6 md:pl-8" style={{ minWidth: '220px' }}>
+                        <div>
+                          <span className="text-slate-600 dark:text-slate-300 text-[10px] md:text-xs break-words">
+                            └ {variant.descricaoItem}
+                          </span>
+                          <div className="text-[9px] text-slate-400 ml-3">
+                            {variant.codigoItem} · Fator: {variant.conversionFactor}x
+                          </div>
+                        </div>
+                      </td>
+                      {/* Maxiprod - variant */}
+                      <td className="py-1.5 px-1 md:px-2 text-center">
+                        {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
+                          <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
+                            className="w-14 text-center text-[10px] border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400" />
+                        ) : (
+                          <button onClick={() => handleStartEdit(variant.codigoItem, "estoque_maxiprod")}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-orange-600 hover:bg-orange-50 rounded px-1 py-0.5 transition-colors" title="Editar (senha Maria)">
+                            {variant.estoqueMaxiprod > 0 ? formatNumber(variant.estoqueMaxiprod, true) : "—"}
+                            <Pencil className="w-2 h-2 text-orange-300" />
+                          </button>
+                        )}
+                      </td>
+                      {/* PO - variant (empty) */}
+                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-[10px] text-slate-400">—</span></td>
+                      {/* Projetado - variant (empty) */}
+                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-[10px] text-slate-400">—</span></td>
+                      {/* Processado - variant */}
+                      <td className="py-1.5 px-1 md:px-2 text-center">
+                        {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_processado" ? (
+                          <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
+                            className="w-14 text-center text-[10px] border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400" />
+                        ) : (
+                          <button onClick={() => handleStartEdit(variant.codigoItem, "estoque_processado")}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-teal-600 hover:bg-teal-50 rounded px-1 py-0.5 transition-colors" title="Editar (senha Maria)">
+                            {variant.estoqueProcessado > 0 ? formatNumber(variant.estoqueProcessado, true) : "—"}
+                            <Pencil className="w-2 h-2 text-teal-300" />
+                          </button>
+                        )}
+                      </td>
+                      {/* Pedidos - variant */}
+                      <td className="py-1.5 px-1 md:px-2 text-center">
+                        <span className={`text-[10px] font-medium ${variant.pedidosCx > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                          {variant.pedidosCx > 0 ? `${formatNumber(variant.pedidosCx, true)} cx` : '—'}
+                        </span>
+                      </td>
+                      {/* Disponível - variant (empty) */}
+                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-[10px] text-slate-400">—</span></td>
+                      {/* Regulador - variant */}
+                      <td className="py-1.5 px-1 md:px-2 text-center">
+                        {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_regulador" ? (
+                          <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
+                            className="w-14 text-center text-[10px] border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400" />
+                        ) : (
+                          <button onClick={() => handleStartEdit(variant.codigoItem, "estoque_regulador")}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-purple-600 hover:bg-purple-50 rounded px-1 py-0.5 transition-colors" title="Editar regulador">
+                            {variant.estoqueRegulador > 0 ? formatNumber(variant.estoqueRegulador, true) : "—"}
+                            <Pencil className="w-2 h-2 text-purple-300" />
+                          </button>
+                        )}
+                      </td>
+                      {/* Status - variant (empty) */}
+                      <td className="py-1.5 px-1 md:px-2"></td>
+                    </tr>
+                  ))}
+                  </React.Fragment>
                 ))}
                 {/* Totals row */}
                 <tr className="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 font-bold">
@@ -5410,6 +5533,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       {/* Industrialized Baixa History Dialog */}
       {showIndustrializedBaixa && <IndustrializedBaixaDialog open={showIndustrializedBaixa} onClose={() => setShowIndustrializedBaixa(false)} />}
 
+      {/* ═══ SEÇÃO QUEIJO COALHO (PALITOS PREMIUM) ═══ */}
+      <QueijoCoalhoSection items={items} />
       {/* 3 Classification Cards */}
       <ClassificationCard
         title="Estoque"
@@ -5465,9 +5590,6 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           useUnits={true}
         />
       )}
-
-      {/* ═══ SEÇÃO QUEIJO COALHO (PALITOS PREMIUM) ═══ */}
-      <QueijoCoalhoSection items={items} />
 
       {/* ═══ SEÇÃO MADEIRA ═══ */}
       <div className="mt-6 md:mt-10 mb-3 md:mb-5">
