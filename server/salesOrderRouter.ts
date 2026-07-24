@@ -2261,6 +2261,7 @@ export const salesOrderRouter = router({
       tipoContribuinte: z.string().default("Contribuinte"),
     }))
     .mutation(async ({ input }) => {
+      console.log(`[FreightQuote] Starting: CEP ${input.cepOrigem} → ${input.cepDestino}, peso=${input.peso}kg, valor=${input.valorMercadoria}`);
       // Quote from all 5 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves + Flor de Minas
       const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
         cotarTodosCnpjs({
@@ -2315,6 +2316,14 @@ export const salesOrderRouter = router({
         prazo: string;
         error?: string;
       }> = [];
+
+      // Log carrier results for debugging
+      console.log(`[FreightQuote] Results: Braspress=${braspressResults.status}, Alfa=${alfaResults.status}, SSW=${sswResults.status}, Rodonaves=${rodonavesResults.status}, FlorDeMinas=${florDeMinasResult.status}`);
+      if (braspressResults.status === "rejected") console.log(`[FreightQuote] Braspress error: ${braspressResults.reason?.message}`);
+      if (alfaResults.status === "rejected") console.log(`[FreightQuote] Alfa error: ${alfaResults.reason?.message}`);
+      if (sswResults.status === "rejected") console.log(`[FreightQuote] SSW error: ${sswResults.reason?.message}`);
+      if (rodonavesResults.status === "rejected") console.log(`[FreightQuote] Rodonaves error: ${rodonavesResults.reason?.message}`);
+      if (florDeMinasResult.status === "rejected") console.log(`[FreightQuote] FlorDeMinas error: ${florDeMinasResult.reason?.message}`);
 
       // Process Braspress results
       if (braspressResults.status === "fulfilled") {
