@@ -43,6 +43,7 @@ import {
   GitBranch,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Eye,
   EyeOff,
   TreePine,
@@ -597,7 +598,8 @@ const GRANULAR_PRODUCAO: GranularPermDef[] = [
   { key: "prod.exportarPdf", label: "Exportar PDF", parentTab: "producao" },
 ];
 
-const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [
+// Permissões estáticas da Gestão Comercial (features)
+const GRANULAR_GC_FEATURES: GranularPermDef[] = [
   { key: "gc.painelGestores", label: "Painel dos Gestores", parentTab: "gestao-comercial" },
   { key: "gc.painelVendedores", label: "Painel dos Vendedores", parentTab: "gestao-comercial" },
   { key: "gc.meuPainelVendedor", label: "Meu Painel de Vendedor", parentTab: "gestao-comercial" },
@@ -611,12 +613,9 @@ const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [
   { key: "gc.comissaoPercentual", label: "Comissão (% que se enquadra)", parentTab: "gestao-comercial" },
   { key: "gc.consultaSerasa", label: "Consulta Serasa", parentTab: "gestao-comercial" },
   { key: "gc.exportarMaxiprod", label: "Exportar p/ Maxiprod", parentTab: "gestao-comercial" },
-  // Visibilidade de Gestores - quem pode ver cada gestor no Painel
-  { key: "gc.verGestor.jordao", label: "Ver Jordão Laine", parentTab: "gestao-comercial" },
-  { key: "gc.verGestor.paula", label: "Ver Ana Paula Aleixo", parentTab: "gestao-comercial" },
-  { key: "gc.verGestor.juvenal", label: "Ver Juvenal Teixeira", parentTab: "gestao-comercial" },
-  { key: "gc.verGestor.renato", label: "Ver Renato Ledesma", parentTab: "gestao-comercial" },
 ];
+// Legacy constant kept for ALL_GRANULAR_PERMS compatibility (dynamic items added at runtime)
+const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [...GRANULAR_GC_FEATURES];
 
 const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.senhas", label: "Senhas", parentTab: "configuracoes" },
@@ -673,19 +672,31 @@ function OperatorManagementPanel() {
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [expandedOperator, setExpandedOperator] = useState<number | null>(null);
+  // Track which sub-sections are expanded per operator (e.g. "3-gestores", "3-vendedores")
+  const [expandedSubSections, setExpandedSubSections] = useState<Record<string, boolean>>({});
 
-  // Build dynamic Gestão Comercial permissions: add gestors and sellers dynamically
-  const dynamicGcPerms = useMemo((): GranularPermDef[] => {
-    const basePerms = GRANULAR_GESTAO_COMERCIAL.filter(p => !p.key.startsWith("gc.verGestor."));
-    // Add dynamic gestor visibility permissions
+  const toggleSubSection = (opId: number, section: string) => {
+    const key = `${opId}-${section}`;
+    setExpandedSubSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+  const isSubSectionExpanded = (opId: number, section: string) => {
+    return !!expandedSubSections[`${opId}-${section}`];
+  };
+
+  // Build dynamic gestor list from DB
+  const dynamicGestorPerms = useMemo((): GranularPermDef[] => {
     const gestorPerms: GranularPermDef[] = [];
     if (salesManagersList) {
       for (const mgr of salesManagersList.filter((m: any) => m.active)) {
         const slug = mgr.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-        gestorPerms.push({ key: `gc.verGestor.${slug}`, label: `Ver ${mgr.name}`, parentTab: "gestao-comercial" });
+        gestorPerms.push({ key: `gc.verGestor.${slug}`, label: mgr.name, parentTab: "gestao-comercial" });
       }
     }
-    // Add dynamic seller visibility permissions
+    return gestorPerms;
+  }, [salesManagersList]);
+
+  // Build dynamic seller list from DB
+  const dynamicVendedorPerms = useMemo((): GranularPermDef[] => {
     const sellerPerms: GranularPermDef[] = [];
     if (sellerPermsList) {
       const uniqueSellers = new Map<string, string>();
@@ -696,21 +707,16 @@ function OperatorManagementPanel() {
       }
       Array.from(uniqueSellers.values()).forEach(sellerName => {
         const slug = sellerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-        sellerPerms.push({ key: `gc.verVendedor.${slug}`, label: `Ver ${sellerName}`, parentTab: "gestao-comercial" });
+        sellerPerms.push({ key: `gc.verVendedor.${slug}`, label: sellerName, parentTab: "gestao-comercial" });
       });
     }
-    return [...basePerms, ...gestorPerms, ...sellerPerms];
-  }, [salesManagersList, sellerPermsList]);
+    return sellerPerms;
+  }, [sellerPermsList]);
 
-  // Build dynamic GRANULAR_GROUPS (replace static gc perms with dynamic ones)
+  // Build dynamic GRANULAR_GROUPS (exclude gestao-comercial from the flat list - it gets special rendering)
   const dynamicGranularGroups = useMemo(() => {
-    return GRANULAR_GROUPS.map(group => {
-      if (group.parentTab === "gestao-comercial") {
-        return { ...group, perms: dynamicGcPerms };
-      }
-      return group;
-    });
-  }, [dynamicGcPerms]);
+    return GRANULAR_GROUPS.filter(group => group.parentTab !== "gestao-comercial");
+  }, []);
 
   // Build a map: operatorId -> { permKey -> enabled }
   const granularMap = useMemo(() => {
@@ -940,6 +946,133 @@ function OperatorManagementPanel() {
                         Permissões Detalhadas de {op.name}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* === GESTÃO COMERCIAL - Renderização Hierárquica Especial === */}
+                        {(() => {
+                          const gcEnabled = hasAnyParentTab("gestao-comercial");
+                          const gcColor = "bg-cyan-600";
+                          const gestoresExpanded = isSubSectionExpanded(op.id, "gestores");
+                          const vendedoresExpanded = isSubSectionExpanded(op.id, "vendedores");
+                          return (
+                            <div className={`rounded-lg border p-3 ${gcEnabled ? 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800' : 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 opacity-50'}`}>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className={`w-3 h-3 rounded-full ${gcColor}`} />
+                                <span className="text-xs font-bold text-slate-700 uppercase">Gestão Comercial</span>
+                                {!gcEnabled && <span className="text-[10px] text-red-400">(aba desabilitada)</span>}
+                              </div>
+                              <div className="space-y-2">
+                                {/* Painel dos Gestores - expansível */}
+                                <div>
+                                  <button
+                                    onClick={() => gcEnabled && toggleSubSection(op.id, "gestores")}
+                                    disabled={!gcEnabled}
+                                    className="flex items-center gap-1.5 w-full text-left group"
+                                  >
+                                    {gestoresExpanded ? <ChevronDown className="w-3.5 h-3.5 text-cyan-600" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-600" />}
+                                    <span className="text-xs font-semibold text-slate-700 group-hover:text-cyan-700">Painel dos Gestores</span>
+                                    <span className="text-[10px] text-slate-400 ml-auto">{dynamicGestorPerms.length}</span>
+                                  </button>
+                                  {gestoresExpanded && (
+                                    <div className="ml-5 mt-1.5 space-y-1.5 border-l-2 border-cyan-100 pl-2.5">
+                                      {dynamicGestorPerms.map(perm => {
+                                        const enabled = getGranularValue(op.id, perm.key);
+                                        return (
+                                          <div key={perm.key} className="flex items-center justify-between">
+                                            <span className="text-xs text-slate-600">{perm.label}</span>
+                                            <button
+                                              onClick={() => gcEnabled && handleGranularToggle(op.id, perm.key)}
+                                              disabled={!gcEnabled}
+                                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                                enabled
+                                                  ? `${gcColor} border-transparent text-white`
+                                                  : gcEnabled
+                                                    ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
+                                                    : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                              }`}
+                                            >
+                                              {enabled && <Check className="w-3 h-3" />}
+                                            </button>
+                                          </div>
+                                        );
+                                      })}
+                                      {dynamicGestorPerms.length === 0 && (
+                                        <span className="text-[10px] text-slate-400 italic">Nenhum gestor cadastrado</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Painel dos Vendedores - expansível */}
+                                <div>
+                                  <button
+                                    onClick={() => gcEnabled && toggleSubSection(op.id, "vendedores")}
+                                    disabled={!gcEnabled}
+                                    className="flex items-center gap-1.5 w-full text-left group"
+                                  >
+                                    {vendedoresExpanded ? <ChevronDown className="w-3.5 h-3.5 text-cyan-600" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-600" />}
+                                    <span className="text-xs font-semibold text-slate-700 group-hover:text-cyan-700">Painel dos Vendedores</span>
+                                    <span className="text-[10px] text-slate-400 ml-auto">{dynamicVendedorPerms.length}</span>
+                                  </button>
+                                  {vendedoresExpanded && (
+                                    <div className="ml-5 mt-1.5 space-y-1.5 border-l-2 border-cyan-100 pl-2.5">
+                                      {dynamicVendedorPerms.map(perm => {
+                                        const enabled = getGranularValue(op.id, perm.key);
+                                        return (
+                                          <div key={perm.key} className="flex items-center justify-between">
+                                            <span className="text-xs text-slate-600">{perm.label}</span>
+                                            <button
+                                              onClick={() => gcEnabled && handleGranularToggle(op.id, perm.key)}
+                                              disabled={!gcEnabled}
+                                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                                enabled
+                                                  ? `${gcColor} border-transparent text-white`
+                                                  : gcEnabled
+                                                    ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
+                                                    : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                              }`}
+                                            >
+                                              {enabled && <Check className="w-3 h-3" />}
+                                            </button>
+                                          </div>
+                                        );
+                                      })}
+                                      {dynamicVendedorPerms.length === 0 && (
+                                        <span className="text-[10px] text-slate-400 italic">Nenhum vendedor cadastrado</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+
+                                {/* Feature permissions (flat checkboxes) */}
+                                {GRANULAR_GC_FEATURES.filter(p => p.key !== "gc.painelGestores" && p.key !== "gc.painelVendedores").map(perm => {
+                                  const enabled = getGranularValue(op.id, perm.key);
+                                  return (
+                                    <div key={perm.key} className="flex items-center justify-between">
+                                      <span className="text-xs text-slate-600">{perm.label}</span>
+                                      <button
+                                        onClick={() => gcEnabled && handleGranularToggle(op.id, perm.key)}
+                                        disabled={!gcEnabled}
+                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                          enabled
+                                            ? `${gcColor} border-transparent text-white`
+                                            : gcEnabled
+                                              ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
+                                              : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                        }`}
+                                      >
+                                        {enabled && <Check className="w-3 h-3" />}
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* === DEMAIS GRUPOS (renderização flat padrão) === */}
                         {dynamicGranularGroups.map(group => {
                           const parentEnabled = hasAnyParentTab(group.parentTab);
                           return (

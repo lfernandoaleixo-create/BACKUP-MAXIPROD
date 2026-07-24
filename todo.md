@@ -6059,3 +6059,4 @@
 - [x] Hierarquia: operador → tica gestores → tica vendedores daquele gestor → features se aplicam só aos ticados
 - [x] Filtrar dados no GestaoComercial baseado nos gestores/vendedores permitidos
 - [x] GESTOR_CARDS dinâmico (carrega do banco via listSalesManagers, fallback para constante)
+- [x] Refatorar painel de permissões Gestão Comercial para estrutura hierárquica expansível (Painel dos Gestores expande gestores, Painel dos Vendedores expande vendedores, sem duplicatas)

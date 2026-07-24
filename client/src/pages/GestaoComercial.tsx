@@ -1280,7 +1280,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorC
               <div>
                 {filteredAllVendedores.map((v, idx) => (
                   <div
-                    key={v.name}
+                    key={`${v.name}-${idx}`}
                     className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
                   >
                     <button
@@ -1391,7 +1391,7 @@ function VendedoresCollapsible({ allVendedores, isLoading, navigate }: { allVend
             <div>
               {allVendedores.map((v, idx) => (
                 <div
-                  key={v.name}
+                  key={`${v.name}-${idx}`}
                   className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
                 >
                   <button
