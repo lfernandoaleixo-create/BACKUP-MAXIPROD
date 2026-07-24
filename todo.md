@@ -6000,3 +6000,11 @@
 
 ## Feature: Flor de Minas como 5ª opção de cotação no app dos vendedores (24/07/2026)
 - [x] Garantir que Flor de Minas apareça como 5ª opção de cotação de frete no app dos vendedores
+
+## Fix Rodonaves + Alfa (TLS 1.2 e IP bloqueado) - 24/07/2026
+- [x] Fix Rodonaves API: reescrever usando Node.js native `https` com TLS 1.2 (Citrix NetScaler rejeita TLS 1.3 de IPs cloud)
+- [x] Fix Rodonaves API: adicionar retry com backoff para erros ECONNRESET transientes
+- [x] Fix Rodonaves API: adicionar cache hardcoded de city IDs (Betim, SP, BH, Campinas, etc.) para funcionar sem DNE API
+- [x] Fix Alfa API: melhorar detecção de IP bloqueado (403) com mensagem clara para o usuário
+- [x] Fix Alfa API: adicionar tratamento de erros de rede (ECONNREFUSED, timeout) com mensagem sobre bloqueio de IP
+- [ ] Alfa Transportes: solicitar liberação do IP de produção (62.217.129.245) em chamados@alfatransportes.com.br

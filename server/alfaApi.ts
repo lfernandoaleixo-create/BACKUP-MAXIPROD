@@ -74,17 +74,33 @@ export async function quoteAlfaFreight(params: AlfaQuoteParams): Promise<AlfaQuo
     body.cliCnpj = params.cnpjDestinatario.replace(/\D/g, "");
   }
 
-  const response = await fetch("https://api.alfatransportes.com.br/cotacao/v1.2/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(10000),
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://api.alfatransportes.com.br/cotacao/v1.2/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch (fetchErr: any) {
+    // Network-level errors (ECONNREFUSED, ECONNRESET, timeout, DNS failure)
+    if (fetchErr.name === "TimeoutError" || fetchErr.code === "UND_ERR_CONNECT_TIMEOUT") {
+      throw new Error("Alfa: timeout na conexão (servidor pode estar bloqueando IP)");
+    }
+    throw new Error(`Alfa: erro de rede (${fetchErr.code || fetchErr.message}). Possível bloqueio de IP.`);
+  }
 
   if (!response.ok) {
-    throw new Error(`Alfa API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text().catch(() => "");
+    // Detect IP blocking (returns 403 with "Acesso bloqueado para o IP")
+    if (response.status === 403 && errorText.includes("bloqueado")) {
+      const ipMatch = errorText.match(/IP:\s*([\d.]+)/);
+      const blockedIp = ipMatch ? ipMatch[1] : "desconhecido";
+      throw new Error(`Alfa: IP bloqueado (${blockedIp}). Solicitar liberação em chamados@alfatransportes.com.br`);
+    }
+    throw new Error(`Alfa API error: ${response.status} ${response.statusText} - ${errorText.substring(0, 100)}`);
   }
 
   const result: AlfaQuoteResult = await response.json();
