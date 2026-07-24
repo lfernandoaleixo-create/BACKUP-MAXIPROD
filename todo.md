@@ -5979,7 +5979,7 @@
 - [x] Para pedidos normais, mensagem menos alarmante: "Lotes atribuídos (parcial permitido)"
 
 ## Fix: Cotação de frete não retorna valores (23/07/2026)
-- [x] Fix SSW API: corrigir namespace SOAP e SOAPAction (urn:sswinfbr.sswCotacaoCliente#cotacao)
+- [x] Fix SSW API: corrigir endpoint (/ws/ não /2/ws/), método (cotar), SOAPAction (#cotar), e parâmetros camelCase conforme WSDL
 - [x] Fix Rodonaves API: adicionar fallback ViaCEP quando dne-api.rte.com.br falhar
 - [x] Adicionar timeouts adequados (10s) em todas as chamadas de API de frete
 - [x] Aumentar Node.js max-old-space-size de 384MB para 512MB

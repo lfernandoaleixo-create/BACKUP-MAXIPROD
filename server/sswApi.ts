@@ -4,23 +4,34 @@
  * 
  * Endpoint: https://ssw.inf.br/ws/sswCotacaoCliente/index.php
  * Namespace: urn:sswinfbr.sswCotacaoCliente
- * SOAPAction: urn:sswinfbr.sswCotacaoCliente#cotacao
+ * Method: cotar
+ * SOAPAction: urn:sswinfbr.sswCotacaoCliente#cotar
  * 
- * Parameters (in WSDL order):
+ * WSDL Parameters (camelCase, in order):
  *   dominio, login, senha, cnpjPagador, senhaPagador, cepOrigem, cepDestino,
  *   valorNF, quantidade, peso, volume, mercadoria, cnpjDestinatario,
  *   coletar, entDificil, destContribuinte, cnpjRemetente
+ * 
+ * Notes:
+ *   - "volume" in WSDL = cubagem em m³ (NOT number of volumes)
+ *   - "quantidade" = number of volumes/packages
+ *   - "mercadoria" = commodity code (9 = CAIXAS for Fox)
+ *   - CEP must be 8 digits without dash
  */
 
 interface SSWQuoteParams {
   cnpjPagador: string;
-  cepOrigem: number;
-  cepDestino: number;
+  cepOrigem: string | number;
+  cepDestino: string | number;
   valorNF: number;
-  quantidade: number;
-  peso: number;
-  volume: number; // m³
+  quantidade: number; // number of volumes/packages
+  peso: number; // kg
+  cubagem: number; // m³ (maps to "volume" in WSDL)
+  mercadoria?: number; // commodity code, default 9 (CAIXAS)
   cnpjDestinatario?: string;
+  cnpjRemetente?: string;
+  coletar?: "S" | "N";
+  entDificil?: "S" | "N";
   destContribuinte?: "S" | "N";
 }
 
@@ -39,6 +50,11 @@ interface SSWQuoteResult {
   pedagio: number;
   tas: number;
   impostos: number;
+  adicFrete: number;
+  tde: number;
+  coleta: number;
+  entrega: number;
+  tabCalculo: string;
 }
 
 function buildSoapEnvelope(params: SSWQuoteParams): string {
@@ -47,31 +63,35 @@ function buildSoapEnvelope(params: SSWQuoteParams): string {
   const senha = process.env.SSW_PASSWORD || "14lt27ca";
   const senhaPagador = process.env.SSW_SENHA_PAGADOR || "251038";
 
-  // Parameters in WSDL-specified order for sswCotacaoCliente
+  // Normalize CEP to 8 digits (no dash)
+  const cepOrigem = String(params.cepOrigem).replace(/\D/g, "");
+  const cepDestino = String(params.cepDestino).replace(/\D/g, "");
+
+  // Parameters in WSDL-specified order for sswCotacaoCliente#cotar
   return `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="urn:sswinfbr.sswCotacaoCliente">
-  <soap:Body>
-    <tns:cotar>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:sswinfbr.sswCotacaoCliente">
+  <SOAP-ENV:Body>
+    <ns1:cotar>
       <dominio>${domain}</dominio>
       <login>${login}</login>
       <senha>${senha}</senha>
       <cnpjPagador>${params.cnpjPagador}</cnpjPagador>
       <senhaPagador>${senhaPagador}</senhaPagador>
-      <cepOrigem>${params.cepOrigem}</cepOrigem>
-      <cepDestino>${params.cepDestino}</cepDestino>
+      <cepOrigem>${cepOrigem}</cepOrigem>
+      <cepDestino>${cepDestino}</cepDestino>
       <valorNF>${params.valorNF.toFixed(2)}</valorNF>
       <quantidade>${params.quantidade}</quantidade>
       <peso>${params.peso.toFixed(3)}</peso>
-      <volume>${params.volume.toFixed(4)}</volume>
-      <mercadoria>1</mercadoria>
+      <volume>${params.cubagem.toFixed(4)}</volume>
+      <mercadoria>${params.mercadoria ?? 9}</mercadoria>
       <cnpjDestinatario>${params.cnpjDestinatario || ""}</cnpjDestinatario>
-      <coletar>N</coletar>
-      <entDificil>N</entDificil>
+      <coletar>${params.coletar || "S"}</coletar>
+      <entDificil>${params.entDificil || "N"}</entDificil>
       <destContribuinte>${params.destContribuinte || "S"}</destContribuinte>
-      <cnpjRemetente>${params.cnpjPagador}</cnpjRemetente>
-    </tns:cotar>
-  </soap:Body>
-</soap:Envelope>`;
+      <cnpjRemetente>${params.cnpjRemetente || params.cnpjPagador}</cnpjRemetente>
+    </ns1:cotar>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>`;
 }
 
 function parseXmlValue(xml: string, tag: string): string {
@@ -81,11 +101,11 @@ function parseXmlValue(xml: string, tag: string): string {
 }
 
 /**
- * Decode HTML entities that SSW sometimes returns in error messages
- * e.g. "nampampao" -> "não", "Cotaampampcampampao" -> "Cotação"
+ * Decode HTML entities that SSW sometimes returns in error/info messages
  */
 function decodeSSWMessage(msg: string): string {
   return msg
+    .replace(/&amp;/g, "&")
     .replace(/ampamp/g, "&")
     .replace(/&atilde;/g, "ã")
     .replace(/&ccedil;/g, "ç")
@@ -93,7 +113,11 @@ function decodeSSWMessage(msg: string): string {
     .replace(/&eacute;/g, "é")
     .replace(/&iacute;/g, "í")
     .replace(/&oacute;/g, "ó")
-    .replace(/&uacute;/g, "ú");
+    .replace(/&uacute;/g, "ú")
+    .replace(/&nbsp;/g, " ")
+    .replace(/<br>/g, " ")
+    .replace(/&lt;br&gt;/g, " ")
+    .trim();
 }
 
 function parseSSWResponse(xml: string): SSWQuoteResult {
@@ -112,6 +136,11 @@ function parseSSWResponse(xml: string): SSWQuoteResult {
     pedagio: parseFloat(parseXmlValue(xml, "pedagio") || "0"),
     tas: parseFloat(parseXmlValue(xml, "tas") || "0"),
     impostos: parseFloat(parseXmlValue(xml, "impostos") || "0"),
+    adicFrete: parseFloat(parseXmlValue(xml, "adicFrete") || "0"),
+    tde: parseFloat(parseXmlValue(xml, "entGeral") || "0"), // TDE = entrega geral
+    coleta: parseFloat(parseXmlValue(xml, "coleta") || "0"),
+    entrega: parseFloat(parseXmlValue(xml, "entrega") || "0"),
+    tabCalculo: parseXmlValue(xml, "tabCalculo") || "",
   };
 }
 
@@ -122,10 +151,10 @@ export async function quoteSswFreight(params: SSWQuoteParams): Promise<SSWQuoteR
     method: "POST",
     headers: {
       "Content-Type": "text/xml; charset=utf-8",
-      "SOAPAction": "urn:sswinfbr.sswCotacaoCliente#cotacao",
+      "SOAPAction": "urn:sswinfbr.sswCotacaoCliente#cotar",
     },
     body: soapBody,
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -150,12 +179,13 @@ export async function quoteSswFreight(params: SSWQuoteParams): Promise<SSWQuoteR
   const result = parseSSWResponse(innerXml);
 
   if (result.erro === -2) {
-    throw new Error(`SSW Login error: ${result.mensagem}`);
+    throw new Error(`SSW Login inválido: ${result.mensagem}`);
   }
-  if (result.erro === -1) {
+  if (result.erro < 0) {
     throw new Error(`SSW: ${result.mensagem}`);
   }
 
+  // erro >= 1 means success (may include informational messages like "área de risco")
   return result;
 }
 
