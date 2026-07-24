@@ -741,6 +741,8 @@ export const operators = mysqlTable("operators", {
   accessConfiguracoes: boolean("accessConfiguracoes").notNull().default(false),
   accessValorizacao: boolean("accessValorizacao").notNull().default(false),
   accessProducao: boolean("accessProducao").notNull().default(false),
+  accessGestaoComercial: boolean("accessGestaoComercial").notNull().default(false),
+  accessImportacao: boolean("accessImportacao").notNull().default(false),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -146,7 +146,7 @@ function ExportMaxiprodButton() {
 }
 
 export default function GestaoComercial() {
-  const { operator } = useOperator();
+  const { operator, hasGranularAccess } = useOperator();
   const [, setLocation] = useLocation();
 
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
@@ -236,7 +236,7 @@ export default function GestaoComercial() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {/* Painel dos Gestores */}
-            <Link href="/gestao-comercial/painel-gestores">
+            {hasGranularAccess("gc.painelGestores") && <Link href="/gestao-comercial/painel-gestores">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-200 dark:border-teal-700 shadow-sm p-6 hover:shadow-lg hover:border-teal-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 transition-colors">
@@ -248,10 +248,10 @@ export default function GestaoComercial() {
                   </div>
                 </div>
               </div>
-            </Link>
+            </Link>}
 
             {/* Painel dos Vendedores (visão geral - para gestores que administram vendedores) */}
-            <Link href="/vendedor-gestor">
+            {hasGranularAccess("gc.painelVendedores") && <Link href="/vendedor-gestor">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-sm p-6 hover:shadow-lg hover:border-blue-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
@@ -263,10 +263,10 @@ export default function GestaoComercial() {
                   </div>
                 </div>
               </div>
-            </Link>
+            </Link>}
 
             {/* Meu Painel de Vendedor - para Renato/Juvenal que também vendem */}
-            {isGestorVendedor && (
+            {isGestorVendedor && hasGranularAccess("gc.meuPainelVendedor") && (
               <a href="/vendedor">
                 <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-sm p-6 hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer group">
                   <div className="flex items-center gap-3 mb-3">
@@ -283,7 +283,7 @@ export default function GestaoComercial() {
             )}
 
             {/* Aprovações de Pedidos - para Renato/Juvenal que precisam aprovar pedidos dos seus vendedores */}
-            {isGestorVendedor && gestorNameForHub && (
+            {isGestorVendedor && gestorNameForHub && hasGranularAccess("gc.aprovacoesPedidos") && (
               <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(gestorNameForHub)}`}>
                 <div className={`rounded-xl border-2 shadow-sm p-6 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden ${
                   pendingCount > 0
@@ -315,7 +315,7 @@ export default function GestaoComercial() {
             )}
 
             {/* Painel de Cadastro de Clientes */}
-            <Link href="/gestao-comercial/cadastro-clientes">
+            {hasGranularAccess("gc.cadastroClientes") && <Link href="/gestao-comercial/cadastro-clientes">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 shadow-sm p-6 hover:shadow-lg hover:border-emerald-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
@@ -327,10 +327,9 @@ export default function GestaoComercial() {
                   </div>
                 </div>
               </div>
-            </Link>
-
+                        </Link>}
             {/* Painel de Pedidos de Vendas */}
-            <Link href="/gestao-comercial/pedidos-operador">
+            {hasGranularAccess("gc.pedidosVenda") && <Link href="/gestao-comercial/pedidos-operador">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-amber-200 dark:border-amber-700 shadow-sm p-6 hover:shadow-lg hover:border-amber-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
@@ -342,13 +341,12 @@ export default function GestaoComercial() {
                   </div>
                 </div>
               </div>
-            </Link>
+                        </Link>}
           </div>
         </main>
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
       <TopNav />
@@ -362,10 +360,9 @@ export default function GestaoComercial() {
           </div>
           {/* Spacer */}
           <div className="flex-1" />
-          {/* Exportar Maxiprod button */}
-          <ExportMaxiprodButton />
+                    {/* Exportar Maxiprod button */}
+          {hasGranularAccess("gc.exportarMaxiprod") && <ExportMaxiprodButton />}
         </div>
-
         {/* Content - only Gestores panel (Vendedores has its own separate page) */}
         <GestoresTab
           getVendedoresForGestor={getVendedoresForGestor}
@@ -399,7 +396,16 @@ interface GestoresTabProps {
   filterGestorName?: string; // If set, show only this gestor's card (already expanded)
 }
 
+// Map GESTOR_CARDS names to their visibility permission keys
+const GESTOR_VISIBILITY_MAP: Record<string, string> = {
+  "JORDÃO LAINE": "gc.verGestor.jordao",
+  "ANA PAULA ALEIXO": "gc.verGestor.paula",
+  "JUVENAL TEIXEIRA": "gc.verGestor.juvenal",
+  "RENATO LEDESMA": "gc.verGestor.renato",
+};
+
 function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching, filterGestorName }: GestoresTabProps) {
+  const { hasGranularAccess } = useOperator();
   // Auto-expand gestor from URL param or prop
   const urlParams = new URLSearchParams(window.location.search);
   const autoExpandName = filterGestorName || urlParams.get("autoExpand");
@@ -719,10 +725,16 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
               </div>
             )}
 
-            {/* Gestor Cards (filtered if filterGestorName is set) */}
+            {/* Gestor Cards (filtered by filterGestorName + visibility permissions) */}
             {!isLoading && GESTOR_CARDS.filter(card => {
-              if (!filterGestorName) return true;
-              return card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+              // Filter by specific gestor name if provided
+              if (filterGestorName) {
+                return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              }
+              // Check visibility permission for this gestor card
+              const visKey = GESTOR_VISIBILITY_MAP[card.name];
+              if (visKey && !hasGranularAccess(visKey)) return false;
+              return true;
             }).map((card) => {
         const isExpanded = expandedGestor === card.name;
         const vendedoresBase = getVendedoresForCard(card);
@@ -3020,6 +3032,7 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
 }
 
 export function GestaoComercialFull() {
+  const { hasGranularAccess } = useOperator();
   // Fetch seller list from Maxiprod
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
@@ -3062,7 +3075,7 @@ export function GestaoComercialFull() {
           {/* Spacer */}
           <div className="flex-1" />
           {/* Exportar Maxiprod button */}
-          <ExportMaxiprodButton />
+          {hasGranularAccess("gc.exportarMaxiprod") && <ExportMaxiprodButton />}
         </div>
         {/* Content - only Gestores panel */}
         <GestoresTab
@@ -3079,6 +3092,7 @@ export function GestaoComercialFull() {
         />
 
         {/* Serasa - Métricas de Consultas */}
+        {hasGranularAccess("gc.consultaSerasa") && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-6">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -3091,6 +3105,7 @@ export function GestaoComercialFull() {
           </div>
           <SerasaMetricas />
         </div>
+        )}
       </main>
     </div>
   );

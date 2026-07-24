@@ -25,7 +25,7 @@ function formatCurrency(value: number | string) {
 type VitoriaFilter = "pendente" | "recebido" | "lancado" | "todos";
 
 export default function VitoriaOrders() {
-  const { operator } = useOperator();
+  const { operator, hasGranularAccess } = useOperator();
   const [statusFilter, setStatusFilter] = useState<VitoriaFilter>("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
@@ -730,7 +730,7 @@ export default function VitoriaOrders() {
                                             </div>
                                             <p className="text-sm font-bold text-slate-700 ml-2">{formatCurrency(Number(item.totalItem))}</p>
                                           </div>
-                                          {descontoDado !== null && (
+                                          {descontoDado !== null && hasGranularAccess("gc.barraProduto") && (
                                             <div className="pl-3">
                                               <ProductMarginBar desconto={descontoDado} showValues={false} />
                                             </div>
@@ -1020,7 +1020,7 @@ export default function VitoriaOrders() {
                                     {formatCurrency(Number(item.totalItem))}
                                   </p>
                                 </div>
-                                {descontoDado !== null && (
+                                {descontoDado !== null && hasGranularAccess("gc.barraProduto") && (
                                   <div className="pl-3">
                                     <ProductMarginBar desconto={descontoDado} showValues={false} />
                                   </div>

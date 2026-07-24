@@ -6015,3 +6015,19 @@
 - [x] Fetch Espeto Premium Queijo Coalho stock from Maxiprod grupo 26 dynamically (not hardcoded)
 - [x] Set 00648 as first item in the list (pinned)
 - [x] Exclude product 00335 (ESPETO DE MADEIRA 3,8*200MM 10.000) from dashboard
+
+## Redesign Permissões - Painel 1 e 2
+- [ ] Painel 1: Add accessGestaoComercial and accessImportacao columns to operators table
+- [ ] Painel 1: Update PERMISSION_COLS in SettingsPage to include Gestão Comercial and Importação
+- [ ] Painel 1: Replace hardcoded name-based access in OperatorContext with DB-driven columns
+- [x] Painel 2: Define GRANULAR_GESTAO_COMERCIAL permissions for all Gestão Comercial features (17 permissions incl. gestor visibility)
+- [x] Painel 2: Create dedicated permissions config panel inside Gestão Comercial with checkboxes per person (via SettingsPage granular panel)
+- [x] Painel 2: Apply granular permissions in VendedorDetalhe and GestaoComercial to show/hide components
+- [x] Painel 2: hasAnyParentTab corrigido para gestao-comercial, producao, importacao
+- [x] Painel 2: Visibilidade de gestores (gc.verGestor.jordao/paula/juvenal/renato) filtra cards no Painel dos Gestores
+- [x] Painel 2: gc.barraProduto controla ProductMarginBar em VendedorDetalhe e VitoriaOrders
+- [x] Painel 2: gc.barraComissao controla RealCostMarginBar em VendedorDetalhe
+- [x] Painel 2: gc.barraMes controla Monthly Reputation Bar em VendedorDetalhe
+- [x] Painel 2: gc.comissaoPercentual controla Discount-based commission bar em VendedorDetalhe
+- [x] Painel 2: gc.consultaSerasa controla SerasaConsulta e SerasaMetricas
+- [x] Painel 2: gc.exportarMaxiprod controla ExportMaxiprodButton em ambos paineis

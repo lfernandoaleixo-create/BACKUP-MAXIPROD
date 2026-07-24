@@ -525,8 +525,10 @@ const PERMISSION_COLS = [
   { key: "accessEstoque" as const, label: "Estoque", color: "bg-teal-500" },
   { key: "accessValorizacao" as const, label: "Valoriz.", color: "bg-amber-500", sub: true },
   { key: "accessVendas" as const, label: "Vendas", color: "bg-blue-500" },
+  { key: "accessGestaoComercial" as const, label: "Gestão Com.", color: "bg-cyan-600" },
   { key: "accessFaturamento" as const, label: "Faturamento", color: "bg-violet-500" },
   { key: "accessFinanceiro" as const, label: "Financeiro", color: "bg-emerald-500" },
+  { key: "accessImportacao" as const, label: "Importação", color: "bg-yellow-600" },
   { key: "accessProducao" as const, label: "Produção", color: "bg-orange-500" },
   { key: "accessConfiguracoes" as const, label: "Configuração", color: "bg-red-500" },
 ];
@@ -576,6 +578,27 @@ const GRANULAR_PRODUCAO: GranularPermDef[] = [
   { key: "prod.mov_aprovar", label: "Aprovar/Recusar Baixa Estoque", parentTab: "producao" },
 ];
 
+const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [
+  { key: "gc.painelGestores", label: "Painel dos Gestores", parentTab: "gestao-comercial" },
+  { key: "gc.painelVendedores", label: "Painel dos Vendedores", parentTab: "gestao-comercial" },
+  { key: "gc.meuPainelVendedor", label: "Meu Painel de Vendedor", parentTab: "gestao-comercial" },
+  { key: "gc.aprovacoesPedidos", label: "Aprovações de Pedidos", parentTab: "gestao-comercial" },
+  { key: "gc.cadastroClientes", label: "Cadastro de Clientes", parentTab: "gestao-comercial" },
+  { key: "gc.pedidosVenda", label: "Pedidos de Venda", parentTab: "gestao-comercial" },
+  { key: "gc.metricasVenda", label: "Métricas de Venda", parentTab: "gestao-comercial" },
+  { key: "gc.barraComissao", label: "Barra de Comissão (no pedido)", parentTab: "gestao-comercial" },
+  { key: "gc.barraProduto", label: "Barra do Produto (estoque vendedor)", parentTab: "gestao-comercial" },
+  { key: "gc.barraMes", label: "Barra do Mês (vendas mensais)", parentTab: "gestao-comercial" },
+  { key: "gc.comissaoPercentual", label: "Comissão (% que se enquadra)", parentTab: "gestao-comercial" },
+  { key: "gc.consultaSerasa", label: "Consulta Serasa", parentTab: "gestao-comercial" },
+  { key: "gc.exportarMaxiprod", label: "Exportar p/ Maxiprod", parentTab: "gestao-comercial" },
+  // Visibilidade de Gestores - quem pode ver cada gestor no Painel
+  { key: "gc.verGestor.jordao", label: "Ver Jordão Laine", parentTab: "gestao-comercial" },
+  { key: "gc.verGestor.paula", label: "Ver Ana Paula Aleixo", parentTab: "gestao-comercial" },
+  { key: "gc.verGestor.juvenal", label: "Ver Juvenal Teixeira", parentTab: "gestao-comercial" },
+  { key: "gc.verGestor.renato", label: "Ver Renato Ledesma", parentTab: "gestao-comercial" },
+];
+
 const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.senhas", label: "Senhas", parentTab: "configuracoes" },
   { key: "cfg.produtos", label: "Produto Importado", parentTab: "configuracoes" },
@@ -585,10 +608,11 @@ const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.dados", label: "Dados", parentTab: "configuracoes" },
 ];
 
-const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
+const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_GESTAO_COMERCIAL, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
 
 const GRANULAR_GROUPS = [
   { parentTab: "estoque", label: "Estoque", color: "bg-teal-500", perms: GRANULAR_ESTOQUE },
+  { parentTab: "gestao-comercial", label: "Gestão Comercial", color: "bg-cyan-600", perms: GRANULAR_GESTAO_COMERCIAL },
   { parentTab: "faturamento", label: "Faturamento", color: "bg-violet-500", perms: GRANULAR_FATURAMENTO },
   { parentTab: "financeiro", label: "Financeiro", color: "bg-emerald-500", perms: GRANULAR_FINANCEIRO },
   { parentTab: "producao", label: "Produção", color: "bg-orange-500", perms: GRANULAR_PRODUCAO },
@@ -763,6 +787,9 @@ function OperatorManagementPanel() {
                 if (tab === "faturamento") return op.accessFaturamento;
                 if (tab === "financeiro") return op.accessFinanceiro;
                 if (tab === "configuracoes") return op.accessConfiguracoes;
+                if (tab === "gestao-comercial") return op.accessGestaoComercial;
+                if (tab === "producao") return op.accessProducao;
+                if (tab === "importacao") return op.accessImportacao;
                 return false;
               };
 

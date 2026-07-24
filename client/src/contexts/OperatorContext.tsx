@@ -10,6 +10,8 @@ export interface OperatorPermissions {
   accessConfiguracoes: boolean;
   accessValorizacao: boolean;
   accessProducao: boolean;
+  accessGestaoComercial: boolean;
+  accessImportacao: boolean;
 }
 
 interface OperatorContextType {
@@ -114,10 +116,10 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
     switch (section) {
       case "estoque": return operator.accessEstoque;
       case "vendas": return operator.accessVendas;
-      case "gestao-comercial": return operator.name === "Fernando" || operator.name === "Guilherme" || operator.name === "Bruno" || operator.name === "Juvenal" || operator.name === "Vitoria" || operator.name === "Vitória" || operator.name === "Luis" || operator.name === "Luís Eduardo" || operator.name === "Renato";
+      case "gestao-comercial": return operator.accessGestaoComercial;
       case "faturamento": return operator.accessFaturamento;
       case "financeiro": return operator.accessFinanceiro;
-      case "importacao": return operator.name === "Fernando" || operator.name === "Guilherme" || operator.name === "Larissa" || operator.name === "Bruno" || operator.name === "Gilson" || operator.name === "Flavio" || operator.name === "Luis" || operator.name === "Luís Eduardo";
+      case "importacao": return operator.accessImportacao;
       case "producao": return operator.accessProducao;
       case "configuracoes": return operator.accessConfiguracoes || (granularPermissions["cfg.produtos"] === true);
       case "valorizacao": return operator.accessValorizacao;

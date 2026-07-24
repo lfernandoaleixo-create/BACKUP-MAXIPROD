@@ -674,7 +674,7 @@ export const settingsRouter = router({
   updateOperatorPermission: publicProcedure
     .input(z.object({
       id: z.number(),
-      field: z.enum(["accessEstoque", "accessVendas", "accessFaturamento", "accessFinanceiro", "accessConfiguracoes", "accessValorizacao", "accessProducao"]),
+      field: z.enum(["accessEstoque", "accessVendas", "accessFaturamento", "accessFinanceiro", "accessConfiguracoes", "accessValorizacao", "accessProducao", "accessGestaoComercial", "accessImportacao"]),
       value: z.boolean(),
     }))
     .mutation(async ({ input }) => {
@@ -831,6 +831,8 @@ export const settingsRouter = router({
             accessConfiguracoes: op.accessConfiguracoes,
             accessValorizacao: op.accessValorizacao,
             accessProducao: op.accessProducao,
+            accessGestaoComercial: op.accessGestaoComercial,
+            accessImportacao: op.accessImportacao,
           },
           granularPermissions: granularMap,
           seller: null,

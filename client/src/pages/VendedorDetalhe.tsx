@@ -5127,7 +5127,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   }, [isEditMode, editOrderQuery.data, editDataLoaded]);
 
   // Margin bar state - controlled per seller via seller_permissions table
-  const { operator: marginOperator, hasAccess: marginHasAccess } = useOperator();
+  const { operator: marginOperator, hasAccess: marginHasAccess, hasGranularAccess } = useOperator();
   // Real costs from CustosDeVendaStep (step 3)
   const [realComissaoPerc, setRealComissaoPerc] = useState<number | null>(null);
   const [realFretePerc, setRealFretePerc] = useState<number | null>(null);
@@ -5141,10 +5141,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   );
   // Margin bar visible for everyone (sellers and gestores)
   const isGestorMode = !!marginOperator;
-  const showMarginBar = true; // barra de desconto visível para todos (vendedores e gestores)
+  const showMarginBar = hasGranularAccess("gc.barraProduto"); // barra de desconto por produto
   const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
-  // Real cost bar (reputação) - only visible for Fernando, Guilherme, Juvenal, Bruno and Renato
-  const showRealCostBar = marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal" || marginOperator?.name === "Bruno" || marginOperator?.name === "Renato";
+  // Real cost bar (reputação) - only visible for operators with gc.barraComissao permission AND specific operators
+  const showRealCostBar = hasGranularAccess("gc.barraComissao") && (marginOperator?.name === "Guilherme" || marginOperator?.name === "Fernando" || marginOperator?.name === "Juvenal" || marginOperator?.name === "Bruno" || marginOperator?.name === "Renato");
   const [marginComissao, setMarginComissao] = useState(5.85);
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
@@ -5734,7 +5734,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             </div>
 
             {/* Consulta Serasa - Aparece imediatamente após selecionar o cliente */}
-            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && marginOperator?.name && (
+            {cnpjCpf && cnpjCpf.replace(/\D/g, "").length >= 11 && marginOperator?.name && hasGranularAccess("gc.consultaSerasa") && (
               <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-xl">
                 <SerasaConsulta
                   documento={cnpjCpf}
@@ -7099,7 +7099,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               </div>
             )}
             {/* Monthly Reputation Bar - Level 3 Commission (gestores only) */}
-            {isGestorMode && !isSimulation && monthlyMarginQuery.data && (() => {
+            {isGestorMode && !isSimulation && hasGranularAccess("gc.barraMes") && monthlyMarginQuery.data && (() => {
               const md = monthlyMarginQuery.data;
               const margin = md.projectedMonthlyMargin ?? md.currentMonthlyMargin ?? 0;
               const hasOrders = md.totalOrders > 0 || md.projectedMonthlyMargin !== null;
@@ -7292,14 +7292,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 </div>
               );
             })()}
-            {isGestorMode && !isSimulation && monthlyMarginQuery.isLoading && items.length > 0 && (
+            {isGestorMode && !isSimulation && hasGranularAccess("gc.barraMes") && monthlyMarginQuery.isLoading && items.length > 0 && (
               <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 Calculando reputação mensal...
               </div>
             )}
             {/* Second bar: Discount-based commission (comparativo) */}
-            {isGestorMode && !isSimulation && monthlyDiscountQuery.data && (() => {
+            {isGestorMode && !isSimulation && hasGranularAccess("gc.comissaoPercentual") && monthlyDiscountQuery.data && (() => {
               const dd = monthlyDiscountQuery.data;
               if (!dd.avgDiscount && dd.avgDiscount !== 0) return null;
               if (dd.totalOrders === 0) return null;
