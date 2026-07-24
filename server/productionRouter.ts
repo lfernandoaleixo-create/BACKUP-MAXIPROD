@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries, productionLots, lotMovements, productCatalog, retroactiveLotRequests } from "../drizzle/schema";
+import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries, productionLots, lotMovements, productCatalog, retroactiveLotRequests, queijoCoalhoStock, queijoCoalhoStockHistory } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 import { eq, and, or, sql, desc, gte, lte, inArray, ne } from "drizzle-orm";
 
@@ -156,36 +156,72 @@ export const productionRouter = router({
           const diff = input.quantidade - previousQty;
 
           if (diff !== 0) {
-            // Get current stock value (para registro no histórico)
-            const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
-            const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
-            const newStock = Math.max(0, currentStock + diff);
+            // ─── Check if this is a Queijo Coalho product (Palitos Premium) ───
+            const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+            const isQueijCoalho = QUEIJO_COALHO_CODES.includes(codigoItem);
 
-            // Record history (SEMPRE registra, mesmo com auto-feed desabilitado)
-            await db.insert(stockEditHistory).values({
-              card: "madeira",
-              codigoItem,
-              descricaoItem: null,
-              valorAnterior: String(currentStock),
-              valorNovo: String(newStock),
-              operador: `Produção (${input.lancadoPor || "Sistema"})`,
-              tipo: "alteracao",
-            });
+            if (isQueijCoalho) {
+              // Auto-feed Queijo Coalho: atualiza estoque_processado
+              const qcRows = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, codigoItem));
+              const currentProcessado = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0;
+              const newProcessado = Math.max(0, currentProcessado + diff);
 
-            // Upsert stock
-            if (!MADEIRA_STOCK_AUTO_FEED_DISABLED) {
-              await db.insert(madeiraStock)
+              // Record history
+              await db.insert(queijoCoalhoStockHistory).values({
+                codigoItem,
+                campo: "estoque_processado",
+                valorAnterior: String(currentProcessado),
+                valorNovo: String(newProcessado),
+                operador: `Produção (${input.lancadoPor || "Sistema"})`,
+                observacao: `Embalagem Palitos Premium: ${diff > 0 ? "+" : ""}${diff} cx`,
+              });
+
+              // Upsert queijo coalho stock
+              await db.insert(queijoCoalhoStock)
                 .values({
                   codigoItem,
-                  quantidade: String(newStock),
+                  estoqueProcessado: String(newProcessado),
                   updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
                 })
                 .onDuplicateKeyUpdate({
                   set: {
-                    quantidade: sql`${String(newStock)}`,
+                    estoqueProcessado: sql`${String(newProcessado)}`,
                     updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
                   },
                 });
+            } else {
+              // Madeira PA auto-feed (existing logic)
+              // Get current stock value (para registro no histórico)
+              const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
+              const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
+              const newStock = Math.max(0, currentStock + diff);
+
+              // Record history (SEMPRE registra, mesmo com auto-feed desabilitado)
+              await db.insert(stockEditHistory).values({
+                card: "madeira",
+                codigoItem,
+                descricaoItem: null,
+                valorAnterior: String(currentStock),
+                valorNovo: String(newStock),
+                operador: `Produção (${input.lancadoPor || "Sistema"})`,
+                tipo: "alteracao",
+              });
+
+              // Upsert stock
+              if (!MADEIRA_STOCK_AUTO_FEED_DISABLED) {
+                await db.insert(madeiraStock)
+                  .values({
+                    codigoItem,
+                    quantidade: String(newStock),
+                    updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
+                  })
+                  .onDuplicateKeyUpdate({
+                    set: {
+                      quantidade: sql`${String(newStock)}`,
+                      updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
+                    },
+                  });
+              }
             }
           }
         }
@@ -331,41 +367,73 @@ export const productionRouter = router({
         const allCodigos = Array.from(new Set([...Array.from(oldQtyMap.keys()), ...Array.from(newQtyMap.keys())]));
         const lancadoPor = input.entries[0]?.lancadoPor || "Sistema";
 
+        const QUEIJO_COALHO_CODES_BATCH = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+
         for (const codigoItem of allCodigos) {
           const oldQty = oldQtyMap.get(codigoItem) || 0;
           const newQty = newQtyMap.get(codigoItem) || 0;
           const diff = newQty - oldQty;
 
           if (diff !== 0) {
-            const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
-            const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
-            const newStock = Math.max(0, currentStock + diff);
+            const isQueijCoalho = QUEIJO_COALHO_CODES_BATCH.includes(codigoItem);
 
-            // Record history (SEMPRE registra, mesmo com auto-feed desabilitado)
-            await db.insert(stockEditHistory).values({
-              card: "madeira",
-              codigoItem,
-              descricaoItem: null,
-              valorAnterior: String(currentStock),
-              valorNovo: String(newStock),
-              operador: `Produção (${lancadoPor})`,
-              tipo: "alteracao",
-            });
+            if (isQueijCoalho) {
+              // Auto-feed Queijo Coalho: atualiza estoque_processado
+              const qcRows = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, codigoItem));
+              const currentProcessado = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0;
+              const newProcessado = Math.max(0, currentProcessado + diff);
 
-            // Upsert stock
-            if (!BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED) {
-              await db.insert(madeiraStock)
+              await db.insert(queijoCoalhoStockHistory).values({
+                codigoItem,
+                campo: "estoque_processado",
+                valorAnterior: String(currentProcessado),
+                valorNovo: String(newProcessado),
+                operador: `Produção (${lancadoPor})`,
+                observacao: `Embalagem Palitos Premium (batch): ${diff > 0 ? "+" : ""}${diff} cx`,
+              });
+
+              await db.insert(queijoCoalhoStock)
                 .values({
                   codigoItem,
-                  quantidade: String(newStock),
+                  estoqueProcessado: String(newProcessado),
                   updatedBy: `Produção (${lancadoPor})`,
                 })
                 .onDuplicateKeyUpdate({
                   set: {
-                    quantidade: sql`${String(newStock)}`,
+                    estoqueProcessado: sql`${String(newProcessado)}`,
                     updatedBy: `Produção (${lancadoPor})`,
                   },
                 });
+            } else {
+              // Madeira PA auto-feed (existing logic)
+              const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
+              const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
+              const newStock = Math.max(0, currentStock + diff);
+
+              await db.insert(stockEditHistory).values({
+                card: "madeira",
+                codigoItem,
+                descricaoItem: null,
+                valorAnterior: String(currentStock),
+                valorNovo: String(newStock),
+                operador: `Produção (${lancadoPor})`,
+                tipo: "alteracao",
+              });
+
+              if (!BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED) {
+                await db.insert(madeiraStock)
+                  .values({
+                    codigoItem,
+                    quantidade: String(newStock),
+                    updatedBy: `Produção (${lancadoPor})`,
+                  })
+                  .onDuplicateKeyUpdate({
+                    set: {
+                      quantidade: sql`${String(newStock)}`,
+                      updatedBy: `Produção (${lancadoPor})`,
+                    },
+                  });
+              }
             }
           }
         }
@@ -506,11 +574,40 @@ export const productionRouter = router({
    * Supports two categories: "madeira" (Madeira PA) and "bambu" (Importação/Bambu).
    */
   getFinishedProducts: publicProcedure
-    .input(z.object({ categoria: z.enum(["madeira", "bambu"]).optional() }).optional())
+    .input(z.object({ categoria: z.enum(["madeira", "bambu", "palitos_premium"]).optional() }).optional())
     .query(async ({ input }) => {
     const db = await getDb();
     if (!db) return [];
     const categoria = input?.categoria || "madeira";
+    
+    // ─── Palitos Premium (Queijo Coalho): códigos fixos ───
+    const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+    
+    if (categoria === "palitos_premium") {
+      const rows = await db
+        .select({
+          codigoItem: stockItems.codigoItem,
+          descricaoItem: stockItems.descricaoItem,
+          unidadeMedida: stockItems.unidadeMedida,
+        })
+        .from(stockItems)
+        .where(inArray(stockItems.codigoItem, QUEIJO_COALHO_CODES))
+        .orderBy(stockItems.descricaoItem);
+      
+      const seen = new Set<string>();
+      const products: Array<{ codigoItem: string; descricaoItem: string; unidadeMedida: string }> = [];
+      for (const row of rows) {
+        if (!seen.has(row.codigoItem)) {
+          seen.add(row.codigoItem);
+          products.push({
+            codigoItem: row.codigoItem,
+            descricaoItem: row.descricaoItem || row.codigoItem,
+            unidadeMedida: row.unidadeMedida || "cx",
+          });
+        }
+      }
+      return products;
+    }
     
     // Itens que devem ser FORÇADOS em Bambu (mesmo que o grupo diga outra coisa)
     const forceBambu = ["00141A"]; // AMOSTRA ESPETO DE BAMBU - superGrupo 16/grupo 18 mas é bambu

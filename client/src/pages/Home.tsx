@@ -4322,6 +4322,431 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
   );
 }
 
+/* --- Queijo Coalho (Palitos Premium) Section --- */
+const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+
+function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [editingCell, setEditingCell] = useState<{ codigo: string; campo: string } | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [pendingEdit, setPendingEdit] = useState<{ codigo: string; campo: string } | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<string | undefined>(undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch queijo coalho stock data
+  const { data: qcStockData } = trpc.dashboard.getQueijoCoalhoStock.useQuery(undefined, { refetchInterval: 30000 });
+  const updateMutation = trpc.dashboard.updateQueijoCoalhoStock.useMutation({
+    onSuccess: (result) => {
+      if (result.success === false && result.error === "senha_incorreta") {
+        toast.error("Senha incorreta! Apenas Maria pode editar o Estoque Maxiprod.");
+      } else {
+        toast.success("Estoque atualizado!");
+      }
+      setEditingCell(null);
+    },
+    onError: () => toast.error("Erro ao salvar"),
+  });
+  const utils = trpc.useUtils();
+
+  // Build stock map from DB
+  const qcStockMap = useMemo(() => {
+    const map = new Map<string, { maxiprod: number; processado: number; regulador: number }>();
+    if (qcStockData?.items) {
+      for (const row of qcStockData.items) {
+        map.set(row.codigoItem, {
+          maxiprod: parseFloat(String(row.estoqueMaxiprod)) || 0,
+          processado: parseFloat(String(row.estoqueProcessado)) || 0,
+          regulador: parseFloat(String(row.estoqueRegulador)) || 0,
+        });
+      }
+    }
+    return map;
+  }, [qcStockData]);
+
+  // Filter items for queijo coalho products (parent only)
+  const qcItems = useMemo(() => {
+    return items.filter(i => QUEIJO_COALHO_CODES.includes(i.codigoItem) && !i.isChild);
+  }, [items]);
+
+  // If no items found, also check children
+  const qcAllItems = useMemo(() => {
+    if (qcItems.length > 0) return qcItems;
+    return items.filter(i => QUEIJO_COALHO_CODES.includes(i.codigoItem));
+  }, [items, qcItems]);
+
+  // Build rows with computed columns
+  const rows = useMemo(() => {
+    return qcAllItems.map(item => {
+      const stock = qcStockMap.get(item.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
+      const poCx = item.poCx ?? 0;
+      const pedidosCx = item.pedidosCx ?? 0;
+      const estoqueProjetado = poCx + stock.maxiprod;
+      const disponivelVenda = stock.processado - pedidosCx;
+      // Status logic
+      let status: "verde" | "amarelo" | "vermelho" = "verde";
+      if (stock.regulador > 0) {
+        if (disponivelVenda <= 0) status = "vermelho";
+        else if (disponivelVenda < stock.regulador) status = "amarelo";
+      }
+      return {
+        codigoItem: item.codigoItem,
+        descricaoItem: item.descricaoItem,
+        estoqueMaxiprod: stock.maxiprod,
+        poCx,
+        estoqueProjetado,
+        estoqueProcessado: stock.processado,
+        pedidosCx,
+        disponivelVenda,
+        estoqueRegulador: stock.regulador,
+        status,
+      };
+    });
+  }, [qcAllItems, qcStockMap]);
+
+  // Totals
+  const totals = useMemo(() => ({
+    maxiprod: rows.reduce((s, r) => s + r.estoqueMaxiprod, 0),
+    po: rows.reduce((s, r) => s + r.poCx, 0),
+    projetado: rows.reduce((s, r) => s + r.estoqueProjetado, 0),
+    processado: rows.reduce((s, r) => s + r.estoqueProcessado, 0),
+    pedidos: rows.reduce((s, r) => s + r.pedidosCx, 0),
+    disponivel: rows.reduce((s, r) => s + r.disponivelVenda, 0),
+    regulador: rows.reduce((s, r) => s + r.estoqueRegulador, 0),
+  }), [rows]);
+
+  const handleStartEdit = (codigo: string, campo: string) => {
+    if (campo === "estoque_maxiprod") {
+      setPendingEdit({ codigo, campo });
+      setShowPasswordModal(true);
+      return;
+    }
+    const stock = qcStockMap.get(codigo) || { maxiprod: 0, processado: 0, regulador: 0 };
+    const currentVal = campo === "estoque_regulador" ? stock.regulador : stock.processado;
+    setEditingCell({ codigo, campo });
+    setEditValue(String(currentVal));
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const handlePasswordConfirm = (name: string) => {
+    if (name.toLowerCase() !== "maria") {
+      toast.error("Apenas Maria pode editar o Estoque Maxiprod!");
+      setShowPasswordModal(false);
+      setPendingEdit(null);
+      return;
+    }
+    setShowPasswordModal(false);
+    if (pendingEdit) {
+      const stock = qcStockMap.get(pendingEdit.codigo) || { maxiprod: 0, processado: 0, regulador: 0 };
+      setEditingCell(pendingEdit);
+      setEditValue(String(stock.maxiprod));
+      setPendingEdit(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
+  const handleSave = () => {
+    if (!editingCell) return;
+    const val = parseNumberBR(editValue) || 0;
+    const operatorName = editingCell.campo === "estoque_maxiprod" ? "Maria" : "Sistema";
+    updateMutation.mutate(
+      {
+        codigoItem: editingCell.codigo,
+        campo: editingCell.campo as "estoque_maxiprod" | "estoque_regulador" | "estoque_processado",
+        valor: val,
+        operatorName,
+        senha: editingCell.campo === "estoque_maxiprod" ? "Maria" : undefined,
+      },
+      { onSuccess: () => utils.dashboard.getQueijoCoalhoStock.invalidate() }
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") setEditingCell(null);
+  };
+
+  const statusColors = {
+    verde: "bg-emerald-100 text-emerald-700 border-emerald-300",
+    amarelo: "bg-amber-100 text-amber-700 border-amber-300",
+    vermelho: "bg-red-100 text-red-700 border-red-300",
+  };
+  const statusLabels = { verde: "OK", amarelo: "Atenção", vermelho: "Crítico" };
+
+  return (
+    <div className="mt-6 md:mt-10">
+      <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEdit(null); }} onConfirm={handlePasswordConfirm} title="Senha Maria" />
+
+      {/* History Dialog */}
+      {showHistory && (
+        <Dialog open={showHistory} onOpenChange={(v) => !v && setShowHistory(false)}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-orange-600" />
+                Histórico Queijo Coalho
+              </DialogTitle>
+            </DialogHeader>
+            <QueijoCoalhoHistoryContent codigoItem={historyFilter} />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Section Header */}
+      <div className="mb-3 md:mb-5">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-orange-300 to-transparent" />
+          <div className="flex items-center gap-1.5 md:gap-2 bg-orange-50 border border-orange-200 rounded-full px-3 md:px-5 py-1.5 md:py-2">
+            <span className="text-base">🧀</span>
+            <span className="text-xs md:text-sm font-bold text-orange-800 uppercase tracking-wider">Palitos Premium (Queijo Coalho)</span>
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-orange-300 to-transparent" />
+        </div>
+        <p className="text-center text-[10px] md:text-xs text-slate-400 mt-1.5 md:mt-2">Estoque exclusivo — 00648 + 6 variações</p>
+      </div>
+
+      {/* Card */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border-l-4 border-l-orange-500 border border-slate-100 dark:border-slate-700 shadow-sm">
+        {/* Header */}
+        <div onClick={() => setIsOpen(!isOpen)} className="w-full px-3 md:px-5 py-3 md:py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-xl md:text-2xl">🧀</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 md:gap-3">
+                  <h3 className="text-xs md:text-lg font-bold text-slate-800 dark:text-slate-100">Palitos Premium</h3>
+                  <span className="text-[10px] md:text-sm font-extrabold text-orange-700 bg-orange-100 border border-orange-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{rows.length} itens</span>
+                </div>
+                <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">Espeto Premium p/ Queijo Coalho — Estoque controlado pela Maria</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setHistoryFilter(undefined); setShowHistory(true); }}
+                className="p-1.5 rounded-lg hover:bg-orange-100 transition-colors" title="Histórico"
+              >
+                <History className="w-4 h-4 text-orange-600" />
+              </button>
+              {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        {isOpen && (
+          <div className="px-2 md:px-4 pb-4 overflow-x-auto">
+            <table className="w-full text-xs md:text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-600">
+                  <th className="text-left py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Produto</th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <Lock className="w-3 h-3 text-orange-500" />
+                      Est. Maxiprod
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <Ship className="w-3 h-3 text-blue-500" />
+                      PO (Mar)
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <TrendingUp className="w-3 h-3 text-indigo-500" />
+                      Projetado
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <Package className="w-3 h-3 text-teal-500" />
+                      Processado
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <ShoppingCart className="w-3 h-3 text-rose-500" />
+                      Ped. Venda
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                      Disponível
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <span className="flex items-center justify-center gap-1">
+                      <Scale className="w-3 h-3 text-purple-500" />
+                      Regulador
+                    </span>
+                  </th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.codigoItem} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    {/* Produto */}
+                    <td className="py-2 px-1 md:px-2">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-slate-800 dark:text-slate-200 text-[10px] md:text-xs leading-tight">
+                          {row.descricaoItem.replace(/ESPETO PREMIUM P\/ QUEIJO COALHO /i, "").replace(/ 5\.?000$/i, "") || row.descricaoItem}
+                        </span>
+                        <span className="text-[9px] md:text-[10px] text-slate-400">{row.codigoItem}</span>
+                      </div>
+                    </td>
+                    {/* Estoque Maxiprod (editable by Maria) */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={handleSave}
+                          className="w-16 text-center text-xs border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => handleStartEdit(row.codigoItem, "estoque_maxiprod")}
+                          className="inline-flex items-center gap-0.5 text-xs font-semibold text-orange-700 hover:bg-orange-50 rounded px-1.5 py-0.5 transition-colors"
+                          title="Editar (senha Maria)"
+                        >
+                          {formatNumber(row.estoqueMaxiprod, true)}
+                          <Pencil className="w-2.5 h-2.5 text-orange-400" />
+                        </button>
+                      )}
+                    </td>
+                    {/* PO (Mar) */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      <span className={`text-xs font-medium ${row.poCx > 0 ? "text-blue-700" : "text-slate-400"}`}>
+                        {formatNumber(row.poCx, true)}
+                      </span>
+                    </td>
+                    {/* Projetado */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      <span className="text-xs font-semibold text-indigo-700">
+                        {formatNumber(row.estoqueProjetado, true)}
+                      </span>
+                    </td>
+                    {/* Processado */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      <span className="text-xs font-medium text-teal-700">
+                        {formatNumber(row.estoqueProcessado, true)}
+                      </span>
+                    </td>
+                    {/* Pedidos de Venda */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      <span className={`text-xs font-medium ${row.pedidosCx > 0 ? "text-rose-700" : "text-slate-400"}`}>
+                        {formatNumber(row.pedidosCx, true)}
+                      </span>
+                    </td>
+                    {/* Disponível para Venda */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      <span className={`text-xs font-bold ${row.disponivelVenda < 0 ? "text-red-600" : row.disponivelVenda === 0 ? "text-slate-400" : "text-emerald-700"}`}>
+                        {formatNumber(row.disponivelVenda, true)}
+                      </span>
+                    </td>
+                    {/* Estoque Regulador (editable) */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_regulador" ? (
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={handleSave}
+                          className="w-16 text-center text-xs border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => handleStartEdit(row.codigoItem, "estoque_regulador")}
+                          className="inline-flex items-center gap-0.5 text-xs font-medium text-purple-700 hover:bg-purple-50 rounded px-1.5 py-0.5 transition-colors"
+                          title="Editar regulador"
+                        >
+                          {row.estoqueRegulador > 0 ? formatNumber(row.estoqueRegulador, true) : "-"}
+                          <Pencil className="w-2.5 h-2.5 text-purple-400" />
+                        </button>
+                      )}
+                    </td>
+                    {/* Status */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      <span className={`inline-block text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusColors[row.status]}`}>
+                        {statusLabels[row.status]}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {/* Totals row */}
+                <tr className="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 font-bold">
+                  <td className="py-2 px-1 md:px-2 text-xs text-slate-700 dark:text-slate-200">TOTAL</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-orange-700">{formatNumber(totals.maxiprod, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-blue-700">{formatNumber(totals.po, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-indigo-700">{formatNumber(totals.projetado, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-teal-700">{formatNumber(totals.processado, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-rose-700">{formatNumber(totals.pedidos, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-emerald-700">{formatNumber(totals.disponivel, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-xs text-purple-700">{formatNumber(totals.regulador, true)}</td>
+                  <td className="py-2 px-1 md:px-2"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* --- Queijo Coalho History Content --- */
+function QueijoCoalhoHistoryContent({ codigoItem }: { codigoItem?: string }) {
+  const { data, isLoading } = trpc.dashboard.getQueijoCoalhoHistory.useQuery(
+    { codigoItem },
+    { refetchInterval: 30000 }
+  );
+
+  if (isLoading) return <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>;
+  if (!data?.history?.length) return <p className="text-sm text-slate-400 text-center py-6">Nenhum histórico encontrado.</p>;
+
+  const campoLabels: Record<string, string> = {
+    estoque_maxiprod: "Est. Maxiprod",
+    estoque_processado: "Processado",
+    estoque_regulador: "Regulador",
+  };
+
+  return (
+    <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+      {data.history.map((h: any, i: number) => (
+        <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-600">
+          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+            <History className="w-4 h-4 text-orange-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{h.operador}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-medium">{campoLabels[h.campo] || h.campo}</span>
+              <span className="text-[9px] text-slate-400">{h.codigoItem}</span>
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-[10px] text-red-500 line-through">{h.valorAnterior}</span>
+              <ArrowRight className="w-3 h-3 text-slate-400" />
+              <span className="text-[10px] text-emerald-600 font-semibold">{h.valorNovo}</span>
+            </div>
+            {h.observacao && <p className="text-[9px] text-slate-400 mt-0.5">{h.observacao}</p>}
+            <p className="text-[9px] text-slate-400 mt-0.5">{new Date(h.createdAt).toLocaleString("pt-BR")}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* --- Main Dashboard Content --- */
 function DashboardContent({ items }: { items: StockItem[] }) {
   const operatorCtx = useOperator();
@@ -5020,6 +5445,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           useUnits={true}
         />
       )}
+
+      {/* ═══ SEÇÃO QUEIJO COALHO (PALITOS PREMIUM) ═══ */}
+      <QueijoCoalhoSection items={items} />
 
       {/* ═══ SEÇÃO MADEIRA ═══ */}
       <div className="mt-6 md:mt-10 mb-3 md:mb-5">

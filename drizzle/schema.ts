@@ -3248,3 +3248,40 @@ export const orderApprovalHistory = mysqlTable("order_approval_history", {
 });
 export type OrderApprovalHistory = typeof orderApprovalHistory.$inferSelect;
 export type InsertOrderApprovalHistory = typeof orderApprovalHistory.$inferInsert;
+
+
+/**
+ * Estoque manual do Queijo Coalho (Palitos Premium).
+ * Coluna "Estoque Maxiprod" é alimentada manualmente pela Maria.
+ * Coluna "Estoque Processado" é alimentada automaticamente pela Embalagem Palitos Premium.
+ * Coluna "Estoque Regulador" é configurável.
+ */
+export const queijoCoalhoStock = mysqlTable("queijo_coalho_stock", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull().unique(),
+  estoqueMaxiprod: decimal("estoque_maxiprod", { precision: 18, scale: 5 }).notNull().default("0"),
+  estoqueProcessado: decimal("estoque_processado", { precision: 18, scale: 5 }).notNull().default("0"),
+  estoqueRegulador: decimal("estoque_regulador", { precision: 18, scale: 5 }).notNull().default("0"),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type QueijoCoalhoStock = typeof queijoCoalhoStock.$inferSelect;
+export type InsertQueijoCoalhoStock = typeof queijoCoalhoStock.$inferInsert;
+
+/**
+ * Histórico de edições do estoque Queijo Coalho.
+ * Registra TODAS as modificações (manuais pela Maria e automáticas pela Embalagem).
+ * REGRA: NUNCA apagar registros. Histórico permanente e imutável.
+ */
+export const queijoCoalhoStockHistory = mysqlTable("queijo_coalho_stock_history", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(),
+  campo: varchar("campo", { length: 50 }).notNull(), // "estoque_maxiprod" | "estoque_processado" | "estoque_regulador"
+  valorAnterior: decimal("valorAnterior", { precision: 18, scale: 5 }).notNull(),
+  valorNovo: decimal("valorNovo", { precision: 18, scale: 5 }).notNull(),
+  operador: varchar("operador", { length: 200 }).notNull(), // "Maria" ou "Produção (Maria)" ou "Sistema"
+  observacao: text("observacao"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type QueijoCoalhoStockHistory = typeof queijoCoalhoStockHistory.$inferSelect;
+export type InsertQueijoCoalhoStockHistory = typeof queijoCoalhoStockHistory.$inferInsert;

@@ -1908,7 +1908,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
   const [qty, setQty] = useState("");
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editCardQty, setEditCardQty] = useState("");
-  const [categoria, setCategoria] = useState<"madeira" | "bambu">("madeira");
+  const [categoria, setCategoria] = useState<"madeira" | "bambu" | "palitos_premium">("madeira");
 
   const { data: products, isLoading } = trpc.production.getFinishedProducts.useQuery({ categoria });
 
@@ -2109,7 +2109,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
 
       {/* Search bar and product list - visible to all */}
       <>
-        {/* Category selector: Madeira / Bambu */}
+        {/* Category selector: Madeira / Bambu / Palitos Premium */}
         <div className="flex gap-2">
           <button
             onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
@@ -2137,6 +2137,19 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
               Bambu
             </span>
           </button>
+          <button
+            onClick={() => { setCategoria("palitos_premium"); setSearch(""); setSelectedProduct(null); }}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+              categoria === "palitos_premium"
+                ? "bg-orange-50 border-orange-400 text-orange-800 shadow-sm shadow-orange-100"
+                : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-base">🧀</span>
+              Palitos Premium
+            </span>
+          </button>
         </div>
 
         <div className="relative">
@@ -2145,7 +2158,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Buscar produto ${categoria === "madeira" ? "de madeira" : "de bambu"}...`}
+            placeholder={`Buscar produto ${categoria === "madeira" ? "de madeira" : categoria === "bambu" ? "de bambu" : "palitos premium"}...`}
             className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
           />
           {search && (

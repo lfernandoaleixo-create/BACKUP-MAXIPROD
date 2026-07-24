@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments, importSuppliers, trackingCache } from "../drizzle/schema";
+import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments, importSuppliers, trackingCache, queijoCoalhoStock, queijoCoalhoStockHistory } from "../drizzle/schema";
 import { sql, desc, eq, and, gte, or } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
@@ -755,6 +755,99 @@ export const appRouter = router({
 
       return { trackingByPO };
     }),
+
+    // ═══ QUEIJO COALHO STOCK ═══
+    getQueijoCoalhoStock: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { items: [] };
+      const rows = await db.select().from(queijoCoalhoStock);
+      return { items: rows };
+    }),
+
+    /**
+     * Update queijo coalho stock manually.
+     * REGRA: Apenas Maria pode editar Estoque Maxiprod (senha: "Maria").
+     * Estoque Regulador pode ser editado por qualquer operador autorizado.
+     */
+    updateQueijoCoalhoStock: publicProcedure
+      .input(z.object({
+        codigoItem: z.string(),
+        campo: z.enum(["estoque_maxiprod", "estoque_regulador", "estoque_processado"]),
+        valor: z.number().min(0),
+        operatorName: z.string(),
+        senha: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB not available");
+
+        // Validação de senha para estoque_maxiprod
+        if (input.campo === "estoque_maxiprod") {
+          if (!input.senha || input.senha.toLowerCase() !== "maria") {
+            return { success: false, error: "senha_incorreta" };
+          }
+        }
+
+        // Get current value
+        const existing = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, input.codigoItem));
+        let valorAnterior = "0";
+        if (existing.length > 0) {
+          if (input.campo === "estoque_maxiprod") valorAnterior = String(existing[0].estoqueMaxiprod || "0");
+          else if (input.campo === "estoque_regulador") valorAnterior = String(existing[0].estoqueRegulador || "0");
+          else if (input.campo === "estoque_processado") valorAnterior = String(existing[0].estoqueProcessado || "0");
+        }
+
+        // Record history
+        await db.insert(queijoCoalhoStockHistory).values({
+          codigoItem: input.codigoItem,
+          campo: input.campo,
+          valorAnterior,
+          valorNovo: String(input.valor),
+          operador: input.operatorName,
+          observacao: `Edição manual: ${input.campo}`,
+        });
+
+        // Upsert stock
+        const updateSet: any = { updatedBy: input.operatorName };
+        if (input.campo === "estoque_maxiprod") updateSet.estoqueMaxiprod = sql`${String(input.valor)}`;
+        else if (input.campo === "estoque_regulador") updateSet.estoqueRegulador = sql`${String(input.valor)}`;
+        else if (input.campo === "estoque_processado") updateSet.estoqueProcessado = sql`${String(input.valor)}`;
+
+        const insertValues: any = {
+          codigoItem: input.codigoItem,
+          updatedBy: input.operatorName,
+        };
+        if (input.campo === "estoque_maxiprod") insertValues.estoqueMaxiprod = String(input.valor);
+        else if (input.campo === "estoque_regulador") insertValues.estoqueRegulador = String(input.valor);
+        else if (input.campo === "estoque_processado") insertValues.estoqueProcessado = String(input.valor);
+
+        await db.insert(queijoCoalhoStock)
+          .values(insertValues)
+          .onDuplicateKeyUpdate({ set: updateSet });
+
+        return { success: true };
+      }),
+
+    getQueijoCoalhoHistory: publicProcedure
+      .input(z.object({
+        codigoItem: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { history: [] };
+
+        const conditions = [];
+        if (input.codigoItem) {
+          conditions.push(eq(queijoCoalhoStockHistory.codigoItem, input.codigoItem));
+        }
+
+        const rows = await db.select().from(queijoCoalhoStockHistory)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(desc(queijoCoalhoStockHistory.createdAt))
+          .limit(500);
+
+        return { history: rows };
+      }),
   }),
 });
 
