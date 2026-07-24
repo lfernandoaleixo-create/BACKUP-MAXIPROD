@@ -643,6 +643,9 @@ function OperatorManagementPanel() {
   const utils = trpc.useUtils();
   const { data: operatorList, isLoading } = trpc.settings.getOperators.useQuery();
   const { data: allGranularPerms } = trpc.settings.getAllGranularPermissions.useQuery();
+  // Dynamic: load gestors and sellers for dynamic permission keys
+  const { data: salesManagersList } = trpc.sales.listSalesManagers.useQuery();
+  const { data: sellerPermsList } = trpc.sales.listSellerPermissions.useQuery();
   const seedMutation = trpc.settings.seedOperators.useMutation({
     onSuccess: () => utils.settings.getOperators.invalidate(),
   });
@@ -670,6 +673,44 @@ function OperatorManagementPanel() {
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [expandedOperator, setExpandedOperator] = useState<number | null>(null);
+
+  // Build dynamic Gestão Comercial permissions: add gestors and sellers dynamically
+  const dynamicGcPerms = useMemo((): GranularPermDef[] => {
+    const basePerms = GRANULAR_GESTAO_COMERCIAL.filter(p => !p.key.startsWith("gc.verGestor."));
+    // Add dynamic gestor visibility permissions
+    const gestorPerms: GranularPermDef[] = [];
+    if (salesManagersList) {
+      for (const mgr of salesManagersList.filter((m: any) => m.active)) {
+        const slug = mgr.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        gestorPerms.push({ key: `gc.verGestor.${slug}`, label: `Ver ${mgr.name}`, parentTab: "gestao-comercial" });
+      }
+    }
+    // Add dynamic seller visibility permissions
+    const sellerPerms: GranularPermDef[] = [];
+    if (sellerPermsList) {
+      const uniqueSellers = new Map<string, string>();
+      for (const sp of sellerPermsList as any[]) {
+        if (!uniqueSellers.has(sp.sellerName.toUpperCase())) {
+          uniqueSellers.set(sp.sellerName.toUpperCase(), sp.sellerName);
+        }
+      }
+      Array.from(uniqueSellers.values()).forEach(sellerName => {
+        const slug = sellerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        sellerPerms.push({ key: `gc.verVendedor.${slug}`, label: `Ver ${sellerName}`, parentTab: "gestao-comercial" });
+      });
+    }
+    return [...basePerms, ...gestorPerms, ...sellerPerms];
+  }, [salesManagersList, sellerPermsList]);
+
+  // Build dynamic GRANULAR_GROUPS (replace static gc perms with dynamic ones)
+  const dynamicGranularGroups = useMemo(() => {
+    return GRANULAR_GROUPS.map(group => {
+      if (group.parentTab === "gestao-comercial") {
+        return { ...group, perms: dynamicGcPerms };
+      }
+      return group;
+    });
+  }, [dynamicGcPerms]);
 
   // Build a map: operatorId -> { permKey -> enabled }
   const granularMap = useMemo(() => {
@@ -899,7 +940,7 @@ function OperatorManagementPanel() {
                         Permissões Detalhadas de {op.name}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {GRANULAR_GROUPS.map(group => {
+                        {dynamicGranularGroups.map(group => {
                           const parentEnabled = hasAnyParentTab(group.parentTab);
                           return (
                             <div key={group.parentTab} className={`rounded-lg border p-3 ${parentEnabled ? 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800' : 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 opacity-50'}`}>

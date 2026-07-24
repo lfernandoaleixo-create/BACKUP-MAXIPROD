@@ -3290,21 +3290,41 @@ export const salesRouter = router({
   }),
 
   createSalesManager: publicProcedure
-    .input(z.object({ name: z.string().min(2) }))
+    .input(z.object({
+      name: z.string().min(2),
+      role: z.enum(["gestor", "sub-gestor"]).default("gestor"),
+      parentManagerId: z.number().nullable().optional(),
+      maxiprodName: z.string().nullable().optional(),
+    }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      await db.insert(salesManagers).values({ name: input.name });
-      return { success: true };
+      const result = await db.insert(salesManagers).values({
+        name: input.name,
+        role: input.role,
+        parentManagerId: input.parentManagerId ?? null,
+        maxiprodName: input.maxiprodName ?? null,
+      });
+      return { success: true, id: result[0].insertId };
     }),
 
   updateSalesManager: publicProcedure
-    .input(z.object({ id: z.number(), name: z.string().min(2).optional(), active: z.boolean().optional() }))
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(2).optional(),
+      role: z.enum(["gestor", "sub-gestor"]).optional(),
+      parentManagerId: z.number().nullable().optional(),
+      maxiprodName: z.string().nullable().optional(),
+      active: z.boolean().optional(),
+    }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
       const updates: Record<string, unknown> = {};
       if (input.name !== undefined) updates.name = input.name;
+      if (input.role !== undefined) updates.role = input.role;
+      if (input.parentManagerId !== undefined) updates.parentManagerId = input.parentManagerId;
+      if (input.maxiprodName !== undefined) updates.maxiprodName = input.maxiprodName;
       if (input.active !== undefined) updates.active = input.active;
       if (Object.keys(updates).length > 0) {
         await db.update(salesManagers).set(updates).where(eq(salesManagers.id, input.id));
@@ -3317,7 +3337,7 @@ export const salesRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      await db.delete(salesManagers).where(eq(salesManagers.id, input.id));
+      await db.update(salesManagers).set({ active: false }).where(eq(salesManagers.id, input.id));
       return { success: true };
     }),
 

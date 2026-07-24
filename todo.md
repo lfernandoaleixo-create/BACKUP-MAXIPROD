@@ -6044,3 +6044,18 @@
 - [x] Expandir GRANULAR_PRODUCAO com: historico, pirografia, graficos, checklist, movimentacao, lotes, exportarPdf, lancamento
 - [x] Aplicar hasGranularAccess em Importacao.tsx para sub-tabs
 - [x] Aplicar hasGranularAccess em Production.tsx para checklist, lotes, movimentacao, historico, pirografia, graficos, exportarPdf
+
+## Permissões Dinâmicas por Vendedor
+- [x] Vendedores da Gestão Comercial aparecem dinamicamente nas permissões granulares (gc.verVendedor.*)
+- [x] Operador primeiro seleciona quais vendedores pode ver
+- [x] Permissões (métricas, pedidos, barras) só se aplicam aos vendedores selecionados
+- [x] Quando novo vendedor é cadastrado, ele aparece automaticamente nas opções de permissão
+- [x] Filtrar dados no GestaoComercial/VendedorDetalhe baseado nos vendedores permitidos
+
+## Cadastro de Gestores/Sub-gestores + Permissões Dinâmicas
+- [x] Criar UI de cadastro de gestores/sub-gestores na aba Gestão Comercial (GerenciarGestores.tsx)
+- [x] Gestores cadastrados aparecem dinamicamente como gc.verGestor.{slug} nas permissões
+- [x] Vendedores de cada gestor aparecem como gc.verVendedor.{slug} nas permissões
+- [x] Hierarquia: operador → tica gestores → tica vendedores daquele gestor → features se aplicam só aos ticados
+- [x] Filtrar dados no GestaoComercial baseado nos gestores/vendedores permitidos
+- [x] GESTOR_CARDS dinâmico (carrega do banco via listSalesManagers, fallback para constante)

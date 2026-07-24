@@ -171,16 +171,29 @@ export default function GestaoComercial() {
     enabled: !shouldRedirectToPedidos && !showNavigationHub,
   });
 
-  const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
+    const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
   });
-
+  // Dynamic gestor cards from DB
+  const managersQuery = trpc.sales.listSalesManagers.useQuery(undefined, { staleTime: 60 * 1000 });
+  const { dynamicGestorCards, dynamicNameMap } = useMemo(() => {
+    if (!managersQuery.data || managersQuery.data.length === 0) return { dynamicGestorCards: GESTOR_CARDS, dynamicNameMap: GESTOR_NAME_MAP };
+    const cards: GestorCard[] = managersQuery.data.filter((m: any) => m.active !== false).map((m: any) => ({
+      name: m.name.toUpperCase(),
+      role: m.role === "sub-gestor" ? "Sub-gestor" as const : "Gestor" as const,
+      parentGestor: m.parentManagerId ? managersQuery.data.find((p: any) => p.id === m.parentManagerId)?.name?.toUpperCase() : undefined,
+    }));
+    const nameMap: Record<string, string> = {};
+    managersQuery.data.filter((m: any) => m.active !== false).forEach((m: any) => {
+      nameMap[m.name.toUpperCase()] = (m.maxiprodName || m.name).toUpperCase();
+    });
+    return { dynamicGestorCards: cards.length > 0 ? cards : GESTOR_CARDS, dynamicNameMap: Object.keys(nameMap).length > 0 ? nameMap : GESTOR_NAME_MAP };
+  }, [managersQuery.data]);
   // Get vendedores for a specific gestor from Maxiprod data
   const getVendedoresForGestor = (gestorName: string): string[] => {
     if (!representantesQuery.data) return [];
     const gestores = representantesQuery.data.gestores as GestorGroup[];
-    // Use GESTOR_NAME_MAP to resolve the Maxiprod name (e.g. "RENATO LEDESMA" -> "RENATO ALEIXO")
-    const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
+    const maxiprodName = dynamicNameMap[gestorName] || GESTOR_NAME_MAP[gestorName] || gestorName;
     // Try exact match first
     const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
@@ -342,6 +355,20 @@ export default function GestaoComercial() {
                 </div>
               </div>
                         </Link>}
+            {/* Cadastrar Gestores/Sub-gestores */}
+            {hasGranularAccess("gc.painelGestores") && <Link href="/gestao-comercial/gerenciar-gestores">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-sm p-6 hover:shadow-lg hover:border-purple-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors">
+                    <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Gerenciar Gestores</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Cadastrar gestores, sub-gestores e hierarquia</p>
+                  </div>
+                </div>
+              </div>
+            </Link>}
           </div>
         </main>
       </div>
@@ -374,9 +401,10 @@ export default function GestaoComercial() {
             representantesQuery.refetch();
             permissionsQuery.refetch();
           }}
-          isFetching={representantesQuery.isFetching}
+                    isFetching={representantesQuery.isFetching}
+          gestorCards={dynamicGestorCards}
+          maxiprodNameMap={dynamicNameMap}
         />
-
       </main>
     </div>
   );
@@ -394,17 +422,24 @@ interface GestoresTabProps {
   onRefresh: () => void;
   isFetching: boolean;
   filterGestorName?: string; // If set, show only this gestor's card (already expanded)
+  gestorCards?: GestorCard[]; // Dynamic gestor cards from DB (overrides GESTOR_CARDS)
+  maxiprodNameMap?: Record<string, string>; // Map gestor display name -> maxiprod name
 }
 
-// Map GESTOR_CARDS names to their visibility permission keys
-const GESTOR_VISIBILITY_MAP: Record<string, string> = {
-  "JORDÃO LAINE": "gc.verGestor.jordao",
-  "ANA PAULA ALEIXO": "gc.verGestor.paula",
-  "JUVENAL TEIXEIRA": "gc.verGestor.juvenal",
-  "RENATO LEDESMA": "gc.verGestor.renato",
-};
+// Dynamic: generate visibility permission key from gestor/vendedor name (slug)
+function getGestorVisibilityKey(name: string): string {
+  const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  return `gc.verGestor.${slug}`;
+}
+function getVendedorVisibilityKey(name: string): string {
+  const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  return `gc.verVendedor.${slug}`;
+}
 
-function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching, filterGestorName }: GestoresTabProps) {
+function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, errorMessage, onRefresh, isFetching, filterGestorName, gestorCards: gestorCardsProp, maxiprodNameMap: maxiprodNameMapProp }: GestoresTabProps) {
+  // Use dynamic gestor cards from DB if provided, otherwise fallback to constant
+  const activeGestorCards = gestorCardsProp || GESTOR_CARDS;
+  const activeNameMap = maxiprodNameMapProp || GESTOR_NAME_MAP;
   const { hasGranularAccess } = useOperator();
   // Auto-expand gestor from URL param or prop
   const urlParams = new URLSearchParams(window.location.search);
@@ -446,7 +481,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
 
   const totalVendedores = useMemo(() => {
     let count = 0;
-    for (const gc of GESTOR_CARDS) {
+    for (const gc of activeGestorCards) {
       if (gc.role !== "Sub-gestor") {
         count += getVendedoresForGestor(gc.name).length;
       }
@@ -479,7 +514,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     const vendedores = getVendedoresForGestor(card.name);
     // Filter out vendedores who are also Gestor/Gestora (they have their own independent card)
     // Sub-gestores like Renato should NOT be filtered — they count as vendedores under their parent gestor
-    const gestorOnlyNames = GESTOR_CARDS
+    const gestorOnlyNames = activeGestorCards
       .filter(g => g.role === "Gestor" || g.role === "Gestora")
       .map(g => g.name.toUpperCase());
     return vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
@@ -513,7 +548,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
         )}
 
         {/* Single gestor card, already expanded */}
-        {!isLoading && GESTOR_CARDS.filter(card => {
+        {!isLoading && activeGestorCards.filter(card => {
           return card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
         }).map((card) => {
           const vendedoresBase = getVendedoresForCard(card);
@@ -684,7 +719,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             <div className="text-left">
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Gestores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {GESTOR_CARDS.filter(g => g.role !== "Sub-gestor").length} gestores · 1 sub-gestor · {totalVendedores} vendedores
+                {activeGestorCards.filter(g => g.role !== "Sub-gestor").length} gestores · {activeGestorCards.filter(g => g.role === "Sub-gestor").length} sub-gestor(es) · {totalVendedores} vendedores
               </p>
             </div>
           </div>
@@ -726,14 +761,14 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             )}
 
             {/* Gestor Cards (filtered by filterGestorName + visibility permissions) */}
-            {!isLoading && GESTOR_CARDS.filter(card => {
+            {!isLoading && activeGestorCards.filter(card => {
               // Filter by specific gestor name if provided
               if (filterGestorName) {
                 return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
               }
-              // Check visibility permission for this gestor card
-              const visKey = GESTOR_VISIBILITY_MAP[card.name];
-              if (visKey && !hasGranularAccess(visKey)) return false;
+              // Check visibility permission for this gestor card (dynamic slug)
+              const visKey = getGestorVisibilityKey(card.name);
+              if (!hasGranularAccess(visKey)) return false;
               return true;
             }).map((card) => {
         const isExpanded = expandedGestor === card.name;
@@ -935,7 +970,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                             <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
                           </div>
                         )}
-                        {vendedores.map((vendedor) => {
+                        {vendedores.filter(vendedor => hasGranularAccess(getVendedorVisibilityKey(vendedor))).map((vendedor) => {
                           const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
                           const target = { tab: "pedidos" };
                           const navUrl = `/gestao-comercial/vendedor/${perm?.id}?tab=${target.tab}`;
@@ -971,7 +1006,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                             <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum vendedor cadastrado</p>
                           </div>
                         )}
-                        {vendedores.map((vendedor) => {
+                        {vendedores.filter(vendedor => hasGranularAccess(getVendedorVisibilityKey(vendedor))).map((vendedor) => {
                           const perm = getPermission(vendedor, card.name) || getPermissionByName(vendedor);
                           const tabMap: Record<string, { tab: string; section?: string }> = {
                             tabela_preco: { tab: "tabela_precos" },
@@ -1031,6 +1066,8 @@ interface AcessoAppViewProps {
 }
 
 function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: AcessoAppViewProps) {
+  const { hasGranularAccess } = useOperator();
+  const filteredVendedores = vendedores.filter(v => hasGranularAccess(getVendedorVisibilityKey(v)));
   const utils = trpc.useUtils();
   const addSellerMutation = trpc.sales.addSellerWithPassword.useMutation({
     onSuccess: () => {
@@ -1056,8 +1093,7 @@ function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: Ac
     });
   };
 
-  const authorizedCount = vendedores.filter(v => getPermForVendedor(v)?.authorized).length;
-
+    const authorizedCount = filteredVendedores.filter(v => getPermForVendedor(v)?.authorized).length;
   return (
     <div className="space-y-3">
       {/* Summary */}
@@ -1065,14 +1101,13 @@ function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: Ac
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-teal-600 dark:text-teal-400" />
           <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-            {authorizedCount} autorizado{authorizedCount !== 1 ? "s" : ""} de {vendedores.length} vendedor{vendedores.length !== 1 ? "es" : ""}
+            {authorizedCount} autorizado{authorizedCount !== 1 ? "s" : ""} de {filteredVendedores.length} vendedor{filteredVendedores.length !== 1 ? "es" : ""}
           </span>
         </div>
       </div>
-
       {/* Sellers list */}
       <div className="space-y-2">
-        {vendedores.map((vendedor) => {
+        {filteredVendedores.map((vendedor) => {
           const perm = getPermForVendedor(vendedor);
           const isAuthorized = perm?.authorized ?? false;
 
@@ -1133,9 +1168,12 @@ interface VendedoresTabProps {
   getVendedoresForGestor: (gestorName: string) => string[];
   permissions: SellerPermission[];
   isLoading: boolean;
+  gestorCards?: GestorCard[]; // Dynamic gestor cards from DB (overrides GESTOR_CARDS)
 }
 
-function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: VendedoresTabProps) {
+function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorCards: gestorCardsProp }: VendedoresTabProps) {
+  const activeGestorCards = gestorCardsProp || GESTOR_CARDS;
+  const { hasGranularAccess } = useOperator();
   const [, navigate] = useLocation();
   const deleteMutation = trpc.sales.deleteSellerPermission.useMutation();
   const utils = trpc.useUtils();
@@ -1153,7 +1191,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
     const result: { name: string; gestor: string; permission?: SellerPermission; isGestor: boolean }[] = [];
     
     // Add gestores as vendedores (they sell too)
-    for (const gc of GESTOR_CARDS) {
+    for (const gc of activeGestorCards) {
       const perm = permissions.find(
         p => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gc.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
       );
@@ -1166,12 +1204,12 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
     }
 
     // Add regular vendedores from Maxiprod
-    for (const gc of GESTOR_CARDS) {
+    for (const gc of activeGestorCards) {
       if (gc.role === "Sub-gestor") continue; // Sub-gestor doesn't have vendedores yet
       const vendedores = getVendedoresForGestor(gc.name);
       for (const v of vendedores) {
         // Skip if already added as gestor
-        if (GESTOR_CARDS.some(g => g.name.toUpperCase() === v.toUpperCase())) continue;
+        if (activeGestorCards.some(g => g.name.toUpperCase() === v.toUpperCase())) continue;
         const perm = permissions.find(
           p => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
         );
@@ -1186,7 +1224,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
       const normName = perm.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
       if (addedNames.has(normName)) continue;
       // Skip gestores that are already in the list
-      if (GESTOR_CARDS.some(g => g.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normName)) continue;
+      if (activeGestorCards.some(g => g.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normName)) continue;
       result.push({ name: perm.sellerName, gestor: perm.gestorName, permission: perm, isGestor: false });
       addedNames.add(normName);
     }
@@ -1197,9 +1235,13 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
       if (!a.isGestor && b.isGestor) return 1;
       return a.name.localeCompare(b.name, 'pt-BR');
     });
-  }, [getVendedoresForGestor, permissions]);
-
-  const authorizedCount = allVendedores.filter(v => v.permission?.authorized).length;
+    }, [getVendedoresForGestor, permissions]);
+  // Filter vendedores by visibility permission
+  const filteredAllVendedores = allVendedores.filter(v => {
+    if (v.isGestor) return hasGranularAccess(getGestorVisibilityKey(v.name));
+    return hasGranularAccess(getVendedorVisibilityKey(v.name));
+  });
+  const authorizedCount = filteredAllVendedores.filter(v => v.permission?.authorized).length;
 
   const [panelExpanded, setPanelExpanded] = useState(false);
 
@@ -1219,7 +1261,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
             <div>
               <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white">Painel dos Vendedores</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {authorizedCount} autorizados de {allVendedores.length} · Clique para expandir
+                {authorizedCount} autorizados de {filteredAllVendedores.length} · Clique para expandir
               </p>
             </div>
           </div>
@@ -1236,7 +1278,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
               </div>
             ) : (
               <div>
-                {allVendedores.map((v, idx) => (
+                {filteredAllVendedores.map((v, idx) => (
                   <div
                     key={v.name}
                     className={`${idx > 0 ? 'border-t border-slate-100 dark:border-slate-700' : ''}`}
@@ -1258,7 +1300,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading }: Vende
                         <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
                         {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                          {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
+                          {v.isGestor ? (GESTOR_CARDS.find((g: GestorCard) => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -1369,7 +1411,7 @@ function VendedoresCollapsible({ allVendedores, isLoading, navigate }: { allVend
                       <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
                       {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                        {v.isGestor ? (GESTOR_CARDS.find(g => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
+                        {v.isGestor ? (GESTOR_CARDS.find((g: GestorCard) => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -2992,16 +3034,29 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
   });
-
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
   });
-
+  // Dynamic gestor cards from DB
+  const managersQuery = trpc.sales.listSalesManagers.useQuery(undefined, { staleTime: 60 * 1000 });
+  const { dynamicGestorCards, dynamicNameMap } = useMemo(() => {
+    if (!managersQuery.data || managersQuery.data.length === 0) return { dynamicGestorCards: GESTOR_CARDS, dynamicNameMap: GESTOR_NAME_MAP };
+    const cards: GestorCard[] = managersQuery.data.filter((m: any) => m.active !== false).map((m: any) => ({
+      name: m.name.toUpperCase(),
+      role: m.role === "sub-gestor" ? "Sub-gestor" as const : "Gestor" as const,
+      parentGestor: m.parentManagerId ? managersQuery.data.find((p: any) => p.id === m.parentManagerId)?.name?.toUpperCase() : undefined,
+    }));
+    const nameMap: Record<string, string> = {};
+    managersQuery.data.filter((m: any) => m.active !== false).forEach((m: any) => {
+      nameMap[m.name.toUpperCase()] = (m.maxiprodName || m.name).toUpperCase();
+    });
+    return { dynamicGestorCards: cards.length > 0 ? cards : GESTOR_CARDS, dynamicNameMap: Object.keys(nameMap).length > 0 ? nameMap : GESTOR_NAME_MAP };
+  }, [managersQuery.data]);
   // Get vendedores for a specific gestor from Maxiprod data
   const getVendedoresForGestor = (gestorName: string): string[] => {
     if (!representantesQuery.data) return [];
     const gestores = representantesQuery.data.gestores as GestorGroup[];
-    const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
+    const maxiprodName = dynamicNameMap[gestorName] || GESTOR_NAME_MAP[gestorName] || gestorName;
     const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
     const normalized = maxiprodName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
@@ -3026,6 +3081,8 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
         }}
         isFetching={representantesQuery.isFetching}
         filterGestorName={autoExpandName}
+        gestorCards={dynamicGestorCards}
+        maxiprodNameMap={dynamicNameMap}
       />
     </main>
   );
@@ -3037,16 +3094,29 @@ export function GestaoComercialFull() {
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
   });
-
   const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
     staleTime: 30 * 1000,
   });
-
+  // Dynamic gestor cards from DB
+  const managersQuery = trpc.sales.listSalesManagers.useQuery(undefined, { staleTime: 60 * 1000 });
+  const { dynamicGestorCards, dynamicNameMap } = useMemo(() => {
+    if (!managersQuery.data || managersQuery.data.length === 0) return { dynamicGestorCards: GESTOR_CARDS, dynamicNameMap: GESTOR_NAME_MAP };
+    const cards: GestorCard[] = managersQuery.data.filter((m: any) => m.active !== false).map((m: any) => ({
+      name: m.name.toUpperCase(),
+      role: m.role === "sub-gestor" ? "Sub-gestor" as const : "Gestor" as const,
+      parentGestor: m.parentManagerId ? managersQuery.data.find((p: any) => p.id === m.parentManagerId)?.name?.toUpperCase() : undefined,
+    }));
+    const nameMap: Record<string, string> = {};
+    managersQuery.data.filter((m: any) => m.active !== false).forEach((m: any) => {
+      nameMap[m.name.toUpperCase()] = (m.maxiprodName || m.name).toUpperCase();
+    });
+    return { dynamicGestorCards: cards.length > 0 ? cards : GESTOR_CARDS, dynamicNameMap: Object.keys(nameMap).length > 0 ? nameMap : GESTOR_NAME_MAP };
+  }, [managersQuery.data]);
   // Get vendedores for a specific gestor from Maxiprod data
   const getVendedoresForGestor = (gestorName: string): string[] => {
     if (!representantesQuery.data) return [];
     const gestores = representantesQuery.data.gestores as GestorGroup[];
-    const maxiprodName = GESTOR_NAME_MAP[gestorName] || gestorName;
+    const maxiprodName = dynamicNameMap[gestorName] || GESTOR_NAME_MAP[gestorName] || gestorName;
     const grupo = gestores.find(g => g.gestor.toUpperCase() === maxiprodName.toUpperCase());
     if (grupo) return grupo.vendedores;
     const normalized = maxiprodName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
@@ -3077,7 +3147,7 @@ export function GestaoComercialFull() {
           {/* Exportar Maxiprod button */}
           {hasGranularAccess("gc.exportarMaxiprod") && <ExportMaxiprodButton />}
         </div>
-        {/* Content - only Gestores panel */}
+                {/* Content - only Gestores panel */}
         <GestoresTab
           getVendedoresForGestor={getVendedoresForGestor}
           permissions={permissionsQuery.data || []}
@@ -3089,8 +3159,9 @@ export function GestaoComercialFull() {
             permissionsQuery.refetch();
           }}
           isFetching={representantesQuery.isFetching}
+          gestorCards={dynamicGestorCards}
+          maxiprodNameMap={dynamicNameMap}
         />
-
         {/* Serasa - Métricas de Consultas */}
         {hasGranularAccess("gc.consultaSerasa") && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-6">

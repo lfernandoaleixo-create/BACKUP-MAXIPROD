@@ -2014,6 +2014,9 @@ export type InsertPaymentCalendarTick = typeof paymentCalendarTicks.$inferInsert
 export const salesManagers = mysqlTable("sales_managers", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
+  role: varchar("role", { length: 20 }).default("gestor").notNull(), // 'gestor' | 'sub-gestor'
+  parentManagerId: int("parent_manager_id"), // FK para sales_managers.id (para sub-gestores)
+  maxiprodName: varchar("maxiprod_name", { length: 200 }), // Nome no Maxiprod (pode diferir do name)
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
