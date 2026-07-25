@@ -6071,3 +6071,5 @@
 - [x] QC Card: PO (Mar) puxar das POs pendentes quando tiver produto 00648/variações chegando (qtd + datas)
 - [x] QC Card: destacar coluna "Disponível para Venda" com fundo verde claro e números grandes/bold (estilo do segundo print)
 - [x] QC Card: renomear cabeçalho "Disponível" para "Disponível para Venda"
+- [x] QC Card: adicionar linhas de divisão verticais entre as colunas da tabela (igual cards de estoque)
+- [x] Histórico: mover controle de visibilidade para aba Configurações > Visibilidade com toggles por card (Estoque, Queijo, Semi Pronto, Aguardando)

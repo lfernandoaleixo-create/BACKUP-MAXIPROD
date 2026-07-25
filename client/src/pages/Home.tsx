@@ -2943,12 +2943,13 @@ function AutoFeedReportModal({ open, onClose }: { open: boolean; onClose: () => 
 }
 
 /* --- Madeira PA Card (estoque editável com senha e histórico - SOMENTE AUMENTO) --- */
-function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySalesData }: {
+function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySalesData, showHistoryBtn = true }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
   pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
   monthlySalesData?: MonthlySalesData;
+  showHistoryBtn?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
@@ -3126,12 +3127,14 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
-              className="p-1.5 rounded-lg hover:bg-green-100 transition-colors" title="Histórico de alterações"
-            >
-              <History className="w-4 h-4 text-green-600" />
-            </button>
+            {showHistoryBtn && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
+                className="p-1.5 rounded-lg hover:bg-green-100 transition-colors" title="Histórico de alterações"
+              >
+                <History className="w-4 h-4 text-green-600" />
+              </button>
+            )}
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
@@ -3368,10 +3371,12 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         </td>
                         {/* Histórico */}
                         <td className="py-2 px-0.5 text-center">
-                          <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
-                            className="p-0.5 rounded hover:bg-green-50 transition-colors" title="Histórico deste item">
-                            <History className="w-3.5 h-3.5 text-slate-400 hover:text-green-600" />
-                          </button>
+                          {showHistoryBtn && (
+                            <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
+                              className="p-0.5 rounded hover:bg-green-50 transition-colors" title="Histórico deste item">
+                              <History className="w-3.5 h-3.5 text-slate-400 hover:text-green-600" />
+                            </button>
+                          )}
                         </td>
                         {/* Pedidos */}
                         <td className="px-1.5 py-2 text-center whitespace-nowrap">
@@ -3772,12 +3777,13 @@ function AguardandoValorizacaoInline({
 }
 
 /* --- Semi Pronto Card (estoque editável com senha e histórico) --- */
-function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }: {
+function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx, showHistoryBtn = true }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
   madeiraVisData?: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> };
   operatorCtx?: ReturnType<typeof useOperator>;
+  showHistoryBtn?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [showValorizacao, setShowValorizacao] = useState(false);
@@ -3894,12 +3900,14 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
-              className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors" title="Histórico de alterações"
-            >
-              <History className="w-4 h-4 text-amber-600" />
-            </button>
+            {showHistoryBtn && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
+                className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors" title="Histórico de alterações"
+              >
+                <History className="w-4 h-4 text-amber-600" />
+              </button>
+            )}
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
@@ -4020,10 +4028,12 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
                         )}
                       </td>
                       <td className="py-2 px-1">
-                        <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
-                          className="p-1 rounded hover:bg-amber-50 transition-colors" title="Histórico deste item">
-                          <History className="w-3.5 h-3.5 text-slate-400 hover:text-amber-600" />
-                        </button>
+                        {showHistoryBtn && (
+                          <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
+                            className="p-1 rounded hover:bg-amber-50 transition-colors" title="Histórico deste item">
+                            <History className="w-3.5 h-3.5 text-slate-400 hover:text-amber-600" />
+                          </button>
+                        )}
                       </td>
                       <td className="py-2 px-2 text-right">
                         <span className={`text-sm font-semibold ${pedidosVal > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
@@ -4047,12 +4057,13 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
   );
 }
 
-function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }: {
+function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx, showHistoryBtn = true }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
   madeiraVisData?: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> };
   operatorCtx?: ReturnType<typeof useOperator>;
+  showHistoryBtn?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [showValorizacao, setShowValorizacao] = useState(false);
@@ -4169,12 +4180,14 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
-              className="p-1.5 rounded-lg hover:bg-purple-100 transition-colors" title="Histórico de alterações"
-            >
-              <History className="w-4 h-4 text-purple-600" />
-            </button>
+            {showHistoryBtn && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
+                className="p-1.5 rounded-lg hover:bg-purple-100 transition-colors" title="Histórico de alterações"
+              >
+                <History className="w-4 h-4 text-purple-600" />
+              </button>
+            )}
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
@@ -4296,10 +4309,12 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
                         )}
                       </td>
                       <td className="py-2 px-1">
-                        <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
-                          className="p-1 rounded hover:bg-purple-50 transition-colors" title="Histórico deste item">
-                          <History className="w-3.5 h-3.5 text-slate-400 hover:text-purple-600" />
-                        </button>
+                        {showHistoryBtn && (
+                          <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
+                            className="p-1 rounded hover:bg-purple-50 transition-colors" title="Histórico deste item">
+                            <History className="w-3.5 h-3.5 text-slate-400 hover:text-purple-600" />
+                          </button>
+                        )}
                       </td>
                       <td className="py-2 px-2 text-right">
                         <span className={`text-sm font-semibold ${pedidosVal > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
@@ -4326,7 +4341,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
 /* --- Queijo Coalho (Palitos Premium) Section --- */
 const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
 
-function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
+function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { items: StockItem[]; showHistory?: boolean }) {
   const [isOpen, setIsOpen] = useState(true);
   const [editingCell, setEditingCell] = useState<{ codigo: string; campo: string } | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -4605,12 +4620,14 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                   <Unlock className="w-4 h-4 text-emerald-600" />
                 </button>
               )}
-              <button
-                onClick={(e) => { e.stopPropagation(); setHistoryFilter(undefined); setShowHistory(true); }}
-                className="p-1.5 rounded-lg hover:bg-orange-100 transition-colors" title="Histórico"
-              >
-                <History className="w-4 h-4 text-orange-600" />
-              </button>
+              {showHistoryBtn && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setHistoryFilter(undefined); setShowHistory(true); }}
+                  className="p-1.5 rounded-lg hover:bg-orange-100 transition-colors" title="Histórico"
+                >
+                  <History className="w-4 h-4 text-orange-600" />
+                </button>
+              )}
               {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
             </div>
           </div>
@@ -4619,46 +4636,46 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
         {/* Table */}
         {isOpen && (
           <div className="px-2 md:px-4 pb-4 overflow-x-auto">
-            <table className="w-full text-xs md:text-sm">
+            <table className="w-full text-xs md:text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-600">
-                  <th className="text-left py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Produto</th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-left py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">Produto</th>
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       Est. Maxiprod
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <Ship className="w-3 h-3 text-blue-500" />
                       PO (Mar)
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <TrendingUp className="w-3 h-3 text-indigo-500" />
                       Projetado
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <Package className="w-3 h-3 text-teal-500" />
                       Processado
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <ShoppingCart className="w-3 h-3 text-rose-500" />
                       Ped. Venda
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/30">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/30 border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                       Disp. p/ Venda
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <Scale className="w-3 h-3 text-purple-500" />
                       Regulador
@@ -4672,7 +4689,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                   <React.Fragment key={row.codigoItem}>
                   <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                     {/* Produto */}
-                    <td className="py-2 px-1 md:px-2" style={{ minWidth: '220px' }}>
+                    <td className="py-2 px-1 md:px-2 border-r border-slate-200 dark:border-slate-600" style={{ minWidth: '220px' }}>
                       <div className="flex items-start gap-1">
                         {hasVariants && (
                           <button
@@ -4695,7 +4712,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       </div>
                     </td>
                     {/* Estoque Maxiprod (editable by Maria) */}
-                    <td className="py-2 px-1 md:px-2 text-center">
+                    <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
                         <input
                           ref={inputRef}
@@ -4720,7 +4737,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       )}
                     </td>
                     {/* PO (Mar) - POCell style with tooltip */}
-                    <td className="py-2 px-1 md:px-2 text-center">
+                    <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {row.poCx > 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -4798,13 +4815,13 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       )}
                     </td>
                     {/* Projetado */}
-                    <td className="py-2 px-1 md:px-2 text-center">
+                    <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       <span className="text-sm font-semibold text-indigo-700">
                         {formatNumber(row.estoqueProjetado, true)} cx
                       </span>
                     </td>
                     {/* Processado (editable by Maria) */}
-                    <td className="py-2 px-1 md:px-2 text-center">
+                    <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_processado" ? (
                         <input
                           ref={inputRef}
@@ -4829,19 +4846,19 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       )}
                     </td>
                     {/* Pedidos de Venda */}
-                    <td className="py-2 px-1 md:px-2 text-center">
+                    <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       <span className={`text-sm font-medium ${row.pedidosCx > 0 ? "text-rose-700" : "text-slate-400"}`}>
                         {row.pedidosCx > 0 ? `${formatNumber(row.pedidosCx, true)} cx` : "—"}
                       </span>
                     </td>
                     {/* Disponível para Venda */}
-                    <td className="py-2 px-1 md:px-2 text-center bg-emerald-50 dark:bg-emerald-900/20">
+                    <td className="py-2 px-1 md:px-2 text-center bg-emerald-50 dark:bg-emerald-900/20 border-r border-slate-200 dark:border-slate-600">
                       <span className={`text-base font-extrabold ${row.disponivelVenda < 0 ? "text-red-600" : row.disponivelVenda === 0 ? "text-slate-400" : "text-emerald-700"}`}>
                         {row.disponivelVenda !== 0 ? `${formatNumber(row.disponivelVenda, true)} cx` : "—"}
                       </span>
                     </td>
                     {/* Estoque Regulador (editable) */}
-                    <td className="py-2 px-1 md:px-2 text-center">
+                    <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_regulador" ? (
                         <input
                           ref={inputRef}
@@ -4875,7 +4892,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                   {/* Expandable variant rows */}
                   {hasVariants && isExpanded && variantRows.map((variant) => (
                     <tr key={`${row.codigoItem}-${variant.codigoItem}`} className="bg-orange-50/30 border-l-4 border-orange-300 border-b border-slate-100">
-                      <td className="py-1.5 px-1 md:px-2 pl-6 md:pl-8" style={{ minWidth: '220px' }}>
+                      <td className="py-1.5 px-1 md:px-2 pl-6 md:pl-8 border-r border-slate-200 dark:border-slate-600" style={{ minWidth: '220px' }}>
                         <div>
                           <span className="text-slate-600 dark:text-slate-300 text-[10px] md:text-xs break-words">
                             └ {variant.descricaoItem}
@@ -4886,7 +4903,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                         </div>
                       </td>
                       {/* Maxiprod - variant */}
-                      <td className="py-1.5 px-1 md:px-2 text-center">
+                      <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
                             className="w-16 text-center text-xs border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400" />
@@ -4901,11 +4918,11 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                         )}
                       </td>
                       {/* PO - variant (empty) */}
-                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-xs text-slate-400">—</span></td>
+                      <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600"><span className="text-xs text-slate-400">—</span></td>
                       {/* Projetado - variant (empty) */}
-                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-xs text-slate-400">—</span></td>
+                      <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600"><span className="text-xs text-slate-400">—</span></td>
                       {/* Processado - variant */}
-                      <td className="py-1.5 px-1 md:px-2 text-center">
+                      <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_processado" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
                             className="w-16 text-center text-xs border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400" />
@@ -4920,20 +4937,20 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                         )}
                       </td>
                       {/* Pedidos - variant */}
-                      <td className="py-1.5 px-1 md:px-2 text-center">
+                      <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                         <span className={`text-xs font-medium ${variant.pedidosCx > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                           {variant.pedidosCx > 0 ? `${formatNumber(variant.pedidosCx, true)} cx` : '—'}
                         </span>
                       </td>
                       {/* Disponível - variant */}
-                      <td className="py-1.5 px-1 md:px-2 text-center bg-emerald-50/50 dark:bg-emerald-900/10">
+                      <td className="py-1.5 px-1 md:px-2 text-center bg-emerald-50/50 dark:bg-emerald-900/10 border-r border-slate-200 dark:border-slate-600">
                         {(() => {
                           const disp = variant.estoqueProcessado - variant.pedidosCx;
                           return <span className={`text-sm font-bold ${disp < 0 ? 'text-red-600' : disp > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>{disp !== 0 ? `${formatNumber(disp, true)} cx` : '—'}</span>;
                         })()}
                       </td>
                       {/* Regulador - variant */}
-                      <td className="py-1.5 px-1 md:px-2 text-center">
+                      <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_regulador" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
                             className="w-16 text-center text-xs border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400" />
@@ -4955,14 +4972,14 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                 ))}
                 {/* Totals row */}
                 <tr className="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 font-bold">
-                  <td className="py-2 px-1 md:px-2 text-sm text-slate-700 dark:text-slate-200">TOTAL</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-orange-700">{formatNumber(totals.maxiprod, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700">{formatNumber(totals.po, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700">{formatNumber(totals.projetado, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-teal-700">{formatNumber(totals.processado, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-rose-700">{formatNumber(totals.pedidos, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-base font-extrabold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">{formatNumber(totals.disponivel, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-purple-700">{formatNumber(totals.regulador, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-sm text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-600">TOTAL</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-orange-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.maxiprod, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.po, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.projetado, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-teal-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.processado, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-rose-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.pedidos, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-base font-extrabold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.disponivel, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-purple-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.regulador, true)} cx</td>
                   <td className="py-2 px-1 md:px-2"></td>
                 </tr>
               </tbody>
@@ -5046,6 +5063,18 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
   // Fetch madeira visibility settings
   const { data: madeiraVisData } = trpc.settings.getMadeiraVisibility.useQuery();
+
+  // Fetch history visibility toggles
+  const { data: histEstoque } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_estoque" });
+  const { data: histQueijo } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_queijo" });
+  const { data: histSemiPronto } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_semi_pronto" });
+  const { data: histAguardando } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_aguardando" });
+  const historyVisible = {
+    estoque: histEstoque?.enabled !== false, // default true
+    queijo: histQueijo?.enabled !== false,
+    semiPronto: histSemiPronto?.enabled !== false,
+    aguardando: histAguardando?.enabled !== false,
+  };
 
   // Fetch avg sales prices for valuation
   const { data: pricesData } = trpc.dashboard.getAvgSalesPrices.useQuery(undefined, {
@@ -5663,7 +5692,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       {showIndustrializedBaixa && <IndustrializedBaixaDialog open={showIndustrializedBaixa} onClose={() => setShowIndustrializedBaixa(false)} />}
 
       {/* ═══ SEÇÃO QUEIJO COALHO (PALITOS PREMIUM) ═══ */}
-      <QueijoCoalhoSection items={items} />
+      <QueijoCoalhoSection items={items} showHistory={historyVisible.queijo} />
       {/* 3 Classification Cards */}
       <ClassificationCard
         title="Estoque"
@@ -5886,6 +5915,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         onToggle={() => toggleCard("madeira")}
         pricingOverrides={pricingOverrides ?? undefined}
         monthlySalesData={monthlySalesData}
+        showHistoryBtn={historyVisible.estoque}
       />
 
       <SemiProntoCard
@@ -5894,6 +5924,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         onToggle={() => toggleCard("semiPronto")}
         madeiraVisData={madeiraVisData}
         operatorCtx={operatorCtx}
+        showHistoryBtn={historyVisible.semiPronto}
       />
 
       <AguardandoEscolhaCard
@@ -5902,6 +5933,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         onToggle={() => toggleCard("aguardandoEscolha")}
         madeiraVisData={madeiraVisData}
         operatorCtx={operatorCtx}
+        showHistoryBtn={historyVisible.aguardando}
       />
 
     </div>

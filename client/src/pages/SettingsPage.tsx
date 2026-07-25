@@ -462,6 +462,10 @@ function AlertSettingsPanel({ adminPassword }: { adminPassword: string }) {
 // ─── Feature Toggles Panel ────────────────────────────────────
 const FEATURE_TOGGLES = [
   { key: "vendas_a_faturar_completo", label: "A Faturar (Completo)", description: "Exibir card 'A Faturar (Completo)' na aba Vendas com todos os pedidos dos últimos 90 dias" },
+  { key: "historico_estoque", label: "Histórico — Estoque (Madeira)", description: "Exibir botão de histórico de alterações no card Estoque Madeira" },
+  { key: "historico_queijo", label: "Histórico — Queijo Coalho", description: "Exibir botão de histórico de alterações no card Queijo Coalho" },
+  { key: "historico_semi_pronto", label: "Histórico — Semi Pronto", description: "Exibir botão de histórico de alterações no card Semi Pronto" },
+  { key: "historico_aguardando", label: "Histórico — Aguardando Escolha", description: "Exibir botão de histórico de alterações no card Aguardando Escolha" },
 ];
 
 function FeatureTogglesPanel() {
