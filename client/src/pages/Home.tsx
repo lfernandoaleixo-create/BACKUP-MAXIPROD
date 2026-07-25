@@ -4392,7 +4392,9 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     // Parent row
     const parentStock = qcStockMap.get(parentItem.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
     const parentPo = parentItem.poCx ?? 0;
-    const parentPedidos = parentItem.pedidosCx ?? 0;
+    // Sum variant pedidos directly (stockProcessor's aggregation is broken for this product
+    // because variants are in CX but parent is in UN with fator=5000)
+    const parentPedidos = (parentItem.variants || []).reduce((sum, v) => sum + (v.pedidosCx ?? 0), 0);
     const parentProjetado = parentPo + parentStock.maxiprod;
     const parentDisponivel = parentStock.processado - parentPedidos;
     let parentStatus: "verde" | "amarelo" | "vermelho" = "verde";
@@ -4805,8 +4807,13 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                           {variant.pedidosCx > 0 ? `${formatNumber(variant.pedidosCx, true)} cx` : '—'}
                         </span>
                       </td>
-                      {/* Disponível - variant (empty) */}
-                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-[10px] text-slate-400">—</span></td>
+                      {/* Disponível - variant */}
+                      <td className="py-1.5 px-1 md:px-2 text-center">
+                        {(() => {
+                          const disp = variant.estoqueProcessado - variant.pedidosCx;
+                          return <span className={`text-[10px] font-medium ${disp < 0 ? 'text-red-600' : disp > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{disp !== 0 ? `${formatNumber(disp, true)} cx` : '—'}</span>;
+                        })()}
+                      </td>
                       {/* Regulador - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_regulador" ? (
@@ -4969,10 +4976,12 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     if (i.grupo === "industrializacao") return false;
     // Excluir itens "outros" - eles vão no card Estoque E-Commerce
     if (i.grupo === "outros") return false;
+    // Excluir Queijo Coalho (00648 + variações) - tem card exclusivo
+    if (QUEIJO_COALHO_CODES.includes(i.codigoItem)) return false;
     return c === "estoque" || !c || c === "outros";
   }), [items, classificationMap]);
-  const ecommerceItems = useMemo(() => items.filter(i => i.grupo === "outros"), [items]);
-  const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda"), [items, classificationMap]);
+  const ecommerceItems = useMemo(() => items.filter(i => i.grupo === "outros" && !QUEIJO_COALHO_CODES.includes(i.codigoItem)), [items]);
+  const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda" && !QUEIJO_COALHO_CODES.includes(i.codigoItem)), [items, classificationMap]);
 
   // Build madeira visibility map
   const madeiraVisMap = useMemo(() => {
@@ -5004,7 +5013,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     return !vis || vis.aguardandoEscolha;
   }), [allMadeiraItems, madeiraVisMap]);
 
-  const revendaItems = useMemo(() => items.filter((i) => i.grupo === "importacao_revenda"), [items]);
+  const revendaItems = useMemo(() => items.filter((i) => i.grupo === "importacao_revenda" && !QUEIJO_COALHO_CODES.includes(i.codigoItem)), [items]);
   const industItems = useMemo(() => items.filter((i) => i.grupo === "industrializacao"), [items]);
   const mpItems = useMemo(() => items.filter((i) => i.grupo === "importacao_mp"), [items]);
 
@@ -5021,7 +5030,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
   // Totais gerais: apenas importação (revenda + MP), exclui industrialização (madeira) e "outros" (e-commerce)
   // IMPORTANTE: excluir filhos (isChild) para não duplicar estoque de variações PC já somadas no mãe
-  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao" && i.grupo !== "outros" && !i.isChild), [items]);
+  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao" && i.grupo !== "outros" && !i.isChild && !QUEIJO_COALHO_CODES.includes(i.codigoItem)), [items]);
   const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   // Pedidos de venda: soma APENAS produtos de importação (excluir industrialização/madeira)
   // Industrialização tem seus próprios pedidos na seção Madeira Produto Acabado
