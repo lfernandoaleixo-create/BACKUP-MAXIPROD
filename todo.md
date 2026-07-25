@@ -6069,3 +6069,5 @@
 - [x] QC Card: Maria só pode editar Estoque Maxiprod; Guilherme pode editar tudo (Maxiprod, Processado, Regulador)
 - [x] QC Card: aumentar tamanho dos números + adicionar "cx" na frente de todos os valores
 - [x] QC Card: PO (Mar) puxar das POs pendentes quando tiver produto 00648/variações chegando (qtd + datas)
+- [x] QC Card: destacar coluna "Disponível para Venda" com fundo verde claro e números grandes/bold (estilo do segundo print)
+- [x] QC Card: renomear cabeçalho "Disponível" para "Disponível para Venda"

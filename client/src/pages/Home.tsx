@@ -4652,10 +4652,10 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       Ped. Venda
                     </span>
                   </th>
-                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <th className="text-center py-2 px-1 md:px-2 font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/30">
                     <span className="flex items-center justify-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                      Disponível
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Disp. p/ Venda
                     </span>
                   </th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
@@ -4835,8 +4835,8 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       </span>
                     </td>
                     {/* Disponível para Venda */}
-                    <td className="py-2 px-1 md:px-2 text-center">
-                      <span className={`text-sm font-bold ${row.disponivelVenda < 0 ? "text-red-600" : row.disponivelVenda === 0 ? "text-slate-400" : "text-emerald-700"}`}>
+                    <td className="py-2 px-1 md:px-2 text-center bg-emerald-50 dark:bg-emerald-900/20">
+                      <span className={`text-base font-extrabold ${row.disponivelVenda < 0 ? "text-red-600" : row.disponivelVenda === 0 ? "text-slate-400" : "text-emerald-700"}`}>
                         {row.disponivelVenda !== 0 ? `${formatNumber(row.disponivelVenda, true)} cx` : "—"}
                       </span>
                     </td>
@@ -4926,10 +4926,10 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                         </span>
                       </td>
                       {/* Disponível - variant */}
-                      <td className="py-1.5 px-1 md:px-2 text-center">
+                      <td className="py-1.5 px-1 md:px-2 text-center bg-emerald-50/50 dark:bg-emerald-900/10">
                         {(() => {
                           const disp = variant.estoqueProcessado - variant.pedidosCx;
-                          return <span className={`text-xs font-medium ${disp < 0 ? 'text-red-600' : disp > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{disp !== 0 ? `${formatNumber(disp, true)} cx` : '—'}</span>;
+                          return <span className={`text-sm font-bold ${disp < 0 ? 'text-red-600' : disp > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>{disp !== 0 ? `${formatNumber(disp, true)} cx` : '—'}</span>;
                         })()}
                       </td>
                       {/* Regulador - variant */}
@@ -4961,7 +4961,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700">{formatNumber(totals.projetado, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-teal-700">{formatNumber(totals.processado, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-rose-700">{formatNumber(totals.pedidos, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-emerald-700">{formatNumber(totals.disponivel, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-base font-extrabold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">{formatNumber(totals.disponivel, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-purple-700">{formatNumber(totals.regulador, true)} cx</td>
                   <td className="py-2 px-1 md:px-2"></td>
                 </tr>
