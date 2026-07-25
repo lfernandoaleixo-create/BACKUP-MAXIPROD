@@ -781,11 +781,21 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("DB not available");
 
-        // Validação de senha para estoque_maxiprod e estoque_processado (apenas Maria)
-        if (input.campo === "estoque_maxiprod" || input.campo === "estoque_processado") {
-          if (!input.senha || input.senha.toLowerCase() !== "maria") {
-            return { success: false, error: "senha_incorreta" };
-          }
+        // Validação de acesso:
+        // - Maria: só pode editar estoque_maxiprod
+        // - Guilherme: pode editar tudo (maxiprod, processado, regulador)
+        // - Ninguém mais tem acesso à edição manual
+        const senhaLower = (input.senha || "").toLowerCase();
+        const isMaria = senhaLower === "maria";
+        const isGuilherme = senhaLower === "guilherme";
+        
+        if (!isMaria && !isGuilherme) {
+          return { success: false, error: "senha_incorreta" };
+        }
+        
+        // Maria só pode editar estoque_maxiprod
+        if (isMaria && input.campo !== "estoque_maxiprod") {
+          return { success: false, error: "sem_permissao" };
         }
 
         // Get current value

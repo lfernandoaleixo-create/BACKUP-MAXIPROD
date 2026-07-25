@@ -6064,3 +6064,8 @@
 - [x] Queijo Coalho: mover para primeiro card na Importação + usar mesmo layout dos outros cards (descrição completa, variações recolhíveis)
 - [x] Queijo Coalho: corrigir pedidos de venda (valores errados, deveria ser ~5 cx total)
 - [x] Queijo Coalho: remover 00648 e variações do card de estoque normal (já tem card exclusivo)
+- [x] QC Card: modal de senha genérico (não revelar "Maria") - pedir apenas "Digite sua senha"
+- [x] QC Card: lápis de edição visível apenas após autenticação com senha Maria ou Guilherme
+- [x] QC Card: Maria só pode editar Estoque Maxiprod; Guilherme pode editar tudo (Maxiprod, Processado, Regulador)
+- [x] QC Card: aumentar tamanho dos números + adicionar "cx" na frente de todos os valores
+- [x] QC Card: PO (Mar) puxar das POs pendentes quando tiver produto 00648/variações chegando (qtd + datas)

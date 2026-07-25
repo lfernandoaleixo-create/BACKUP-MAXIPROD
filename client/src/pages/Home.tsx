@@ -52,6 +52,7 @@ import {
   Boxes,
   ClipboardList,
   Lock,
+  Unlock,
   Eye,
   EyeOff,
   TreePine,
@@ -4334,6 +4335,9 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
   const [showHistory, setShowHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<string | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Auth state: only Maria/Guilherme see edit buttons after authenticating
+  const [qcAuth, setQcAuth] = useState<{ role: "maria" | "guilherme" } | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Fetch queijo coalho stock data
   const { data: qcStockData } = trpc.dashboard.getQueijoCoalhoStock.useQuery(undefined, { refetchInterval: 30000 });
@@ -4380,6 +4384,8 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
       descricaoItem: string;
       estoqueMaxiprod: number;
       poCx: number;
+      poLotes: POLote[];
+      poFornecedores: string[];
       estoqueProjetado: number;
       estoqueProcessado: number;
       pedidosCx: number;
@@ -4412,6 +4418,8 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
       descricaoItem: parentItem.descricaoItem,
       estoqueMaxiprod: parentStock.maxiprod,
       poCx: parentPo,
+      poLotes: parentItem.poLotes || [],
+      poFornecedores: parentItem.poFornecedores || [],
       estoqueProjetado: parentProjetado,
       estoqueProcessado: parentStock.processado,
       pedidosCx: parentPedidos,
@@ -4463,49 +4471,58 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     });
   };
 
+  // Authenticate to unlock edit buttons
+  const handleAuthConfirm = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower === "maria") {
+      setQcAuth({ role: "maria" });
+      setShowAuthModal(false);
+      toast.success("Acesso liberado");
+    } else if (lower === "guilherme") {
+      setQcAuth({ role: "guilherme" });
+      setShowAuthModal(false);
+      toast.success("Acesso liberado");
+    } else {
+      toast.error("Senha incorreta");
+      setShowAuthModal(false);
+    }
+  };
+
   const handleStartEdit = (codigo: string, campo: string) => {
-    if (campo === "estoque_maxiprod" || campo === "estoque_processado") {
-      setPendingEdit({ codigo, campo });
-      setShowPasswordModal(true);
+    if (!qcAuth) return;
+    // Maria can only edit estoque_maxiprod
+    if (qcAuth.role === "maria" && campo !== "estoque_maxiprod") {
+      toast.error("Sem permissão para editar este campo");
       return;
     }
     const stock = qcStockMap.get(codigo) || { maxiprod: 0, processado: 0, regulador: 0 };
-    const currentVal = campo === "estoque_regulador" ? stock.regulador : stock.processado;
+    let currentVal = 0;
+    if (campo === "estoque_maxiprod") currentVal = stock.maxiprod;
+    else if (campo === "estoque_processado") currentVal = stock.processado;
+    else if (campo === "estoque_regulador") currentVal = stock.regulador;
     setEditingCell({ codigo, campo });
     setEditValue(String(currentVal));
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const handlePasswordConfirm = (name: string) => {
-    if (name.toLowerCase() !== "maria") {
-      toast.error("Apenas Maria pode editar!");
-      setShowPasswordModal(false);
-      setPendingEdit(null);
-      return;
-    }
+    // Legacy - not used anymore
     setShowPasswordModal(false);
-    if (pendingEdit) {
-      const stock = qcStockMap.get(pendingEdit.codigo) || { maxiprod: 0, processado: 0, regulador: 0 };
-      const currentVal = pendingEdit.campo === "estoque_maxiprod" ? stock.maxiprod : stock.processado;
-      setEditingCell(pendingEdit);
-      setEditValue(String(currentVal));
-      setPendingEdit(null);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    setPendingEdit(null);
   };
 
   const handleSave = () => {
-    if (!editingCell) return;
+    if (!editingCell || !qcAuth) return;
     const val = parseNumberBR(editValue) || 0;
-    const isMariaCampo = editingCell.campo === "estoque_maxiprod" || editingCell.campo === "estoque_processado";
-    const operatorName = isMariaCampo ? "Maria" : "Sistema";
+    const operatorName = qcAuth.role === "maria" ? "Maria" : "Guilherme";
+    const senha = operatorName; // senha = nome do operador autenticado
     updateMutation.mutate(
       {
         codigoItem: editingCell.codigo,
         campo: editingCell.campo as "estoque_maxiprod" | "estoque_regulador" | "estoque_processado",
         valor: val,
         operatorName,
-        senha: isMariaCampo ? "Maria" : undefined,
+        senha,
       },
       { onSuccess: () => utils.dashboard.getQueijoCoalhoStock.invalidate() }
     );
@@ -4525,7 +4542,7 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
 
   return (
     <div className="mt-6 md:mt-10">
-      <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEdit(null); }} onConfirm={handlePasswordConfirm} title="Senha Maria" />
+      <PasswordModal open={showAuthModal} onClose={() => setShowAuthModal(false)} onConfirm={handleAuthConfirm} title="Acesso restrito" />
 
       {/* History Dialog */}
       {showHistory && (
@@ -4569,10 +4586,25 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                   <h3 className="text-xs md:text-lg font-bold text-slate-800 dark:text-slate-100">Palitos Premium</h3>
                   <span className="text-[10px] md:text-sm font-extrabold text-orange-700 bg-orange-100 border border-orange-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{1 + variantRows.length} itens</span>
                 </div>
-                <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">Espeto Premium p/ Queijo Coalho — Estoque controlado pela Maria</p>
+                <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">Espeto Premium p/ Queijo Coalho — Estoque exclusivo</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {!qcAuth ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowAuthModal(true); }}
+                  className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors" title="Desbloquear edição"
+                >
+                  <Lock className="w-4 h-4 text-amber-600" />
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setQcAuth(null); setEditingCell(null); }}
+                  className="p-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 transition-colors" title={`Logado: ${qcAuth.role === 'maria' ? 'Maria' : 'Guilherme'} (clique para sair)`}
+                >
+                  <Unlock className="w-4 h-4 text-emerald-600" />
+                </button>
+              )}
               <button
                 onClick={(e) => { e.stopPropagation(); setHistoryFilter(undefined); setShowHistory(true); }}
                 className="p-1.5 rounded-lg hover:bg-orange-100 transition-colors" title="Histórico"
@@ -4593,7 +4625,6 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                   <th className="text-left py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Produto</th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
                     <span className="flex items-center justify-center gap-1">
-                      <Lock className="w-3 h-3 text-orange-500" />
                       Est. Maxiprod
                     </span>
                   </th>
@@ -4613,7 +4644,6 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                     <span className="flex items-center justify-center gap-1">
                       <Package className="w-3 h-3 text-teal-500" />
                       Processado
-                      <Lock className="w-2.5 h-2.5 text-teal-400" />
                     </span>
                   </th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
@@ -4674,29 +4704,103 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={handleKeyDown}
                           onBlur={handleSave}
-                          className="w-16 text-center text-xs border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                          className="w-20 text-center text-sm border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400"
                         />
-                      ) : (
+                      ) : qcAuth ? (
                         <button
                           onClick={() => handleStartEdit(row.codigoItem, "estoque_maxiprod")}
-                          className="inline-flex items-center gap-0.5 text-xs font-semibold text-orange-700 hover:bg-orange-50 rounded px-1.5 py-0.5 transition-colors"
-                          title="Editar (senha Maria)"
+                          className="inline-flex items-center gap-0.5 text-sm font-semibold text-orange-700 hover:bg-orange-50 rounded px-1.5 py-0.5 transition-colors"
+                          title="Editar estoque maxiprod"
                         >
-                          {formatNumber(row.estoqueMaxiprod, true)}
-                          <Pencil className="w-2.5 h-2.5 text-orange-400" />
+                          {formatNumber(row.estoqueMaxiprod, true)} cx
+                          <Pencil className="w-3 h-3 text-orange-400" />
                         </button>
+                      ) : (
+                        <span className="text-sm font-semibold text-orange-700">{formatNumber(row.estoqueMaxiprod, true)} cx</span>
                       )}
                     </td>
-                    {/* PO (Mar) */}
+                    {/* PO (Mar) - POCell style with tooltip */}
                     <td className="py-2 px-1 md:px-2 text-center">
-                      <span className={`text-xs font-medium ${row.poCx > 0 ? "text-blue-700" : "text-slate-400"}`}>
-                        {formatNumber(row.poCx, true)}
-                      </span>
+                      {row.poCx > 0 ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-help inline-block">
+                              <span className="font-semibold text-sm text-blue-600">
+                                {formatNumber(row.poCx, true)} cx
+                              </span>
+                              {row.poLotes.length > 0 && (
+                                <div className="text-[10px] text-blue-400 flex items-center gap-0.5 mt-0.5 justify-center">
+                                  <CalendarDays className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate max-w-[120px]">
+                                    {row.poLotes.length === 1
+                                      ? `${row.poLotes[0].referenciaPO || 'PO'} - ${row.poLotes[0].dataEntrega}`
+                                      : `${row.poLotes.length} POs: ${row.poLotes.map(l => l.referenciaPO || 'PO').join(', ')}`
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl">
+                            <div className="p-3 space-y-2">
+                              <p className="font-semibold text-sm flex items-center gap-1.5">
+                                <Ship className="w-4 h-4 text-blue-500" />
+                                Pedidos de Compra (PO)
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Total: <strong className="text-slate-800">{formatNumber(row.poCx, true)} cx</strong> a receber
+                              </p>
+                              {row.poLotes.length > 0 && (
+                                <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-slate-50 dark:bg-slate-800">
+                                      <tr>
+                                        <th className="px-2 py-1 text-left font-medium">PO</th>
+                                        <th className="px-2 py-1 text-left font-medium">Entrega</th>
+                                        <th className="px-2 py-1 text-right font-medium">Qtd (cx)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                      {row.poLotes.map((lote, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                          <td className="px-2 py-1 font-semibold text-blue-700">
+                                            <span className="flex items-center gap-1">
+                                              {lote.referenciaPO || lote.numeroPedido || "?"}
+                                              {lote.tipoPO === "PROFORMA" && <span className="inline-block w-2 h-2 rounded-full bg-orange-400" title="Proforma - sujeito a alterações" />}
+                                              {lote.tipoPO === "COMERCIAL" && <span className="inline-block w-2 h-2 rounded-full bg-green-500" title="Comercial - confirmado" />}
+                                            </span>
+                                          </td>
+                                          <td className="px-2 py-1 font-medium text-blue-600">
+                                            <div className="flex items-center gap-1">
+                                              <Truck className="w-3 h-3 flex-shrink-0" />
+                                              {lote.dataEntrega || "Sem data"}
+                                            </div>
+                                          </td>
+                                          <td className="px-2 py-1 text-right font-semibold">
+                                            {formatNumber(lote.quantidade)}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                              {row.poFornecedores.length > 0 && (
+                                <p className="text-xs text-slate-500">
+                                  Fornecedor: {row.poFornecedores.join(", ")}
+                                </p>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-sm text-slate-400">—</span>
+                      )}
                     </td>
                     {/* Projetado */}
                     <td className="py-2 px-1 md:px-2 text-center">
-                      <span className="text-xs font-semibold text-indigo-700">
-                        {formatNumber(row.estoqueProjetado, true)}
+                      <span className="text-sm font-semibold text-indigo-700">
+                        {formatNumber(row.estoqueProjetado, true)} cx
                       </span>
                     </td>
                     {/* Processado (editable by Maria) */}
@@ -4709,29 +4813,31 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={handleKeyDown}
                           onBlur={handleSave}
-                          className="w-16 text-center text-xs border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                          className="w-20 text-center text-sm border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400"
                         />
-                      ) : (
+                      ) : (qcAuth && qcAuth.role === "guilherme") ? (
                         <button
                           onClick={() => handleStartEdit(row.codigoItem, "estoque_processado")}
-                          className="inline-flex items-center gap-0.5 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
-                          title="Editar (senha Maria)"
+                          className="inline-flex items-center gap-0.5 text-sm font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
+                          title="Editar processado"
                         >
-                          {formatNumber(row.estoqueProcessado, true)}
-                          <Pencil className="w-2.5 h-2.5 text-teal-400" />
+                          {formatNumber(row.estoqueProcessado, true)} cx
+                          <Pencil className="w-3 h-3 text-teal-400" />
                         </button>
+                      ) : (
+                        <span className="text-sm font-medium text-teal-700">{formatNumber(row.estoqueProcessado, true)} cx</span>
                       )}
                     </td>
                     {/* Pedidos de Venda */}
                     <td className="py-2 px-1 md:px-2 text-center">
-                      <span className={`text-xs font-medium ${row.pedidosCx > 0 ? "text-rose-700" : "text-slate-400"}`}>
-                        {formatNumber(row.pedidosCx, true)}
+                      <span className={`text-sm font-medium ${row.pedidosCx > 0 ? "text-rose-700" : "text-slate-400"}`}>
+                        {row.pedidosCx > 0 ? `${formatNumber(row.pedidosCx, true)} cx` : "—"}
                       </span>
                     </td>
                     {/* Disponível para Venda */}
                     <td className="py-2 px-1 md:px-2 text-center">
-                      <span className={`text-xs font-bold ${row.disponivelVenda < 0 ? "text-red-600" : row.disponivelVenda === 0 ? "text-slate-400" : "text-emerald-700"}`}>
-                        {formatNumber(row.disponivelVenda, true)}
+                      <span className={`text-sm font-bold ${row.disponivelVenda < 0 ? "text-red-600" : row.disponivelVenda === 0 ? "text-slate-400" : "text-emerald-700"}`}>
+                        {row.disponivelVenda !== 0 ? `${formatNumber(row.disponivelVenda, true)} cx` : "—"}
                       </span>
                     </td>
                     {/* Estoque Regulador (editable) */}
@@ -4744,17 +4850,19 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={handleKeyDown}
                           onBlur={handleSave}
-                          className="w-16 text-center text-xs border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                          className="w-20 text-center text-sm border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400"
                         />
-                      ) : (
+                      ) : (qcAuth && qcAuth.role === "guilherme") ? (
                         <button
                           onClick={() => handleStartEdit(row.codigoItem, "estoque_regulador")}
-                          className="inline-flex items-center gap-0.5 text-xs font-medium text-purple-700 hover:bg-purple-50 rounded px-1.5 py-0.5 transition-colors"
+                          className="inline-flex items-center gap-0.5 text-sm font-medium text-purple-700 hover:bg-purple-50 rounded px-1.5 py-0.5 transition-colors"
                           title="Editar regulador"
                         >
-                          {row.estoqueRegulador > 0 ? formatNumber(row.estoqueRegulador, true) : "-"}
-                          <Pencil className="w-2.5 h-2.5 text-purple-400" />
+                          {row.estoqueRegulador > 0 ? `${formatNumber(row.estoqueRegulador, true)} cx` : "—"}
+                          <Pencil className="w-3 h-3 text-purple-400" />
                         </button>
+                      ) : (
+                        <span className="text-sm font-medium text-purple-700">{row.estoqueRegulador > 0 ? `${formatNumber(row.estoqueRegulador, true)} cx` : "—"}</span>
                       )}
                     </td>
                     {/* Status */}
@@ -4781,35 +4889,39 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       <td className="py-1.5 px-1 md:px-2 text-center">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
-                            className="w-14 text-center text-[10px] border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400" />
-                        ) : (
+                            className="w-16 text-center text-xs border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400" />
+                        ) : qcAuth ? (
                           <button onClick={() => handleStartEdit(variant.codigoItem, "estoque_maxiprod")}
-                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-orange-600 hover:bg-orange-50 rounded px-1 py-0.5 transition-colors" title="Editar (senha Maria)">
-                            {variant.estoqueMaxiprod > 0 ? formatNumber(variant.estoqueMaxiprod, true) : "—"}
-                            <Pencil className="w-2 h-2 text-orange-300" />
+                            className="inline-flex items-center gap-0.5 text-xs font-medium text-orange-600 hover:bg-orange-50 rounded px-1 py-0.5 transition-colors" title="Editar estoque maxiprod">
+                            {variant.estoqueMaxiprod > 0 ? `${formatNumber(variant.estoqueMaxiprod, true)} cx` : "—"}
+                            <Pencil className="w-2.5 h-2.5 text-orange-300" />
                           </button>
+                        ) : (
+                          <span className="text-xs font-medium text-orange-600">{variant.estoqueMaxiprod > 0 ? `${formatNumber(variant.estoqueMaxiprod, true)} cx` : "—"}</span>
                         )}
                       </td>
                       {/* PO - variant (empty) */}
-                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-[10px] text-slate-400">—</span></td>
+                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-xs text-slate-400">—</span></td>
                       {/* Projetado - variant (empty) */}
-                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-[10px] text-slate-400">—</span></td>
+                      <td className="py-1.5 px-1 md:px-2 text-center"><span className="text-xs text-slate-400">—</span></td>
                       {/* Processado - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_processado" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
-                            className="w-14 text-center text-[10px] border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400" />
-                        ) : (
+                            className="w-16 text-center text-xs border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400" />
+                        ) : (qcAuth && qcAuth.role === "guilherme") ? (
                           <button onClick={() => handleStartEdit(variant.codigoItem, "estoque_processado")}
-                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-teal-600 hover:bg-teal-50 rounded px-1 py-0.5 transition-colors" title="Editar (senha Maria)">
-                            {variant.estoqueProcessado > 0 ? formatNumber(variant.estoqueProcessado, true) : "—"}
-                            <Pencil className="w-2 h-2 text-teal-300" />
+                            className="inline-flex items-center gap-0.5 text-xs font-medium text-teal-600 hover:bg-teal-50 rounded px-1 py-0.5 transition-colors" title="Editar processado">
+                            {variant.estoqueProcessado > 0 ? `${formatNumber(variant.estoqueProcessado, true)} cx` : "—"}
+                            <Pencil className="w-2.5 h-2.5 text-teal-300" />
                           </button>
+                        ) : (
+                          <span className="text-xs font-medium text-teal-600">{variant.estoqueProcessado > 0 ? `${formatNumber(variant.estoqueProcessado, true)} cx` : "—"}</span>
                         )}
                       </td>
                       {/* Pedidos - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center">
-                        <span className={`text-[10px] font-medium ${variant.pedidosCx > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                        <span className={`text-xs font-medium ${variant.pedidosCx > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                           {variant.pedidosCx > 0 ? `${formatNumber(variant.pedidosCx, true)} cx` : '—'}
                         </span>
                       </td>
@@ -4817,20 +4929,22 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                       <td className="py-1.5 px-1 md:px-2 text-center">
                         {(() => {
                           const disp = variant.estoqueProcessado - variant.pedidosCx;
-                          return <span className={`text-[10px] font-medium ${disp < 0 ? 'text-red-600' : disp > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{disp !== 0 ? `${formatNumber(disp, true)} cx` : '—'}</span>;
+                          return <span className={`text-xs font-medium ${disp < 0 ? 'text-red-600' : disp > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{disp !== 0 ? `${formatNumber(disp, true)} cx` : '—'}</span>;
                         })()}
                       </td>
                       {/* Regulador - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_regulador" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
-                            className="w-14 text-center text-[10px] border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400" />
-                        ) : (
+                            className="w-16 text-center text-xs border border-purple-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-400" />
+                        ) : (qcAuth && qcAuth.role === "guilherme") ? (
                           <button onClick={() => handleStartEdit(variant.codigoItem, "estoque_regulador")}
-                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-purple-600 hover:bg-purple-50 rounded px-1 py-0.5 transition-colors" title="Editar regulador">
-                            {variant.estoqueRegulador > 0 ? formatNumber(variant.estoqueRegulador, true) : "—"}
-                            <Pencil className="w-2 h-2 text-purple-300" />
+                            className="inline-flex items-center gap-0.5 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded px-1 py-0.5 transition-colors" title="Editar regulador">
+                            {variant.estoqueRegulador > 0 ? `${formatNumber(variant.estoqueRegulador, true)} cx` : "—"}
+                            <Pencil className="w-2.5 h-2.5 text-purple-300" />
                           </button>
+                        ) : (
+                          <span className="text-xs font-medium text-purple-600">{variant.estoqueRegulador > 0 ? `${formatNumber(variant.estoqueRegulador, true)} cx` : "—"}</span>
                         )}
                       </td>
                       {/* Status - variant (empty) */}
@@ -4841,14 +4955,14 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
                 ))}
                 {/* Totals row */}
                 <tr className="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 font-bold">
-                  <td className="py-2 px-1 md:px-2 text-xs text-slate-700 dark:text-slate-200">TOTAL</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-orange-700">{formatNumber(totals.maxiprod, true)}</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-blue-700">{formatNumber(totals.po, true)}</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-indigo-700">{formatNumber(totals.projetado, true)}</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-teal-700">{formatNumber(totals.processado, true)}</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-rose-700">{formatNumber(totals.pedidos, true)}</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-emerald-700">{formatNumber(totals.disponivel, true)}</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-xs text-purple-700">{formatNumber(totals.regulador, true)}</td>
+                  <td className="py-2 px-1 md:px-2 text-sm text-slate-700 dark:text-slate-200">TOTAL</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-orange-700">{formatNumber(totals.maxiprod, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700">{formatNumber(totals.po, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700">{formatNumber(totals.projetado, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-teal-700">{formatNumber(totals.processado, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-rose-700">{formatNumber(totals.pedidos, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-emerald-700">{formatNumber(totals.disponivel, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-purple-700">{formatNumber(totals.regulador, true)} cx</td>
                   <td className="py-2 px-1 md:px-2"></td>
                 </tr>
               </tbody>
