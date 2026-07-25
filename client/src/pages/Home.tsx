@@ -4394,7 +4394,12 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     const parentPo = parentItem.poCx ?? 0;
     // Sum variant pedidos directly (stockProcessor's aggregation is broken for this product
     // because variants are in CX but parent is in UN with fator=5000)
-    const parentPedidos = (parentItem.variants || []).reduce((sum, v) => sum + (v.pedidosCx ?? 0), 0);
+    // Para QC: usar quantidadeOriginalCx (total do pedido) ao invés de pedidosCx (total - faturada)
+    // Porque mesmo faturamento parcial compromete todo o estoque
+    const parentPedidos = (parentItem.variants || []).reduce((sum, v) => {
+      const totalOriginal = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
+      return sum + totalOriginal;
+    }, 0);
     const parentProjetado = parentPo + parentStock.maxiprod;
     const parentDisponivel = parentStock.processado - parentPedidos;
     let parentStatus: "verde" | "amarelo" | "vermelho" = "verde";
@@ -4422,7 +4427,8 @@ function QueijoCoalhoSection({ items }: { items: StockItem[] }) {
     if (!parentItem?.variants) return [];
     return parentItem.variants.map(v => {
       const vStock = qcStockMap.get(v.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
-      const vPedidos = v.pedidosCx ?? 0;
+      // Usar quantidadeOriginalCx (total do pedido) - faturamento parcial ainda compromete tudo
+      const vPedidos = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
       return {
         codigoItem: v.codigoItem,
         descricaoItem: v.descricaoItem,
