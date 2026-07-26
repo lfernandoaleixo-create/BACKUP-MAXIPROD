@@ -6076,3 +6076,4 @@
 - [x] Rodonaves: fix TLS/SNI blocking - usar servername vazio no httpsRequest para bypass do Citrix NetScaler
 - [x] Rodonaves: fix response parsing - suportar novo formato (Value/DeliveryTime numéricos) e formato legado (FreightValue string)
 - [x] Rodonaves: IP fallback map para DNS intermitente (01wapi → 150.230.65.150, quotation-apigateway → 200.210.75.41)
+- [x] Criar documentação definitiva das 5 transportadoras em docs/FREIGHT_CARRIERS_REFERENCE.md (credenciais, endpoints, workarounds, cobertura)
