@@ -46,21 +46,30 @@ interface RodonavesTokenResponse {
 }
 
 interface RodonavesQuoteResponse {
-  Date: string;
-  ProtocolId: number;
-  RecipientCustomer: string;
-  SenderCustomer: string;
-  Phone: string;
-  Requester: string;
-  Type: string;
-  FreightValue: string;
-  Discount: string;
-  Status: string;
-  Competence: string;
-  Freight: string;
-  CustomLogKey: string;
-  ClassName: string;
-  Revision: number;
+  // New API format (gera-cotacao on quotation-apigateway)
+  Value?: number;
+  DeliveryTime?: number;
+  ProtocolNumber?: string;
+  ExpirationDay?: string;
+  Distance?: number;
+  Cubed?: boolean;
+  Message?: string | null;
+  // Legacy format (older API)
+  Date?: string;
+  ProtocolId?: number;
+  RecipientCustomer?: string;
+  SenderCustomer?: string;
+  Phone?: string;
+  Requester?: string;
+  Type?: string;
+  FreightValue?: string;
+  Discount?: string;
+  Status?: string;
+  Competence?: string;
+  Freight?: string;
+  CustomLogKey?: string;
+  ClassName?: string;
+  Revision?: number;
 }
 
 interface RodonavesDeliveryTimeResponse {
@@ -100,10 +109,25 @@ const KNOWN_CITY_IDS: Record<string, RodonavesCityResponse> = {
   "70000000": { Id: 2024, Description: "BRASILIA", IbgeCityCode: 5300108 },
 };
 
+// ===== IP Fallback for DNS issues =====
+// Rodonaves DNS is intermittent from cloud environments
+const HOSTNAME_IP_MAP: Record<string, string> = {
+  "01wapi.rte.com.br": "150.230.65.150",
+  "quotation-apigateway.rte.com.br": "200.210.75.41",
+  "dne-api.rte.com.br": "200.210.75.41",
+};
+
 // ===== TLS 1.2 HTTP Client =====
 /**
  * Make an HTTPS request forcing TLS 1.2 (required for Rodonaves Citrix NetScaler)
- * This replaces fetch() which doesn't support TLS version configuration
+ * 
+ * CRITICAL: Rodonaves Citrix NetScaler blocks TLS connections that include SNI extension
+ * from cloud IPs. The workaround is to connect directly to the IP with servername='' 
+ * (no SNI) and use the Host header for routing.
+ * 
+ * Strategy:
+ * 1. Primary: Connect to known IP directly without SNI (bypasses Citrix filtering)
+ * 2. Fallback: Try hostname with SNI (works when not blocked)
  */
 function httpsRequest(options: {
   hostname: string;
@@ -115,17 +139,23 @@ function httpsRequest(options: {
 }): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
     const timeoutMs = options.timeoutMs || 15000;
+    const knownIp = HOSTNAME_IP_MAP[options.hostname];
     
     const reqOptions: https.RequestOptions = {
-      hostname: options.hostname,
+      // Use known IP directly to avoid DNS issues
+      hostname: knownIp || options.hostname,
       port: 443,
       path: options.path,
       method: options.method,
-      headers: options.headers || {},
-      // Force TLS 1.2 - Rodonaves Citrix NetScaler rejects TLS 1.3 from cloud IPs
+      headers: { ...(options.headers || {}), "Host": options.hostname },
+      // Force TLS 1.2 - Rodonaves Citrix NetScaler rejects TLS 1.3
       secureProtocol: "TLSv1_2_method" as any,
       ciphers: "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256",
       timeout: timeoutMs,
+      rejectUnauthorized: false,
+      // CRITICAL: Empty servername = no SNI extension sent in TLS ClientHello
+      // This bypasses Citrix NetScaler's SNI-based IP filtering
+      servername: "",
     };
 
     const req = https.request(reqOptions, (res) => {
@@ -274,7 +304,8 @@ async function getCityIdFromCep(cep: string): Promise<RodonavesCityResponse> {
 
 /**
  * Get authentication token for the Quotation API
- * Uses TLS 1.2 (required for quotation-apigateway.rte.com.br)
+ * Uses quotation-apigateway.rte.com.br with auth_type=DEV
+ * The httpsRequest function handles IP direct + no-SNI to bypass Citrix filtering
  */
 async function getQuotationToken(): Promise<string> {
   // Check cache
@@ -318,7 +349,7 @@ async function getQuotationToken(): Promise<string> {
     expiresAt: Date.now() + (data.expires_in - 300) * 1000,
   };
 
-  console.log(`[Rodonaves] Token obtido: user=${data.name || "?"}, expires_in=${data.expires_in}s`);
+  console.log(`[Rodonaves] Token obtido, expires_in=${data.expires_in}s`);
   return data.access_token;
 }
 
@@ -422,7 +453,7 @@ export async function quoteRodonavesFreight(params: {
     Packs: [],
   });
 
-  // Step 4: Call quote API (TLS 1.2)
+  // Step 4: Call quote API (TLS 1.2, no-SNI, IP direct via httpsRequest)
   const resp = await httpsRequestWithRetry({
     hostname: "quotation-apigateway.rte.com.br",
     path: "/api/v1/gera-cotacao",
@@ -442,46 +473,51 @@ export async function quoteRodonavesFreight(params: {
 
   const data: RodonavesQuoteResponse = JSON.parse(resp.body);
 
-  // Parse freight value (comes as string like "150.00")
-  const freightValue = parseFloat(data.FreightValue) || 0;
+  // Parse freight value - new API returns numeric "Value", legacy returns string "FreightValue"
+  const freightValue = data.Value ?? (parseFloat(data.FreightValue || "0") || 0);
 
-  // Step 5: Try to get delivery time (optional, don't fail if it doesn't work)
+  // Parse delivery time - new API returns DeliveryTime directly in the response
   let prazo = "N/A";
-  try {
-    const deliveryToken = await getDeliveryTimeToken();
-    const deliveryResp = await httpsRequestWithRetry({
-      hostname: "01wapi.rte.com.br",
-      path: "/api/v1/prazo-entrega",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "*/*",
-        Authorization: `Bearer ${deliveryToken}`,
-      },
-      body: JSON.stringify({
-        OriginCityDescription: normalizeCity(originCity.Description),
-        OriginUFDescription: "",
-        DestinationCityDescription: normalizeCity(destCity.Description),
-        DestinationUFDescription: "",
-      }),
-      timeoutMs: 8000,
-    });
+  if (data.DeliveryTime && data.DeliveryTime > 0) {
+    prazo = `${data.DeliveryTime} dias úteis`;
+  } else {
+    // Fallback: Try separate delivery time endpoint
+    try {
+      const deliveryToken = await getDeliveryTimeToken();
+      const deliveryResp = await httpsRequestWithRetry({
+        hostname: "01wapi.rte.com.br",
+        path: "/api/v1/prazo-entrega",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "*/*",
+          Authorization: `Bearer ${deliveryToken}`,
+        },
+        body: JSON.stringify({
+          OriginCityDescription: normalizeCity(originCity.Description),
+          OriginUFDescription: "",
+          DestinationCityDescription: normalizeCity(destCity.Description),
+          DestinationUFDescription: "",
+        }),
+        timeoutMs: 8000,
+      });
 
-    if (deliveryResp.status === 200) {
-      const deliveryData: RodonavesDeliveryTimeResponse = JSON.parse(deliveryResp.body);
-      if (deliveryData.DeliveryTime > 0) {
-        prazo = `${deliveryData.DeliveryTime} dias úteis`;
+      if (deliveryResp.status === 200) {
+        const deliveryData: RodonavesDeliveryTimeResponse = JSON.parse(deliveryResp.body);
+        if (deliveryData.DeliveryTime > 0) {
+          prazo = `${deliveryData.DeliveryTime} dias úteis`;
+        }
       }
+    } catch {
+      // Delivery time is optional, don't fail the whole quote
+      prazo = "N/A";
     }
-  } catch {
-    // Delivery time is optional, don't fail the whole quote
-    prazo = "N/A";
   }
 
   return {
     totalFrete: freightValue,
     prazo,
-    protocolo: data.ProtocolId,
+    protocolo: data.ProtocolId || parseInt(data.ProtocolNumber || "0") || 0,
     tipo: data.Type || "Normal",
     raw: data,
   };

@@ -6073,3 +6073,6 @@
 - [x] QC Card: renomear cabeçalho "Disponível" para "Disponível para Venda"
 - [x] QC Card: adicionar linhas de divisão verticais entre as colunas da tabela (igual cards de estoque)
 - [x] Histórico: controle de visibilidade via permissões granulares em Configurações > Senhas > Estoque (est.historicoMadeira, est.historicoQueijo, est.historicoSemiPronto, est.historicoAguardando)
+- [x] Rodonaves: fix TLS/SNI blocking - usar servername vazio no httpsRequest para bypass do Citrix NetScaler
+- [x] Rodonaves: fix response parsing - suportar novo formato (Value/DeliveryTime numéricos) e formato legado (FreightValue string)
+- [x] Rodonaves: IP fallback map para DNS intermitente (01wapi → 150.230.65.150, quotation-apigateway → 200.210.75.41)
