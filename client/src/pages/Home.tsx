@@ -5064,16 +5064,12 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   // Fetch madeira visibility settings
   const { data: madeiraVisData } = trpc.settings.getMadeiraVisibility.useQuery();
 
-  // Fetch history visibility toggles
-  const { data: histEstoque } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_estoque" });
-  const { data: histQueijo } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_queijo" });
-  const { data: histSemiPronto } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_semi_pronto" });
-  const { data: histAguardando } = trpc.settings.getFeatureToggle.useQuery({ key: "historico_aguardando" });
+  // History visibility controlled by granular permissions (est.historico*)
   const historyVisible = {
-    estoque: histEstoque?.enabled !== false, // default true
-    queijo: histQueijo?.enabled !== false,
-    semiPronto: histSemiPronto?.enabled !== false,
-    aguardando: histAguardando?.enabled !== false,
+    estoque: operatorCtx?.hasGranularAccess("est.historicoMadeira") !== false,
+    queijo: operatorCtx?.hasGranularAccess("est.historicoQueijo") !== false,
+    semiPronto: operatorCtx?.hasGranularAccess("est.historicoSemiPronto") !== false,
+    aguardando: operatorCtx?.hasGranularAccess("est.historicoAguardando") !== false,
   };
 
   // Fetch avg sales prices for valuation
