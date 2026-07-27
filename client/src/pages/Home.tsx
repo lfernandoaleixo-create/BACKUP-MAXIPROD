@@ -4492,7 +4492,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       poFornecedores: string[];
       estoqueProjetado: number;
       estoqueProcessado: number;
+      estoqueProcessadoBruto: number;
       pedidosCx: number;
+      pedidosCxOriginal: number;
       pedidosFaturadosCx: number;
       pedidosPorCliente: PedidoCliente[];
       disponivelVenda: number;
@@ -4507,8 +4509,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     // Sum variant pedidos directly (stockProcessor's aggregation is broken for this product
     // because variants are in CX but parent is in UN with fator=5000)
     // Para QC: usar quantidadeOriginalCx (total do pedido) ao invés de pedidosCx (total - faturada)
-    // Porque mesmo faturamento parcial compromete todo o estoque
-    const parentPedidos = (parentItem.variants || []).reduce((sum, v) => {
+    // Pedidos originais e faturados
+    const parentPedidosOriginal = (parentItem.variants || []).reduce((sum, v) => {
       const totalOriginal = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
       return sum + totalOriginal;
     }, 0);
@@ -4516,8 +4518,13 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       const totalFaturado = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeFaturadaCx || 0), 0);
       return sum + totalFaturado;
     }, 0);
+    // Pedidos pendentes = original - faturados (o que ainda falta entregar)
+    const parentPedidos = parentPedidosOriginal - parentFaturados;
+    // Processado ajustado = processado_db - faturados (o que saiu do estoque)
+    const parentProcessadoAjustado = parentStock.processado - parentFaturados;
     const parentProjetado = parentPo + parentStock.maxiprod;
-    const parentDisponivel = parentStock.processado - parentPedidos;
+    // Disponível = processado ajustado - pedidos pendentes
+    const parentDisponivel = parentProcessadoAjustado - parentPedidos;
     let parentStatus: "verde" | "amarelo" | "vermelho" = "verde";
     if (parentStock.regulador > 0) {
       if (parentDisponivel <= 0) parentStatus = "vermelho";
@@ -4531,8 +4538,10 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       poLotes: parentItem.poLotes || [],
       poFornecedores: parentItem.poFornecedores || [],
       estoqueProjetado: parentProjetado,
-      estoqueProcessado: parentStock.processado,
+      estoqueProcessado: parentProcessadoAjustado,
+      estoqueProcessadoBruto: parentStock.processado,
       pedidosCx: parentPedidos,
+      pedidosCxOriginal: parentPedidosOriginal,
       pedidosFaturadosCx: parentFaturados,
       pedidosPorCliente: (parentItem.variants || []).flatMap(v => (v.pedidosPorCliente || []).filter(pc => pc.quantidadeOriginalCx > 0)),
       disponivelVenda: parentDisponivel,
@@ -4547,18 +4556,23 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     if (!parentItem?.variants) return [];
     return parentItem.variants.map(v => {
       const vStock = qcStockMap.get(v.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
-      // Usar quantidadeOriginalCx (total do pedido) - faturamento parcial ainda compromete tudo
-      const vPedidos = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
+      const vPedidosOriginal = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
       const vFaturados = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeFaturadaCx || 0), 0);
+      // Pedidos pendentes = original - faturados
+      const vPedidos = vPedidosOriginal - vFaturados;
+      // Processado ajustado = processado_db - faturados (saíram do estoque)
+      const vProcessadoAjustado = vStock.processado - vFaturados;
       return {
         codigoItem: v.codigoItem,
         descricaoItem: v.descricaoItem,
         conversionFactor: v.conversionFactor,
         pedidosCx: vPedidos,
+        pedidosCxOriginal: vPedidosOriginal,
         pedidosFaturadosCx: vFaturados,
         pedidosPorCliente: (v.pedidosPorCliente || []).filter(pc => pc.quantidadeOriginalCx > 0),
         estoqueMaxiprod: vStock.maxiprod,
-        estoqueProcessado: vStock.processado,
+        estoqueProcessado: vProcessadoAjustado,
+        estoqueProcessadoBruto: vStock.processado,
         estoqueRegulador: vStock.regulador,
       };
     });
@@ -4570,7 +4584,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     po: rows.reduce((s, r) => s + r.poCx, 0),
     projetado: rows.reduce((s, r) => s + r.estoqueProjetado, 0),
     processado: rows.reduce((s, r) => s + r.estoqueProcessado, 0),
+    processadoBruto: rows.reduce((s, r) => s + r.estoqueProcessadoBruto, 0),
     pedidos: rows.reduce((s, r) => s + r.pedidosCx, 0),
+    pedidosOriginal: rows.reduce((s, r) => s + r.pedidosCxOriginal, 0),
     pedidosFaturados: rows.reduce((s, r) => s + r.pedidosFaturadosCx, 0),
     disponivel: rows.reduce((s, r) => s + r.disponivelVenda, 0),
     regulador: rows.reduce((s, r) => s + r.estoqueRegulador, 0),
@@ -4934,16 +4950,30 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           className="w-20 text-center text-sm border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400"
                         />
                       ) : (qcAuth && qcAuth.role === "guilherme") ? (
-                        <button
-                          onClick={() => handleStartEdit(row.codigoItem, "estoque_processado")}
-                          className="inline-flex items-center gap-0.5 text-sm font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
-                          title="Editar processado"
-                        >
-                          {formatNumber(row.estoqueProcessado, true)} cx
-                          <Pencil className="w-3 h-3 text-teal-400" />
-                        </button>
+                        <div className="flex flex-col items-center">
+                          <button
+                            onClick={() => handleStartEdit(row.codigoItem, "estoque_processado")}
+                            className="inline-flex items-center gap-0.5 text-sm font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
+                            title="Editar processado (valor bruto no DB)"
+                          >
+                            {formatNumber(row.estoqueProcessado, true)} cx
+                            <Pencil className="w-3 h-3 text-teal-400" />
+                          </button>
+                          {row.pedidosFaturadosCx > 0 && (
+                            <span className="text-[9px] text-slate-500 mt-0.5 leading-tight">
+                              ({formatNumber(row.estoqueProcessadoBruto, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-sm font-medium text-teal-700">{formatNumber(row.estoqueProcessado, true)} cx</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-sm font-medium text-teal-700">{formatNumber(row.estoqueProcessado, true)} cx</span>
+                          {row.pedidosFaturadosCx > 0 && (
+                            <span className="text-[9px] text-slate-500 mt-0.5 leading-tight">
+                              ({formatNumber(row.estoqueProcessadoBruto, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
                     {/* Pedidos de Venda */}
@@ -4956,8 +4986,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                 {formatNumber(row.pedidosCx, true)} cx
                               </span>
                               {row.pedidosFaturadosCx > 0 && (
-                                <div className="text-[9px] text-orange-600 font-medium mt-0.5 leading-tight">
-                                  {formatNumber(row.pedidosFaturadosCx, true)} fat. | {formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a fat.
+                                <div className="text-[9px] text-green-600 font-medium mt-0.5 leading-tight">
+                                  ({formatNumber(row.pedidosCxOriginal, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
                                 </div>
                               )}
                             </div>
@@ -4966,12 +4996,12 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                             <div className="p-3 space-y-2">
                               <p className="font-semibold text-sm flex items-center gap-1.5">
                                 <ShoppingCart className="w-4 h-4 text-rose-500" />
-                                Pedidos de Venda
+                                Pedidos de Venda (Pendentes)
                               </p>
                               <p className="text-xs text-slate-500">
-                                Total: <strong className="text-slate-800">{formatNumber(row.pedidosCx, true)} cx</strong>
+                                Pendente: <strong className="text-rose-700">{formatNumber(row.pedidosCx, true)} cx</strong>
                                 {row.pedidosFaturadosCx > 0 && (
-                                  <> — <span className="text-green-600">{formatNumber(row.pedidosFaturadosCx, true)} faturadas</span> | <span className="text-orange-600">{formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a faturar</span></>
+                                  <> (Original: {formatNumber(row.pedidosCxOriginal, true)} — <span className="text-green-600">{formatNumber(row.pedidosFaturadosCx, true)} já faturadas</span>)</>
                                 )}
                               </p>
                               <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
@@ -5016,8 +5046,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                         <div className="flex flex-col items-center">
                           <span className="text-sm font-medium text-rose-700">{formatNumber(row.pedidosCx, true)} cx</span>
                           {row.pedidosFaturadosCx > 0 && (
-                            <span className="text-[9px] text-orange-600 font-medium mt-0.5 leading-tight">
-                              {formatNumber(row.pedidosFaturadosCx, true)} fat. | {formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a fat.
+                            <span className="text-[9px] text-green-600 font-medium mt-0.5 leading-tight">
+                              ({formatNumber(row.pedidosCxOriginal, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
                             </span>
                           )}
                         </div>
@@ -5120,8 +5150,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                   {formatNumber(variant.pedidosCx, true)} cx
                                 </span>
                                 {variant.pedidosFaturadosCx > 0 && (
-                                  <div className="text-[8px] text-orange-600 font-medium mt-0.5 leading-tight">
-                                    {formatNumber(variant.pedidosFaturadosCx, true)} fat. | {formatNumber(variant.pedidosCx - variant.pedidosFaturadosCx, true)} a fat.
+                                  <div className="text-[8px] text-green-600 font-medium mt-0.5 leading-tight">
+                                    ({formatNumber(variant.pedidosCxOriginal, true)} - {formatNumber(variant.pedidosFaturadosCx, true)} fat.)
                                   </div>
                                 )}
                               </div>
@@ -5130,12 +5160,12 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                               <div className="p-3 space-y-2">
                                 <p className="font-semibold text-sm flex items-center gap-1.5">
                                   <ShoppingCart className="w-4 h-4 text-rose-500" />
-                                  Pedidos de Venda
+                                  Pedidos de Venda (Pendentes)
                                 </p>
                                 <p className="text-xs text-slate-500">
-                                  Total: <strong className="text-slate-800">{formatNumber(variant.pedidosCx, true)} cx</strong>
+                                  Pendente: <strong className="text-rose-700">{formatNumber(variant.pedidosCx, true)} cx</strong>
                                   {variant.pedidosFaturadosCx > 0 && (
-                                    <> — <span className="text-green-600">{formatNumber(variant.pedidosFaturadosCx, true)} faturadas</span> | <span className="text-orange-600">{formatNumber(variant.pedidosCx - variant.pedidosFaturadosCx, true)} a faturar</span></>
+                                    <> (Original: {formatNumber(variant.pedidosCxOriginal, true)} — <span className="text-green-600">{formatNumber(variant.pedidosFaturadosCx, true)} já faturadas</span>)</>
                                   )}
                                 </p>
                                 <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
@@ -5223,13 +5253,22 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-orange-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.maxiprod, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.po, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.projetado, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-teal-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.processado, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm font-semibold text-teal-700">{formatNumber(totals.processado, true)} cx</span>
+                      {totals.pedidosFaturados > 0 && (
+                        <span className="text-[8px] text-slate-500 font-medium mt-0.5">
+                          ({formatNumber(totals.processadoBruto, true)} - {formatNumber(totals.pedidosFaturados, true)} fat.)
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                     <div className="flex flex-col items-center">
                       <span className="text-sm font-semibold text-rose-700">{formatNumber(totals.pedidos, true)} cx</span>
                       {totals.pedidosFaturados > 0 && (
-                        <span className="text-[8px] text-orange-600 font-medium mt-0.5">
-                          {formatNumber(totals.pedidosFaturados, true)} fat. | {formatNumber(totals.pedidos - totals.pedidosFaturados, true)} a fat.
+                        <span className="text-[8px] text-green-600 font-medium mt-0.5">
+                          ({formatNumber(totals.pedidosOriginal, true)} - {formatNumber(totals.pedidosFaturados, true)} fat.)
                         </span>
                       )}
                     </div>

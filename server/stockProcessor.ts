@@ -975,6 +975,7 @@ export async function processStockData(): Promise<void> {
       // Virtual parent names
       const VIRTUAL_PARENT_NAMES: Record<string, string> = {
         'ECOM': 'Estoque "E-commerce"',
+        '00086': 'VARETA AROMATIZADOR 4,0 X 218 MM',
       };
       const virtualName = VIRTUAL_PARENT_NAMES[parentCode] || `Agrupador ${parentCode}`;
       

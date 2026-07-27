@@ -6102,3 +6102,21 @@
 
 ## Bug: Aplicativo de Vendas - Concluir Pedido bloqueado mesmo com forma de pagamento selecionada (27/07/2026)
 - [x] Corrigir validação de "Concluir Pedido" que exige forma de pagamento mesmo quando já está selecionada (ex: Boleto) — CORRIGIDO: adicionado "Boleto", "PIX", "Depósito", "Cartão" como opções diretas no dropdown de Forma de Pagamento; auto-fill agora mapeia formaCobranca do cliente diretamente para a opção correta
+
+## Palito Premium: Baixa de faturados no estoque e pedidos (27/07/2026)
+- [x] Faturados devem dar baixa no estoque "Produto Acabado" (processado) — ex: 17cx processadas - 17cx faturadas = 0cx
+- [x] Faturados devem abater do saldo pendente dos pedidos de venda — ex: pedido 80cx, faturou 5cx → pedido mostra 75cx pendentes
+- [x] Garantir que a lógica funciona para faturamentos parciais (múltiplos faturamentos no mesmo pedido)
+
+## Rastreio de Contêineres via API Logcomex (27/07/2026)
+- [ ] Pesquisar documentação da API Logcomex para rastreio de contêineres
+- [ ] Implementar integração backend com API Logcomex (usando LOGCOMEX_API_KEY)
+- [ ] Criar endpoint tRPC para consultar status de contêineres
+- [ ] Criar UI na aba Importação para exibir rastreio dos contêineres em tempo real
+- [ ] Testar integração end-to-end com dados reais
+
+## Produção: Controle de Lotes - Código 00084 → AR20 (27/07/2026)
+- [x] Na aba Produção, no controle de lotes, transformar o código 00084 em "AR20"
+
+## Madeira: Nome correto do item 00086 (27/07/2026)
+- [x] No card Madeira Produto Acabado, o item 00086 está mostrando "Agrupador 00086" — trocado para "VARETA AROMATIZADOR 4,0 X 218 MM"
