@@ -6085,3 +6085,4 @@
 - [x] Configurações > Senhas: permissões granulares para sub-abas de Vendas (vnd.abaVendas, vnd.abaFornecedores, vnd.abaMetricasVendas, vnd.abaMetricasClientes) — removido hardcode de FORNECEDORES_OPERATORS
 - [x] Queijo Coalho: abater Processado do Estoque Maxiprod (quando produção processa caixas, o estoque exibido deve ser reduzido)
 - [x] Embalagem: manter código na barra de pesquisa após registrar produção (não limpar o campo de busca)
+- [ ] Todas as barras de pesquisa: busca por substring/caractere (qualquer trecho parcial deve encontrar resultado, sem exigir palavra completa)
