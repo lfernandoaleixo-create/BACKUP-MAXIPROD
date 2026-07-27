@@ -6096,3 +6096,6 @@
 - [x] Ao clicar no campo Disponível de um produto, mostrar Popover com composição (Estoque - Reservas Aprovado - Reservas Digitação = Disponível)
 - [x] Card detalha clientes com pedidos em Digitação e quantidade reservada
 - [x] Pedidos em Digitação agora aparecem no tooltip de Pedidos com badge azul
+
+## Produção: Adicionar "3,8x200mm - Palitos Premium" na Seleção Automática (27/07/2026)
+- [x] Adicionar produto "3,8x200mm - Palitos Premium" como nova opção de medida nas 6 máquinas da Seleção Automática (setor 4)

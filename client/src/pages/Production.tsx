@@ -81,11 +81,12 @@ const SELETORA_TOCO_MEASURE_OPTIONS = [
   { value: "3.5x250mm", label: "3,5x250mm", color: "#ef4444", bgClass: "bg-red-50", textClass: "text-red-800", borderClass: "border-red-300" },
 ];
 
-// Seleção Automática (setor 4): sem 300/350, 3,8x nas restantes + 3,5x200/250
+// Seleção Automática (setor 4): sem 300/350, 3,8x nas restantes + 3,5x200/250 + Palitos Premium
 const SELECAO_AUTO_MEASURE_OPTIONS = [
   { value: "3.8x150mm", label: "3,8x150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
   { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
   { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "3.8x200mm_premium", label: "3,8x200mm - Palitos Premium", color: "#8b5cf6", bgClass: "bg-violet-50", textClass: "text-violet-800", borderClass: "border-violet-300" },
   { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
   { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
   { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
@@ -110,6 +111,7 @@ const CONVERSION_FACTORS: Record<string, { cxp: number; cxg: number }> = {
   "3.8x150mm": { cxp: 0, cxg: 0 },
   "3.8x180mm": { cxp: 0.5, cxg: 0 },
   "3.8x200mm": { cxp: 0.6, cxg: 0.8 },
+  "3.8x200mm_premium": { cxp: 0.6, cxg: 0.8 },
   "3.8x218mm": { cxp: 0.6, cxg: 0.8 },
   "3.8x220mm": { cxp: 0.5, cxg: 0.7 },
   "3.8x250mm": { cxp: 0, cxg: 0.8 },
@@ -1405,7 +1407,7 @@ export default function Production() {
                 {/* Medidas em ordem crescente */}
                 {[
                   "3.5x200mm", "3.5x250mm", "3.5x350mm",
-                  "3.8x150mm", "3.8x180mm", "3.8x200mm", "3.8x218mm", "3.8x220mm", "3.8x250mm", "3.8x350mm",
+                  "3.8x150mm", "3.8x180mm", "3.8x200mm", "3.8x200mm_premium", "3.8x218mm", "3.8x220mm", "3.8x250mm", "3.8x350mm",
                 ].filter(key => CONVERSION_FACTORS[key]).map((key: string, i: number) => {
                   const opt = VARETEIRA_MEASURE_OPTIONS.find(o => o.value === key) || SELETORA_TOCO_MEASURE_OPTIONS.find(o => o.value === key) || SELECAO_AUTO_MEASURE_OPTIONS.find(o => o.value === key) || FLOWPACK_MEASURE_OPTIONS.find(o => o.value === key) || { value: key, label: key.replace(".", ","), bgClass: "bg-slate-50", textClass: "text-slate-800", borderClass: "border-slate-300" };
                   const factors = CONVERSION_FACTORS[key];
