@@ -6177,3 +6177,9 @@
 
 ## Bug: Faturamento Parcial - Status Errado
 - [x] Pedido com faturamento parcial ("Fat. Parcial") deve voltar para "Pedidos em Aberto" (NÃO para "Autorizado a faturar")
+
+## Automatização Transportadoras - Cadastro de Clientes
+- [x] Rodonaves: Cadastro automático de cliente quando "Cliente destinatário não encontrado" (busca dados em vendor_clients, cadastra via API, retenta cotação)
+- [ ] Alfa Transportes: Erro "código 13 - FALHA AO CALCULAR COTAÇÃO" = rota não coberta pelo contrato (requer contato comercial com a Alfa, não há API de cadastro)
+- [ ] SSW (Camilo dos Santos): Erro "Cliente não possui tabela" = cliente sem tabela negociada (requer contato comercial com a SSW)
+- [ ] Flor de Minas: "Cidade não atendida" = cobertura geográfica limitada (não há API)

@@ -115,7 +115,12 @@ const HOSTNAME_IP_MAP: Record<string, string> = {
   "01wapi.rte.com.br": "150.230.65.150",
   "quotation-apigateway.rte.com.br": "200.210.75.41",
   "dne-api.rte.com.br": "200.210.75.41",
+  "customer-apigateway.rte.com.br": "200.210.75.41",
 };
+
+// ===== Customer registration cache =====
+// Track which CNPJs we've already registered in this session to avoid duplicate calls
+const registeredCustomers = new Set<string>();
 
 // ===== TLS 1.2 HTTP Client =====
 /**
@@ -406,10 +411,136 @@ function normalizeCity(city: string): string {
     .trim();
 }
 
+// ===== Customer Registration =====
+
+/**
+ * Token cache for customer-apigateway (separate from quotation)
+ */
+let customerTokenCache: { token: string; expiresAt: number } | null = null;
+
+async function getCustomerToken(): Promise<string> {
+  if (customerTokenCache && Date.now() < customerTokenCache.expiresAt) {
+    return customerTokenCache.token;
+  }
+
+  if (!RODONAVES_PASSWORD) {
+    throw new Error("Rodonaves: Credenciais não configuradas (RODONAVES_PASSWORD)");
+  }
+
+  const body = new URLSearchParams({
+    auth_type: "DEV",
+    grant_type: "password",
+    username: RODONAVES_USERNAME,
+    password: RODONAVES_PASSWORD,
+  }).toString();
+
+  const resp = await httpsRequestWithRetry({
+    hostname: "customer-apigateway.rte.com.br",
+    path: "/token",
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+    timeoutMs: 15000,
+  });
+
+  if (resp.status !== 200) {
+    throw new Error(`Rodonaves customer auth error: ${resp.status} - ${resp.body.substring(0, 200)}`);
+  }
+
+  const data: RodonavesTokenResponse = JSON.parse(resp.body);
+  customerTokenCache = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in - 300) * 1000,
+  };
+
+  return data.access_token;
+}
+
+/**
+ * Register a customer (destinatário) in Rodonaves TMS system.
+ * Required before quoting freight for new customers.
+ * 
+ * If customer already exists, Rodonaves returns 400 with ORA-20010 error - we treat this as success.
+ */
+export async function registerRodonavesCustomer(params: {
+  cnpj: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  inscricaoEstadual?: string;
+}): Promise<{ success: boolean; alreadyExists?: boolean; error?: string }> {
+  const cleanCnpj = params.cnpj.replace(/\D/g, "");
+  
+  // Skip if already registered in this session
+  if (registeredCustomers.has(cleanCnpj)) {
+    return { success: true, alreadyExists: true };
+  }
+
+  try {
+    const token = await getCustomerToken();
+
+    const requestBody = JSON.stringify({
+      Description: params.nome,
+      TaxIdRegistration: cleanCnpj,
+      StadualIdRegistration: params.inscricaoEstadual || "",
+      Email: params.email || "nfe@grupofox.com.br",
+      Phone: (params.telefone || "31999999999").replace(/\D/g, ""),
+      ZipCode: params.cep.replace(/\D/g, ""),
+      Street: params.logradouro || "Rua",
+      Number: params.numero || "S/N",
+      Supplement: params.complemento || "",
+      District: params.bairro || "Centro",
+      City: params.cidade || "",
+      UnitFederation: params.uf || "",
+    });
+
+    const resp = await httpsRequestWithRetry({
+      hostname: "customer-apigateway.rte.com.br",
+      path: "/api/v1/customer/savecustomer",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: requestBody,
+      timeoutMs: 15000,
+    });
+
+    if (resp.status === 200) {
+      console.log(`[Rodonaves] Cliente cadastrado com sucesso: ${cleanCnpj} (${params.nome})`);
+      registeredCustomers.add(cleanCnpj);
+      return { success: true };
+    }
+
+    // 400 with "Já existe" = customer already registered (this is fine)
+    if (resp.status === 400 && resp.body.includes("exite uma pessoa cadastrada")) {
+      console.log(`[Rodonaves] Cliente já cadastrado: ${cleanCnpj}`);
+      registeredCustomers.add(cleanCnpj);
+      return { success: true, alreadyExists: true };
+    }
+
+    console.error(`[Rodonaves] Erro ao cadastrar cliente ${cleanCnpj}: ${resp.status} - ${resp.body.substring(0, 300)}`);
+    return { success: false, error: `HTTP ${resp.status}: ${resp.body.substring(0, 200)}` };
+  } catch (err: any) {
+    console.error(`[Rodonaves] Exceção ao cadastrar cliente ${cleanCnpj}: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
 // ===== Main API functions =====
 
 /**
  * Quote freight via Rodonaves for a single CNPJ remetente
+ * Now with auto-registration: if "Cliente destinatário não encontrado",
+ * attempts to register the customer and retry the quote.
  */
 export async function quoteRodonavesFreight(params: {
   cnpjRemetente: string;
@@ -524,7 +655,11 @@ export async function quoteRodonavesFreight(params: {
 }
 
 /**
- * Quote freight from Rodonaves for all available CNPJs simultaneously
+ * Quote freight from Rodonaves for all available CNPJs simultaneously.
+ * Auto-registers the customer if "Cliente destinatário não encontrado" error occurs.
+ * 
+ * @param customerData - Optional customer data for auto-registration. If not provided,
+ *                       the caller (salesOrderRouter) should pass it from vendor_clients lookup.
  */
 export async function quoteAllRodonavesCnpjs(params: {
   cepOrigem?: string;
@@ -533,6 +668,20 @@ export async function quoteAllRodonavesCnpjs(params: {
   peso: number;
   volumes?: number;
   cnpjDestinatario?: string;
+  // Customer data for auto-registration (looked up from vendor_clients)
+  customerData?: {
+    nome: string;
+    email: string;
+    telefone: string;
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    inscricaoEstadual?: string;
+  };
 }): Promise<Array<{
   cnpj: string;
   totalFrete: number;
@@ -542,6 +691,7 @@ export async function quoteAllRodonavesCnpjs(params: {
   const cepOrigem = params.cepOrigem || DEFAULT_ORIGIN_CEP;
   const cnpjDest = params.cnpjDestinatario || "00000000000000";
 
+  // Step 1: Try quoting first
   const results = await Promise.allSettled(
     RODONAVES_CNPJS.map(config =>
       quoteRodonavesFreight({
@@ -556,6 +706,63 @@ export async function quoteAllRodonavesCnpjs(params: {
     )
   );
 
+  // Step 2: Check if any failed with "Cliente destinatário não encontrado"
+  const hasClientNotFound = results.some(
+    r => r.status === "rejected" && r.reason?.message?.includes("Cliente destinat\u00e1rio n\u00e3o encontrado")
+  );
+
+  // Step 3: If client not found and we have customer data, register and retry
+  if (hasClientNotFound && params.customerData && cnpjDest !== "00000000000000") {
+    console.log(`[Rodonaves] Cliente ${cnpjDest} não encontrado. Tentando cadastro automático...`);
+    
+    const regResult = await registerRodonavesCustomer({
+      cnpj: cnpjDest,
+      ...params.customerData,
+    });
+
+    if (regResult.success) {
+      console.log(`[Rodonaves] Cadastro OK (alreadyExists=${regResult.alreadyExists}). Retentando cotação...`);
+      
+      // Wait 2s for Rodonaves TMS to propagate the new customer
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Retry all quotes
+      const retryResults = await Promise.allSettled(
+        RODONAVES_CNPJS.map(config =>
+          quoteRodonavesFreight({
+            cnpjRemetente: config.cnpj,
+            cnpjDestinatario: cnpjDest,
+            cepOrigem,
+            cepDestino: params.cepDestino,
+            valorMercadoria: params.valorMercadoria,
+            peso: params.peso,
+            volumes: params.volumes,
+          })
+        )
+      );
+
+      return retryResults.map((result, idx) => {
+        if (result.status === "fulfilled") {
+          return {
+            cnpj: RODONAVES_CNPJS[idx].cnpj,
+            totalFrete: result.value.totalFrete,
+            prazo: result.value.prazo,
+          };
+        } else {
+          return {
+            cnpj: RODONAVES_CNPJS[idx].cnpj,
+            totalFrete: 0,
+            prazo: "",
+            error: result.reason?.message || "Erro desconhecido Rodonaves",
+          };
+        }
+      });
+    } else {
+      console.error(`[Rodonaves] Falha no cadastro automático: ${regResult.error}`);
+    }
+  }
+
+  // Return original results (either no client-not-found error, or registration failed)
   return results.map((result, idx) => {
     if (result.status === "fulfilled") {
       return {

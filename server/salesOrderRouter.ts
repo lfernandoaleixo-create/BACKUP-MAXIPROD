@@ -2262,6 +2262,36 @@ export const salesOrderRouter = router({
     }))
     .mutation(async ({ input }) => {
       console.log(`[FreightQuote] Starting: CEP ${input.cepOrigem} → ${input.cepDestino}, peso=${input.peso}kg, valor=${input.valorMercadoria}`);
+      
+      // Lookup customer data from vendor_clients for auto-registration (Rodonaves)
+      let customerData: { nome: string; email: string; telefone: string; cep: string; logradouro: string; numero: string; complemento?: string; bairro: string; cidade: string; uf: string; inscricaoEstadual?: string } | undefined;
+      if (input.cnpjDestinatario) {
+        const db = await getDb();
+        const cleanCnpj = input.cnpjDestinatario.replace(/\D/g, "");
+        const [client] = await db!.select()
+          .from(vendorClients)
+          .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cleanCnpj}`)
+          .limit(1);
+        if (client) {
+          customerData = {
+            nome: client.razaoSocial || client.nomeFantasia || "Cliente",
+            email: client.emailNfe || client.email || "nfe@grupofox.com.br",
+            telefone: client.telefone1 || client.telefone2 || "31999999999",
+            cep: client.cep || input.cepDestino,
+            logradouro: client.logradouro || "Rua",
+            numero: client.numero || "S/N",
+            complemento: client.complemento || undefined,
+            bairro: client.bairro || "Centro",
+            cidade: client.cidade || "",
+            uf: client.uf || "",
+            inscricaoEstadual: client.inscricaoEstadual || undefined,
+          };
+          console.log(`[FreightQuote] Customer data found for ${cleanCnpj}: ${customerData.nome}`);
+        } else {
+          console.log(`[FreightQuote] No customer data found in vendor_clients for CNPJ ${cleanCnpj}`);
+        }
+      }
+
       // Quote from all 5 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves + Flor de Minas
       const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
         cotarTodosCnpjs({
@@ -2301,6 +2331,7 @@ export const salesOrderRouter = router({
           peso: input.peso,
           volumes: input.volumes,
           cnpjDestinatario: input.cnpjDestinatario,
+          customerData,
         }),
         quoteFlordeMinas({
           cepDestino: input.cepDestino,
