@@ -4448,7 +4448,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   const updateMutation = trpc.dashboard.updateQueijoCoalhoStock.useMutation({
     onSuccess: (result) => {
       if (result.success === false && result.error === "senha_incorreta") {
-        toast.error("Senha incorreta! Apenas Maria pode editar o Estoque Maxiprod.");
+        toast.error("Senha incorreta! Apenas Maria pode editar o Aguardando Processamento.");
       } else {
         toast.success("Estoque atualizado!");
       }
@@ -4743,7 +4743,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                   <th className="text-left py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">Produto</th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
-                      Est. Maxiprod
+                      Aguardando Processamento
                     </span>
                   </th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
@@ -4761,7 +4761,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
                     <span className="flex items-center justify-center gap-1">
                       <Package className="w-3 h-3 text-teal-500" />
-                      Processado
+                      Produto Acabado
                     </span>
                   </th>
                   <th className="text-center py-2 px-1 md:px-2 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-600">
@@ -4812,7 +4812,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                         </div>
                       </div>
                     </td>
-                    {/* Estoque Maxiprod (editable by Maria) */}
+                    {/* Aguardando Processamento (editable by Maria) */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
                         <input
@@ -4921,7 +4921,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                         {formatNumber(row.estoqueProjetado, true)} cx
                       </span>
                     </td>
-                    {/* Processado (editable by Maria) */}
+                    {/* Produto Acabado (editable by Maria) */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_processado" ? (
                         <input
@@ -5076,7 +5076,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           </div>
                         </div>
                       </td>
-                      {/* Maxiprod - variant */}
+                      {/* Aguardando Processamento - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
@@ -5095,7 +5095,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                       <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600"><span className="text-xs text-slate-400">—</span></td>
                       {/* Projetado - variant (empty) */}
                       <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600"><span className="text-xs text-slate-400">—</span></td>
-                      {/* Processado - variant */}
+                      {/* Produto Acabado - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                         {editingCell?.codigo === variant.codigoItem && editingCell?.campo === "estoque_processado" ? (
                           <input ref={inputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
@@ -5258,8 +5258,8 @@ function QueijoCoalhoHistoryContent({ codigoItem }: { codigoItem?: string }) {
   if (!data?.history?.length) return <p className="text-sm text-slate-400 text-center py-6">Nenhum histórico encontrado.</p>;
 
   const campoLabels: Record<string, string> = {
-    estoque_maxiprod: "Est. Maxiprod",
-    estoque_processado: "Processado",
+    estoque_maxiprod: "Aguardando Processamento",
+    estoque_processado: "Produto Acabado",
     estoque_regulador: "Regulador",
   };
 
