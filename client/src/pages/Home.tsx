@@ -4405,6 +4405,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       estoqueProcessado: number;
       pedidosCx: number;
       pedidosFaturadosCx: number;
+      pedidosPorCliente: PedidoCliente[];
       disponivelVenda: number;
       estoqueRegulador: number;
       status: "verde" | "amarelo" | "vermelho";
@@ -4444,6 +4445,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       estoqueProcessado: parentStock.processado,
       pedidosCx: parentPedidos,
       pedidosFaturadosCx: parentFaturados,
+      pedidosPorCliente: (parentItem.variants || []).flatMap(v => (v.pedidosPorCliente || []).filter(pc => pc.quantidadeOriginalCx > 0)),
       disponivelVenda: parentDisponivel,
       estoqueRegulador: parentStock.regulador,
       status: parentStatus,
@@ -4465,6 +4467,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
         conversionFactor: v.conversionFactor,
         pedidosCx: vPedidos,
         pedidosFaturadosCx: vFaturados,
+        pedidosPorCliente: (v.pedidosPorCliente || []).filter(pc => pc.quantidadeOriginalCx > 0),
         estoqueMaxiprod: vStock.maxiprod,
         estoqueProcessado: vStock.processado,
         estoqueRegulador: vStock.regulador,
@@ -4856,11 +4859,73 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                     </td>
                     {/* Pedidos de Venda */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                      {row.pedidosCx > 0 ? (
+                      {row.pedidosCx > 0 && row.pedidosPorCliente.length > 0 ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-help inline-block">
+                              <span className="text-sm font-medium text-rose-700">
+                                {formatNumber(row.pedidosCx, true)} cx
+                              </span>
+                              {row.pedidosFaturadosCx > 0 && (
+                                <div className="text-[9px] text-orange-600 font-medium mt-0.5 leading-tight">
+                                  {formatNumber(row.pedidosFaturadosCx, true)} fat. | {formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a fat.
+                                </div>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[420px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-rose-500/50 shadow-xl">
+                            <div className="p-3 space-y-2">
+                              <p className="font-semibold text-sm flex items-center gap-1.5">
+                                <ShoppingCart className="w-4 h-4 text-rose-500" />
+                                Pedidos de Venda
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Total: <strong className="text-slate-800">{formatNumber(row.pedidosCx, true)} cx</strong>
+                                {row.pedidosFaturadosCx > 0 && (
+                                  <> — <span className="text-green-600">{formatNumber(row.pedidosFaturadosCx, true)} faturadas</span> | <span className="text-orange-600">{formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a faturar</span></>
+                                )}
+                              </p>
+                              <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+                                <table className="w-full text-xs">
+                                  <thead className="bg-slate-50 dark:bg-slate-800">
+                                    <tr>
+                                      <th className="px-2 py-1 text-left font-medium">Cliente</th>
+                                      <th className="px-2 py-1 text-right font-medium">Total (cx)</th>
+                                      <th className="px-2 py-1 text-right font-medium">Faturado</th>
+                                      <th className="px-2 py-1 text-right font-medium">A Faturar</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y">
+                                    {row.pedidosPorCliente.map((pc, idx) => {
+                                      const total = Math.ceil(pc.quantidadeOriginalCx || 0);
+                                      const faturado = Math.ceil(pc.quantidadeFaturadaCx || 0);
+                                      const aFaturar = total - faturado;
+                                      return (
+                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                          <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={pc.cliente}>
+                                            {pc.cliente}
+                                          </td>
+                                          <td className="px-2 py-1 text-right font-semibold text-rose-700">
+                                            {formatNumber(total, true)}
+                                          </td>
+                                          <td className="px-2 py-1 text-right font-medium text-green-600">
+                                            {faturado > 0 ? formatNumber(faturado, true) : '—'}
+                                          </td>
+                                          <td className="px-2 py-1 text-right font-medium text-orange-600">
+                                            {formatNumber(aFaturar, true)}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : row.pedidosCx > 0 ? (
                         <div className="flex flex-col items-center">
-                          <span className="text-sm font-medium text-rose-700">
-                            {formatNumber(row.pedidosCx, true)} cx
-                          </span>
+                          <span className="text-sm font-medium text-rose-700">{formatNumber(row.pedidosCx, true)} cx</span>
                           {row.pedidosFaturadosCx > 0 && (
                             <span className="text-[9px] text-orange-600 font-medium mt-0.5 leading-tight">
                               {formatNumber(row.pedidosFaturadosCx, true)} fat. | {formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a fat.
@@ -4958,11 +5023,73 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                       </td>
                       {/* Pedidos - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                        {variant.pedidosCx > 0 ? (
+                        {variant.pedidosCx > 0 && variant.pedidosPorCliente.length > 0 ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="cursor-help inline-block">
+                                <span className="text-xs font-medium text-rose-600">
+                                  {formatNumber(variant.pedidosCx, true)} cx
+                                </span>
+                                {variant.pedidosFaturadosCx > 0 && (
+                                  <div className="text-[8px] text-orange-600 font-medium mt-0.5 leading-tight">
+                                    {formatNumber(variant.pedidosFaturadosCx, true)} fat. | {formatNumber(variant.pedidosCx - variant.pedidosFaturadosCx, true)} a fat.
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-[420px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-rose-500/50 shadow-xl">
+                              <div className="p-3 space-y-2">
+                                <p className="font-semibold text-sm flex items-center gap-1.5">
+                                  <ShoppingCart className="w-4 h-4 text-rose-500" />
+                                  Pedidos de Venda
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  Total: <strong className="text-slate-800">{formatNumber(variant.pedidosCx, true)} cx</strong>
+                                  {variant.pedidosFaturadosCx > 0 && (
+                                    <> — <span className="text-green-600">{formatNumber(variant.pedidosFaturadosCx, true)} faturadas</span> | <span className="text-orange-600">{formatNumber(variant.pedidosCx - variant.pedidosFaturadosCx, true)} a faturar</span></>
+                                  )}
+                                </p>
+                                <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-slate-50 dark:bg-slate-800">
+                                      <tr>
+                                        <th className="px-2 py-1 text-left font-medium">Cliente</th>
+                                        <th className="px-2 py-1 text-right font-medium">Total (cx)</th>
+                                        <th className="px-2 py-1 text-right font-medium">Faturado</th>
+                                        <th className="px-2 py-1 text-right font-medium">A Faturar</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                      {variant.pedidosPorCliente.map((pc, idx) => {
+                                        const total = Math.ceil(pc.quantidadeOriginalCx || 0);
+                                        const faturado = Math.ceil(pc.quantidadeFaturadaCx || 0);
+                                        const aFaturar = total - faturado;
+                                        return (
+                                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                            <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={pc.cliente}>
+                                              {pc.cliente}
+                                            </td>
+                                            <td className="px-2 py-1 text-right font-semibold text-rose-700">
+                                              {formatNumber(total, true)}
+                                            </td>
+                                            <td className="px-2 py-1 text-right font-medium text-green-600">
+                                              {faturado > 0 ? formatNumber(faturado, true) : '—'}
+                                            </td>
+                                            <td className="px-2 py-1 text-right font-medium text-orange-600">
+                                              {formatNumber(aFaturar, true)}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : variant.pedidosCx > 0 ? (
                           <div className="flex flex-col items-center">
-                            <span className="text-xs font-medium text-rose-600">
-                              {formatNumber(variant.pedidosCx, true)} cx
-                            </span>
+                            <span className="text-xs font-medium text-rose-600">{formatNumber(variant.pedidosCx, true)} cx</span>
                             {variant.pedidosFaturadosCx > 0 && (
                               <span className="text-[8px] text-orange-600 font-medium mt-0.5 leading-tight">
                                 {formatNumber(variant.pedidosFaturadosCx, true)} fat. | {formatNumber(variant.pedidosCx - variant.pedidosFaturadosCx, true)} a fat.
