@@ -979,8 +979,12 @@ export default function CustosDeVendaStep({
               required
             >
               <option value="">Selecione...</option>
+              <option value="Boleto">Boleto</option>
               <option value="A prazo">A prazo</option>
               <option value="À vista">À vista</option>
+              <option value="PIX">PIX</option>
+              <option value="Depósito">Depósito</option>
+              <option value="Cartão">Cartão</option>
               <option value="Sem pagamento">Sem pagamento</option>
               <option value="Outros">Outros</option>
             </select>

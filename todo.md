@@ -6099,3 +6099,6 @@
 
 ## Produção: Adicionar "3,8x200mm - Palitos Premium" na Seleção Automática (27/07/2026)
 - [x] Adicionar produto "3,8x200mm - Palitos Premium" como nova opção de medida nas 6 máquinas da Seleção Automática (setor 4)
+
+## Bug: Aplicativo de Vendas - Concluir Pedido bloqueado mesmo com forma de pagamento selecionada (27/07/2026)
+- [x] Corrigir validação de "Concluir Pedido" que exige forma de pagamento mesmo quando já está selecionada (ex: Boleto) — CORRIGIDO: adicionado "Boleto", "PIX", "Depósito", "Cartão" como opções diretas no dropdown de Forma de Pagamento; auto-fill agora mapeia formaCobranca do cliente diretamente para a opção correta

@@ -5244,8 +5244,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     // Auto-fill formaPagamento from client's formaCobranca
     if (client.formaCobranca && !formaPagamento) {
       const fc = client.formaCobranca.toLowerCase();
-      if (fc.includes('prazo') || fc.includes('boleto')) {
+      if (fc.includes('boleto')) {
+        setFormaPagamento('Boleto');
+      } else if (fc.includes('prazo')) {
         setFormaPagamento('A prazo');
+      } else if (fc.includes('pix')) {
+        setFormaPagamento('PIX');
+      } else if (fc.includes('depósito') || fc.includes('deposito')) {
+        setFormaPagamento('Depósito');
+      } else if (fc.includes('cartão') || fc.includes('cartao')) {
+        setFormaPagamento('Cartão');
       } else {
         setFormaPagamento('À vista');
       }
@@ -6868,8 +6876,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!formaPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
                     >
                       <option value="">Selecione...</option>
+                      <option value="Boleto">Boleto</option>
                       <option value="A prazo">A prazo</option>
                       <option value="À vista">À vista</option>
+                      <option value="PIX">PIX</option>
+                      <option value="Depósito">Depósito</option>
+                      <option value="Cartão">Cartão</option>
                       <option value="Sem pagamento">Sem pagamento</option>
                       <option value="Outros">Outros</option>
                     </select>
