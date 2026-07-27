@@ -1041,15 +1041,20 @@ export const billingRouter = router({
         // Pode ser uma condição temporária durante a sincronização (delete + re-insert atômico).
         if (!states) continue;
         
-        // ÚNICA REGRA: Só remover autorização quando TODOS os itens do pedido estão
-        // completamente "Faturado" (100% faturado, nada mais a fazer).
-        // Em TODOS os outros casos, a autorização deve ser PRESERVADA:
-        // - "A faturar" = autorizado mas ainda não faturou → manter
-        // - "Faturado parcial" = parte faturada, parte pendente → manter (precisa continuar faturando)
-        // - Mix de "Faturado" + "A faturar" = parte completa, parte pendente → manter
-        // - "Faturado c/ entrega futura" = faturado aguardando entrega → manter
+        // REGRA 1: Remover autorização quando TODOS os itens estão 100% "Faturado".
+        // O pedido sai completamente do fluxo de faturamento.
         if (states.size === 1 && states.has("Faturado")) {
           toRemove.push(pedido);
+          continue;
+        }
+        
+        // REGRA 2: Faturamento parcial → desautorizar para voltar a "Pedidos em Aberto".
+        // Quando parte do pedido foi faturada ("Faturado parcial"), o pedido deve voltar
+        // para "Pedidos em Aberto" para ser re-autorizado para a próxima remessa.
+        // Isso garante que o gestor revise e re-autorize cada lote de faturamento.
+        if (states.has("Faturado parcial")) {
+          toRemove.push(pedido);
+          continue;
         }
       }
 

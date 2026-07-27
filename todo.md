@@ -6173,7 +6173,7 @@
 - [x] Corrigir campos vazios: seguro, outras despesas, comissão = null (não 0)
 - [x] Corrigir headers: exatamente como template oficial (com espaços)
 - [x] Testes passando (5/5 no maxiprodOrderExport.test.ts)
-- [ ] Gerar arquivo real com pedidos existentes para teste no Maxiprod
+- [x] Gerar arquivo real com pedidos existentes para teste no Maxiprod
 
 ## Bug: Faturamento Parcial - Status Errado
-- [ ] Pedido com faturamento parcial ("Fat. Parcial") deve voltar para "Pedidos em Aberto" (NÃO para "Autorizado a faturar")
+- [x] Pedido com faturamento parcial ("Fat. Parcial") deve voltar para "Pedidos em Aberto" (NÃO para "Autorizado a faturar")
