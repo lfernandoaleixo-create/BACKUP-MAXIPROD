@@ -2168,10 +2168,9 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   bairro: varchar("bairro", { length: 200 }),
   municipio: varchar("municipio", { length: 200 }),
   uf: varchar("uf", { length: 2 }),
-  telefone1: varchar("telefone1", { length: 20 }),
-  telefone2: varchar("telefone2", { length: 20 }),
+  telefone1: varchar("telefone1", { length: 100 }),
+  telefone2: varchar("telefone2", { length: 100 }),
   emailContato: varchar("email_contato", { length: 300 }),
-  
   // Redespacho
   possuiRedespacho: boolean("possui_redespacho").default(false),
   redespachoCnpj: varchar("redespacho_cnpj", { length: 20 }),
@@ -2183,7 +2182,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   redespachoBairro: varchar("redespacho_bairro", { length: 200 }),
   redespachoCidade: varchar("redespacho_cidade", { length: 200 }),
   redespachoUf: varchar("redespacho_uf", { length: 2 }),
-  redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
+  redespachoTelefone: varchar("redespacho_telefone", { length: 100 }),
   // Endereço de entrega
   enderecoEntregaMesmo: boolean("endereco_entrega_mesmo").default(true),
   entregaCep: varchar("entrega_cep", { length: 10 }),
@@ -2193,7 +2192,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   entregaBairro: varchar("entrega_bairro", { length: 200 }),
   entregaCidade: varchar("entrega_cidade", { length: 200 }),
   entregaUf: varchar("entrega_uf", { length: 2 }),
-  entregaTelefone: varchar("entrega_telefone", { length: 30 }),
+  entregaTelefone: varchar("entrega_telefone", { length: 100 }),
   // Dados do pedido Maxiprod
   operacaoFiscal: varchar("operacao_fiscal", { length: 50 }),
   naturezaOperacao: varchar("natureza_operacao", { length: 100 }),
@@ -2369,8 +2368,8 @@ export const vendorClients = mysqlTable("vendor_clients", {
   uf: varchar("uf", { length: 2 }),
   
   // Contato
-  telefone1: varchar("telefone1", { length: 30 }),
-  telefone2: varchar("telefone2", { length: 30 }),
+  telefone1: varchar("telefone1", { length: 100 }),
+  telefone2: varchar("telefone2", { length: 100 }),
   email: varchar("email", { length: 300 }),
   nomeContato: varchar("nome_contato", { length: 200 }), // pessoa de contato
   
@@ -2389,7 +2388,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   redespachoBairro: varchar("redespacho_bairro", { length: 200 }),
   redespachoCidade: varchar("redespacho_cidade", { length: 200 }),
   redespachoUf: varchar("redespacho_uf", { length: 2 }),
-  redespachoTelefone: varchar("redespacho_telefone", { length: 30 }),
+  redespachoTelefone: varchar("redespacho_telefone", { length: 100 }),
   redespachoCnpj: varchar("redespacho_cnpj", { length: 20 }),
   redespachoRazaoSocial: varchar("redespacho_razao_social", { length: 200 }),
   
@@ -2402,7 +2401,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   entregaBairro: varchar("entrega_bairro", { length: 200 }),
   entregaCidade: varchar("entrega_cidade", { length: 200 }),
   entregaUf: varchar("entrega_uf", { length: 2 }),
-  entregaTelefone: varchar("entrega_telefone", { length: 30 }),
+  entregaTelefone: varchar("entrega_telefone", { length: 100 }),
   
   // Maxiprod sync
   maxiprodId: bigint("maxiprod_id", { mode: "number" }), // ID da empresa no Maxiprod (para dedup na sincronização)

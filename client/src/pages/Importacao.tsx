@@ -2450,11 +2450,11 @@ function NcmTaxesSection() {
   const utils = trpc.useUtils();
   const createNcm = trpc.import.createNcmTax.useMutation({
     onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM adicionado!'); setShowAdd(false); resetForm(); },
-    onError: (err) => toast.error(err.message?.includes('Duplicate') ? 'NCM já cadastrado!' : 'Erro ao cadastrar NCM'),
+    onError: (err) => toast.error(err.message?.includes('Duplicate') ? 'NCM já cadastrado!' : err.message?.includes('Valor') ? err.message : 'Erro ao cadastrar NCM'),
   });
   const updateNcm = trpc.import.updateNcmTax.useMutation({
     onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM atualizado!'); setEditingId(null); },
-    onError: () => toast.error('Erro ao atualizar NCM'),
+    onError: (err) => toast.error(err.message?.includes('Valor') ? err.message : 'Erro ao atualizar NCM'),
   });
   const deleteNcm = trpc.import.deleteNcmTax.useMutation({
     onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM removido!'); },
@@ -2516,7 +2516,10 @@ function NcmTaxesSection() {
               <button
                 onClick={() => {
                   if (!form.ncm.trim() || form.iiRate === '' || form.ipiRate === '') return toast.error('NCM, II e IPI obrigatórios');
-                  createNcm.mutate({ ncm: form.ncm.trim(), description: form.description.trim() || undefined, grupo: form.grupo.trim() || undefined, iiRate: form.iiRate, ipiRate: form.ipiRate, pisRate: form.pisRate, cofinsRate: form.cofinsRate });
+                  const sanitize = (v: string) => v.trim().replace(',', '.');
+                  const ii = sanitize(form.iiRate), ipi = sanitize(form.ipiRate);
+                  if (isNaN(Number(ii)) || isNaN(Number(ipi))) return toast.error('II e IPI devem ser números válidos (use ponto para decimais)');
+                  createNcm.mutate({ ncm: form.ncm.trim(), description: form.description.trim() || undefined, grupo: form.grupo.trim() || undefined, iiRate: ii, ipiRate: ipi, pisRate: sanitize(form.pisRate), cofinsRate: sanitize(form.cofinsRate) });
                 }}
                 className="px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
               >

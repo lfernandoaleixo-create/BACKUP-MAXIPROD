@@ -1340,14 +1340,30 @@ export const importRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      // Sanitize rate values: replace comma with period, trim whitespace
+      const sanitizeRate = (val: string, fieldName: string): string => {
+        const sanitized = val.trim().replace(",", ".");
+        if (!sanitized || isNaN(Number(sanitized))) {
+          throw new Error(`Valor inválido para ${fieldName}: "${val}". Use apenas números (ex: 18 ou 18.5)`);
+        }
+        const num = Number(sanitized);
+        if (num < 0 || num > 999.99) {
+          throw new Error(`Valor de ${fieldName} fora do intervalo permitido (0 a 999.99): ${val}`);
+        }
+        return sanitized;
+      };
+      const iiRate = sanitizeRate(input.iiRate, "II");
+      const ipiRate = sanitizeRate(input.ipiRate, "IPI");
+      const pisRate = sanitizeRate(input.pisRate || "2.10", "PIS");
+      const cofinsRate = sanitizeRate(input.cofinsRate || "9.65", "COFINS");
       const [result] = await db.insert(importNcmTaxes).values({
-        ncm: input.ncm,
+        ncm: input.ncm.trim(),
         description: input.description || null,
         grupo: input.grupo || null,
-        iiRate: input.iiRate,
-        ipiRate: input.ipiRate,
-        pisRate: input.pisRate || "2.10",
-        cofinsRate: input.cofinsRate || "9.65",
+        iiRate,
+        ipiRate,
+        pisRate,
+        cofinsRate,
       });
       return { id: result.insertId };
     }),
@@ -1367,14 +1383,25 @@ export const importRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       const { id, ...data } = input;
+      const sanitizeRate = (val: string, fieldName: string): string => {
+        const sanitized = val.trim().replace(",", ".");
+        if (!sanitized || isNaN(Number(sanitized))) {
+          throw new Error(`Valor inválido para ${fieldName}: "${val}". Use apenas números (ex: 18 ou 18.5)`);
+        }
+        const num = Number(sanitized);
+        if (num < 0 || num > 999.99) {
+          throw new Error(`Valor de ${fieldName} fora do intervalo permitido (0 a 999.99): ${val}`);
+        }
+        return sanitized;
+      };
       const updateData: Record<string, any> = {};
-      if (data.ncm !== undefined) updateData.ncm = data.ncm;
+      if (data.ncm !== undefined) updateData.ncm = data.ncm.trim();
       if (data.description !== undefined) updateData.description = data.description;
       if (data.grupo !== undefined) updateData.grupo = data.grupo;
-      if (data.iiRate !== undefined) updateData.iiRate = data.iiRate;
-      if (data.ipiRate !== undefined) updateData.ipiRate = data.ipiRate;
-      if (data.pisRate !== undefined) updateData.pisRate = data.pisRate;
-      if (data.cofinsRate !== undefined) updateData.cofinsRate = data.cofinsRate;
+      if (data.iiRate !== undefined) updateData.iiRate = sanitizeRate(data.iiRate, "II");
+      if (data.ipiRate !== undefined) updateData.ipiRate = sanitizeRate(data.ipiRate, "IPI");
+      if (data.pisRate !== undefined) updateData.pisRate = sanitizeRate(data.pisRate, "PIS");
+      if (data.cofinsRate !== undefined) updateData.cofinsRate = sanitizeRate(data.cofinsRate, "COFINS");
       await db.update(importNcmTaxes).set(updateData).where(eq(importNcmTaxes.id, id));
       return { success: true };
     }),

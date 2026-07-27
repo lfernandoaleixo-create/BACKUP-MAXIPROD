@@ -6088,3 +6088,5 @@
 - [x] Todas as barras de pesquisa: busca por substring/caractere (já implementado em todas as telas - confirmado auditoria)
 - [x] Bug: Renato não consegue cadastrar cliente no aplicativo de vendas (SellerApp) - testado e funciona OK, aguardando mais detalhes do Renato
 - [x] Rastreamento: dados inseridos para HANK-CARRY (COSCO SHIPPING URUGUAY, ETA 03/08) e BETTY-FUSHENG (RDO ENDEAVOUR, ETA 18/08) + rota SHEKOU_SANTOS + fallback ONE Line quando Logcomex sem créditos
+- [x] Bug URGENTE: Renato não consegue cadastrar cliente - campo telefone com limite de 30 chars (ele digitou 2 números separados por /) — CORRIGIDO: aumentado limite de 30 para 100 chars no Zod (salesRouter.ts) e no banco (vendor_clients, sales_order_requests)
+- [x] Bug URGENTE: Larissa não consegue cadastrar NCM na aba Importação > Configurações — CORRIGIDO: adicionada sanitização de vírgula→ponto nos campos de alíquota (II, IPI, PIS, COFINS), validação numérica com mensagem clara de erro, e proteção contra valores inválidos no backend (importRouter.ts) e frontend (Importacao.tsx)
