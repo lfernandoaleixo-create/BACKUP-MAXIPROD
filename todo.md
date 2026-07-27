@@ -6079,3 +6079,5 @@
 - [x] Criar documentação definitiva das 5 transportadoras em docs/FREIGHT_CARRIERS_REFERENCE.md (credenciais, endpoints, workarounds, cobertura)
 - [x] QC Card: exibir faturamento parcial nos pedidos (ex: 80cx total, 5 faturadas, 75 a faturar)
 - [x] QC Card: tooltip nos pedidos de venda ao passar cursor mostrando comprador, qtd, faturado, a faturar
+- [x] Faturamento: alerta/badge no app quando alguém alterar transportadora (notificação in-app com sino)
+- [x] Faturamento: faturamento parcial - saldo remanescente volta para pedidos em aberto automaticamente (ex: 80cx, fatura 5, 75 voltam para aberto)

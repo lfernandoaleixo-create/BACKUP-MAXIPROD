@@ -1783,6 +1783,19 @@ export const billingRouter = router({
           transportadoraNova: input.transportadora,
           alteradoPor: operatorName,
         });
+
+        // Criar notificação de troca de transportadora
+        try {
+          const { createNotification } = await import("./notificationRouter");
+          const anterior = transportadoraAnterior || "(nenhuma)";
+          await createNotification({
+            type: "troca_transportadora",
+            title: `Transportadora alterada - Pedido #${input.pedido}`,
+            message: `${operatorName} alterou a transportadora do pedido #${input.pedido}: ${anterior} → ${input.transportadora}`,
+            severity: "info",
+            metadata: { pedido: input.pedido, operador: operatorName, anterior, nova: input.transportadora },
+          });
+        } catch (e) { console.error("[Notification] Error creating troca_transportadora:", e); }
       }
 
       return { success: true };

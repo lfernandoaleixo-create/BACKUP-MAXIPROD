@@ -24,6 +24,7 @@ import {
   ShoppingCart,
   MessageSquare,
   FileText,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -67,6 +68,7 @@ const TYPE_ICONS: Record<string, typeof Bell> = {
   sync_erro: RefreshCw,
   alerta_estoque: Package,
   cobranca_documento: FileText,
+  troca_transportadora: Truck,
 };
 
 function formatTimeAgo(date: Date): string {
