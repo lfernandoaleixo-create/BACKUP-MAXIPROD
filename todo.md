@@ -6085,4 +6085,6 @@
 - [x] Configurações > Senhas: permissões granulares para sub-abas de Vendas (vnd.abaVendas, vnd.abaFornecedores, vnd.abaMetricasVendas, vnd.abaMetricasClientes) — removido hardcode de FORNECEDORES_OPERATORS
 - [x] Queijo Coalho: abater Processado do Estoque Maxiprod (quando produção processa caixas, o estoque exibido deve ser reduzido)
 - [x] Embalagem: manter código na barra de pesquisa após registrar produção (não limpar o campo de busca)
-- [ ] Todas as barras de pesquisa: busca por substring/caractere (qualquer trecho parcial deve encontrar resultado, sem exigir palavra completa)
+- [x] Todas as barras de pesquisa: busca por substring/caractere (já implementado em todas as telas - confirmado auditoria)
+- [x] Bug: Renato não consegue cadastrar cliente no aplicativo de vendas (SellerApp) - testado e funciona OK, aguardando mais detalhes do Renato
+- [x] Rastreamento: dados inseridos para HANK-CARRY (COSCO SHIPPING URUGUAY, ETA 03/08) e BETTY-FUSHENG (RDO ENDEAVOUR, ETA 18/08) + rota SHEKOU_SANTOS + fallback ONE Line quando Logcomex sem créditos

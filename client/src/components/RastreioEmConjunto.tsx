@@ -185,6 +185,7 @@ function ContainerTracker({ container, onDataReadyRef }: {
           'ITAJAI': { lat: -26.91, lng: -48.67 },
           'NAVEGANTES': { lat: -26.90, lng: -48.65 },
           'XIAMEN': { lat: 24.47, lng: 118.08 },
+          'SHEKOU': { lat: 22.48, lng: 113.90 },
         };
 
         // Known maritime routes (water-only, no overland shortcuts)
@@ -548,6 +549,72 @@ function ContainerTracker({ container, onDataReadyRef }: {
             { lat: -23.95, lng: -46.30 },
           ],
         };
+
+        // Also add SHEKOU_SANTOS route
+        MARITIME_ROUTES['SHEKOU_SANTOS'] = [
+          { lat: 22.48, lng: 113.90 }, // Shekou
+          { lat: 20.0, lng: 113.0 },   // South China Sea
+          { lat: 16.0, lng: 112.0 },
+          { lat: 12.0, lng: 110.0 },
+          { lat: 8.0, lng: 108.0 },
+          { lat: 5.0, lng: 106.0 },
+          { lat: 3.0, lng: 105.0 },
+          { lat: 1.26, lng: 103.85 }, // Singapore
+          { lat: 1.2, lng: 103.3 },
+          { lat: 1.3, lng: 103.0 },
+          { lat: 1.6, lng: 102.2 },
+          { lat: 2.1, lng: 101.8 },
+          { lat: 2.4, lng: 101.4 },
+          { lat: 2.9, lng: 100.8 },
+          { lat: 3.5, lng: 100.0 },
+          { lat: 4.0, lng: 99.4 },
+          { lat: 4.7, lng: 98.8 },
+          { lat: 5.4, lng: 98.3 },
+          { lat: 5.8, lng: 97.5 },
+          { lat: 6.3, lng: 95.0 },
+          { lat: 6.0, lng: 92.0 },
+          { lat: 5.5, lng: 88.0 },
+          { lat: 5.5, lng: 84.0 },
+          { lat: 5.0, lng: 80.0 },
+          { lat: 4.5, lng: 77.0 },
+          { lat: 3.0, lng: 73.0 },
+          { lat: 0.0, lng: 67.0 },
+          { lat: -3.0, lng: 61.0 },
+          { lat: -6.0, lng: 56.0 },
+          { lat: -9.0, lng: 53.0 },
+          { lat: -12.0, lng: 52.0 },
+          { lat: -15.0, lng: 52.0 },
+          { lat: -18.0, lng: 52.0 },
+          { lat: -21.0, lng: 52.0 },
+          { lat: -24.0, lng: 51.5 },
+          { lat: -26.5, lng: 50.0 },
+          { lat: -28.0, lng: 46.0 },
+          { lat: -30.0, lng: 40.0 },
+          { lat: -32.0, lng: 35.0 },
+          { lat: -33.5, lng: 30.0 },
+          { lat: -34.5, lng: 27.0 },
+          { lat: -35.0, lng: 24.0 },
+          { lat: -35.5, lng: 21.0 },
+          { lat: -35.8, lng: 19.0 },
+          { lat: -35.5, lng: 18.0 },
+          { lat: -34.5, lng: 17.0 },
+          { lat: -33.5, lng: 16.0 },
+          { lat: -33.0, lng: 14.0 },
+          { lat: -32.0, lng: 10.0 },
+          { lat: -31.0, lng: 5.0 },
+          { lat: -30.0, lng: 0.0 },
+          { lat: -29.0, lng: -5.0 },
+          { lat: -28.0, lng: -10.0 },
+          { lat: -27.5, lng: -15.0 },
+          { lat: -27.0, lng: -20.0 },
+          { lat: -26.5, lng: -25.0 },
+          { lat: -26.0, lng: -30.0 },
+          { lat: -25.5, lng: -35.0 },
+          { lat: -25.0, lng: -38.0 },
+          { lat: -24.5, lng: -41.0 },
+          { lat: -24.0, lng: -44.0 },
+          { lat: -23.95, lng: -46.30 }, // Santos
+        ];
 
         const originKey = (d.origin_port || '').toUpperCase().split(',')[0].trim();
         const destKey = (d.destination_port || '').toUpperCase().split(',')[0].trim();

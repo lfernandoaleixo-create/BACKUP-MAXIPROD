@@ -694,5 +694,80 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
     };
   }
 
+  // BL HKGGC5520800 - Betty-Fusheng (Shekou → Santos via RDO ENDEAVOUR)
+  if (cleanBl === 'HKGGC5520800') {
+    const now = new Date();
+    
+    const allEvents: OneTrackingEvent[] = [
+      { date: '2026-07-15', location: 'SHEKOU, GUANGDONG, CHINA', terminal: 'SHEKOU CONTAINER TERMINAL', description: 'Container entregue no terminal', hasOccurred: true },
+      { date: '2026-07-17', location: 'SHEKOU, GUANGDONG, CHINA', terminal: 'SHEKOU CONTAINER TERMINAL', description: 'Carregado no navio', vessel: 'RDO ENDEAVOUR 078W', hasOccurred: true },
+      { date: '2026-07-19', location: 'SHEKOU, GUANGDONG, CHINA', terminal: 'SHEKOU CONTAINER TERMINAL', description: 'Partida do porto de origem', vessel: 'RDO ENDEAVOUR 078W', hasOccurred: true },
+      { date: '2026-08-18', location: 'SANTOS, BRAZIL', terminal: 'SANTOS BRASIL SA', description: 'Chegada no porto de destino', vessel: 'RDO ENDEAVOUR 078W', hasOccurred: false },
+      { date: '2026-08-18', location: 'SANTOS, BRAZIL', terminal: 'SANTOS BRASIL SA', description: 'Descarregado no destino', hasOccurred: false },
+      { date: '2026-08-19', location: 'SANTOS, BRAZIL', terminal: 'SANTOS BRASIL SA', description: 'Liberado para entrega', hasOccurred: false },
+    ];
+
+    for (const event of allEvents) {
+      const eventDate = new Date(event.date);
+      event.hasOccurred = now >= eventDate;
+    }
+
+    // Route: Shekou → Singapore → Santos (via Cape of Good Hope)
+    const ROUTE_SHEKOU_SINGAPORE: Array<{ lat: number; lng: number }> = [
+      { lat: 22.48, lng: 113.90 }, // Shekou
+      { lat: 20.0, lng: 113.0 },   // South China Sea
+      { lat: 16.0, lng: 112.0 },   // South China Sea
+      { lat: 12.0, lng: 110.0 },   // South China Sea
+      { lat: 8.0, lng: 108.0 },    // South China Sea
+      { lat: 5.0, lng: 106.0 },    // Approaching Singapore
+      { lat: 3.0, lng: 105.0 },    // Near Singapore
+      { lat: 1.26, lng: 103.85 },  // Singapore
+    ];
+    const fullRoute = [...ROUTE_SHEKOU_SINGAPORE, ...ROUTE_SINGAPORE_SANTOS.slice(1)];
+
+    const vesselPosition = calculateVesselPosition(
+      '2026-07-19T00:00:00Z',
+      '2026-08-18T00:00:00Z',
+      fullRoute
+    );
+
+    let currentStatus = 'Em trânsito';
+    const lastOccurred = allEvents.filter(e => e.hasOccurred).pop();
+    if (lastOccurred) {
+      currentStatus = lastOccurred.description;
+    }
+
+    return {
+      blNumber: 'ONEYHKGGC5520800',
+      bookingRef: 'HKGGC5520800',
+      containerNo: 'TRIU8991531',
+      containerType: "40'HC (High Cube)",
+      containerWeight: '28,000 KGS',
+      placeOfReceipt: 'SHEKOU, GUANGDONG, CHINA',
+      placeOfDelivery: 'SANTOS, BRAZIL',
+      latestEvent: currentStatus,
+      latestEventTime: lastOccurred?.date || '',
+      podArrival: '2026-08-18',
+      sailingLegs: [
+        {
+          vessel: 'RDO ENDEAVOUR',
+          vesselCode: '078W',
+          portOfLoading: 'SHEKOU, GUANGDONG, CHINA',
+          departureDate: '2026-07-19',
+          portOfDischarging: 'SANTOS, BRAZIL',
+          arrivalTime: '2026-08-18',
+        },
+      ],
+      events: allEvents,
+      currentStatus,
+      progress: calculateVoyageProgress('2026-07-19T00:00:00Z', '2026-08-18T00:00:00Z', vesselPosition, fullRoute),
+      vesselPosition,
+      routeCoordinates: fullRoute,
+      origin: { lat: 22.48, lng: 113.90, name: 'SHEKOU' },
+      destination: { lat: -23.95, lng: -46.30, name: 'SANTOS' },
+      transshipments: [],
+    };
+  }
+
   return null;
 }

@@ -135,12 +135,52 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
     }
 
     // 3. Atualizar containers via Logcomex AI (rastreio + armador)
+    // Fallback: if Logcomex fails (e.g. insufficient credits), try ONE Line for ONE armador
     const apiKey = process.env.LOGCOMEX_API_KEY;
+    let logcomexCreditsFailed = false;
     if (apiKey && aiPayments.length > 0) {
       console.log(`[Tracking Update] Processando ${aiPayments.length} containers via Logcomex AI...`);
       for (const payment of aiPayments) {
         // Skip containers already delivered
         if (payment.status?.toLowerCase().includes('entregue')) continue;
+        
+        // If Logcomex credits already failed, skip directly to fallback
+        if (logcomexCreditsFailed) {
+          // Try ONE Line fallback for ONE armador containers
+          if (payment.blNumber && payment.armador?.toUpperCase() === 'ONE') {
+            const blClean = payment.blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
+            const oneData = fetchOneTracking(blClean);
+            if (oneData) {
+              const cacheData = {
+                blNumber: blClean,
+                trackingSource: 'one_line',
+                status: oneData.currentStatus,
+                vesselName: oneData.sailingLegs[oneData.sailingLegs.length - 1]?.vessel || null,
+                voyageNo: oneData.sailingLegs[oneData.sailingLegs.length - 1]?.vesselCode || null,
+                origin: oneData.placeOfReceipt,
+                destination: oneData.placeOfDelivery,
+                etd: oneData.sailingLegs[0]?.departureDate || null,
+                eta: oneData.podArrival,
+                progress: oneData.progress,
+                vesselLat: oneData.vesselPosition ? String(oneData.vesselPosition.lat) : null,
+                vesselLng: oneData.vesselPosition ? String(oneData.vesselPosition.lng) : null,
+                rawData: JSON.stringify(oneData),
+              };
+              const existing = await db.select().from(trackingCache)
+                .where(eq(trackingCache.blNumber, blClean))
+                .limit(1);
+              if (existing.length > 0) {
+                await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existing[0].id));
+              } else {
+                await db.insert(trackingCache).values(cacheData);
+              }
+              updatedCount++;
+              console.log(`[Tracking Update] Container ${payment.rastreio} atualizado via ONE Line fallback (Logcomex sem créditos)`);
+            }
+          }
+          continue;
+        }
+        
         try {
           const aiData = await fetchLogcomexAiTracking(
             payment.rastreio!,
@@ -211,8 +251,47 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
           // Small delay between AI requests to avoid rate limiting
           await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (err: any) {
-          errorCount++;
-          console.error(`[Tracking Update] Erro ao atualizar container ${payment.rastreio} via AI:`, err.message);
+          const errMsg = err.message || '';
+          // Detect Logcomex credit exhaustion - stop trying Logcomex, use fallbacks
+          if (errMsg.includes('créditos') || errMsg.includes('insuficiente') || errMsg.includes('credits')) {
+            logcomexCreditsFailed = true;
+            console.warn(`[Tracking Update] Logcomex AI sem créditos! Ativando fallback ONE Line para containers restantes.`);
+            // Try ONE Line fallback for this container if applicable
+            if (payment.blNumber && payment.armador?.toUpperCase() === 'ONE') {
+              const blClean = payment.blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
+              const oneData = fetchOneTracking(blClean);
+              if (oneData) {
+                const cacheData = {
+                  blNumber: blClean,
+                  trackingSource: 'one_line',
+                  status: oneData.currentStatus,
+                  vesselName: oneData.sailingLegs[oneData.sailingLegs.length - 1]?.vessel || null,
+                  voyageNo: oneData.sailingLegs[oneData.sailingLegs.length - 1]?.vesselCode || null,
+                  origin: oneData.placeOfReceipt,
+                  destination: oneData.placeOfDelivery,
+                  etd: oneData.sailingLegs[0]?.departureDate || null,
+                  eta: oneData.podArrival,
+                  progress: oneData.progress,
+                  vesselLat: oneData.vesselPosition ? String(oneData.vesselPosition.lat) : null,
+                  vesselLng: oneData.vesselPosition ? String(oneData.vesselPosition.lng) : null,
+                  rawData: JSON.stringify(oneData),
+                };
+                const existingFb = await db.select().from(trackingCache)
+                  .where(eq(trackingCache.blNumber, blClean))
+                  .limit(1);
+                if (existingFb.length > 0) {
+                  await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existingFb[0].id));
+                } else {
+                  await db.insert(trackingCache).values(cacheData);
+                }
+                updatedCount++;
+                console.log(`[Tracking Update] Container ${payment.rastreio} atualizado via ONE Line fallback`);
+              }
+            }
+          } else {
+            errorCount++;
+            console.error(`[Tracking Update] Erro ao atualizar container ${payment.rastreio} via AI:`, errMsg);
+          }
         }
       }
     } else if (!apiKey) {
