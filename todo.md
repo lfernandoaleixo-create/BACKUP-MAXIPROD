@@ -6133,3 +6133,10 @@
 ## Gestão Comercial: Vendedores novos aparecem em Configurações (27/07/2026)
 - [x] Sempre que um novo vendedor for criado pelo gestor na aba Gestão Comercial, o nome e senha desse vendedor devem aparecer automaticamente na aba Configurações > Senhas
 - [x] Exemplos: Rafael, Patrick, Livia — cada um com seu nome e senha listados em Configurações
+
+## Card Queijo Coalho: Dedução correta de faturados + Histórico de saídas (27/07/2026)
+- [x] Processado é BRUTO (total produzido pela Maria). Sistema deve descontar TODOS os faturados (parciais + completos + bonificações)
+- [x] Incluir faturados completos da sales_orders (pedidos que saíram de order_items) na dedução — apenas para produtos QC (variantes do 00648)
+- [x] Bonificação #1217 (12cx de 00547) deve ser deduzida do processado: 17 - 5 - 12 = 0
+- [x] Criar painel de histórico de saídas no card QC mostrando: pedido, cliente, quantidade, tipo (venda/bonificação/faturamento parcial)
+

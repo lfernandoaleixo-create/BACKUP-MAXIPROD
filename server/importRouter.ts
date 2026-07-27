@@ -936,20 +936,41 @@ export const importRouter = router({
       const db = await getDb();
       if (!db) return null;
       const containerKey = input.container.trim().toUpperCase();
-      // Look up cache by container number
-      const rows = await db.select().from(trackingCache)
-        .where(eq(trackingCache.blNumber, containerKey))
-        .limit(1);
-      if (rows.length > 0 && rows[0].rawData) {
+
+      // Helper: check if a cache entry has meaningful data (ETA, ETD, or progress)
+      const hasRealData = (row: any): boolean => {
+        return !!(row.eta || row.etd || (row.progress !== null && row.progress > 0));
+      };
+
+      // Helper: parse and return a cache row
+      const parseRow = (row: any) => {
+        if (!row.rawData) return null;
         try {
-          const parsed = JSON.parse(rows[0].rawData);
+          const parsed = JSON.parse(row.rawData);
           return {
             ...parsed,
             _cached: true,
-            _lastUpdated: rows[0].lastUpdated?.toISOString() || null,
+            _lastUpdated: row.lastUpdated?.toISOString() || null,
+            _trackingSource: row.trackingSource || null,
           };
         } catch { return null; }
+      };
+
+      // Look up ALL cache entries by container number (not just limit 1)
+      // This allows us to pick the best one (with actual data) over empty ones
+      const rows = await db.select().from(trackingCache)
+        .where(eq(trackingCache.blNumber, containerKey));
+
+      if (rows.length > 0) {
+        // Prioritize: entries with real data (ETA/ETD/progress) > most recent
+        const withData = rows.filter(hasRealData);
+        const bestRow = withData.length > 0
+          ? withData.sort((a, b) => (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0))[0]
+          : rows.sort((a, b) => (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0))[0];
+        const result = parseRow(bestRow);
+        if (result) return result;
       }
+
       // Also try by BL if payment has one
       const payments = await db.select().from(importPayments)
         .where(eq(importPayments.rastreio, input.container))
@@ -957,17 +978,14 @@ export const importRouter = router({
       if (payments[0]?.blNumber) {
         const blKey = payments[0].blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
         const blRows = await db.select().from(trackingCache)
-          .where(eq(trackingCache.blNumber, blKey))
-          .limit(1);
-        if (blRows.length > 0 && blRows[0].rawData) {
-          try {
-            const parsed = JSON.parse(blRows[0].rawData);
-            return {
-              ...parsed,
-              _cached: true,
-              _lastUpdated: blRows[0].lastUpdated?.toISOString() || null,
-            };
-          } catch { return null; }
+          .where(eq(trackingCache.blNumber, blKey));
+        if (blRows.length > 0) {
+          const withData = blRows.filter(hasRealData);
+          const bestRow = withData.length > 0
+            ? withData.sort((a, b) => (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0))[0]
+            : blRows.sort((a, b) => (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0))[0];
+          const result = parseRow(bestRow);
+          if (result) return result;
         }
       }
       return null;

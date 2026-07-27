@@ -25,9 +25,9 @@
  * 5. Calcular disponível = estoque - pedidos
  * 6. Calcular projetado = disponível + PO
  */
-import { eq } from "drizzle-orm";
+import { eq, and, isNotNull, gte } from "drizzle-orm";
 import { getDb } from "./db";
-import { stockItems, orderItems, dashboardData, purchaseOrderItems, productVariants } from "../drizzle/schema";
+import { stockItems, orderItems, dashboardData, purchaseOrderItems, productVariants, salesOrders } from "../drizzle/schema";
 
 interface POLote {
   numeroPedido: string;
@@ -430,6 +430,40 @@ export async function processStockData(): Promise<void> {
   const rawOrders = await db.select().from(orderItems);
   const rawPOs = await db.select().from(purchaseOrderItems);
   
+  // ─── FATURADOS COMPLETOS (sales_orders com estadoItem="Faturado") ───
+  // Pedidos totalmente faturados (incluindo bonificações) saem de order_items
+  // mas devem dar baixa no estoque processado (card Queijo Coalho).
+  // ESCOPO: apenas produtos QC (variantes do 00648) para não carregar todos os 2467 faturados.
+  // Códigos QC: 00648 (pai), 00546, 00547, 00577, 00645, 00646, 00647
+  const QC_PRODUCT_CODES = new Set(['00648', '00546', '00547', '00577', '00645', '00646', '00647']);
+  const faturadosCompletos = await db.select().from(salesOrders)
+    .where(
+      and(
+        eq(salesOrders.estadoItem, 'Faturado'),
+        isNotNull(salesOrders.codigoItem),
+        isNotNull(salesOrders.quantidadeFaturada)
+      )
+    );
+  
+  // Build map: codigoItem -> total faturado em caixas (da sales_orders)
+  // Filtra apenas códigos QC para evitar inflar deduções em outros produtos
+  const faturadosCompletosByCode = new Map<string, { totalFaturadoCx: number; items: Array<{ cliente: string; qtyCx: number; pedido: string; estadoConfiguravel: string }> }>();
+  for (const so of faturadosCompletos) {
+    const code = so.codigoItem!;
+    if (!QC_PRODUCT_CODES.has(code)) continue; // Apenas produtos QC
+    const qtyFat = so.quantidadeFaturada ? parseFloat(so.quantidadeFaturada) : 0;
+    if (qtyFat <= 0) continue;
+    const existing = faturadosCompletosByCode.get(code) || { totalFaturadoCx: 0, items: [] };
+    existing.totalFaturadoCx += qtyFat;
+    existing.items.push({ 
+      cliente: so.cliente || '(sem cliente)', 
+      qtyCx: qtyFat, 
+      pedido: so.pedido || '',
+      estadoConfiguravel: so.estadoConfiguravel || ''
+    });
+    faturadosCompletosByCode.set(code, existing);
+  }
+  
   // NO FILTERING of stock items - espelho fiel!
   
   // Filter orders: exclude Cancelado
@@ -699,10 +733,42 @@ export async function processStockData(): Promise<void> {
     const poCx = poData?.totalCx || 0;
     
         // Agregar pedidos por cliente + status para tooltip
-    // reservingOrders agora inclui Digitação, então orderData.items já contém todos
+    // reservingOrders agora inclui Ditação, então orderData.items já contém todos
     const pedidosPorCliente = orderData
       ? aggregateOrdersByClient(orderData.items, unitsPerBox)
       : [];
+    
+    // ─── Incluir faturados completos da sales_orders (bonificações + pedidos 100% faturados) ───
+    // Esses pedidos já saíram de order_items mas devem dar baixa no processado (card QC)
+    // Só aplica para produtos QC (variantes do 00648)
+    if (QC_PRODUCT_CODES.has(item.codigoItem)) {
+      const faturadosDoItem = faturadosCompletosByCode.get(item.codigoItem);
+      if (faturadosDoItem) {
+        for (const fat of faturadosDoItem.items) {
+          // Verificar se esse pedido já está contabilizado em order_items (faturamento parcial)
+          // Pedidos em order_items já têm quantidadeFaturada preenchida, então não duplicar
+          // Checa por número do pedido: se o pedido já está em order_items, o faturamento parcial já conta
+          const jaEmOrderItems = rawOrders.some(o => 
+            o.numeroPedido === fat.pedido && o.codigoItem === item.codigoItem
+          );
+          if (!jaEmOrderItems) {
+            // Adicionar como entrada para contabilizar a baixa
+            // quantidadeCx = 0 (não reserva estoque), quantidadeFaturadaCx = fat.qtyCx (dá baixa)
+            const tipo = fat.estadoConfiguravel.toUpperCase().includes('BONIF') ? 'Bonificação' : 'Faturado';
+            pedidosPorCliente.push({
+              cliente: fat.cliente,
+              quantidadeCx: 0, // Não reserva mais (já foi entregue)
+              quantidadeUn: 0,
+              quantidadeOriginalCx: fat.qtyCx, // Original era isso
+              quantidadeFaturadaCx: fat.qtyCx, // Tudo faturado
+              status: tipo,
+              estadoConfiguravel: fat.estadoConfiguravel || undefined,
+              crmSegmento: undefined,
+            });
+          }
+        }
+      }
+    }
     // Digitação separado apenas para o card explicativo de reservas
     const digitacaoItems = digitacaoByCode.get(item.codigoItem);
     // Extrair estadoConfiguravel predominante e segmentos CRM dos pedidos

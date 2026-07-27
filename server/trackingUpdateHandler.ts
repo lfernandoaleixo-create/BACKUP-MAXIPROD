@@ -202,6 +202,9 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
             }
           }
 
+          // Check if Logcomex AI returned meaningful data (ETA, ETD, events, vessel)
+          const hasUsefulData = !!(aiData.etd || aiData.eta || aiData.vessel_name || (aiData.events && aiData.events.length > 0));
+
           const cacheData = {
             blNumber: payment.rastreio!.trim().toUpperCase(),
             trackingSource: 'logcomex_ai',
@@ -225,28 +228,43 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
             .limit(1);
 
           if (existing.length > 0) {
-            await db.update(trackingCache)
-              .set(cacheData)
-              .where(eq(trackingCache.id, existing[0].id));
+            // DON'T overwrite existing good data (manual or previous AI) with empty Logcomex response
+            const existingHasData = !!(existing[0].eta || existing[0].etd || (existing[0].progress !== null && existing[0].progress > 0));
+            if (!hasUsefulData && existingHasData && existing[0].trackingSource !== 'logcomex_ai') {
+              console.log(`[Tracking Update] Container ${payment.rastreio}: Logcomex AI retornou dados vazios, mantendo dados existentes (${existing[0].trackingSource})`);
+            } else if (hasUsefulData || !existingHasData) {
+              await db.update(trackingCache)
+                .set(cacheData)
+                .where(eq(trackingCache.id, existing[0].id));
+            } else {
+              // Logcomex returned empty AND existing is also logcomex_ai empty - just update timestamp
+              await db.update(trackingCache)
+                .set(cacheData)
+                .where(eq(trackingCache.id, existing[0].id));
+            }
           } else {
             await db.insert(trackingCache).values(cacheData);
           }
 
-          // Also update BL cache entry if payment has BL
-          if (payment.blNumber) {
+          // Also update BL cache entry if payment has BL (only if we have useful data)
+          if (payment.blNumber && hasUsefulData) {
             const blClean = payment.blNumber.replace(/^ONEY/i, '').trim().toUpperCase();
             const existingBl = await db.select().from(trackingCache)
               .where(eq(trackingCache.blNumber, blClean))
               .limit(1);
             if (existingBl.length > 0) {
-              await db.update(trackingCache)
-                .set({ ...cacheData, blNumber: blClean })
-                .where(eq(trackingCache.id, existingBl[0].id));
+              const existingBlHasData = !!(existingBl[0].eta || existingBl[0].etd || (existingBl[0].progress !== null && existingBl[0].progress > 0));
+              // Only overwrite BL entry if we have better data or existing is empty
+              if (hasUsefulData || !existingBlHasData) {
+                await db.update(trackingCache)
+                  .set({ ...cacheData, blNumber: blClean })
+                  .where(eq(trackingCache.id, existingBl[0].id));
+              }
             }
           }
 
           updatedCount++;
-          console.log(`[Tracking Update] Container ${payment.rastreio} atualizado (Logcomex AI) - ETA: ${aiData.eta}`);
+          console.log(`[Tracking Update] Container ${payment.rastreio} atualizado (Logcomex AI) - ETA: ${aiData.eta || 'N/A'} | Dados úteis: ${hasUsefulData}`);
           
           // Small delay between AI requests to avoid rate limiting
           await new Promise(resolve => setTimeout(resolve, 2000));
