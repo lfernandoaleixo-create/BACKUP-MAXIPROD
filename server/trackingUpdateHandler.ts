@@ -65,7 +65,22 @@ export async function trackingUpdateCronHandler(req: Request, res: Response) {
             destination: trackingData.placeOfDelivery,
             etd: trackingData.sailingLegs[0]?.departureDate || null,
             eta: trackingData.podArrival,
-            progress: trackingData.progress,
+            progress: (() => {
+              // Recalculate progress from ETD/ETA for accuracy
+              const etdStr = trackingData.sailingLegs[0]?.departureDate;
+              const etaStr = trackingData.podArrival;
+              if (etdStr && etaStr) {
+                const etdDate = new Date(etdStr);
+                const etaDate = new Date(etaStr);
+                const now = new Date();
+                const total = etaDate.getTime() - etdDate.getTime();
+                if (total > 0) {
+                  const elapsed = now.getTime() - etdDate.getTime();
+                  return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+                }
+              }
+              return trackingData.progress;
+            })(),
             vesselLat: trackingData.vesselPosition ? String(trackingData.vesselPosition.lat) : null,
             vesselLng: trackingData.vesselPosition ? String(trackingData.vesselPosition.lng) : null,
             rawData: JSON.stringify(trackingData),

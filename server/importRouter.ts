@@ -2548,7 +2548,20 @@ export const importRouter = router({
         destination: cached?.destination || null,
         etd: cached?.etd || null,
         eta: cached?.eta || null,
-        progress: cached?.progress || null,
+        progress: (() => {
+          // Recalculate progress in real-time from ETD/ETA (triangulation)
+          if (cached?.etd && cached?.eta) {
+            const etdDate = new Date(cached.etd);
+            const etaDate = new Date(cached.eta);
+            const now = new Date();
+            const totalDuration = etaDate.getTime() - etdDate.getTime();
+            if (totalDuration > 0) {
+              const elapsed = now.getTime() - etdDate.getTime();
+              return Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+            }
+          }
+          return cached?.progress || null;
+        })(),
         vesselLat: cached?.vesselLat || null,
         vesselLng: cached?.vesselLng || null,
         trackingStatus: cached?.status || null,
