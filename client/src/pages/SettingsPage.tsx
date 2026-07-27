@@ -576,6 +576,12 @@ const GRANULAR_FINANCEIRO: GranularPermDef[] = [
   { key: "fin.verFluxoCaixa", label: "Ver Fluxo de Caixa", parentTab: "financeiro" },
   { key: "fin.verResumoFinanceiro", label: "Ver Resumo Financeiro", parentTab: "financeiro" },
   { key: "fin.cobranca", label: "Ações de Cobrança", parentTab: "financeiro" },
+  { key: "fin.abaVisaoGeral", label: "Aba: Visão Geral", parentTab: "financeiro" },
+  { key: "fin.abaInadimplencia", label: "Aba: Inadimplência", parentTab: "financeiro" },
+  { key: "fin.abaRecebiveis", label: "Aba: Recebíveis", parentTab: "financeiro" },
+  { key: "fin.abaEcommerce", label: "Aba: E-commerce", parentTab: "financeiro" },
+  { key: "fin.abaSerragemRojao", label: "Aba: Análise Serragem/Rojão", parentTab: "financeiro" },
+  { key: "fin.abaCartoesCredito", label: "Aba: Cartões de Crédito", parentTab: "financeiro" },
 ];
 
 const GRANULAR_IMPORTACAO: GranularPermDef[] = [

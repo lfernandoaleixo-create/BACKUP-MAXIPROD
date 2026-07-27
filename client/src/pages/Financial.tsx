@@ -2326,16 +2326,29 @@ function CashFlowCard() {
 export default function Financial() {
   const { hasGranularAccess, operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
-  const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme", "Thalita"];
-  const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
-  const SERRAGEM_ROJAO_OPERATORS = ["Guilherme", "Fernando", "Flavio", "Thalita", "Bruno", "Gilson"];
-  const canSeeSerragemRojao = operator && SERRAGEM_ROJAO_OPERATORS.includes(operator.name);
-  // Pedro só pode ver E-commerce, não tem acesso a Visão Geral, Inadimplência e Recebíveis
+  // Permissões granulares para cada sub-aba do Financeiro
+  // hasGranularAccess retorna true por padrão se a permissão não foi configurada no banco
+  // Quando o admin desmarcar a checkbox em Config > Senhas, o valor será false e a aba some
+  const canSeeVisaoGeral = hasGranularAccess("fin.abaVisaoGeral");
+  const canSeeInadimplencia = hasGranularAccess("fin.abaInadimplencia");
+  const canSeeRecebiveis = hasGranularAccess("fin.abaRecebiveis");
+  const canSeeEcommerce = hasGranularAccess("fin.abaEcommerce");
+  const canSeeSerragemRojao = hasGranularAccess("fin.abaSerragemRojao");
+  const canSeeCreditCards = hasGranularAccess("fin.abaCartoesCredito");
   const ECOMMERCE_ONLY_OPERATORS = ["Pedro"];
   const isEcommerceOnly = operator && ECOMMERCE_ONLY_OPERATORS.includes(operator.name);
-  const CREDIT_CARD_OPERATORS = ["Guilherme", "Flavio"];
-  const canSeeCreditCards = operator && CREDIT_CARD_OPERATORS.includes(operator.name);
-  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce" | "serragem-rojao" | "cartoes">(isEcommerceOnly ? "ecommerce" : "visao-geral");
+  // Determinar aba inicial: primeira aba disponível para o operador
+  const getInitialTab = (): "visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce" | "serragem-rojao" | "cartoes" => {
+    if (isEcommerceOnly) return "ecommerce";
+    if (canSeeVisaoGeral) return "visao-geral";
+    if (canSeeInadimplencia) return "inadimplencia";
+    if (canSeeRecebiveis) return "recebiveis";
+    if (canSeeEcommerce) return "ecommerce";
+    if (canSeeSerragemRojao) return "serragem-rojao";
+    if (canSeeCreditCards) return "cartoes";
+    return "visao-geral";
+  };
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce" | "serragem-rojao" | "cartoes">(getInitialTab());
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
   const recebiveisBlinking = discountAlerts?.isAlertOperator && discountAlerts.blinkLevel === "recebiveis-tab" && discountAlerts.unreadCount > 0;
@@ -2403,7 +2416,7 @@ export default function Financial() {
 
         {/* Sub-abas */}
         <div className="flex items-center gap-0.5 md:gap-2 md:justify-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1 md:p-2 overflow-x-auto scrollbar-hide -mx-2 md:mx-0 px-1 md:px-0">
-          {!isEcommerceOnly && (
+          {canSeeVisaoGeral && (
             <button
               onClick={() => setActiveTab("visao-geral")}
               className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
@@ -2416,7 +2429,7 @@ export default function Financial() {
               <span>Visão Geral</span>
             </button>
           )}
-          {!isEcommerceOnly && (
+          {canSeeInadimplencia && (
             <button
               onClick={() => setActiveTab("inadimplencia")}
               className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
@@ -2438,7 +2451,7 @@ export default function Financial() {
               )}
             </button>
           )}
-          {!isEcommerceOnly && (
+          {canSeeRecebiveis && (
             <button
               onClick={() => {
                 if (recebiveisBlinking && discountAlerts) {
@@ -2501,10 +2514,10 @@ export default function Financial() {
         </div>
 
         {/* Tab: Inadimplência */}
-        {activeTab === "inadimplencia" && !isEcommerceOnly && <InadimplenciaTab />}
+        {activeTab === "inadimplencia" && canSeeInadimplencia && <InadimplenciaTab />}
 
         {/* Tab: Recebíveis */}
-        {activeTab === "recebiveis" && !isEcommerceOnly && <ReceivablesTab />}
+        {activeTab === "recebiveis" && canSeeRecebiveis && <ReceivablesTab />}
 
         {/* Tab: E-commerce */}
         {activeTab === "ecommerce" && canSeeEcommerce && <EcommerceTab />}
@@ -2516,7 +2529,7 @@ export default function Financial() {
         {activeTab === "cartoes" && canSeeCreditCards && <CreditCardTab />}
 
         {/* Tab: Visão Geral */}
-        {activeTab === "visao-geral" && !isEcommerceOnly && (
+        {activeTab === "visao-geral" && canSeeVisaoGeral && (
         isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-teal-500 mb-3" />
