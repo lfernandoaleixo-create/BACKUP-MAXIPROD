@@ -1984,7 +1984,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
     onSaveProduct(sector.id, selectedProduct.codigoItem, quantidade, selectedProduct.descricaoItem);
     setSelectedProduct(null);
     setQty("");
-    setSearch("");
+    // Não limpar search: permite buscar o mesmo código novamente sem redigitar
   };
 
   const handleEditCard = (codigoItem: string, currentQty: number) => {

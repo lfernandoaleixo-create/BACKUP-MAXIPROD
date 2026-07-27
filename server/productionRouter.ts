@@ -161,12 +161,15 @@ export const productionRouter = router({
             const isQueijCoalho = QUEIJO_COALHO_CODES.includes(codigoItem);
 
             if (isQueijCoalho) {
-              // Auto-feed Queijo Coalho: atualiza estoque_processado
+              // Auto-feed Queijo Coalho: atualiza estoque_processado E abate do estoque_maxiprod
               const qcRows = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, codigoItem));
               const currentProcessado = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0;
+              const currentMaxiprod = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueMaxiprod)) : 0;
               const newProcessado = Math.max(0, currentProcessado + diff);
+              // Abater do estoque Maxiprod: quando processa, sai da matéria-prima
+              const newMaxiprod = Math.max(0, currentMaxiprod - diff);
 
-              // Record history
+              // Record history - processado
               await db.insert(queijoCoalhoStockHistory).values({
                 codigoItem,
                 campo: "estoque_processado",
@@ -176,16 +179,30 @@ export const productionRouter = router({
                 observacao: `Embalagem Palitos Premium: ${diff > 0 ? "+" : ""}${diff} cx`,
               });
 
-              // Upsert queijo coalho stock
+              // Record history - maxiprod deduction
+              if (diff > 0) {
+                await db.insert(queijoCoalhoStockHistory).values({
+                  codigoItem,
+                  campo: "estoque_maxiprod",
+                  valorAnterior: String(currentMaxiprod),
+                  valorNovo: String(newMaxiprod),
+                  operador: `Produção (${input.lancadoPor || "Sistema"})`,
+                  observacao: `Abatido do Maxiprod (embalagem): -${diff} cx`,
+                });
+              }
+
+              // Upsert queijo coalho stock (processado + maxiprod)
               await db.insert(queijoCoalhoStock)
                 .values({
                   codigoItem,
                   estoqueProcessado: String(newProcessado),
+                  estoqueMaxiprod: String(newMaxiprod),
                   updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
                 })
                 .onDuplicateKeyUpdate({
                   set: {
                     estoqueProcessado: sql`${String(newProcessado)}`,
+                    estoqueMaxiprod: sql`${String(newMaxiprod)}`,
                     updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
                   },
                 });
@@ -378,11 +395,15 @@ export const productionRouter = router({
             const isQueijCoalho = QUEIJO_COALHO_CODES_BATCH.includes(codigoItem);
 
             if (isQueijCoalho) {
-              // Auto-feed Queijo Coalho: atualiza estoque_processado
+              // Auto-feed Queijo Coalho: atualiza estoque_processado E abate do estoque_maxiprod
               const qcRows = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, codigoItem));
               const currentProcessado = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0;
+              const currentMaxiprod = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueMaxiprod)) : 0;
               const newProcessado = Math.max(0, currentProcessado + diff);
+              // Abater do estoque Maxiprod: quando processa, sai da matéria-prima
+              const newMaxiprod = Math.max(0, currentMaxiprod - diff);
 
+              // Record history - processado
               await db.insert(queijoCoalhoStockHistory).values({
                 codigoItem,
                 campo: "estoque_processado",
@@ -392,15 +413,30 @@ export const productionRouter = router({
                 observacao: `Embalagem Palitos Premium (batch): ${diff > 0 ? "+" : ""}${diff} cx`,
               });
 
+              // Record history - maxiprod deduction
+              if (diff > 0) {
+                await db.insert(queijoCoalhoStockHistory).values({
+                  codigoItem,
+                  campo: "estoque_maxiprod",
+                  valorAnterior: String(currentMaxiprod),
+                  valorNovo: String(newMaxiprod),
+                  operador: `Produção (${lancadoPor})`,
+                  observacao: `Abatido do Maxiprod (embalagem batch): -${diff} cx`,
+                });
+              }
+
+              // Upsert queijo coalho stock (processado + maxiprod)
               await db.insert(queijoCoalhoStock)
                 .values({
                   codigoItem,
                   estoqueProcessado: String(newProcessado),
+                  estoqueMaxiprod: String(newMaxiprod),
                   updatedBy: `Produção (${lancadoPor})`,
                 })
                 .onDuplicateKeyUpdate({
                   set: {
                     estoqueProcessado: sql`${String(newProcessado)}`,
+                    estoqueMaxiprod: sql`${String(newMaxiprod)}`,
                     updatedBy: `Produção (${lancadoPor})`,
                   },
                 });

@@ -6083,3 +6083,5 @@
 - [x] Faturamento: faturamento parcial - saldo remanescente volta para pedidos em aberto automaticamente (ex: 80cx, fatura 5, 75 voltam para aberto)
 - [x] Configurações > Senhas: permissões granulares para cada sub-aba do Financeiro (fin.abaVisaoGeral, fin.abaInadimplencia, fin.abaRecebiveis, fin.abaEcommerce, fin.abaSerragemRojao, fin.abaCartoesCredito)
 - [x] Configurações > Senhas: permissões granulares para sub-abas de Vendas (vnd.abaVendas, vnd.abaFornecedores, vnd.abaMetricasVendas, vnd.abaMetricasClientes) — removido hardcode de FORNECEDORES_OPERATORS
+- [x] Queijo Coalho: abater Processado do Estoque Maxiprod (quando produção processa caixas, o estoque exibido deve ser reduzido)
+- [x] Embalagem: manter código na barra de pesquisa após registrar produção (não limpar o campo de busca)
