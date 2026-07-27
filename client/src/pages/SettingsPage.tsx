@@ -630,6 +630,7 @@ const GRANULAR_GC_FEATURES: GranularPermDef[] = [
   { key: "gc.comissaoPercentual", label: "Comissão (% que se enquadra)", parentTab: "gestao-comercial" },
   { key: "gc.consultaSerasa", label: "Consulta Serasa", parentTab: "gestao-comercial" },
   { key: "gc.exportarMaxiprod", label: "Exportar p/ Maxiprod", parentTab: "gestao-comercial" },
+  { key: "gc.editarComissao", label: "Editar Comiss\u00e3o (% no pedido)", parentTab: "gestao-comercial" },
 ];
 // Legacy constant kept for ALL_GRANULAR_PERMS compatibility (dynamic items added at runtime)
 const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [...GRANULAR_GC_FEATURES];

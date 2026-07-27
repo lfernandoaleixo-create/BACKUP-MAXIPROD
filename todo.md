@@ -6109,14 +6109,27 @@
 - [x] Garantir que a lógica funciona para faturamentos parciais (múltiplos faturamentos no mesmo pedido)
 
 ## Rastreio de Contêineres via API Logcomex (27/07/2026)
-- [ ] Pesquisar documentação da API Logcomex para rastreio de contêineres
-- [ ] Implementar integração backend com API Logcomex (usando LOGCOMEX_API_KEY)
-- [ ] Criar endpoint tRPC para consultar status de contêineres
-- [ ] Criar UI na aba Importação para exibir rastreio dos contêineres em tempo real
-- [ ] Testar integração end-to-end com dados reais
+- [x] Pesquisar documentação da API Logcomex para rastreio de contêineres — JÁ IMPLEMENTADO (logcomexAiTracking.ts + trackingUpdateHandler.ts + RastreioEmConjunto.tsx)
+- [x] Implementar integração backend com API Logcomex (usando LOGCOMEX_API_KEY) — JÁ IMPLEMENTADO
+- [x] Criar endpoint tRPC para consultar status de contêineres — JÁ IMPLEMENTADO (fetchLogcomexAiTracking, getTrackingFromCache, refreshLogcomexAi)
+- [x] Criar UI na aba Importação para exibir rastreio dos contêineres em tempo real — JÁ IMPLEMENTADO (aba "Rastreio em Conjunto" com mapa)
+- [x] Testar integração end-to-end com dados reais — JÁ IMPLEMENTADO (logcomex.test.ts + cron 2x/dia)
 
 ## Produção: Controle de Lotes - Código 00084 → AR20 (27/07/2026)
 - [x] Na aba Produção, no controle de lotes, transformar o código 00084 em "AR20"
 
 ## Madeira: Nome correto do item 00086 (27/07/2026)
 - [x] No card Madeira Produto Acabado, o item 00086 está mostrando "Agrupador 00086" — trocado para "VARETA AROMATIZADOR 4,0 X 218 MM"
+
+## App Vendedores: Mover campos de cadastro para o final do pedido (27/07/2026)
+- [x] No aplicativo dos vendedores, mover os campos de Dados Fiscais, Dados de Venda e Dados de Relacionamento (CRM) para o FINAL do fluxo de pedido de venda, não no início (atualmente aparecem no cadastro inicial do cliente, mas devem ser preenchidos ao finalizar o pedido)
+
+## App Vendedores: Permissão configurável para editar comissão (27/07/2026)
+- [x] Na aba Configurações, adicionar checkbox por operador para autorizar/desautorizar a edição da comissão (travada em 5,85% por padrão)
+- [x] Gestores (ex: Juvenal) podem ter permissão para alterar a comissão de outros vendedores
+- [x] Vendedores comuns NÃO podem mexer na própria comissão (a menos que o checkbox esteja marcado)
+- [x] No app do vendedor, se o operador não tem permissão, o campo de comissão fica desabilitado/readonly
+
+## Gestão Comercial: Vendedores novos aparecem em Configurações (27/07/2026)
+- [x] Sempre que um novo vendedor for criado pelo gestor na aba Gestão Comercial, o nome e senha desse vendedor devem aparecer automaticamente na aba Configurações > Senhas
+- [x] Exemplos: Rafael, Patrick, Livia — cada um com seu nome e senha listados em Configurações

@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification, appSettings, sellerMonthlyTargets, commissionMatrix } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems, dashboardData, productClassification, appSettings, sellerMonthlyTargets, commissionMatrix, operators } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -4917,6 +4917,24 @@ export const salesRouter = router({
         password: input.password.trim(),
         authorized: input.authorized,
       });
+
+      // Also create an operator entry so the seller appears in Configurações > Senhas
+      const sellerNameForOperator = input.sellerName.trim().toUpperCase();
+      const [existingOp] = await db.select().from(operators)
+        .where(eq(operators.name, sellerNameForOperator))
+        .limit(1);
+      if (!existingOp) {
+        await db.insert(operators).values({
+          name: sellerNameForOperator,
+          password: input.password.trim(),
+          accessEstoque: false,
+          accessVendas: false,
+          accessFaturamento: false,
+          accessFinanceiro: false,
+          accessConfiguracoes: false,
+          accessGestaoComercial: true,
+        });
+      }
 
       return { success: true, id: result[0].insertId };
     }),

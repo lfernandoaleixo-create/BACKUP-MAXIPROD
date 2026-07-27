@@ -4853,6 +4853,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
   const [submittedOrderNumber, setSubmittedOrderNumber] = useState<number | null>(null);
   const [editDataLoaded, setEditDataLoaded] = useState(false);
+  const [showDadosComplementares, setShowDadosComplementares] = useState(false);
   
   // Client fields
   const [clientSearch, setClientSearch] = useState("");
@@ -5766,125 +5767,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <OrderFormInput label="Telefone 1" value={telefone1} onChange={(v) => { setTelefone1(v); setShowClientValidationError(false); }} placeholder="(00) 00000-0000" required error={showClientValidationError} />
               <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error={showClientValidationError} />
               <OrderFormInput label="Segmento" value={segmento} onChange={setSegmento} placeholder="Indústria, Loja, Distribuidora..." />
-            </div>
-
-            {/* DADOS FISCAIS */}
-            <div className="mt-4 p-3 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-2">📋 DADOS FISCAIS</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Regime Tributário</label>
-                  <select value={regimeTributario} onChange={(e) => setRegimeTributario(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="Normal">Normal</option>
-                    <option value="Simples Nacional">Simples Nacional</option>
-                    <option value="Lucro Presumido">Lucro Presumido</option>
-                    <option value="Lucro Real">Lucro Real</option>
-                    <option value="MEI">MEI</option>
-                  </select>
-                </div>
-                <OrderFormInput label="Inscrição Municipal" value={inscricaoMunicipal} onChange={setInscricaoMunicipal} placeholder="IM" />
-                <OrderFormInput label="Inscrição SUFRAMA" value={inscricaoSuframa} onChange={setInscricaoSuframa} placeholder="SUFRAMA" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação Fiscal Especial</label>
-                  <select value={situacaoFiscalEspecial} onChange={(e) => setSituacaoFiscalEspecial(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="Nenhuma">Nenhuma</option>
-                    <option value="Zona Franca de Manaus">Zona Franca de Manaus</option>
-                    <option value="Área de Livre Comércio">Área de Livre Comércio</option>
-                  </select>
-                </div>
-                <OrderFormInput label="CNAE Fiscal" value={cnaeFiscal} onChange={setCnaeFiscal} placeholder="0000000" />
-                <OrderFormInput label="Email NF-e/NFC-e" value={emailNfe} onChange={setEmailNfe} placeholder="nfe@empresa.com" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                <OrderFormInput label="Website" value={websiteCliente} onChange={setWebsiteCliente} placeholder="www.empresa.com.br" />
-              </div>
-            </div>
-
-            {/* DADOS DE VENDA */}
-            <div className="mt-4 p-3 bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-              <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase mb-2">💰 DADOS DE VENDA</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <OrderFormInput label="Limite de Crédito (R$)" value={limiteCredito} onChange={setLimiteCredito} placeholder="999.999,99" />
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Cobrança (padrão)</label>
-                  <select value={formaCobranca} onChange={(e) => setFormaCobranca(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Boleto">Boleto</option>
-                    <option value="Depósito">Depósito</option>
-                    <option value="PIX">PIX</option>
-                    <option value="Cartão">Cartão</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                <OrderFormInput label="Tabela de Preços" value={tabelaPrecos} onChange={setTabelaPrecos} placeholder="Nome da tabela" />
-                <OrderFormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="30/60/90 dias" />
-              </div>
-            </div>
-
-            {/* DADOS DE RELACIONAMENTO (CRM) */}
-            <div className="mt-4 p-3 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg">
-              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase mb-2">🏢 DADOS DE RELACIONAMENTO (CRM)</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <OrderFormInput label="Região" value={regiao} onChange={setRegiao} placeholder="Região" />
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Perfil</label>
-                  <select value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Pedido</label>
-                  <select value={formaPedido} onChange={(e) => setFormaPedido(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Telefone">Telefone</option>
-                    <option value="WhatsApp">WhatsApp</option>
-                    <option value="Email">Email</option>
-                    <option value="Presencial">Presencial</option>
-                    <option value="App">App</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-                <OrderFormInput label="Produtos de Interesse" value={produtosInteresse} onChange={setProdutosInteresse} placeholder="Produtos de interesse" />
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Probabilidade de Negócio</label>
-                  <select value={probabilidadeNegocio} onChange={(e) => setProbabilidadeNegocio(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Média">Média</option>
-                    <option value="Baixa">Baixa</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Tamanho</label>
-                  <select value={tamanho} onChange={(e) => setTamanho(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Pequeno">Pequeno</option>
-                    <option value="Médio">Médio</option>
-                    <option value="Grande">Grande</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Atenção</label>
-                  <select value={atencao} onChange={(e) => setAtencao(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    <option value="Normal">Normal</option>
-                    <option value="Urgente">Urgente</option>
-                    <option value="VIP">VIP</option>
-                  </select>
-                </div>
-                <OrderFormInput label="Fornecedor Atual" value={fornecedorAtual} onChange={setFornecedorAtual} placeholder="Concorrente atual" />
-              </div>
             </div>
 
             {/* COBRANÇA */}
@@ -7377,6 +7259,141 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 </div>
               );
             })()}
+            {/* DADOS COMPLEMENTARES DO CLIENTE - Collapsible section */}
+            {!isSimulation && (
+            <div className="mt-3 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowDadosComplementares(!showDadosComplementares)}
+                className="w-full px-3 py-2.5 flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase">Dados Complementares do Cliente</span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showDadosComplementares ? 'rotate-180' : ''}`} />
+              </button>
+              {showDadosComplementares && (
+                <div className="p-3 space-y-3 border-t border-slate-200 dark:border-slate-600">
+                  {/* DADOS FISCAIS */}
+                  <div className="p-3 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-2">DADOS FISCAIS</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Regime Tributario</label>
+                        <select value={regimeTributario} onChange={(e) => setRegimeTributario(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="Normal">Normal</option>
+                          <option value="Simples Nacional">Simples Nacional</option>
+                          <option value="Lucro Presumido">Lucro Presumido</option>
+                          <option value="Lucro Real">Lucro Real</option>
+                          <option value="MEI">MEI</option>
+                        </select>
+                      </div>
+                      <OrderFormInput label="Inscricao Municipal" value={inscricaoMunicipal} onChange={setInscricaoMunicipal} placeholder="IM" />
+                      <OrderFormInput label="Inscricao SUFRAMA" value={inscricaoSuframa} onChange={setInscricaoSuframa} placeholder="SUFRAMA" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Situacao Fiscal Especial</label>
+                        <select value={situacaoFiscalEspecial} onChange={(e) => setSituacaoFiscalEspecial(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="Nenhuma">Nenhuma</option>
+                          <option value="Zona Franca de Manaus">Zona Franca de Manaus</option>
+                          <option value="Area de Livre Comercio">Area de Livre Comercio</option>
+                        </select>
+                      </div>
+                      <OrderFormInput label="CNAE Fiscal" value={cnaeFiscal} onChange={setCnaeFiscal} placeholder="0000000" />
+                      <OrderFormInput label="Email NF-e/NFC-e" value={emailNfe} onChange={setEmailNfe} placeholder="nfe@empresa.com" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      <OrderFormInput label="Website" value={websiteCliente} onChange={setWebsiteCliente} placeholder="www.empresa.com.br" />
+                    </div>
+                  </div>
+
+                  {/* DADOS DE VENDA */}
+                  <div className="p-3 bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase mb-2">DADOS DE VENDA</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <OrderFormInput label="Limite de Credito (R$)" value={limiteCredito} onChange={setLimiteCredito} placeholder="999.999,99" />
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Cobranca (padrao)</label>
+                        <select value={formaCobranca} onChange={(e) => setFormaCobranca(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="">Selecione...</option>
+                          <option value="Boleto">Boleto</option>
+                          <option value="Deposito">Deposito</option>
+                          <option value="PIX">PIX</option>
+                          <option value="Cartao">Cartao</option>
+                          <option value="Cheque">Cheque</option>
+                          <option value="Dinheiro">Dinheiro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      <OrderFormInput label="Tabela de Precos" value={tabelaPrecos} onChange={setTabelaPrecos} placeholder="Nome da tabela" />
+                      <OrderFormInput label="Condicao de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="30/60/90 dias" />
+                    </div>
+                  </div>
+
+                  {/* DADOS DE RELACIONAMENTO (CRM) */}
+                  <div className="p-3 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg">
+                    <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase mb-2">DADOS DE RELACIONAMENTO (CRM)</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <OrderFormInput label="Regiao" value={regiao} onChange={setRegiao} placeholder="Regiao" />
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Perfil</label>
+                        <select value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="">Selecione...</option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Pedido</label>
+                        <select value={formaPedido} onChange={(e) => setFormaPedido(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="">Selecione...</option>
+                          <option value="Telefone">Telefone</option>
+                          <option value="WhatsApp">WhatsApp</option>
+                          <option value="Email">Email</option>
+                          <option value="Presencial">Presencial</option>
+                          <option value="App">App</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                      <OrderFormInput label="Produtos de Interesse" value={produtosInteresse} onChange={setProdutosInteresse} placeholder="Produtos de interesse" />
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Probabilidade de Negocio</label>
+                        <select value={probabilidadeNegocio} onChange={(e) => setProbabilidadeNegocio(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="">Selecione...</option>
+                          <option value="Alta">Alta</option>
+                          <option value="Media">Media</option>
+                          <option value="Baixa">Baixa</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Tamanho</label>
+                        <select value={tamanho} onChange={(e) => setTamanho(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="">Selecione...</option>
+                          <option value="Pequeno">Pequeno</option>
+                          <option value="Medio">Medio</option>
+                          <option value="Grande">Grande</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1">Atencao</label>
+                        <select value={atencao} onChange={(e) => setAtencao(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                          <option value="Normal">Normal</option>
+                          <option value="Urgente">Urgente</option>
+                          <option value="VIP">VIP</option>
+                        </select>
+                      </div>
+                      <OrderFormInput label="Fornecedor Atual" value={fornecedorAtual} onChange={setFornecedorAtual} placeholder="Concorrente atual" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            )}
             <div className="flex justify-between pt-2">
               <button onClick={() => isGestorMode ? setStep("pagamento") : setStep("produtos")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar

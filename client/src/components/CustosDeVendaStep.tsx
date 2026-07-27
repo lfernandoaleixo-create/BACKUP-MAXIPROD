@@ -15,6 +15,7 @@ import {
   AlertTriangle, BarChart3, TrendingUp, TrendingDown, PlusCircle
 } from "lucide-react";
 import { toast } from "sonner";
+import { useOperator } from "@/contexts/OperatorContext";
 
 interface OrderItem {
   codigoItem: string;
@@ -169,6 +170,8 @@ export default function CustosDeVendaStep({
   sellerId,
   onRealCostsCalculated,
 }: CustosDeVendaStepProps) {
+  const { hasGranularAccess } = useOperator();
+  const canEditComissao = hasGranularAccess("gc.editarComissao");
   const [comissaoPercOverride, setComissaoPercOverride] = useState<number | null>(null);
   const [gastosAdicionais, setGastosAdicionais] = useState(0);
   const [tipoProduto, setTipoProduto] = useState<"importado" | "industrializado">("importado");
@@ -675,13 +678,18 @@ export default function CustosDeVendaStep({
                   step="0.5"
                   value={comissaoPercOverride !== null ? comissaoPercOverride : (costsData?.comissao.percentual ?? 0)}
                   onChange={(e) => {
+                    if (!canEditComissao) return;
                     const v = Number(e.target.value);
                     setComissaoPercOverride(v > 0 ? v : null);
                   }}
-                  className="w-full text-xs bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-2 py-1.5"
+                  disabled={!canEditComissao}
+                  className={`w-full text-xs border rounded px-2 py-1.5 ${!canEditComissao ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600'}`}
                   placeholder="Auto"
                 />
-                {comissaoPercOverride !== null && comissaoPercOverride > 0 && (
+                {!canEditComissao && (
+                  <p className="text-[9px] text-slate-400 mt-0.5">Sem permiss\u00e3o para editar comiss\u00e3o</p>
+                )}
+                {canEditComissao && comissaoPercOverride !== null && comissaoPercOverride > 0 && (
                   <button
                     onClick={() => setComissaoPercOverride(null)}
                     className="text-[9px] text-blue-600 hover:underline mt-0.5"
