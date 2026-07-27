@@ -18,6 +18,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -181,6 +186,10 @@ interface StockItem {
   } | null;
   // Unidade de venda predominante dos pedidos (CX, PC, kg, DZ, un)
   unidadeVenda?: string;
+  // Reservas de pedidos em Digitação (para card explicativo)
+  digitacaoReservaCx?: number | null;
+  digitacaoReservaUn?: number;
+  digitacaoReservaPorCliente?: PedidoCliente[];
 }
 
 type SortField = "descricaoItem" | "comprimento" | "estoqueCx" | "pedidosCx" | "disponivelCx" | "poCx" | "projetadoCx";
@@ -1050,8 +1059,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   <td className='px-2 py-2.5'>
                     {(() => {
                       const allPedidos = item.pedidosPorCliente || [];
-                      const reservados = allPedidos.filter(pc => pc.status !== 'Digitação');
-                      // digitacao removido - não exibir pedidos em digitação
+                      const reservados = allPedidos; // Digitação agora reserva estoque, mostrar todos
                       const hasAny = allPedidos.length > 0;
                       const hasPedidos = (item.pedidosCx ?? item.pedidosUn) > 0;
                       const unit = getUnit(item, false);
@@ -1060,7 +1068,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                       // Para produto pai: separar pedidos próprios vs variações
                       const pedidosProprioCx = item.pedidosCxProprio ?? 0;
                       const pedidosProprioPorCliente = item.pedidosPorClienteProprio || [];
-                      const proprioReservados = pedidosProprioPorCliente.filter(pc => pc.status !== 'Digitação');
+                      const proprioReservados = pedidosProprioPorCliente; // Digitação agora reserva estoque
                       
                       if (hasPedidos && hasAny) {
                         return (
@@ -1116,6 +1124,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                     <td className="px-4 py-3 text-center">
                                                       <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
                                                         pc.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-700' :
+                                                        pc.status === 'Digitação' ? 'bg-blue-100 text-blue-700' :
                                                         'bg-amber-100 text-amber-700'
                                                       }`}>
                                                         {pc.status}
@@ -1130,7 +1139,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                       )}
                                       {/* Clientes de cada variação */}
                                       {isParentWithVariants && item.variants!.map((v, vi) => {
-                                        const vReservados = (v.pedidosPorCliente || []).filter(pc => pc.status !== 'Digitação');
+                                        const vReservados = (v.pedidosPorCliente || []); // Digitação agora reserva estoque
                                         if (vReservados.length === 0) return null;
                                         return (
                                           <div key={`var-${vi}`}>
@@ -1160,6 +1169,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                       <td className="px-4 py-3 text-center">
                                                         <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
                                                           pc.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-700' :
+                                                          pc.status === 'Digitação' ? 'bg-blue-100 text-blue-700' :
                                                           'bg-amber-100 text-amber-700'
                                                         }`}>
                                                           {pc.status}
@@ -1190,12 +1200,91 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     })()}
                   </td>
                   )}
-                  {/* Disponivel - destaque para time comercial */}
+                  {/* Disponivel - destaque para time comercial - clicável com card de reservas */}
                   <td className={`bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
-                    <span className={`font-bold ${showFinancial ? 'text-[10px]' : 'text-sm'} ${isNegative ? "text-red-600" : isZero ? "text-amber-600" : "text-emerald-700"}`}>
-                      {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx, true)}` : `${formatNumber(item.disponivelUn, true)}`}
-                      {!showFinancial && <> {getUnit(item, item.disponivelCx !== null)}</>}
-                    </span>
+                    {(() => {
+                      const hasDigitacao = (item.digitacaoReservaCx ?? item.digitacaoReservaUn ?? 0) > 0;
+                      const dispVal = item.disponivelCx !== null ? formatNumber(item.disponivelCx, true) : formatNumber(item.disponivelUn, true);
+                      const unit = getUnit(item, item.disponivelCx !== null);
+                      
+                      if (hasDigitacao && !showFinancial) {
+                        const estoqueVal = item.estoqueCx !== null ? item.estoqueCx : item.estoqueUn;
+                        const pedidosAprovados = (item.pedidosCx ?? item.pedidosUn) - (item.digitacaoReservaCx ?? Math.ceil(item.digitacaoReservaUn || 0));
+                        const digitacaoVal = item.digitacaoReservaCx ?? Math.ceil(item.digitacaoReservaUn || 0);
+                        const digitacaoClientes = item.digitacaoReservaPorCliente || [];
+                        return (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <span className={`font-bold text-sm cursor-pointer border-b border-dashed ${isNegative ? "text-red-600 border-red-300" : isZero ? "text-amber-600 border-amber-300" : "text-emerald-700 border-emerald-400"}`}>
+                                {dispVal} {unit}
+                              </span>
+                            </PopoverTrigger>
+                            <PopoverContent side="left" className="w-[380px] p-0" sideOffset={8}>
+                              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 overflow-hidden">
+                                {/* Header */}
+                                <div className="bg-emerald-50 px-4 py-3 border-b border-emerald-100">
+                                  <p className="text-sm font-bold text-emerald-800">Composição do Disponível</p>
+                                  <p className="text-xs text-emerald-600 mt-0.5">{item.descricaoItem}</p>
+                                </div>
+                                {/* Breakdown */}
+                                <div className="px-4 py-3 space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600">Estoque total</span>
+                                    <span className="text-sm font-bold text-slate-800">{formatNumber(estoqueVal, true)} {unit}</span>
+                                  </div>
+                                  {pedidosAprovados > 0 && (
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-orange-600">− Reservas (Aprovado/A aprovar)</span>
+                                      <span className="text-sm font-bold text-orange-600">{formatNumber(pedidosAprovados, true)} {unit}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-amber-600">− Reservas (Digitação)</span>
+                                    <span className="text-sm font-bold text-amber-600">{formatNumber(digitacaoVal, true)} {unit}</span>
+                                  </div>
+                                  <div className="border-t border-slate-200 pt-2 flex justify-between items-center">
+                                    <span className="text-sm font-bold text-emerald-700">= Disponível</span>
+                                    <span className={`text-sm font-extrabold ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>{dispVal} {unit}</span>
+                                  </div>
+                                </div>
+                                {/* Detalhamento Digitação */}
+                                {digitacaoClientes.length > 0 && (
+                                  <div className="border-t border-slate-200">
+                                    <div className="bg-amber-50 px-4 py-2 border-b border-amber-100">
+                                      <p className="text-xs font-bold text-amber-800">Pedidos em Digitação (reservados)</p>
+                                    </div>
+                                    <div className="max-h-[200px] overflow-y-auto">
+                                      <table className="w-full text-xs">
+                                        <thead>
+                                          <tr className="bg-slate-50">
+                                            <th className="text-left px-3 py-1.5 font-semibold text-slate-500">Cliente</th>
+                                            <th className="text-right px-3 py-1.5 font-semibold text-slate-500">Qtd</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                          {digitacaoClientes.map((pc, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-50">
+                                              <td className="px-3 py-1.5 text-slate-700 max-w-[220px] truncate" title={pc.cliente}>{pc.cliente}</td>
+                                              <td className="px-3 py-1.5 text-right font-bold text-amber-600 whitespace-nowrap">{formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      }
+                      return (
+                        <span className={`font-bold ${showFinancial ? 'text-[10px]' : 'text-sm'} ${isNegative ? "text-red-600" : isZero ? "text-amber-600" : "text-emerald-700"}`}>
+                          {dispVal}
+                          {!showFinancial && <> {unit}</>}
+                        </span>
+                      );
+                    })()}
                   </td>
                   {/* PO */}
                   <td className={`whitespace-nowrap ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>

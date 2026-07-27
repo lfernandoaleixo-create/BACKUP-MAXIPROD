@@ -234,10 +234,10 @@
 - [x] Diagnosticar por que a mudança de segmento não está sendo aplicada (lookup comparava descricao com codigoItem)
 - [x] Corrigir o bug (getProductSegments agora faz match por descricaoItem, codigoItem e codigoGrupo)
 
-## Regra: Pedidos em Digitação NÃO reservam estoque
-- [x] Excluir pedidos com status "Digitação" do cálculo de reservados (estoque - pedidos)
-- [x] Apenas pedidos "Aprovados" e "A aprovar" devem reservar estoque
-- [x] Ajustar tooltip: seção separada "Em Digitação" (cinza, opacidade reduzida, nota "Não reservam estoque")
+## Regra: Pedidos em Digitação NÃO reservam estoque (REVOGADA 27/07/2026)
+- [x] ~~Excluir pedidos com status "Digitação" do cálculo de reservados~~ (REVERTIDO: Digitação RESERVA estoque conforme Maxiprod)
+- [x] ~~Apenas pedidos "Aprovados" e "A aprovar" devem reservar estoque~~ (REVERTIDO: todos não-cancelados reservam)
+- [x] ~~Ajustar tooltip: seção separada "Em Digitação"~~ (REVERTIDO: Digitação agora aparece junto com badge azul)
 - [x] Atualizar testes (18 stockProcessor passando)
 
 ## Bug: Erro recorrente na sincronização manual
@@ -6090,3 +6090,9 @@
 - [x] Rastreamento: dados inseridos para HANK-CARRY (COSCO SHIPPING URUGUAY, ETA 03/08) e BETTY-FUSHENG (RDO ENDEAVOUR, ETA 18/08) + rota SHEKOU_SANTOS + fallback ONE Line quando Logcomex sem créditos
 - [x] Bug URGENTE: Renato não consegue cadastrar cliente - campo telefone com limite de 30 chars (ele digitou 2 números separados por /) — CORRIGIDO: aumentado limite de 30 para 100 chars no Zod (salesRouter.ts) e no banco (vendor_clients, sales_order_requests)
 - [x] Bug URGENTE: Larissa não consegue cadastrar NCM na aba Importação > Configurações — CORRIGIDO: adicionada sanitização de vírgula→ponto nos campos de alíquota (II, IPI, PIS, COFINS), validação numérica com mensagem clara de erro, e proteção contra valores inválidos no backend (importRouter.ts) e frontend (Importacao.tsx)
+
+## Estoque: Reserva de pedidos em Digitação (27/07/2026)
+- [x] Pedidos em "Digitação" com reserva devem abater do estoque disponível no dashboard
+- [x] Ao clicar no campo Disponível de um produto, mostrar Popover com composição (Estoque - Reservas Aprovado - Reservas Digitação = Disponível)
+- [x] Card detalha clientes com pedidos em Digitação e quantidade reservada
+- [x] Pedidos em Digitação agora aparecem no tooltip de Pedidos com badge azul

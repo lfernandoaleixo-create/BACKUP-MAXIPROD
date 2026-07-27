@@ -131,6 +131,10 @@ interface ProcessedItem {
   ecommerceBreakdown: EcommerceBreakdown | null;
   // Unidade de venda predominante dos pedidos (CX, PC, kg, DZ, un)
   unidadeVenda: string;
+  // Reservas de pedidos em Digitação (para card explicativo no frontend)
+  digitacaoReservaCx: number | null;
+  digitacaoReservaUn: number;
+  digitacaoReservaPorCliente: PedidoCliente[];
 }
 
 /**
@@ -429,10 +433,11 @@ export async function processStockData(): Promise<void> {
   // NO FILTERING of stock items - espelho fiel!
   
   // Filter orders: exclude Cancelado
-  // REGRA DE NEGÓCIO (13/03/2026):
-  // Pedidos em "Digitação" NÃO reservam estoque.
-  // Apenas pedidos "Aprovados" e "A aprovar" reservam estoque.
-  // Digitação aparece no tooltip como informação, mas não conta na reserva.
+  // REGRA DE NEGÓCIO (27/07/2026 - ATUALIZADA):
+  // Pedidos em "Digitação" com estadoItem="A faturar" RESERVAM estoque (confirmado pelo Maxiprod).
+  // Todos os pedidos não-cancelados reservam estoque.
+  // O campo digitacaoReservaCx/digitacaoReservaPorCliente permite ao frontend
+  // mostrar um card explicando a composição da reserva.
   const allValidOrders = rawOrders.filter(
     (o) => o.estadoNota !== "Cancelado"
   );
@@ -448,12 +453,11 @@ export async function processStockData(): Promise<void> {
   const ecommerceOrders = allValidOrders.filter(isEcommerceTransfer);
   const nonEcommerceOrders = allValidOrders.filter(o => !isEcommerceTransfer(o));
   
-  // Pedidos que RESERVAM estoque (exclui Digitação E exclui E-COMMERCE)
-  const reservingOrders = nonEcommerceOrders.filter(
-    (o) => o.estadoNota !== "Digitação" && o.estadoNota !== "Digitacao"
-  );
+  // Pedidos que RESERVAM estoque (TODOS não-cancelados, não-ecommerce)
+  // Inclui Digitação pois o Maxiprod confirma reserva (estadoItem="A faturar")
+  const reservingOrders = nonEcommerceOrders;
   
-  // Pedidos em Digitação (apenas para exibição no tooltip, exclui E-COMMERCE)
+  // Pedidos em Digitação (separados para exibição no card explicativo)
   const digitacaoOrders = nonEcommerceOrders.filter(
     (o) => o.estadoNota === "Digitação" || o.estadoNota === "Digitacao"
   );
@@ -564,14 +568,31 @@ export async function processStockData(): Promise<void> {
    * Returns array of { cliente, quantidadeCx, quantidadeUn, status }
    * sorted by quantity descending
    */
-  // ─── Build digitacao map by codigoItem (apenas para tooltip) ───
+  // ─── Build digitacao map by codigoItem (para card explicativo) ───
   const digitacaoByCode = new Map<string, typeof digitacaoOrders>();
+  const digitacaoTotalByCode = new Map<string, { totalUn: number; totalCx: number }>();
   for (const order of digitacaoOrders) {
     const code = order.codigoItem;
     if (!code) continue;
     const existing = digitacaoByCode.get(code) || [];
     existing.push(order);
     digitacaoByCode.set(code, existing);
+    // Acumular totais de Digitação para o card
+    const totals = digitacaoTotalByCode.get(code) || { totalUn: 0, totalCx: 0 };
+    const qtyTotal = parseFloat(order.quantidade);
+    const qtyFaturada = order.quantidadeFaturada ? parseFloat(order.quantidadeFaturada) : 0;
+    const qtyCx = Math.max(0, qtyTotal - qtyFaturada);
+    totals.totalCx += qtyCx;
+    const qtyUnEstoque = order.quantidadeUnEstoque ? parseFloat(order.quantidadeUnEstoque) : 0;
+    if (qtyUnEstoque > 0) {
+      const ratio = qtyTotal > 0 ? qtyCx / qtyTotal : 1;
+      totals.totalUn += qtyUnEstoque * ratio;
+    } else {
+      const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
+      const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
+      totals.totalUn += unitsPerBox ? qtyCx * unitsPerBox : qtyCx;
+    }
+    digitacaoTotalByCode.set(code, totals);
   }
   
   function aggregateOrdersByClient(
@@ -677,19 +698,15 @@ export async function processStockData(): Promise<void> {
     const poUn = poData?.totalUn || 0;
     const poCx = poData?.totalCx || 0;
     
-    // Agregar pedidos por cliente + status para tooltip
-    // Inclui pedidos que reservam (Aprovado/A aprovar) E pedidos em Digitação (só informação)
-    const reservaPorCliente = orderData
+        // Agregar pedidos por cliente + status para tooltip
+    // reservingOrders agora inclui Digitação, então orderData.items já contém todos
+    const pedidosPorCliente = orderData
       ? aggregateOrdersByClient(orderData.items, unitsPerBox)
       : [];
+    // Digitação separado apenas para o card explicativo de reservas
     const digitacaoItems = digitacaoByCode.get(item.codigoItem);
-    const digitacaoPorCliente = digitacaoItems
-      ? aggregateOrdersByClient(digitacaoItems, unitsPerBox)
-      : [];
-    const pedidosPorCliente = [...reservaPorCliente, ...digitacaoPorCliente];
-    
     // Extrair estadoConfiguravel predominante e segmentos CRM dos pedidos
-    const allOrdersForItem = [...(orderData?.items || []), ...(digitacaoItems || [])];
+    const allOrdersForItem = orderData?.items || [];
     const estadoConfCounts = new Map<string, number>();
     const segCRMSet = new Set<string>();
     for (const ord of allOrdersForItem) {
@@ -799,6 +816,18 @@ export async function processStockData(): Promise<void> {
       // Produto 00808: forçar unidade de venda como CX (comercial lança em caixas, não kg)
       // Produto 00556: forçar unidade de venda como CX (comercial lança em MIL, converter para caixas)
       unidadeVenda: (item.codigoItem === '00808' || item.codigoItem === '00556') ? 'CX' : (unidadeVendaByCode.get(item.codigoItem) || item.unidadeMedida || ""),
+      // Reservas de Digitação (para card explicativo)
+      digitacaoReservaUn: digitacaoTotalByCode.get(item.codigoItem)?.totalUn || 0,
+      digitacaoReservaCx: (() => {
+        const digTotal = digitacaoTotalByCode.get(item.codigoItem);
+        if (!digTotal || digTotal.totalUn === 0) return null;
+        if (item.codigoItem === '00556') return Math.round(digTotal.totalCx / 10.002);
+        if (unitsPerBox && unitsPerBox !== 1) return Math.ceil(digTotal.totalUn / unitsPerBox);
+        return Math.ceil(digTotal.totalCx);
+      })(),
+      digitacaoReservaPorCliente: digitacaoItems
+        ? aggregateOrdersByClient(digitacaoItems, unitsPerBox)
+        : [],
     });
     processedCodes.add(item.codigoItem);
   }
@@ -821,17 +850,14 @@ export async function processStockData(): Promise<void> {
     
     // ─── Cruzar com pedidos de venda para itens PO-only ───
     const orderData = orderByCode.get(code);
-    const reservaPorCliente = orderData
+        // reservingOrders agora inclui Digitação, então orderData.items já contém todos
+    const pedidosPorCliente = orderData
       ? aggregateOrdersByClient(orderData.items, unitsPerBox)
       : [];
+    // Digitação separado apenas para o card explicativo de reservas
     const digitacaoItems = digitacaoByCode.get(code);
-    const digitacaoPorCliente = digitacaoItems
-      ? aggregateOrdersByClient(digitacaoItems, unitsPerBox)
-      : [];
-    const pedidosPorCliente = [...reservaPorCliente, ...digitacaoPorCliente];
-    
     // Extrair estadoConfiguravel e segmentos CRM dos pedidos
-    const allOrdersForPOItem = [...(orderData?.items || []), ...(digitacaoItems || [])];
+    const allOrdersForPOItem = orderData?.items || [];
     const estadoConfCountsPO = new Map<string, number>();
     const segCRMSetPO = new Set<string>();
     for (const ord of allOrdersForPOItem) {
@@ -912,6 +938,17 @@ export async function processStockData(): Promise<void> {
       pedidosPorClienteProprio: [...pedidosPorCliente],
       ecommerceBreakdown: null,
       unidadeVenda: unidadeVendaByCode.get(code) || poItem.unidadeMedida || "",
+      // Reservas de Digitação (para card explicativo)
+      digitacaoReservaUn: digitacaoTotalByCode.get(code)?.totalUn || 0,
+      digitacaoReservaCx: (() => {
+        const digTotal = digitacaoTotalByCode.get(code);
+        if (!digTotal || digTotal.totalUn === 0) return null;
+        if (unitsPerBox && unitsPerBox !== 1) return Math.ceil(digTotal.totalUn / unitsPerBox);
+        return Math.ceil(digTotal.totalCx);
+      })(),
+      digitacaoReservaPorCliente: digitacaoItems
+        ? aggregateOrdersByClient(digitacaoItems, unitsPerBox)
+        : [],
     });
     processedCodes.add(code);
   }
@@ -1000,6 +1037,9 @@ export async function processStockData(): Promise<void> {
         pedidosPorClienteProprio: [],
         ecommerceBreakdown: null,
         unidadeVenda: firstChild.unidadeVenda,
+        digitacaoReservaUn: 0,
+        digitacaoReservaCx: null,
+        digitacaoReservaPorCliente: [],
       };
       processed.push(parent);
       processedByCode.set(parentCode, parent);
