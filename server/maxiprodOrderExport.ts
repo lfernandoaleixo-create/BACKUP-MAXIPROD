@@ -2,59 +2,70 @@
  * Generates an Excel file in Maxiprod "Pedidos de Venda" import format.
  * Based on the official "Planilha_Modelo_Pedidos_De_Venda_MAXIPROD.xls" template.
  * 
- * 29 columns total. Each row = 1 item of the order.
- * First item has "Novo pedido" = "S", subsequent items = "N".
+ * REGRAS CRÍTICAS (extraídas dos comentários do template oficial):
  * 
- * IMPORTANT: Maxiprod rejects imports when required fields (*) are empty.
- * All required fields MUST have a valid value.
+ * 1. ABA DEVE SE CHAMAR "Dados" (NÃO "Pedidos de Venda")
+ * 2. Coluna A (Novo pedido): "S" = primeiro item do pedido, "N" = itens subsequentes
+ * 3. Coluna B (Identificador): MESMO valor para todos os itens do mesmo pedido
+ * 4. Coluna D (Cliente): CNPJ/CPF APENAS NÚMEROS (zeros à esquerda relevantes!)
+ *    Exemplo: 05.282.757/0001-39 → informar "05282757000139"
+ * 5. Coluna E (Operação fiscal): APENAS o código numérico (ex: 6102, 5101)
+ *    NÃO usar texto descritivo como "6101 - Fora do Estado - Madeira"
+ * 6. Coluna G (Representante): CNPJ/CPF apenas números OU nome
+ * 7. Coluna I (Forma de pagamento): APENAS "À vista", "A Prazo" ou "Outros"
+ *    NÃO usar "Boleto", "PIX", etc.
+ * 8. Colunas R, S, Y: Deixar VAZIO quando zero (NÃO colocar 0)
+ * 9. Headers devem ser EXATAMENTE como no template (incluindo espaços extras)
+ * 
+ * 29 columns total. Each row = 1 item of the order.
  */
 import ExcelJS from "exceljs";
 import { getDb } from "./db";
 import { salesOrderRequests, salesOrderRequestItems } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
-// Exact column headers from Maxiprod import template
+// EXACT column headers from Maxiprod official template (MAXIPROD.xls)
+// ATENÇÃO: Espaços extras em " Representante/ vendedor " são INTENCIONAIS
 const PEDIDO_HEADERS = [
-  "Novo pedido *",
-  "Identificador *",
-  "Referência",
-  "Cliente *",
-  "Operação fiscal *",
-  "Tabela de preços",
-  "Representante/ vendedor",
-  "Moeda*",
-  "Forma de pagamento",
-  "Condição de pagamento",
-  "Código",
-  "Descrição",
-  "Quantidade*",
-  "Unidade de venda*",
-  "Valor unitário",
-  "Valor de desconto",
-  "Valor de frete",
-  "Valor de seguro",
-  "Valor de outras despesas",
-  "Entrega",
-  "Previsão entrega",
-  "Informações adicionais do produto",
-  "Observações técnicas",
-  "Tipo de comissão",
-  "Valor da comissão",
-  "Pedido do cliente",
-  "Pedido do cliente (Item)",
-  "Item (nº) do pedido do cliente",
-  "Resultado da importação",
+  "Novo pedido *",                                              // A
+  "Identificador *",                                            // B
+  "Referência",                                                 // C
+  "Cliente *",                                                  // D
+  "Operação fiscal *",                                          // E
+  "Tabela de preços",                                           // F
+  " Representante/ vendedor ",                                  // G (espaços antes e depois!)
+  "Moeda*",                                                     // H
+  "Forma de pagamento (À vista, A prazo ou Outros)",            // I (descrição completa!)
+  "Condição de pagamento",                                      // J
+  "Código",                                                     // K
+  "Descrição",                                                  // L
+  "Quantidade*",                                                // M
+  "Unidade de venda*",                                          // N
+  "Valor unitário",                                             // O
+  "Valor de desconto",                                          // P
+  "Valor de frete",                                             // Q
+  "Valor de seguro",                                            // R
+  "Valor de outras despesas",                                   // S
+  "Entrega",                                                    // T
+  "Previsão entrega",                                           // U
+  "Informações adicionais do produto",                          // V
+  "Observações técnicas",                                       // W
+  "Tipo de comissão (percentual, valor unitário ou valor total)", // X (descrição completa!)
+  "Valor da comissão",                                          // Y
+  "Pedido do cliente",                                          // Z
+  "Pedido do cliente (Item)",                                   // AA
+  "Item (nº) do pedido do cliente",                             // AB
+  "Resultado da importação",                                    // AC
 ];
 
 interface OrderExportData {
   orderId: number;
   orderNumber: number;
-  razaoSocial: string;
-  operacaoFiscal: string;
+  cnpjCpf: string;         // CNPJ/CPF do cliente (apenas números!)
+  operacaoFiscal: string;  // Código numérico (ex: "6102")
   tabelaPrecos: string;
-  representante: string;
-  moeda: string;
-  formaPagamento: string;
+  representante: string;   // Nome do vendedor (ou CNPJ/CPF)
+  formaPagamento: string;  // "À vista", "A Prazo" ou "Outros"
   condicaoPagamento: string;
   dataEntrega: string;
   previsaoEntrega: string;
@@ -97,37 +108,112 @@ function formatDateBR(dateStr: string | null | undefined): string {
 }
 
 /**
- * Determine the correct "Operação fiscal" based on UF
- * - Same state (PR): 5101 (venda de produção) or 5102 (revenda)
- * - Different state: 6101 (venda de produção) or 6102 (revenda)
- * Default to 6101 (venda interestadual de produção própria) which is most common for Grupo Fox
+ * Limpa CNPJ/CPF removendo tudo que não é dígito.
+ * Mantém zeros à esquerda (relevantes para o Maxiprod).
+ */
+function cleanCnpjCpf(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return raw.replace(/[^\d]/g, "");
+}
+
+/**
+ * Normaliza a forma de pagamento para os valores aceitos pelo Maxiprod.
+ * Aceitos: "À vista", "A Prazo", "Outros"
+ * 
+ * Mapeamentos:
+ * - "Boleto", "A prazo", "a prazo", "Faturado" → "A Prazo"
+ * - "À vista", "Avista", "PIX", "Dinheiro", "Cartão" → "À vista"
+ * - Qualquer outro → "Outros"
+ */
+function normalizeFormaPagamento(raw: string | null | undefined): string {
+  if (!raw) return "A Prazo"; // Default: A Prazo (mais comum para Grupo Fox)
+  
+  const normalized = raw.trim().toLowerCase();
+  
+  // A Prazo
+  if (
+    normalized === "a prazo" ||
+    normalized === "boleto" ||
+    normalized === "faturado" ||
+    normalized === "faturamento" ||
+    normalized.includes("prazo") ||
+    normalized.includes("boleto") ||
+    normalized.includes("faturad")
+  ) {
+    return "A Prazo";
+  }
+  
+  // À vista
+  if (
+    normalized === "à vista" ||
+    normalized === "a vista" ||
+    normalized === "avista" ||
+    normalized === "pix" ||
+    normalized === "dinheiro" ||
+    normalized === "cartão" ||
+    normalized === "cartao" ||
+    normalized.includes("vista") ||
+    normalized.includes("pix") ||
+    normalized.includes("dinheiro")
+  ) {
+    return "À vista";
+  }
+  
+  return "Outros";
+}
+
+/**
+ * Determine the correct "Operação fiscal" code based on UF.
+ * Grupo Fox está no PR.
+ * - Mesmo estado (PR): 5101 (venda de produção) ou 5102 (revenda)
+ * - Outro estado: 6101 (venda de produção) ou 6102 (revenda)
+ * 
+ * Default: 6101 (venda interestadual de produção própria) - mais comum para Grupo Fox
  */
 function deriveOperacaoFiscal(operacaoFiscal: string | null | undefined, uf: string | null | undefined): string {
-  if (operacaoFiscal && operacaoFiscal.trim() !== "") return operacaoFiscal;
-  // Default: 6101 for interstate sales (Grupo Fox is in PR, most clients are out of state)
+  // Se já tem um código numérico válido, usar ele
+  if (operacaoFiscal && operacaoFiscal.trim() !== "") {
+    // Extrair apenas o código numérico (remover texto descritivo)
+    const match = operacaoFiscal.match(/(\d{4})/);
+    if (match) return match[1];
+    // Se é só número, retornar direto
+    if (/^\d+$/.test(operacaoFiscal.trim())) return operacaoFiscal.trim();
+  }
+  
+  // Default baseado na UF
   if (uf && uf.toUpperCase() === "PR") return "5101";
   return "6101";
 }
 
 /**
- * Generate Excel buffer for a single order in Maxiprod Pedidos de Venda format
- * GUARANTEE: No required field will be empty.
+ * Generate Excel buffer for a single order in Maxiprod Pedidos de Venda format.
+ * 
+ * REGRAS IMPLEMENTADAS:
+ * - Aba chamada "Dados" (não "Pedidos de Venda")
+ * - Cliente = CNPJ apenas números
+ * - Operação fiscal = apenas código numérico
+ * - Forma de pagamento = "À vista", "A Prazo" ou "Outros"
+ * - Campos zero (seguro, outras despesas, comissão) = VAZIO (não 0)
+ * - Primeiro item: A = "S", demais: A = "N"
+ * - Identificador igual para todos os itens
+ * - Headers exatamente como no template oficial
  */
 export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Pedidos de Venda");
+  // CRÍTICO: A aba DEVE se chamar "Dados" (não "Pedidos de Venda")
+  const worksheet = workbook.addWorksheet("Dados");
 
-  // Add header row
+  // Add header row with EXACT headers from template
   worksheet.addRow(PEDIDO_HEADERS);
 
-  // Style header row
+  // Style header row (cyan background like the Maxiprod template)
   const headerRow = worksheet.getRow(1);
-  headerRow.font = { bold: true };
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
   headerRow.eachCell((cell) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFFFFFCC" }, // Light yellow like Maxiprod
+      fgColor: { argb: "FF00BCD4" }, // Cyan like Maxiprod template
     };
     cell.border = {
       bottom: { style: "thin" },
@@ -143,39 +229,42 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
     // Today's date as fallback for delivery dates
     const todayBR = (() => {
       const d = new Date();
-      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
     })();
 
-    const row: (string | number)[] = [
-      isFirst ? "S" : "N",                           // 1. Novo pedido * (REQUIRED: "S" or "N")
-      String(orderData.orderNumber || orderData.orderId), // 2. Identificador * (REQUIRED: unique ID)
-      String(orderData.orderNumber || orderData.orderId), // 3. Referência (same as identifier)
-      orderData.razaoSocial || "CLIENTE",             // 4. Cliente * (REQUIRED: must match Maxiprod cadastro)
-      orderData.operacaoFiscal || "6101",             // 5. Operação fiscal * (REQUIRED: CFOP code)
-      orderData.tabelaPrecos || "001",                // 6. Tabela de preços (default: 001)
-      orderData.representante || "",                    // 7. Representante/vendedor
-      orderData.moeda || "R$",                        // 8. Moeda* (REQUIRED: "R$")
-      orderData.formaPagamento || "A prazo",          // 9. Forma de pagamento
-      orderData.condicaoPagamento || "",              // 10. Condição de pagamento
-      item.codigoItem || "00000",                     // 11. Código (product code)
-      item.descricaoItem || "PRODUTO",                // 12. Descrição (product description)
-      item.quantidade || 1,                           // 13. Quantidade* (REQUIRED: must be > 0)
-      item.unidadeMedida || "CX",                    // 14. Unidade de venda* (REQUIRED: "CX", "UN", "KG", etc.)
-      item.precoUnitario || 0,                        // 15. Valor unitário (price per unit)
-      item.valorDesconto || 0,                        // 16. Valor de desconto
-      isFirst ? (orderData.valorFrete || 0) : 0,     // 17. Valor de frete (only on first item)
-      0,                                              // 18. Valor de seguro
-      0,                                              // 19. Valor de outras despesas
-      formatDateBR(orderData.dataEntrega) || todayBR, // 20. Entrega (delivery date)
-      formatDateBR(orderData.previsaoEntrega) || todayBR, // 21. Previsão entrega
-      orderData.estadoConfiguravel || "",              // 22. Informações adicionais do produto
-      isFirst ? (orderData.observacoes || "") : "",     // 23. Observações técnicas
-      "",                                             // 24. Tipo de comissão
-      "0",                                            // 25. Valor da comissão
-      "",                                             // 26. Pedido do cliente
-      "",                                             // 27. Pedido do cliente (Item)
-      "0",                                            // 28. Item (nº) do pedido do cliente
-      "",                                             // 29. Resultado da importação (filled by Maxiprod)
+    // CNPJ limpo (apenas números, zeros à esquerda preservados)
+    const cnpjLimpo = cleanCnpjCpf(orderData.cnpjCpf);
+
+    const row: (string | number | null)[] = [
+      isFirst ? "S" : "N",                                    // A: Novo pedido * (S=primeiro, N=demais)
+      String(orderData.orderNumber || orderData.orderId),     // B: Identificador * (mesmo para todos itens)
+      String(orderData.orderNumber || orderData.orderId),     // C: Referência (= identificador)
+      cnpjLimpo,                                              // D: Cliente * (CNPJ APENAS NÚMEROS!)
+      orderData.operacaoFiscal,                               // E: Operação fiscal * (APENAS código numérico!)
+      orderData.tabelaPrecos || "001",                        // F: Tabela de preços
+      orderData.representante || "",                           // G: Representante/vendedor (nome ou CNPJ)
+      "R$",                                                   // H: Moeda* (sempre R$)
+      orderData.formaPagamento,                               // I: Forma de pagamento (À vista/A Prazo/Outros)
+      orderData.condicaoPagamento || "",                      // J: Condição de pagamento
+      item.codigoItem || "",                                  // K: Código do produto
+      item.descricaoItem || "",                               // L: Descrição (se vazio, Maxiprod usa cadastro)
+      item.quantidade || 1,                                   // M: Quantidade*
+      item.unidadeMedida || "un",                             // N: Unidade de venda*
+      item.precoUnitario || 0,                                // O: Valor unitário
+      item.valorDesconto || 0,                                // P: Valor de desconto
+      isFirst ? (orderData.valorFrete || 0) : 0,             // Q: Valor de frete
+      null,                                                   // R: Valor de seguro (VAZIO, não 0!)
+      null,                                                   // S: Valor de outras despesas (VAZIO, não 0!)
+      formatDateBR(orderData.dataEntrega) || todayBR,         // T: Entrega
+      formatDateBR(orderData.previsaoEntrega) || todayBR,     // U: Previsão entrega
+      orderData.estadoConfiguravel || "",                     // V: Informações adicionais do produto
+      isFirst ? (orderData.observacoes || "") : "",           // W: Observações técnicas
+      "",                                                     // X: Tipo de comissão (vazio)
+      null,                                                   // Y: Valor da comissão (VAZIO, não "0"!)
+      "",                                                     // Z: Pedido do cliente
+      "",                                                     // AA: Pedido do cliente (Item)
+      "0",                                                    // AB: Item (nº) do pedido do cliente
+      "",                                                     // AC: Resultado da importação (preenchido pelo Maxiprod)
     ];
 
     worksheet.addRow(row);
@@ -221,7 +310,13 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
 }
 
 /**
- * Generate Maxiprod Order Excel from a saved order in the database
+ * Generate Maxiprod Order Excel from a saved order in the database.
+ * Applies ALL format corrections:
+ * - CNPJ apenas números
+ * - Operação fiscal apenas código
+ * - Forma de pagamento normalizada
+ * - Aba "Dados"
+ * - Campos vazios onde zero não é aceito
  */
 export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise<{ buffer: Buffer; filename: string }> {
   const db = await getDb();
@@ -235,19 +330,24 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     .where(eq(salesOrderRequestItems.orderId, orderId));
   if (items.length === 0) throw new Error("Pedido sem itens");
 
-  // Determine operação fiscal based on UF
+  // Determine operação fiscal based on UF (apenas código numérico)
   const uf = order.uf || "";
   const operacaoFiscal = deriveOperacaoFiscal(order.operacaoFiscal || null, uf);
+
+  // CNPJ limpo (apenas números)
+  const cnpjLimpo = cleanCnpjCpf(order.cnpjCpf);
+
+  // Forma de pagamento normalizada (À vista / A Prazo / Outros)
+  const formaPagamento = normalizeFormaPagamento(order.formaPagamento);
 
   const orderData: OrderExportData = {
     orderId: order.id,
     orderNumber: order.orderNumber || order.id,
-    razaoSocial: order.razaoSocial || order.nomeFantasia || "CLIENTE",
+    cnpjCpf: cnpjLimpo,
     operacaoFiscal,
     tabelaPrecos: order.tabelaPrecos || "",
     representante: order.sellerName || "",
-    moeda: "R$",
-    formaPagamento: order.formaPagamento || "A prazo",
+    formaPagamento,
     condicaoPagamento: order.condicaoPagamento || "",
     dataEntrega: order.dataEntrega || "",
     previsaoEntrega: order.previsaoEntrega || order.dataEntrega || "",
@@ -256,9 +356,9 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     estadoConfiguravel: order.estadoConfiguravel || "",
     items: items.map(item => ({
       codigoItem: item.codigoItem || "",
-      descricaoItem: item.descricaoItem || "PRODUTO",
+      descricaoItem: item.descricaoItem || "",
       quantidade: Number(item.quantidade) || 1,
-      unidadeMedida: item.unidadeMedida || "CX",
+      unidadeMedida: item.unidadeMedida || "un",
       precoUnitario: Number(item.precoUnitario) || 0,
       valorDesconto: 0,
     })),

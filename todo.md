@@ -6162,3 +6162,18 @@
 - [x] Atualizar scheduler.ts para logar contagem de religamentos
 - [x] Atualizar teste vitest para incluir campo 'relinked' no resultado
 - [x] Testes passando (5/5 no cobrancaPlanilhaSync.test.ts)
+
+## Fix: Exportação Pedido Maxiprod - Formato Correto
+- [x] Analisar 3 arquivos Excel (template oficial, versão errada, versão aceita)
+- [x] Documentar todas as regras dos comentários (pontos vermelhos) do template
+- [x] Corrigir aba: "Dados" (não "Pedidos de Venda")
+- [x] Corrigir Cliente: CNPJ apenas números (não nome da empresa)
+- [x] Corrigir Operação fiscal: apenas código numérico (não texto descritivo)
+- [x] Corrigir Forma de pagamento: normalizar para "À vista"/"A Prazo"/"Outros"
+- [x] Corrigir campos vazios: seguro, outras despesas, comissão = null (não 0)
+- [x] Corrigir headers: exatamente como template oficial (com espaços)
+- [x] Testes passando (5/5 no maxiprodOrderExport.test.ts)
+- [ ] Gerar arquivo real com pedidos existentes para teste no Maxiprod
+
+## Bug: Faturamento Parcial - Status Errado
+- [ ] Pedido com faturamento parcial ("Fat. Parcial") deve voltar para "Pedidos em Aberto" (NÃO para "Autorizado a faturar")
