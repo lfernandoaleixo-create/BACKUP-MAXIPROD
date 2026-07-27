@@ -1631,9 +1631,15 @@ export function RastreioEmConjunto() {
 
             {/* Status */}
             {(activeLive?.currentStatus || activeContainer.trackingStatus || activeContainer.status) && (
-              <div className="bg-slate-800/60 rounded-lg p-2 mb-3">
+              <div className={`${(activeLive?.currentStatus || activeContainer.trackingStatus || '').toLowerCase().includes('pré-embarque') ? 'bg-amber-900/40 border border-amber-600/40' : 'bg-slate-800/60'} rounded-lg p-2 mb-3`}>
                 <span className="text-slate-500 uppercase tracking-wider text-[9px]">Status</span>
-                <p className="text-emerald-300 font-medium mt-0.5">{activeLive?.currentStatus || activeContainer.trackingStatus || activeContainer.status}</p>
+                <p className={`font-medium mt-0.5 ${(activeLive?.currentStatus || activeContainer.trackingStatus || '').toLowerCase().includes('pré-embarque') ? 'text-amber-300' : 'text-emerald-300'}`}>{activeLive?.currentStatus || activeContainer.trackingStatus || activeContainer.status}</p>
+                {(activeLive?.currentStatus || activeContainer.trackingStatus || '').toLowerCase().includes('pré-embarque') && (activeLive?.progress === 0 || !activeLive?.progress) && (
+                  <p className="text-[9px] text-red-400 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Sem marco logístico confirmado (RISCO)
+                  </p>
+                )}
               </div>
             )}
 
@@ -1759,8 +1765,14 @@ export function RastreioEmConjunto() {
               </div>
 
               {live?.currentStatus && (
-                <div className="mt-1.5 text-[10px] text-emerald-600 font-medium truncate">
+                <div className={`mt-1.5 text-[10px] font-medium truncate ${live.currentStatus.toLowerCase().includes('pré-embarque') ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {live.currentStatus.toLowerCase().includes('pré-embarque') && (
+                    <AlertCircle className="w-3 h-3 inline mr-1 text-red-500" />
+                  )}
                   {live.currentStatus}
+                  {live.currentStatus.toLowerCase().includes('pré-embarque') && (
+                    <span className="text-[9px] text-red-500 ml-1">(RISCO)</span>
+                  )}
                 </div>
               )}
 
@@ -1892,9 +1904,27 @@ export function RastreioEmConjunto() {
 
                 {/* Status */}
                 {(ml?.currentStatus || mc.trackingStatus || mc.status) && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                    <p className="text-[10px] text-emerald-600 uppercase tracking-wider">Status Atual</p>
-                    <p className="text-sm font-semibold text-emerald-700 mt-0.5">{ml?.currentStatus || mc.trackingStatus || mc.status}</p>
+                  <div className={`${(ml?.currentStatus || mc.trackingStatus || '').toLowerCase().includes('pré-embarque') ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'} rounded-lg p-3`}>
+                    <p className={`text-[10px] uppercase tracking-wider ${(ml?.currentStatus || mc.trackingStatus || '').toLowerCase().includes('pré-embarque') ? 'text-amber-600' : 'text-emerald-600'}`}>Status Atual</p>
+                    <p className={`text-sm font-semibold mt-0.5 ${(ml?.currentStatus || mc.trackingStatus || '').toLowerCase().includes('pré-embarque') ? 'text-amber-700' : 'text-emerald-700'}`}>{ml?.currentStatus || mc.trackingStatus || mc.status}</p>
+                  </div>
+                )}
+
+                {/* Risk Alert - Logcomex AI */}
+                {ml?.currentStatus?.toLowerCase().includes('pré-embarque') && (ml?.progress === 0 || !ml?.progress) && (
+                  <div className="bg-red-50 border-l-4 border-l-red-500 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-red-700">Tracking localizado, mas ainda sem marco logístico confirmado</p>
+                        <p className="text-[10px] text-red-600 mt-1 leading-relaxed">
+                          O container foi localizado no LogManager, porém o status atual está em <strong>Verificando Embarque</strong> e não há booking, navio, viagem, origem, destino, ETA, ETD nem eventos cronológicos registrados.
+                        </p>
+                        <p className="text-[10px] text-red-500 mt-1 font-medium">
+                          Classificação: Pré-embarque — sem atualização operacional confiável até a próxima sincronização.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 

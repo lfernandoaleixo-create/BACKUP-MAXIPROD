@@ -6140,3 +6140,9 @@
 - [x] Bonificação #1217 (12cx de 00547) deve ser deduzida do processado: 17 - 5 - 12 = 0
 - [x] Criar painel de histórico de saídas no card QC mostrando: pedido, cliente, quantidade, tipo (venda/bonificação/faturamento parcial)
 
+
+## HANK Container: Exibir status correto da Logcomex (27/07/2026)
+- [x] Remover dados incorretos do cosco_manual (77%, ETA 03/08) — contêiner NÃO embarcou
+- [x] HANK deve mostrar: Pré-embarque, 0%, sem ETA/ETD/navio
+- [x] Adicionar alerta de risco: "Tracking localizado, mas sem marco logístico confirmado"
+- [x] Exibir classificação operacional da Logcomex no card do contêiner
