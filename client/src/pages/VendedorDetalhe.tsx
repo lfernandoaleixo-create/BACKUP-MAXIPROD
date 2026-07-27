@@ -6863,8 +6863,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <p className="text-xs text-slate-400 text-center py-3">Carregando produtos...</p>
             )}
 
-            {/* Forma de Pagamento - visível para vendedores que não passam pelo step pagamento */}
-            {!isGestorMode && (
+            {/* Forma de Pagamento - sempre visível para permitir conclusão rápida do pedido */}
+            {true && (
               <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-3">
                 <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase mb-2">💰 Pagamento</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -6887,9 +6887,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     </select>
                     {!formaPagamento && <p className="text-[8px] text-red-500 mt-0.5">Campo obrigatório</p>}
                   </div>
-                  {formaPagamento === 'A prazo' && (
+                  {(formaPagamento === 'A prazo' || formaPagamento === 'Boleto') && (
                     <div>
-                      <label className="text-[10px] text-slate-500 font-medium">Condição de Pagamento <span className="text-red-500">*</span></label>
+                      <label className="text-[10px] text-slate-500 font-medium">Condição de Pagamento {formaPagamento === 'A prazo' && <span className="text-red-500">*</span>}</label>
                       <input
                         type="text"
                         value={condicaoPagamento}
@@ -6897,7 +6897,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                         placeholder="Ex: 30/60/90 dias"
                         className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 ${formaPagamento === 'A prazo' && !condicaoPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
                       />
-                      {!condicaoPagamento && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório para pagamento a prazo</p>}
+                      {formaPagamento === 'A prazo' && !condicaoPagamento && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório para pagamento a prazo</p>}
                     </div>
                   )}
                 </div>
