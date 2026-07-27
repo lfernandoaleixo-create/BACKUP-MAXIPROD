@@ -6,9 +6,11 @@ describe("cobrancaPlanilhaSync - Auto sync", () => {
     const result = await syncCobrancaPlanilhaAuto();
     expect(result).toHaveProperty("added");
     expect(result).toHaveProperty("deactivated");
+    expect(result).toHaveProperty("relinked");
     expect(result).toHaveProperty("total");
     expect(typeof result.added).toBe("number");
     expect(typeof result.deactivated).toBe("number");
+    expect(typeof result.relinked).toBe("number");
     expect(typeof result.total).toBe("number");
     expect(result.total).toBeGreaterThan(0);
   }, 60000);

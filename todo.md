@@ -6146,3 +6146,19 @@
 - [x] HANK deve mostrar: Pré-embarque, 0%, sem ETA/ETD/navio
 - [x] Adicionar alerta de risco: "Tracking localizado, mas sem marco logístico confirmado"
 - [x] Exibir classificação operacional da Logcomex no card do contêiner
+
+## Financeiro - Inadimplência: Duplicação e Perda de Dados (27/07/2026)
+- [ ] FOGOS OURO NF 394 (2/2) aparece DUPLICADO na inadimplência — Maxiprod tem apenas 1 título (R$ 2.250,00 cheque). Corrigir deduplicação
+- [ ] Garantir que dados de status/etapas de cobrança da inadimplência NUNCA se percam (ex: MIL AROMAS com status "Pendente" e etapas preenchidas)
+- [ ] Implementar proteção contra perda de dados de inadimplência durante sync/atualização
+
+## Fix Inadimplência - Duplicatas e Perda de Dados (27/07/2026)
+- [x] Diagnosticar causa raiz: Maxiprod muda ar_id dos títulos, auto-sync criava novo registro sem detectar o existente
+- [x] Implementar deduplicação no auto-sync: antes de inserir, verificar se já existe registro ativo com mesma empresa+documento+vencimento+valor
+- [x] Se match encontrado, religar ar_id do existente em vez de criar novo (evita duplicatas)
+- [x] Limpar 15 registros duplicados existentes no banco (11 grupos de duplicatas)
+- [x] Limpar 2 duplicatas Maxiprod (KEURE - NF 1391 vs NFE 1391)
+- [x] Verificar: 0 duplicatas, 0 ar_ids órfãos, 97 registros ativos
+- [x] Atualizar scheduler.ts para logar contagem de religamentos
+- [x] Atualizar teste vitest para incluir campo 'relinked' no resultado
+- [x] Testes passando (5/5 no cobrancaPlanilhaSync.test.ts)

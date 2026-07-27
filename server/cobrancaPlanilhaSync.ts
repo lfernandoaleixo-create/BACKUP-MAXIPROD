@@ -136,9 +136,9 @@ const STATUS_MAP: Record<string, string> = {
   fundo_perdido: "Fundo Perdido",
 };
 
-export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deactivated: number; total: number }> {
+export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deactivated: number; relinked: number; total: number }> {
   const db = await getDb();
-  if (!db) return { added: 0, deactivated: 0, total: 0 };
+  if (!db) return { added: 0, deactivated: 0, relinked: 0, total: 0 };
 
   const cutoff = getPreviousBusinessDay();
   const todayStr = getTodayBR();
@@ -286,8 +286,53 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   const allPlanilhaRecords = await db.select().from(cobrancaPlanilha);
 
   let added = 0;
+  let relinked = 0;
   for (const title of validOverdue) {
     if (!allPlanilhaArIds.has(title.arId)) {
+      // DEDUPLICAÇÃO: Antes de inserir, verificar se já existe um registro ativo
+      // com mesma empresa+documento+vencimento+valor mas ar_id diferente (órfão).
+      // Isso acontece quando o Maxiprod muda o ID interno do título.
+      const empresaUpper = title.empresa.toUpperCase().trim();
+      const docNum = title.row.documentoVinculadoNumero;
+      const parcela = title.row.parcela;
+      const totalParcelas = title.row.parcelasQuantidadeTotal;
+      let expectedDoc: string | null = null;
+      if (docNum) {
+        expectedDoc = `NF ${docNum}`;
+        if (parcela && totalParcelas) {
+          expectedDoc += ` (${parcela}/${totalParcelas})`;
+        } else if (parcela) {
+          expectedDoc += ` (${parcela})`;
+        }
+      }
+      const valorStr = title.valorAReceber.toFixed(2);
+      
+      // Buscar registro ativo existente com mesma empresa+documento+vencimento+valor
+      const existingMatch = activePlanilha.find(p => {
+        if (!p.empresa || !p.arId) return false;
+        // ar_id já correto? Não precisa religar
+        if (p.arId === title.arId) return false;
+        // Mesma empresa
+        if (p.empresa.toUpperCase().trim() !== empresaUpper) return false;
+        // Mesmo documento
+        if ((p.documento || null) !== expectedDoc) return false;
+        // Mesmo vencimento
+        if (p.vencimento !== title.vencDate) return false;
+        // Mesmo valor (com tolerância de 0.01)
+        if (Math.abs((Number(p.valor) || 0) - title.valorAReceber) > 0.01) return false;
+        return true;
+      });
+      
+      if (existingMatch) {
+        // RELIGAR: Atualizar o ar_id do registro existente para o novo ID
+        await db.update(cobrancaPlanilha)
+          .set({ arId: title.arId, updatedBy: "Auto-sync (ar_id atualizado)" })
+          .where(eq(cobrancaPlanilha.id, existingMatch.id));
+        relinked++;
+        console.log(`[Auto-sync] RELINK: ${title.empresa} - ${expectedDoc} ar_id ${existingMatch.arId} → ${title.arId}`);
+        continue;
+      }
+      
       // New title not in planilha at all → add it
       const vencDate = title.vencDate;
       const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
@@ -305,26 +350,26 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       // 4. Se a empresa tem títulos inativos com status forte (Protestado/Fundo Perdido/etc) → herda
       //    (empresa já protestada, novos títulos devem manter o mesmo status)
       // 5. Caso contrário → entra como Pendente (cada título é tratado individualmente)
-      const empresaUpper = title.empresa.toUpperCase().trim();
+      const empUpper = title.empresa.toUpperCase().trim();
       const especialMatch = allPlanilhaRecords.find(
-        r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper && r.status === "Especial s/ cobrança"
+        r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empUpper && r.status === "Especial s/ cobrança"
       );
       if (especialMatch) {
         statusPlanilha = "Especial s/ cobrança";
       } else {
         // Check for same empresa+vencimento in inactive records (arId changed in Maxiprod)
         const sameEmpVenc = allPlanilhaRecords.find(
-          r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+          r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empUpper
             && r.vencimento === title.vencDate && r.status && r.status !== "Pendente"
         );
         if (sameEmpVenc) {
           statusPlanilha = sameEmpVenc.status!;
         } else {
           // Check for same empresa+valor in inactive records (parcela com vencimento diferente)
-          const valorStr = String(title.valorAReceber.toFixed(2));
+          const valorStrHeranca = String(title.valorAReceber.toFixed(2));
           const sameEmpValor = allPlanilhaRecords.find(
-            r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
-              && r.valor && parseFloat(String(r.valor)).toFixed(2) === valorStr
+            r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empUpper
+              && r.valor && parseFloat(String(r.valor)).toFixed(2) === valorStrHeranca
               && r.status && r.status !== "Pendente"
           );
           if (sameEmpValor) {
@@ -337,7 +382,7 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
             // pois novos títulos devem começar como Pendente para serem cobrados normalmente.
             const STRONG_STATUSES = ["Protestado", "Protesto em Análise", "Fundo Perdido", "Especial s/ cobrança"];
             const recentInactiveOfEmpresa = allPlanilhaRecords
-              .filter(r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+              .filter(r => !r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empUpper
                 && r.status && STRONG_STATUSES.includes(r.status))
               .sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
             if (recentInactiveOfEmpresa.length > 0) {
@@ -345,7 +390,7 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
             } else {
               // Também verificar títulos ATIVOS da mesma empresa com status forte
               const activeOfEmpresa = allPlanilhaRecords.find(
-                r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+                r => r.ativo && r.empresa && r.empresa.toUpperCase().trim() === empUpper
                   && r.status && STRONG_STATUSES.includes(r.status)
               );
               if (activeOfEmpresa) {
@@ -368,26 +413,15 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         tipoPlanilha = "COM PROTESTO (CARTÓRIO)";
       }
 
-      // Build documento string (NF + parcela)
-      const docNum = title.row.documentoVinculadoNumero;
-      const parcela = title.row.parcela;
-      const totalParcelas = title.row.parcelasQuantidadeTotal;
-      let documento: string | null = null;
-      if (docNum) {
-        documento = `NF ${docNum}`;
-        if (parcela && totalParcelas) {
-          documento += ` (${parcela}/${totalParcelas})`;
-        } else if (parcela) {
-          documento += ` (${parcela})`;
-        }
-      }
+      // Build documento string (NF + parcela) - reuse expectedDoc from dedup check above
+      const documento = expectedDoc;
 
       // Centro: will be populated from sales_orders lookup (see below)
       const centroCustos: string | null = null; // populated after insert via batch update
 
       // FIX APAGÕES: Buscar donor para herdar TUDO (etapas + observações + histórico)
       const donor = allPlanilhaRecords
-        .filter(r => r.empresa && r.empresa.toUpperCase().trim() === empresaUpper
+        .filter(r => r.empresa && r.empresa.toUpperCase().trim() === empUpper
           && (r.primeiraCobranca || r.promessaPgto || r.semAcao1 || r.segundaCobranca || r.semAcao2 || r.terceiraCobranca || r.semAcao3 || r.acaoFinal || r.observacoes))
         .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0];
       
@@ -768,7 +802,11 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
 
   const finalCountAfterFP = await db.select({ id: cobrancaPlanilha.id }).from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
 
-  return { added, deactivated, total: finalCountAfterFP.length };
+  if (relinked > 0) {
+    console.log(`[Auto-sync] ${relinked} títulos religados (ar_id atualizado sem duplicar)`);
+  }
+
+  return { added, deactivated, relinked, total: finalCountAfterFP.length };
 }
 
 /**

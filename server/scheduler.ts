@@ -82,7 +82,7 @@ export function startScheduler(): void {
         // Auto-sync Planilha de Cobrança (deactivate paid titles, add new overdue ones)
         try {
           const cobrancaResult = await syncCobrancaPlanilhaAuto();
-          console.log(`[Scheduler] Cobrança planilha synced: ${cobrancaResult.added} novos, ${cobrancaResult.deactivated} desativados, ${cobrancaResult.total} ativos`);
+          console.log(`[Scheduler] Cobrança planilha synced: ${cobrancaResult.added} novos, ${cobrancaResult.deactivated} desativados, ${cobrancaResult.relinked} religados, ${cobrancaResult.total} ativos`);
         } catch (cobErr: any) {
           console.error(`[Scheduler] Cobrança planilha sync failed: ${cobErr.message}`);
         }
