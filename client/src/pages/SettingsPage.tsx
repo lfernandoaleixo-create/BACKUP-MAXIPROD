@@ -541,6 +541,13 @@ interface GranularPermDef {
   parentTab: string; // qual aba principal (faturamento, financeiro, configuracoes)
 }
 
+const GRANULAR_VENDAS: GranularPermDef[] = [
+  { key: "vnd.abaVendas", label: "Aba: Vendas (Dashboard)", parentTab: "vendas" },
+  { key: "vnd.abaFornecedores", label: "Aba: Fornecedores Brasileiros", parentTab: "vendas" },
+  { key: "vnd.abaMetricasVendas", label: "Aba: Métricas de Vendas", parentTab: "vendas" },
+  { key: "vnd.abaMetricasClientes", label: "Aba: Métrica de Clientes", parentTab: "vendas" },
+];
+
 const GRANULAR_ESTOQUE: GranularPermDef[] = [
   { key: "est.valorizacao", label: "Valorização de Estoque", parentTab: "estoque" },
   { key: "est.historicoMadeira", label: "Histórico — Estoque (Madeira)", parentTab: "estoque" },
@@ -636,9 +643,10 @@ const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.dados", label: "Dados", parentTab: "configuracoes" },
 ];
 
-const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_GESTAO_COMERCIAL, ...GRANULAR_IMPORTACAO, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
+const ALL_GRANULAR_PERMS = [...GRANULAR_VENDAS, ...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_GESTAO_COMERCIAL, ...GRANULAR_IMPORTACAO, ...GRANULAR_PRODUCAO, ...GRANULAR_CONFIGURACOES];
 
 const GRANULAR_GROUPS = [
+  { parentTab: "vendas", label: "Vendas", color: "bg-blue-500", perms: GRANULAR_VENDAS },
   { parentTab: "estoque", label: "Estoque", color: "bg-teal-500", perms: GRANULAR_ESTOQUE },
   { parentTab: "gestao-comercial", label: "Gestão Comercial", color: "bg-cyan-600", perms: GRANULAR_GESTAO_COMERCIAL },
   { parentTab: "faturamento", label: "Faturamento", color: "bg-violet-500", perms: GRANULAR_FATURAMENTO },

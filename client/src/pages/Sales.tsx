@@ -3998,7 +3998,7 @@ function MetricaVendasSubTabs() {
 
 /* ---- Main Sales Page ---- */
 export default function Sales() {
-  const { operator } = useOperator();
+  const { operator, hasGranularAccess } = useOperator();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
@@ -4013,8 +4013,12 @@ export default function Sales() {
     "Renato": "RENATO LEDESMA",
   };
   const sellerNameForCobranca = operator?.name ? OPERATOR_TO_SELLER_SALES[operator.name] : undefined;
-  const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
-  const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
+  // Permissões granulares para sub-abas de Vendas
+  const canSeeVendas = hasGranularAccess("vnd.abaVendas");
+  const canSeeFornecedores = hasGranularAccess("vnd.abaFornecedores");
+  const canSeeMetricasVendas = hasGranularAccess("vnd.abaMetricasVendas");
+  const canSeeMetricasClientes = hasGranularAccess("vnd.abaMetricasClientes");
+  const hasAnySubTab = canSeeFornecedores || canSeeMetricasVendas || canSeeMetricasClientes;
   const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes">("vendas");
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
@@ -4345,8 +4349,9 @@ export default function Sales() {
         </div>
 
         {/* Sub-abas Vendas */}
-        {canSeeFornecedores && (
+        {hasAnySubTab && (
           <div className="flex flex-wrap items-center justify-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+            {canSeeVendas && (
             <button
               onClick={() => setSalesTab("vendas")}
               className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
@@ -4358,6 +4363,8 @@ export default function Sales() {
               <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
               <span className="truncate">Vendas</span>
             </button>
+            )}
+            {canSeeFornecedores && (
             <button
               onClick={() => setSalesTab("fornecedores")}
               className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
@@ -4369,6 +4376,8 @@ export default function Sales() {
               <Truck className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
               <span className="whitespace-nowrap"><span className="md:hidden">Fornecedores</span><span className="hidden md:inline">Fornecedores Brasileiros</span></span>
             </button>
+            )}
+            {canSeeMetricasVendas && (
             <button
               onClick={() => setSalesTab("metricas")}
               className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
@@ -4380,6 +4389,8 @@ export default function Sales() {
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
               <span className="whitespace-nowrap"><span className="md:hidden">Mét. Vendas</span><span className="hidden md:inline">Métricas de Vendas</span></span>
             </button>
+            )}
+            {canSeeMetricasClientes && (
             <button
               onClick={() => setSalesTab("clientes")}
               className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
@@ -4391,8 +4402,7 @@ export default function Sales() {
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
               <span className="whitespace-nowrap"><span className="md:hidden">Mét. Clientes</span><span className="hidden md:inline">Métrica de Clientes</span></span>
             </button>
-
-
+            )}
           </div>
         )}
 
@@ -4402,12 +4412,12 @@ export default function Sales() {
         )}
 
         {/* Tab: Métrica de Vendas */}
-        {salesTab === "metricas" && canSeeFornecedores && (
+        {salesTab === "metricas" && canSeeMetricasVendas && (
           <MetricaVendasSubTabs />
         )}
 
         {/* Tab: Métrica de Clientes */}
-        {salesTab === "clientes" && canSeeFornecedores && (
+        {salesTab === "clientes" && canSeeMetricasClientes && (
           <MetricaClientesTab />
         )}
 
