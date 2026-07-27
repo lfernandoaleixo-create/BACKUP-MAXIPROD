@@ -4404,6 +4404,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       estoqueProjetado: number;
       estoqueProcessado: number;
       pedidosCx: number;
+      pedidosFaturadosCx: number;
       disponivelVenda: number;
       estoqueRegulador: number;
       status: "verde" | "amarelo" | "vermelho";
@@ -4420,6 +4421,10 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     const parentPedidos = (parentItem.variants || []).reduce((sum, v) => {
       const totalOriginal = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
       return sum + totalOriginal;
+    }, 0);
+    const parentFaturados = (parentItem.variants || []).reduce((sum, v) => {
+      const totalFaturado = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeFaturadaCx || 0), 0);
+      return sum + totalFaturado;
     }, 0);
     const parentProjetado = parentPo + parentStock.maxiprod;
     const parentDisponivel = parentStock.processado - parentPedidos;
@@ -4438,6 +4443,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       estoqueProjetado: parentProjetado,
       estoqueProcessado: parentStock.processado,
       pedidosCx: parentPedidos,
+      pedidosFaturadosCx: parentFaturados,
       disponivelVenda: parentDisponivel,
       estoqueRegulador: parentStock.regulador,
       status: parentStatus,
@@ -4452,11 +4458,13 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       const vStock = qcStockMap.get(v.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
       // Usar quantidadeOriginalCx (total do pedido) - faturamento parcial ainda compromete tudo
       const vPedidos = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeOriginalCx || 0), 0);
+      const vFaturados = (v.pedidosPorCliente || []).reduce((s, pc) => s + Math.ceil(pc.quantidadeFaturadaCx || 0), 0);
       return {
         codigoItem: v.codigoItem,
         descricaoItem: v.descricaoItem,
         conversionFactor: v.conversionFactor,
         pedidosCx: vPedidos,
+        pedidosFaturadosCx: vFaturados,
         estoqueMaxiprod: vStock.maxiprod,
         estoqueProcessado: vStock.processado,
         estoqueRegulador: vStock.regulador,
@@ -4471,6 +4479,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     projetado: rows.reduce((s, r) => s + r.estoqueProjetado, 0),
     processado: rows.reduce((s, r) => s + r.estoqueProcessado, 0),
     pedidos: rows.reduce((s, r) => s + r.pedidosCx, 0),
+    pedidosFaturados: rows.reduce((s, r) => s + r.pedidosFaturadosCx, 0),
     disponivel: rows.reduce((s, r) => s + r.disponivelVenda, 0),
     regulador: rows.reduce((s, r) => s + r.estoqueRegulador, 0),
   }), [rows]);
@@ -4847,9 +4856,20 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                     </td>
                     {/* Pedidos de Venda */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                      <span className={`text-sm font-medium ${row.pedidosCx > 0 ? "text-rose-700" : "text-slate-400"}`}>
-                        {row.pedidosCx > 0 ? `${formatNumber(row.pedidosCx, true)} cx` : "—"}
-                      </span>
+                      {row.pedidosCx > 0 ? (
+                        <div className="flex flex-col items-center">
+                          <span className="text-sm font-medium text-rose-700">
+                            {formatNumber(row.pedidosCx, true)} cx
+                          </span>
+                          {row.pedidosFaturadosCx > 0 && (
+                            <span className="text-[9px] text-orange-600 font-medium mt-0.5 leading-tight">
+                              {formatNumber(row.pedidosFaturadosCx, true)} fat. | {formatNumber(row.pedidosCx - row.pedidosFaturadosCx, true)} a fat.
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium text-slate-400">—</span>
+                      )}
                     </td>
                     {/* Disponível para Venda */}
                     <td className="py-2 px-1 md:px-2 text-center bg-emerald-50 dark:bg-emerald-900/20 border-r border-slate-200 dark:border-slate-600">
@@ -4938,9 +4958,20 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                       </td>
                       {/* Pedidos - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                        <span className={`text-xs font-medium ${variant.pedidosCx > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
-                          {variant.pedidosCx > 0 ? `${formatNumber(variant.pedidosCx, true)} cx` : '—'}
-                        </span>
+                        {variant.pedidosCx > 0 ? (
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs font-medium text-rose-600">
+                              {formatNumber(variant.pedidosCx, true)} cx
+                            </span>
+                            {variant.pedidosFaturadosCx > 0 && (
+                              <span className="text-[8px] text-orange-600 font-medium mt-0.5 leading-tight">
+                                {formatNumber(variant.pedidosFaturadosCx, true)} fat. | {formatNumber(variant.pedidosCx - variant.pedidosFaturadosCx, true)} a fat.
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs font-medium text-slate-400">—</span>
+                        )}
                       </td>
                       {/* Disponível - variant */}
                       <td className="py-1.5 px-1 md:px-2 text-center bg-emerald-50/50 dark:bg-emerald-900/10 border-r border-slate-200 dark:border-slate-600">
@@ -4977,7 +5008,16 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.po, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.projetado, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-teal-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.processado, true)} cx</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-rose-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.pedidos, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm font-semibold text-rose-700">{formatNumber(totals.pedidos, true)} cx</span>
+                      {totals.pedidosFaturados > 0 && (
+                        <span className="text-[8px] text-orange-600 font-medium mt-0.5">
+                          {formatNumber(totals.pedidosFaturados, true)} fat. | {formatNumber(totals.pedidos - totals.pedidosFaturados, true)} a fat.
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-2 px-1 md:px-2 text-center text-base font-extrabold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.disponivel, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-purple-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.regulador, true)} cx</td>
                   <td className="py-2 px-1 md:px-2"></td>

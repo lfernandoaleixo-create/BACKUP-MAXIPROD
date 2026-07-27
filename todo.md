@@ -6077,3 +6077,4 @@
 - [x] Rodonaves: fix response parsing - suportar novo formato (Value/DeliveryTime numéricos) e formato legado (FreightValue string)
 - [x] Rodonaves: IP fallback map para DNS intermitente (01wapi → 150.230.65.150, quotation-apigateway → 200.210.75.41)
 - [x] Criar documentação definitiva das 5 transportadoras em docs/FREIGHT_CARRIERS_REFERENCE.md (credenciais, endpoints, workarounds, cobertura)
+- [x] QC Card: exibir faturamento parcial nos pedidos (ex: 80cx total, 5 faturadas, 75 a faturar)
