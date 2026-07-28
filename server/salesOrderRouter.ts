@@ -655,6 +655,7 @@ export const salesOrderRouter = router({
       observacoesInternas: z.string().optional(),
       transportadora: z.string().optional(),
       protocoloCotacao: z.string().optional(),
+      trackingUrl: z.string().optional(),
       // Campos Maxiprod
       operacaoFiscal: z.string().optional(),
       naturezaOperacao: z.string().optional(),
@@ -780,6 +781,7 @@ export const salesOrderRouter = router({
         observacoesInternas: input.observacoesInternas || null,
         transportadora: input.transportadora || null,
         protocoloCotacao: input.protocoloCotacao || null,
+        trackingUrl: input.trackingUrl || null,
         operacaoFiscal: input.operacaoFiscal || null,
         naturezaOperacao: input.naturezaOperacao || null,
         estadoConfiguravel: input.estadoConfiguravel || null,
@@ -2350,6 +2352,8 @@ export const salesOrderRouter = router({
         cnpj: string;
         totalFrete: number;
         prazo: string;
+        trackingUrl?: string;
+        protocolo?: string;
         error?: string;
       }> = [];
 
@@ -2369,6 +2373,9 @@ export const salesOrderRouter = router({
             cnpj: r.cnpjUsado,
             totalFrete: r.totalFrete || 0,
             prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A",
+            // Braspress tracking: by CNPJ + NF (available after NF is emitted)
+            trackingUrl: r.cnpjUsado ? `https://www.braspress.com/rastreie-sua-encomenda/` : undefined,
+            protocolo: r.id ? String(r.id) : undefined,
             error: r.error,
           });
         }
@@ -2390,6 +2397,8 @@ export const salesOrderRouter = router({
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo || "N/A",
+            // Alfa tracking: via API interna (trackAllAlfaCnpjs) - sem link público
+            trackingUrl: "rastreio-interno",
             error: r.error,
           });
         }
@@ -2411,6 +2420,8 @@ export const salesOrderRouter = router({
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A",
+            // SSW/Camilo tracking: CNPJ remetente 19451038000109 + NF (available after NF)
+            trackingUrl: `https://ssw.inf.br/2/rastreamento`,
             error: r.error,
           });
         }
@@ -2427,11 +2438,14 @@ export const salesOrderRouter = router({
       // Process Rodonaves results
       if (rodonavesResults.status === "fulfilled") {
         for (const r of rodonavesResults.value) {
+          const protocolo = r.protocolo ? String(r.protocolo) : undefined;
           carriers.push({
             transportadora: "Rodonaves",
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo || "N/A",
+            protocolo,
+            trackingUrl: protocolo ? `https://www.rodonaves.com.br/rastreio-de-mercadoria?protocolo=${protocolo}&rastreiemercadoria=1` : undefined,
             error: r.error,
           });
         }

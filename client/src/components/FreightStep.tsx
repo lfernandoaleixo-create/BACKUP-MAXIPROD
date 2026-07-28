@@ -37,6 +37,7 @@ interface FreightStepProps {
   setObservacoes: (v: string) => void;
   onTransportadoraSelect?: (nome: string) => void;
   onProtocoloSet?: (protocolo: string) => void;
+  onTrackingUrlSet?: (url: string) => void;
   onBack: () => void;
   onNext: () => void;
 }
@@ -127,6 +128,7 @@ export default function FreightStep({
   setObservacoes,
   onTransportadoraSelect,
   onProtocoloSet,
+  onTrackingUrlSet,
   onBack,
   onNext,
 }: FreightStepProps) {
@@ -178,15 +180,19 @@ export default function FreightStep({
     });
   };
 
-  const handleUsarCotacao = (valor: number, transportadora?: string) => {
+  const handleUsarCotacao = (valor: number, transportadora?: string, trackingUrl?: string, protocolo?: string) => {
     setValorFrete(String(valor.toFixed(2)));
     if (transportadora && onTransportadoraSelect) {
       onTransportadoraSelect(transportadora);
     }
-    // Generate protocol from timestamp
-    const protocolo = `COT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString(36).toUpperCase()}`;
+    // Use real protocolo from API if available, otherwise generate one
+    const protocoloFinal = protocolo || `COT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString(36).toUpperCase()}`;
     if (onProtocoloSet) {
-      onProtocoloSet(protocolo);
+      onProtocoloSet(protocoloFinal);
+    }
+    // Pass tracking URL to parent for saving with the order
+    if (trackingUrl && trackingUrl !== "rastreio-interno" && onTrackingUrlSet) {
+      onTrackingUrlSet(trackingUrl);
     }
     toast.success(`Frete de ${formatCurrency(valor)} aplicado ao pedido${transportadora ? ` (${transportadora})` : ''}`);
   };
@@ -331,7 +337,7 @@ export default function FreightStep({
                             <p className="text-[9px] text-slate-400">{quote.prazo}</p>
                           </div>
                           <button
-                            onClick={() => handleUsarCotacao(quote.totalFrete, transportadora)}
+                            onClick={() => handleUsarCotacao(quote.totalFrete, transportadora, quote.trackingUrl, quote.protocolo)}
                             className="px-2 py-1 bg-teal-600 text-white rounded text-[9px] font-bold hover:bg-teal-700 cursor-pointer"
                           >
                             Usar

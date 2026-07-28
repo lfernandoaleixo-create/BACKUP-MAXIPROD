@@ -4994,6 +4994,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [observacoesInternas, setObservacoesInternas] = useState("");
   const [transportadoraSelecionada, setTransportadoraSelecionada] = useState("");
   const [protocoloCotacao, setProtocoloCotacao] = useState("");
+  const [trackingUrl, setTrackingUrl] = useState("");
   // Campos Maxiprod
   const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
@@ -5481,6 +5482,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       observacoesInternas: observacoesInternas || undefined,
       transportadora: transportadoraSelecionada || undefined,
       protocoloCotacao: protocoloCotacao || undefined,
+      trackingUrl: trackingUrl || undefined,
       // Campos Maxiprod
       operacaoFiscal: operacaoFiscal || undefined,
       naturezaOperacao: naturezaOperacao || undefined,
@@ -6930,6 +6932,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             setPrevisaoEntregaPedido={setPrevisaoEntregaPedido}
             onTransportadoraSelect={setTransportadoraSelecionada}
             onProtocoloSet={setProtocoloCotacao}
+            onTrackingUrlSet={setTrackingUrl}
             onBack={() => setStep("produtos")}
             onNext={() => setStep("revisao")}
             onRealCostsCalculated={(data) => {
@@ -7050,6 +7053,20 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">Frete ({tipoFrete}):</span>
                     <span className="text-slate-700 dark:text-slate-200">{formatCurrencySales(Number(valorFrete))}</span>
+                  </div>
+                )}
+                {transportadoraSelecionada && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Transportadora:</span>
+                    <span className="text-slate-700 dark:text-slate-200">{transportadoraSelecionada}</span>
+                  </div>
+                )}
+                {trackingUrl && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Rastreio:</span>
+                    <a href={trackingUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:text-teal-700 underline truncate max-w-[200px]">
+                      Rastrear Entrega
+                    </a>
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-bold">

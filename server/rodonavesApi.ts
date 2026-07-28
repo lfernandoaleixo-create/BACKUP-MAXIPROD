@@ -747,6 +747,7 @@ export async function quoteAllRodonavesCnpjs(params: {
             cnpj: RODONAVES_CNPJS[idx].cnpj,
             totalFrete: result.value.totalFrete,
             prazo: result.value.prazo,
+            protocolo: result.value.protocolo,
           };
         } else {
           return {
@@ -769,6 +770,7 @@ export async function quoteAllRodonavesCnpjs(params: {
         cnpj: RODONAVES_CNPJS[idx].cnpj,
         totalFrete: result.value.totalFrete,
         prazo: result.value.prazo,
+        protocolo: result.value.protocolo,
       };
     } else {
       return {

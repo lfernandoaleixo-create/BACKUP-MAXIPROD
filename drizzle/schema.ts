@@ -2232,6 +2232,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   observacoesInternas: text("observacoes_internas"), // Obs internas: frete + protocolo + texto livre (vai para financeiro/fiscal)
   transportadora: varchar("transportadora", { length: 200 }), // Nome da transportadora selecionada na cotação
   protocoloCotacao: varchar("protocolo_cotacao", { length: 100 }), // Protocolo da simulação de frete
+  trackingUrl: text("tracking_url"), // Link de rastreio gerado automaticamente ao selecionar transportadora
   
   // Comissão
   comissaoFonte: varchar("comissao_fonte", { length: 30 }), // auto, critico_liberado, critico_bloqueado, manual

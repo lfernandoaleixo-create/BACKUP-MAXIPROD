@@ -6322,3 +6322,10 @@
 - [x] Simular frete com Flor de Minas para 3-4 estados: SP R$303. Cobertura limitada (só Grande SP e MG)
 - [x] CORREÇÃO: SSW/Camilo usava CEP origem errado (32210130 Contagem) - corrigido para 37260000 (Perdões/MG)
 - [x] Ir a fundo nos códigos das APIs, fazer simulações manuais - feito para todas as 5
+
+## Rastreio e Cobertura das Transportadoras (28/07/2026)
+- [ ] Pesquisar cobertura geográfica completa de cada transportadora (todos os 26 estados + DF)
+- [ ] Verificar se APIs retornam protocolo/código de rastreio na cotação ou após coleta
+- [ ] Verificar link de rastreio de cada transportadora
+- [ ] Implementar mecanismo automático: ao selecionar transportadora no pedido, gerar link de rastreio
+- [ ] Listar capacidades de cada API (cotação, rastreio, coleta, NF-e)

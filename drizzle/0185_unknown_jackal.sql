@@ -1,0 +1,1 @@
+ALTER TABLE `sales_order_requests` ADD `tracking_url` text;
