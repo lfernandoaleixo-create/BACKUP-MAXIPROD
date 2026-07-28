@@ -6270,3 +6270,6 @@
 
 ## Bug: "Meu Painel de Vendedor" faz logout ao invés de abrir o painel
 - [x] Fix: Clicar em "Meu Painel de Vendedor" na Gestão Comercial não deve fazer logout — deve abrir o painel do vendedor
+
+## Bug: Painel dos Vendedores mostra vendedores não ticados nas permissões
+- [x] Fix: Quando Juvenal acessa o Painel dos Vendedores, ele vê vendedores que NÃO foram ticados (ex: Ana Paula). Só deve mostrar os vendedores que estão marcados nas permissões granulares
