@@ -750,8 +750,8 @@ function OperatorManagementPanel() {
   }, [allGranularPerms]);
 
   const getGranularValue = (operatorId: number, key: string): boolean => {
-    // Se não existe no mapa, default = autorizado (true)
-    if (!granularMap[operatorId] || !(key in granularMap[operatorId])) return true;
+    // Se não existe no mapa, default = NEGADO (false) - só libera o que foi explicitamente ticado
+    if (!granularMap[operatorId] || !(key in granularMap[operatorId])) return false;
     return granularMap[operatorId][key] === true;
   };
 
@@ -817,8 +817,39 @@ function OperatorManagementPanel() {
     }
   };
 
+  const setBulkGranularMutation = trpc.settings.setBulkGranularPermissions.useMutation({
+    onSuccess: () => utils.settings.getAllGranularPermissions.invalidate(),
+  });
+
+  // Map parent tab field to granular permission prefix
+  const TAB_TO_PREFIX: Record<string, string> = {
+    accessVendas: "vnd.",
+    accessEstoque: "est.",
+    accessFaturamento: "fat.",
+    accessFinanceiro: "fin.",
+    accessImportacao: "imp.",
+    accessProducao: "prod.",
+    accessGestaoComercial: "gc.",
+    accessConfiguracoes: "cfg.",
+  };
+
   const handlePermissionToggle = (id: number, field: typeof PERMISSION_COLS[number]["key"], currentValue: boolean) => {
-    updatePermissionMutation.mutate({ id, field, value: !currentValue });
+    const newValue = !currentValue;
+    updatePermissionMutation.mutate({ id, field, value: newValue });
+
+    // When DISABLING a parent tab, also disable ALL granular perms under it
+    if (!newValue) {
+      const prefix = TAB_TO_PREFIX[field];
+      if (prefix) {
+        // Find all granular keys for this operator that match the prefix
+        const keysToDisable = allGranularPerms
+          ?.filter((p: any) => p.operatorId === id && p.permissionKey.startsWith(prefix) && p.enabled)
+          ?.map((p: any) => ({ permissionKey: p.permissionKey, enabled: false })) || [];
+        if (keysToDisable.length > 0) {
+          setBulkGranularMutation.mutate({ operatorId: id, permissions: keysToDisable });
+        }
+      }
+    }
   };
 
   if (isLoading) {

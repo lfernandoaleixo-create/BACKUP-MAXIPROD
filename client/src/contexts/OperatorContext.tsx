@@ -127,11 +127,11 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
     }
   }, [operator, granularPermissions]);
 
-  // Granular permission check: returns true if permission is explicitly enabled or not set (default = authorized),
-  // false only if explicitly disabled
+  // Granular permission check: returns true ONLY if permission is explicitly enabled in the database.
+  // If not set, defaults to FALSE (denied) - only explicitly ticked permissions are allowed.
   const hasGranularAccess = useCallback((key: string): boolean => {
     if (key in granularPermissions) return granularPermissions[key] === true;
-    return true; // default: autorizado se não existir no banco
+    return false; // default: negado se não existir no banco - só libera o que foi explicitamente ticado
   }, [granularPermissions]);
 
   const setGranularPermissions = useCallback((perms: Record<string, boolean>) => {

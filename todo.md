@@ -6254,3 +6254,8 @@
 - [x] Adicionar checkbox "Selecionar Tudo" no header de cada coluna de vendedor (para marcar/desmarcar todos os produtos de uma vez)
 - [x] Funcionar tanto na seção Bambu quanto na seção Madeira
 - [x] Funcionar para todos os gestores (não apenas Paula)
+
+## Bug: Permissões de vendedor - aba Financeiro liberada sem permissão
+- [x] Fix: Aba Financeiro foi liberada para Juvenal sem o Fernando ter ticado - sistema deve respeitar APENAS o que está explicitamente marcado
+- [x] Fix: Desticar uma permissão deve remover o acesso imediatamente (sem delay, sem cache)
+- [x] Fix: Não liberar nenhuma aba/feature por padrão - tudo deve começar desabilitado até ser explicitamente ticado pelo gestor
