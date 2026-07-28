@@ -4984,30 +4984,112 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           className="w-20 text-center text-sm border border-teal-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400"
                         />
                       ) : (qcAuth && qcAuth.role === "guilherme") ? (
-                        <div className="flex flex-col items-center">
-                          <button
-                            onClick={() => handleStartEdit(row.codigoItem, "estoque_processado")}
-                            className="inline-flex items-center gap-0.5 text-sm font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
-                            title="Editar processado (valor bruto no DB)"
-                          >
-                            {formatNumber(row.estoqueProcessado, true)} cx
-                            <Pencil className="w-3 h-3 text-teal-400" />
-                          </button>
-                          {row.pedidosFaturadosCx > 0 && (
-                            <span className="text-[9px] text-slate-500 mt-0.5 leading-tight">
-                              ({formatNumber(row.estoqueProcessadoBruto, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
-                            </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex flex-col items-center">
+                              <button
+                                onClick={() => handleStartEdit(row.codigoItem, "estoque_processado")}
+                                className="inline-flex items-center gap-0.5 text-sm font-medium text-teal-700 hover:bg-teal-50 rounded px-1.5 py-0.5 transition-colors"
+                                title="Editar processado (valor bruto no DB)"
+                              >
+                                {formatNumber(row.estoqueProcessado, true)} cx
+                                <Pencil className="w-3 h-3 text-teal-400" />
+                              </button>
+                              {row.pedidosFaturadosCx > 0 && (
+                                <span className="text-[9px] text-slate-500 mt-0.5 leading-tight">
+                                  ({formatNumber(row.estoqueProcessadoBruto, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
+                                </span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          {saidasList.length > 0 && (
+                            <TooltipContent side="bottom" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-teal-500/50 shadow-xl">
+                              <div className="p-3 space-y-2">
+                                <p className="font-semibold text-sm flex items-center gap-1.5">
+                                  <Package className="w-4 h-4 text-teal-500" />
+                                  Saídas do Processado
+                                </p>
+                                <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-teal-50 dark:bg-teal-900/30">
+                                      <tr>
+                                        <th className="px-2 py-1 text-left font-medium">Cliente</th>
+                                        <th className="px-2 py-1 text-center font-medium">Tipo</th>
+                                        <th className="px-2 py-1 text-right font-medium">Qtd</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                      {saidasList.map((s, idx) => (
+                                        <tr key={idx} className="hover:bg-teal-50/50 dark:hover:bg-teal-900/20">
+                                          <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={s.cliente}>{s.cliente}</td>
+                                          <td className="px-2 py-1 text-center">
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                              s.tipo === 'Bonificação' ? 'bg-amber-100 text-amber-700' :
+                                              s.tipo === 'Faturado (completo)' ? 'bg-green-100 text-green-700' :
+                                              'bg-blue-100 text-blue-700'
+                                            }`}>{s.tipo}</span>
+                                          </td>
+                                          <td className="px-2 py-1 text-right font-bold text-teal-700">{s.qtdFaturada} cx</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1">Total: {saidasList.reduce((s, x) => s + x.qtdFaturada, 0)} cx faturadas</p>
+                              </div>
+                            </TooltipContent>
                           )}
-                        </div>
+                        </Tooltip>
                       ) : (
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm font-medium text-teal-700">{formatNumber(row.estoqueProcessado, true)} cx</span>
-                          {row.pedidosFaturadosCx > 0 && (
-                            <span className="text-[9px] text-slate-500 mt-0.5 leading-tight">
-                              ({formatNumber(row.estoqueProcessadoBruto, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
-                            </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex flex-col items-center cursor-help">
+                              <span className="text-sm font-medium text-teal-700">{formatNumber(row.estoqueProcessado, true)} cx</span>
+                              {row.pedidosFaturadosCx > 0 && (
+                                <span className="text-[9px] text-slate-500 mt-0.5 leading-tight">
+                                  ({formatNumber(row.estoqueProcessadoBruto, true)} - {formatNumber(row.pedidosFaturadosCx, true)} fat.)
+                                </span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          {saidasList.length > 0 && (
+                            <TooltipContent side="bottom" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-teal-500/50 shadow-xl">
+                              <div className="p-3 space-y-2">
+                                <p className="font-semibold text-sm flex items-center gap-1.5">
+                                  <Package className="w-4 h-4 text-teal-500" />
+                                  Saídas do Processado
+                                </p>
+                                <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-teal-50 dark:bg-teal-900/30">
+                                      <tr>
+                                        <th className="px-2 py-1 text-left font-medium">Cliente</th>
+                                        <th className="px-2 py-1 text-center font-medium">Tipo</th>
+                                        <th className="px-2 py-1 text-right font-medium">Qtd</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                      {saidasList.map((s, idx) => (
+                                        <tr key={idx} className="hover:bg-teal-50/50 dark:hover:bg-teal-900/20">
+                                          <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={s.cliente}>{s.cliente}</td>
+                                          <td className="px-2 py-1 text-center">
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                              s.tipo === 'Bonificação' ? 'bg-amber-100 text-amber-700' :
+                                              s.tipo === 'Faturado (completo)' ? 'bg-green-100 text-green-700' :
+                                              'bg-blue-100 text-blue-700'
+                                            }`}>{s.tipo}</span>
+                                          </td>
+                                          <td className="px-2 py-1 text-right font-bold text-teal-700">{s.qtdFaturada} cx</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1">Total: {saidasList.reduce((s, x) => s + x.qtdFaturada, 0)} cx faturadas</p>
+                              </div>
+                            </TooltipContent>
                           )}
-                        </div>
+                        </Tooltip>
                       )}
                     </td>
                     {/* Pedidos de Venda */}
@@ -5288,14 +5370,55 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.po, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.projetado, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                    <div className="flex flex-col items-center">
-                      <span className="text-sm font-semibold text-teal-700">{formatNumber(totals.processado, true)} cx</span>
-                      {totals.pedidosFaturados > 0 && (
-                        <span className="text-[8px] text-slate-500 font-medium mt-0.5">
-                          ({formatNumber(totals.processadoBruto, true)} - {formatNumber(totals.pedidosFaturados, true)} fat.)
-                        </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex flex-col items-center cursor-help">
+                          <span className="text-sm font-semibold text-teal-700">{formatNumber(totals.processado, true)} cx</span>
+                          {totals.pedidosFaturados > 0 && (
+                            <span className="text-[8px] text-slate-500 font-medium mt-0.5">
+                              ({formatNumber(totals.processadoBruto, true)} - {formatNumber(totals.pedidosFaturados, true)} fat.)
+                            </span>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      {saidasList.length > 0 && (
+                        <TooltipContent side="bottom" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-teal-500/50 shadow-xl">
+                          <div className="p-3 space-y-2">
+                            <p className="font-semibold text-sm flex items-center gap-1.5">
+                              <Package className="w-4 h-4 text-teal-500" />
+                              Saídas do Processado
+                            </p>
+                            <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+                              <table className="w-full text-xs">
+                                <thead className="bg-teal-50 dark:bg-teal-900/30">
+                                  <tr>
+                                    <th className="px-2 py-1 text-left font-medium">Cliente</th>
+                                    <th className="px-2 py-1 text-center font-medium">Tipo</th>
+                                    <th className="px-2 py-1 text-right font-medium">Qtd</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                  {saidasList.map((s, idx) => (
+                                    <tr key={idx} className="hover:bg-teal-50/50 dark:hover:bg-teal-900/20">
+                                      <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={s.cliente}>{s.cliente}</td>
+                                      <td className="px-2 py-1 text-center">
+                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                          s.tipo === 'Bonificação' ? 'bg-amber-100 text-amber-700' :
+                                          s.tipo === 'Faturado (completo)' ? 'bg-green-100 text-green-700' :
+                                          'bg-blue-100 text-blue-700'
+                                        }`}>{s.tipo}</span>
+                                      </td>
+                                      <td className="px-2 py-1 text-right font-bold text-teal-700">{s.qtdFaturada} cx</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-1">Total: {saidasList.reduce((s, x) => s + x.qtdFaturada, 0)} cx faturadas</p>
+                          </div>
+                        </TooltipContent>
                       )}
-                    </div>
+                    </Tooltip>
                   </td>
                   <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                     <div className="flex flex-col items-center">

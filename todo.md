@@ -6219,3 +6219,6 @@
 - [x] Processado = 17 cx (correto), Faturado = 17 cx (5cx pedido #1219 + 12cx bonificação Latco)
 - [x] Garantir que: Produto Acabado = Processado - Faturado = 17 - 17 = 0 cx
 - [x] Disp. p/ Venda = Produto Acabado - Ped. Venda restante = 0 - 265 = -265 cx
+
+## Feature: Tooltip no faturado do card QC mostrando detalhes de bonificação (28/07/2026)
+- [x] Adicionar tooltip/hover no valor de faturado do card Palitos Premium mostrando que as 12cx foram bonificação e para quem (LATCO)
