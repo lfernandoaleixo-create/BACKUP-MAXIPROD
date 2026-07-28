@@ -6259,3 +6259,11 @@
 - [x] Fix: Aba Financeiro foi liberada para Juvenal sem o Fernando ter ticado - sistema deve respeitar APENAS o que está explicitamente marcado
 - [x] Fix: Desticar uma permissão deve remover o acesso imediatamente (sem delay, sem cache)
 - [x] Fix: Não liberar nenhuma aba/feature por padrão - tudo deve começar desabilitado até ser explicitamente ticado pelo gestor
+
+## Bug: Pedido #390001 do Juvenal não aparece nas métricas/painel vendedor
+- [ ] Fix: Pedido #390001 (PHILIPPE COMERCIO ATACADISTA LTDA, R$5.750, 27/07/2026, vendedor JUVENAL TEIXEIRA) deve aparecer nas métricas do app e no "Meu Painel de Vendedor" quando logado como Juvenal
+
+## Fix: Alerta de estoque insuficiente não deve reaparecer após aceite
+- [x] Quando pedido é modificado e volta pro aceite de produção, o alerta de estoque insuficiente NÃO deve reaparecer se já foi aceito pela Maria/Eva
+- [x] O alerta de insuficiência só dispara uma vez (na criação do pedido)
+- [x] Se o aceite já foi dado, modificações no pedido não reativam o alerta

@@ -12,7 +12,7 @@
  */
 import { getDb } from "./db";
 import { stockInsufficientAlerts, stockItems } from "../drizzle/schema";
-import { eq, and, inArray, gte } from "drizzle-orm";
+import { eq, and, inArray, gte, sql } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
 interface PedidoItem {
@@ -158,7 +158,12 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     }
   }
 
-  // 4. Buscar alertas existentes (pendente, aceito, recusado) dos últimos 7 dias para evitar duplicatas
+  // 4. Buscar alertas existentes para evitar duplicatas
+  // REGRA (a partir de 28/07/2026): Se um alerta já foi ACEITO (Maria/Eva deram o aceite),
+  // NUNCA criar novo alerta para o mesmo pedido+item, mesmo que o pedido volte para A aprovar
+  // após modificação. O alerta de insuficiência só dispara UMA VEZ por pedido+item.
+  
+  // 4a. Alertas ativos (pendente/aceito/recusado) nos últimos 7 dias
   const alertasExistentes = await db.select({
     pedidoNumero: stockInsufficientAlerts.pedidoNumero,
     codigoItem: stockInsufficientAlerts.codigoItem,
@@ -171,7 +176,26 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
       )
     );
 
-  const alertaSet = new Set(alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`));
+  // 4b. Alertas que JÁ FORAM ACEITOS em qualquer momento (sem limite de tempo)
+  // Isso garante que se Maria/Eva já deram aceite, o alerta NUNCA volta.
+  // Busca alertas com status 'aceito' OU 'expirado' que tenham respondidoPor != 'sistema'
+  // (ou seja, foram aceitos por uma pessoa real antes de serem expirados)
+  const alertasAceitosPrevios = await db.select({
+    pedidoNumero: stockInsufficientAlerts.pedidoNumero,
+    codigoItem: stockInsufficientAlerts.codigoItem,
+  })
+    .from(stockInsufficientAlerts)
+    .where(
+      and(
+        inArray(stockInsufficientAlerts.status, ["aceito", "expirado"]),
+        sql`${stockInsufficientAlerts.respondidoPor} IS NOT NULL AND ${stockInsufficientAlerts.respondidoPor} != 'sistema'`
+      )
+    );
+
+  const alertaSet = new Set([
+    ...alertasExistentes.map(a => `${a.pedidoNumero}-${a.codigoItem}`),
+    ...alertasAceitosPrevios.map(a => `${a.pedidoNumero}-${a.codigoItem}`),
+  ]);
 
   // 5. Criar alertas para itens insuficientes que não têm alerta recente
   // Para MADEIRA: verificar estoque local (card estoque) antes de criar alerta
@@ -311,20 +335,24 @@ async function cleanupOldAlerts(db: any, currentPedidos?: Set<string>, currentIn
         continue;
       }
       // Se não está mais no Maxiprod como insuficiente (pedido saiu de A aprovar), expirar
+      // MAS só se for "pendente". Alertas "aceito" são expirados normalmente
+      // (a proteção contra re-criação está no step 4b da detecção)
       if (!insufficientSet.has(key)) {
         idsToExpire.push(alerta.id);
       }
       continue;
     }
 
-    // REGRA BAMBU (fluxo original)
+    // REGRA GERAL (BAMBU e outros)
     if (alerta.status === "pendente") {
       // Para alertas "pendente": expirar se não é mais insuficiente
       if (!insufficientSet.has(key)) {
         idsToExpire.push(alerta.id);
       }
     } else if (alerta.status === "aceito") {
-      // Para alertas "aceito": SÓ expirar se o item NÃO é mais insuficiente
+      // Para alertas "aceito": expirar normalmente quando o pedido sai de A aprovar.
+      // A proteção contra re-criação do alerta está no step 4b (alertasAceitosPrevios)
+      // que verifica se já houve aceite humano para este pedido+item.
       if (!insufficientSet.has(key)) {
         idsToExpire.push(alerta.id);
       }
