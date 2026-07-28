@@ -2036,6 +2036,10 @@ export async function runGraphQLSync(): Promise<{
     // Estes produtos estão no grupo 26 (Fabricado) no Maxiprod mas devem aparecer como Importação Revenda
     // 00648 é o produto mãe, 00546/00547/00577/00645-00647 são variações (configurado em product_variants)
     const ESPETO_QUEIJO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
+    // Nomes corretos para fallback (quando Maxiprod não retorna descrição)
+    const ESPETO_QUEIJO_NAMES: Record<string, string> = {
+      "00649": "ESPETO DE BAMBU PARA QUEIJO COALHO 200MM C/ 200 UNID.",
+    };
     try {
       // Fetch stock from Maxiprod group 26 for these specific items
       const grupo26Items = await fetchAllPages("estoques", (skip, take) => `{
@@ -2106,7 +2110,7 @@ export async function runGraphQLSync(): Promise<{
           const item = agg?.item;
           stockData.push({
             codigoItem: code,
-            descricaoItem: item?.descricao || `ESPETO PREMIUM P/ QUEIJO COALHO (${code})`,
+            descricaoItem: item?.descricao || ESPETO_QUEIJO_NAMES[code] || `ESPETO PREMIUM P/ QUEIJO COALHO (${code})`,
             quantidade: agg ? String(agg.quantidade) : "0",
             unidadeMedida: item?.unidade?.codigo || "un",
             custoUnitario: agg && agg.quantidade > 0 ? String(agg.valorTotal / agg.quantidade) : "0",
@@ -2137,7 +2141,7 @@ export async function runGraphQLSync(): Promise<{
         if (!existingCodesAfterAll.has(code)) {
           stockData.push({
             codigoItem: code,
-            descricaoItem: `ESPETO PREMIUM P/ QUEIJO COALHO (${code})`,
+            descricaoItem: ESPETO_QUEIJO_NAMES[code] || `ESPETO PREMIUM P/ QUEIJO COALHO (${code})`,
             quantidade: "0",
             unidadeMedida: "un",
             custoUnitario: "0",
