@@ -453,13 +453,17 @@ export async function processStockData(): Promise<void> {
   for (const so of faturadosCompletos) {
     const code = so.codigoItem!;
     if (!QC_PRODUCT_CODES.has(code)) continue; // Apenas produtos QC
-    const qtyFat = so.quantidadeFaturada ? parseFloat(so.quantidadeFaturada) : 0;
-    if (qtyFat <= 0) continue;
+    // CORREÇÃO: usar `quantidade` (que é em CX) em vez de `quantidadeFaturada` (que pode estar em UNIDADES).
+    // Para pedidos com estadoItem='Faturado', a quantidade inteira foi faturada.
+    // Exemplo: pedido #1217 (LATCO bonificação) tem quantidade=12 CX mas quantidadeFaturada=60000 (unidades!).
+    // O campo quantidadeFaturada no sales_orders é inconsistente para QC - às vezes vem em UN.
+    const qtyCx = so.quantidade ? parseFloat(so.quantidade) : 0;
+    if (qtyCx <= 0) continue;
     const existing = faturadosCompletosByCode.get(code) || { totalFaturadoCx: 0, items: [] };
-    existing.totalFaturadoCx += qtyFat;
+    existing.totalFaturadoCx += qtyCx;
     existing.items.push({ 
       cliente: so.cliente || '(sem cliente)', 
-      qtyCx: qtyFat, 
+      qtyCx: qtyCx, 
       pedido: so.pedido || '',
       estadoConfiguravel: so.estadoConfiguravel || ''
     });

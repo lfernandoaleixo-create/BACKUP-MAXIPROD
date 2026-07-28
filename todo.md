@@ -6211,3 +6211,11 @@
 - [x] Corrigido: lógica invertida - agora só considera insuficiente quando estoquesAgrupados TEM registro E disponível < pedido. Itens sem registro em estoquesAgrupados são ignorados (não geram alerta)
 - [x] 4 alertas falso-positivos existentes expirados manualmente no banco
 - [x] Verificado: detector agora detecta apenas 1 item insuficiente (pedido #1570, código 00009 - estoque reservado >= total) e VARETAS não aparecem mais
+
+## Bug: Card Queijo Coalho - Faturado em unidades e cálculos incorretos (28/07/2026)
+- [x] Faturado mostra 60.005 (unidades) em vez de caixas - precisa converter para caixas
+- [x] Produto Acabado mostra -59.988 cx (cálculo errado por causa do faturado em unidades)
+- [x] Pedidos de venda devem ser exibidos em caixas (265 cx parece correto: 75 + 120 + 70)
+- [x] Processado = 17 cx (correto), Faturado = 17 cx (5cx pedido #1219 + 12cx bonificação Latco)
+- [x] Garantir que: Produto Acabado = Processado - Faturado = 17 - 17 = 0 cx
+- [x] Disp. p/ Venda = Produto Acabado - Ped. Venda restante = 0 - 265 = -265 cx
