@@ -2035,7 +2035,7 @@ export async function runGraphQLSync(): Promise<{
     // ─── Produtos de Importação Revenda do Grupo 26 (Espeto Premium Queijo Coalho) ───
     // Estes produtos estão no grupo 26 (Fabricado) no Maxiprod mas devem aparecer como Importação Revenda
     // 00648 é o produto mãe, 00546/00547/00577/00645-00647 são variações (configurado em product_variants)
-    const ESPETO_QUEIJO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+    const ESPETO_QUEIJO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
     try {
       // Fetch stock from Maxiprod group 26 for these specific items
       const grupo26Items = await fetchAllPages("estoques", (skip, take) => `{

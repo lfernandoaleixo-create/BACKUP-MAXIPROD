@@ -6189,3 +6189,7 @@
 ## Bug: Pedido insuficiente não aparece no alerta de insuficiência (28/07/2026)
 - [x] Pedido #1566 (LATICINIOS VIMILK, código 00649 - ESPETO DE BAMBU PARA QUEIJO COALHO) está com status "Insuficiente (reservar)" no Maxiprod mas não aparece no alerta de insuficiência do dashboard
 - [x] Corrigido: removido filtro que exigia estoques.length > 0 (estoquesAgrupados não retorna itens com estoque 0). Agora trata ausência de estoquesAgrupados como estoque = 0 (insuficiente)
+
+## Bug: Código 00649 não aparece na requisição de movimentação de estoque (28/07/2026)
+- [x] Código 00649 (ESPETO DE BAMBU PARA QUEIJO COALHO) não aparece na lista de produtos para fazer requisição de movimentação de estoque na aba Produção
+- [x] Corrigido: 00649 adicionado à lista ESPETO_QUEIJO_CODES no sync + inserido manualmente no stock_items/product_catalog com superGrupoCodigo=12
