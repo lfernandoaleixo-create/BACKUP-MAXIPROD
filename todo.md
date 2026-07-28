@@ -6273,3 +6273,6 @@
 
 ## Bug: Painel dos Vendedores mostra vendedores não ticados nas permissões
 - [x] Fix: Quando Juvenal acessa o Painel dos Vendedores, ele vê vendedores que NÃO foram ticados (ex: Ana Paula). Só deve mostrar os vendedores que estão marcados nas permissões granulares
+
+## UI: Mover INADIMPLÊNCIA para depois dos Pedidos de Venda
+- [x] Mover a seção INADIMPLÊNCIA para aparecer após os Pedidos de Venda no painel do vendedor (aba Vendas na Gestão Comercial)

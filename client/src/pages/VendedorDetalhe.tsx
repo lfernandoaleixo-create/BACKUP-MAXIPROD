@@ -329,11 +329,11 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
 
 
         {activeTab === "vendas" && (
-          <SellerCobrancaView sellerName={seller.sellerName} onAlertCount={setSellerAlertCount} />
+          <SellerSalesView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
         )}
 
         {activeTab === "vendas" && (
-          <SellerSalesView sellerId={sellerId} sellerName={seller.sellerName} gestorName={seller.gestorName} />
+          <SellerCobrancaView sellerName={seller.sellerName} onAlertCount={setSellerAlertCount} />
         )}
 
         {activeTab === "aprovacoes" && gestorSelfMode && (
