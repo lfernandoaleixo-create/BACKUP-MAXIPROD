@@ -2038,7 +2038,7 @@ export async function runGraphQLSync(): Promise<{
     const ESPETO_QUEIJO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
     // Nomes corretos para fallback (quando Maxiprod não retorna descrição)
     const ESPETO_QUEIJO_NAMES: Record<string, string> = {
-      "00649": "ESPETO DE BAMBU PARA QUEIJO COALHO 200MM C/ 200 UNID.",
+      "00649": "ESPETO DE BAMBU PARA QUEIJO COALHO 3,8 X 200 MM C/ 10.000 UNID.",
     };
     try {
       // Fetch stock from Maxiprod group 26 for these specific items
