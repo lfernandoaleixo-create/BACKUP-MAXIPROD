@@ -5,7 +5,8 @@
  * Lógica (via GraphQL direto no Maxiprod):
  * 1. Busca itens de pedidos com pedidoDeVenda.estado = AAPROVAR via GraphQL
  * 2. Busca estoque agrupado (quantidadeTotal - quantidadeReservada) para cada item
- * 3. Se estoque disponível < quantidade pedida → item é insuficiente
+ * 3. Se estoque disponível < quantidade pedida E o item TEM registro em estoquesAgrupados → item é insuficiente
+ *    (Itens SEM registro em estoquesAgrupados NÃO são considerados insuficientes — o Maxiprod não os controla via estoque agrupado)
  * 4. Cria alertas para itens insuficientes que não tenham alerta recente (pendente/aceito/recusado)
  * 5. Expira alertas pendentes de pedidos que não estão mais em "A aprovar"
  */
@@ -27,8 +28,7 @@ interface PedidoItem {
 
 /**
  * Fetch items from pedidos in "A aprovar" state directly from Maxiprod GraphQL.
- * Also fetches the item's estoques to determine if the item has stock records.
- * Only items WITH stock records can be "Insuficiente (reservar)".
+ * Returns all items from AAPROVAR orders.
  */
 async function fetchAaprovarItems(): Promise<PedidoItem[]> {
   try {
@@ -55,10 +55,6 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
 
     if (!data?.itensDosPedidosDeVendas?.items) return [];
 
-    // Incluir TODOS os itens de pedidos "A aprovar".
-    // Itens com estoques vazio (sem registro de estoque) são tratados como estoque = 0,
-    // pois o Maxiprod marca como "Insuficiente (reservar)" mesmo quando não há registro de estoque.
-    // Exemplo: código 00649 (ESPETO QUEIJO COALHO) não tem estoque no Maxiprod → insuficiente.
     return data.itensDosPedidosDeVendas.items
       .map((item: any) => {
         // Identificar se é madeira: superGrupo 16 (dentroDoGrupo.codigo) com grupo 18 ou 19
@@ -83,7 +79,10 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
 }
 
 /**
- * Fetch aggregated stock for given itemIds from Maxiprod GraphQL
+ * Fetch aggregated stock for given itemIds from Maxiprod GraphQL.
+ * Returns a Map where:
+ * - Key exists with {total, reserved} → item has stock records in Maxiprod
+ * - Key does NOT exist → item has NO stock records (not tracked via estoquesAgrupados)
  */
 async function fetchStockForItems(itemIds: number[]): Promise<Map<number, { total: number; reserved: number }>> {
   const stockMap = new Map<number, { total: number; reserved: number }>();
@@ -136,13 +135,24 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   const uniqueItemIds = Array.from(new Set(pedidoItems.map(p => p.itemId)));
   const stockMap = await fetchStockForItems(uniqueItemIds);
 
-  // 3. Identificar itens insuficientes (estoque disponível < quantidade pedida)
-  // Se estoquesAgrupados NÃO retorna dados para um item, tratamos como estoque = 0.
-  // O Maxiprod marca como "Insuficiente (reservar)" mesmo quando não há registro de estoque agrupado.
+  // 3. Identificar itens insuficientes
+  // REGRA CORRIGIDA: Só considerar insuficiente se o item TEM registro em estoquesAgrupados
+  // e o disponível (total - reservado) < quantidade pedida.
+  // Itens SEM registro em estoquesAgrupados NÃO são insuficientes — o Maxiprod não os
+  // controla via estoque agrupado (ex: VARETAS AROMATIZADOR que têm estoque mas não aparecem
+  // no estoquesAgrupados). Se não tem bolinha vermelha no Maxiprod, não deve gerar alerta.
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
     const stock = stockMap.get(item.itemId);
-    const available = stock ? (stock.total - stock.reserved) : 0;
+    
+    // Se NÃO tem registro em estoquesAgrupados → item não é controlado por estoque agrupado
+    // → NÃO considerar insuficiente (evita falsos positivos como VARETAS)
+    if (!stock) {
+      continue;
+    }
+    
+    // Tem registro em estoquesAgrupados → verificar se disponível < pedido
+    const available = stock.total - stock.reserved;
     if (available < item.quantidade) {
       insufficientItems.push(item);
     }

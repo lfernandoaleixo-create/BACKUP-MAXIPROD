@@ -6199,3 +6199,15 @@
 - [x] Adicionar campo observações internas ao GraphQL query de pedidos de compra
 - [x] Adicionar coluna observacoesInternas na tabela purchase_order_items
 - [x] Exibir observações internas no card de POs no frontend
+
+## Bug: Pedido aguardando aprovação não aparece na tela de Aprovação de Pedidos (28/07/2026)
+- [ ] Pedido #450001 (Samanta Fernochi, vendedor RAFAEL LEONEL PEREIRA, R$ 882,00) está com status "AGUARDANDO APROVAÇÃO" na lista de Pedidos para Processamento
+- [ ] Mas NÃO aparece na tela "Aprovação de Pedidos" do Juvenal (gestor)
+- [ ] Corrigir: pedidos de vendedores subordinados que precisam de aprovação do gestor devem aparecer na tela de Aprovação de Pedidos do gestor
+
+## Bug: Falsos positivos de insuficiência para VARETAS AROMATIZADOR (28/07/2026)
+- [x] Pedido #1552 (SOUZA MONTEIRO PERFUMARIA) - VARETAS 00081, 00083, 00090, 00106 gerando alerta falso de insuficiência
+- [x] Causa: fix anterior (tratar ausência de estoquesAgrupados como estoque=0) causou falsos positivos para itens que TÊM estoque mas não são controlados via estoquesAgrupados no Maxiprod
+- [x] Corrigido: lógica invertida - agora só considera insuficiente quando estoquesAgrupados TEM registro E disponível < pedido. Itens sem registro em estoquesAgrupados são ignorados (não geram alerta)
+- [x] 4 alertas falso-positivos existentes expirados manualmente no banco
+- [x] Verificado: detector agora detecta apenas 1 item insuficiente (pedido #1570, código 00009 - estoque reservado >= total) e VARETAS não aparecem mais
