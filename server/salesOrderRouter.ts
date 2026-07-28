@@ -85,16 +85,14 @@ export const salesOrderRouter = router({
       }> = [];
       try {
         const qL = q.toLowerCase();
+        // Search ALL vendor_clients (no sellerId filter) so CNPJ/data is found regardless of seller assignment
         const vcRows = await db.select()
           .from(vendorClients)
           .where(
-            and(
-              ...(input.sellerId ? [eq(vendorClients.sellerId, input.sellerId)] : []),
-              or(
-                sql`LOWER(${vendorClients.razaoSocial}) LIKE ${`%${qL}%`}`,
-                sql`LOWER(${vendorClients.nomeFantasia}) LIKE ${`%${qL}%`}`,
-                like(vendorClients.cnpjCpf, `%${q}%`)
-              )
+            or(
+              sql`LOWER(${vendorClients.razaoSocial}) LIKE ${`%${qL}%`}`,
+              sql`LOWER(${vendorClients.nomeFantasia}) LIKE ${`%${qL}%`}`,
+              like(vendorClients.cnpjCpf, `%${q}%`)
             )
           )
           .limit(20);
@@ -2321,7 +2319,8 @@ export const salesOrderRouter = router({
           cnpjDestinatario: input.cnpjDestinatario,
         }),
         quoteAllSswCnpjs({
-          cepOrigem: input.cepOrigem.replace(/\D/g, ""),
+          // SSW/Camilo has freight table negotiated from Perdões/MG (37260000), not Contagem
+          cepOrigem: "37260000",
           cepDestino: input.cepDestino.replace(/\D/g, ""),
           valorNF: input.valorMercadoria,
           quantidade: input.volumes,

@@ -22,7 +22,6 @@ import {
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
 import GestorAprovacoes from "./GestorAprovacoes";
-import { SerasaMetricas } from "@/components/SerasaConsulta";
 
 type GestaoView = "gestores" | "vendedores" | "metricas";
 
@@ -527,7 +526,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     return vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
   };
 
-  const [panelOpen, setPanelOpen] = useState(!!filterGestorName);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // When filtered (SellerApp gestor mode), skip the collapsible wrapper
   if (filterGestorName) {
@@ -654,10 +653,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         <Percent className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Comissão</span>
                       </button>
-                      <button onClick={() => { /* TODO: cadastrar vendedor */ }} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer">
-                        <UserPlus className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                        <span className="text-xs font-medium text-teal-700 dark:text-teal-300">Cadastrar Vendedor</span>
-                      </button>
+
                     </div>
                   </div>
                 )}
@@ -908,13 +904,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
                         <Percent className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                         <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Comissão</span>
                       </button>
-                      <button
-                        onClick={() => { /* TODO: open cadastrar vendedor modal */ }}
-                        className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-teal-300 dark:border-teal-600 bg-teal-50/50 dark:bg-teal-900/10 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all cursor-pointer"
-                      >
-                        <UserPlus className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                        <span className="text-xs font-medium text-teal-700 dark:text-teal-300">Cadastrar Vendedor</span>
-                      </button>
+
                     </div>
                   </div>
                 )}
@@ -3195,21 +3185,7 @@ export function GestaoComercialFull() {
           gestorCards={dynamicGestorCards}
           maxiprodNameMap={dynamicNameMap}
         />
-        {/* Serasa - Métricas de Consultas */}
-        {hasGranularAccess("gc.consultaSerasa") && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">Consultas Serasa</h2>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">Métricas de consultas de crédito realizadas</p>
-            </div>
-          </div>
-          <SerasaMetricas />
-        </div>
-        )}
+
       </main>
     </div>
   );

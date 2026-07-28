@@ -6276,3 +6276,49 @@
 
 ## UI: Mover INADIMPLÊNCIA para depois dos Pedidos de Venda
 - [x] Mover a seção INADIMPLÊNCIA para aparecer após os Pedidos de Venda no painel do vendedor (aba Vendas na Gestão Comercial)
+
+## Ajustes Gestão Comercial - Serasa, Cadastrar Vendedor, Auto-fill CNPJ (28/07/2026)
+- [ ] Remover card "Consultas Serasa" do Painel dos Gestores (histórico global não faz sentido ali)
+- [ ] Remover botão "Cadastrar Vendedor" dos cards de configuração do gestor
+- [ ] Adicionar métricas de consulta Serasa individuais por vendedor no painel do vendedor
+- [ ] Auto-fill CNPJ e dados do cliente do Maxiprod ao criar pedido de venda (quando cliente já existe)
+- [ ] Botão de consulta Serasa no pedido de venda (só aparece para quem tem permissão gc.consultaSerasa)
+
+## Bug: Painel dos Gestores não expande (28/07/2026)
+- [x] Painel dos Gestores não abre/expande ao clicar mesmo com todas as permissões ticadas nas Configurações
+- [x] Investigar e corrigir lógica de expansão do card "Painel dos Gestores" na Gestão Comercial (panelOpen default true)
+
+## Bug: Auto-fill CNPJ no Pedido de Venda (28/07/2026)
+- [x] Ao selecionar cliente que já existe no Maxiprod (ex: BOX 81), CNPJ e dados devem ser preenchidos IMEDIATAMENTE (removido filtro sellerId da busca vendor_clients)
+
+## Produtos de Madeira no App de Vendas (Fase de Teste) (28/07/2026)
+- [ ] Botão "Selecionar todos produtos de madeira" na página do gestor (seleção em massa)
+- [ ] Produtos de madeira aparecem no pedido de venda quando ticados pelo gestor
+- [ ] Mostrar quantidade em estoque (puxada do Maxiprod) para produtos de madeira
+- [ ] Campo de preço manual para produtos de madeira (vendedor digita o preço)
+- [ ] Sem desconto para madeira até ter tabela de preço criada
+- [ ] Quando tabela de preço existir, funcionar igual importados (preço fixo + desconto)
+- [ ] Fluxo do pedido igual importados: vendedor monta → conclui → cai para Vitória
+
+## Comissão Editável para Gestores (28/07/2026)
+- [ ] Comissão editável manualmente para gestores (Juvenal, Ana Paula, Jordão)
+- [ ] Vendedores de rua mantêm comissão fixa de 5,85%
+
+## Repetir Último Pedido (28/07/2026)
+- [ ] Botão "Repetir Último Pedido" ao selecionar cliente com histórico no pedido de venda
+- [ ] Funciona com histórico do Maxiprod (vendas anteriores) e do próprio app (pedidos feitos pelo sistema)
+- [ ] Ao clicar, preenche automaticamente: produtos, quantidades, e todas as configurações do último pedido
+- [ ] Deve funcionar independente se o pedido original foi feito pelo Maxiprod ou pelo app
+
+## Verificação Exportação Maxiprod (28/07/2026)
+- [x] Garantir que todas as modificações de exportação Maxiprod estão salvas e intactas (maxiprodExcelExport.ts não tocado)
+- [ ] Preparar para teste amanhã com colunas extras no Excel
+
+## Simulação APIs Transportadoras (28/07/2026)
+- [x] Simular frete com Alfa para 3-4 estados: RJ R$522, SP R$683, PR R$554. BA não atende (confirmação real da API)
+- [x] Simular frete com Rodonaves para 3-4 estados: RJ R$827, SP R$841, PR R$898. BA não atende (sem unidade)
+- [x] Simular frete com SSW/Camilo para 3-4 estados: RJ R$448, SP R$447, BA R$684. PR rota não cadastrada
+- [x] Simular frete com Braspress para 3-4 estados: RJ R$614, SP R$889, PR R$692. BA parcial (V.Conquista R$939)
+- [x] Simular frete com Flor de Minas para 3-4 estados: SP R$303. Cobertura limitada (só Grande SP e MG)
+- [x] CORREÇÃO: SSW/Camilo usava CEP origem errado (32210130 Contagem) - corrigido para 37260000 (Perdões/MG)
+- [x] Ir a fundo nos códigos das APIs, fazer simulações manuais - feito para todas as 5

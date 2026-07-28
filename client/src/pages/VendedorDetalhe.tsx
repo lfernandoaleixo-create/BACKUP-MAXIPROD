@@ -6410,7 +6410,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   // Calculate derived values
                   const discountPct = calc.discount ? parseFloat(calc.discount) : 0;
                   const finalFromDiscount = precoBase > 0 && discountPct > 0 ? precoBase * (1 - discountPct / 100) : precoBase;
-                  const finalFromValue = calc.finalValue ? parseFloat(calc.finalValue) : 0;
+                  const finalFromValue = calc.finalValue ? parseFloat(calc.finalValue.replace(',', '.')) : 0;
                   const discountFromValue = precoBase > 0 && finalFromValue > 0 ? ((precoBase - finalFromValue) / precoBase) * 100 : 0;
 
                   // The effective price to use (discount takes priority if set, otherwise finalValue)
@@ -6667,57 +6667,81 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
 
                         </div>
                       )}
-                      {/* If no price, just show cart button */}
+                      {/* If no price table, show manual price input + cart */}
                       {precoBase === 0 && (
-                        <div className="flex items-center gap-2 mt-2">
-                          {!calc.showQty ? (
-                            <button
-                              onClick={() => updateCalc('showQty', true)}
-                              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 shadow-sm transition-all hover:shadow-md"
-                            >
-                              <ShoppingCart className="w-3.5 h-3.5" /> Adicionar
-                            </button>
-                          ) : (
-                            <div className="flex flex-wrap items-center gap-2">
+                        <div className="mt-2">
+                          <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+                            {/* Stock */}
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-medium mb-0.5 whitespace-nowrap">Caixas disponíveis</span>
+                              <div className={`flex items-center gap-0.5 px-2 py-1 rounded-lg ${qtdCaixas > 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                                <span className={`text-sm font-black ${qtdCaixas > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-400'}`}>
+                                  {qtdCaixas.toLocaleString('pt-BR')}
+                                </span>
+                                <span className={`text-[8px] font-bold uppercase ${qtdCaixas > 0 ? 'text-emerald-500' : 'text-red-400'}`}>{unidadeVenda}</span>
+                              </div>
+                            </div>
+
+                            {/* Manual price input */}
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] text-amber-600 dark:text-amber-400 font-medium mb-0.5 whitespace-nowrap">Preço Manual (R$/cx)</span>
+                              <div className="flex items-center gap-0.5 rounded-lg px-1.5 py-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">R$</span>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                  value={calc.finalValue}
+                                  onChange={(e) => {
+                                    const v = e.target.value.replace(/[^0-9.,]/g, '');
+                                    setProductCalc(prev => ({
+                                      ...prev,
+                                      [p.codigoItem]: { ...calc, finalValue: v, discount: '' }
+                                    }));
+                                  }}
+                                  className="w-20 px-1 py-0.5 text-xs font-bold text-center border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Quantity */}
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-medium mb-0.5 whitespace-nowrap">Qtd. pedido</span>
                               <div className="flex items-center border border-emerald-300 dark:border-emerald-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
-                                <button
-                                  onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))}
-                                  className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-sm"
-                                >
-                                  −
-                                </button>
+                                <button onClick={() => updateCalc('quantity', Math.max(0, calc.quantity - 1))} className="px-2 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm">−</button>
                                 <input
                                   type="text"
                                   inputMode="numeric"
                                   value={calc.quantity}
                                   onChange={(e) => { const v = Math.max(0, parseInt(e.target.value) || 0); updateCalc('quantity', v); }}
-                                  className="w-14 text-center py-1.5 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                                  className="w-12 text-center py-1.5 text-xs font-bold border-x border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
                                 />
-                                <button
-                                  onClick={() => updateCalc('quantity', calc.quantity + 1)}
-                                  className="px-2.5 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-emerald-700 dark:text-emerald-300 font-bold text-sm"
-                                >
-                                  +
-                                </button>
+                                <button onClick={() => updateCalc('quantity', calc.quantity + 1)} className="px-2 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm">+</button>
                               </div>
-                              {/* Live subtotal */}
-                              {calc.quantity > 0 && effectivePrice > 0 && (
-                                <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg whitespace-nowrap">
-                                  = {formatCurrencySales(calc.quantity * effectivePrice)}
-                                </span>
-                              )}
-                              <button
-                                onClick={() => {
-                                  addProduct(p, effectivePrice, calc.quantity);
-                                  updateCalc('showQty', false);
-                                  updateCalc('quantity', 1);
-                                }}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all"
-                              >
-                                <Plus className="w-3 h-3" /> Salvar
-                              </button>
                             </div>
-                          )}
+
+                            {/* Subtotal + Save */}
+                            {calc.quantity > 0 && effectivePrice > 0 && (
+                              <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg whitespace-nowrap">
+                                = {formatCurrencySales(calc.quantity * effectivePrice)}
+                              </span>
+                            )}
+
+                            <button
+                              onClick={() => {
+                                const manualPrice = calc.finalValue ? parseFloat(calc.finalValue.replace(',', '.')) : 0;
+                                if (manualPrice <= 0) { return; }
+                                addProduct(p, manualPrice, calc.quantity);
+                                setProductCalc(prev => { const next = { ...prev }; delete next[p.codigoItem]; return next; });
+                              }}
+                              disabled={!calc.finalValue || parseFloat(calc.finalValue.replace(',', '.')) <= 0}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all"
+                            >
+                              <Plus className="w-3 h-3" /> Salvar
+                            </button>
+                          </div>
+                          {/* No price table notice */}
+                          <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-1 font-medium">⚠️ Sem tabela de preço — insira o valor manualmente</p>
                         </div>
                       )}
 
