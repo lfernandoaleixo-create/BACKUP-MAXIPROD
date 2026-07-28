@@ -1155,11 +1155,12 @@ export function RastreioEmConjunto() {
             </div>
           `;
         } else {
-          // Dynamic color based on delivery status/progress
-          const statusColor = progress >= 80 ? '#16a34a' : progress >= 50 ? '#0891b2' : progress >= 25 ? '#f59e0b' : '#ef4444';
-          const hullColor = progress >= 80 ? '#0f5132' : progress >= 50 ? '#164e63' : progress >= 25 ? '#78350f' : '#7f1d1d';
-          const cabinColor = progress >= 80 ? '#22c55e' : progress >= 50 ? '#06b6d4' : progress >= 25 ? '#eab308' : '#ef4444';
-          const cabinStroke = progress >= 80 ? '#15803d' : progress >= 50 ? '#0e7490' : progress >= 25 ? '#ca8a04' : '#dc2626';
+          // Use the route color for this container so label matches the trajectory line
+          const statusColor = color;
+          // Derive hull/cabin from the route color (darken for hull, lighten for cabin)
+          const hullColor = color + '99'; // semi-transparent version for hull
+          const cabinColor = '#d4a574'; // beige/tan for cabin (brand)
+          const cabinStroke = '#b8956a'; // darker beige for cabin stroke
           
           // In transit: front-facing cargo ship with waves, rocking animation, water trail, dynamic color
           markerEl.innerHTML = `
