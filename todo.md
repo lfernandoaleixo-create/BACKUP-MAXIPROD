@@ -6248,3 +6248,9 @@
 - [x] Também atualiza vencimento e diasVencidos ao religar título.
 - [x] Registro duplicado (ID 2190002) desativado manualmente.
 - [x] Verificação: 0 órfãos restantes no sistema.
+
+## Feature: Estoque Paula ticável + Selecionar Tudo por vendedor
+- [x] Tornar o estoque da ANA PAULA ALEIXO (gestora) ticável com checkboxes como os outros gestores
+- [x] Adicionar checkbox "Selecionar Tudo" no header de cada coluna de vendedor (para marcar/desmarcar todos os produtos de uma vez)
+- [x] Funcionar tanto na seção Bambu quanto na seção Madeira
+- [x] Funcionar para todos os gestores (não apenas Paula)

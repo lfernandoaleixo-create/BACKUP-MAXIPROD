@@ -3591,6 +3591,51 @@ export const salesRouter = router({
     }),
 
   /**
+   * Toggle all products for a seller in a specific segment (bulk select/deselect)
+   * Used by the "Select All" checkbox per vendor column
+   */
+  toggleAllSellerProducts: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      productCodes: z.array(z.string()),
+      visible: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      if (input.visible) {
+        // Add all products that don't already exist
+        const existing = await db.select({ productCode: sellerProductVisibility.productCode })
+          .from(sellerProductVisibility)
+          .where(and(
+            eq(sellerProductVisibility.sellerId, input.sellerId),
+            inArray(sellerProductVisibility.productCode, input.productCodes)
+          ));
+        const existingSet = new Set(existing.map(e => e.productCode));
+        const toInsert = input.productCodes.filter(code => !existingSet.has(code));
+        if (toInsert.length > 0) {
+          await db.insert(sellerProductVisibility).values(
+            toInsert.map(code => ({
+              sellerId: input.sellerId,
+              productCode: code,
+              visible: true,
+            }))
+          );
+        }
+      } else {
+        // Remove all products for this seller in this segment
+        if (input.productCodes.length > 0) {
+          await db.delete(sellerProductVisibility)
+            .where(and(
+              eq(sellerProductVisibility.sellerId, input.sellerId),
+              inArray(sellerProductVisibility.productCode, input.productCodes)
+            ));
+        }
+      }
+      return { success: true, count: input.productCodes.length };
+    }),
+
+  /**
    * Login do vendedor (app mobile)
    * Verifica senha e se está autorizado pelo gestor.
    */
@@ -4330,6 +4375,16 @@ export const salesRouter = router({
           sellers.push(sub);
         }
       }
+      // If gestor has no subordinates, check if they exist as a seller themselves
+      // This handles sub-gestors like ANA PAULA ALEIXO who need to configure their own stock
+      if (sellers.length === 0) {
+        const selfAsSeller = await db.select().from(sellerPermissions)
+          .where(eq(sellerPermissions.sellerName, input.gestorName))
+          .limit(1);
+        if (selfAsSeller.length > 0) {
+          sellers.push(selfAsSeller[0]);
+        }
+      }
       // 2. Get all price tables
       const allTables = await db.select().from(priceTables);
       // 3. Get all price table items
@@ -4461,6 +4516,15 @@ export const salesRouter = router({
         if (!seenIds.has(sub.id)) {
           seenIds.add(sub.id);
           sellers.push(sub);
+        }
+      }
+      // If gestor has no subordinates, check if they exist as a seller themselves
+      if (sellers.length === 0) {
+        const selfAsSeller = await db.select().from(sellerPermissions)
+          .where(eq(sellerPermissions.sellerName, input.gestorName))
+          .limit(1);
+        if (selfAsSeller.length > 0) {
+          sellers.push(selfAsSeller[0]);
         }
       }
       // 2. Get all price tables

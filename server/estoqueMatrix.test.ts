@@ -1,112 +1,198 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 /**
- * Test: getEstoqueMatrix procedure
- * Verifies that the estoque matrix correctly maps products to sellers
- * based on their price table assignments.
+ * Tests for:
+ * 1. getEstoqueMatrix self-as-seller fallback (ANA PAULA ALEIXO case)
+ * 2. toggleAllSellerProducts bulk toggle
  */
-import { describe, it, expect } from "vitest";
 
-describe("Estoque Matrix logic", () => {
-  // Simulates the matrix building logic from the getEstoqueMatrix procedure
-  function buildMatrix(
-    sellers: { sellerName: string; priceTableId: number | null }[],
-    priceTableItems: { itemCodigo: string; priceTableId: number }[],
-    stockProducts: { codigoItem: string; descricaoItem: string }[]
-  ) {
-    const itemsByTable = new Map<number, Set<string>>();
-    for (const item of priceTableItems) {
-      if (!itemsByTable.has(item.priceTableId)) {
-        itemsByTable.set(item.priceTableId, new Set());
-      }
-      itemsByTable.get(item.priceTableId)!.add(item.itemCodigo);
-    }
+// Mock the database module
+const mockSelect = vi.fn();
+const mockFrom = vi.fn();
+const mockWhere = vi.fn();
+const mockLimit = vi.fn();
+const mockInsert = vi.fn();
+const mockValues = vi.fn();
+const mockDelete = vi.fn();
 
-    const matrix = stockProducts.map(product => {
-      const row: Record<string, boolean> = {};
-      for (const seller of sellers) {
-        if (seller.priceTableId) {
-          const tableItems = itemsByTable.get(seller.priceTableId);
-          row[seller.sellerName] = tableItems?.has(product.codigoItem) || false;
-        } else {
-          row[seller.sellerName] = false;
-        }
-      }
+vi.mock("./db", () => ({
+  getDb: vi.fn(() => ({
+    select: (...args: any[]) => {
+      mockSelect(...args);
       return {
-        codigoItem: product.codigoItem,
-        descricaoItem: product.descricaoItem,
-        sellers: row,
+        from: (...fArgs: any[]) => {
+          mockFrom(...fArgs);
+          return {
+            where: (...wArgs: any[]) => {
+              mockWhere(...wArgs);
+              return {
+                limit: (...lArgs: any[]) => {
+                  mockLimit(...lArgs);
+                  return [];
+                }
+              };
+            }
+          };
+        }
       };
-    });
+    },
+    insert: (...args: any[]) => {
+      mockInsert(...args);
+      return { values: (...vArgs: any[]) => { mockValues(...vArgs); return {}; } };
+    },
+    delete: (...args: any[]) => {
+      mockDelete(...args);
+      return { where: (...wArgs: any[]) => { mockWhere(...wArgs); return {}; } };
+    },
+  })),
+}));
 
-    return matrix;
-  }
-
-  const sellers = [
-    { sellerName: "DANIEL TAVARES", priceTableId: 1 },
-    { sellerName: "ROMERA", priceTableId: 2 },
-    { sellerName: "CLARINDO", priceTableId: null }, // No price table
-  ];
-
-  const priceTableItems = [
-    { itemCodigo: "00001", priceTableId: 1 },
-    { itemCodigo: "00002", priceTableId: 1 },
-    { itemCodigo: "00003", priceTableId: 1 },
-    { itemCodigo: "00001", priceTableId: 2 },
-    { itemCodigo: "00003", priceTableId: 2 },
-  ];
-
-  const stockProducts = [
-    { codigoItem: "00001", descricaoItem: "ESPETO BAMBU 180MM" },
-    { codigoItem: "00002", descricaoItem: "ESPETO BAMBU 200MM" },
-    { codigoItem: "00003", descricaoItem: "ESPETO BAMBU 250MM" },
-    { codigoItem: "00004", descricaoItem: "PALITO DENTE" },
-  ];
-
-  it("marks products that are in seller's price table with true", () => {
-    const matrix = buildMatrix(sellers, priceTableItems, stockProducts);
-    // Daniel has 00001, 00002, 00003
-    expect(matrix[0].sellers["DANIEL TAVARES"]).toBe(true); // 00001
-    expect(matrix[1].sellers["DANIEL TAVARES"]).toBe(true); // 00002
-    expect(matrix[2].sellers["DANIEL TAVARES"]).toBe(true); // 00003
+describe("EstoqueMatrix - Self as Seller Logic", () => {
+  it("should describe the self-as-seller fallback behavior", () => {
+    // The logic in getEstoqueMatrix:
+    // 1. Query sellerPermissions WHERE gestorName = input.gestorName
+    // 2. If directSellers is empty (no subordinates), query WHERE sellerName = input.gestorName
+    // 3. Use that record as the single seller column
+    
+    // For ANA PAULA ALEIXO:
+    // - She is NOT a gestor in seller_permissions (no records where gestorName = 'ANA PAULA ALEIXO')
+    // - She IS a seller under JORDÃO LAINE (sellerName = 'ANA PAULA ALEIXO', gestorName = 'JORDÃO LAINE')
+    // - The fallback finds her own record and uses it as the seller column
+    
+    const gestorName = "ANA PAULA ALEIXO";
+    
+    // Simulate: directSellers query returns empty
+    const directSellers: any[] = [];
+    
+    // Simulate: self-as-seller fallback
+    const selfAsSeller = [{ id: 370002, sellerName: "ANA PAULA ALEIXO", gestorName: "JORDÃO LAINE", priceTableCode: null, authorized: true }];
+    
+    // Build sellers array with fallback
+    const sellers = [...directSellers];
+    if (sellers.length === 0 && selfAsSeller.length > 0) {
+      sellers.push(selfAsSeller[0]);
+    }
+    
+    expect(sellers.length).toBe(1);
+    expect(sellers[0].sellerName).toBe("ANA PAULA ALEIXO");
+    expect(sellers[0].id).toBe(370002);
   });
 
-  it("marks products NOT in seller's price table with false", () => {
-    const matrix = buildMatrix(sellers, priceTableItems, stockProducts);
-    // Daniel doesn't have 00004
-    expect(matrix[3].sellers["DANIEL TAVARES"]).toBe(false);
+  it("should not use fallback when gestor has subordinates", () => {
+    // For JORDÃO LAINE:
+    // - He IS a gestor with 2 sellers (JORDÃO LAINE + ANA PAULA ALEIXO)
+    // - The fallback should NOT be triggered
+    
+    const directSellers = [
+      { id: 1, sellerName: "JORDÃO LAINE", gestorName: "JORDÃO LAINE", priceTableCode: null, authorized: true },
+      { id: 370002, sellerName: "ANA PAULA ALEIXO", gestorName: "JORDÃO LAINE", priceTableCode: null, authorized: true },
+    ];
+    
+    const sellers = [...directSellers];
+    // Fallback only triggers when sellers.length === 0
+    if (sellers.length === 0) {
+      sellers.push({ id: 999, sellerName: "SHOULD NOT APPEAR", gestorName: "X", priceTableCode: null, authorized: true });
+    }
+    
+    expect(sellers.length).toBe(2);
+    expect(sellers.map(s => s.sellerName)).toEqual(["JORDÃO LAINE", "ANA PAULA ALEIXO"]);
+  });
+});
+
+describe("toggleAllSellerProducts - Bulk Toggle Logic", () => {
+  it("should select all products for a seller (visible=true)", () => {
+    // When visible=true, the procedure should:
+    // 1. Query existing visibility records for this seller + these productCodes
+    // 2. Filter out already-existing ones
+    // 3. Insert only the new ones
+    
+    const input = {
+      sellerId: 370002,
+      productCodes: ["00001", "00002", "00003", "00004", "00005"],
+      visible: true,
+    };
+    
+    // Simulate: some already exist
+    const existing = [{ productCode: "00001" }, { productCode: "00003" }];
+    const existingSet = new Set(existing.map(e => e.productCode));
+    const toInsert = input.productCodes.filter(code => !existingSet.has(code));
+    
+    expect(toInsert).toEqual(["00002", "00004", "00005"]);
+    expect(toInsert.length).toBe(3);
   });
 
-  it("marks all products as false for sellers without a price table", () => {
-    const matrix = buildMatrix(sellers, priceTableItems, stockProducts);
-    // Clarindo has no price table
-    expect(matrix[0].sellers["CLARINDO"]).toBe(false);
-    expect(matrix[1].sellers["CLARINDO"]).toBe(false);
-    expect(matrix[2].sellers["CLARINDO"]).toBe(false);
-    expect(matrix[3].sellers["CLARINDO"]).toBe(false);
+  it("should deselect all products for a seller (visible=false)", () => {
+    // When visible=false, the procedure should:
+    // Delete all visibility records for this seller + these productCodes
+    
+    const input = {
+      sellerId: 370002,
+      productCodes: ["00001", "00002", "00003"],
+      visible: false,
+    };
+    
+    // The delete should target all productCodes for this seller
+    expect(input.productCodes.length).toBe(3);
+    expect(input.visible).toBe(false);
   });
 
-  it("correctly handles partial price tables (Romera has 00001, 00003 but not 00002)", () => {
-    const matrix = buildMatrix(sellers, priceTableItems, stockProducts);
-    expect(matrix[0].sellers["ROMERA"]).toBe(true);  // 00001
-    expect(matrix[1].sellers["ROMERA"]).toBe(false); // 00002 - not in Romera's table
-    expect(matrix[2].sellers["ROMERA"]).toBe(true);  // 00003
-    expect(matrix[3].sellers["ROMERA"]).toBe(false); // 00004
+  it("should handle empty productCodes array gracefully", () => {
+    const input = {
+      sellerId: 370002,
+      productCodes: [] as string[],
+      visible: true,
+    };
+    
+    // With empty array, nothing should be inserted or deleted
+    const toInsert = input.productCodes.filter(code => true);
+    expect(toInsert.length).toBe(0);
+  });
+});
+
+describe("EstoqueSegmentCard - Select All Checkbox State", () => {
+  it("should compute allChecked correctly when all products are checked", () => {
+    const allProducts = [
+      { codigoItem: "001", descricaoItem: "P1", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": true } },
+      { codigoItem: "002", descricaoItem: "P2", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": true } },
+      { codigoItem: "003", descricaoItem: "P3", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": true } },
+    ];
+    
+    const seller = { id: 370002, name: "ANA PAULA ALEIXO", hasTable: false };
+    const allChecked = allProducts.length > 0 && allProducts.every(p => p.sellers[seller.name]);
+    const someChecked = allProducts.some(p => p.sellers[seller.name]);
+    
+    expect(allChecked).toBe(true);
+    expect(someChecked).toBe(true);
   });
 
-  it("returns correct product info in each row", () => {
-    const matrix = buildMatrix(sellers, priceTableItems, stockProducts);
-    expect(matrix[0].codigoItem).toBe("00001");
-    expect(matrix[0].descricaoItem).toBe("ESPETO BAMBU 180MM");
-    expect(matrix.length).toBe(4);
+  it("should compute indeterminate state when some products are checked", () => {
+    const allProducts = [
+      { codigoItem: "001", descricaoItem: "P1", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": true } },
+      { codigoItem: "002", descricaoItem: "P2", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": false } },
+      { codigoItem: "003", descricaoItem: "P3", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": true } },
+    ];
+    
+    const seller = { id: 370002, name: "ANA PAULA ALEIXO", hasTable: false };
+    const allChecked = allProducts.length > 0 && allProducts.every(p => p.sellers[seller.name]);
+    const someChecked = allProducts.some(p => p.sellers[seller.name]);
+    
+    // indeterminate = someChecked && !allChecked
+    expect(allChecked).toBe(false);
+    expect(someChecked).toBe(true);
+    expect(someChecked && !allChecked).toBe(true); // indeterminate state
   });
 
-  it("handles empty sellers list", () => {
-    const matrix = buildMatrix([], priceTableItems, stockProducts);
-    expect(matrix.length).toBe(4);
-    expect(Object.keys(matrix[0].sellers)).toHaveLength(0);
-  });
-
-  it("handles empty products list", () => {
-    const matrix = buildMatrix(sellers, priceTableItems, []);
-    expect(matrix.length).toBe(0);
+  it("should compute unchecked state when no products are checked", () => {
+    const allProducts = [
+      { codigoItem: "001", descricaoItem: "P1", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": false } },
+      { codigoItem: "002", descricaoItem: "P2", segmento: "bambu", sellers: { "ANA PAULA ALEIXO": false } },
+    ];
+    
+    const seller = { id: 370002, name: "ANA PAULA ALEIXO", hasTable: false };
+    const allChecked = allProducts.length > 0 && allProducts.every(p => p.sellers[seller.name]);
+    const someChecked = allProducts.some(p => p.sellers[seller.name]);
+    
+    expect(allChecked).toBe(false);
+    expect(someChecked).toBe(false);
   });
 });

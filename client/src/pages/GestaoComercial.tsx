@@ -1443,11 +1443,19 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
     { staleTime: 60 * 1000 }
   );
   const toggleMutation = trpc.sales.toggleSellerProduct.useMutation();
+  const toggleAllMutation = trpc.sales.toggleAllSellerProducts.useMutation();
   const utils = trpc.useUtils();
 
   const handleToggle = (sellerId: number, productCode: string, currentValue: boolean) => {
     toggleMutation.mutate(
       { sellerId, productCode, visible: !currentValue },
+      { onSuccess: () => utils.sales.getEstoqueMatrix.invalidate() }
+    );
+  };
+
+  const handleToggleAll = (sellerId: number, productCodes: string[], visible: boolean) => {
+    toggleAllMutation.mutate(
+      { sellerId, productCodes, visible },
       { onSuccess: () => utils.sales.getEstoqueMatrix.invalidate() }
     );
   };
@@ -1511,6 +1519,7 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
         sellers={sellers}
         allProducts={bambuProducts}
         onToggle={handleToggle}
+        onToggleAll={handleToggleAll}
       />
       {/* MADEIRA PRODUTO ACABADO Card */}
       <EstoqueSegmentCard
@@ -1520,6 +1529,7 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
         sellers={sellers}
         allProducts={madeiraProducts}
         onToggle={handleToggle}
+        onToggleAll={handleToggleAll}
       />
 
       {/* Legend */}
@@ -1545,9 +1555,10 @@ interface EstoqueSegmentCardProps {
   sellers: { id: number; name: string; hasTable: boolean }[];
   allProducts: { codigoItem: string; descricaoItem: string; segmento: string; sellers: Record<string, boolean> }[];
   onToggle: (sellerId: number, productCode: string, currentValue: boolean) => void;
+  onToggleAll?: (sellerId: number, productCodes: string[], visible: boolean) => void;
 }
 
-function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onToggle }: EstoqueSegmentCardProps) {
+function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onToggle, onToggleAll }: EstoqueSegmentCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const colorMap = {
@@ -1578,7 +1589,9 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
   // Count products per seller for this segment
   const sellerCounts = sellers.map(s => {
     const count = allProducts.filter(p => p.sellers[s.name]).length;
-    return { ...s, count };
+    const allChecked = allProducts.length > 0 && allProducts.every(p => p.sellers[s.name]);
+    const someChecked = allProducts.some(p => p.sellers[s.name]);
+    return { ...s, count, allChecked, someChecked };
   });
 
   return (
@@ -1619,6 +1632,19 @@ function EstoqueSegmentCard({ title, color, products, sellers, allProducts, onTo
                       <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${seller.hasTable ? colorClasses.badge : "bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-400"}`}>
                         {seller.count}
                       </span>
+                      {onToggleAll && (
+                        <input
+                          type="checkbox"
+                          checked={seller.allChecked}
+                          ref={(el) => { if (el) el.indeterminate = seller.someChecked && !seller.allChecked; }}
+                          onChange={() => {
+                            const allCodes = allProducts.map(p => p.codigoItem);
+                            onToggleAll(seller.id, allCodes, !seller.allChecked);
+                          }}
+                          title={seller.allChecked ? "Desmarcar todos" : "Selecionar todos"}
+                          className={`w-3.5 h-3.5 rounded cursor-pointer ${color === "blue" ? "accent-blue-600" : color === "yellow" ? "accent-yellow-600" : "accent-amber-600"}`}
+                        />
+                      )}
                     </div>
                   </th>
                 ))}
