@@ -307,8 +307,13 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       }
       const valorStr = title.valorAReceber.toFixed(2);
       
-      // Buscar registro ativo existente com mesma empresa+documento+vencimento+valor
-      const existingMatch = activePlanilha.find(p => {
+      // Buscar registro ativo existente com mesma empresa+documento+valor
+      // NOTA: Não exigimos mesmo vencimento porque o Maxiprod pode alterar a data de vencimento
+      // quando um cheque é reapresentado ou renegociado (ex: de 19/07 para 25/07).
+      // Nesses casos o arId antigo é deletado e um novo é criado, mas é o MESMO título.
+      // Critério de match: empresa + documento + valor (sem vencimento).
+      // Se houver múltiplos matches, preferir o que tem arId que NÃO existe mais em accounts_receivable.
+      const existingMatches = activePlanilha.filter(p => {
         if (!p.empresa || !p.arId) return false;
         // ar_id já correto? Não precisa religar
         if (p.arId === title.arId) return false;
@@ -316,17 +321,29 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         if (p.empresa.toUpperCase().trim() !== empresaUpper) return false;
         // Mesmo documento
         if ((p.documento || null) !== expectedDoc) return false;
-        // Mesmo vencimento
-        if (p.vencimento !== title.vencDate) return false;
         // Mesmo valor (com tolerância de 0.01)
         if (Math.abs((Number(p.valor) || 0) - title.valorAReceber) > 0.01) return false;
         return true;
       });
       
+      // Preferir match cujo arId NÃO existe mais no accounts_receivable (título substituído)
+      let existingMatch = existingMatches.find(p => !validOverdueArIds.has(p.arId!));
+      // Fallback: qualquer match com mesmo documento+empresa+valor
+      if (!existingMatch && existingMatches.length > 0) {
+        existingMatch = existingMatches[0];
+      }
+      
       if (existingMatch) {
         // RELIGAR: Atualizar o ar_id do registro existente para o novo ID
+        // Também atualizar vencimento e diasVencidos caso tenham mudado (ex: cheque reapresentado)
+        const newDiasVencidos = Math.floor((new Date(todayStr).getTime() - new Date(title.vencDate).getTime()) / 86400000);
         await db.update(cobrancaPlanilha)
-          .set({ arId: title.arId, updatedBy: "Auto-sync (ar_id atualizado)" })
+          .set({
+            arId: title.arId,
+            vencimento: title.vencDate,
+            diasVencidos: Math.max(0, newDiasVencidos),
+            updatedBy: "Auto-sync (ar_id atualizado + vencimento corrigido)"
+          })
           .where(eq(cobrancaPlanilha.id, existingMatch.id));
         relinked++;
         console.log(`[Auto-sync] RELINK: ${title.empresa} - ${expectedDoc} ar_id ${existingMatch.arId} → ${title.arId}`);

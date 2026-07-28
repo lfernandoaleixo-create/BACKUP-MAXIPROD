@@ -6234,3 +6234,17 @@
 - [x] Exportação Maxiprod: Data entrega e Previsão entrega preenchidas corretamente
 - [x] Exportação Maxiprod: Forma de pagamento normalizada (À vista/A Prazo/Outros)
 - [x] Exportação cadastro cliente: garantir que UF/estado seja exportado corretamente
+
+## Bug: Duplicidade de inadimplência - MARIA APARECIDA (EMBALAGENS VITORIA)
+- [x] Cliente MARIA APARECIDA aparece com 2 inadimplências na Manus mas só 1 no Maxiprod
+- [x] NF 346 aparece duplicada: uma como "Promessa de Pgto" (19/07) e outra como "Cheque em compensação" (25/07)
+- [x] No Maxiprod só existe 1 título (emissão 19/06, venc 25/07, R$ 769,00, Cheque)
+- [x] Investigar se o sync está criando duplicatas em vez de atualizar registros existentes
+- [x] Corrigir lógica de deduplicação para títulos com mesma NF/empresa
+
+### Resolução
+- [x] Causa raiz: arId antigo (45615295) deletado no Maxiprod quando cheque foi reapresentado com novo vencimento (25/07), criando novo arId (56500793). O dedup exigia mesmo vencimento, então não reconheceu como mesmo título.
+- [x] Fix: Removida exigência de mesmo vencimento no match de deduplicação. Agora usa empresa+documento+valor. Preferência para match cujo arId não existe mais no accounts_receivable.
+- [x] Também atualiza vencimento e diasVencidos ao religar título.
+- [x] Registro duplicado (ID 2190002) desativado manualmente.
+- [x] Verificação: 0 órfãos restantes no sistema.
