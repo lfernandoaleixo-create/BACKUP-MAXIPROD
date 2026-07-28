@@ -279,21 +279,28 @@ export default function GestaoComercial() {
             </Link>}
 
             {/* Meu Painel de Vendedor - para Renato/Juvenal que também vendem */}
-            {isGestorVendedor && hasGranularAccess("gc.meuPainelVendedor") && (
-              <a href="/vendedor">
-                <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-sm p-6 hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer group">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
-                      <ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Meu Painel de Vendedor</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Meus pedidos, estoque e clientes (como vendedor)</p>
+            {isGestorVendedor && hasGranularAccess("gc.meuPainelVendedor") && (() => {
+              // Find the seller ID for this gestor-vendedor from permissions data
+              const mySellerRecord = permissionsQuery.data?.find(
+                (p: any) => p.sellerName?.toUpperCase() === gestorNameForHub?.toUpperCase()
+              );
+              if (!mySellerRecord) return null;
+              return (
+                <Link href={`/gestao-comercial/vendedor/${mySellerRecord.id}`}>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-sm p-6 hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
+                        <ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Meu Painel de Vendedor</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Meus pedidos, estoque e clientes (como vendedor)</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </a>
-            )}
+                </Link>
+              );
+            })()}
 
             {/* Aprovações de Pedidos - para Renato/Juvenal que precisam aprovar pedidos dos seus vendedores */}
             {isGestorVendedor && gestorNameForHub && hasGranularAccess("gc.aprovacoesPedidos") && (

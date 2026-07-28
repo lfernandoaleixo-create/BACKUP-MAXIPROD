@@ -6267,3 +6267,6 @@
 - [x] Quando pedido é modificado e volta pro aceite de produção, o alerta de estoque insuficiente NÃO deve reaparecer se já foi aceito pela Maria/Eva
 - [x] O alerta de insuficiência só dispara uma vez (na criação do pedido)
 - [x] Se o aceite já foi dado, modificações no pedido não reativam o alerta
+
+## Bug: "Meu Painel de Vendedor" faz logout ao invés de abrir o painel
+- [x] Fix: Clicar em "Meu Painel de Vendedor" na Gestão Comercial não deve fazer logout — deve abrir o painel do vendedor
