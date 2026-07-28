@@ -55,15 +55,11 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
 
     if (!data?.itensDosPedidosDeVendas?.items) return [];
 
-    // CRITICAL: Only include items that HAVE stock records in Maxiprod.
-    // If item.estoques is empty (no stock records), Maxiprod does NOT mark as "Insuficiente".
-    // The "Insuficiente (reservar)" only appears when the item HAS stock records but qty is insufficient.
+    // Incluir TODOS os itens de pedidos "A aprovar".
+    // Itens com estoques vazio (sem registro de estoque) são tratados como estoque = 0,
+    // pois o Maxiprod marca como "Insuficiente (reservar)" mesmo quando não há registro de estoque.
+    // Exemplo: código 00649 (ESPETO QUEIJO COALHO) não tem estoque no Maxiprod → insuficiente.
     return data.itensDosPedidosDeVendas.items
-      .filter((item: any) => {
-        const estoques = item.item?.estoques || [];
-        // Item must have at least one stock record to be considered for insufficiency
-        return estoques.length > 0;
-      })
       .map((item: any) => {
         // Identificar se é madeira: superGrupo 16 (dentroDoGrupo.codigo) com grupo 18 ou 19
         const grupoCodigo = item.item?.grupo?.codigo || "";
@@ -141,18 +137,12 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   const stockMap = await fetchStockForItems(uniqueItemIds);
 
   // 3. Identificar itens insuficientes (estoque disponível < quantidade pedida)
-  // IMPORTANTE: Se estoquesAgrupados NÃO retorna dados para um item, isso significa que o
-  // Maxiprod NÃO controla estoque agrupado desse item → NÃO deve gerar alerta.
-  // Isso diferencia "estoque é controlado e está em 0" de "estoque não é controlado".
+  // Se estoquesAgrupados NÃO retorna dados para um item, tratamos como estoque = 0.
+  // O Maxiprod marca como "Insuficiente (reservar)" mesmo quando não há registro de estoque agrupado.
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
-    if (!stockMap.has(item.itemId)) {
-      // Item não tem registro em estoquesAgrupados → Maxiprod não controla estoque dele
-      // NÃO criar alerta (ex: Varetas Aromatizador que não têm estoque controlado)
-      continue;
-    }
-    const stock = stockMap.get(item.itemId)!;
-    const available = stock.total - stock.reserved;
+    const stock = stockMap.get(item.itemId);
+    const available = stock ? (stock.total - stock.reserved) : 0;
     if (available < item.quantidade) {
       insufficientItems.push(item);
     }
