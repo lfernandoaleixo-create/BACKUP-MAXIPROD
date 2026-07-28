@@ -59,6 +59,9 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
   const [valorFrete, setValorFrete] = useState("");
   const [tipoFrete, setTipoFrete] = useState("CIF");
   const [observacoes, setObservacoes] = useState("");
+  const [observacoesInternas, setObservacoesInternas] = useState("");
+  const [transportadoraSelecionada, setTransportadoraSelecionada] = useState("");
+  const [protocoloCotacao, setProtocoloCotacao] = useState("");
 
   // Client search
   const [clientSearch, setClientSearch] = useState("");
@@ -173,6 +176,9 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
       valorFrete: Number(valorFrete) || undefined,
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
+      observacoesInternas: observacoesInternas || undefined,
+      transportadora: transportadoraSelecionada || undefined,
+      protocoloCotacao: protocoloCotacao || undefined,
       items: items.map(item => ({
         codigoItem: item.codigoItem,
         descricaoItem: item.descricaoItem,
@@ -270,6 +276,7 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
             valorFrete={valorFrete} setValorFrete={setValorFrete}
             tipoFrete={tipoFrete} setTipoFrete={setTipoFrete}
             observacoes={observacoes} setObservacoes={setObservacoes}
+            observacoesInternas={observacoesInternas} setObservacoesInternas={setObservacoesInternas}
             totalProdutos={totalProdutos}
             totalPedido={totalPedido}
           />
@@ -612,6 +619,7 @@ function PaymentStep({
   valorFrete, setValorFrete,
   tipoFrete, setTipoFrete,
   observacoes, setObservacoes,
+  observacoesInternas, setObservacoesInternas,
   totalProdutos, totalPedido,
 }: any) {
   return (
@@ -633,13 +641,24 @@ function PaymentStep({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1.5">Observações</label>
+        <label className="block text-xs font-medium text-slate-600 mb-1.5">Observações (Produção)</label>
         <textarea
           value={observacoes}
           onChange={(e) => setObservacoes(e.target.value)}
-          placeholder="Observações adicionais sobre o pedido..."
+          placeholder="Ex: EMBALAR NA MARCA DO CLIENTE (visível na aba faturamento)"
           className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
-          rows={3}
+          rows={2}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-600 mb-1.5">Observações Internas (Financeiro/Fiscal)</label>
+        <textarea
+          value={observacoesInternas}
+          onChange={(e) => setObservacoesInternas(e.target.value)}
+          placeholder="Ex: FAVOR COTAR FRETE (visível para financeiro e fiscal)"
+          className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+          rows={2}
         />
       </div>
 

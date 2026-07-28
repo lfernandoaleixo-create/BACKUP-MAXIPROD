@@ -2229,6 +2229,9 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   valorFrete: decimal("valor_frete", { precision: 18, scale: 2 }),
   tipoFrete: varchar("tipo_frete", { length: 50 }), // CIF, FOB
   observacoes: text("observacoes"),
+  observacoesInternas: text("observacoes_internas"), // Obs internas: frete + protocolo + texto livre (vai para financeiro/fiscal)
+  transportadora: varchar("transportadora", { length: 200 }), // Nome da transportadora selecionada na cotação
+  protocoloCotacao: varchar("protocolo_cotacao", { length: 100 }), // Protocolo da simulação de frete
   
   // Comissão
   comissaoFonte: varchar("comissao_fonte", { length: 30 }), // auto, critico_liberado, critico_bloqueado, manual

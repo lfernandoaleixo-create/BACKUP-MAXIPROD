@@ -4991,6 +4991,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [valorFrete, setValorFrete] = useState("");
   const [tipoFrete, setTipoFrete] = useState("CIF");
   const [observacoes, setObservacoes] = useState("");
+  const [observacoesInternas, setObservacoesInternas] = useState("");
+  const [transportadoraSelecionada, setTransportadoraSelecionada] = useState("");
+  const [protocoloCotacao, setProtocoloCotacao] = useState("");
   // Campos Maxiprod
   const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
@@ -5469,6 +5472,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       valorFrete: Number(valorFrete) || undefined,
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
+      observacoesInternas: observacoesInternas || undefined,
+      transportadora: transportadoraSelecionada || undefined,
+      protocoloCotacao: protocoloCotacao || undefined,
       // Campos Maxiprod
       operacaoFiscal: operacaoFiscal || undefined,
       naturezaOperacao: naturezaOperacao || undefined,
@@ -6857,6 +6863,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             setDataEntregaPedido={setDataEntregaPedido}
             previsaoEntregaPedido={previsaoEntregaPedido}
             setPrevisaoEntregaPedido={setPrevisaoEntregaPedido}
+            onTransportadoraSelect={setTransportadoraSelecionada}
+            onProtocoloSet={setProtocoloCotacao}
             onBack={() => setStep("produtos")}
             onNext={() => setStep("revisao")}
             onRealCostsCalculated={(data) => {

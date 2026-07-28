@@ -35,6 +35,8 @@ interface FreightStepProps {
   setTipoFrete: (v: string) => void;
   observacoes: string;
   setObservacoes: (v: string) => void;
+  onTransportadoraSelect?: (nome: string) => void;
+  onProtocoloSet?: (protocolo: string) => void;
   onBack: () => void;
   onNext: () => void;
 }
@@ -123,6 +125,8 @@ export default function FreightStep({
   setTipoFrete,
   observacoes,
   setObservacoes,
+  onTransportadoraSelect,
+  onProtocoloSet,
   onBack,
   onNext,
 }: FreightStepProps) {
@@ -174,9 +178,17 @@ export default function FreightStep({
     });
   };
 
-  const handleUsarCotacao = (valor: number) => {
+  const handleUsarCotacao = (valor: number, transportadora?: string) => {
     setValorFrete(String(valor.toFixed(2)));
-    toast.success(`Frete de ${formatCurrency(valor)} aplicado ao pedido`);
+    if (transportadora && onTransportadoraSelect) {
+      onTransportadoraSelect(transportadora);
+    }
+    // Generate protocol from timestamp
+    const protocolo = `COT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString(36).toUpperCase()}`;
+    if (onProtocoloSet) {
+      onProtocoloSet(protocolo);
+    }
+    toast.success(`Frete de ${formatCurrency(valor)} aplicado ao pedido${transportadora ? ` (${transportadora})` : ''}`);
   };
 
   // Group results by transportadora
@@ -319,7 +331,7 @@ export default function FreightStep({
                             <p className="text-[9px] text-slate-400">{quote.prazo}</p>
                           </div>
                           <button
-                            onClick={() => handleUsarCotacao(quote.totalFrete)}
+                            onClick={() => handleUsarCotacao(quote.totalFrete, transportadora)}
                             className="px-2 py-1 bg-teal-600 text-white rounded text-[9px] font-bold hover:bg-teal-700 cursor-pointer"
                           >
                             Usar

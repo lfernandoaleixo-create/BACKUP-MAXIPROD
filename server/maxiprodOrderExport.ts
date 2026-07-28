@@ -70,8 +70,12 @@ interface OrderExportData {
   dataEntrega: string;
   previsaoEntrega: string;
   valorFrete: number;
-  observacoes: string;
+  observacoes: string;           // Obs produção (vai para W - Observações técnicas)
+  observacoesInternas: string;   // Obs internas (vai para V junto com estado configurável)
   estadoConfiguravel: string;
+  transportadora: string;        // Transportadora selecionada
+  protocoloCotacao: string;      // Protocolo da cotação de frete
+  tipoFrete: string;             // CIF/FOB/RETIRA
   items: Array<{
     codigoItem: string;
     descricaoItem: string;
@@ -186,6 +190,62 @@ function deriveOperacaoFiscal(operacaoFiscal: string | null | undefined, uf: str
 }
 
 /**
+ * Convert tipoFrete (CIF/FOB/RETIRA) to Maxiprod code.
+ * 0 = CIF (frete por conta do remetente)
+ * 1 = FOB (frete por conta do destinatário)
+ * 2 = Terceiros
+ * 9 = Sem frete / Retira
+ */
+function tipoFreteToCode(tipoFrete: string | null | undefined): string {
+  if (!tipoFrete) return "0"; // Default CIF
+  const normalized = tipoFrete.trim().toUpperCase();
+  if (normalized === "FOB") return "1";
+  if (normalized === "RETIRA" || normalized === "SEM FRETE") return "9";
+  return "0"; // CIF
+}
+
+/**
+ * Build the "Informações adicionais do produto" (col V) content.
+ * Concatena: estado configurável + condição frete + transportadora + protocolo + obs internas
+ * Separados por " | "
+ */
+function buildInfoAdicionais(orderData: OrderExportData): string {
+  const parts: string[] = [];
+  
+  // Estado configurável (ex: MADEIRA)
+  if (orderData.estadoConfiguravel) {
+    parts.push(`Estado: ${orderData.estadoConfiguravel}`);
+  }
+  
+  // Condição do frete (0=CIF, 1=FOB, 9=Retira)
+  const codFrete = tipoFreteToCode(orderData.tipoFrete);
+  const descFrete = orderData.tipoFrete || "CIF";
+  parts.push(`Frete: ${codFrete} (${descFrete})`);
+  
+  // Transportadora selecionada
+  if (orderData.transportadora) {
+    parts.push(`Transportadora: ${orderData.transportadora}`);
+  }
+  
+  // Valor do frete (informativo)
+  if (orderData.valorFrete && orderData.valorFrete > 0) {
+    parts.push(`Valor frete: R$ ${orderData.valorFrete.toFixed(2).replace('.', ',')}`);
+  }
+  
+  // Protocolo da cotação
+  if (orderData.protocoloCotacao) {
+    parts.push(`Protocolo: ${orderData.protocoloCotacao}`);
+  }
+  
+  // Observações internas (texto livre do vendedor)
+  if (orderData.observacoesInternas) {
+    parts.push(orderData.observacoesInternas);
+  }
+  
+  return parts.join(" | ");
+}
+
+/**
  * Generate Excel buffer for a single order in Maxiprod Pedidos de Venda format.
  * 
  * REGRAS IMPLEMENTADAS:
@@ -252,13 +312,13 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
       item.unidadeMedida || "un",                             // N: Unidade de venda*
       item.precoUnitario || 0,                                // O: Valor unitário
       item.valorDesconto || 0,                                // P: Valor de desconto
-      isFirst ? (orderData.valorFrete || 0) : 0,             // Q: Valor de frete
+      null,                                                   // Q: Valor de frete (VAZIO conforme solicitado)
       null,                                                   // R: Valor de seguro (VAZIO, não 0!)
       null,                                                   // S: Valor de outras despesas (VAZIO, não 0!)
       formatDateBR(orderData.dataEntrega) || todayBR,         // T: Entrega
       formatDateBR(orderData.previsaoEntrega) || todayBR,     // U: Previsão entrega
-      orderData.estadoConfiguravel || "",                     // V: Informações adicionais do produto
-      isFirst ? (orderData.observacoes || "") : "",           // W: Observações técnicas
+      isFirst ? buildInfoAdicionais(orderData) : "",          // V: Informações adicionais do produto
+      isFirst ? (orderData.observacoes || "") : "",           // W: Observações técnicas (produção)
       "",                                                     // X: Tipo de comissão (vazio)
       null,                                                   // Y: Valor da comissão (VAZIO, não "0"!)
       "",                                                     // Z: Pedido do cliente
@@ -353,7 +413,11 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     previsaoEntrega: order.previsaoEntrega || order.dataEntrega || "",
     valorFrete: Number(order.valorFrete) || 0,
     observacoes: order.observacoes || "",
+    observacoesInternas: order.observacoesInternas || "",
     estadoConfiguravel: order.estadoConfiguravel || "",
+    transportadora: order.transportadora || "",
+    protocoloCotacao: order.protocoloCotacao || "",
+    tipoFrete: order.tipoFrete || "CIF",
     items: items.map(item => ({
       codigoItem: item.codigoItem || "",
       descricaoItem: item.descricaoItem || "",

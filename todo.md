@@ -6222,3 +6222,15 @@
 
 ## Feature: Tooltip no faturado do card QC mostrando detalhes de bonificação (28/07/2026)
 - [x] Adicionar tooltip/hover no valor de faturado do card Palitos Premium mostrando que as 12cx foram bonificação e para quem (LATCO)
+
+## Feature: Melhorias na exportação Maxiprod - Pedidos de Venda e Cadastro de Clientes (28/07/2026)
+- [x] Adicionar campos observacoesInternas, transportadora, protocoloCotacao na tabela sales_order_requests
+- [x] Adicionar campo observacoesInternas no formulário de pedido (SalesOrderForm)
+- [x] Salvar transportadora selecionada quando vendedor escolher cotação de frete
+- [x] Salvar protocolo da cotação de frete no pedido
+- [x] Exportação Maxiprod: Valor do frete = vazio (não preencher)
+- [x] Exportação Maxiprod: Observações técnicas (col W) = observações de produção
+- [x] Exportação Maxiprod: Informações adicionais (col V) = estado configurável + obs internas (frete + protocolo + transportadora + condição frete + texto livre)
+- [x] Exportação Maxiprod: Data entrega e Previsão entrega preenchidas corretamente
+- [x] Exportação Maxiprod: Forma de pagamento normalizada (À vista/A Prazo/Outros)
+- [x] Exportação cadastro cliente: garantir que UF/estado seja exportado corretamente
