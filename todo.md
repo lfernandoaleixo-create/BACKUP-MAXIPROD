@@ -6183,3 +6183,6 @@
 - [ ] Alfa Transportes: Erro "código 13 - FALHA AO CALCULAR COTAÇÃO" = rota não coberta pelo contrato (requer contato comercial com a Alfa, não há API de cadastro)
 - [ ] SSW (Camilo dos Santos): Erro "Cliente não possui tabela" = cliente sem tabela negociada (requer contato comercial com a SSW)
 - [ ] Flor de Minas: "Cidade não atendida" = cobertura geográfica limitada (não há API)
+## Regra: Alteração de Observações → Volta para Aceite da Produção
+- [x] Quando observações do pedido são editadas (daqui pra frente), mover pedido para "Aceite da Produção" (NÃO para "Pedidos em Aberto")
+- [x] Regra vale SOMENTE para alterações futuras — NÃO mexer em pedidos existentes na aba faturamento

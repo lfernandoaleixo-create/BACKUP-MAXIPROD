@@ -2048,16 +2048,24 @@ export const billingRouter = router({
         }
       }
 
-      // Gerar notificação de alteração de observação
+      // Quando observação MUDA, voltar pedido para Aceite da Produção
+      // (remover productionAcceptance e billingAuthorizations)
       if (input.observation.trim() !== oldObservation) {
+        // 1. Remover do Aceite da Produção (volta para pendingAcceptance)
+        await db.delete(productionAcceptance).where(eq(productionAcceptance.pedido, input.pedido));
+        // 2. Remover autorização de faturamento (caso estivesse autorizado)
+        await db.delete(billingAuthorizations).where(eq(billingAuthorizations.pedido, input.pedido));
+        console.log(`[ObsChange] Pedido #${input.pedido} voltou para Aceite da Produção após alteração de observação por ${operatorName}`);
+
+        // Gerar notificação
         try {
           const { createNotification } = await import("./notificationRouter");
           const obsPreview = input.observation.trim().length > 80 ? input.observation.trim().substring(0, 80) + "..." : input.observation.trim();
           await createNotification({
             type: "observacao_alterada",
-            title: `Obs. Faturamento - Pedido #${input.pedido}`,
-            message: `${operatorName} alterou a observação de faturamento do pedido #${input.pedido}: "${obsPreview}"`,
-            severity: "info",
+            title: `Pedido #${input.pedido} voltou para Aceite (Obs. alterada)`,
+            message: `${operatorName} alterou a observação do pedido #${input.pedido}: "${obsPreview}". Pedido retornou para Aceite da Produção.`,
+            severity: "warning",
             metadata: { pedido: input.pedido, operador: operatorName, oldObs: oldObservation.substring(0, 200), newObs: input.observation.trim().substring(0, 200) },
           });
         } catch (e) { console.error("[Notification] Error:", e); }
