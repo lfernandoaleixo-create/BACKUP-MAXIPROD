@@ -5173,6 +5173,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     { enabled: selectedClientName.length >= 3 }
   );
 
+  // Last order items query - for "Repetir Último Pedido" feature
+  const lastOrderQuery = trpc.salesOrders.getLastOrderItems.useQuery(
+    { clientName: selectedClientName, cnpjCpf: cnpjCpf || undefined },
+    { enabled: selectedClientName.length >= 3 && items.length === 0 }
+  );
+
   const updateVendorClientMutation = trpc.sales.updateVendorClient.useMutation();
 
   const selectClient = (client: any) => {
@@ -6100,7 +6106,42 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-slate-500 uppercase">2. Produtos do Estoque</p>
-              <span className="text-[10px] text-slate-400">{productsQuery.data?.length || 0} produtos disponíveis</span>
+              <div className="flex items-center gap-2">
+                {lastOrderQuery.data && lastOrderQuery.data.items.length > 0 && items.length === 0 && (
+                  <button
+                    onClick={() => {
+                      const lastItems = lastOrderQuery.data!.items;
+                      const availableProds = productsQuery.data || [];
+                      const newItems: typeof items = [];
+                      for (const li of lastItems) {
+                        const prod = availableProds.find((p: any) => p.codigoItem === li.codigoItem);
+                        newItems.push({
+                          codigoItem: li.codigoItem,
+                          descricaoItem: li.descricaoItem,
+                          quantidade: li.quantidade,
+                          unidadeMedida: li.unidadeMedida || "CX",
+                          precoUnitario: prod?.precoVendedor ? Number(prod.precoVendedor) : (prod?.precoMinimo ? Number(prod.precoMinimo) : li.precoUnitario),
+                          precoMinimo: prod?.precoMinimo ? Number(prod.precoMinimo) : null,
+                          precoVendedor: prod?.precoVendedor ? Number(prod.precoVendedor) : null,
+                          grupo: prod?.grupo || "",
+                          disponivel: prod?.disponivel || "0",
+                          pesoBrutoCaixa: prod?.pesoBruto && Number(prod.pesoBruto) > 0 ? Number(prod.pesoBruto) * (Number(prod.unidadeDeVendaFator) || 1) : undefined,
+                          dimsStr: prod?.descricaoComplementar?.match(/([\ d,.]+)[xX]([\ d,.]+)[xX]([\ d,.]+)/)?.[0] || undefined,
+                        });
+                      }
+                      setItems(newItems);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-[11px] font-semibold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Repetir Último Pedido
+                    {lastOrderQuery.data.source === "maxiprod" && lastOrderQuery.data.pedidoNumber && (
+                      <span className="text-[9px] text-blue-500 dark:text-blue-400">#{lastOrderQuery.data.pedidoNumber}</span>
+                    )}
+                  </button>
+                )}
+                <span className="text-[10px] text-slate-400">{productsQuery.data?.length || 0} produtos disponíveis</span>
+              </div>
             </div>
             {/* Margin simulation params (Fernando/Guilherme only) */}
             {showRealCostBar && (

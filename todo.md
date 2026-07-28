@@ -6305,10 +6305,10 @@
 - [ ] Vendedores de rua mantêm comissão fixa de 5,85%
 
 ## Repetir Último Pedido (28/07/2026)
-- [ ] Botão "Repetir Último Pedido" ao selecionar cliente com histórico no pedido de venda
-- [ ] Funciona com histórico do Maxiprod (vendas anteriores) e do próprio app (pedidos feitos pelo sistema)
-- [ ] Ao clicar, preenche automaticamente: produtos, quantidades, e todas as configurações do último pedido
-- [ ] Deve funcionar independente se o pedido original foi feito pelo Maxiprod ou pelo app
+- [x] Botão "Repetir Último Pedido" ao selecionar cliente com histórico no pedido de venda
+- [x] Funciona com histórico do Maxiprod (vendas anteriores) e do próprio app (pedidos feitos pelo sistema)
+- [x] Ao clicar, preenche automaticamente: produtos, quantidades, e todas as configurações do último pedido
+- [x] Deve funcionar independente se o pedido original foi feito pelo Maxiprod ou pelo app
 
 ## Verificação Exportação Maxiprod (28/07/2026)
 - [x] Garantir que todas as modificações de exportação Maxiprod estão salvas e intactas (maxiprodExcelExport.ts não tocado)

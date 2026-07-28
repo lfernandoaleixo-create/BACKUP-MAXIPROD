@@ -3685,4 +3685,115 @@ export const salesOrderRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Get last order items for a client (for "Repetir Último Pedido" feature)
+   * Checks app orders first, then Maxiprod orders
+   */
+  getLastOrderItems: publicProcedure
+    .input(z.object({
+      clientName: z.string().min(1),
+      cnpjCpf: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { items: [], source: null as string | null, orderDate: null as string | null, pedidoNumber: null as string | null };
+
+      const clientNameLower = input.clientName.toLowerCase();
+
+      // 1. Check app orders (sales_order_requests) first
+      const appOrderConditions = [];
+      if (input.cnpjCpf) {
+        appOrderConditions.push(eq(salesOrderRequests.cnpjCpf, input.cnpjCpf));
+      } else {
+        appOrderConditions.push(
+          or(
+            sql`LOWER(${salesOrderRequests.razaoSocial}) LIKE ${`%${clientNameLower}%`}`,
+            sql`LOWER(${salesOrderRequests.nomeFantasia}) LIKE ${`%${clientNameLower}%`}`
+          )!
+        );
+      }
+
+      const lastAppOrder = await db.select({
+        id: salesOrderRequests.id,
+        createdAt: salesOrderRequests.createdAt,
+        status: salesOrderRequests.status,
+      })
+      .from(salesOrderRequests)
+      .where(and(
+        ...appOrderConditions,
+        sql`${salesOrderRequests.status} NOT IN ('rejeitado')`
+      ))
+      .orderBy(desc(salesOrderRequests.createdAt))
+      .limit(1);
+
+      if (lastAppOrder.length > 0) {
+        const orderId = lastAppOrder[0].id;
+        const orderItems = await db.select({
+          codigoItem: salesOrderRequestItems.codigoItem,
+          descricaoItem: salesOrderRequestItems.descricaoItem,
+          quantidade: salesOrderRequestItems.quantidade,
+          precoUnitario: salesOrderRequestItems.precoUnitario,
+          unidadeMedida: salesOrderRequestItems.unidadeMedida,
+        })
+        .from(salesOrderRequestItems)
+        .where(eq(salesOrderRequestItems.orderId, orderId));
+
+        return {
+          items: orderItems.map(i => ({
+            codigoItem: i.codigoItem,
+            descricaoItem: typeof i.descricaoItem === 'string' ? i.descricaoItem : '',
+            quantidade: Number(i.quantidade),
+            precoUnitario: Number(i.precoUnitario),
+            unidadeMedida: i.unidadeMedida || "CX",
+          })),
+          source: "app",
+          orderDate: lastAppOrder[0].createdAt?.toISOString() || null,
+          pedidoNumber: null,
+        };
+      }
+
+      // 2. Check Maxiprod orders (sales_orders)
+      const maxiprodOrders = await db.select({
+        pedido: salesOrders.pedido,
+        dataEmissao: salesOrders.dataEmissao,
+        codigoItem: salesOrders.codigoItem,
+        descricaoItem: salesOrders.descricaoItem,
+        quantidade: salesOrders.quantidade,
+        valorUnitario: salesOrders.valorUnitario,
+        unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
+      })
+      .from(salesOrders)
+      .where(
+        or(
+          sql`LOWER(${salesOrders.cliente}) LIKE ${`%${clientNameLower}%`}`,
+          sql`LOWER(${salesOrders.clienteApelido}) LIKE ${`%${clientNameLower}%`}`,
+          sql`LOWER(${salesOrders.razaoSocial}) LIKE ${`%${clientNameLower}%`}`
+        )
+      )
+      .orderBy(desc(salesOrders.dataEmissao))
+      .limit(100);
+
+      if (maxiprodOrders.length === 0) {
+        return { items: [], source: null, orderDate: null, pedidoNumber: null };
+      }
+
+      // Get the most recent pedido number and all its items
+      const latestPedido = maxiprodOrders[0].pedido;
+      const latestDate = maxiprodOrders[0].dataEmissao;
+      const latestItems = maxiprodOrders.filter(o => o.pedido === latestPedido && o.codigoItem);
+
+      return {
+        items: latestItems.map(i => ({
+          codigoItem: i.codigoItem || "",
+          descricaoItem: typeof i.descricaoItem === 'string' ? i.descricaoItem : (typeof i.descricaoItem === 'object' ? '' : String(i.descricaoItem || '')),
+          quantidade: Number(i.quantidade || 1),
+          precoUnitario: Number(i.valorUnitario || 0),
+          unidadeMedida: i.unidadeMedidaCodigo || "CX",
+        })),
+        source: "maxiprod",
+        orderDate: latestDate || null,
+        pedidoNumber: latestPedido || null,
+      };
+    }),
 });
