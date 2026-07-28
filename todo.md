@@ -6193,3 +6193,9 @@
 ## Bug: Código 00649 não aparece na requisição de movimentação de estoque (28/07/2026)
 - [x] Código 00649 (ESPETO DE BAMBU PARA QUEIJO COALHO) não aparece na lista de produtos para fazer requisição de movimentação de estoque na aba Produção
 - [x] Corrigido: 00649 adicionado à lista ESPETO_QUEIJO_CODES no sync + inserido manualmente no stock_items/product_catalog com superGrupoCodigo=12
+
+## Fix: POs card mostrando apenas 5 POs (deveria mostrar todas 12) (28/07/2026)
+- [x] Remover 00335 da lista EXCLUDED_CODES para que POs da HARBIN ZHONGYI (MADEIRA) apareçam
+- [x] Adicionar campo observações internas ao GraphQL query de pedidos de compra
+- [x] Adicionar coluna observacoesInternas na tabela purchase_order_items
+- [x] Exibir observações internas no card de POs no frontend

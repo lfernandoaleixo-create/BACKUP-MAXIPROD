@@ -108,6 +108,7 @@ interface POLote {
   quantidadeUn: number;
   dataEntrega: string;
   fornecedor: string;
+  observacoesInternas: string | null;
 }
 
 interface PedidoCliente {
@@ -1828,6 +1829,7 @@ interface POSummary {
   dataEntrega: string;
   totalCx: number;
   totalUn: number;
+  observacoesInternas: string | null;
   produtos: { descricaoItem: string; codigoItem: string; quantidade: number; quantidadeUn: number }[];
 }
 
@@ -1860,6 +1862,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
           dataEntrega: lote.dataEntrega || "",
           totalCx: 0,
           totalUn: 0,
+          observacoesInternas: lote.observacoesInternas || null,
           produtos: [],
         };
         existing.totalCx += lote.quantidade;
@@ -1999,6 +2002,13 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                         {po.produtos.length} {po.produtos.length === 1 ? "produto" : "produtos"}
                       </span>
                     </div>
+                    {po.observacoesInternas && (
+                      <div className="mt-1">
+                        <span className="text-[10px] md:text-xs text-purple-600 font-medium italic">
+                          📝 {po.observacoesInternas}
+                        </span>
+                      </div>
+                    )}
                     {/* Cached tracking info from Logcomex */}
                     {(() => {
                       const t = trackingQuery.data?.trackingByPO?.[po.referenciaPO.toUpperCase()];

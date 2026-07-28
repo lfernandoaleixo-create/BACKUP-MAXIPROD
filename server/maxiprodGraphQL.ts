@@ -477,7 +477,8 @@ async function fetchPurchaseOrderItems(): Promise<any[]> {
           estado
           emissaoData
           minhaEmpresaId
-          fornecedor { nomeFantasia }
+          observacoesInternas
+          fornecedor { nomeFantasia razaoSocial }
         }
       }
     }
@@ -674,7 +675,7 @@ function transformPurchaseOrderItems(graphqlItems: any[]): any[] {
       dataEmissao: pc.emissaoData || "",
       estadoPedido: pc.estado || "",
       estadoItem: item.estado || "",
-      fornecedor: pc.fornecedor?.nomeFantasia || "",
+      fornecedor: pc.fornecedor?.nomeFantasia || pc.fornecedor?.razaoSocial || "",
       valorTotal: String(item.valorTotal || 0),
       valorUnitario: String(item.valorUnitario || 0),
       numeroPedido: pc.numero || "",
@@ -684,6 +685,7 @@ function transformPurchaseOrderItems(graphqlItems: any[]): any[] {
       codigoCFOP: "",
       empresaDona: getCompanyName(pc.minhaEmpresaId),
       maxiprodId: safeMaxiprodId(item.itemId),
+      observacoesInternas: pc.observacoesInternas || null,
     };
   });
 }

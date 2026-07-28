@@ -164,6 +164,7 @@ export const purchaseOrderItems = mysqlTable("purchase_order_items", {
   codigoCFOP: varchar("codigoCFOP", { length: 10 }),
   empresaDona: varchar("empresaDona", { length: 100 }),
   maxiprodId: bigint("maxiprodId", { mode: "number" }),
+  observacoesInternas: text("observacoesInternas"),
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 

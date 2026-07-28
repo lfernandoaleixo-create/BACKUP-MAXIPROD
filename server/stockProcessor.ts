@@ -37,6 +37,7 @@ interface POLote {
   quantidadeUn: number;
   dataEntrega: string;
   fornecedor: string;
+  observacoesInternas: string | null;
 }
 
 interface PedidoCliente {
@@ -409,6 +410,7 @@ function processPOItem(
     quantidadeUn: qtyUn,
     dataEntrega,
     fornecedor: po.fornecedor || "",
+    observacoesInternas: po.observacoesInternas || null,
   });
   
   poByCode.set(code, existing);
@@ -703,7 +705,7 @@ export async function processStockData(): Promise<void> {
   }
   
   // ─── Exclusões manuais (produtos que não devem aparecer no dashboard) ───
-  const EXCLUDED_CODES = new Set(["00335"]); // 00335: ESPETO DE MADEIRA 3,8*200MM 10.000 - excluído a pedido
+  const EXCLUDED_CODES = new Set<string>([]); // Nenhum produto excluído (00335 reabilitado em 28/07/2026 para mostrar POs HARBIN)
   // ─── Produtos prioritários (aparecem primeiro na lista da sua aba) ───
   const PINNED_FIRST_CODES = ["00648"]; // 00648: ESPETO PREMIUM P/ QUEIJO COALHO - primeiro na Importação
 
