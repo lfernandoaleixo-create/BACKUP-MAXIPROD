@@ -859,11 +859,14 @@ export const billingRouter = router({
                   ))
                   .limit(1);
 
-                // Observação COMERCIAL (do Maxiprod) mudou → voltar pedido para Aceite
-                // Remover productionAcceptance e billingAuthorizations para forçar re-aceite
+                // Observação COMERCIAL (do Maxiprod) mudou → voltar pedido para Aceite de Produção
+                // Remover APENAS productionAcceptance para forçar re-aceite de produção.
+                // NÃO remover billingAuthorizations - se o pedido já foi autorizado a faturar,
+                // ele deve PERMANECER autorizado. A autorização de faturamento só deve ser
+                // removida quando o pedido é efetivamente faturado (parcial ou total).
                 await db.delete(productionAcceptance).where(eq(productionAcceptance.pedido, pedido));
-                await db.delete(billingAuthorizations).where(eq(billingAuthorizations.pedido, pedido));
-                console.log(`[ObsComercial] Pedido #${pedido} voltou para Aceite - observação comercial alterada no Maxiprod`);
+                // REMOVIDO: await db.delete(billingAuthorizations).where(eq(billingAuthorizations.pedido, pedido));
+                console.log(`[ObsComercial] Pedido #${pedido} voltou para Aceite de Produção - observação comercial alterada no Maxiprod (autorização de faturamento mantida)`);
 
                 if (existingObs.length === 0) {
                   const obsPreview = newObs.length > 80 ? newObs.substring(0, 80) + "..." : newObs;
@@ -1065,11 +1068,15 @@ export const billingRouter = router({
         }
         
         // REGRA 2: Faturamento parcial COMPLETO → desautorizar para voltar a "Pedidos em Aberto".
-        // Só remove a autorização quando o pedido tem itens "Faturado" (já faturados)
+        // Só remove a autorização quando o pedido tem itens 100% "Faturado" (já faturados)
         // E TAMBÉM tem itens restantes ("Faturado parcial" ou "A faturar").
-        // Isso significa que uma remessa foi faturada e o restante precisa ser re-autorizado.
-        // Se o pedido só tem "Faturado parcial" sem "Faturado", o faturamento ainda está
-        // em andamento e o pedido deve PERMANECER autorizado.
+        // Isso significa que uma remessa FOI EFETIVAMENTE faturada e o restante precisa ser
+        // produzido e re-autorizado.
+        //
+        // IMPORTANTE: Se o pedido só tem "Faturado parcial" sem nenhum item 100% "Faturado",
+        // o faturamento ainda está em andamento e o pedido deve PERMANECER autorizado.
+        // Também, se o pedido só tem "A faturar" (sem nenhum "Faturado"), ele PERMANECE
+        // autorizado pois ainda não foi faturado nenhum item.
         if (states.has("Faturado") && (states.has("Faturado parcial") || states.has("A faturar"))) {
           toRemove.push(pedido);
           continue;

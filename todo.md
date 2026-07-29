@@ -6468,3 +6468,7 @@
 - [x] Ao selecionar "Usar" uma transportadora: inserir automaticamente o protocolo/código de cotação na revisão do pedido (para defesa caso a transportadora questione o valor do frete gerado pela API)
 - [x] O código de cotação/protocolo deve ser gerado obrigatoriamente em toda simulação (já existe lógica implementada para isso)
 - [x] O PDF gerado fica salvo no histórico de simulação das transportadoras (para consulta futura a qualquer momento)
+
+## Bug: Pedido 1219 volta sozinho de "Autorizado a Faturar" para "Pedidos em Aberto"
+- [x] Corrigir fluxo de status: quando autorizado, pedido deve PERMANECER em "Autorizado a Faturar" até ser faturado
+- [x] Para faturamento parcial: só após faturar é que o pedido volta para "Pedidos em Aberto" para produzir o restante das caixas que faltam
