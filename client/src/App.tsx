@@ -6,6 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { OperatorProvider, useOperator } from "./contexts/OperatorContext";
 import { DiscountAlertProvider } from "./contexts/DiscountAlertContext";
+import { OrderDraftProvider } from "./contexts/OrderDraftContext";
+import FloatingOrderDraft from "./components/FloatingOrderDraft";
 import { useSessionRefresh } from "./hooks/useSessionRefresh";
 import { useTheme } from "./contexts/ThemeContext";
 import { Sun, Moon } from "lucide-react";
@@ -80,10 +82,13 @@ function AppContent() {
   }
 
   return (
-    <DiscountAlertProvider>
-      <Router />
-      <FloatingThemeToggle />
-    </DiscountAlertProvider>
+    <OrderDraftProvider>
+      <DiscountAlertProvider>
+        <Router />
+        <FloatingThemeToggle />
+        <FloatingOrderDraft />
+      </DiscountAlertProvider>
+    </OrderDraftProvider>
   );
 }
 

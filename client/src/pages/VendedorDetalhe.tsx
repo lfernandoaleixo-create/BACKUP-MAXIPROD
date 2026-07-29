@@ -8,11 +8,12 @@
  * - Aba Configurações: ticagem de produtos visíveis, autorização, senha, catálogos
  */
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { trpc } from "@/lib/trpc";
+import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
 import {
   ArrowLeft,
   Package,
@@ -699,10 +700,10 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
 
   const filteredProducts = useMemo(() => {
     if (!stockSearch.trim()) return visibleProducts;
-    const terms = stockSearch.toLowerCase().trim().split(/\s+/);
+    const s = stockSearch.toLowerCase().trim();
     return visibleProducts.filter(item => {
       const searchable = `${item.codigoItem} ${item.descricaoItem}`.toLowerCase();
-      return terms.every(t => searchable.includes(t));
+      return searchable.includes(s);
     });
   }, [visibleProducts, stockSearch]);
 
@@ -4135,7 +4136,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [showNewOrder, setShowNewOrder] = useState(false);
+  const { hasDraft } = useOrderDraft();
+  const resumeDraft = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
+  const [showNewOrder, setShowNewOrder] = useState(resumeDraft && hasDraft);
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
@@ -5051,6 +5054,61 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [dataEntregaPedido, setDataEntregaPedido] = useState("");
   const [previsaoEntregaPedido, setPrevisaoEntregaPedido] = useState("");
 
+  // === ORDER DRAFT PERSISTENCE ===
+  const { draft, saveDraft, clearDraft } = useOrderDraft();
+
+  // Load draft on mount (only for new orders, not edits)
+  useEffect(() => {
+    if (isEditMode) return;
+    if (draft && draft.sellerId === sellerId && draft.items.length > 0) {
+      setItems(draft.items as OrderItem[]);
+      if (draft.client) {
+        setCnpjCpf(draft.client.cnpjCpf || "");
+        setRazaoSocial(draft.client.razaoSocial || "");
+        setNomeFantasia(draft.client.nomeFantasia || "");
+        setInscricaoEstadual(draft.client.inscricaoEstadual || "");
+        setCep(draft.client.cep || "");
+        setEndereco(draft.client.endereco || "");
+        setNumero(draft.client.numero || "");
+        setComplemento(draft.client.complemento || "");
+        setBairro(draft.client.bairro || "");
+        setMunicipio(draft.client.municipio || "");
+        setUf(draft.client.uf || "");
+        setTelefone1(draft.client.telefone1 || "");
+        setEmailNfe(draft.client.emailNfe || "");
+        setSegmento(draft.client.segmento || "");
+        setTipoContribuinte(draft.client.tipoContribuinte || "Contribuinte");
+        setRegimeTributario(draft.client.regimeTributario || "Normal");
+      }
+      if (draft.observacoes) setObservacoes(draft.observacoes);
+      if (draft.formaPagamento) setFormaPagamento(draft.formaPagamento);
+      if (draft.condicaoPagamento) setCondicaoPagamento(draft.condicaoPagamento);
+      if (draft.step) setStep(draft.step);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save draft whenever items or client data changes
+  useEffect(() => {
+    if (isEditMode || orderSubmitted) return;
+    if (items.length === 0 && !cnpjCpf) return; // nothing to save
+    const clientData: DraftClientData | null = cnpjCpf ? {
+      cnpjCpf, razaoSocial, nomeFantasia, inscricaoEstadual,
+      cep, endereco, numero, complemento, bairro, municipio, uf,
+      telefone1, emailNfe, segmento, tipoContribuinte, regimeTributario
+    } : null;
+    saveDraft({
+      sellerId,
+      sellerName,
+      step,
+      items: items as DraftOrderItem[],
+      client: clientData,
+      observacoes,
+      formaPagamento,
+      condicaoPagamento,
+      updatedAt: Date.now()
+    });
+  }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, condicaoPagamento]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(
     { query: clientSearch, sellerId },
@@ -5331,7 +5389,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const addedCodes = new Set(items.map(i => i.codigoItem));
     let filtered = productsQuery.data.filter((p: any) => !addedCodes.has(p.codigoItem));
     if (productSearch.trim()) {
-      const terms = productSearch.trim().toLowerCase().split(/\s+/);
+      const s = productSearch.trim().toLowerCase();
       filtered = filtered.filter((p: any) => {
         const searchable = [
           p.codigoItem,
@@ -5339,7 +5397,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
           p.codigoBarras || "",
           p.grupo || "",
         ].join(" ").toLowerCase();
-        return terms.every(term => searchable.includes(term));
+        return searchable.includes(s);
       });
     }
     return filtered;
@@ -5485,6 +5543,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             utils.salesOrders.getSellerOrders.invalidate();
             setShowBelowMinConfirm(false);
             setOrderSubmitted(true);
+            clearDraft();
             setSubmittedOrderId(result.orderId);
             setSubmittedOrderNumber(result.orderNumber);
             setStep("resumo_final");
@@ -5592,6 +5651,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
           utils.salesOrders.getSellerOrders.invalidate();
           setShowBelowMinConfirm(false);
           setOrderSubmitted(true);
+          clearDraft();
           setSubmittedOrderId(result.orderId);
           setSubmittedOrderNumber(result.orderNumber);
           setStep("resumo_final");

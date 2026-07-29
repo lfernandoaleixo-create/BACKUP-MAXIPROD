@@ -6409,3 +6409,23 @@
 
 ## Bug: Protocolo da Rodonaves não está sendo puxado
 - [x] A API Rodonaves retorna um código de cotação (ex: 30704329) - já estava capturando via ProtocolId/ProtocolNumber (type fix)
+
+## Melhoria: Busca parcial (contains) em TODAS as barras de pesquisa do dashboard
+- [x] Padronizar busca: qualquer texto digitado encontra tudo que contenha aquele texto (ex: "0" encontra tudo com 0, "300" encontra tudo com 300, "4,5" encontra tudo com 4,5)
+- [x] Estoque (Home.tsx) - barras de pesquisa (já usava .includes())
+- [x] Vendas/Pedidos - barras de pesquisa (já usava .includes())
+- [x] Gestão Comercial - barras de pesquisa (já usava .includes())
+- [x] Faturamento - barras de pesquisa (já usava .includes())
+- [x] Financeiro - barras de pesquisa (já usava .includes())
+- [x] Importação - barras de pesquisa (já usava .includes())
+- [x] VendedorDetalhe - barras de pesquisa (estoque + pedido) - corrigido split para contains simples
+- [x] SettingsPage - barras de pesquisa (já usava .includes())
+- [x] Todas as outras páginas com campo de busca - verificado, todas usam .includes()
+
+## Feature: Persistência do carrinho de pedido + botão flutuante "Continuar Pedido"
+- [x] Salvar itens do pedido em andamento no localStorage (produtos, quantidades, preços, dados do cliente)
+- [x] Ao navegar para outra aba/página, o pedido em andamento não se perde
+- [x] Botão flutuante "Continuar Pedido" visível em qualquer aba do sistema quando há pedido em andamento
+- [x] Clicar no botão leva direto de volta ao pedido em andamento
+- [x] Pedido só desaparece quando: concluído com sucesso OU excluído manualmente pelo vendedor
+- [x] Funcionar mesmo se fechar o navegador e abrir novamente
