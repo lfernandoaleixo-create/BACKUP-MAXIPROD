@@ -6385,3 +6385,27 @@
 ## Feature: Liberar variações automaticamente quando produto mãe é liberado para vendedor
 - [x] Quando gestor libera produto mãe (ex: 00024), incluir automaticamente as variações (ex: 00025, 00023) na consulta de produtos do vendedor
 - [x] Vendedor deve poder ver e escolher as variações na tela de pedido/venda
+
+## Bug: Produtos da tabela de preços não aparecem na busca de novo pedido
+- [x] Produtos que estão na tabela de preços do vendedor devem aparecer na busca de novo pedido mesmo sem estoque (ex: 00066 para Daniel)
+- [x] Remover filtro de estoque > 0 no getProductsForSeller - mostrar todos os produtos da tabela
+
+## Bug: Peso e dimensões não carregados para todos os produtos
+- [x] Garantir que peso bruto e dimensões de todos os produtos sejam carregados do Maxiprod (ex: 00066 sem peso) - RESOLVIDO: produto já tinha peso no DB (0.00314*5000=15.7kg), mas não aparecia pois filtro qty>0 excluía
+- [x] Verificar se a sincronização GraphQL está trazendo pesoBruto e descricaoComplementar para todos os itens - CONFIRMADO: dados estão no DB
+
+## Melhoria: Busca parcial na barra de pesquisa de novo pedido
+- [x] Busca deve funcionar por qualquer parte da descrição (ex: digitar "doce" deve encontrar "ALGODÃO DOCE")
+
+## Feature: Repetir último pedido com valores exatos
+- [x] Ao clicar "Repetir último pedido", puxar literalmente o último pedido com preços, descontos e quantidades idênticos ao original (Maxiprod ou app de venda)
+
+## Feature: Relatório PDF automático em toda simulação de frete
+- [ ] Sempre que fizer simulação de frete, gerar automaticamente um relatório PDF detalhado (medidas, pesos, cubagem, ranking, protocolos)
+
+## Bug: Protocolo da Camilo (SSW) não está sendo puxado
+- [x] A API SSW (Camilo) retorna um número de cotação (ex: 2768465) - já estava capturando via numeroCotacao
+- [x] Verificar resposta da API SSW e extrair o campo de protocolo/número de cotação
+
+## Bug: Protocolo da Rodonaves não está sendo puxado
+- [x] A API Rodonaves retorna um código de cotação (ex: 30704329) - já estava capturando via ProtocolId/ProtocolNumber (type fix)

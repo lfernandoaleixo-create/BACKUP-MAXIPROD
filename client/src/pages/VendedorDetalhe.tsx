@@ -699,11 +699,11 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
 
   const filteredProducts = useMemo(() => {
     if (!stockSearch.trim()) return visibleProducts;
-    const term = stockSearch.toLowerCase().trim();
-    return visibleProducts.filter(item =>
-      item.codigoItem.toLowerCase().includes(term) ||
-      item.descricaoItem.toLowerCase().includes(term)
-    );
+    const terms = stockSearch.toLowerCase().trim().split(/\s+/);
+    return visibleProducts.filter(item => {
+      const searchable = `${item.codigoItem} ${item.descricaoItem}`.toLowerCase();
+      return terms.every(t => searchable.includes(t));
+    });
   }, [visibleProducts, stockSearch]);
 
   const madeiraProducts = useMemo(() =>
@@ -5331,13 +5331,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const addedCodes = new Set(items.map(i => i.codigoItem));
     let filtered = productsQuery.data.filter((p: any) => !addedCodes.has(p.codigoItem));
     if (productSearch.trim()) {
-      const term = productSearch.trim().toLowerCase();
-      filtered = filtered.filter((p: any) =>
-        p.codigoItem.toLowerCase().includes(term) ||
-        p.descricaoItem.toLowerCase().includes(term) ||
-        (p.codigoBarras && p.codigoBarras.toLowerCase().includes(term)) ||
-        (p.grupo && p.grupo.toLowerCase().includes(term))
-      );
+      const terms = productSearch.trim().toLowerCase().split(/\s+/);
+      filtered = filtered.filter((p: any) => {
+        const searchable = [
+          p.codigoItem,
+          p.descricaoItem,
+          p.codigoBarras || "",
+          p.grupo || "",
+        ].join(" ").toLowerCase();
+        return terms.every(term => searchable.includes(term));
+      });
     }
     return filtered;
   }, [productsQuery.data, items, productSearch]);
@@ -6165,12 +6168,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       const newItems: typeof items = [];
                       for (const li of lastItems) {
                         const prod = availableProds.find((p: any) => p.codigoItem === li.codigoItem);
+                        // Usar o preço EXATO do último pedido (li.precoUnitario) - idêntico ao original
                         newItems.push({
                           codigoItem: li.codigoItem,
                           descricaoItem: li.descricaoItem,
                           quantidade: li.quantidade,
                           unidadeMedida: li.unidadeMedida || "CX",
-                          precoUnitario: prod?.precoVendedor ? Number(prod.precoVendedor) : (prod?.precoMinimo ? Number(prod.precoMinimo) : li.precoUnitario),
+                          precoUnitario: li.precoUnitario,
                           precoMinimo: prod?.precoMinimo ? Number(prod.precoMinimo) : null,
                           precoVendedor: prod?.precoVendedor ? Number(prod.precoVendedor) : null,
                           grupo: prod?.grupo || "",

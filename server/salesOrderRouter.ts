@@ -458,7 +458,7 @@ export const salesOrderRouter = router({
         }
       }
 
-      // Get stock items with available quantity
+      // Get stock items (include all items from price table, even with 0 stock)
       const items = await db.select({
         codigoItem: stockItems.codigoItem,
         descricaoItem: stockItems.descricaoItem,
@@ -476,8 +476,7 @@ export const salesOrderRouter = router({
         estado: stockItems.estado,
         unidadeDeVendaCodigo: stockItems.unidadeDeVendaCodigo,
       })
-      .from(stockItems)
-      .where(sql`CAST(${stockItems.quantidade} AS DECIMAL) > 0`);
+      .from(stockItems);
 
       // Filter by visibility: only show products in seller's price table or manual overrides
       const filteredItems = visibleCodes.size > 0

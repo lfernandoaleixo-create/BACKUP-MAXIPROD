@@ -687,6 +687,7 @@ export async function quoteAllRodonavesCnpjs(params: {
   cnpj: string;
   totalFrete: number;
   prazo: string;
+  protocolo?: number;
   error?: string;
 }>> {
   const cepOrigem = params.cepOrigem || DEFAULT_ORIGIN_CEP;
