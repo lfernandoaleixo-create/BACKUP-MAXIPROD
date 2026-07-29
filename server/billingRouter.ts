@@ -859,15 +859,21 @@ export const billingRouter = router({
                   ))
                   .limit(1);
 
+                // Observação COMERCIAL (do Maxiprod) mudou → voltar pedido para Aceite
+                // Remover productionAcceptance e billingAuthorizations para forçar re-aceite
+                await db.delete(productionAcceptance).where(eq(productionAcceptance.pedido, pedido));
+                await db.delete(billingAuthorizations).where(eq(billingAuthorizations.pedido, pedido));
+                console.log(`[ObsComercial] Pedido #${pedido} voltou para Aceite - observação comercial alterada no Maxiprod`);
+
                 if (existingObs.length === 0) {
                   const obsPreview = newObs.length > 80 ? newObs.substring(0, 80) + "..." : newObs;
                   await createNotification({
                     type: "observacao_alterada",
-                    title: `Obs. Alterada - Pedido #${pedido}`,
+                    title: `Pedido #${pedido} voltou para Aceite (Obs. Comercial alterada)`,
                     message: oldObs === "" 
-                      ? `Nova observação no pedido #${pedido} (${cliente}): "${obsPreview}"`
-                      : `Observação do pedido #${pedido} (${cliente}) foi alterada: "${obsPreview}"`,
-                    severity: "info",
+                      ? `Nova observação comercial no pedido #${pedido} (${cliente}): "${obsPreview}". Pedido retornou para Aceite da Produção.`
+                      : `Observação comercial do pedido #${pedido} (${cliente}) foi alterada: "${obsPreview}". Pedido retornou para Aceite da Produção.`,
+                    severity: "warning",
                     metadata: { pedido, cliente, oldObs: oldObs.substring(0, 200), newObs: newObs.substring(0, 200) },
                   });
                 }
@@ -2058,27 +2064,11 @@ export const billingRouter = router({
         }
       }
 
-      // Quando observação MUDA, voltar pedido para Aceite da Produção
-      // (remover productionAcceptance e billingAuthorizations)
+      // NOTA: A observação de faturamento (campo laranja) NÃO deve fazer o pedido
+      // voltar para o Aceite. Apenas alterações na observação COMERCIAL (do Maxiprod)
+      // devem causar essa volta. O campo laranja é apenas informativo para o faturamento.
       if (input.observation.trim() !== oldObservation) {
-        // 1. Remover do Aceite da Produção (volta para pendingAcceptance)
-        await db.delete(productionAcceptance).where(eq(productionAcceptance.pedido, input.pedido));
-        // 2. Remover autorização de faturamento (caso estivesse autorizado)
-        await db.delete(billingAuthorizations).where(eq(billingAuthorizations.pedido, input.pedido));
-        console.log(`[ObsChange] Pedido #${input.pedido} voltou para Aceite da Produção após alteração de observação por ${operatorName}`);
-
-        // Gerar notificação
-        try {
-          const { createNotification } = await import("./notificationRouter");
-          const obsPreview = input.observation.trim().length > 80 ? input.observation.trim().substring(0, 80) + "..." : input.observation.trim();
-          await createNotification({
-            type: "observacao_alterada",
-            title: `Pedido #${input.pedido} voltou para Aceite (Obs. alterada)`,
-            message: `${operatorName} alterou a observação do pedido #${input.pedido}: "${obsPreview}". Pedido retornou para Aceite da Produção.`,
-            severity: "warning",
-            metadata: { pedido: input.pedido, operador: operatorName, oldObs: oldObservation.substring(0, 200), newObs: input.observation.trim().substring(0, 200) },
-          });
-        } catch (e) { console.error("[Notification] Error:", e); }
+        console.log(`[ObsChange] Pedido #${input.pedido} teve observação de faturamento alterada por ${operatorName} (NÃO volta para Aceite)`);
       }
 
       return { success: true };
