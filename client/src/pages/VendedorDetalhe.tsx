@@ -3329,19 +3329,19 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
           <MapPin className="w-3 h-3" /> Endereço
         </p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <FormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" required />
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" />
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-2 mt-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
           <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" />
           <FormInput label="Complemento" value={complemento} onChange={setComplemento} placeholder="Sala, Bloco..." />
           <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" />
           <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" />
         </div>
-        <div className="grid grid-cols-4 gap-2 mt-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
           <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" />
           <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" required />
           <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
@@ -3379,19 +3379,19 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
               <FormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
               <FormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão social do redespacho" required />
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <FormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <FormInput label="Logradouro" value={redespachoLogradouro} onChange={setRedespachoLogradouro} placeholder="Rua/Av" />
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
               <FormInput label="Número" value={redespachoNumero} onChange={setRedespachoNumero} placeholder="Nº" />
               <FormInput label="Complemento" value={redespachoComplemento} onChange={setRedespachoComplemento} placeholder="Sala, Bloco..." />
               <FormInput label="Bairro" value={redespachoBairro} onChange={setRedespachoBairro} placeholder="Bairro" />
               <FormInput label="Cidade" value={redespachoCidade} onChange={setRedespachoCidade} placeholder="Cidade" />
             </div>
-            <div className="grid grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
               <FormInput label="UF" value={redespachoUf} onChange={setRedespachoUf} placeholder="XX" />
               <FormInput label="Telefone" value={redespachoTelefone} onChange={setRedespachoTelefone} placeholder="(00) 00000-0000" />
             </div>
@@ -3425,19 +3425,19 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             <p className="text-[10px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-2 flex items-center gap-1">
               <MapPin className="w-3 h-3" /> Endereço de Entrega
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <FormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" required />
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <FormInput label="Logradouro" value={entregaLogradouro} onChange={setEntregaLogradouro} placeholder="Rua/Av" />
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
               <FormInput label="Número" value={entregaNumero} onChange={setEntregaNumero} placeholder="Nº" />
               <FormInput label="Complemento" value={entregaComplemento} onChange={setEntregaComplemento} placeholder="Sala, Bloco..." />
               <FormInput label="Bairro" value={entregaBairro} onChange={setEntregaBairro} placeholder="Bairro" />
               <FormInput label="Cidade" value={entregaCidade} onChange={setEntregaCidade} placeholder="Cidade" />
             </div>
-            <div className="grid grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
               <FormInput label="UF" value={entregaUf} onChange={setEntregaUf} placeholder="XX" />
               <FormInput label="Telefone" value={entregaTelefone} onChange={setEntregaTelefone} placeholder="(00) 00000-0000" required />
             </div>

@@ -16,12 +16,56 @@ function TooltipProvider({
   );
 }
 
+/**
+ * Mobile-friendly Tooltip: opens on tap (touch devices) and hover (desktop).
+ */
 function Tooltip({
+  children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+  const [open, setOpen] = React.useState(false);
+  const isTouchRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const handler = () => { isTouchRef.current = true; };
+    window.addEventListener("touchstart", handler, { once: true, passive: true });
+    return () => window.removeEventListener("touchstart", handler);
+  }, []);
+
+  // Close tooltip when tapping outside on mobile
+  React.useEffect(() => {
+    if (!open || !isTouchRef.current) return;
+    const close = () => setOpen(false);
+    const timer = setTimeout(() => {
+      document.addEventListener("touchstart", close, { once: true });
+    }, 100);
+    return () => { clearTimeout(timer); document.removeEventListener("touchstart", close); };
+  }, [open]);
+
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root
+        data-slot="tooltip"
+        open={open}
+        onOpenChange={(v) => {
+          if (!isTouchRef.current) setOpen(v);
+        }}
+        {...props}
+      >
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement(child) && (child as any).type === TooltipTrigger) {
+            return React.cloneElement(child as React.ReactElement<any>, {
+              onTouchEnd: (e: React.TouchEvent) => {
+                if (isTouchRef.current) {
+                  e.preventDefault();
+                  setOpen((prev) => !prev);
+                }
+              },
+            });
+          }
+          return child;
+        })}
+      </TooltipPrimitive.Root>
     </TooltipProvider>
   );
 }

@@ -320,7 +320,7 @@ function EvolucaoTab({ chartFilter, setChartFilter, searchInput, setSearchInput,
                 <path d={pathD} fill="none" stroke="#92400e" strokeWidth="1" strokeOpacity="0.5" strokeLinecap="round" strokeLinejoin="round" />
                 {normalizedPoints.map((p: any, i: number) => (
                   <g key={`dot-${i}`}>
-                    <circle cx={p.x} cy={p.y} r="10" fill="transparent" onMouseEnter={() => setHoveredDot(i)} onMouseLeave={() => setHoveredDot(null)} className="cursor-pointer" style={{ pointerEvents: "all" }} />
+                    <circle cx={p.x} cy={p.y} r="10" fill="transparent" onMouseEnter={() => setHoveredDot(i)} onMouseLeave={() => setHoveredDot(null)} onTouchStart={(e) => { e.preventDefault(); setHoveredDot(hoveredDot === i ? null : i); }} className="cursor-pointer" style={{ pointerEvents: "all" }} />
                     <circle
                       cx={p.x} cy={p.y}
                       r={hoveredDot === i ? 4 : 2.5}

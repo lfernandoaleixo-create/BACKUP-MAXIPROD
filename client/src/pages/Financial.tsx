@@ -2163,6 +2163,17 @@ function CashFlowCard() {
                         setHoveredBar({ x: mx, y: my - 14, text: `Receber: ${formatCurrency(w.recebimentos)}` });
                       }}
                       onMouseLeave={() => setHoveredBar(null)}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        const svg = svgRef.current;
+                        if (!svg) return;
+                        const r = svg.getBoundingClientRect();
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const mx = (touch.clientX - r.left) * (svgWidth / r.width);
+                        const my = (touch.clientY - r.top) * (svgHeight / r.height);
+                        setHoveredBar(prev => prev ? null : { x: mx, y: my - 14, text: `Receber: ${formatCurrency(w.recebimentos)}` });
+                      }}
                     />
                   )}
                   {/* Pagar - bar down from zero */}
@@ -2187,6 +2198,17 @@ function CashFlowCard() {
                         setHoveredBar({ x: mx, y: my + 16, text: `Pagar: ${formatCurrency(w.pagamentos)}` });
                       }}
                       onMouseLeave={() => setHoveredBar(null)}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        const svg = svgRef.current;
+                        if (!svg) return;
+                        const r = svg.getBoundingClientRect();
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const mx = (touch.clientX - r.left) * (svgWidth / r.width);
+                        const my = (touch.clientY - r.top) * (svgHeight / r.height);
+                        setHoveredBar(prev => prev ? null : { x: mx, y: my + 16, text: `Pagar: ${formatCurrency(w.pagamentos)}` });
+                      }}
                     />
                   )}
                 </g>

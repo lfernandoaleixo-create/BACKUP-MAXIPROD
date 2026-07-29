@@ -484,7 +484,7 @@ export default function CustosDeVendaStep({
               style={{ width: `${Math.max(0, Math.min(100, costsData.margem.margemPercentual + 10))}%` }}
             />
           </div>
-          <div className="grid grid-cols-6 gap-1 text-center text-[9px]">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 text-center text-[9px]">
             <div>
               <p className="font-bold">{formatCurrency(costsData.margem.valorVenda)}</p>
               <p className="text-slate-500">Venda</p>

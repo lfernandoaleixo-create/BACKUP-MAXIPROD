@@ -640,6 +640,15 @@ function DailyChart({ data, mode, period, comparison }: {
                     }
                   }}
                   onMouseLeave={() => setHoveredDay(null)}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    setHoveredDay(hoveredDay === item.day ? null : item.day);
+                    const touch = e.touches[0];
+                    const containerRect = (e.target as SVGElement).closest('.relative')?.getBoundingClientRect();
+                    if (containerRect && touch) {
+                      setTooltipPos({ x: touch.clientX - containerRect.left, y: touch.clientY - containerRect.top });
+                    }
+                  }}
                 />
               </g>
             );
@@ -1212,6 +1221,15 @@ function PeriodEvolutionChart({ data, type, onExportPdf, monthlyData, comparison
                       }
                     }}
                     onMouseLeave={() => setHoveredIdx(null)}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      setHoveredIdx(hoveredIdx === idx ? null : idx);
+                      const touch = e.touches[0];
+                      const containerRect = (e.target as SVGElement).closest('.relative')?.getBoundingClientRect();
+                      if (containerRect && touch) {
+                        setTooltipPos({ x: touch.clientX - containerRect.left, y: touch.clientY - containerRect.top });
+                      }
+                    }}
                   />
                 </g>
               );
