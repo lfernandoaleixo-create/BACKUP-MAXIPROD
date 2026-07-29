@@ -6429,3 +6429,4 @@
 - [x] Clicar no botão leva direto de volta ao pedido em andamento
 - [x] Pedido só desaparece quando: concluído com sucesso OU excluído manualmente pelo vendedor
 - [x] Funcionar mesmo se fechar o navegador e abrir novamente
+- [x] Adicionar máquinas 4, 5, 6, 7 ao setor Máquina Pirografar (sectorId=9) - INSERT no DB + UPDATE quantidadeEquipamentos para 7
