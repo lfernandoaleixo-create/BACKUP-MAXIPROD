@@ -6329,3 +6329,4 @@
 - [ ] Verificar link de rastreio de cada transportadora
 - [ ] Implementar mecanismo automático: ao selecionar transportadora no pedido, gerar link de rastreio
 - [ ] Listar capacidades de cada API (cotação, rastreio, coleta, NF-e)
+- [x] Bug: Importação Custo Mercadoria - valores monetários (frete terrestre, DIFAL, comissão) acrescentam centavos ao recarregar página (ex: R$20.000 vira R$20.000,01). Causa: autoSaveProductCosts salvava USD direto no campo BRL + .toFixed(2)/.toFixed(4) causava drift de arredondamento. Fix: converter para BRL com .toFixed(6) antes de salvar, usar precisão total na divisão de reload, e salvar taxa de câmbio usada.

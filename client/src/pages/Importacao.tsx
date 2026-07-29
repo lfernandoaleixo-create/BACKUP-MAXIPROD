@@ -3791,13 +3791,13 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const legacyRate = Number(po.valorDolar1 || po.valorDolar1Remessa || exchangeRate);
   const isLegacyInit = !!(po.freteTermestreRemessa || po.comissaoSilverio || po.difalValor);
   const [freteTerrestreSPUsd, setFreteTerrestreSPUsd] = useState(
-    isLegacyInit && po.freteTermestreRemessa ? String((Number(po.freteTermestreRemessa) / legacyRate).toFixed(4)) : (po.freteTermestreRemessa || '')
+    isLegacyInit && po.freteTermestreRemessa ? String(Number(po.freteTermestreRemessa) / legacyRate) : (po.freteTermestreRemessa || '')
   );
   const [difalValUsd, setDifalValUsd] = useState(
-    isLegacyInit && po.difalValor ? String((Number(po.difalValor) / legacyRate).toFixed(4)) : (po.difalValor || '')
+    isLegacyInit && po.difalValor ? String(Number(po.difalValor) / legacyRate) : (po.difalValor || '')
   );
   const [comSilverioUsd, setComSilverioUsd] = useState(
-    isLegacyInit && po.comissaoSilverio ? String((Number(po.comissaoSilverio) / legacyRate).toFixed(4)) : (po.comissaoSilverio || '')
+    isLegacyInit && po.comissaoSilverio ? String(Number(po.comissaoSilverio) / legacyRate) : (po.comissaoSilverio || '')
   );
   // Frete override: null = usa cálculo automático, string = valor manual em USD
   const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(po.freteOverrideUsd ? String(po.freteOverrideUsd) : null);
@@ -3819,7 +3819,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const toUsd = (inputVal: string) => {
     const n = Number(inputVal.replace(',', '.'));
     if (isNaN(n)) return '0';
-    return currency === 'BRL' ? (n / effectiveRate).toFixed(4) : String(n);
+    return currency === 'BRL' ? String(n / effectiveRate) : String(n);
   };
   // Aliases for compatibility
   const valorCi = valorCiUsd;
@@ -3893,20 +3893,30 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       return { id: p.id, valorCaixaBrl: valorCaixaBrl.toFixed(6), precoMilUnid: precoMilUnid.toFixed(6) };
     });
 
+    // Convert USD values to BRL before saving (DB stores BRL for frete/difal/comissao)
+    // Use .toFixed(6) to avoid rounding drift when converting back on reload
+    const saveRate = isLegacyInit ? legacyRate : exchangeRate;
+    const convertToBrl = (usdVal: string) => {
+      if (!usdVal) return null;
+      const n = Number(usdVal);
+      if (isNaN(n) || n === 0) return null;
+      return String((n * saveRate).toFixed(6));
+    };
     autoSaveProductCosts.mutate({
       id: poId,
       totalCiRemessa: valorCiUsd,
       pagamento1Remessa: pag1,
       pagamento2Remessa: pag2Usd,
       pagamento3Remessa: pag3Usd,
-      freteTermestreRemessa: freteTerrestreSPUsd,
-      difalValor: difalValUsd,
-      comissaoSilverio: comSilverioUsd,
+      freteTermestreRemessa: convertToBrl(freteTerrestreSPUsd),
+      difalValor: convertToBrl(difalValUsd),
+      comissaoSilverio: convertToBrl(comSilverioUsd),
       freteOverrideUsd: freteOverrideUsd,
       vilelaValorReal: vilelaReal,
+      valorDolar1Remessa: String(exchangeRate),
       productCosts,
     });
-  }, [products, freteOverrideUsd, valorCiUsd, vilelaReal, freteTerrestreSPUsd, difalValUsd, comSilverioUsd, effectiveRate, vilelaPercent, pag1, pag2Usd, pag3Usd, poId]);
+  }, [products, freteOverrideUsd, valorCiUsd, vilelaReal, freteTerrestreSPUsd, difalValUsd, comSilverioUsd, effectiveRate, vilelaPercent, pag1, pag2Usd, pag3Usd, poId, isLegacyInit, legacyRate, exchangeRate]);
 
   // Effect: save productCosts ONLY after a user-triggered product edit (not on rate changes)
   useEffect(() => {
@@ -4008,7 +4018,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     const n = Number(usdVal);
     if (isNaN(n) || n === 0) return null;
     const rate = isLegacyInit ? legacyRate : exchangeRate;
-    return String((n * rate).toFixed(2));
+    return String((n * rate).toFixed(6));
   };
 
   const saveCosts = () => {
@@ -4040,7 +4050,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       freteTermestreRemessa: toBrl(freteTerrestreSP),
       difalValor: toBrl(difalVal),
       comissaoSilverio: toBrl(comSilverio),
-      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(2)) : (po.despesasLiberacaoRemessa || null),
+      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String((despesasLiberacao * (isLegacyInit ? legacyRate : exchangeRate)).toFixed(6)) : (po.despesasLiberacaoRemessa || null),
       vilelaValorReal: vilelaReal || null,
       freteOverrideUsd: freteOverrideUsd || null,
       // Save the exchange rate used so that on reload, values don't vary with live rate
