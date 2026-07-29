@@ -55,6 +55,7 @@ interface SSWQuoteResult {
   coleta: number;
   entrega: number;
   tabCalculo: string;
+  numeroCotacao: string;
 }
 
 function buildSoapEnvelope(params: SSWQuoteParams): string {
@@ -141,6 +142,7 @@ function parseSSWResponse(xml: string): SSWQuoteResult {
     coleta: parseFloat(parseXmlValue(xml, "coleta") || "0"),
     entrega: parseFloat(parseXmlValue(xml, "entrega") || "0"),
     tabCalculo: parseXmlValue(xml, "tabCalculo") || "",
+    numeroCotacao: parseXmlValue(xml, "numeroCotacao") || parseXmlValue(xml, "numero_cotacao") || parseXmlValue(xml, "cotacao") || "",
   };
 }
 
@@ -176,6 +178,11 @@ export async function quoteSswFreight(params: SSWQuoteParams): Promise<SSWQuoteR
       .replace(/&apos;/g, "'");
   }
 
+  // Log XML fields to capture cotacao number if present
+  const allFields = innerXml.match(/<([a-zA-Z_]+)>/g)?.map(f => f.replace(/[<>]/g, '')) || [];
+  const cotacaoFields = allFields.filter(f => /cotacao|numero|protocolo|id/i.test(f));
+  if (cotacaoFields.length) console.log(`[SSW] Cotacao-related fields found: ${cotacaoFields.join(', ')}`);
+
   const result = parseSSWResponse(innerXml);
 
   if (result.erro === -2) {
@@ -196,6 +203,7 @@ export async function quoteAllSswCnpjs(params: Omit<SSWQuoteParams, "cnpjPagador
   cnpj: string;
   totalFrete: number;
   prazo: number;
+  protocolo?: string;
   error?: string;
   details?: SSWQuoteResult;
 }>> {
@@ -213,6 +221,7 @@ export async function quoteAllSswCnpjs(params: Omit<SSWQuoteParams, "cnpjPagador
         cnpj: cnpjs[idx],
         totalFrete: result.value.totalFrete,
         prazo: result.value.prazo,
+        protocolo: result.value.numeroCotacao || undefined,
         details: result.value,
       };
     } else {

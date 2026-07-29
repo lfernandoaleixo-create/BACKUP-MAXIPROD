@@ -2159,7 +2159,7 @@ export const salesOrderRouter = router({
     .input(z.object({
       cnpjIndex: z.number().min(0).max(2),
       cnpjDestinatario: z.string(),
-      cepOrigem: z.string().default("32210130"), // CEP padrão Grupo Fox - Contagem/MG
+      cepOrigem: z.string().default("37264000"), // CEP padrão Grupo Fox - Ribeirão Vermelho/MG
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2176,7 +2176,7 @@ export const salesOrderRouter = router({
   quoteAllBraspress: publicProcedure
     .input(z.object({
       cnpjDestinatario: z.string(),
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2193,7 +2193,7 @@ export const salesOrderRouter = router({
   quoteAlfa: publicProcedure
     .input(z.object({
       cnpjIndex: z.number().min(0).max(1), // 0 = CNPJ 36562762000129, 1 = CNPJ 50128808000127
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2231,7 +2231,7 @@ export const salesOrderRouter = router({
   /** Quote freight via all Alfa Transportes CNPJs simultaneously */
   quoteAllAlfa: publicProcedure
     .input(z.object({
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2255,7 +2255,7 @@ export const salesOrderRouter = router({
   quoteAllCarriers: publicProcedure
     .input(z.object({
       cnpjDestinatario: z.string().optional(),
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2397,6 +2397,7 @@ export const salesOrderRouter = router({
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo || "N/A",
+            protocolo: r.protocolo || undefined,
             // Alfa tracking: via API interna (trackAllAlfaCnpjs) - sem link público
             trackingUrl: "rastreio-interno",
             error: r.error,
@@ -2420,6 +2421,7 @@ export const salesOrderRouter = router({
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A",
+            protocolo: r.protocolo || undefined,
             // SSW/Camilo tracking: CNPJ remetente 19451038000109 + NF (available after NF)
             trackingUrl: `https://ssw.inf.br/2/rastreamento`,
             error: r.error,

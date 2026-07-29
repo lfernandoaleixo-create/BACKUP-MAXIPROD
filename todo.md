@@ -6335,3 +6335,9 @@
 - [x] Mostrar conversão para caixas de 5k (dobro das caixas de 10k)
 - [x] Identificar containers com produto 3,8x200mm (código 00335) como estoque Queijo Coalho
 - [x] Coluna Projetado = Aguardando Processamento (cx 5k) + PO convertido em cx 5k
+
+## Correções Transportadoras - CEP Origem e Protocolo (29/07/2026)
+- [x] Alterar CEP de origem de Contagem (32210130) para Ribeirão Vermelho-MG nas APIs: Alfa, Rodonaves, Braspress, Flor de Minas
+- [x] Manter SSW/Camilo com CEP de Perdões (37260000) - está correto
+- [x] Garantir captura do protocolo/código de cotação em todas as transportadoras (exceto Flor de Minas que não retorna)
+- [x] Exibir protocolo de cotação no resultado da simulação de frete

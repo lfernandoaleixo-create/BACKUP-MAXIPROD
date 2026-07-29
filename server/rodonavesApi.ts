@@ -28,8 +28,8 @@ export const RODONAVES_CNPJS = [
   { cnpj: "50128808000127", label: "Espetos Indústria e Comércio" },
 ];
 
-// CEP de origem padrão (Betim-MG)
-const DEFAULT_ORIGIN_CEP = "32210130";
+// CEP de origem padrão (Ribeirão Vermelho-MG)
+const DEFAULT_ORIGIN_CEP = "37264000"; // Ribeirão Vermelho/MG
 
 // ===== Types =====
 interface RodonavesCityResponse {
@@ -87,6 +87,7 @@ const cityCache = new Map<string, RodonavesCityResponse>();
 // These were obtained from successful DNE API calls and are stable internal IDs
 const KNOWN_CITY_IDS: Record<string, RodonavesCityResponse> = {
   // Minas Gerais - origens Grupo Fox
+  "37264000": { Id: 8592, Description: "RIBEIRAO VERMELHO", IbgeCityCode: 3154705 },
   "32210130": { Id: 1068, Description: "BETIM", IbgeCityCode: 3106705 },
   "32200000": { Id: 1068, Description: "BETIM", IbgeCityCode: 3106705 },
   "37260000": { Id: 7401, Description: "PERDOES", IbgeCityCode: 3149903 },
