@@ -111,6 +111,18 @@ const TIPO_LABELS: Record<string, string> = {
   madeira_dura: "Mad. Dura",
   bambu: "Bambu",
   madeira: "Madeira",
+  "3.8x200mm_premium": "3,8x200 Prem.",
+  "3.8x200mm": "3,8x200mm",
+  "3.8x180mm": "3,8x180mm",
+  "3.8x150mm": "3,8x150mm",
+  "3.8x218mm": "3,8x218mm",
+  "3.8x220mm": "3,8x220mm",
+  "3.8x250mm": "3,8x250mm",
+  "3.8x350mm": "3,8x350mm",
+  "3.5x200mm": "3,5x200mm",
+  "3.5x250mm": "3,5x250mm",
+  "3.5x180mm": "3,5x180mm",
+  "4.0x400mm": "4,0x400mm",
 };
 
 function tipoLabel(tipo: string | null): string {
@@ -515,7 +527,7 @@ function drawSectorCardsGrid(
 
     const colWidths = isWeeklyOrMonthly
       ? [cardW * 0.32, cardW * 0.24, cardW * 0.22, cardW * 0.22]
-      : [cardW * 0.22, cardW * 0.28, cardW * 0.14, cardW * 0.36];
+      : [cardW * 0.22, cardW * 0.34, cardW * 0.12, cardW * 0.32];
 
     let colX = x + 2;
     for (let c = 0; c < colHeaders.length; c++) {
@@ -578,9 +590,11 @@ function drawSectorCardsGrid(
         doc.text(mName, colX, rowY);
         colX += colWidths[0];
 
-        // Tipo/Medida
+        // Tipo/Medida (truncate to fit column)
         doc.setTextColor(...C.medium);
-        doc.text(rowData.tipo, colX, rowY);
+        const maxTipoLen = 15;
+        const tipoText = rowData.tipo.length > maxTipoLen ? rowData.tipo.substring(0, maxTipoLen - 1) + "\u2026" : rowData.tipo;
+        doc.text(tipoText, colX, rowY);
         colX += colWidths[1];
 
         // Quantidade

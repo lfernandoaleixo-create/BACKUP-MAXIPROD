@@ -6364,3 +6364,6 @@
 - [x] Vendedores criados no painel dos gestores devem aparecer automaticamente como operadores na aba Configurações
 - [x] Vendedor-operador só consegue logar se o gestor dele tiver liberado acesso
 - [x] Cada vendedor-operador deve ter sua própria senha na lista de operadores
+
+## Fix PDF Produção - Texto Sobreposto (29/07/2026)
+- [x] Corrigir sobreposição de texto no PDF da aba Produção (coluna Tipo sobrepõe coluna Qtd nas máquinas)
