@@ -155,7 +155,9 @@ export default function GestaoComercial() {
   const isFernando = operator?.name === "Fernando";
   const isRenato = operator?.name === "Renato";
   const shouldRedirectToPedidos = isVitoria; // Only Vitória auto-redirects
-  const showNavigationHub = isJuvenal || isGuilherme || isBruno || isFernando || isRenato; // These operators see navigation hub
+  // Navigation hub is shown to ALL operators with Gestão Comercial access
+  // The cards inside the hub are individually controlled by granular permissions
+  const showNavigationHub = true; // Always show hub - cards are permission-gated
 
   // Auto-redirect Vitória to Pedidos page
   useEffect(() => {
@@ -167,7 +169,7 @@ export default function GestaoComercial() {
   // Fetch seller list from Maxiprod
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
-    enabled: !shouldRedirectToPedidos && !showNavigationHub,
+    enabled: !shouldRedirectToPedidos,
   });
 
     const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
@@ -216,27 +218,50 @@ export default function GestaoComercial() {
     return names;
   }, [representantesQuery.data]);
 
-    // Query pending orders count for gestores
+  // Determine if current operator is a gestor (for pending orders)
+  const currentOperatorGestor = useMemo(() => {
+    if (!managersQuery.data || !operator?.name) return null;
+    const match = managersQuery.data.find(
+      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === operator.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    );
+    return match ? match.name.toUpperCase() : null;
+  }, [managersQuery.data, operator?.name]);
+
+  // Query pending orders count for gestores
   const pendingOrdersQuery = trpc.salesOrders.listOrders.useQuery(
-    { status: "pendente", gestorName: isRenato ? "RENATO LEDESMA" : isJuvenal ? "JUVENAL TEIXEIRA" : undefined },
-    { staleTime: 30 * 1000, enabled: showNavigationHub && (isRenato || isJuvenal), refetchInterval: 60 * 1000 }
+    { status: "pendente", gestorName: currentOperatorGestor || undefined },
+    { staleTime: 30 * 1000, enabled: !!currentOperatorGestor && hasGranularAccess("gc.aprovacoesPedidos"), refetchInterval: 60 * 1000 }
   );
-  // For Juvenal: also count orders pending his approval (aprovado_subgestor from Renato)
+  // For parent gestores: also count orders pending their approval (aprovado_subgestor)
+  const isParentGestor = useMemo(() => {
+    if (!managersQuery.data || !currentOperatorGestor) return false;
+    const myRecord = managersQuery.data.find((m: any) => m.name?.toUpperCase() === currentOperatorGestor);
+    return myRecord && myRecord.role !== "sub-gestor";
+  }, [managersQuery.data, currentOperatorGestor]);
   const subgestorPendingQuery = trpc.salesOrders.getOrdersPendingGestorApproval.useQuery(
     undefined,
-    { staleTime: 30 * 1000, enabled: showNavigationHub && isJuvenal, refetchInterval: 60 * 1000 }
+    { staleTime: 30 * 1000, enabled: !!isParentGestor && hasGranularAccess("gc.aprovacoesPedidos"), refetchInterval: 60 * 1000 }
   );
-  const subgestorPendingCount = isJuvenal ? (subgestorPendingQuery.data?.length || 0) : 0;
+  const subgestorPendingCount = isParentGestor ? (subgestorPendingQuery.data?.length || 0) : 0;
   const pendingCount = (pendingOrdersQuery.data?.length || 0) + subgestorPendingCount;
 
   // If Vitória, show nothing (redirect will happen)
   if (shouldRedirectToPedidos) return null;
 
-  // Juvenal/Guilherme see a navigation hub with panels
+  // Navigation hub with permission-gated cards
   if (showNavigationHub) {
-    // Determine the gestor name for Renato/Juvenal (used for filtering their own orders)
-    const gestorNameForHub = isRenato ? "RENATO LEDESMA" : isJuvenal ? "JUVENAL TEIXEIRA" : null;
-    const isGestorVendedor = isRenato || isJuvenal; // These operators are both gestors AND sellers
+    // Determine if this operator is also a seller (has a matching seller_permissions record)
+    const operatorNameUpper = operator?.name?.toUpperCase() || "";
+    const mySellerRecordForHub = permissionsQuery.data?.find(
+      (p: any) => p.sellerName?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+        || p.sellerName?.toUpperCase().includes(operatorNameUpper)
+    );
+    // Also check if operator is a gestor (has a sales_managers record)
+    const myGestorRecord = managersQuery.data?.find(
+      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    );
+    const gestorNameForHub = myGestorRecord?.name?.toUpperCase() || (mySellerRecordForHub?.sellerName?.toUpperCase()) || null;
+    const isGestorVendedor = !!mySellerRecordForHub && hasGranularAccess("gc.meuPainelVendedor"); // Operator is also a seller
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -277,12 +302,9 @@ export default function GestaoComercial() {
               </div>
             </Link>}
 
-            {/* Meu Painel de Vendedor - para Renato/Juvenal que também vendem */}
-            {isGestorVendedor && hasGranularAccess("gc.meuPainelVendedor") && (() => {
-              // Find the seller ID for this gestor-vendedor from permissions data
-              const mySellerRecord = permissionsQuery.data?.find(
-                (p: any) => p.sellerName?.toUpperCase() === gestorNameForHub?.toUpperCase()
-              );
+            {/* Meu Painel de Vendedor - for operators who are also sellers */}
+            {isGestorVendedor && (() => {
+              const mySellerRecord = mySellerRecordForHub;
               if (!mySellerRecord) return null;
               return (
                 <Link href={`/gestao-comercial/vendedor/${mySellerRecord.id}`}>
@@ -301,8 +323,8 @@ export default function GestaoComercial() {
               );
             })()}
 
-            {/* Aprovações de Pedidos - para Renato/Juvenal que precisam aprovar pedidos dos seus vendedores */}
-            {isGestorVendedor && gestorNameForHub && hasGranularAccess("gc.aprovacoesPedidos") && (
+            {/* Aprovações de Pedidos - for operators with approval permission */}
+            {gestorNameForHub && hasGranularAccess("gc.aprovacoesPedidos") && (
               <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(gestorNameForHub)}`}>
                 <div className={`rounded-xl border-2 shadow-sm p-6 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden ${
                   pendingCount > 0

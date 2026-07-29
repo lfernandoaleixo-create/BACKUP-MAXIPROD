@@ -3410,10 +3410,60 @@ export const salesRouter = router({
         password,
         authorized: false,
       });
+
+      // Also create operator entry so seller appears in Configurações > Senhas
+      const sellerNameUpper = v.sellerName.toUpperCase();
+      const [existingOp] = await db.select().from(operators)
+        .where(eq(operators.name, sellerNameUpper))
+        .limit(1);
+      if (!existingOp) {
+        await db.insert(operators).values({
+          name: sellerNameUpper,
+          password,
+          accessEstoque: false,
+          accessVendas: false,
+          accessFaturamento: false,
+          accessFinanceiro: false,
+          accessConfiguracoes: false,
+          accessGestaoComercial: true,
+        });
+      }
       inserted++;
     }
 
     return { total: vendedores.length, inserted, existing: existing.length };
+  }),
+
+  /**
+   * Sync existing sellers to operators table.
+   * Creates operator entries for sellers that don't have one yet.
+   * This is a one-time migration to ensure all sellers appear in Configurações > Senhas.
+   */
+  syncSellersToOperators: publicProcedure.mutation(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    const allSellers = await db.select().from(sellerPermissions);
+    const allOps = await db.select().from(operators);
+    const opNamesSet = new Set(allOps.map(o => o.name.toUpperCase()));
+    let created = 0;
+    for (const seller of allSellers) {
+      const nameUpper = seller.sellerName.toUpperCase();
+      if (!opNamesSet.has(nameUpper)) {
+        await db.insert(operators).values({
+          name: nameUpper,
+          password: seller.password,
+          accessEstoque: false,
+          accessVendas: false,
+          accessFaturamento: false,
+          accessFinanceiro: false,
+          accessConfiguracoes: false,
+          accessGestaoComercial: true,
+        });
+        opNamesSet.add(nameUpper);
+        created++;
+      }
+    }
+    return { success: true, created, total: allSellers.length };
   }),
 
   /**

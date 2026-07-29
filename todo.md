@@ -6356,3 +6356,11 @@
 - [x] Bug: Botão Consulta Serasa não aparece no pedido de venda normal (não simulação) quando cliente é selecionado
 - [x] Bug: Aba VENDAS continua desabilitada para Patrick mesmo após ticar permissão Vendas no topo
 - [x] Bug: Ticagem de permissões granulares está lenta - implementar atualização otimista
+
+## Organização Máxima de Permissões + Auto-criação Operadores (29/07/2026)
+- [x] Permissões granulares Painel Gestores: se ticado, operador vê apenas os gestores ticados
+- [x] Permissões granulares Painel Vendedores: se ticado, operador vê apenas os vendedores ticados
+- [x] Se operador tem apenas Painel Gestores ticado, NÃO vê Painel Vendedores (e vice-versa)
+- [x] Vendedores criados no painel dos gestores devem aparecer automaticamente como operadores na aba Configurações
+- [x] Vendedor-operador só consegue logar se o gestor dele tiver liberado acesso
+- [x] Cada vendedor-operador deve ter sua própria senha na lista de operadores
