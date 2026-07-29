@@ -6341,3 +6341,6 @@
 - [x] Manter SSW/Camilo com CEP de Perdões (37260000) - está correto
 - [x] Garantir captura do protocolo/código de cotação em todas as transportadoras (exceto Flor de Minas que não retorna)
 - [x] Exibir protocolo de cotação no resultado da simulação de frete
+
+## Ocultar 00649 do Card Estoque (29/07/2026)
+- [x] Ocultar produto 00649 (ESPETO BAMBU QUEIJO COALHO 3,8x200mm cx 10.000) do card Estoque - já tem card específico QC

@@ -4438,7 +4438,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
 }
 
 /* --- Queijo Coalho (Palitos Premium) Section --- */
-const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00335"];
+const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00335", "00649"];
 
 function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { items: StockItem[]; showHistory?: boolean }) {
   const [isOpen, setIsOpen] = useState(true);
