@@ -6344,3 +6344,6 @@
 
 ## Ocultar 00649 do Card Estoque (29/07/2026)
 - [x] Ocultar produto 00649 (ESPETO BAMBU QUEIJO COALHO 3,8x200mm cx 10.000) do card Estoque - já tem card específico QC
+
+## KPI PO (A RECEBER) - Somar todos os cards (29/07/2026)
+- [x] Card PO (A RECEBER) na seção IMPORTAÇÃO deve somar POs de TODOS os produtos (Estoque + Queijo Coalho + outros)
