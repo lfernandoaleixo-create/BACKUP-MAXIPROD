@@ -25,7 +25,8 @@ function formatCurrency(value: number | string) {
 type VitoriaFilter = "pendente" | "recebido" | "lancado" | "todos";
 
 export default function VitoriaOrders() {
-  const { operator, hasGranularAccess } = useOperator();
+  const { operator, hasGranularAccess, getVisiblePeopleForFeature } = useOperator();
+  const visibleSellersForOrders = getVisiblePeopleForFeature("gc.pedidosVenda");
   const [statusFilter, setStatusFilter] = useState<VitoriaFilter>("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
@@ -284,6 +285,11 @@ export default function VitoriaOrders() {
   // "Novos" tab: for Guilherme/Juvenal includes both 'pendente' (aguardando aprovacao) AND 'aprovado' not yet received
   // For Vitória: only 'aprovado' not yet received
   const filteredOrders = (orders || []).filter((o: any) => {
+    // Sub-permission filter: only show orders from visible sellers
+    if (visibleSellersForOrders.length > 0) {
+      const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+      if (!visibleSellersForOrders.includes(sellerSlug)) return false;
+    }
     if (statusFilter === "todos") return true;
     if (statusFilter === "pendente") {
       if (canSeeAguardandoAprovacao) {

@@ -145,7 +145,7 @@ function ExportMaxiprodButton() {
 }
 
 export default function GestaoComercial() {
-  const { operator, hasGranularAccess } = useOperator();
+  const { operator, hasGranularAccess, getVisiblePeopleForFeature } = useOperator();
   const [, setLocation] = useLocation();
 
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";

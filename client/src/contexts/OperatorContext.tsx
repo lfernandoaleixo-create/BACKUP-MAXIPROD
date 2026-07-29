@@ -22,6 +22,7 @@ interface OperatorContextType {
   logout: () => void;
   hasAccess: (section: string) => boolean;
   hasGranularAccess: (key: string) => boolean;
+  getVisiblePeopleForFeature: (featureKey: string) => string[];
   setGranularPermissions: (perms: Record<string, boolean>) => void;
 }
 
@@ -128,12 +129,22 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
   }, [operator, granularPermissions]);
 
   // Granular permission check: returns true ONLY if permission is explicitly enabled in the database.
-  // If not set, defaults to FALSE (denied) - only explicitly ticked permissions are allowed.
+    // If not set, defaults to FALSE (denied) - only explicitly ticked permissions are allowed.
   const hasGranularAccess = useCallback((key: string): boolean => {
     if (key in granularPermissions) return granularPermissions[key] === true;
     return false; // default: negado se não existir no banco - só libera o que foi explicitamente ticado
   }, [granularPermissions]);
-
+  // Returns slugs of people visible for a given feature (e.g. gc.cadastroClientes.jordao_laine -> "jordao_laine")
+  const getVisiblePeopleForFeature = useCallback((featureKey: string): string[] => {
+    const prefix = `${featureKey}.`;
+    const people: string[] = [];
+    for (const [key, val] of Object.entries(granularPermissions)) {
+      if (key.startsWith(prefix) && val === true) {
+        people.push(key.slice(prefix.length));
+      }
+    }
+    return people;
+  }, [granularPermissions]);
   const setGranularPermissions = useCallback((perms: Record<string, boolean>) => {
     setGranularPermsState(perms);
     sessionStorage.setItem("granularPermissions", JSON.stringify(perms));
@@ -148,6 +159,7 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
       logout,
       hasAccess,
       hasGranularAccess,
+      getVisiblePeopleForFeature,
       setGranularPermissions,
     }}>
       {children}

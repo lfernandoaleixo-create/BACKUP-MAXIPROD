@@ -14,13 +14,20 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 
 export default function CadastroClientes() {
-  const { operator } = useOperator();
+  const { operator, getVisiblePeopleForFeature } = useOperator();
   const [exportingClientId, setExportingClientId] = useState<number | null>(null);
+  const visibleSellers = getVisiblePeopleForFeature("gc.cadastroClientes");
 
-  const { data: newClients, isLoading, refetch: refetchClients } = trpc.salesOrders.getNewClientsForOperator.useQuery(
+  const { data: rawClients, isLoading, refetch: refetchClients } = trpc.salesOrders.getNewClientsForOperator.useQuery(
     undefined,
     { staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   );
+  // Filter clients by visible sellers (if sub-permissions are configured)
+  const newClients = rawClients?.filter((c: any) => {
+    if (visibleSellers.length === 0) return true; // No sub-perms configured = show all
+    const sellerSlug = (c.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    return visibleSellers.includes(sellerSlug);
+  });
   const exportVendorClientMutation = trpc.salesOrders.exportVendorClientMaxiprod.useMutation();
   const markExportedMutation = trpc.salesOrders.markClientExported.useMutation();
   const utils = trpc.useUtils();

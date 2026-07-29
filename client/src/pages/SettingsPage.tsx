@@ -757,6 +757,33 @@ function OperatorManagementPanel() {
     return sellerPerms;
   }, [sellerPermsList]);
 
+  // Build combined list of all people (gestores + vendedores) for expandable feature permissions
+  const allPeoplePerms = useMemo((): { name: string; slug: string }[] => {
+    const people: { name: string; slug: string }[] = [];
+    const seen = new Set<string>();
+    // Add gestores first
+    if (salesManagersList) {
+      for (const mgr of salesManagersList.filter((m: any) => m.active)) {
+        const slug = mgr.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        if (!seen.has(slug)) {
+          seen.add(slug);
+          people.push({ name: mgr.name, slug });
+        }
+      }
+    }
+    // Add vendedores
+    if (sellerPermsList) {
+      for (const sp of sellerPermsList as any[]) {
+        const slug = sp.sellerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        if (!seen.has(slug)) {
+          seen.add(slug);
+          people.push({ name: sp.sellerName, slug });
+        }
+      }
+    }
+    return people;
+  }, [salesManagersList, sellerPermsList]);
+
   // Build dynamic GRANULAR_GROUPS (exclude gestao-comercial from the flat list - it gets special rendering)
   const dynamicGranularGroups = useMemo(() => {
     return GRANULAR_GROUPS.filter(group => group.parentTab !== "gestao-comercial");
@@ -1127,25 +1154,66 @@ function OperatorManagementPanel() {
                                 {/* Divider */}
                                 <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
 
-                                {/* Feature permissions (flat checkboxes) */}
+                                {/* Feature permissions - expandable with individual names */}
                                 {GRANULAR_GC_FEATURES.filter(p => p.key !== "gc.painelGestores" && p.key !== "gc.painelVendedores").map(perm => {
                                   const enabled = getGranularValue(op.id, perm.key);
+                                  const featureExpanded = isSubSectionExpanded(op.id, perm.key);
+                                  // Count how many people are enabled for this feature
+                                  const enabledPeopleCount = allPeoplePerms.filter(p => getGranularValue(op.id, `${perm.key}.${p.slug}`)).length;
                                   return (
-                                    <div key={perm.key} className="flex items-center justify-between">
-                                      <span className="text-xs text-slate-600">{perm.label}</span>
-                                      <button
-                                        onClick={() => gcEnabled && handleGranularToggle(op.id, perm.key)}
-                                        disabled={!gcEnabled}
-                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                                          enabled
-                                            ? `${gcColor} border-transparent text-white`
-                                            : gcEnabled
-                                              ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
-                                              : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
-                                        }`}
-                                      >
-                                        {enabled && <Check className="w-3 h-3" />}
-                                      </button>
+                                    <div key={perm.key}>
+                                      <div className="flex items-center justify-between">
+                                        <button
+                                          onClick={() => gcEnabled && toggleSubSection(op.id, perm.key)}
+                                          disabled={!gcEnabled}
+                                          className="flex items-center gap-1.5 text-left group flex-1 min-w-0"
+                                        >
+                                          {featureExpanded ? <ChevronDown className="w-3 h-3 text-cyan-600 shrink-0" /> : <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-cyan-600 shrink-0" />}
+                                          <span className="text-xs text-slate-600 group-hover:text-cyan-700 truncate">{perm.label}</span>
+                                          {enabledPeopleCount > 0 && <span className="text-[9px] bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 px-1 rounded shrink-0">{enabledPeopleCount}</span>}
+                                        </button>
+                                        <button
+                                          onClick={() => gcEnabled && handleGranularToggle(op.id, perm.key)}
+                                          disabled={!gcEnabled}
+                                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0 ml-2 ${
+                                            enabled
+                                              ? `${gcColor} border-transparent text-white`
+                                              : gcEnabled
+                                                ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
+                                                : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                          }`}
+                                        >
+                                          {enabled && <Check className="w-3 h-3" />}
+                                        </button>
+                                      </div>
+                                      {featureExpanded && (
+                                        <div className="ml-5 mt-1.5 space-y-1 border-l-2 border-cyan-100 pl-2.5 pb-1">
+                                          {allPeoplePerms.map(person => {
+                                            const personEnabled = getGranularValue(op.id, `${perm.key}.${person.slug}`);
+                                            return (
+                                              <div key={person.slug} className="flex items-center justify-between">
+                                                <span className="text-[11px] text-slate-500">{person.name}</span>
+                                                <button
+                                                  onClick={() => gcEnabled && handleGranularToggle(op.id, `${perm.key}.${person.slug}`)}
+                                                  disabled={!gcEnabled}
+                                                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                                                    personEnabled
+                                                      ? `${gcColor} border-transparent text-white`
+                                                      : gcEnabled
+                                                        ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
+                                                        : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                                  }`}
+                                                >
+                                                  {personEnabled && <Check className="w-2.5 h-2.5" />}
+                                                </button>
+                                              </div>
+                                            );
+                                          })}
+                                          {allPeoplePerms.length === 0 && (
+                                            <span className="text-[10px] text-slate-400 italic">Nenhuma pessoa cadastrada</span>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
