@@ -3570,6 +3570,26 @@ export const salesRouter = router({
           }
         }
       }
+
+      // Auto-include child variants of visible parent products
+      const allCodes = new Set(manualProducts.map(p => p.productCode));
+      const allVariants = await db.select({
+        parentCode: productVariants.parentCode,
+        childCode: productVariants.childCode,
+      }).from(productVariants);
+      for (const v of allVariants) {
+        if (allCodes.has(v.parentCode) && !allCodes.has(v.childCode)) {
+          manualProducts.push({
+            id: 0,
+            sellerId: input.sellerId,
+            productCode: v.childCode,
+            visible: true,
+            createdAt: new Date(),
+          } as any);
+          allCodes.add(v.childCode);
+        }
+      }
+
       return manualProducts;
     }),
 

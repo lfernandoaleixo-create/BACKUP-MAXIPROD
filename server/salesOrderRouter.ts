@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -446,6 +446,17 @@ export const salesOrderRouter = router({
 
       // Combine manual + price table codes for visibility
       const visibleCodes = new Set([...Array.from(manualVisibleCodes), ...Array.from(priceTableCodes)]);
+
+      // Auto-include child variants of visible parent products
+      const allVariants = await db.select({
+        parentCode: productVariants.parentCode,
+        childCode: productVariants.childCode,
+      }).from(productVariants);
+      for (const v of allVariants) {
+        if (visibleCodes.has(v.parentCode)) {
+          visibleCodes.add(v.childCode);
+        }
+      }
 
       // Get stock items with available quantity
       const items = await db.select({

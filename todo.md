@@ -6381,3 +6381,7 @@
 - [x] Corrigir frontend: usar comparação com totalCiRemessa para detectar se valor é BRL legado
 - [x] Corrigir server importRouter.ts: mesma lógica de detecção nos cálculos
 - [x] Corrigir custoPdfExport.ts: mesma lógica de detecção na exportação PDF
+
+## Feature: Liberar variações automaticamente quando produto mãe é liberado para vendedor
+- [x] Quando gestor libera produto mãe (ex: 00024), incluir automaticamente as variações (ex: 00025, 00023) na consulta de produtos do vendedor
+- [x] Vendedor deve poder ver e escolher as variações na tela de pedido/venda
