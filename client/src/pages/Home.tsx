@@ -4564,7 +4564,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       poCx10k: po00335Cx10k,
       poCx5k: po00335Cx5k,
       poLotes: [...(parentItem.poLotes || []), ...po00335Lotes],
-      poFornecedores: [...new Set([...(parentItem.poFornecedores || []), ...po00335Fornecedores])],
+      poFornecedores: Array.from(new Set([...(parentItem.poFornecedores || []), ...po00335Fornecedores])),
       estoqueProjetado: parentProjetado,
       estoqueProcessado: parentProcessadoAjustado,
       estoqueProcessadoBruto: parentStock.processado,

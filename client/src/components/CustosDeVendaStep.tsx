@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Truck, Loader2, AlertCircle, CheckCircle2, Package,
   Calculator, ChevronDown, ChevronUp, DollarSign, Percent,
-  AlertTriangle, BarChart3, TrendingUp, TrendingDown, PlusCircle
+  AlertTriangle, BarChart3, TrendingUp, TrendingDown, PlusCircle, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -293,6 +293,73 @@ export default function CustosDeVendaStep({
       onTrackingUrlSet(trackingUrl);
     }
     toast.success(`Frete de ${formatCurrency(valor)} aplicado ao pedido${transportadora ? ` (${transportadora})` : ''}`);
+  };
+
+  // Generate freight report as downloadable text
+  const generateFreightReport = () => {
+    if (!quoteAllMutation.data) return;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR');
+    const timeStr = now.toLocaleTimeString('pt-BR');
+    let report = `═══════════════════════════════════════════════════════════════\n`;
+    report += `              RELATÓRIO DE COTAÇÃO DE FRETE\n`;
+    report += `═══════════════════════════════════════════════════════════════\n\n`;
+    report += `Data: ${dateStr} às ${timeStr}\n`;
+    report += `CEP Origem: 37264-000 (Grupo Fox)\n`;
+    report += `CEP Destino: ${cep}\n`;
+    if (cnpjCpf) report += `CNPJ/CPF Destinatário: ${cnpjCpf}\n`;
+    report += `\n───────────────────────────────────────────────────────────────\n`;
+    report += `DADOS DA CARGA\n`;
+    report += `───────────────────────────────────────────────────────────────\n`;
+    report += `Valor da Mercadoria: ${formatCurrency(totalProdutos)}\n`;
+    report += `Peso Total: ${totalPeso.toFixed(2)} kg\n`;
+    report += `Volumes: ${totalVolumes}\n`;
+    report += `Cubagem Total: ${totalMetroCubico.toFixed(4)} m³\n`;
+    report += `\n───────────────────────────────────────────────────────────────\n`;
+    report += `PRODUTOS\n`;
+    report += `───────────────────────────────────────────────────────────────\n`;
+    items.forEach((item, idx) => {
+      const pesoItem = (item.pesoBrutoCaixa || 5) * item.quantidade;
+      let cubagemItem = 0.03 * item.quantidade;
+      if (item.dimsStr) {
+        const parts = item.dimsStr.split('x').map(Number);
+        if (parts.length === 3) cubagemItem = (parts[0] * parts[1] * parts[2] / 1000000) * item.quantidade;
+      }
+      report += `${idx + 1}. ${item.descricaoItem} (${item.codigoItem})\n`;
+      report += `   Qtd: ${item.quantidade} ${item.unidadeMedida} | Peso: ${pesoItem.toFixed(2)} kg | Cubagem: ${cubagemItem.toFixed(4)} m³\n`;
+      if (item.dimsStr) report += `   Dimensões: ${item.dimsStr} cm\n`;
+    });
+    report += `\n───────────────────────────────────────────────────────────────\n`;
+    report += `COTAÇÕES DAS TRANSPORTADORAS\n`;
+    report += `───────────────────────────────────────────────────────────────\n\n`;
+    const validQuotes = quoteAllMutation.data.filter((q: any) => !q.error && q.totalFrete > 0);
+    const errorQuotes = quoteAllMutation.data.filter((q: any) => q.error || q.totalFrete === 0);
+    validQuotes.sort((a: any, b: any) => a.totalFrete - b.totalFrete);
+    validQuotes.forEach((q: any, idx: number) => {
+      report += `${idx === 0 ? '★ ' : '  '}${q.transportadora}${q.cnpj ? ` (CNPJ: ${formatCnpj(q.cnpj)})` : ''}\n`;
+      report += `   Valor: ${formatCurrency(q.totalFrete)} | Prazo: ${q.prazo}\n`;
+      if (q.protocolo) report += `   Protocolo: ${q.protocolo}\n`;
+      report += `\n`;
+    });
+    if (errorQuotes.length > 0) {
+      report += `\nTransportadoras com erro:\n`;
+      errorQuotes.forEach((q: any) => {
+        report += `  ✗ ${q.transportadora}: ${q.error}\n`;
+      });
+    }
+    report += `\n═══════════════════════════════════════════════════════════════\n`;
+    report += `Relatório gerado automaticamente pelo Grupo Fox Dashboard\n`;
+    // Download
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-frete-${cep.replace(/\D/g, '')}-${now.toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Relatório de frete baixado!');
   };
 
   // Group freight results by transportadora
@@ -803,6 +870,15 @@ export default function CustosDeVendaStep({
               )}
             </button>
 
+            {/* Botão Baixar Relatório */}
+            {showResults && quoteAllMutation.data && (
+              <button
+                onClick={generateFreightReport}
+                className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200 dark:border-slate-600"
+              >
+                <Download className="w-3 h-3" /> Baixar Relatório de Frete
+              </button>
+            )}
             {/* Resultados */}
             {showResults && groupedResults && (
               <div className="space-y-2">
@@ -954,95 +1030,7 @@ export default function CustosDeVendaStep({
         </div>
       </div>
 
-      {/* ===== DADOS PARA MAXIPROD ===== */}
-      <div className="border-t border-slate-200 dark:border-slate-600 pt-3 space-y-2">
-        <p className="text-[10px] font-bold text-amber-600 uppercase">Dados para Maxiprod (Pedido de Venda)</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="col-span-2">
-            <label className="text-[9px] text-slate-500 font-medium">Operação Fiscal *</label>
-            <select
-              value={operacaoFiscal}
-              onChange={(e) => setOperacaoFiscal(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-            >
-              <option value="6101 - Fora do Estado - Madeira">6101 - Fora do Estado - Madeira</option>
-              <option value="6101 - Fora do Estado - Aromas">6101 - Fora do Estado - Aromas</option>
-              <option value="5101 - Dentro do Estado - Madeira">5101 - Dentro do Estado - Madeira</option>
-              <option value="5101 - Dentro do Estado - Aromas">5101 - Dentro do Estado - Aromas</option>
-              <option value="6108 - Fora do Estado - Consumidor Final">6108 - Fora do Estado - Consumidor Final</option>
-              <option value="5102 - Dentro do Estado - Revenda">5102 - Dentro do Estado - Revenda</option>
-              <option value="6102 - Fora do Estado - Revenda">6102 - Fora do Estado - Revenda</option>
-            </select>
-          </div>
-          <div className="col-span-2">
-            <label className="text-[9px] text-slate-500 font-medium">Natureza da Operação</label>
-            <select
-              value={naturezaOperacao}
-              onChange={(e) => setNaturezaOperacao(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-            >
-              <option value="Venda de produção do estabelecimento">Venda de produção do estabelecimento</option>
-              <option value="Venda de mercadoria adquirida">Venda de mercadoria adquirida</option>
-              <option value="Transferência de produção do estabelecimento">Transferência de produção do estabelecimento</option>
-              <option value="Devolução de compra">Devolução de compra</option>
-              <option value="Remessa para industrialização">Remessa para industrialização</option>
-              <option value="Remessa para conserto">Remessa para conserto</option>
-              <option value="Venda para entrega futura">Venda para entrega futura</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[9px] text-slate-500 font-medium">Estado Configurável</label>
-            <select
-              value={estadoConfiguravel}
-              onChange={(e) => setEstadoConfiguravel(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-            >
-              <option value="MADEIRA">MADEIRA</option>
-              <option value="AROMAS">AROMAS</option>
-              <option value="ESPETOS">ESPETOS</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[9px] text-slate-500 font-medium">Forma de Pagamento <span className="text-red-500">*</span></label>
-            <select
-              value={formaPagamento}
-              onChange={(e) => setFormaPagamento(e.target.value)}
-              className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!formaPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
-              required
-            >
-              <option value="">Selecione...</option>
-              <option value="Boleto">Boleto</option>
-              <option value="A prazo">A prazo</option>
-              <option value="À vista">À vista</option>
-              <option value="PIX">PIX</option>
-              <option value="Depósito">Depósito</option>
-              <option value="Cartão">Cartão</option>
-              <option value="Sem pagamento">Sem pagamento</option>
-              <option value="Outros">Outros</option>
-            </select>
-            {!formaPagamento && <p className="text-[8px] text-red-500 mt-0.5">Campo obrigatório</p>}
-          </div>
-          <div>
-            <label className="text-[9px] text-slate-500 font-medium">Data de Entrega</label>
-            <input
-              type="date"
-              value={dataEntregaPedido}
-              onChange={(e) => setDataEntregaPedido(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-            />
-          </div>
-          <div>
-            <label className="text-[9px] text-slate-500 font-medium">Previsão de Entrega</label>
-            <input
-              type="date"
-              value={previsaoEntregaPedido}
-              onChange={(e) => setPrevisaoEntregaPedido(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-            />
-          </div>
-        </div>
-        <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
-      </div>
+      {/* Dados para Maxiprod foram movidos para a tela principal de finalização do pedido */}
 
       {/* Alerta de bloqueio */}
       {costsData && (costsData.comissao as any).fonte === "critico_bloqueado" && (

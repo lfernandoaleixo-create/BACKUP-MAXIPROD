@@ -6436,3 +6436,19 @@
 - [x] Bug REAL FIX: Importação valores +0.01 centavo - causa raiz era DECIMAL(12,2) no MySQL truncando precisão. Colunas frete_terrestre_remessa, difal_valor, comissao_silverio, despesas_liberacao_remessa, vilela_valor_real alteradas para DECIMAL(18,6)
 - [x] URGENTE Bug Faturamento: Pedidos na aba 'Autorizado a Faturar' estão sumindo e voltando para 'Pedidos em Aberto' ou 'Aceite da Produção' sem nenhuma alteração manual. Só faturamento parcial deveria causar isso. Pedidos 1581 e 1583 afetados.
 - [x] Bug Faturamento: Campo de Observação (laranja/faturamento) NÃO deve fazer pedido voltar pro Aceite - só Observação Comercial deve causar isso
+- [ ] Pedido de Venda: Adicionar campos do cadastro do cliente (Dados Fiscais, Dados de Venda, CRM, Cobrança) na etapa de finalização do pedido, pré-preenchidos com dados do cliente
+- [x] Pedido de Venda: Mover campos 'Dados para Maxiprod' (Operação Fiscal, Natureza da Operação, Estado Configurável, Forma de Pagamento, Data de Entrega, Previsão de Entrega) para fora do card Custos de Venda, direto na finalização
+- [ ] Exportação Maxiprod: Garantir que Data de Entrega e Previsão de Entrega sejam incluídas no arquivo de importação
+- [ ] Estado Configurável: Adicionar TODOS os estados configuráveis do Maxiprod (Madeira, Bambu, Matéria-prima Importada, etc.) no dropdown do pedido de venda
+- [x] Bug Revisão Pedido: NÃO somar frete ao valor do pedido - mostrar discriminado (valor pedido + valor frete separados) e exportar pro Maxiprod apenas o valor do pedido sem frete
+- [x] Custos de Venda: adicionar como item ticável nas permissões (Configurações)
+- [ ] Auditoria de permissões: verificar que o que está ticado aparece e o que não está ticado não aparece
+- [ ] Simulação de vendas: testar com todos os vendedores (tabela de preço, desconto automático, preço manual)
+- [ ] Pesquisa de produtos: puxar variações, pesquisa parcial funcionando corretamente
+- [ ] Corrigir erro de "reload page" ao liberar estoque para vendedor
+- [x] Relatório de frete: gerar relatório (cubagem, peso, produtos, valor) ao usar transportadora ou simular frete
+- [ ] APIs de transportadoras: garantir que não falham
+- [ ] Verificar estoque do vendedor batendo com o que o gestor liberou
+- [ ] Permissões granulares expandíveis: TODOS os itens da seção Gestão Comercial (exceto Painel Gestores/Vendedores que já têm) devem ganhar setinha expandível com nomes individuais de gestores/vendedores para ticar quem pode ver o quê de quem. Inclui: Meu Painel de Vendedor, Aprovações de Pedidos, Cadastro de Clientes, Pedidos de Venda, Métricas de Venda, Barra de Comissão, Barra do Produto, Barra do Mês, Comissão, Consulta Serasa, Exportar p/ Maxiprod, Editar Comissão, Gerenciar Gestores, Custos de Venda
+- [ ] Revisão completa versão mobile: tooltip de pedidos (tap em vez de hover), layout responsivo em todas as abas, nada sobreposto/encavalado, todas funcionalidades novas funcionando igual desktop
+- [ ] Linha do Tempo do Pedido de Venda: item expandível nas permissões GC de cada senha, com nomes ticáveis e sub-condições (margem produto/pedido/mês acima/abaixo do esperado) para definir para quem o pedido vai

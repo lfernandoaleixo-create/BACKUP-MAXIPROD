@@ -1468,14 +1468,26 @@ function EstoqueMatrixView({ gestorName }: { gestorName: string }) {
   const handleToggle = (sellerId: number, productCode: string, currentValue: boolean) => {
     toggleMutation.mutate(
       { sellerId, productCode, visible: !currentValue },
-      { onSuccess: () => utils.sales.getEstoqueMatrix.invalidate() }
+      { 
+        onSuccess: () => utils.sales.getEstoqueMatrix.invalidate(),
+        onError: (err) => {
+          console.error('Erro ao alterar visibilidade:', err);
+          utils.sales.getEstoqueMatrix.invalidate();
+        }
+      }
     );
   };
 
   const handleToggleAll = (sellerId: number, productCodes: string[], visible: boolean) => {
     toggleAllMutation.mutate(
       { sellerId, productCodes, visible },
-      { onSuccess: () => utils.sales.getEstoqueMatrix.invalidate() }
+      { 
+        onSuccess: () => utils.sales.getEstoqueMatrix.invalidate(),
+        onError: (err) => {
+          console.error('Erro ao alterar visibilidade em massa:', err);
+          utils.sales.getEstoqueMatrix.invalidate();
+        }
+      }
     );
   };
 

@@ -925,6 +925,10 @@ async function saveAllData(
   }
 
   // Usar transação atômica para evitar dados inconsistentes durante a sincronização
+  // Retry up to 3 times for lock timeout / deadlock errors
+  const DB_MAX_RETRIES = 3;
+  for (let dbAttempt = 1; dbAttempt <= DB_MAX_RETRIES; dbAttempt++) {
+  try {
   await db.transaction(async (tx) => {
     // Save stock items - delete ALL items and re-insert (sync provides complete dataset including madeira/manual items)
     await tx.delete(stockItems);
@@ -1054,7 +1058,18 @@ async function saveAllData(
       console.error('[Cancellation Tracker] Erro ao registrar cancelamentos:', e);
     }
   });
-
+  // Transaction succeeded, break out of retry loop
+  break;
+  } catch (txErr: any) {
+    const isLockError = txErr.message?.includes('Lock wait timeout') || txErr.message?.includes('Deadlock') || txErr.message?.includes('Failed query: delete');
+    if (isLockError && dbAttempt < DB_MAX_RETRIES) {
+      console.warn(`[GraphQL Sync] Transaction attempt ${dbAttempt}/${DB_MAX_RETRIES} failed (lock/deadlock). Retrying in ${dbAttempt * 3}s...`);
+      await sleep(dbAttempt * 3000);
+      continue;
+    }
+    throw txErr;
+  }
+  } // end retry loop
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
 
   // ═══ NOTIFICAÇÃO DE NOVAS VENDAS: Comparar pedidos anteriores vs novos ═══

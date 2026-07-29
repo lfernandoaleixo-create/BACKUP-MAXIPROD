@@ -3673,6 +3673,7 @@ export const salesRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
+      if (input.productCodes.length === 0) return { success: true, count: 0 };
       if (input.visible) {
         // Add all products that don't already exist
         const existing = await db.select({ productCode: sellerProductVisibility.productCode })

@@ -730,7 +730,7 @@ export const salesOrderRouter = router({
       });
 
       const valorFrete = input.valorFrete || 0;
-      const totalPedido = totalProdutos + valorFrete;
+      const totalPedido = totalProdutos; // Frete NÃO é somado ao valor do pedido
 
       // Determine status - ALL real orders start as 'pendente' and require gestor approval
       const status = input.isSimulation ? "simulacao" as const : "pendente" as const;
@@ -3469,7 +3469,7 @@ export const salesOrderRouter = router({
 
       const totalProdutos = itemsWithValidation.reduce((sum, i) => sum + i.totalItem, 0);
       const valorFrete = input.valorFrete || 0;
-      const totalPedido = totalProdutos + valorFrete;
+      const totalPedido = totalProdutos; // Frete NÃO é somado ao valor do pedido
       const temPrecoAbaixoMinimo = itemsWithValidation.some(i => i.abaixoDoMinimo);
 
       // Update order fields
