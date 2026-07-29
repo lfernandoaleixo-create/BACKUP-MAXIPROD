@@ -6472,3 +6472,9 @@
 ## Bug: Pedido 1219 volta sozinho de "Autorizado a Faturar" para "Pedidos em Aberto"
 - [x] Corrigir fluxo de status: quando autorizado, pedido deve PERMANECER em "Autorizado a Faturar" até ser faturado
 - [x] Para faturamento parcial: só após faturar é que o pedido volta para "Pedidos em Aberto" para produzir o restante das caixas que faltam
+
+## Botão Simular Frete no Histórico de Pedidos do Vendedor
+- [x] Botão "Simular Frete" ao lado de cada pedido no histórico (Digitação e A Aprovar) - simula nas 5 transportadoras
+- [x] Botão "Rastrear" nos pedidos faturados - puxa rastreio pela API da transportadora
+- [x] Permissão configurável em Configurações → Gestão Comercial: item ticável "Cotar Frete (Pedido de Venda)" para controlar quem pode ver/usar o botão
+- [x] Testar simulação end-to-end para garantir funcionamento (Pedido 1219: Rodonaves R$281,41 / 13 dias úteis / Protocolo 219507658)

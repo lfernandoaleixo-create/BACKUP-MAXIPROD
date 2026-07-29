@@ -2565,6 +2565,246 @@ export const salesOrderRouter = router({
       return carriers;
     }),
 
+  /**
+   * Quote freight for an existing order (by pedido number).
+   * Automatically fetches CEP, CNPJ, peso, valor from the order/client data.
+   */
+  quoteByPedido: publicProcedure
+    .input(z.object({ pedido: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // 1. Get order items from salesOrders
+      const orderItems = await db.select({
+        cliente: salesOrders.cliente,
+        uf: salesOrders.uf,
+        enderecoCep: salesOrders.enderecoCep,
+        valorTotalPedido: salesOrders.valorTotalPedido,
+        valorTotal: salesOrders.valorTotal,
+        quantidade: salesOrders.quantidade,
+        codigoItem: salesOrders.codigoItem,
+        transportadora: salesOrders.transportadora,
+        razaoSocial: salesOrders.razaoSocial,
+        inscricaoEstadual: salesOrders.inscricaoEstadual,
+      }).from(salesOrders)
+        .where(eq(salesOrders.pedido, input.pedido));
+
+      if (orderItems.length === 0) {
+        throw new Error(`Pedido #${input.pedido} não encontrado no Maxiprod`);
+      }
+
+      const firstItem = orderItems[0];
+      const clienteName = firstItem.cliente || "";
+      let cepDestino = (firstItem.enderecoCep || "").replace(/\D/g, "");
+      let cnpjDestinatario = "";
+      let tipoContribuinte = "Contribuinte";
+      let valorMercadoria = parseFloat(String(firstItem.valorTotalPedido || 0));
+      if (!valorMercadoria) {
+        valorMercadoria = orderItems.reduce((sum, i) => sum + parseFloat(String(i.valorTotal || 0)), 0);
+      }
+
+      // 2. Try to find client in vendor_clients for CNPJ and CEP (more reliable)
+      if (clienteName) {
+        const [client] = await db.select()
+          .from(vendorClients)
+          .where(sql`UPPER(${vendorClients.razaoSocial}) = ${clienteName.toUpperCase()}`)
+          .limit(1);
+        if (client) {
+          cnpjDestinatario = (client.cnpjCpf || "").replace(/\D/g, "");
+          if (client.cep) cepDestino = client.cep.replace(/\D/g, "");
+          tipoContribuinte = client.tipoContribuinte || "Contribuinte";
+        }
+      }
+
+      if (!cepDestino || cepDestino.length < 8) {
+        throw new Error(`CEP do destinatário não encontrado para o pedido #${input.pedido}. Verifique o cadastro do cliente.`);
+      }
+
+      // 3. Calculate weight from stock items
+      let pesoTotal = 0;
+      const codigosItens = orderItems.map(i => i.codigoItem).filter(Boolean) as string[];
+      if (codigosItens.length > 0) {
+        const stockData = await db.select({
+          codigoItem: stockItems.codigoItem,
+          pesoBruto: stockItems.pesoBruto,
+          pesoLiquido: stockItems.pesoLiquido,
+        }).from(stockItems)
+          .where(inArray(stockItems.codigoItem, codigosItens));
+
+        const pesoMap = new Map<string, number>();
+        for (const s of stockData) {
+          const peso = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
+          if (peso > 0 && s.codigoItem) pesoMap.set(s.codigoItem, peso);
+        }
+
+        for (const item of orderItems) {
+          const pesoUnit = pesoMap.get(item.codigoItem || "") || 0;
+          const qty = parseFloat(String(item.quantidade || 1));
+          pesoTotal += pesoUnit * qty;
+        }
+      }
+
+      // Fallback: if no weight found, estimate 0.5kg per item
+      if (pesoTotal <= 0) {
+        pesoTotal = orderItems.reduce((sum, i) => sum + parseFloat(String(i.quantidade || 1)), 0) * 0.5;
+      }
+
+      const volumes = Math.max(1, Math.ceil(pesoTotal / 30)); // ~30kg per volume estimate
+      const metroCubico = volumes * 0.05; // ~0.05m³ per volume estimate
+
+      console.log(`[QuoteByPedido] Pedido #${input.pedido}: CEP=${cepDestino}, CNPJ=${cnpjDestinatario}, Valor=${valorMercadoria}, Peso=${pesoTotal}kg, Volumes=${volumes}`);
+
+      // 4. Get customer data for Rodonaves
+      let customerData: { nome: string; email: string; telefone: string; cep: string; logradouro: string; numero: string; complemento?: string; bairro: string; cidade: string; uf: string; inscricaoEstadual?: string } | undefined;
+      if (cnpjDestinatario) {
+        const [client] = await db.select()
+          .from(vendorClients)
+          .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cnpjDestinatario}`)
+          .limit(1);
+        if (client) {
+          customerData = {
+            nome: client.razaoSocial || client.nomeFantasia || "Cliente",
+            email: client.emailNfe || client.email || "nfe@grupofox.com.br",
+            telefone: client.telefone1 || client.telefone2 || "31999999999",
+            cep: client.cep || cepDestino,
+            logradouro: client.logradouro || "Rua",
+            numero: client.numero || "S/N",
+            complemento: client.complemento || undefined,
+            bairro: client.bairro || "Centro",
+            cidade: client.cidade || "",
+            uf: client.uf || "",
+            inscricaoEstadual: client.inscricaoEstadual || undefined,
+          };
+        }
+      }
+
+      // 5. Quote all 5 carriers in parallel
+      const normalizeTipoContrib = (t: string) => {
+        const upper = t.toUpperCase();
+        if (upper.includes("NAO") || upper.includes("NÃO") || upper.includes("N")) return "Não Contribuinte";
+        return "Contribuinte";
+      };
+
+      const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
+        cotarTodosCnpjs({
+          cnpjDestinatario: cnpjDestinatario || "00000000000000",
+          cepOrigem: "37264000",
+          cepDestino,
+          valorMercadoria,
+          peso: pesoTotal,
+          volumes,
+          altura: 0.5,
+          largura: 0.5,
+          comprimento: 0.5,
+        }),
+        quoteAllAlfaCnpjs({
+          cepDestino,
+          cepOrigem: "37264000",
+          valorMercadoria,
+          peso: pesoTotal,
+          metroCubico,
+          volumes,
+          cnpjDestinatario,
+        }),
+        quoteAllSswCnpjs({
+          cepOrigem: "37260000",
+          cepDestino: cepDestino.replace(/\D/g, ""),
+          valorNF: valorMercadoria,
+          quantidade: volumes,
+          peso: pesoTotal,
+          cubagem: metroCubico,
+          cnpjDestinatario,
+          destContribuinte: normalizeTipoContrib(tipoContribuinte) === "Contribuinte" ? "S" : "N",
+        }),
+        quoteAllRodonavesCnpjs({
+          cepOrigem: "37264000",
+          cepDestino,
+          valorMercadoria,
+          peso: pesoTotal,
+          volumes,
+          cnpjDestinatario,
+          customerData,
+        }),
+        quoteFlordeMinas({
+          cepDestino,
+          valorMercadoria,
+          pesoKg: pesoTotal,
+        }),
+      ]);
+
+      const carriers: Array<{
+        transportadora: string;
+        cnpj: string;
+        totalFrete: number;
+        prazo: string;
+        protocolo?: string;
+        error?: string;
+      }> = [];
+
+      // Process Braspress
+      if (braspressResults.status === "fulfilled") {
+        for (const r of braspressResults.value) {
+          carriers.push({ transportadora: "Braspress", cnpj: r.cnpjUsado, totalFrete: r.totalFrete || 0, prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A", protocolo: r.id ? String(r.id) : undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Braspress", cnpj: "", totalFrete: 0, prazo: "N/A", error: braspressResults.reason?.message || "Erro" });
+      }
+
+      // Process Alfa
+      if (alfaResults.status === "fulfilled") {
+        for (const r of alfaResults.value) {
+          carriers.push({ transportadora: "Alfa Transportes", cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo || "N/A", protocolo: r.protocolo || undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Alfa Transportes", cnpj: "", totalFrete: 0, prazo: "N/A", error: alfaResults.reason?.message || "Erro" });
+      }
+
+      // Process Camilo (SSW)
+      if (sswResults.status === "fulfilled") {
+        for (const r of sswResults.value) {
+          carriers.push({ transportadora: "Camilo dos Santos", cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A", protocolo: r.protocolo || undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Camilo dos Santos", cnpj: "", totalFrete: 0, prazo: "N/A", error: sswResults.reason?.message || "Erro" });
+      }
+
+      // Process Rodonaves
+      if (rodonavesResults.status === "fulfilled") {
+        for (const r of rodonavesResults.value) {
+          carriers.push({ transportadora: "Rodonaves", cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo || "N/A", protocolo: r.protocolo ? String(r.protocolo) : undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Rodonaves", cnpj: "", totalFrete: 0, prazo: "N/A", error: rodonavesResults.reason?.message || "Erro" });
+      }
+
+      // Process Flor de Minas
+      if (florDeMinasResult.status === "fulfilled") {
+        const r = florDeMinasResult.value;
+        carriers.push({ transportadora: r.transportadora, cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo, error: r.error });
+      } else {
+        carriers.push({ transportadora: "Flor de Minas", cnpj: "", totalFrete: 0, prazo: "N/A", error: florDeMinasResult.reason?.message || "Erro" });
+      }
+
+      // Sort by lowest freight (errors at the end)
+      carriers.sort((a, b) => {
+        if (a.error && !b.error) return 1;
+        if (!a.error && b.error) return -1;
+        return a.totalFrete - b.totalFrete;
+      });
+
+      return {
+        pedido: input.pedido,
+        cliente: clienteName,
+        cepDestino,
+        cnpjDestinatario,
+        valorMercadoria,
+        pesoTotal,
+        volumes,
+        carriers,
+      };
+    }),
+
   // ===== INLINE SALES COSTS CALCULATION (for order form, before order is saved) =====
   /** Calculate all sales costs inline - custo mercadoria, impostos, comissão, margem */
   calculateSalesCosts: publicProcedure

@@ -4202,6 +4202,12 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const [trackingPedido, setTrackingPedido] = useState<string | null>(null);
   const trackAlfaMutation = trpc.billing.trackAlfaShipment.useMutation();
 
+  // Freight simulation state
+  const { hasGranularAccess } = useOperator();
+  const canCotarFrete = hasGranularAccess("gc.cotarFretePedido");
+  const [freightPedido, setFreightPedido] = useState<string | null>(null);
+  const quoteByPedidoMutation = trpc.salesOrders.quoteByPedido.useMutation();
+
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
@@ -4749,6 +4755,97 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
         </div>
       )}
 
+      {/* Modal Simulação de Frete */}
+      {freightPedido && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { setFreightPedido(null); quoteByPedidoMutation.reset(); }}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Simulação de Frete - Pedido #{freightPedido}</h3>
+              </div>
+              <button onClick={() => { setFreightPedido(null); quoteByPedidoMutation.reset(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              {quoteByPedidoMutation.isPending && (
+                <div className="flex items-center justify-center gap-2 py-8">
+                  <RefreshCw className="w-5 h-5 text-teal-500 animate-spin" />
+                  <span className="text-sm text-slate-500">Simulando frete nas 5 transportadoras...</span>
+                </div>
+              )}
+              {quoteByPedidoMutation.isError && (
+                <div className="text-center py-6">
+                  <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">Erro na simulação</p>
+                  <p className="text-xs text-slate-400 mt-1">{quoteByPedidoMutation.error?.message}</p>
+                </div>
+              )}
+              {quoteByPedidoMutation.isSuccess && quoteByPedidoMutation.data && (
+                <div className="space-y-4">
+                  {/* Dados usados */}
+                  <div className="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div>
+                        <span className="text-slate-400">Cliente</span>
+                        <p className="font-medium text-slate-700 dark:text-slate-200 truncate">{quoteByPedidoMutation.data.cliente}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400">CEP Destino</span>
+                        <p className="font-medium text-slate-700 dark:text-slate-200">{quoteByPedidoMutation.data.cepDestino}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400">Peso Total</span>
+                        <p className="font-medium text-slate-700 dark:text-slate-200">{quoteByPedidoMutation.data.pesoTotal.toFixed(2)} kg</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400">Valor Mercadoria</span>
+                        <p className="font-medium text-slate-700 dark:text-slate-200">R$ {quoteByPedidoMutation.data.valorMercadoria.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Resultados das transportadoras */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-slate-500 uppercase">Cotações (menor para maior)</p>
+                    {quoteByPedidoMutation.data.carriers.map((c, idx) => (
+                      <div key={idx} className={`flex items-center justify-between rounded-lg px-4 py-3 border ${
+                        c.error ? "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-900/10" :
+                        idx === 0 ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/10" :
+                        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+                      }`}>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{c.transportadora}</span>
+                            {idx === 0 && !c.error && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">MENOR</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            {c.cnpj && <span className="text-[10px] text-slate-400">CNPJ: {c.cnpj}</span>}
+                            {c.prazo && <span className="text-[10px] text-slate-400">Prazo: {c.prazo}</span>}
+                            {c.protocolo && <span className="text-[10px] text-blue-500">Prot: {c.protocolo}</span>}
+                          </div>
+                        </div>
+                        <div className="text-right ml-3">
+                          {c.error ? (
+                            <span className="text-xs text-red-500 font-medium">{c.error.length > 40 ? c.error.slice(0, 40) + "..." : c.error}</span>
+                          ) : (
+                            <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                              R$ {c.totalFrete.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {!showNewOrder && (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
@@ -4810,7 +4907,27 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       {formatCurrencySales(pedido.valorTotal)}
                     </p>
                   </div>
-                  {/* Botão Rastrear - só para pedidos faturados com transportadora Alfa */}
+                  {/* Botão Simular Frete - para pedidos em Digitação ou A aprovar */}
+                  {canCotarFrete && (pedido.estadoNota === "Digitação" || pedido.estadoNota === "A aprovar" || pedido.estadoNota === "Aprovado") && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFreightPedido(pedido.pedido);
+                        quoteByPedidoMutation.mutate({ pedido: pedido.pedido });
+                      }}
+                      disabled={quoteByPedidoMutation.isPending && freightPedido === pedido.pedido}
+                      className="ml-1 px-2 py-1 rounded-md text-[10px] font-bold bg-teal-50 text-teal-600 hover:bg-teal-100 dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50 transition-colors flex items-center gap-1 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                      title="Simular frete nas 5 transportadoras"
+                    >
+                      {quoteByPedidoMutation.isPending && freightPedido === pedido.pedido ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Truck className="w-3 h-3" />
+                      )}
+                      <span className="hidden sm:inline">Simular Frete</span>
+                    </button>
+                  )}
+                  {/* Botão Rastrear - só para pedidos faturados com transportadora */}
                   {(pedido.estadoNota === "Faturado" || pedido.estadoNota === "Faturado c/ entrega futura") && pedido.transportadora && (
                     <button
                       onClick={(e) => {
