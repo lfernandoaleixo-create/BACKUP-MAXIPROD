@@ -3803,12 +3803,23 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(po.freteOverrideUsd ? String(po.freteOverrideUsd) : null);
   const [freteEditing, setFreteEditing] = useState(false);
   // Vilela valor real: valor exato pago (quando preenchido, substitui a estimativa %)
-  // Stored in USD internally, converted from BRL if legacy PO had it in BRL
-  const [vilelaRealUsd, setVilelaRealUsd] = useState(
-    isLegacyInit && po.vilelaValorReal && Number(po.vilelaValorReal) > 100
-      ? String((Number(po.vilelaValorReal) / legacyRate).toFixed(4))
-      : (po.vilelaValorReal || '')
-  );
+  // Stored in USD internally. Detection logic:
+  // - If vilelaValorReal > totalCiRemessa (the CI value in USD), it's likely stored in BRL (legacy)
+  //   and needs conversion. Otherwise it's already in USD (new code saves in USD via toUsd()).
+  // - This replaces the old "> 100" heuristic which broke for legitimate USD values > 100.
+  const [vilelaRealUsd, setVilelaRealUsd] = useState(() => {
+    if (!po.vilelaValorReal) return '';
+    const vilelaNum = Number(po.vilelaValorReal);
+    if (isNaN(vilelaNum) || vilelaNum === 0) return '';
+    const ciNum = Number(po.totalCiRemessa || 0);
+    // If vilela > CI value, it's almost certainly stored in BRL (legacy behavior)
+    // because despesas de liberação should never exceed the CI value in USD
+    const isLikelyBrl = isLegacyInit && ciNum > 0 && vilelaNum > ciNum;
+    if (isLikelyBrl) {
+      return String((vilelaNum / legacyRate).toFixed(4));
+    }
+    return String(vilelaNum);
+  });
   // Alias for backwards compatibility in calculations
   const vilelaReal = vilelaRealUsd;
   

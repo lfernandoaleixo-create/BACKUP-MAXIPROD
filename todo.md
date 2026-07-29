@@ -6370,3 +6370,14 @@
 
 ## Bug: Valor Real Vilela (USD) no Container ZY2026-018 (29/07/2026)
 - [x] Campo "Valor Real Vilela (USD)" na aba Importação está ficando só em USD (mostra $ 0.00), precisa exibir corretamente
+
+## Bug: Crash "Unexpected Error" ao abrir estoque no Painel do Vendedor (Queijo Coalho)
+- [x] Diagnosticar: StockCategorySection e ConfigCategorySection aceitavam apenas color="amber"|"green" mas eram chamados com color="teal" para Queijo Coalho
+- [x] Corrigir: adicionar "teal" ao tipo union e classes de cor em ambos componentes
+- [x] Verificar compilação TypeScript sem erros
+
+## Bug: Valor Real Vilela muda ao salvar (Importação)
+- [x] Diagnosticar: lógica de detecção legado BRL vs USD incorreta (comparava > 100 mas USD pode ser > 100)
+- [x] Corrigir frontend: usar comparação com totalCiRemessa para detectar se valor é BRL legado
+- [x] Corrigir server importRouter.ts: mesma lógica de detecção nos cálculos
+- [x] Corrigir custoPdfExport.ts: mesma lógica de detecção na exportação PDF

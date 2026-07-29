@@ -874,7 +874,7 @@ function StockCategorySection({
 }: {
   title: string;
   items: DashboardItem[];
-  color: "amber" | "green";
+  color: "amber" | "green" | "teal";
   sellerName: string;
   sellerId: number;
   allowReserve: boolean;
@@ -898,6 +898,12 @@ function StockCategorySection({
       border: "border-green-200 dark:border-green-800",
       badge: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
       icon: "text-green-600 dark:text-green-400",
+    },
+    teal: {
+      bg: "bg-teal-50 dark:bg-teal-900/20",
+      border: "border-teal-200 dark:border-teal-800",
+      badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400",
+      icon: "text-teal-600 dark:text-teal-400",
     },
   };
 
@@ -1428,7 +1434,7 @@ function ConfigCategorySection({
   onSelectAll: () => void;
   onDeselectAll: () => void;
   countSelected: number;
-  color: "amber" | "green";
+  color: "amber" | "green" | "teal";
 }) {
   const colorClasses = {
     amber: {
@@ -1442,6 +1448,12 @@ function ConfigCategorySection({
       border: "border-green-200 dark:border-green-800",
       badge: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
       icon: "text-green-600 dark:text-green-400",
+    },
+    teal: {
+      bg: "bg-teal-50 dark:bg-teal-900/20",
+      border: "border-teal-200 dark:border-teal-800",
+      badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400",
+      icon: "text-teal-600 dark:text-teal-400",
     },
   };
 
