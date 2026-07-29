@@ -260,6 +260,7 @@ export async function quoteAllAlfaCnpjs(params: {
   cnpj: string;
   totalFrete: number;
   prazo: string;
+  protocolo?: string;
   error?: string;
   details?: AlfaQuoteResult;
 }>> {
@@ -292,6 +293,7 @@ export async function quoteAllAlfaCnpjs(params: {
         cnpj: configs[idx].cnpj,
         totalFrete: cotacao.valoresCotacao.valorTotal,
         prazo: cotacao.diasEntrega,
+        protocolo: result.value.cotacao.codigoCotacao || undefined,
         details: result.value,
       };
     } else if (result.status === "fulfilled") {

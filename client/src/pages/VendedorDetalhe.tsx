@@ -8,11 +8,12 @@
  * - Aba Configurações: ticagem de produtos visíveis, autorização, senha, catálogos
  */
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { trpc } from "@/lib/trpc";
+import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
 import {
   ArrowLeft,
   Package,
@@ -699,11 +700,11 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
 
   const filteredProducts = useMemo(() => {
     if (!stockSearch.trim()) return visibleProducts;
-    const term = stockSearch.toLowerCase().trim();
-    return visibleProducts.filter(item =>
-      item.codigoItem.toLowerCase().includes(term) ||
-      item.descricaoItem.toLowerCase().includes(term)
-    );
+    const s = stockSearch.toLowerCase().trim();
+    return visibleProducts.filter(item => {
+      const searchable = `${item.codigoItem} ${item.descricaoItem}`.toLowerCase();
+      return searchable.includes(s);
+    });
   }, [visibleProducts, stockSearch]);
 
   const madeiraProducts = useMemo(() =>
@@ -711,8 +712,13 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
     [filteredProducts]
   );
 
+  const QC_SELLER_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
   const bambuProducts = useMemo(() =>
-    filteredProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu"),
+    filteredProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu" && !QC_SELLER_CODES.includes(item.codigoItem)),
+    [filteredProducts]
+  );
+  const queijoCoalhoProducts = useMemo(() =>
+    filteredProducts.filter(item => QC_SELLER_CODES.includes(item.codigoItem)),
     [filteredProducts]
   );
 
@@ -799,6 +805,21 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           onTrack={(uuid, bl) => { if (uuid) setTrackingUuid(uuid); else if (bl) setTrackingBl(bl); }}
         />
       )}
+      {/* Queijo Coalho */}
+      {queijoCoalhoProducts.length > 0 && (
+        <StockCategorySection
+          title="Queijo Coalho"
+          items={queijoCoalhoProducts}
+          color="teal"
+          sellerName={sellerName}
+          sellerId={sellerId}
+          allowReserve={false}
+          onReserve={() => {}}
+          reservationSummary={reservationSummary.data || {}}
+          trackingMap={trackingQuery.data?.trackingByPO || {}}
+          onTrack={(uuid, bl) => { if (uuid) setTrackingUuid(uuid); else if (bl) setTrackingBl(bl); }}
+        />
+      )}
 
       {/* Reservas ativas */}
       {reservationsQuery.data && reservationsQuery.data.length > 0 && (
@@ -854,7 +875,7 @@ function StockCategorySection({
 }: {
   title: string;
   items: DashboardItem[];
-  color: "amber" | "green";
+  color: "amber" | "green" | "teal";
   sellerName: string;
   sellerId: number;
   allowReserve: boolean;
@@ -878,6 +899,12 @@ function StockCategorySection({
       border: "border-green-200 dark:border-green-800",
       badge: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
       icon: "text-green-600 dark:text-green-400",
+    },
+    teal: {
+      bg: "bg-teal-50 dark:bg-teal-900/20",
+      border: "border-teal-200 dark:border-teal-800",
+      badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400",
+      icon: "text-teal-600 dark:text-teal-400",
     },
   };
 
@@ -1224,7 +1251,7 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
 
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["madeira", "bambu"]));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["madeira", "bambu", "queijo_coalho"]));
 
   useEffect(() => {
     if (productsQuery.data && !initialized) {
@@ -1258,12 +1285,16 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     subgrupo: string;
   }
 
+  const QC_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
   const stockItems: SimpleStockItem[] = (stockQuery.data?.items || []) as SimpleStockItem[];
   const madeiraItems = stockItems.filter((item) =>
     item.grupo === "industrializacao" && item.subgrupo === "madeira"
   );
   const bambuItems = stockItems.filter((item) =>
-    item.grupo === "importacao_revenda" && item.subgrupo === "bambu"
+    item.grupo === "importacao_revenda" && item.subgrupo === "bambu" && !QC_CODES.includes(item.codigoItem)
+  );
+  const queijoCoalhoItems = stockItems.filter((item) =>
+    QC_CODES.includes(item.codigoItem)
   );
 
   const selectAllCategory = (items: SimpleStockItem[]) => {
@@ -1356,6 +1387,18 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
             countSelected={countSelected(bambuItems)}
             color="green"
           />
+          <ConfigCategorySection
+            title="Queijo Coalho"
+            items={queijoCoalhoItems}
+            selectedProducts={selectedProducts}
+            isExpanded={expandedCategories.has("queijo_coalho")}
+            onToggleExpand={() => toggleCategory("queijo_coalho")}
+            onToggleProduct={toggleProduct}
+            onSelectAll={() => selectAllCategory(queijoCoalhoItems)}
+            onDeselectAll={() => deselectAllCategory(queijoCoalhoItems)}
+            countSelected={countSelected(queijoCoalhoItems)}
+            color="teal"
+          />
         </div>
       )}
 
@@ -1392,7 +1435,7 @@ function ConfigCategorySection({
   onSelectAll: () => void;
   onDeselectAll: () => void;
   countSelected: number;
-  color: "amber" | "green";
+  color: "amber" | "green" | "teal";
 }) {
   const colorClasses = {
     amber: {
@@ -1406,6 +1449,12 @@ function ConfigCategorySection({
       border: "border-green-200 dark:border-green-800",
       badge: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
       icon: "text-green-600 dark:text-green-400",
+    },
+    teal: {
+      bg: "bg-teal-50 dark:bg-teal-900/20",
+      border: "border-teal-200 dark:border-teal-800",
+      badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400",
+      icon: "text-teal-600 dark:text-teal-400",
     },
   };
 
@@ -4087,7 +4136,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [showNewOrder, setShowNewOrder] = useState(false);
+  const { hasDraft } = useOrderDraft();
+  const resumeDraft = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
+  const [showNewOrder, setShowNewOrder] = useState(resumeDraft && hasDraft);
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
@@ -5003,6 +5054,61 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [dataEntregaPedido, setDataEntregaPedido] = useState("");
   const [previsaoEntregaPedido, setPrevisaoEntregaPedido] = useState("");
 
+  // === ORDER DRAFT PERSISTENCE ===
+  const { draft, saveDraft, clearDraft } = useOrderDraft();
+
+  // Load draft on mount (only for new orders, not edits)
+  useEffect(() => {
+    if (isEditMode) return;
+    if (draft && draft.sellerId === sellerId && draft.items.length > 0) {
+      setItems(draft.items as OrderItem[]);
+      if (draft.client) {
+        setCnpjCpf(draft.client.cnpjCpf || "");
+        setRazaoSocial(draft.client.razaoSocial || "");
+        setNomeFantasia(draft.client.nomeFantasia || "");
+        setInscricaoEstadual(draft.client.inscricaoEstadual || "");
+        setCep(draft.client.cep || "");
+        setEndereco(draft.client.endereco || "");
+        setNumero(draft.client.numero || "");
+        setComplemento(draft.client.complemento || "");
+        setBairro(draft.client.bairro || "");
+        setMunicipio(draft.client.municipio || "");
+        setUf(draft.client.uf || "");
+        setTelefone1(draft.client.telefone1 || "");
+        setEmailNfe(draft.client.emailNfe || "");
+        setSegmento(draft.client.segmento || "");
+        setTipoContribuinte(draft.client.tipoContribuinte || "Contribuinte");
+        setRegimeTributario(draft.client.regimeTributario || "Normal");
+      }
+      if (draft.observacoes) setObservacoes(draft.observacoes);
+      if (draft.formaPagamento) setFormaPagamento(draft.formaPagamento);
+      if (draft.condicaoPagamento) setCondicaoPagamento(draft.condicaoPagamento);
+      if (draft.step) setStep(draft.step);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save draft whenever items or client data changes
+  useEffect(() => {
+    if (isEditMode || orderSubmitted) return;
+    if (items.length === 0 && !cnpjCpf) return; // nothing to save
+    const clientData: DraftClientData | null = cnpjCpf ? {
+      cnpjCpf, razaoSocial, nomeFantasia, inscricaoEstadual,
+      cep, endereco, numero, complemento, bairro, municipio, uf,
+      telefone1, emailNfe, segmento, tipoContribuinte, regimeTributario
+    } : null;
+    saveDraft({
+      sellerId,
+      sellerName,
+      step,
+      items: items as DraftOrderItem[],
+      client: clientData,
+      observacoes,
+      formaPagamento,
+      condicaoPagamento,
+      updatedAt: Date.now()
+    });
+  }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, condicaoPagamento]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(
     { query: clientSearch, sellerId },
@@ -5283,13 +5389,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const addedCodes = new Set(items.map(i => i.codigoItem));
     let filtered = productsQuery.data.filter((p: any) => !addedCodes.has(p.codigoItem));
     if (productSearch.trim()) {
-      const term = productSearch.trim().toLowerCase();
-      filtered = filtered.filter((p: any) =>
-        p.codigoItem.toLowerCase().includes(term) ||
-        p.descricaoItem.toLowerCase().includes(term) ||
-        (p.codigoBarras && p.codigoBarras.toLowerCase().includes(term)) ||
-        (p.grupo && p.grupo.toLowerCase().includes(term))
-      );
+      const s = productSearch.trim().toLowerCase();
+      filtered = filtered.filter((p: any) => {
+        const searchable = [
+          p.codigoItem,
+          p.descricaoItem,
+          p.codigoBarras || "",
+          p.grupo || "",
+        ].join(" ").toLowerCase();
+        return searchable.includes(s);
+      });
     }
     return filtered;
   }, [productsQuery.data, items, productSearch]);
@@ -5434,6 +5543,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             utils.salesOrders.getSellerOrders.invalidate();
             setShowBelowMinConfirm(false);
             setOrderSubmitted(true);
+            clearDraft();
             setSubmittedOrderId(result.orderId);
             setSubmittedOrderNumber(result.orderNumber);
             setStep("resumo_final");
@@ -5541,6 +5651,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
           utils.salesOrders.getSellerOrders.invalidate();
           setShowBelowMinConfirm(false);
           setOrderSubmitted(true);
+          clearDraft();
           setSubmittedOrderId(result.orderId);
           setSubmittedOrderNumber(result.orderNumber);
           setStep("resumo_final");
@@ -6117,12 +6228,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       const newItems: typeof items = [];
                       for (const li of lastItems) {
                         const prod = availableProds.find((p: any) => p.codigoItem === li.codigoItem);
+                        // Usar o preço EXATO do último pedido (li.precoUnitario) - idêntico ao original
                         newItems.push({
                           codigoItem: li.codigoItem,
                           descricaoItem: li.descricaoItem,
                           quantidade: li.quantidade,
                           unidadeMedida: li.unidadeMedida || "CX",
-                          precoUnitario: prod?.precoVendedor ? Number(prod.precoVendedor) : (prod?.precoMinimo ? Number(prod.precoMinimo) : li.precoUnitario),
+                          precoUnitario: li.precoUnitario,
                           precoMinimo: prod?.precoMinimo ? Number(prod.precoMinimo) : null,
                           precoVendedor: prod?.precoVendedor ? Number(prod.precoVendedor) : null,
                           grupo: prod?.grupo || "",

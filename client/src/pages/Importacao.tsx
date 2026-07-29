@@ -3803,7 +3803,25 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const [freteOverrideUsd, setFreteOverrideUsd] = useState<string | null>(po.freteOverrideUsd ? String(po.freteOverrideUsd) : null);
   const [freteEditing, setFreteEditing] = useState(false);
   // Vilela valor real: valor exato pago (quando preenchido, substitui a estimativa %)
-  const [vilelaReal, setVilelaReal] = useState(po.vilelaValorReal || '');
+  // Stored in USD internally. Detection logic:
+  // - If vilelaValorReal > totalCiRemessa (the CI value in USD), it's likely stored in BRL (legacy)
+  //   and needs conversion. Otherwise it's already in USD (new code saves in USD via toUsd()).
+  // - This replaces the old "> 100" heuristic which broke for legitimate USD values > 100.
+  const [vilelaRealUsd, setVilelaRealUsd] = useState(() => {
+    if (!po.vilelaValorReal) return '';
+    const vilelaNum = Number(po.vilelaValorReal);
+    if (isNaN(vilelaNum) || vilelaNum === 0) return '';
+    const ciNum = Number(po.totalCiRemessa || 0);
+    // If vilela > CI value, it's almost certainly stored in BRL (legacy behavior)
+    // because despesas de liberação should never exceed the CI value in USD
+    const isLikelyBrl = isLegacyInit && ciNum > 0 && vilelaNum > ciNum;
+    if (isLikelyBrl) {
+      return String((vilelaNum / legacyRate).toFixed(4));
+    }
+    return String(vilelaNum);
+  });
+  // Alias for backwards compatibility in calculations
+  const vilelaReal = vilelaRealUsd;
   
   // Helper: display value in current currency (uses legacyRate for legacy POs)
   // SPREAD: +R$0,20 na taxa efetiva para conversão USD→BRL
@@ -4761,20 +4779,21 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     {/* Campo Verde - Valor Real Vilela */}
                     <div>
                       <label className="text-[10px] text-green-700 font-medium">
-                        Valor Real Vilela (USD)
+                        Valor Real Vilela ({currency})
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-green-500 font-mono pointer-events-none">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-green-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
                         <input
+                          key={`vilela-real-${currency}`}
                           className="w-full border-2 border-green-300 bg-green-50 rounded px-3 py-2 pl-7 text-sm font-mono font-bold text-green-800 focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-green-300"
-                          placeholder="0.00"
+                          placeholder="0,00"
                           type="number"
                           step="any"
-                          value={vilelaReal}
-                          onChange={e => setVilelaReal(e.target.value)}
+                          defaultValue={displayVal(vilelaRealUsd)}
+                          onBlur={e => setVilelaRealUsd(toUsd(e.target.value))}
                         />
                       </div>
-                      {vilelaReal && (
+                      {vilelaRealUsd && (
                         <p className="text-[9px] text-green-600 mt-0.5 font-medium">
                           ✓ Usando valor real no cálculo
                         </p>

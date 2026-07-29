@@ -160,7 +160,12 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
 
       // Calculate values
       const valorCi = Number(po.totalCiRemessa || po.totalCiUsd || 0);
-      const vilelaReal = Number(po.vilelaValorReal || 0);
+      const vilelaRaw = Number(po.vilelaValorReal || 0);
+      // Detect if vilelaValorReal is stored in BRL (legacy) or USD (new)
+      // If value > CI (in USD), it's likely BRL legacy and needs conversion
+      const vilelaReal = (vilelaRaw > 0 && valorCi > 0 && vilelaRaw > valorCi)
+        ? vilelaRaw / poExchangeRate
+        : vilelaRaw;
       const despLib = isLegacyPo
         ? Number(po.despesasLiberacaoRemessa || 0)
         : (vilelaReal > 0 ? vilelaReal : valorCi * (vilelaPercent / 100));
@@ -347,7 +352,11 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
         }, 0);
 
         const valorCi = Number(po.totalCiRemessa || po.totalCiUsd || 0);
-        const vilelaReal = Number(po.vilelaValorReal || 0);
+        const vilelaRaw = Number(po.vilelaValorReal || 0);
+        // Detect if vilelaValorReal is stored in BRL (legacy) or USD (new)
+        const vilelaReal = (vilelaRaw > 0 && valorCi > 0 && vilelaRaw > valorCi)
+          ? vilelaRaw / poExchangeRate
+          : vilelaRaw;
         const despLib = isLegacyPo
           ? Number(po.despesasLiberacaoRemessa || 0)
           : (vilelaReal > 0 ? vilelaReal : valorCi * (vilelaPercent / 100));

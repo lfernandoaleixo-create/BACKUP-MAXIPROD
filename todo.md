@@ -6324,9 +6324,111 @@
 - [x] Ir a fundo nos códigos das APIs, fazer simulações manuais - feito para todas as 5
 
 ## Rastreio e Cobertura das Transportadoras (28/07/2026)
-- [ ] Pesquisar cobertura geográfica completa de cada transportadora (todos os 26 estados + DF)
-- [ ] Verificar se APIs retornam protocolo/código de rastreio na cotação ou após coleta
-- [ ] Verificar link de rastreio de cada transportadora
-- [ ] Implementar mecanismo automático: ao selecionar transportadora no pedido, gerar link de rastreio
-- [ ] Listar capacidades de cada API (cotação, rastreio, coleta, NF-e)
+- [x] Pesquisar cobertura geográfica completa de cada transportadora (todos os 26 estados + DF)
+- [x] Verificar se APIs retornam protocolo/código de rastreio na cotação ou após coleta
+- [x] Verificar link de rastreio de cada transportadora
+- [x] Implementar mecanismo automático: ao selecionar transportadora no pedido, gerar link de rastreio
+- [x] Listar capacidades de cada API (cotação, rastreio, coleta, NF-e)
+
+## Card Queijo Coalho - PO com Conversão 10k→5k (29/07/2026)
+- [x] Na coluna PO do card Queijo Coalho, mostrar total de caixas de 10k chegando nos containers
+- [x] Mostrar conversão para caixas de 5k (dobro das caixas de 10k)
+- [x] Identificar containers com produto 3,8x200mm (código 00335) como estoque Queijo Coalho
+- [x] Coluna Projetado = Aguardando Processamento (cx 5k) + PO convertido em cx 5k
+
+## Correções Transportadoras - CEP Origem e Protocolo (29/07/2026)
+- [x] Alterar CEP de origem de Contagem (32210130) para Ribeirão Vermelho-MG nas APIs: Alfa, Rodonaves, Braspress, Flor de Minas
+- [x] Manter SSW/Camilo com CEP de Perdões (37260000) - está correto
+- [x] Garantir captura do protocolo/código de cotação em todas as transportadoras (exceto Flor de Minas que não retorna)
+- [x] Exibir protocolo de cotação no resultado da simulação de frete
+
+## Ocultar 00649 do Card Estoque (29/07/2026)
+- [x] Ocultar produto 00649 (ESPETO BAMBU QUEIJO COALHO 3,8x200mm cx 10.000) do card Estoque - já tem card específico QC
+
+## KPI PO (A RECEBER) - Somar todos os cards (29/07/2026)
+- [x] Card PO (A RECEBER) na seção IMPORTAÇÃO deve somar POs de TODOS os produtos (Estoque + Queijo Coalho + outros)
+
+## Correções Pedido de Venda + Estoque QC no App (29/07/2026)
+- [x] Bug: Botão Consulta Serasa não aparece no pedido de venda para usuário Juvenal (que tem permissão Consulta Serasa ativa)
+- [x] Adicionar estoque Queijo Coalho no aplicativo de vendas (busca de produtos) - além de Bambu e Madeira
+
+## Bugs Pedido de Venda + Permissões (29/07/2026)
+- [x] Bug: Botão Consulta Serasa não aparece no pedido de venda normal (não simulação) quando cliente é selecionado
+- [x] Bug: Aba VENDAS continua desabilitada para Patrick mesmo após ticar permissão Vendas no topo
+- [x] Bug: Ticagem de permissões granulares está lenta - implementar atualização otimista
+
+## Organização Máxima de Permissões + Auto-criação Operadores (29/07/2026)
+- [x] Permissões granulares Painel Gestores: se ticado, operador vê apenas os gestores ticados
+- [x] Permissões granulares Painel Vendedores: se ticado, operador vê apenas os vendedores ticados
+- [x] Se operador tem apenas Painel Gestores ticado, NÃO vê Painel Vendedores (e vice-versa)
+- [x] Vendedores criados no painel dos gestores devem aparecer automaticamente como operadores na aba Configurações
+- [x] Vendedor-operador só consegue logar se o gestor dele tiver liberado acesso
+- [x] Cada vendedor-operador deve ter sua própria senha na lista de operadores
+
+## Fix PDF Produção - Texto Sobreposto (29/07/2026)
+- [x] Corrigir sobreposição de texto no PDF da aba Produção (coluna Tipo sobrepõe coluna Qtd nas máquinas)
+
+## Bug: Valor Real Vilela (USD) no Container ZY2026-018 (29/07/2026)
+- [x] Campo "Valor Real Vilela (USD)" na aba Importação está ficando só em USD (mostra $ 0.00), precisa exibir corretamente
+
+## Bug: Crash "Unexpected Error" ao abrir estoque no Painel do Vendedor (Queijo Coalho)
+- [x] Diagnosticar: StockCategorySection e ConfigCategorySection aceitavam apenas color="amber"|"green" mas eram chamados com color="teal" para Queijo Coalho
+- [x] Corrigir: adicionar "teal" ao tipo union e classes de cor em ambos componentes
+- [x] Verificar compilação TypeScript sem erros
+
+## Bug: Valor Real Vilela muda ao salvar (Importação)
+- [x] Diagnosticar: lógica de detecção legado BRL vs USD incorreta (comparava > 100 mas USD pode ser > 100)
+- [x] Corrigir frontend: usar comparação com totalCiRemessa para detectar se valor é BRL legado
+- [x] Corrigir server importRouter.ts: mesma lógica de detecção nos cálculos
+- [x] Corrigir custoPdfExport.ts: mesma lógica de detecção na exportação PDF
+
+## Feature: Liberar variações automaticamente quando produto mãe é liberado para vendedor
+- [x] Quando gestor libera produto mãe (ex: 00024), incluir automaticamente as variações (ex: 00025, 00023) na consulta de produtos do vendedor
+- [x] Vendedor deve poder ver e escolher as variações na tela de pedido/venda
+
+## Bug: Produtos da tabela de preços não aparecem na busca de novo pedido
+- [x] Produtos que estão na tabela de preços do vendedor devem aparecer na busca de novo pedido mesmo sem estoque (ex: 00066 para Daniel)
+- [x] Remover filtro de estoque > 0 no getProductsForSeller - mostrar todos os produtos da tabela
+
+## Bug: Peso e dimensões não carregados para todos os produtos
+- [x] Garantir que peso bruto e dimensões de todos os produtos sejam carregados do Maxiprod (ex: 00066 sem peso) - RESOLVIDO: produto já tinha peso no DB (0.00314*5000=15.7kg), mas não aparecia pois filtro qty>0 excluía
+- [x] Verificar se a sincronização GraphQL está trazendo pesoBruto e descricaoComplementar para todos os itens - CONFIRMADO: dados estão no DB
+
+## Melhoria: Busca parcial na barra de pesquisa de novo pedido
+- [x] Busca deve funcionar por qualquer parte da descrição (ex: digitar "doce" deve encontrar "ALGODÃO DOCE")
+
+## Feature: Repetir último pedido com valores exatos
+- [x] Ao clicar "Repetir último pedido", puxar literalmente o último pedido com preços, descontos e quantidades idênticos ao original (Maxiprod ou app de venda)
+
+## Feature: Relatório PDF automático em toda simulação de frete
+- [ ] Sempre que fizer simulação de frete, gerar automaticamente um relatório PDF detalhado (medidas, pesos, cubagem, ranking, protocolos)
+
+## Bug: Protocolo da Camilo (SSW) não está sendo puxado
+- [x] A API SSW (Camilo) retorna um número de cotação (ex: 2768465) - já estava capturando via numeroCotacao
+- [x] Verificar resposta da API SSW e extrair o campo de protocolo/número de cotação
+
+## Bug: Protocolo da Rodonaves não está sendo puxado
+- [x] A API Rodonaves retorna um código de cotação (ex: 30704329) - já estava capturando via ProtocolId/ProtocolNumber (type fix)
+
+## Melhoria: Busca parcial (contains) em TODAS as barras de pesquisa do dashboard
+- [x] Padronizar busca: qualquer texto digitado encontra tudo que contenha aquele texto (ex: "0" encontra tudo com 0, "300" encontra tudo com 300, "4,5" encontra tudo com 4,5)
+- [x] Estoque (Home.tsx) - barras de pesquisa (já usava .includes())
+- [x] Vendas/Pedidos - barras de pesquisa (já usava .includes())
+- [x] Gestão Comercial - barras de pesquisa (já usava .includes())
+- [x] Faturamento - barras de pesquisa (já usava .includes())
+- [x] Financeiro - barras de pesquisa (já usava .includes())
+- [x] Importação - barras de pesquisa (já usava .includes())
+- [x] VendedorDetalhe - barras de pesquisa (estoque + pedido) - corrigido split para contains simples
+- [x] SettingsPage - barras de pesquisa (já usava .includes())
+- [x] Todas as outras páginas com campo de busca - verificado, todas usam .includes()
+
+## Feature: Persistência do carrinho de pedido + botão flutuante "Continuar Pedido"
+- [x] Salvar itens do pedido em andamento no localStorage (produtos, quantidades, preços, dados do cliente)
+- [x] Ao navegar para outra aba/página, o pedido em andamento não se perde
+- [x] Botão flutuante "Continuar Pedido" visível em qualquer aba do sistema quando há pedido em andamento
+- [x] Clicar no botão leva direto de volta ao pedido em andamento
+- [x] Pedido só desaparece quando: concluído com sucesso OU excluído manualmente pelo vendedor
+- [x] Funcionar mesmo se fechar o navegador e abrir novamente
+- [x] Adicionar máquinas 4, 5, 6, 7 ao setor Máquina Pirografar (sectorId=9) - INSERT no DB + UPDATE quantidadeEquipamentos para 7
 - [x] Bug: Importação Custo Mercadoria - valores monetários (frete terrestre, DIFAL, comissão) acrescentam centavos ao recarregar página (ex: R$20.000 vira R$20.000,01). Causa: autoSaveProductCosts salvava USD direto no campo BRL + .toFixed(2)/.toFixed(4) causava drift de arredondamento. Fix: converter para BRL com .toFixed(6) antes de salvar, usar precisão total na divisão de reload, e salvar taxa de câmbio usada.
+

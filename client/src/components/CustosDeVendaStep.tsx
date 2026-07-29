@@ -825,9 +825,16 @@ export default function CustosDeVendaStep({
                       <div className="divide-y divide-slate-200/50">
                         {quotes.map((quote: any, idx: number) => (
                           <div key={idx} className="px-3 py-1.5 flex items-center justify-between">
-                            <p className="text-[9px] text-slate-500">
-                              CNPJ: <span className="font-medium text-slate-700 dark:text-slate-200">{formatCnpj(quote.cnpj)}</span>
-                            </p>
+                            <div>
+                              <p className="text-[9px] text-slate-500">
+                                CNPJ: <span className="font-medium text-slate-700 dark:text-slate-200">{formatCnpj(quote.cnpj)}</span>
+                              </p>
+                              {quote.protocolo && (
+                                <p className="text-[8px] text-slate-400">
+                                  Protocolo: <span className="font-mono font-medium text-slate-600 dark:text-slate-300">{quote.protocolo}</span>
+                                </p>
+                              )}
+                            </div>
                             {!quote.error ? (
                               <div className="flex items-center gap-2">
                                 <div className="text-right">

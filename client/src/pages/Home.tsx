@@ -4438,7 +4438,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
 }
 
 /* --- Queijo Coalho (Palitos Premium) Section --- */
-const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647"];
+const QUEIJO_COALHO_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00335", "00649"];
 
 function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { items: StockItem[]; showHistory?: boolean }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -4491,6 +4491,16 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     return items.find(i => i.codigoItem === "00648" && !i.isChild);
   }, [items]);
 
+  // Get product 00335 (ESPETO DE MADEIRA 3,8*200MM 10.000) - container product that feeds QC stock
+  // 1 cx de 10k = 2 cx de 5k (the selling unit)
+  const item00335 = useMemo(() => {
+    return items.find(i => i.codigoItem === "00335");
+  }, [items]);
+  const po00335Cx10k = item00335?.poCx ?? 0; // caixas de 10.000 unidades
+  const po00335Cx5k = po00335Cx10k * 2; // conversão: dobro em caixas de 5.000
+  const po00335Lotes = item00335?.poLotes ?? [];
+  const po00335Fornecedores = item00335?.poFornecedores ?? [];
+
   // Build rows: parent first, then variants as expandable children
   const rows = useMemo(() => {
     if (!parentItem) return [];
@@ -4499,6 +4509,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       descricaoItem: string;
       estoqueMaxiprod: number;
       poCx: number;
+      poCx10k: number; // PO em caixas de 10k (containers 00335)
+      poCx5k: number; // PO convertido em caixas de 5k (×2)
       poLotes: POLote[];
       poFornecedores: string[];
       estoqueProjetado: number;
@@ -4516,7 +4528,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     }> = [];
     // Parent row
     const parentStock = qcStockMap.get(parentItem.codigoItem) || { maxiprod: 0, processado: 0, regulador: 0 };
-    const parentPo = parentItem.poCx ?? 0;
+    // PO do 00648 próprio + PO do 00335 (containers 10k) convertido para cx 5k
+    const parentPoOwn = parentItem.poCx ?? 0;
+    const parentPo = parentPoOwn + po00335Cx5k; // Total PO em cx de 5k
     // Sum variant pedidos directly (stockProcessor's aggregation is broken for this product
     // because variants are in CX but parent is in UN with fator=5000)
     // Para QC: usar quantidadeOriginalCx (total do pedido) ao invés de pedidosCx (total - faturada)
@@ -4533,7 +4547,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     const parentPedidos = parentPedidosOriginal - parentFaturados;
     // Processado ajustado = processado_db - faturados (o que saiu do estoque)
     const parentProcessadoAjustado = parentStock.processado - parentFaturados;
-    const parentProjetado = parentPo + parentStock.maxiprod;
+    // Projetado = Aguardando Processamento (cx 5k) + PO(mar) convertido em cx 5k
+    const parentProjetado = parentStock.maxiprod + parentPo;
     // Disponível = processado ajustado - pedidos pendentes
     const parentDisponivel = parentProcessadoAjustado - parentPedidos;
     let parentStatus: "verde" | "amarelo" | "vermelho" = "verde";
@@ -4546,8 +4561,10 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       descricaoItem: parentItem.descricaoItem,
       estoqueMaxiprod: parentStock.maxiprod,
       poCx: parentPo,
-      poLotes: parentItem.poLotes || [],
-      poFornecedores: parentItem.poFornecedores || [],
+      poCx10k: po00335Cx10k,
+      poCx5k: po00335Cx5k,
+      poLotes: [...(parentItem.poLotes || []), ...po00335Lotes],
+      poFornecedores: [...new Set([...(parentItem.poFornecedores || []), ...po00335Fornecedores])],
       estoqueProjetado: parentProjetado,
       estoqueProcessado: parentProcessadoAjustado,
       estoqueProcessadoBruto: parentStock.processado,
@@ -4560,7 +4577,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
       status: parentStatus,
     });
     return result;
-  }, [parentItem, qcStockMap]);
+  }, [parentItem, qcStockMap, po00335Cx10k, po00335Cx5k, po00335Lotes, po00335Fornecedores]);
 
   // Variant rows (from parent's variants array)
   const variantRows = useMemo(() => {
@@ -4887,15 +4904,24 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                         <span className="text-sm font-semibold text-orange-700">{formatNumber(row.estoqueMaxiprod, true)} cx</span>
                       )}
                     </td>
-                    {/* PO (Mar) - POCell style with tooltip */}
+                    {/* PO (Mar) - POCell style with tooltip - shows 10k→5k conversion */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
                       {row.poCx > 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="cursor-help inline-block">
+                              {/* Show cx de 5k (converted) as main value */}
                               <span className="font-semibold text-sm text-blue-600">
                                 {formatNumber(row.poCx, true)} cx
                               </span>
+                              {/* Show 10k→5k conversion info when there are containers */}
+                              {row.poCx10k > 0 && (
+                                <div className="text-[9px] text-blue-500/70 mt-0.5">
+                                  <span className="bg-blue-50 dark:bg-blue-900/30 px-1 py-0.5 rounded">
+                                    {formatNumber(row.poCx10k, true)} cx 10k → {formatNumber(row.poCx5k, true)} cx 5k
+                                  </span>
+                                </div>
+                              )}
                               {row.poLotes.length > 0 && (
                                 <div className="text-[10px] text-blue-400 flex items-center gap-0.5 mt-0.5 justify-center">
                                   <CalendarDays className="w-3 h-3 flex-shrink-0" />
@@ -4909,14 +4935,25 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                               )}
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="left" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl">
+                          <TooltipContent side="left" className="max-w-[420px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl">
                             <div className="p-3 space-y-2">
                               <p className="font-semibold text-sm flex items-center gap-1.5">
                                 <Ship className="w-4 h-4 text-blue-500" />
-                                Pedidos de Compra (PO)
+                                Pedidos de Compra (PO) — Queijo Coalho
                               </p>
+                              {/* Conversion summary */}
+                              {row.poCx10k > 0 && (
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded p-2">
+                                  <p className="text-xs font-medium text-blue-800 dark:text-blue-200">
+                                    📦 Containers: <strong>{formatNumber(row.poCx10k, true)} cx de 10.000 un</strong>
+                                  </p>
+                                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-0.5">
+                                    → Conversão: <strong>{formatNumber(row.poCx5k, true)} cx de 5.000 un</strong> (unidade de venda)
+                                  </p>
+                                </div>
+                              )}
                               <p className="text-xs text-slate-500">
-                                Total: <strong className="text-slate-800">{formatNumber(row.poCx, true)} cx</strong> a receber
+                                Total PO (cx 5k): <strong className="text-slate-800 dark:text-slate-200">{formatNumber(row.poCx, true)} cx</strong> a receber
                               </p>
                               {row.poLotes.length > 0 && (
                                 <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
@@ -4925,7 +4962,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                       <tr>
                                         <th className="px-2 py-1 text-left font-medium">PO</th>
                                         <th className="px-2 py-1 text-left font-medium">Entrega</th>
-                                        <th className="px-2 py-1 text-right font-medium">Qtd (cx)</th>
+                                        <th className="px-2 py-1 text-right font-medium">Qtd (cx 10k)</th>
+                                        <th className="px-2 py-1 text-right font-medium">→ cx 5k</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y">
@@ -4947,6 +4985,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                           <td className="px-2 py-1 text-right font-semibold">
                                             {formatNumber(lote.quantidade)}
                                           </td>
+                                          <td className="px-2 py-1 text-right font-semibold text-emerald-600">
+                                            {formatNumber(lote.quantidade * 2)}
+                                          </td>
                                         </tr>
                                       ))}
                                     </tbody>
@@ -4965,11 +5006,26 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                         <span className="text-sm text-slate-400">—</span>
                       )}
                     </td>
-                    {/* Projetado */}
+                    {/* Projetado = Aguardando Processamento + PO(cx 5k) */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                      <span className="text-sm font-semibold text-indigo-700">
-                        {formatNumber(row.estoqueProjetado, true)} cx
-                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-help inline-block">
+                            <span className="text-sm font-semibold text-indigo-700">
+                              {formatNumber(row.estoqueProjetado, true)} cx
+                            </span>
+                            <div className="text-[9px] text-indigo-400 mt-0.5">
+                              {formatNumber(row.estoqueMaxiprod, true)} + {formatNumber(row.poCx, true)}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[280px] p-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-lg">
+                          <p className="text-xs font-medium">Projetado = Aguardando Processamento + PO (cx 5k)</p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {formatNumber(row.estoqueMaxiprod, true)} cx (aguardando) + {formatNumber(row.poCx, true)} cx (PO) = {formatNumber(row.estoqueProjetado, true)} cx
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </td>
                     {/* Produto Acabado (editable by Maria) */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
@@ -5685,14 +5741,16 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const totalPedidosCx = importItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
   // Disponível = Estoque Total (importação) - Pedidos (apenas importação)
   const totalDisponivelCx = totalEstoqueCx - totalPedidosCx;
-  // KPI PO: somar em caixas usando poLotes (quantidade original da PO)
-  // Para produtos kg (ex: 00058), poCx está em kg para a tabela, mas o KPI deve mostrar caixas
-  const totalPOCx = importItems.reduce((sum, i) => {
-    if (i.poLotes && i.poLotes.length > 0) {
-      return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
-    }
-    return sum + (i.poCx ?? 0);
-  }, 0);
+  // KPI PO: somar em caixas usando poLotes de TODOS os itens (mesmo valor do card grande de POs)
+  // Sem conversão 10k→5k - mostra quantidade bruta dos pedidos de compra
+  const totalPOCx = useMemo(() => {
+    return items.filter(i => !i.isChild).reduce((sum, i) => {
+      if (i.poLotes && i.poLotes.length > 0) {
+        return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
+      }
+      return sum + (i.poCx ?? 0);
+    }, 0);
+  }, [items]);
   // Projetado = Disponível + PO
   const totalProjetadoCx = totalDisponivelCx + totalPOCx;
 

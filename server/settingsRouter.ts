@@ -810,7 +810,35 @@ export const settingsRouter = router({
       const rows = await db.select().from(operators)
         .where(and(eq(operators.password, input.password), eq(operators.active, true)));
       if (rows.length > 0) {
-        const op = rows[0];
+        // Fetch all seller_permissions with this password to check authorization
+        const matchingSellers = await db.select().from(sellerPermissions)
+          .where(eq(sellerPermissions.password, input.password));
+
+        // Find the first operator that is either NOT a seller, or IS an authorized seller
+        let validOp = null;
+        for (const op of rows) {
+          const sellerForThisOp = matchingSellers.find(
+            s => s.sellerName.toUpperCase() === op.name.toUpperCase()
+          );
+          if (!sellerForThisOp) {
+            // Not a seller-operator, always allowed
+            validOp = op;
+            break;
+          }
+          if (sellerForThisOp.authorized) {
+            // Is a seller-operator and is authorized
+            validOp = op;
+            break;
+          }
+          // This operator is a seller that is NOT authorized - skip and try next
+        }
+
+        if (!validOp) {
+          // All matching operators are unauthorized sellers
+          return { success: false, loginType: "operator" as const, operator: null, granularPermissions: {} as Record<string, boolean>, seller: null, error: "Acesso n\u00e3o autorizado. Aguarde libera\u00e7\u00e3o do gestor." };
+        }
+
+        const op = validOp;
         // Also fetch granular permissions
         const granPerms = await db.select().from(operatorGranularPermissions)
           .where(eq(operatorGranularPermissions.operatorId, op.id));

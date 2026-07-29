@@ -1560,9 +1560,12 @@ export const importRouter = router({
         
         // Despesas Liberação: use vilelaValorReal if set, otherwise estimate
         const totalCi = Number(po.totalCiRemessa || 0);
-        const despesasLiberacao = po.vilelaValorReal 
-          ? Number(po.vilelaValorReal) 
-          : (totalCi * (vilelaPercent / 100));
+        const vilelaRaw = Number(po.vilelaValorReal || 0);
+        // Detect if vilelaValorReal is BRL (legacy, value > CI) or USD (new)
+        const vilelaUsd = (vilelaRaw > 0 && totalCi > 0 && vilelaRaw > totalCi)
+          ? vilelaRaw / rate
+          : vilelaRaw;
+        const despesasLiberacao = vilelaUsd > 0 ? vilelaUsd : (totalCi * (vilelaPercent / 100));
         
         const freteTerrestreSP = Number(po.freteTermestreRemessa || 0) / rate; // stored in BRL, convert to USD
         const difalVal = Number(po.difalValor || 0) / rate;
@@ -1822,11 +1825,14 @@ export const importRouter = router({
       }
 
       const totalCi = Number(firstProd.totalCiRemessa || 0);
-      const despesasLiberacao = firstProd.vilelaValorReal && Number(firstProd.vilelaValorReal) > 0
-        ? Number(firstProd.vilelaValorReal)
-        : (totalCi * (vilelaPercent / 100));
-
       const poRate = Number(firstProd.valorDolar1 || firstProd.valorDolar1Remessa || currentRate);
+      const vilelaRaw = Number(firstProd.vilelaValorReal || 0);
+      // Detect if vilelaValorReal is BRL (legacy, value > CI) or USD (new)
+      const vilelaUsd = (vilelaRaw > 0 && totalCi > 0 && vilelaRaw > totalCi)
+        ? vilelaRaw / poRate
+        : vilelaRaw;
+      const despesasLiberacao = vilelaUsd > 0 ? vilelaUsd : (totalCi * (vilelaPercent / 100));
+
       const freteTerrestreSP = Number(firstProd.freteTermestreRemessa || 0) / poRate;
       const difalVal = Number(firstProd.difalValor || 0) / poRate;
       const comSilverio = Number(firstProd.comissaoSilverio || 0) / poRate;
@@ -1954,11 +1960,14 @@ export const importRouter = router({
       }
 
       const totalCi = Number(firstProd.totalCiRemessa || 0);
-      const despesasLiberacao = firstProd.vilelaValorReal && Number(firstProd.vilelaValorReal) > 0
-        ? Number(firstProd.vilelaValorReal)
-        : (totalCi * (vilelaPercent / 100));
-
       const poRate = Number(firstProd.valorDolar1 || firstProd.valorDolar1Remessa || currentRate);
+      const vilelaRaw = Number(firstProd.vilelaValorReal || 0);
+      // Detect if vilelaValorReal is BRL (legacy, value > CI) or USD (new)
+      const vilelaUsd = (vilelaRaw > 0 && totalCi > 0 && vilelaRaw > totalCi)
+        ? vilelaRaw / poRate
+        : vilelaRaw;
+      const despesasLiberacao = vilelaUsd > 0 ? vilelaUsd : (totalCi * (vilelaPercent / 100));
+
       const freteTerrestreSP = Number(firstProd.freteTermestreRemessa || 0) / poRate;
       const difalVal = Number(firstProd.difalValor || 0) / poRate;
       const comSilverio = Number(firstProd.comissaoSilverio || 0) / poRate;

@@ -380,20 +380,8 @@ function GestorSellerPicker({ onLogout }: { onLogout: () => void }) {
 
   const sellers = useMemo(() => {
     if (!permissionsQuery.data) return [];
-    // Filter sellers by granular permissions: only show sellers that the operator has gc.verVendedor.{slug} enabled
-    // Admin (Fernando, Guilherme, Bruno) see all sellers
-    const isAdmin = operator?.name === "Fernando" || operator?.name === "Guilherme" || operator?.name === "Bruno";
-    if (isAdmin) {
-      return permissionsQuery.data.sort((a, b) => a.sellerName.localeCompare(b.sellerName, 'pt-BR'));
-    }
-    // Check if this operator has ANY gc.verVendedor.* permissions configured
-    // If none exist, show all sellers (backwards compatible - permissions not yet configured)
-    const hasAnySellerVisibilityPerm = Object.keys(granularPermissions).some(k => k.startsWith('gc.verVendedor.'));
-    if (!hasAnySellerVisibilityPerm) {
-      // No seller visibility permissions configured yet - show all (backwards compatible)
-      return permissionsQuery.data.sort((a, b) => a.sellerName.localeCompare(b.sellerName, 'pt-BR'));
-    }
-    // Filter: only show sellers that are explicitly enabled
+    // STRICT: Only show sellers that are EXPLICITLY enabled via gc.verVendedor.{slug}
+    // No fallbacks - only what is ticked is visible
     return permissionsQuery.data
       .filter(s => {
         const slug = s.sellerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");

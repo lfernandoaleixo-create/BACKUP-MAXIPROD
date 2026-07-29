@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -447,7 +447,18 @@ export const salesOrderRouter = router({
       // Combine manual + price table codes for visibility
       const visibleCodes = new Set([...Array.from(manualVisibleCodes), ...Array.from(priceTableCodes)]);
 
-      // Get stock items with available quantity
+      // Auto-include child variants of visible parent products
+      const allVariants = await db.select({
+        parentCode: productVariants.parentCode,
+        childCode: productVariants.childCode,
+      }).from(productVariants);
+      for (const v of allVariants) {
+        if (visibleCodes.has(v.parentCode)) {
+          visibleCodes.add(v.childCode);
+        }
+      }
+
+      // Get stock items (include all items from price table, even with 0 stock)
       const items = await db.select({
         codigoItem: stockItems.codigoItem,
         descricaoItem: stockItems.descricaoItem,
@@ -465,8 +476,7 @@ export const salesOrderRouter = router({
         estado: stockItems.estado,
         unidadeDeVendaCodigo: stockItems.unidadeDeVendaCodigo,
       })
-      .from(stockItems)
-      .where(sql`CAST(${stockItems.quantidade} AS DECIMAL) > 0`);
+      .from(stockItems);
 
       // Filter by visibility: only show products in seller's price table or manual overrides
       const filteredItems = visibleCodes.size > 0
@@ -2159,7 +2169,7 @@ export const salesOrderRouter = router({
     .input(z.object({
       cnpjIndex: z.number().min(0).max(2),
       cnpjDestinatario: z.string(),
-      cepOrigem: z.string().default("32210130"), // CEP padrão Grupo Fox - Contagem/MG
+      cepOrigem: z.string().default("37264000"), // CEP padrão Grupo Fox - Ribeirão Vermelho/MG
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2176,7 +2186,7 @@ export const salesOrderRouter = router({
   quoteAllBraspress: publicProcedure
     .input(z.object({
       cnpjDestinatario: z.string(),
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2193,7 +2203,7 @@ export const salesOrderRouter = router({
   quoteAlfa: publicProcedure
     .input(z.object({
       cnpjIndex: z.number().min(0).max(1), // 0 = CNPJ 36562762000129, 1 = CNPJ 50128808000127
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2231,7 +2241,7 @@ export const salesOrderRouter = router({
   /** Quote freight via all Alfa Transportes CNPJs simultaneously */
   quoteAllAlfa: publicProcedure
     .input(z.object({
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2255,7 +2265,7 @@ export const salesOrderRouter = router({
   quoteAllCarriers: publicProcedure
     .input(z.object({
       cnpjDestinatario: z.string().optional(),
-      cepOrigem: z.string().default("32210130"),
+      cepOrigem: z.string().default("37264000"),
       cepDestino: z.string(),
       valorMercadoria: z.number(),
       peso: z.number(),
@@ -2397,6 +2407,7 @@ export const salesOrderRouter = router({
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo || "N/A",
+            protocolo: r.protocolo || undefined,
             // Alfa tracking: via API interna (trackAllAlfaCnpjs) - sem link público
             trackingUrl: "rastreio-interno",
             error: r.error,
@@ -2420,6 +2431,7 @@ export const salesOrderRouter = router({
             cnpj: r.cnpj,
             totalFrete: r.totalFrete,
             prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A",
+            protocolo: r.protocolo || undefined,
             // SSW/Camilo tracking: CNPJ remetente 19451038000109 + NF (available after NF)
             trackingUrl: `https://ssw.inf.br/2/rastreamento`,
             error: r.error,
