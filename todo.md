@@ -6459,4 +6459,12 @@
 - [x] Remover "Delete Test" da lista de gestores/vendedores
 - [x] Remover duplicidades de nomes na lista de pessoas (ex: "JORDÃO LAINE" e "Jordao", "JUVENAL TEIXEIRA" e "Juvenal Teixeira")
 - [x] Linha do Tempo: incluir TODOS os operadores (quem tem senha) na lista de pessoas, não apenas gestores e vendedores do seller_permissions
-- [ ] Custos de Venda - UX transportadora: ao abrir uma transportadora, mostrar APENAS o botão "Simular Frete" visível. CNPJs cadastrados, banco de dados e demais informações ficam em card recolhido/colapsável que só expande se o usuário quiser. Após clicar simular, mostrar os valores da simulação.
+- [x] Custos de Venda - UX transportadora: ao abrir uma transportadora, mostrar APENAS o botão "Simular Frete" visível. CNPJs cadastrados, banco de dados e demais informações ficam em card recolhido/colapsável que só expande se o usuário quiser. Após clicar simular, mostrar os valores da simulação.
+
+## Simulação de Frete - Persistência, Relatório PDF e Protocolo
+- [x] Simulação de frete persistente: ao simular, o resultado fica salvo naquele pedido (mesmo navegando e voltando, a simulação permanece)
+- [x] Ao clicar "Usar" uma transportadora: gerar automaticamente relatório PDF com todos os detalhes (metragem, quilos, cubagem, como cada transportadora funciona, o que retorna, todos os protocolos de cada uma)
+- [x] Opção de baixar e opção de visualizar o relatório PDF gerado
+- [x] Ao selecionar "Usar" uma transportadora: inserir automaticamente o protocolo/código de cotação na revisão do pedido (para defesa caso a transportadora questione o valor do frete gerado pela API)
+- [x] O código de cotação/protocolo deve ser gerado obrigatoriamente em toda simulação (já existe lógica implementada para isso)
+- [x] O PDF gerado fica salvo no histórico de simulação das transportadoras (para consulta futura a qualquer momento)

@@ -3320,3 +3320,36 @@ export const orderTimelineRules = mysqlTable("order_timeline_rules", {
 });
 export type OrderTimelineRule = typeof orderTimelineRules.$inferSelect;
 export type InsertOrderTimelineRule = typeof orderTimelineRules.$inferInsert;
+
+// ===== FREIGHT SIMULATIONS =====
+// Persistência das simulações de frete (fica salvo no pedido mesmo navegando e voltando)
+export const freightSimulations = mysqlTable("freight_simulations", {
+  id: int("id").primaryKey().autoincrement(),
+  // Link to salesOrders (nullable - pode ser simulação avulsa)
+  orderId: int("order_id"),
+  // Dados da simulação
+  cepDestino: varchar("cep_destino", { length: 10 }).notNull(),
+  cnpjDestinatario: varchar("cnpj_destinatario", { length: 20 }),
+  valorMercadoria: decimal("valor_mercadoria", { precision: 18, scale: 2 }).notNull(),
+  pesoTotal: decimal("peso_total", { precision: 12, scale: 3 }).notNull(),
+  volumes: int("volumes").notNull(),
+  cubagemTotal: decimal("cubagem_total", { precision: 12, scale: 6 }).notNull(),
+  tipoContribuinte: varchar("tipo_contribuinte", { length: 30 }),
+  // Resultados (JSON com todas as cotações)
+  results: json("results").notNull(),
+  // Transportadora selecionada (quando clica "Usar")
+  selectedTransportadora: varchar("selected_transportadora", { length: 100 }),
+  selectedCnpj: varchar("selected_cnpj", { length: 20 }),
+  selectedValor: decimal("selected_valor", { precision: 18, scale: 2 }),
+  selectedProtocolo: varchar("selected_protocolo", { length: 100 }),
+  // PDF do relatório (URL do S3)
+  pdfUrl: text("pdf_url"),
+  // Quem simulou
+  operatorId: int("operator_id"),
+  operatorName: varchar("operator_name", { length: 200 }),
+  // Timestamps
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type FreightSimulation = typeof freightSimulations.$inferSelect;
+export type InsertFreightSimulation = typeof freightSimulations.$inferInsert;

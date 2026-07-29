@@ -1,0 +1,22 @@
+CREATE TABLE `freight_simulations` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`order_id` int,
+	`cep_destino` varchar(10) NOT NULL,
+	`cnpj_destinatario` varchar(20),
+	`valor_mercadoria` decimal(18,2) NOT NULL,
+	`peso_total` decimal(12,3) NOT NULL,
+	`volumes` int NOT NULL,
+	`cubagem_total` decimal(12,6) NOT NULL,
+	`tipo_contribuinte` varchar(30),
+	`results` json NOT NULL,
+	`selected_transportadora` varchar(100),
+	`selected_cnpj` varchar(20),
+	`selected_valor` decimal(18,2),
+	`selected_protocolo` varchar(100),
+	`pdf_url` text,
+	`operator_id` int,
+	`operator_name` varchar(200),
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `freight_simulations_id` PRIMARY KEY(`id`)
+);

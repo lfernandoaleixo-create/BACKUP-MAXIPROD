@@ -14,6 +14,7 @@ import { trackingUpdateCronHandler } from "../trackingUpdateHandler";
 import { diarySnapshotCronHandler } from "../diarySnapshotHandler";
 import { importPdfExportHandler } from "../importPdfExport";
 import { custoPdfExportHandler } from "../custoPdfExport";
+import { freightPdfExportHandler } from "../freightPdfExport";
 import { registerStorageProxy } from "./storageProxy";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -52,6 +53,8 @@ async function startServer() {
   // PDF export endpoints
   app.get("/api/import/export-pdf", importPdfExportHandler);
   app.get("/api/import/export-custo-pdf", custoPdfExportHandler);
+  // Freight simulation PDF export
+  app.get("/api/freight/export-pdf/:simulationId", freightPdfExportHandler);
 
   // tRPC API
   app.use(

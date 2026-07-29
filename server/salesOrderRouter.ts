@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules, freightSimulations } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -3885,5 +3885,114 @@ export const salesOrderRouter = router({
         orderDate: latestDate || null,
         pedidoNumber: latestPedido || null,
       };
+    }),
+
+  // ===== FREIGHT SIMULATION PERSISTENCE =====
+  /** Save freight simulation results to DB */
+  saveFreightSimulation: publicProcedure
+    .input(z.object({
+      orderId: z.number().optional(),
+      cepDestino: z.string(),
+      cnpjDestinatario: z.string().optional(),
+      valorMercadoria: z.number(),
+      pesoTotal: z.number(),
+      volumes: z.number(),
+      cubagemTotal: z.number(),
+      tipoContribuinte: z.string().optional(),
+      results: z.any(), // JSON array of quotes
+      operatorId: z.number().optional(),
+      operatorName: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      const [inserted] = await db!.insert(freightSimulations).values({
+        orderId: input.orderId || null,
+        cepDestino: input.cepDestino,
+        cnpjDestinatario: input.cnpjDestinatario || null,
+        valorMercadoria: String(input.valorMercadoria),
+        pesoTotal: String(input.pesoTotal),
+        volumes: input.volumes,
+        cubagemTotal: String(input.cubagemTotal),
+        tipoContribuinte: input.tipoContribuinte || null,
+        results: input.results,
+        operatorId: input.operatorId || null,
+        operatorName: input.operatorName || null,
+      });
+      return { id: inserted.insertId };
+    }),
+
+  /** Get latest freight simulation for an order (by CEP + CNPJ combo) */
+  getFreightSimulation: publicProcedure
+    .input(z.object({
+      cepDestino: z.string(),
+      cnpjDestinatario: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const conditions = [sql`${freightSimulations.cepDestino} = ${input.cepDestino}`];
+      if (input.cnpjDestinatario) {
+        conditions.push(sql`${freightSimulations.cnpjDestinatario} = ${input.cnpjDestinatario}`);
+      }
+      const [result] = await db!.select()
+        .from(freightSimulations)
+        .where(sql`${sql.join(conditions, sql` AND `)}`) 
+        .orderBy(sql`${freightSimulations.createdAt} DESC`)
+        .limit(1);
+      return result || null;
+    }),
+
+  /** Mark a freight simulation as selected (when user clicks 'Usar') */
+  selectFreightCarrier: publicProcedure
+    .input(z.object({
+      simulationId: z.number(),
+      selectedTransportadora: z.string(),
+      selectedCnpj: z.string().optional(),
+      selectedValor: z.number(),
+      selectedProtocolo: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      await db!.update(freightSimulations)
+        .set({
+          selectedTransportadora: input.selectedTransportadora,
+          selectedCnpj: input.selectedCnpj || null,
+          selectedValor: String(input.selectedValor),
+          selectedProtocolo: input.selectedProtocolo,
+          updatedAt: new Date(),
+        })
+        .where(sql`${freightSimulations.id} = ${input.simulationId}`);
+      return { success: true };
+    }),
+
+  /** Update PDF URL for a freight simulation */
+  updateFreightSimulationPdf: publicProcedure
+    .input(z.object({
+      simulationId: z.number(),
+      pdfUrl: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      await db!.update(freightSimulations)
+        .set({ pdfUrl: input.pdfUrl, updatedAt: new Date() })
+        .where(sql`${freightSimulations.id} = ${input.simulationId}`);
+      return { success: true };
+    }),
+
+  /** Get freight simulation history (for a specific CEP or all) */
+  getFreightSimulationHistory: publicProcedure
+    .input(z.object({
+      cepDestino: z.string().optional(),
+      limit: z.number().default(20),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      let query = db!.select().from(freightSimulations);
+      if (input.cepDestino) {
+        query = query.where(sql`${freightSimulations.cepDestino} = ${input.cepDestino}`) as any;
+      }
+      const results = await (query as any)
+        .orderBy(sql`${freightSimulations.createdAt} DESC`)
+        .limit(input.limit);
+      return results;
     }),
 });
