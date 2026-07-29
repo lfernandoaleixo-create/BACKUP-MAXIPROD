@@ -6324,8 +6324,14 @@
 - [x] Ir a fundo nos códigos das APIs, fazer simulações manuais - feito para todas as 5
 
 ## Rastreio e Cobertura das Transportadoras (28/07/2026)
-- [ ] Pesquisar cobertura geográfica completa de cada transportadora (todos os 26 estados + DF)
-- [ ] Verificar se APIs retornam protocolo/código de rastreio na cotação ou após coleta
-- [ ] Verificar link de rastreio de cada transportadora
-- [ ] Implementar mecanismo automático: ao selecionar transportadora no pedido, gerar link de rastreio
-- [ ] Listar capacidades de cada API (cotação, rastreio, coleta, NF-e)
+- [x] Pesquisar cobertura geográfica completa de cada transportadora (todos os 26 estados + DF)
+- [x] Verificar se APIs retornam protocolo/código de rastreio na cotação ou após coleta
+- [x] Verificar link de rastreio de cada transportadora
+- [x] Implementar mecanismo automático: ao selecionar transportadora no pedido, gerar link de rastreio
+- [x] Listar capacidades de cada API (cotação, rastreio, coleta, NF-e)
+
+## Card Queijo Coalho - PO com Conversão 10k→5k (29/07/2026)
+- [x] Na coluna PO do card Queijo Coalho, mostrar total de caixas de 10k chegando nos containers
+- [x] Mostrar conversão para caixas de 5k (dobro das caixas de 10k)
+- [x] Identificar containers com produto 3,8x200mm (código 00335) como estoque Queijo Coalho
+- [x] Coluna Projetado = Aguardando Processamento (cx 5k) + PO convertido em cx 5k
