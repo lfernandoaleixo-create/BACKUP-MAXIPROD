@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -963,6 +963,69 @@ export const salesOrderRouter = router({
         }
       }
 
+      // === LINHA DO TEMPO: Evaluate timeline rules and route order ===
+      let timelineRecipients: Array<{ recipientId: number; recipientName: string; actionType: string }> = [];
+      if (!input.isSimulation) {
+        try {
+          const timelineRules = await db.select().from(orderTimelineRules)
+            .where(and(
+              eq(orderTimelineRules.sellerId, input.sellerId),
+              eq(orderTimelineRules.active, true)
+            ));
+          if (timelineRules.length > 0) {
+            // Calculate order metrics for condition evaluation
+            const descontoProdutoMax = itemsWithValidation.reduce((max, item) => {
+              if (item.precoMinimo !== null && item.precoMinimo > 0) {
+                const desconto = ((item.precoMinimo - item.precoUnitario) / item.precoMinimo) * 100;
+                return Math.max(max, desconto);
+              }
+              return max;
+            }, 0);
+            // Group rules by recipient
+            const byRecipient = new Map<number, typeof timelineRules>();
+            for (const rule of timelineRules) {
+              const existing = byRecipient.get(rule.recipientId) || [];
+              existing.push(rule);
+              byRecipient.set(rule.recipientId, existing);
+            }
+            for (const [recipientId, recipientRules] of Array.from(byRecipient.entries())) {
+              let matched = false;
+              let actionType = "visualizar";
+              for (const rule of recipientRules) {
+                const val = rule.conditionValue ? parseFloat(String(rule.conditionValue)) : null;
+                let ruleMatches = false;
+                switch (rule.conditionType) {
+                  case "sempre": ruleMatches = true; break;
+                  case "desconto_produto_acima": ruleMatches = val !== null && descontoProdutoMax > val; break;
+                  case "desconto_produto_abaixo": ruleMatches = val !== null && descontoProdutoMax < val; break;
+                  // margem_pedido and margem_mensal require more context - evaluate as true if configured
+                  case "margem_pedido_acima": case "margem_pedido_abaixo":
+                  case "margem_mensal_acima": case "margem_mensal_abaixo":
+                  case "media_ponderada_descontos_acima": case "media_ponderada_descontos_abaixo":
+                    ruleMatches = true; // Will be evaluated more precisely in future with full margin data
+                    break;
+                }
+                if (ruleMatches) {
+                  matched = true;
+                  if (rule.actionType === "autorizar") actionType = "autorizar";
+                }
+              }
+              if (matched) {
+                timelineRecipients.push({
+                  recipientId,
+                  recipientName: recipientRules[0].recipientName,
+                  actionType,
+                });
+              }
+            }
+            // Timeline routing is stored via evaluateOrderTimeline above.
+            // The order stays as "pendente" - recipients will see/authorize it based on timeline rules.
+          }
+        } catch (err) {
+          console.error("[SalesOrder] Timeline evaluation failed:", err);
+        }
+      }
+
       return {
         success: true,
         orderId: Number(orderId),
@@ -970,6 +1033,7 @@ export const salesOrderRouter = router({
         status,
         temPrecoAbaixoMinimo,
         motivoAlerta,
+        timelineRecipients,
       };
     }),
 

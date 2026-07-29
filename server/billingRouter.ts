@@ -1064,11 +1064,13 @@ export const billingRouter = router({
           continue;
         }
         
-        // REGRA 2: Faturamento parcial → desautorizar para voltar a "Pedidos em Aberto".
-        // Quando parte do pedido foi faturada ("Faturado parcial"), o pedido deve voltar
-        // para "Pedidos em Aberto" para ser re-autorizado para a próxima remessa.
-        // Isso garante que o gestor revise e re-autorize cada lote de faturamento.
-        if (states.has("Faturado parcial")) {
+        // REGRA 2: Faturamento parcial COMPLETO → desautorizar para voltar a "Pedidos em Aberto".
+        // Só remove a autorização quando o pedido tem itens "Faturado" (já faturados)
+        // E TAMBÉM tem itens restantes ("Faturado parcial" ou "A faturar").
+        // Isso significa que uma remessa foi faturada e o restante precisa ser re-autorizado.
+        // Se o pedido só tem "Faturado parcial" sem "Faturado", o faturamento ainda está
+        // em andamento e o pedido deve PERMANECER autorizado.
+        if (states.has("Faturado") && (states.has("Faturado parcial") || states.has("A faturar"))) {
           toRemove.push(pedido);
           continue;
         }

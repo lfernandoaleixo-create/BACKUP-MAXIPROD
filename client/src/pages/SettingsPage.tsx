@@ -53,6 +53,7 @@ import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import TopNav from "@/components/TopNav";
+import { OrderTimelineConfig } from "@/components/OrderTimelineConfig";
 
 // ─── Password Gate ─────────────────────────────────────────────
 function PasswordGate({ onUnlock }: { onUnlock: (pwd: string) => void }) {
@@ -1222,6 +1223,16 @@ function OperatorManagementPanel() {
                           );
                         })()}
 
+                        {/* === LINHA DO TEMPO DO PEDIDO DE VENDA === */}
+                        <OrderTimelineConfig
+                          sellerId={op.id}
+                          sellerName={op.name}
+                          allPeople={[
+                            ...((salesManagersList || []) as any[]).filter((m: any) => m.active).map((m: any) => ({ id: m.id, name: m.name, type: 'gestor' as const })),
+                            ...((operatorList || []) as any[]).filter((o: any) => o.id !== op.id).map((o: any) => ({ id: o.id, name: o.name, type: 'vendedor' as const }))
+                          ]}
+                          gcEnabled={hasAnyParentTab("gestao-comercial")}
+                        />
                         {/* === DEMAIS GRUPOS (renderização flat padrão) === */}
                         {dynamicGranularGroups.map(group => {
                           const parentEnabled = hasAnyParentTab(group.parentTab);

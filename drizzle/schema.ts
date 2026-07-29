@@ -3289,3 +3289,34 @@ export const queijoCoalhoStockHistory = mysqlTable("queijo_coalho_stock_history"
 });
 export type QueijoCoalhoStockHistory = typeof queijoCoalhoStockHistory.$inferSelect;
 export type InsertQueijoCoalhoStockHistory = typeof queijoCoalhoStockHistory.$inferInsert;
+
+/**
+ * Linha do Tempo do Pedido de Venda
+ * Configura para quem o pedido de um vendedor deve ir e sob quais condições.
+ * Cada regra define: vendedor → destinatário → condição → ação
+ */
+export const orderTimelineRules = mysqlTable("order_timeline_rules", {
+  id: int("id").autoincrement().primaryKey(),
+  // Vendedor cujo pedido é monitorado (seller_permissions.id)
+  sellerId: int("seller_id").notNull(),
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  // Destinatário que recebe/autoriza o pedido (operator ou seller)
+  recipientId: int("recipient_id").notNull(),
+  recipientName: varchar("recipient_name", { length: 200 }).notNull(),
+  recipientType: varchar("recipient_type", { length: 20 }).notNull(), // 'gestor' | 'vendedor'
+  // Condição para envio
+  conditionType: varchar("condition_type", { length: 50 }).notNull(),
+  // Tipos: 'sempre', 'desconto_produto_acima', 'desconto_produto_abaixo',
+  //        'margem_pedido_acima', 'margem_pedido_abaixo',
+  //        'margem_mensal_acima', 'margem_mensal_abaixo',
+  //        'media_ponderada_descontos_acima', 'media_ponderada_descontos_abaixo'
+  conditionValue: decimal("condition_value", { precision: 5, scale: 2 }), // Porcentagem (null para 'sempre')
+  // Ação que o destinatário precisa fazer
+  actionType: varchar("action_type", { length: 20 }).notNull(), // 'visualizar' | 'autorizar'
+  // Ativo/inativo
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type OrderTimelineRule = typeof orderTimelineRules.$inferSelect;
+export type InsertOrderTimelineRule = typeof orderTimelineRules.$inferInsert;
