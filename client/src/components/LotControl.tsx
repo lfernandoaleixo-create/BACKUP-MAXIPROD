@@ -179,7 +179,7 @@ function LancamentoLote() {
     const dd = day;
     const mm = month;
     const aa = year.slice(-2);
-    setPreview(`${codigoItem}-${dd}${mm}${aa}-${notaCarga}`);
+    setPreview(convertLotCode(`${codigoItem}-${dd}${mm}${aa}-${notaCarga}`));
   };
 
   const handleConfirm = () => {
@@ -512,6 +512,7 @@ const SKU_CODE_MAP: Record<string, string> = {
   "00147": "EC25",
   "00577": "ECP15",
   "00547": "ECP20",
+  "00648": "ECP20",
 };
 
 /** Converte a primeira sequência do código do lote (ex: 00103-160726-12345 → EC20-160726-12345) */
