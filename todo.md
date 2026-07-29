@@ -6432,6 +6432,6 @@
 - [x] Adicionar máquinas 4, 5, 6, 7 ao setor Máquina Pirografar (sectorId=9) - INSERT no DB + UPDATE quantidadeEquipamentos para 7
 - [x] Bug: Importação Custo Mercadoria - valores monetários (frete terrestre, DIFAL, comissão) acrescentam centavos ao recarregar página (ex: R$20.000 vira R$20.000,01). Causa: autoSaveProductCosts salvava USD direto no campo BRL + .toFixed(2)/.toFixed(4) causava drift de arredondamento. Fix: converter para BRL com .toFixed(6) antes de salvar, usar precisão total na divisão de reload, e salvar taxa de câmbio usada.
 
-- [ ] Configurações: Adicionar item 'Gerenciar Gestores' (Cadastrar gestores, sub-gestores e hierarquia) com controle de visibilidade (ticar quem pode ver e quem não pode)
+- [x] Configurações: Adicionar item 'Gerenciar Gestores' (Cadastrar gestores, sub-gestores e hierarquia) com controle de visibilidade (ticar quem pode ver e quem não pode)
 - [x] Bug REAL FIX: Importação valores +0.01 centavo - causa raiz era DECIMAL(12,2) no MySQL truncando precisão. Colunas frete_terrestre_remessa, difal_valor, comissao_silverio, despesas_liberacao_remessa, vilela_valor_real alteradas para DECIMAL(18,6)
 - [x] URGENTE Bug Faturamento: Pedidos na aba 'Autorizado a Faturar' estão sumindo e voltando para 'Pedidos em Aberto' ou 'Aceite da Produção' sem nenhuma alteração manual. Só faturamento parcial deveria causar isso. Pedidos 1581 e 1583 afetados.
