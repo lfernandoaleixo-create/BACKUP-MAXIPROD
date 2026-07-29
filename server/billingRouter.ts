@@ -557,6 +557,10 @@ export const billingRouter = router({
         const changedOrders: Array<{ pedido: string; currentHash: string; cliente: string; grupoKey: string }> = [];
         const missingHashOrders: Array<{ pedido: string; currentHash: string }> = [];
 
+        // Buscar pedidos já autorizados para NÃO marcar como modificado
+        const authorizedRows = await db.select({ pedido: billingAuthorizations.pedido }).from(billingAuthorizations);
+        const authorizedSet = new Set(authorizedRows.map(r => r.pedido));
+
         for (const row of acceptedRows) {
           if (row.wasModified) continue; // Já marcado como modificado, não reprocessar
           const currentOrder = openOrders.find(o => o.pedido === row.pedido);
@@ -572,6 +576,12 @@ export const billingRouter = router({
           
           // Se o hash mudou, registrar para análise
           if (row.orderHash !== currentHash) {
+            // PROTEÇÃO: Se o pedido já está AUTORIZADO a faturar, apenas atualizar o hash
+            // silenciosamente. NÃO marcar como modificado — a autorização é explícita do gestor.
+            if (authorizedSet.has(row.pedido)) {
+              missingHashOrders.push({ pedido: row.pedido, currentHash });
+              continue;
+            }
             changedOrders.push({
               pedido: row.pedido,
               currentHash,

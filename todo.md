@@ -6434,3 +6434,4 @@
 
 - [ ] Configurações: Adicionar item 'Gerenciar Gestores' (Cadastrar gestores, sub-gestores e hierarquia) com controle de visibilidade (ticar quem pode ver e quem não pode)
 - [x] Bug REAL FIX: Importação valores +0.01 centavo - causa raiz era DECIMAL(12,2) no MySQL truncando precisão. Colunas frete_terrestre_remessa, difal_valor, comissao_silverio, despesas_liberacao_remessa, vilela_valor_real alteradas para DECIMAL(18,6)
+- [x] URGENTE Bug Faturamento: Pedidos na aba 'Autorizado a Faturar' estão sumindo e voltando para 'Pedidos em Aberto' ou 'Aceite da Produção' sem nenhuma alteração manual. Só faturamento parcial deveria causar isso. Pedidos 1581 e 1583 afetados.

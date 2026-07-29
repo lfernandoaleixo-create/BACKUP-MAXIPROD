@@ -2388,12 +2388,14 @@ export default function Billing() {
     const pureOpen: BillingOrder[] = [];
     const authorized: BillingOrder[] = [];
     for (const order of openOrders) {
-      // Pedidos modificados no Maxiprod voltam para Aceite da Produção
-      if (modifiedPedidosSet.has(order.pedido)) {
-        pendingAcceptance.push(order);
-      } else if (authorizedPedidosSet.has(order.pedido)) {
-        // Etapa 3: Autorizado a faturar
+      if (authorizedPedidosSet.has(order.pedido)) {
+        // PRIORIDADE MÁXIMA: Se está autorizado a faturar, FICA autorizado.
+        // Não importa se o hash mudou (wasModified) — a autorização é explícita do gestor.
+        // Só sai daqui por: faturamento total, faturamento parcial, ou desautorização manual.
         authorized.push(order);
+      } else if (modifiedPedidosSet.has(order.pedido)) {
+        // Pedido foi modificado no Maxiprod E ainda não foi autorizado → volta para Aceite
+        pendingAcceptance.push(order);
       } else if (acceptedPedidosSet.has(order.pedido)) {
         // Etapa 2: Aceito pela produção, aguardando autorização (Em Aberto)
         pureOpen.push(order);
