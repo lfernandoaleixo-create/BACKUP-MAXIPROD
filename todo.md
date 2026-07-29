@@ -6367,3 +6367,6 @@
 
 ## Fix PDF Produção - Texto Sobreposto (29/07/2026)
 - [x] Corrigir sobreposição de texto no PDF da aba Produção (coluna Tipo sobrepõe coluna Qtd nas máquinas)
+
+## Bug: Valor Real Vilela (USD) no Container ZY2026-018 (29/07/2026)
+- [x] Campo "Valor Real Vilela (USD)" na aba Importação está ficando só em USD (mostra $ 0.00), precisa exibir corretamente
