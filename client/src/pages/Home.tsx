@@ -5741,38 +5741,16 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const totalPedidosCx = importItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
   // Disponível = Estoque Total (importação) - Pedidos (apenas importação)
   const totalDisponivelCx = totalEstoqueCx - totalPedidosCx;
-  // KPI PO: somar em caixas usando poLotes (quantidade original da PO)
-  // Para produtos kg (ex: 00058), poCx está em kg para a tabela, mas o KPI deve mostrar caixas
-  // Inclui POs de TODOS os produtos (importação + Queijo Coalho) para refletir total real
-  const importPOCx = importItems.reduce((sum, i) => {
-    if (i.poLotes && i.poLotes.length > 0) {
-      return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
-    }
-    return sum + (i.poCx ?? 0);
-  }, 0);
-  // Somar POs dos itens Queijo Coalho (excluídos de importItems)
-  const qcPOCx = useMemo(() => {
-    let total = 0;
-    for (const code of QUEIJO_COALHO_CODES) {
-      const item = items.find(i => i.codigoItem === code);
-      if (!item) continue;
-      if (code === "00335") {
-        // 00335 é cx de 10k, converter para cx de 5k (x2)
-        const cx10k = item.poLotes && item.poLotes.length > 0
-          ? item.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0)
-          : (item.poCx ?? 0);
-        total += cx10k * 2;
-      } else {
-        if (item.poLotes && item.poLotes.length > 0) {
-          total += item.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
-        } else {
-          total += (item.poCx ?? 0);
-        }
+  // KPI PO: somar em caixas usando poLotes de TODOS os itens (mesmo valor do card grande de POs)
+  // Sem conversão 10k→5k - mostra quantidade bruta dos pedidos de compra
+  const totalPOCx = useMemo(() => {
+    return items.filter(i => !i.isChild).reduce((sum, i) => {
+      if (i.poLotes && i.poLotes.length > 0) {
+        return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
       }
-    }
-    return total;
+      return sum + (i.poCx ?? 0);
+    }, 0);
   }, [items]);
-  const totalPOCx = importPOCx + qcPOCx;
   // Projetado = Disponível + PO
   const totalProjetadoCx = totalDisponivelCx + totalPOCx;
 
