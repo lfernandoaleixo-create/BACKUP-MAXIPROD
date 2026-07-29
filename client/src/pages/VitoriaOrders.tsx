@@ -285,11 +285,10 @@ export default function VitoriaOrders() {
   // "Novos" tab: for Guilherme/Juvenal includes both 'pendente' (aguardando aprovacao) AND 'aprovado' not yet received
   // For Vitória: only 'aprovado' not yet received
   const filteredOrders = (orders || []).filter((o: any) => {
-    // Sub-permission filter: only show orders from visible sellers
-    if (visibleSellersForOrders.length > 0) {
-      const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-      if (!visibleSellersForOrders.includes(sellerSlug)) return false;
-    }
+    // Sub-permission filter: STRICT - only show orders from explicitly ticked sellers
+    if (visibleSellersForOrders.length === 0) return false; // No sub-perms ticked = show nothing
+    const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!visibleSellersForOrders.includes(sellerSlug)) return false;
     if (statusFilter === "todos") return true;
     if (statusFilter === "pendente") {
       if (canSeeAguardandoAprovacao) {

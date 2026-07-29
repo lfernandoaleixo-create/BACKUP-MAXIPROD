@@ -22,9 +22,9 @@ export default function CadastroClientes() {
     undefined,
     { staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   );
-  // Filter clients by visible sellers (if sub-permissions are configured)
+  // Filter clients by visible sellers - STRICT: only show sellers that are explicitly ticked
   const newClients = rawClients?.filter((c: any) => {
-    if (visibleSellers.length === 0) return true; // No sub-perms configured = show all
+    if (visibleSellers.length === 0) return false; // No sub-perms ticked = show nothing
     const sellerSlug = (c.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     return visibleSellers.includes(sellerSlug);
   });

@@ -6478,3 +6478,10 @@
 - [x] Botão "Rastrear" nos pedidos faturados - puxa rastreio pela API da transportadora
 - [x] Permissão configurável em Configurações → Gestão Comercial: item ticável "Cotar Frete (Pedido de Venda)" para controlar quem pode ver/usar o botão
 - [x] Testar simulação end-to-end para garantir funcionamento (Pedido 1219: Rodonaves R$281,41 / 13 dias úteis / Protocolo 219507658)
+
+## Fix: Lógica de Permissões GC - Visibilidade por Ticagem Exclusiva
+- [x] Corrigir lógica: visibilidade de vendedores no painel depende EXCLUSIVAMENTE da ticagem manual no checkbox
+- [x] Não inferir automaticamente vendedores a partir da relação gestor-vendedor do banco de dados
+- [x] Se "Meu Painel de Vendedor" está ticado mas nenhum vendedor específico está ticado, o painel aparece mas não abre nada
+- [x] Se "Pedidos de Venda" está ticado mas nenhum vendedor está ticado abaixo, não aparece pedidos de ninguém
+- [x] Não desmarcar nada do que já está configurado - apenas garantir que a lógica funcione corretamente a partir de agora
