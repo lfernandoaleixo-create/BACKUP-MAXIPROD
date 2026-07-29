@@ -6453,3 +6453,8 @@
 - [ ] Revisão completa versão mobile: tooltip de pedidos (tap em vez de hover), layout responsivo em todas as abas, nada sobreposto/encavalado, todas funcionalidades novas funcionando igual desktop
 - [x] Linha do Tempo do Pedido de Venda: item expandível nas permissões GC de cada senha. Nível 1: expandir/recolher. Nível 2: nomes ticáveis (para quem o pedido vai). Nível 3: condições com % editável (desconto produto superior/inferior a X%, margem pedido acima/abaixo X%, margem mensal acima/abaixo X%, média ponderada descontos mês acima/abaixo X%). Nível 4: ação (Visualizar ou Autorizar). Incluir opção "Sempre" como condição (sem porcentagem, pedido vai automaticamente). Cada pessoa pode ter condições diferentes - uns "Sempre", outros com condições específicas de margem/desconto
 - [ ] Bug fix: Pedido autorizado volta sozinho para "Pedidos em Aberto" - deve ficar em "Autorizado a Faturar" permanentemente. Só volta se faturamento parcial (após faturar parcialmente, volta para produzir restante)
+
+## Fix: Linha do Tempo do Pedido de Venda - Posicionamento e Limpeza
+- [x] Mover Linha do Tempo para DENTRO da seção Gestão Comercial (como item expandível igual aos outros, não ao lado separado)
+- [x] Remover "Delete Test" da lista de gestores/vendedores
+- [x] Remover duplicidades de nomes na lista de pessoas (ex: "JORDÃO LAINE" e "Jordao", "JUVENAL TEIXEIRA" e "Juvenal Teixeira")

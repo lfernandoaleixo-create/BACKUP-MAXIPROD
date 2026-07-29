@@ -1218,21 +1218,48 @@ function OperatorManagementPanel() {
                                     </div>
                                   );
                                 })}
+                                {/* === LINHA DO TEMPO DO PEDIDO DE VENDA (dentro da GC) === */}
+                                <div className="border-t border-slate-100 dark:border-slate-700 my-1 pt-1">
+                                  <OrderTimelineConfig
+                                    sellerId={op.id}
+                                    sellerName={op.name}
+                                    allPeople={(() => {
+                                      const people: Array<{id: number; name: string; type: 'gestor' | 'vendedor'}> = [];
+                                      const seenSlugs = new Set<string>();
+                                      // Gestores ativos
+                                      if (salesManagersList) {
+                                        for (const mgr of (salesManagersList as any[]).filter((m: any) => m.active)) {
+                                          const slug = mgr.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                                          if (!seenSlugs.has(slug)) {
+                                            seenSlugs.add(slug);
+                                            people.push({ id: mgr.id, name: mgr.name, type: 'gestor' });
+                                          }
+                                        }
+                                      }
+                                      // Vendedores (seller_permissions) - sem duplicar gestores
+                                      if (sellerPermsList) {
+                                        const uniqueSellers = new Map<string, any>();
+                                        for (const sp of sellerPermsList as any[]) {
+                                          const slug = sp.sellerName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                                          if (!uniqueSellers.has(slug)) uniqueSellers.set(slug, sp);
+                                        }
+                                        Array.from(uniqueSellers.entries()).forEach(([slug, sp]) => {
+                                          if (!seenSlugs.has(slug)) {
+                                            seenSlugs.add(slug);
+                                            people.push({ id: sp.id, name: sp.sellerName, type: 'vendedor' });
+                                          }
+                                        });
+                                      }
+                                      return people.filter(p => p.id !== op.id);
+                                    })()}
+                                    gcEnabled={gcEnabled}
+                                  />
+                                </div>
                               </div>
                             </div>
                           );
                         })()}
 
-                        {/* === LINHA DO TEMPO DO PEDIDO DE VENDA === */}
-                        <OrderTimelineConfig
-                          sellerId={op.id}
-                          sellerName={op.name}
-                          allPeople={[
-                            ...((salesManagersList || []) as any[]).filter((m: any) => m.active).map((m: any) => ({ id: m.id, name: m.name, type: 'gestor' as const })),
-                            ...((operatorList || []) as any[]).filter((o: any) => o.id !== op.id).map((o: any) => ({ id: o.id, name: o.name, type: 'vendedor' as const }))
-                          ]}
-                          gcEnabled={hasAnyParentTab("gestao-comercial")}
-                        />
                         {/* === DEMAIS GRUPOS (renderização flat padrão) === */}
                         {dynamicGranularGroups.map(group => {
                           const parentEnabled = hasAnyParentTab(group.parentTab);
