@@ -2713,11 +2713,11 @@ export const importPos = mysqlTable("import_pos", {
   pagamento2Remessa: decimal("pagamento_2_remessa", { precision: 12, scale: 2 }),
   pagamento3Remessa: decimal("pagamento_3_remessa", { precision: 12, scale: 2 }),
   taxasRemessa: decimal("taxas_remessa", { precision: 12, scale: 2 }),
-  freteTermestreRemessa: decimal("frete_terrestre_remessa", { precision: 12, scale: 2 }),
-  difalValor: decimal("difal_valor", { precision: 12, scale: 2 }),
-  comissaoSilverio: decimal("comissao_silverio", { precision: 12, scale: 2 }),
-  despesasLiberacaoRemessa: decimal("despesas_liberacao_remessa", { precision: 12, scale: 2 }),
-  vilelaValorReal: decimal("vilela_valor_real", { precision: 12, scale: 2 }), // Valor real pago ao Vilela (quando preenchido, substitui a estimativa %)
+  freteTermestreRemessa: decimal("frete_terrestre_remessa", { precision: 18, scale: 6 }),
+  difalValor: decimal("difal_valor", { precision: 18, scale: 6 }),
+  comissaoSilverio: decimal("comissao_silverio", { precision: 18, scale: 6 }),
+  despesasLiberacaoRemessa: decimal("despesas_liberacao_remessa", { precision: 18, scale: 6 }),
+  vilelaValorReal: decimal("vilela_valor_real", { precision: 18, scale: 6 }), // Valor real pago ao Vilela (quando preenchido, substitui a estimativa %)
   // === LOGÍSTICA: Câmbio por Remessa ===
   valorDolar1Remessa: decimal("valor_dolar_1_remessa", { precision: 8, scale: 4 }),
   valorDolar2Remessa: decimal("valor_dolar_2_remessa", { precision: 8, scale: 4 }),
