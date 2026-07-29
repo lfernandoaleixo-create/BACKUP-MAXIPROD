@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface Person {
   id: number;
   name: string;
-  type: "gestor" | "vendedor";
+  type: "gestor" | "vendedor" | "operador";
 }
 
 interface OrderTimelineConfigProps {

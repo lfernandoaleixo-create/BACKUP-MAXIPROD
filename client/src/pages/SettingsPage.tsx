@@ -1224,7 +1224,7 @@ function OperatorManagementPanel() {
                                     sellerId={op.id}
                                     sellerName={op.name}
                                     allPeople={(() => {
-                                      const people: Array<{id: number; name: string; type: 'gestor' | 'vendedor'}> = [];
+                                      const people: Array<{id: number; name: string; type: 'gestor' | 'vendedor' | 'operador'}> = [];
                                       const seenSlugs = new Set<string>();
                                       // Gestores ativos
                                       if (salesManagersList) {
@@ -1249,6 +1249,16 @@ function OperatorManagementPanel() {
                                             people.push({ id: sp.id, name: sp.sellerName, type: 'vendedor' });
                                           }
                                         });
+                                      }
+                                      // Operadores (quem tem senha) - sem duplicar gestores/vendedores
+                                      if (operatorList) {
+                                        for (const oper of operatorList as any[]) {
+                                          const slug = oper.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                                          if (!seenSlugs.has(slug)) {
+                                            seenSlugs.add(slug);
+                                            people.push({ id: oper.id, name: oper.name, type: 'operador' });
+                                          }
+                                        }
                                       }
                                       return people.filter(p => p.id !== op.id);
                                     })()}

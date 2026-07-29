@@ -6458,3 +6458,5 @@
 - [x] Mover Linha do Tempo para DENTRO da seção Gestão Comercial (como item expandível igual aos outros, não ao lado separado)
 - [x] Remover "Delete Test" da lista de gestores/vendedores
 - [x] Remover duplicidades de nomes na lista de pessoas (ex: "JORDÃO LAINE" e "Jordao", "JUVENAL TEIXEIRA" e "Juvenal Teixeira")
+- [x] Linha do Tempo: incluir TODOS os operadores (quem tem senha) na lista de pessoas, não apenas gestores e vendedores do seller_permissions
+- [ ] Custos de Venda - UX transportadora: ao abrir uma transportadora, mostrar APENAS o botão "Simular Frete" visível. CNPJs cadastrados, banco de dados e demais informações ficam em card recolhido/colapsável que só expande se o usuário quiser. Após clicar simular, mostrar os valores da simulação.
