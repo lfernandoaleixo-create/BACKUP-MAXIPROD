@@ -711,8 +711,13 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
     [filteredProducts]
   );
 
+  const QC_SELLER_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
   const bambuProducts = useMemo(() =>
-    filteredProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu"),
+    filteredProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu" && !QC_SELLER_CODES.includes(item.codigoItem)),
+    [filteredProducts]
+  );
+  const queijoCoalhoProducts = useMemo(() =>
+    filteredProducts.filter(item => QC_SELLER_CODES.includes(item.codigoItem)),
     [filteredProducts]
   );
 
@@ -790,6 +795,21 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           title="Bambu (Importação)"
           items={bambuProducts}
           color="green"
+          sellerName={sellerName}
+          sellerId={sellerId}
+          allowReserve={false}
+          onReserve={() => {}}
+          reservationSummary={reservationSummary.data || {}}
+          trackingMap={trackingQuery.data?.trackingByPO || {}}
+          onTrack={(uuid, bl) => { if (uuid) setTrackingUuid(uuid); else if (bl) setTrackingBl(bl); }}
+        />
+      )}
+      {/* Queijo Coalho */}
+      {queijoCoalhoProducts.length > 0 && (
+        <StockCategorySection
+          title="Queijo Coalho"
+          items={queijoCoalhoProducts}
+          color="teal"
           sellerName={sellerName}
           sellerId={sellerId}
           allowReserve={false}
@@ -1224,7 +1244,7 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
 
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["madeira", "bambu"]));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["madeira", "bambu", "queijo_coalho"]));
 
   useEffect(() => {
     if (productsQuery.data && !initialized) {
@@ -1258,12 +1278,16 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     subgrupo: string;
   }
 
+  const QC_CODES = ["00648", "00546", "00547", "00577", "00645", "00646", "00647", "00649"];
   const stockItems: SimpleStockItem[] = (stockQuery.data?.items || []) as SimpleStockItem[];
   const madeiraItems = stockItems.filter((item) =>
     item.grupo === "industrializacao" && item.subgrupo === "madeira"
   );
   const bambuItems = stockItems.filter((item) =>
-    item.grupo === "importacao_revenda" && item.subgrupo === "bambu"
+    item.grupo === "importacao_revenda" && item.subgrupo === "bambu" && !QC_CODES.includes(item.codigoItem)
+  );
+  const queijoCoalhoItems = stockItems.filter((item) =>
+    QC_CODES.includes(item.codigoItem)
   );
 
   const selectAllCategory = (items: SimpleStockItem[]) => {
@@ -1355,6 +1379,18 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
             onDeselectAll={() => deselectAllCategory(bambuItems)}
             countSelected={countSelected(bambuItems)}
             color="green"
+          />
+          <ConfigCategorySection
+            title="Queijo Coalho"
+            items={queijoCoalhoItems}
+            selectedProducts={selectedProducts}
+            isExpanded={expandedCategories.has("queijo_coalho")}
+            onToggleExpand={() => toggleCategory("queijo_coalho")}
+            onToggleProduct={toggleProduct}
+            onSelectAll={() => selectAllCategory(queijoCoalhoItems)}
+            onDeselectAll={() => deselectAllCategory(queijoCoalhoItems)}
+            countSelected={countSelected(queijoCoalhoItems)}
+            color="teal"
           />
         </div>
       )}

@@ -11,12 +11,23 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { serasaConsultas, operators } from "../drizzle/schema";
+import { serasaConsultas, operators, operatorGranularPermissions } from "../drizzle/schema";
 import { sql, eq, desc, and } from "drizzle-orm";
 import { consultarSerasa } from "./serasaApi";
 
-// Operadores autorizados a consultar Serasa (por enquanto apenas gestores)
-const AUTHORIZED_NAMES = ["Fernando", "Guilherme", "Bruno", "Vitória"];
+// Verifica se operador tem permissão granular gc.consultaSerasa no banco
+async function isOperatorAuthorizedForSerasa(operadorName: string): Promise<boolean> {
+  const db = await getDb();
+  const [op] = await db!.select().from(operators)
+    .where(sql`LOWER(${operators.name}) = LOWER(${operadorName})`);
+  if (!op) return false;
+  const [perm] = await db!.select().from(operatorGranularPermissions)
+    .where(and(
+      eq(operatorGranularPermissions.operatorId, op.id),
+      eq(operatorGranularPermissions.permissionKey, "gc.consultaSerasa")
+    ));
+  return !!perm?.enabled;
+}
 
 export const serasaRouter = router({
   /**
@@ -26,9 +37,7 @@ export const serasaRouter = router({
   checkAuthorization: publicProcedure
     .input(z.object({ operadorName: z.string() }))
     .query(async ({ input }) => {
-      const isAuthorized = AUTHORIZED_NAMES.some(
-        name => input.operadorName.toLowerCase().includes(name.toLowerCase())
-      );
+      const isAuthorized = await isOperatorAuthorizedForSerasa(input.operadorName);
       return { authorized: isAuthorized };
     }),
 
@@ -48,12 +57,10 @@ export const serasaRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
 
-      // 1. Verificar se o operador está autorizado
-      const isAuthorized = AUTHORIZED_NAMES.some(
-        name => input.operadorName.toLowerCase().includes(name.toLowerCase())
-      );
+      // 1. Verificar se o operador está autorizado (via permissão granular)
+      const isAuthorized = await isOperatorAuthorizedForSerasa(input.operadorName);
       if (!isAuthorized) {
-        return { success: false, error: "Operador não autorizado para consultas Serasa." };
+        return { success: false, error: "Operador não autorizado para consultas Serasa. Ative a permissão 'Consulta Serasa' nas configurações." };
       }
 
       // 2. Verificar senha do operador

@@ -674,7 +674,30 @@ function OperatorManagementPanel() {
     onSuccess: () => utils.settings.getOperators.invalidate(),
   });
   const setGranularMutation = trpc.settings.setGranularPermission.useMutation({
-    onSuccess: () => utils.settings.getAllGranularPermissions.invalidate(),
+    onMutate: async (newData) => {
+      // Cancel outgoing refetches
+      await utils.settings.getAllGranularPermissions.cancel();
+      // Snapshot previous value
+      const prev = utils.settings.getAllGranularPermissions.getData();
+      // Optimistically update the cache
+      utils.settings.getAllGranularPermissions.setData(undefined, (old: any) => {
+        if (!old) return old;
+        const existing = old.find((gp: any) => gp.operatorId === newData.operatorId && gp.permissionKey === newData.permissionKey);
+        if (existing) {
+          return old.map((gp: any) => gp.operatorId === newData.operatorId && gp.permissionKey === newData.permissionKey ? { ...gp, enabled: newData.enabled } : gp);
+        } else {
+          return [...old, { operatorId: newData.operatorId, permissionKey: newData.permissionKey, enabled: newData.enabled }];
+        }
+      });
+      return { prev };
+    },
+    onError: (_err, _newData, context) => {
+      // Rollback on error
+      if (context?.prev) {
+        utils.settings.getAllGranularPermissions.setData(undefined, context.prev);
+      }
+    },
+    onSettled: () => utils.settings.getAllGranularPermissions.invalidate(),
   });
   const createMutation = trpc.settings.createOperator.useMutation({
     onSuccess: () => {
@@ -760,6 +783,7 @@ function OperatorManagementPanel() {
     setGranularMutation.mutate({ operatorId, permissionKey: key, enabled: !current });
   };
 
+
   // Auto-seed operators if table is empty
   const hasSeeded = useMemo(() => {
     if (operatorList && operatorList.length === 0) {
@@ -835,6 +859,11 @@ function OperatorManagementPanel() {
 
   const handlePermissionToggle = (id: number, field: typeof PERMISSION_COLS[number]["key"], currentValue: boolean) => {
     const newValue = !currentValue;
+    // Optimistically update local cache for instant UI feedback
+    utils.settings.getOperators.setData(undefined, (old: any) => {
+      if (!old) return old;
+      return old.map((op: any) => op.id === id ? { ...op, [field]: newValue } : op);
+    });
     updatePermissionMutation.mutate({ id, field, value: newValue });
 
     // When DISABLING a parent tab, also disable ALL granular perms under it
@@ -900,6 +929,7 @@ function OperatorManagementPanel() {
               const showPwd = passwordVisibility[op.id];
               const isExpanded = expandedOperator === op.id;
               const hasAnyParentTab = (tab: string) => {
+                if (tab === "vendas") return op.accessVendas;
                 if (tab === "estoque") return op.accessEstoque;
                 if (tab === "faturamento") return op.accessFaturamento;
                 if (tab === "financeiro") return op.accessFinanceiro;

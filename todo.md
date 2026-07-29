@@ -6347,3 +6347,12 @@
 
 ## KPI PO (A RECEBER) - Somar todos os cards (29/07/2026)
 - [x] Card PO (A RECEBER) na seção IMPORTAÇÃO deve somar POs de TODOS os produtos (Estoque + Queijo Coalho + outros)
+
+## Correções Pedido de Venda + Estoque QC no App (29/07/2026)
+- [x] Bug: Botão Consulta Serasa não aparece no pedido de venda para usuário Juvenal (que tem permissão Consulta Serasa ativa)
+- [x] Adicionar estoque Queijo Coalho no aplicativo de vendas (busca de produtos) - além de Bambu e Madeira
+
+## Bugs Pedido de Venda + Permissões (29/07/2026)
+- [x] Bug: Botão Consulta Serasa não aparece no pedido de venda normal (não simulação) quando cliente é selecionado
+- [x] Bug: Aba VENDAS continua desabilitada para Patrick mesmo após ticar permissão Vendas no topo
+- [x] Bug: Ticagem de permissões granulares está lenta - implementar atualização otimista
