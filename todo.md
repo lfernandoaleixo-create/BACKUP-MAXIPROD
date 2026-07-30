@@ -6643,3 +6643,4 @@
   - Fix 1: Removido checkAndResetIfNeeded do getWeekReconciliation (reset agora só roda no startup e no cron de meia-noite)
   - Fix 2: Corrigido double-encoding da data no paymentAuthReset.ts
   - Fix 3: Corrigido valor no DB (app_settings)
+- [x] Bug: PDF da Seleção Automática (Produção) - produto 3,8x200 Premium mostra "caixas" ao invés de "sacos" e não faz conversão de quantidade correta
