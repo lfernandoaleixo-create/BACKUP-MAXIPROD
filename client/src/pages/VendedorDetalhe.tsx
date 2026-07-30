@@ -5369,6 +5369,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   );
   // Margin bar visible for everyone (sellers and gestores)
   const isGestorMode = !!marginOperator;
+  // Gestores accessing via /gestao-comercial/vendedor/:id should NOT be blocked by monthly margin
+  // Block only applies to vendedores using the seller app (/app-vendedor route)
+  const isSellerAppRoute = window.location.pathname.startsWith('/app-vendedor');
+  const isMonthlyMarginBlockActive = isSellerAppRoute && isGestorMode && !isSimulation;
   const showMarginBar = hasGranularAccess("gc.barraProduto"); // barra de desconto por produto
   const showMarginValues = currentSellerPerm?.showMarginValues === true; // default false
   // Real cost bar (reputação) - only visible for operators with gc.barraComissao permission AND specific operators
@@ -7644,7 +7648,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       </div>
                     </div>
                   )}
-                  {!md.canCloseOrder && !monthlyOverrideApproved && (
+                  {!md.canCloseOrder && !monthlyOverrideApproved && isMonthlyMarginBlockActive && (
                     <div className="mt-2 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-md p-2 flex items-start gap-2">
                       <Lock className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
                       <div>
@@ -7656,7 +7660,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       </div>
                     </div>
                   )}
-                  {!md.canCloseOrder && !monthlyOverrideApproved && !showManagerPasswordInput && (
+                  {!md.canCloseOrder && !monthlyOverrideApproved && isMonthlyMarginBlockActive && !showManagerPasswordInput && (
                     <button
                       onClick={() => setShowManagerPasswordInput(true)}
                       className="mt-2 w-full px-3 py-2 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-center gap-1.5"
@@ -7665,7 +7669,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       Liberar com Senha do Gestor
                     </button>
                   )}
-                  {!md.canCloseOrder && !monthlyOverrideApproved && showManagerPasswordInput && (
+                  {!md.canCloseOrder && !monthlyOverrideApproved && isMonthlyMarginBlockActive && showManagerPasswordInput && (
                     <div className="mt-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
                       <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 mb-2">Aprovação do Gestor</p>
                       <div className="flex gap-2">
@@ -7727,7 +7731,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       )}
                     </div>
                   )}
-                  {!md.canCloseOrder && monthlyOverrideApproved && (
+                  {!md.canCloseOrder && monthlyOverrideApproved && isMonthlyMarginBlockActive && (
                     <div className="mt-2 bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-md p-2 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
                       <p className="text-[11px] font-bold text-green-700 dark:text-green-300">
@@ -7952,17 +7956,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={createOrderMutation.isPending || (isGestorMode && !isSimulation && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved)}
+                disabled={createOrderMutation.isPending || (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved)}
                 className={`px-5 py-2 ${isSimulation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5`}
               >
                 {createOrderMutation.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (isGestorMode && !isSimulation && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? (
+                ) : (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? (
                   <Lock className="w-3.5 h-3.5" />
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                {isSimulation ? 'Concluir Simulação' : (isGestorMode && !isSimulation && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? 'Bloqueado (Margem Mensal)' : 'Pedido Concluído'}
+                {isSimulation ? 'Concluir Simulação' : (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? 'Bloqueado (Margem Mensal)' : 'Pedido Concluído'}
               </button>
             </div>
           </div>
@@ -8200,15 +8204,15 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               </button>
               <button
                 onClick={() => doSubmitOrder(true)}
-                disabled={createOrderMutation.isPending || (isGestorMode && !isSimulation && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved)}
+                disabled={createOrderMutation.isPending || (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved)}
                 className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
                 {createOrderMutation.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (isGestorMode && !isSimulation && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? (
+                ) : (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? (
                   <Lock className="w-3.5 h-3.5" />
                 ) : null}
-                {(isGestorMode && !isSimulation && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? 'Bloqueado (Margem Mensal)' : 'Sim, Enviar Mesmo Assim'}
+                {(isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? 'Bloqueado (Margem Mensal)' : 'Sim, Enviar Mesmo Assim'}
               </button>
             </div>
           </div>

@@ -6644,3 +6644,4 @@
   - Fix 2: Corrigido double-encoding da data no paymentAuthReset.ts
   - Fix 3: Corrigido valor no DB (app_settings)
 - [x] Bug: PDF da Seleção Automática (Produção) - produto 3,8x200 Premium mostra "caixas" ao invés de "sacos" e não faz conversão de quantidade correta
+- [x] Remover bloqueio por margem mensal para gestores na tela de gestão comercial (/gestao-comercial/vendedor/:id) - gestor precisa conseguir tirar pedido sem ser bloqueado
