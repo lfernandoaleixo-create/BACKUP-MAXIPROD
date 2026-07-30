@@ -2750,6 +2750,10 @@ export const salesOrderRouter = router({
       }
 
       // 3. Calculate weight from stock items
+      // pesoBruto in Maxiprod is per BASE UNIT (unidadeMedida).
+      // If unidadeMedida='un' (per individual piece) but sales are in CX (boxes),
+      // we must multiply by unidadeDeVendaFator to get weight per sales unit.
+      // If unidadeMedida='CX', pesoBruto is already per-box → no conversion needed.
       let pesoTotal = 0;
       const codigosItens = orderItems.map(i => i.codigoItem).filter(Boolean) as string[];
       if (codigosItens.length > 0) {
@@ -2757,19 +2761,34 @@ export const salesOrderRouter = router({
           codigoItem: stockItems.codigoItem,
           pesoBruto: stockItems.pesoBruto,
           pesoLiquido: stockItems.pesoLiquido,
+          unidadeMedida: stockItems.unidadeMedida,
+          unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+          unidadeDeVendaCodigo: stockItems.unidadeDeVendaCodigo,
         }).from(stockItems)
           .where(inArray(stockItems.codigoItem, codigosItens));
 
+        // Build map: codigoItem -> weight per SALES UNIT (the unit used in orders)
         const pesoMap = new Map<string, number>();
         for (const s of stockData) {
-          const peso = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
-          if (peso > 0 && s.codigoItem) pesoMap.set(s.codigoItem, peso);
+          const pesoBase = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
+          if (pesoBase > 0 && s.codigoItem) {
+            const um = (s.unidadeMedida || '').toUpperCase().trim();
+            const uvCodigo = (s.unidadeDeVendaCodigo || '').toUpperCase().trim();
+            const fator = parseFloat(String(s.unidadeDeVendaFator || 1)) || 1;
+            // If pesoBruto is per individual unit (UN) but sales are in boxes (CX),
+            // multiply by conversion factor to get weight per box
+            if (um === 'UN' && uvCodigo === 'CX' && fator > 1) {
+              pesoMap.set(s.codigoItem, pesoBase * fator);
+            } else {
+              pesoMap.set(s.codigoItem, pesoBase);
+            }
+          }
         }
 
         for (const item of orderItems) {
-          const pesoUnit = pesoMap.get(item.codigoItem || "") || 0;
+          const pesoPerSalesUnit = pesoMap.get(item.codigoItem || "") || 0;
           const qty = parseFloat(String(item.quantidade || 1));
-          pesoTotal += pesoUnit * qty;
+          pesoTotal += pesoPerSalesUnit * qty;
         }
       }
 

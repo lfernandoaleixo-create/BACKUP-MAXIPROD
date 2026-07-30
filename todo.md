@@ -6552,3 +6552,11 @@
 
 - [ ] Simular frete para TODOS os pedidos em "digitação" no Maxiprod
 - [ ] Gerar relatório completo com protocolos e metodologia de cálculo
+
+## Fix: Peso e Volumes incorretos na Simulação de Frete (30/07/2026)
+
+- [x] Diagnosticar bug: pesoBruto no Maxiprod é por UNIDADE INDIVIDUAL (ex: 0.003kg por espeto), mas quantidade no pedido é em CAIXAS (CX)
+- [x] Fix: quando unidadeMedida='UN' e unidadeDeVendaCodigo='CX', multiplicar pesoBruto pelo fator de conversão (unidadeDeVendaFator)
+- [x] Testar pedido #1334: peso corrigido de 0.17kg → 969.6kg, volumes de 1 → 33
+- [x] Verificar sem regressão: pedido #1591 (unidadeMedida=CX) continua 25kg ✓
+- [x] Verificar sem regressão: pedido #1585 continua 2.5kg ✓
