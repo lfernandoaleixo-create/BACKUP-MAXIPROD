@@ -6560,3 +6560,28 @@
 - [x] Testar pedido #1334: peso corrigido de 0.17kg → 969.6kg, volumes de 1 → 33
 - [x] Verificar sem regressão: pedido #1591 (unidadeMedida=CX) continua 25kg ✓
 - [x] Verificar sem regressão: pedido #1585 continua 2.5kg ✓
+
+## Fix v2: Volumes e Peso divergentes na Simulação de Frete (30/07/2026)
+
+**Problema reportado:** Pedido #1528 mostrando 6 volumes quando deveria ser 20 caixas. Peso com variação em alguns pedidos.
+
+**Causa raiz identificada:**
+1. **VOLUMES**: O sistema calculava `ceil(pesoTotal / 30)` (estimativa arbitrária). O correto é somar as quantidades do pedido (cada qty = 1 caixa física).
+2. **PESO**: Abordagem anterior usava `pesoBruto * fator * quantidade` (indireto). Agora usa `pesoBruto * quantidadeUnidadeItem` (campo pré-calculado pelo Maxiprod com total de unidades base).
+
+**Correção aplicada:**
+- Volumes = soma das quantidades de todas as linhas do pedido
+- Peso = pesoBruto_por_unidade × quantidadeUnidadeItem
+- Fallback para itens sem pesoBruto: 10kg por caixa
+
+**Verificação (5 pedidos reais):**
+- Pedido 1528: 6 vol → 20 vol ✓ | Peso 180 kg (correto)
+- Pedido 1334: 33 vol → 60 vol ✓ | Peso 969.6 kg (correto)
+- Pedido 1583: 9 vol → 15 vol ✓ | Peso 253.5 kg (correto)
+- Pedido 1590: 8 vol → 22 vol ✓ | Peso 220.59 kg (correto)
+- Pedido 1591: 1 vol → 50 vol ✓ | Peso 500 kg (fallback 10kg/cx)
+
+- [x] Corrigir cálculo de volumes (usar soma de quantidades do pedido)
+- [x] Corrigir cálculo de peso (usar quantidadeUnidadeItem × pesoBruto)
+- [x] Melhorar fallback para itens sem pesoBruto (10kg/cx ao invés de 0.5kg)
+- [x] Verificar com 5 pedidos reais - todos corretos

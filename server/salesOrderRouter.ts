@@ -2711,6 +2711,8 @@ export const salesOrderRouter = router({
         valorTotalPedido: salesOrders.valorTotalPedido,
         valorTotal: salesOrders.valorTotal,
         quantidade: salesOrders.quantidade,
+        quantidadeUnidadeItem: salesOrders.quantidadeUnidadeItem,
+        unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
         codigoItem: salesOrders.codigoItem,
         transportadora: salesOrders.transportadora,
         razaoSocial: salesOrders.razaoSocial,
@@ -2749,13 +2751,14 @@ export const salesOrderRouter = router({
         throw new Error(`CEP do destinatário não encontrado para o pedido #${input.pedido}. Verifique o cadastro do cliente.`);
       }
 
-      // 3. Calculate weight from stock items
-      // pesoBruto in Maxiprod is per BASE UNIT (unidadeMedida).
-      // If unidadeMedida='un' (per individual piece) but sales are in CX (boxes),
-      // we must multiply by unidadeDeVendaFator to get weight per sales unit.
-      // If unidadeMedida='CX', pesoBruto is already per-box → no conversion needed.
+      // 3. Calculate weight and volumes from order data
+      // Strategy: use pesoBruto (per base unit) * quantidadeUnidadeItem (total base units in order line)
+      // This is the most accurate approach because Maxiprod already calculates quantidadeUnidadeItem
+      // which accounts for all unit conversions (CX→UN, PC→UN, etc.)
       let pesoTotal = 0;
+      let totalVolumes = 0; // = sum of order quantities (each qty = 1 physical box/package)
       const codigosItens = orderItems.map(i => i.codigoItem).filter(Boolean) as string[];
+      
       if (codigosItens.length > 0) {
         const stockData = await db.select({
           codigoItem: stockItems.codigoItem,
@@ -2767,37 +2770,51 @@ export const salesOrderRouter = router({
         }).from(stockItems)
           .where(inArray(stockItems.codigoItem, codigosItens));
 
-        // Build map: codigoItem -> weight per SALES UNIT (the unit used in orders)
-        const pesoMap = new Map<string, number>();
+        // Build map: codigoItem -> pesoBruto per base unit (UN)
+        const pesoBrutoMap = new Map<string, number>();
         for (const s of stockData) {
           const pesoBase = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
           if (pesoBase > 0 && s.codigoItem) {
-            const um = (s.unidadeMedida || '').toUpperCase().trim();
-            const uvCodigo = (s.unidadeDeVendaCodigo || '').toUpperCase().trim();
-            const fator = parseFloat(String(s.unidadeDeVendaFator || 1)) || 1;
-            // If pesoBruto is per individual unit (UN) but sales are in boxes (CX),
-            // multiply by conversion factor to get weight per box
-            if (um === 'UN' && uvCodigo === 'CX' && fator > 1) {
-              pesoMap.set(s.codigoItem, pesoBase * fator);
-            } else {
-              pesoMap.set(s.codigoItem, pesoBase);
-            }
+            pesoBrutoMap.set(s.codigoItem, pesoBase);
           }
         }
 
         for (const item of orderItems) {
-          const pesoPerSalesUnit = pesoMap.get(item.codigoItem || "") || 0;
           const qty = parseFloat(String(item.quantidade || 1));
-          pesoTotal += pesoPerSalesUnit * qty;
+          totalVolumes += qty;
+          
+          const pesoBrutoPerUnit = pesoBrutoMap.get(item.codigoItem || "") || 0;
+          if (pesoBrutoPerUnit > 0) {
+            // Use quantidadeUnidadeItem (total individual units) for precise weight
+            // This field is pre-calculated by Maxiprod and accounts for all conversions
+            const qtyUnidadeItem = parseFloat(String(item.quantidadeUnidadeItem || 0));
+            if (qtyUnidadeItem > 0) {
+              pesoTotal += pesoBrutoPerUnit * qtyUnidadeItem;
+            } else {
+              // Fallback: use quantidade * fator from stock_items
+              const stockItem = stockData.find(s => s.codigoItem === item.codigoItem);
+              const um = (stockItem?.unidadeMedida || '').toUpperCase().trim();
+              const uvCodigo = (stockItem?.unidadeDeVendaCodigo || '').toUpperCase().trim();
+              const fator = parseFloat(String(stockItem?.unidadeDeVendaFator || 1)) || 1;
+              if (um === 'UN' && (uvCodigo === 'CX' || uvCodigo === 'PC') && fator > 1) {
+                pesoTotal += pesoBrutoPerUnit * fator * qty;
+              } else {
+                pesoTotal += pesoBrutoPerUnit * qty;
+              }
+            }
+          }
+          // Items without pesoBruto contribute 0 to weight (handled by fallback below)
         }
+      } else {
+        totalVolumes = orderItems.reduce((sum, i) => sum + parseFloat(String(i.quantidade || 1)), 0);
       }
 
-      // Fallback: if no weight found, estimate 0.5kg per item
+      // Fallback: if no weight found at all, estimate based on average box weight (~10kg)
       if (pesoTotal <= 0) {
-        pesoTotal = orderItems.reduce((sum, i) => sum + parseFloat(String(i.quantidade || 1)), 0) * 0.5;
+        pesoTotal = totalVolumes * 10; // ~10kg per box average for bamboo products
       }
 
-      const volumes = Math.max(1, Math.ceil(pesoTotal / 30)); // ~30kg per volume estimate
+      const volumes = Math.max(1, Math.round(totalVolumes));
       const metroCubico = volumes * 0.05; // ~0.05m³ per volume estimate
 
       console.log(`[QuoteByPedido] Pedido #${input.pedido}: CEP=${cepDestino}, CNPJ=${cnpjDestinatario}, Valor=${valorMercadoria}, Peso=${pesoTotal}kg, Volumes=${volumes}`);
