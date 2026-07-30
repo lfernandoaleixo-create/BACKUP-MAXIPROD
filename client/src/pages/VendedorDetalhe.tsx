@@ -5377,6 +5377,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
   const [marginUfSimulacao, setMarginUfSimulacao] = useState(uf || "MG");
+  // Auto-sync: whenever the client UF changes (from selection, draft restore, edit, or manual input),
+  // update the margin simulation UF to match
+  useEffect(() => {
+    if (uf) setMarginUfSimulacao(uf);
+  }, [uf]);
   // Fetch product costs for margin calculation
   const validTipoContrib = ["Contribuinte", "Não contribuinte", "Isento"].includes(tipoContribuinte || "") 
     ? (tipoContribuinte as "Contribuinte" | "Não contribuinte" | "Isento") 

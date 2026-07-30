@@ -6635,3 +6635,6 @@
 - [x] Bug: API Camilo (SSW) retornando frete para Goiás quando não atende o estado
   - Causa raiz: API SSW calcula frete com tabela "Generica" para rotas não atendidas, retornando valor mesmo sem cobertura real
   - Fix: Adicionada validação de tabCalculo - rejeita cotações com tabCalculo="Generica" (rotas válidas usam "Combinada")
+- [x] Bug: Card "Custo Real" na simulação de pedido mantém MG fixo ao invés de usar o estado do cliente selecionado automaticamente
+  - Causa raiz: marginUfSimulacao era inicializado com "MG" e só sincronizava na seleção de cliente do dropdown, não em draft/edit/manual
+  - Fix: Adicionado useEffect que sincroniza uf -> marginUfSimulacao sempre que o UF do cliente muda
