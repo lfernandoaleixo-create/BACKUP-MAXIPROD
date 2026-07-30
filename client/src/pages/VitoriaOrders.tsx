@@ -284,11 +284,16 @@ export default function VitoriaOrders() {
   // Filter orders based on status flow
   // "Novos" tab: for Guilherme/Juvenal includes both 'pendente' (aguardando aprovacao) AND 'aprovado' not yet received
   // For Vitória: only 'aprovado' not yet received
+  // NOTE: For top gestores (Fernando/Guilherme/Bruno/Juvenal), apply gc.pedidosVenda sub-permission filter.
+  // For Vitória and other operators, do NOT apply sub-permission filter - the backend already controls
+  // visibility via status filtering, and timeline rules determine which orders they should process.
   const filteredOrders = (orders || []).filter((o: any) => {
-    // Sub-permission filter: STRICT - only show orders from explicitly ticked sellers
-    if (visibleSellersForOrders.length === 0) return false; // No sub-perms ticked = show nothing
-    const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    if (!visibleSellersForOrders.includes(sellerSlug)) return false;
+    // Sub-permission filter: only for top gestores and Juvenal (who see ALL statuses and need filtering)
+    if (canSeeAguardandoAprovacao) {
+      if (visibleSellersForOrders.length === 0) return false;
+      const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+      if (!visibleSellersForOrders.includes(sellerSlug)) return false;
+    }
     if (statusFilter === "todos") return true;
     if (statusFilter === "pendente") {
       if (canSeeAguardandoAprovacao) {

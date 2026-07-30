@@ -6626,3 +6626,6 @@
   - Causa raiz: Fernando (operador, ID=4) e Pedro Augusto (vendedor, ID=4) tinham o MESMO ID numérico de tabelas diferentes
   - Fix: composite key (type_id) no frontend + WHERE recipientType no backend (saveRules, deleteRulesForRecipient)
 - [x] Cada checkbox agora é 100% individual - testado e verificado
+- [x] Bug: Pedidos aprovados pelo Juvenal não estão aparecendo para Vitória na aba "Novos" - investigar e corrigir
+  - Causa raiz: Filtro de sub-permissões gc.pedidosVenda bloqueava vendedores não cadastrados (Daniel Tavares, etc.)
+  - Fix: Removido filtro de sub-permissões para operadores (Vitória) - backend já controla visibilidade via status
