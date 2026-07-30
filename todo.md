@@ -6485,3 +6485,24 @@
 - [x] Se "Meu Painel de Vendedor" está ticado mas nenhum vendedor específico está ticado, o painel aparece mas não abre nada
 - [x] Se "Pedidos de Venda" está ticado mas nenhum vendedor está ticado abaixo, não aparece pedidos de ninguém
 - [x] Não desmarcar nada do que já está configurado - apenas garantir que a lógica funcione corretamente a partir de agora
+
+## Fix: Mensagens de Erro na Simulação de Frete + Protocolo Camilo
+- [x] Substituir mensagens de erro brutas (HTTP 500, JSON cru) por mensagens legíveis e amigáveis para o usuário
+- [x] Extrair código de cotação da Camilo (ex: 2768465) da resposta da API e exibir como protocolo (via sistema web SSW ssw1608)
+
+## Card "Simulação de Frete" na Gestão Comercial
+
+- [x] Criar novo card "Simulação de Frete" na aba Gestão Comercial (igual aos outros cards: Painel do Gestor, Painel do Vendedor, etc.)
+- [x] Adicionar permissão ticável em Configurações → GC para controlar quem tem acesso ao card
+- [x] No card: campo para digitar o número do pedido de venda
+- [x] Ao digitar o número: buscar automaticamente do Maxiprod todas as informações (dimensão, peso, cubagem, valor, CEP, CNPJ do cliente)
+- [x] Simular frete nas 5 transportadoras automaticamente com os dados puxados
+- [x] Exibir resultados da simulação com valores, prazos e protocolos
+
+## Camilo/SSW - Automação do Número de Cotação (CREDENCIAIS RECEBIDAS)
+
+- [x] Salvar credenciais SSW web: Domínio RCS, Usuário foxp, Senha 2010
+- [x] Implementar automação via HTTP no sistema web SSW (ssw1608 via act=ENV)
+- [x] Após cotação SOAP, buscar número de cotação no sistema web SSW em paralelo
+- [x] Integrar protocolo Camilo no fluxo de simulação de frete (exibir junto com as demais)
+- [x] Testar end-to-end: cotação SOAP + protocolo web funcionando (Pedido 1594: Proto 2779801/2779802, Pedido 1572: Proto 2779799/2779800)

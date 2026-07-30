@@ -6,7 +6,7 @@ import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm"
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
-import { quoteAllSswCnpjs } from "./sswApi";
+import { quoteAllSswCnpjsWithProtocol } from "./sswApi";
 import { quoteAllRodonavesCnpjs, RODONAVES_CNPJS } from "./rodonavesApi";
 import { quoteFlordeMinas } from "./florDeminasApi";
 import { consultaCnpjCompleta } from "./sintegraApi";
@@ -2394,7 +2394,7 @@ export const salesOrderRouter = router({
           volumes: input.volumes,
           cnpjDestinatario: input.cnpjDestinatario,
         }),
-        quoteAllSswCnpjs({
+        quoteAllSswCnpjsWithProtocol({
           // SSW/Camilo has freight table negotiated from Perdões/MG (37260000), not Contagem
           cepOrigem: "37260000",
           cepDestino: input.cepDestino.replace(/\D/g, ""),
@@ -2707,7 +2707,7 @@ export const salesOrderRouter = router({
           volumes,
           cnpjDestinatario,
         }),
-        quoteAllSswCnpjs({
+        quoteAllSswCnpjsWithProtocol({
           cepOrigem: "37260000",
           cepDestino: cepDestino.replace(/\D/g, ""),
           valorNF: valorMercadoria,

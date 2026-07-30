@@ -234,3 +234,236 @@ export async function quoteAllSswCnpjs(params: Omit<SSWQuoteParams, "cnpjPagador
     }
   });
 }
+
+
+/**
+ * SSW Web System Protocol Number
+ * 
+ * The SOAP API does NOT return a protocol/cotação number.
+ * To get the protocol, we must use the SSW web system (ssw1608):
+ * 1. Login at /bin/ssw0422 with web credentials
+ * 2. Load the form at /bin/ssw1608
+ * 3. POST act=ENV with all quotation fields
+ * 4. Parse the XML response to extract nro_cotacao
+ * 
+ * Web credentials: Domain=RCS, User=foxp, Password=2010
+ */
+
+interface SSWWebSession {
+  cookies: string;
+  lastLogin: number;
+}
+
+let cachedWebSession: SSWWebSession | null = null;
+
+async function getSSWWebSession(): Promise<string> {
+  // Reuse session if less than 10 minutes old
+  if (cachedWebSession && Date.now() - cachedWebSession.lastLogin < 10 * 60 * 1000) {
+    return cachedWebSession.cookies;
+  }
+
+  const webDomain = process.env.SSW_DOMAIN || "RCS";
+  const webUser = "foxp";
+  const webPassword = "2010";
+
+  // Step 1: GET login page to get initial cookies
+  const initResp = await fetch("https://sistema.ssw.inf.br/bin/ssw0422", {
+    signal: AbortSignal.timeout(10000),
+  });
+  const initCookies = initResp.headers.getSetCookie?.() || [];
+  
+  // Step 2: POST login
+  const loginResp = await fetch("https://sistema.ssw.inf.br/bin/ssw0422", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest",
+      "Referer": "https://sistema.ssw.inf.br/bin/ssw0422",
+      "Cookie": initCookies.map(c => c.split(";")[0]).join("; "),
+    },
+    body: `act=L&f1=${webDomain}&f2=&f3=${webUser}&f4=${webPassword}`,
+    signal: AbortSignal.timeout(10000),
+  });
+
+  // Collect all cookies from login response
+  const loginCookies = loginResp.headers.getSetCookie?.() || [];
+  const allCookies = [...initCookies, ...loginCookies]
+    .map(c => c.split(";")[0])
+    .filter(c => c.includes("="));
+  
+  // Deduplicate cookies (keep last value for each name)
+  const cookieMap = new Map<string, string>();
+  for (const c of allCookies) {
+    const [name] = c.split("=");
+    cookieMap.set(name, c);
+  }
+  const cookieStr = Array.from(cookieMap.values()).join("; ");
+
+  cachedWebSession = { cookies: cookieStr, lastLogin: Date.now() };
+  return cookieStr;
+}
+
+/**
+ * Get the SSW protocol/cotação number via the web system.
+ * This should be called AFTER a successful SOAP quotation to get the protocol number.
+ */
+export async function getSSWWebProtocol(params: {
+  cnpjPagador: string;
+  cepOrigem: string | number;
+  cepDestino: string | number;
+  valorNF: number;
+  quantidade: number;
+  peso: number;
+  cubagem: number;
+  cnpjDestinatario?: string;
+  cnpjRemetente?: string;
+  coletar?: "S" | "N";
+  contribuinte?: "S" | "N";
+  entDificil?: "S" | "N";
+}): Promise<{ protocolo: string; totalFrete: number; prazo: string; rota: string; tabela: string } | null> {
+  try {
+    const cookies = await getSSWWebSession();
+
+    // Step 3: Load the form page (establishes server-side session state)
+    await fetch("https://sistema.ssw.inf.br/bin/ssw1608", {
+      headers: {
+        "Cookie": cookies,
+        "Referer": "https://sistema.ssw.inf.br/bin/menu01",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    // Step 4: Submit quotation via act=ENV (mimics the sim() JavaScript function)
+    const cepOrigem = String(params.cepOrigem).replace(/\D/g, "");
+    const cepDestino = String(params.cepDestino).replace(/\D/g, "");
+    
+    const formData = new URLSearchParams({
+      act: "ENV",
+      f2: params.cnpjPagador,
+      f3: "",
+      f4: "",                          // Mercadoria (empty = default)
+      f5: "",
+      f6: cepOrigem,                   // CEP origem
+      f7: "",
+      f8: cepDestino,                  // CEP destino
+      f9: "1",                         // Tipo frete: 1=CIF
+      f10: params.coletar || "S",      // Coletar
+      f11: "",
+      f12: "",                         // CNPJ destinatário (optional, leave empty to avoid "não cadastrado")
+      f13: params.contribuinte || "S", // Contribuinte
+      f14: params.entDificil || "N",   // Entrega difícil
+      f15: String(Math.round(params.valorNF)),  // Valor da NF
+      f16: String(params.quantidade),  // Quantidade volumes
+      f17: "0",                        // Quantidade pares
+      f18: String(params.peso),        // Peso (Kg)
+      f19: "",
+      f20: String(params.cubagem),     // Cubagem (m³)
+      f21: "",                         // cub_alt_1
+      f22: "",                         // cub_larg_1
+      f23: "",                         // cub_comp_1
+      f24: "",                         // cub_nro_vezes_1
+      f25: params.cnpjRemetente || params.cnpjPagador,  // cgc_rem
+    });
+
+    const resp = await fetch("https://sistema.ssw.inf.br/bin/ssw1608", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Requested-With": "XMLHttpRequest",
+        "Cookie": cookies,
+        "Referer": "https://sistema.ssw.inf.br/bin/ssw1608",
+      },
+      body: formData.toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    const xml = await resp.text();
+    
+    // Parse the XML response
+    const nroCotacao = xml.match(/<nro_cotacao>([^<]+)<\/nro_cotacao>/)?.[1] || "";
+    const totalFrete = xml.match(/<totalFrete>([^<]+)<\/totalFrete>/)?.[1] || "0";
+    const prazo = xml.match(/<prazo>([^<]+)<\/prazo>/)?.[1] || "";
+    const rota = xml.match(/<rota>([^<]+)<\/rota>/)?.[1] || "";
+    const tabela = xml.match(/<tabela>([^<]+)<\/tabela>/)?.[1] || "";
+    const erro = xml.match(/<erro>([^<]+)<\/erro>/)?.[1] || xml.match(/<flag>([^<]+)<\/flag>/)?.[1] || "";
+
+    if (nroCotacao) {
+      console.log(`[SSW Web] Protocol obtained: ${nroCotacao} (frete: ${totalFrete}, rota: ${rota})`);
+      return {
+        protocolo: nroCotacao,
+        totalFrete: parseFloat(totalFrete.replace(",", ".")),
+        prazo,
+        rota,
+        tabela,
+      };
+    }
+
+    // If there's an error but still got a protocol
+    if (erro && !nroCotacao) {
+      const mensagem = xml.match(/<mensagem>([^<]+)<\/mensagem>/)?.[1] || "";
+      console.log(`[SSW Web] Quotation returned with warning: ${erro} - ${mensagem}`);
+      // Even with ERRO2 (informational), the protocol might still be valid
+      if (nroCotacao) {
+        return { protocolo: nroCotacao, totalFrete: parseFloat(totalFrete.replace(",", ".")), prazo, rota, tabela };
+      }
+    }
+
+    console.log(`[SSW Web] No protocol in response. Error: ${erro}`);
+    return null;
+  } catch (error: any) {
+    console.error(`[SSW Web] Error getting protocol: ${error.message}`);
+    // Invalidate session on error
+    cachedWebSession = null;
+    return null;
+  }
+}
+
+/**
+ * Enhanced version of quoteAllSswCnpjs that also fetches the protocol number
+ * via the web system for the best (cheapest) result.
+ */
+export async function quoteAllSswCnpjsWithProtocol(params: Omit<SSWQuoteParams, "cnpjPagador">): Promise<Array<{
+  cnpj: string;
+  totalFrete: number;
+  prazo: number;
+  protocolo?: string;
+  error?: string;
+  details?: SSWQuoteResult;
+}>> {
+  // First, get SOAP quotes for all CNPJs
+  const results = await quoteAllSswCnpjs(params);
+
+  // For each successful result without a protocol, try to get it via web
+  const enhancedResults = await Promise.all(
+    results.map(async (result) => {
+      if (result.error || result.protocolo) return result;
+
+      try {
+        const webResult = await getSSWWebProtocol({
+          cnpjPagador: result.cnpj,
+          cepOrigem: params.cepOrigem,
+          cepDestino: params.cepDestino,
+          valorNF: params.valorNF,
+          quantidade: params.quantidade,
+          peso: params.peso,
+          cubagem: params.cubagem,
+          cnpjDestinatario: params.cnpjDestinatario,
+          cnpjRemetente: params.cnpjRemetente,
+          coletar: params.coletar,
+          contribuinte: params.destContribuinte,
+          entDificil: params.entDificil,
+        });
+
+        if (webResult?.protocolo) {
+          return { ...result, protocolo: webResult.protocolo };
+        }
+      } catch (e: any) {
+        console.error(`[SSW Web] Failed to get protocol for ${result.cnpj}: ${e.message}`);
+      }
+
+      return result;
+    })
+  );
+
+  return enhancedResults;
+}

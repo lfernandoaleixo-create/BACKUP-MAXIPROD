@@ -635,6 +635,7 @@ const GRANULAR_GC_FEATURES: GranularPermDef[] = [
   { key: "gc.gerenciarGestores", label: "Gerenciar Gestores", parentTab: "gestao-comercial" },
   { key: "gc.custosDeVenda", label: "Custos de Venda", parentTab: "gestao-comercial" },
   { key: "gc.cotarFretePedido", label: "Cotar Frete (Pedido de Venda)", parentTab: "gestao-comercial" },
+  { key: "gc.simulacaoFrete", label: "Simulação de Frete", parentTab: "gestao-comercial" },
 ];
 // Legacy constant kept for ALL_GRANULAR_PERMS compatibility (dynamic items added at runtime)
 const GRANULAR_GESTAO_COMERCIAL: GranularPermDef[] = [...GRANULAR_GC_FEATURES];

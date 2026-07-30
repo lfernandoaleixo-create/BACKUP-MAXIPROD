@@ -17,7 +17,7 @@ import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
   Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check,
-  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent, FileSpreadsheet
+  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent, FileSpreadsheet, Truck
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -383,6 +383,20 @@ export default function GestaoComercial() {
                 </div>
               </div>
                         </Link>}
+            {/* Simulação de Frete */}
+            {hasGranularAccess("gc.simulacaoFrete") && <Link href="/gestao-comercial/simulacao-frete">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-cyan-200 dark:border-cyan-700 shadow-sm p-6 hover:shadow-lg hover:border-cyan-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/50 transition-colors">
+                    <Truck className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Simulação de Frete</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Cotar frete por número do pedido de venda</p>
+                  </div>
+                </div>
+              </div>
+            </Link>}
             {/* Cadastrar Gestores/Sub-gestores */}
             {hasGranularAccess("gc.painelGestores") && <Link href="/gestao-comercial/gerenciar-gestores">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-sm p-6 hover:shadow-lg hover:border-purple-400 transition-all cursor-pointer group">
