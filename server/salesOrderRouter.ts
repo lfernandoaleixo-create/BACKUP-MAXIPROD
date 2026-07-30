@@ -971,9 +971,12 @@ export const salesOrderRouter = router({
       let timelineRecipients: Array<{ recipientId: number; recipientName: string; actionType: string; approvalPosition: number }> = [];
       if (!input.isSimulation) {
         try {
+          // Match by sellerName using LIKE because timeline rules may store short operator names
+          // (e.g. 'Juvenal') while seller_permissions stores full names (e.g. 'JUVENAL TEIXEIRA')
+          const sellerFirstName = seller.sellerName.split(' ')[0].toUpperCase();
           const timelineRules = await db.select().from(orderTimelineRules)
             .where(and(
-              eq(orderTimelineRules.sellerId, input.sellerId),
+              sql`UPPER(${orderTimelineRules.sellerName}) LIKE ${`%${sellerFirstName}%`}`,
               eq(orderTimelineRules.active, true)
             ));
           if (timelineRules.length > 0) {
@@ -1135,29 +1138,46 @@ export const salesOrderRouter = router({
             sql`UPPER(${orderTimelineRules.recipientName}) LIKE ${`%${recipientNameUpper.split(' ')[0]}%`}`
           ));
 
-        if (recipientRules.length > 0) {
-          // Build a map of sellerId -> position for this recipient
-          const sellerPositionMap = new Map<number, number>();
-          const sellerConditionMap = new Map<number, string[]>();
+                if (recipientRules.length > 0) {
+          // Build a map of sellerName -> position for this recipient
+          // Use first-name LIKE matching because timeline rules may store short names
+          // (e.g. 'Juvenal') while orders store full names (e.g. 'JUVENAL TEIXEIRA')
+          const sellerPositionMap = new Map<string, number>();
+          const sellerConditionMap = new Map<string, string[]>();
           for (const rule of recipientRules) {
-            sellerPositionMap.set(rule.sellerId, rule.approvalPosition);
-            const existing = sellerConditionMap.get(rule.sellerId) || [];
+            const nameKey = rule.sellerName.toUpperCase().trim();
+            sellerPositionMap.set(nameKey, rule.approvalPosition);
+            const existing = sellerConditionMap.get(nameKey) || [];
             existing.push(rule.conditionType);
-            sellerConditionMap.set(rule.sellerId, existing);
+            sellerConditionMap.set(nameKey, existing);
           }
-
           // Filter orders: only show orders where currentApprovalPosition matches this recipient's position
           orders = orders.filter(order => {
-            const myPosition = sellerPositionMap.get(order.sellerId);
-            if (myPosition === undefined) return true; // No rule for this seller, show anyway (legacy)
-            const conditions = sellerConditionMap.get(order.sellerId) || [];
-            const isAposAprovacao = conditions.includes("apos_aprovacao_gestores");
-
-            if (isAposAprovacao) {
-              // Only show if order is fully approved (status = 'aprovado')
-              return order.status === "aprovado" || order.status === "processado";
+            const orderSellerName = (order.sellerName || '').toUpperCase().trim();
+            // Try exact match first, then first-name match for short names like 'Juvenal'
+            let matchedKey: string | undefined = sellerPositionMap.has(orderSellerName) ? orderSellerName : undefined;
+            if (!matchedKey) {
+              // Try matching by first name (timeline rules may store 'Juvenal' while order has 'JUVENAL TEIXEIRA')
+              const orderFirstName = orderSellerName.split(' ')[0];
+              for (const [ruleKey] of Array.from(sellerPositionMap.entries())) {
+                const ruleFirstName = ruleKey.split(' ')[0];
+                if (ruleFirstName === orderFirstName || ruleKey.includes(orderFirstName) || orderSellerName.includes(ruleFirstName)) {
+                  matchedKey = ruleKey;
+                  break;
+                }
+              }
             }
-
+            if (!matchedKey) return true; // No rule for this seller, show anyway (legacy)
+            const myPosition = sellerPositionMap.get(matchedKey)!;
+            const conditions = sellerConditionMap.get(matchedKey) || [];
+            const isAposAprovacao = conditions.includes("apos_aprovacao_gestores");
+            if (isAposAprovacao) {
+              // Show if order's current position has reached this recipient's position
+              // (meaning all previous gestors have approved)
+              // OR if order is already fully approved
+              const orderPosition = order.currentApprovalPosition || 1;
+              return orderPosition >= myPosition || order.status === "aprovado" || order.status === "processado";
+            }
             // For position-based: show if order's current position >= my position
             // (so I can see orders at my position or that have already passed my position)
             const orderPosition = order.currentApprovalPosition || 1;
@@ -1404,9 +1424,12 @@ export const salesOrderRouter = router({
 
       // === SEQUENTIAL APPROVAL LOGIC ===
       // Check if there are timeline rules with positions for this seller
+      // Match by sellerName using LIKE because timeline rules may store short operator names
+      // (e.g. 'Juvenal') while orders store full names (e.g. 'JUVENAL TEIXEIRA')
+      const orderSellerFirstName = (order.sellerName || '').split(' ')[0].toUpperCase();
       const timelineRules = await db.select().from(orderTimelineRules)
         .where(and(
-          eq(orderTimelineRules.sellerId, order.sellerId),
+          sql`UPPER(${orderTimelineRules.sellerName}) LIKE ${`%${orderSellerFirstName}%`}`,
           eq(orderTimelineRules.active, true)
         ));
 

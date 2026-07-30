@@ -6536,3 +6536,19 @@
 - [x] TODOS os vendedores -> Guilherme/Fernando/Bruno (pos 1, sempre, visualizar)
 - [x] Guilherme/Fernando/Bruno: permissão gc.painelVendedores + gc.verVendedor.* para todos os 14 vendedores
 - [ ] Nota: Elias não existe no sistema de vendedores (seller_permissions) - ignorado
+
+## Fix: Bug de matching sellerName na Linha do Tempo (30/07/2026)
+
+- [x] createOrder: usar LIKE match com primeiro nome (ex: 'Juvenal' match 'JUVENAL TEIXEIRA')
+- [x] approveOrder: usar LIKE match com primeiro nome (mesmo padrão do createOrder)
+- [x] listOrders: usar first-name match para filtrar pedidos por posição do recipient
+- [x] listOrders: fix condição 'apos_aprovacao_gestores' - mostrar quando currentApprovalPosition >= posição do recipient (não apenas quando status='aprovado')
+- [x] Teste end-to-end: Juvenal (gestor) faz pedido → Vitória + Guilherme/Fernando/Bruno recebem (pos 1) ✅
+- [x] Teste end-to-end: Clarindo (vendedor) faz pedido → Juvenal (pos 1, autorizar) + Guilherme/Fernando/Bruno (pos 1, visualizar) + Vitória (pos 2, após aprovação) ✅
+- [x] Teste end-to-end: Juvenal aprova pedido do Clarindo → posição avança para 2 → Vitória passa a ver o pedido ✅
+- [x] Limpeza: todos os pedidos de teste deletados (600001, 600002, 540001, 510001)
+
+## Simulação de Frete - Todos os pedidos em digitação (30/07/2026)
+
+- [ ] Simular frete para TODOS os pedidos em "digitação" no Maxiprod
+- [ ] Gerar relatório completo com protocolos e metodologia de cálculo
