@@ -838,7 +838,7 @@ export const salesOrderRouter = router({
             codigoItem: item.codigoItem,
             descricaoItem: item.descricaoItem,
             quantidade: item.quantidade.toFixed(3),
-            unidadeMedida: item.unidadeMedida || null,
+            unidadeMedida: item.unidadeMedida || "CX", // Grupo Fox: default sempre caixa
             precoUnitario: item.precoUnitario.toFixed(2),
             precoMinimo: item.precoMinimo !== null ? item.precoMinimo.toFixed(2) : null,
             totalItem: item.totalItem.toFixed(2),
@@ -2844,7 +2844,7 @@ export const salesOrderRouter = router({
             codigo: item.codigoItem || "",
             descricao: item.descricaoItem || "",
             qtd: qty,
-            unidade: item.unidadeMedidaCodigo || "CX",
+            unidade: "CX", // Grupo Fox: todos os produtos são vendidos em caixa
             pesoBrutoUn: pesoBrutoPerUnit,
             fatorConv: fator,
             pesoCx: pesoBrutoPerUnit * fator,
@@ -4105,7 +4105,7 @@ export const salesOrderRouter = router({
           codigoItem: item.codigoItem,
           descricaoItem: item.descricaoItem,
           quantidade: String(item.quantidade),
-          unidadeMedida: item.unidadeMedida || null,
+          unidadeMedida: item.unidadeMedida || "CX", // Grupo Fox: default sempre caixa
           precoUnitario: String(item.precoUnitario),
           precoMinimo: item.precoMinimo !== null ? String(item.precoMinimo) : null,
           totalItem: String(item.totalItem),
@@ -4315,7 +4315,7 @@ export const salesOrderRouter = router({
             descricaoItem: typeof i.descricaoItem === 'string' ? i.descricaoItem : '',
             quantidade: Number(i.quantidade),
             precoUnitario: Number(i.precoUnitario),
-            unidadeMedida: i.unidadeMedida || "CX",
+            unidadeMedida: "CX", // Grupo Fox: todos os produtos são vendidos em caixa
           })),
           source: "app",
           orderDate: lastAppOrder[0].createdAt?.toISOString() || null,
@@ -4359,7 +4359,7 @@ export const salesOrderRouter = router({
           descricaoItem: typeof i.descricaoItem === 'string' ? i.descricaoItem : (typeof i.descricaoItem === 'object' ? '' : String(i.descricaoItem || '')),
           quantidade: Number(i.quantidade || 1),
           precoUnitario: Number(i.valorUnitario || 0),
-          unidadeMedida: i.unidadeMedidaCodigo || "CX",
+          unidadeMedida: "CX", // Grupo Fox: todos os produtos são vendidos em caixa
         })),
         source: "maxiprod",
         orderDate: latestDate || null,

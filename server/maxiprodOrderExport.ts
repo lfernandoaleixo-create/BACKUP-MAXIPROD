@@ -418,11 +418,14 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     transportadora: order.transportadora || "",
     protocoloCotacao: order.protocoloCotacao || "",
     tipoFrete: order.tipoFrete || "CIF",
+    // REGRA: Todos os produtos do Grupo Fox são vendidos em CAIXA (CX).
+    // Independente do que está salvo no item (pode vir 'un' da unidade de estoque),
+    // a exportação para Maxiprod SEMPRE deve usar 'CX' como unidade de venda.
     items: items.map(item => ({
       codigoItem: item.codigoItem || "",
       descricaoItem: item.descricaoItem || "",
       quantidade: Number(item.quantidade) || 1,
-      unidadeMedida: item.unidadeMedida || "CX",
+      unidadeMedida: "CX",
       precoUnitario: Number(item.precoUnitario) || 0,
       valorDesconto: 0,
     })),

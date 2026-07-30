@@ -131,7 +131,7 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
       codigoItem: product.codigoItem,
       descricaoItem: product.descricaoItem,
       quantidade: 1,
-      unidadeMedida: product.unidadeDeVendaCodigo || product.unidadeMedida || "CX",
+      unidadeMedida: "CX", // Grupo Fox: todos os produtos são vendidos em CAIXA
       precoUnitario: product.precoMinimo ? Number(product.precoMinimo) : 0,
       precoMinimo: product.precoMinimo ? Number(product.precoMinimo) : null,
     }]);

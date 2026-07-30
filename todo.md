@@ -6629,3 +6629,6 @@
 - [x] Bug: Pedidos aprovados pelo Juvenal não estão aparecendo para Vitória na aba "Novos" - investigar e corrigir
   - Causa raiz: Filtro de sub-permissões gc.pedidosVenda bloqueava vendedores não cadastrados (Daniel Tavares, etc.)
   - Fix: Removido filtro de sub-permissões para operadores (Vitória) - backend já controla visibilidade via status
+- [x] Bug: Pedido 1596 importado com unidade errada - produtos devem ser importados como "caixa" na tabela de importação, não como "unidade"
+  - Causa raiz: stock_items.unidadeMedida (estoque) = 'un', mas unidadeDeVendaCodigo = 'CX'. Export usava o valor salvo no item que podia ser 'un'
+  - Fix: Forçado 'CX' em todos os pontos: export Maxiprod, criação de pedido, edição, e getLastOrder
