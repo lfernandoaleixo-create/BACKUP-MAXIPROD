@@ -6638,3 +6638,8 @@
 - [x] Bug: Card "Custo Real" na simulação de pedido mantém MG fixo ao invés de usar o estado do cliente selecionado automaticamente
   - Causa raiz: marginUfSimulacao era inicializado com "MG" e só sincronizava na seleção de cliente do dropdown, não em draft/edit/manual
   - Fix: Adicionado useEffect que sincroniza uf -> marginUfSimulacao sempre que o UF do cliente muda
+- [x] Bug: Contas autorizadas pelo Fernando não aparecem como marcadas para Flávio e Thalita na tela de Autorização de Pagamentos
+  - Causa raiz: checkAndResetIfNeeded() rodava em CADA request de getWeekReconciliation, e com o bug de double-encoding da data, a comparação falhava e apagava todas as autorizações
+  - Fix 1: Removido checkAndResetIfNeeded do getWeekReconciliation (reset agora só roda no startup e no cron de meia-noite)
+  - Fix 2: Corrigido double-encoding da data no paymentAuthReset.ts
+  - Fix 3: Corrigido valor no DB (app_settings)

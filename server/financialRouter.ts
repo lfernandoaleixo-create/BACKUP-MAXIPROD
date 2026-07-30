@@ -12,7 +12,7 @@ import { storagePut, storageGet } from "./storage";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql, normalizeVendedorName } from "./maxiprodGraphQL";
-import { checkAndResetIfNeeded } from "./paymentAuthReset";
+// checkAndResetIfNeeded removido daqui - reset é feito apenas no startup e no cron de meia-noite
 
 // Cache em memória para contraprova Maxiprod (TTL 5 minutos)
 const CONTRAPROVA_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
@@ -1880,11 +1880,9 @@ export const financialRouter = router({
    * Get payment authorization data for the current week (Mon-Fri)
    * Returns 5 day cards with contas a pagar listed and authorization status
    */
-  getWeekReconciliation: publicProcedure.query(async () => {
-    // Garantir que autorizações de dias anteriores foram limpas
-    // Isso cobre o caso de sandbox hibernar e o cron de meia-noite não rodar
-    await checkAndResetIfNeeded();
-
+    getWeekReconciliation: publicProcedure.query(async () => {
+    // Reset é feito no startup do servidor (checkAndResetOnStartup) e no cron de meia-noite.
+    // NÃO rodar checkAndResetIfNeeded aqui para evitar race conditions que apagam dados.
     const db = await getDb();
     if (!db) return { days: [], weekLabel: "", vencidas: { items: [], total: 0, count: 0 } };
 

@@ -40,7 +40,21 @@ async function getLastResetDate(db: any): Promise<string | null> {
       .where(eq(appSettings.settingKey, "payment_auth_last_reset_date"))
       .limit(1);
     if (rows.length > 0 && rows[0].settingValue) {
-      return String(rows[0].settingValue).replace(/"/g, '');
+      // settingValue is a JSON column - Drizzle auto-parses it.
+      // Handle both old double-encoded strings and plain strings.
+      let val = rows[0].settingValue;
+      // Unwrap if it's a string that looks like a JSON-encoded string
+      while (typeof val === 'string' && val.startsWith('"') && val.endsWith('"')) {
+        try { val = JSON.parse(val); } catch { break; }
+      }
+      // Final cleanup: remove any remaining quotes
+      const cleaned = String(val).replace(/"/g, '').trim();
+      // Validate it looks like a date YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+        return cleaned;
+      }
+      console.log(`[PaymentAuthReset] Invalid last reset date value: ${JSON.stringify(rows[0].settingValue)} -> cleaned: ${cleaned}`);
+      return null;
     }
   } catch (e: any) {
     console.log(`[PaymentAuthReset] Could not read last reset date: ${e.message}`);
@@ -58,14 +72,17 @@ async function setLastResetDate(db: any, date: string): Promise<void> {
       .where(eq(appSettings.settingKey, "payment_auth_last_reset_date"))
       .limit(1);
     
+    // settingValue is a JSON column - store the date string directly.
+    // Drizzle will handle JSON serialization automatically.
+    // Do NOT use JSON.stringify here as it causes double-encoding.
     if (existing.length > 0) {
       await db.update(appSettings)
-        .set({ settingValue: JSON.stringify(date) })
+        .set({ settingValue: date })
         .where(eq(appSettings.settingKey, "payment_auth_last_reset_date"));
     } else {
       await db.insert(appSettings).values({
         settingKey: "payment_auth_last_reset_date",
-        settingValue: JSON.stringify(date),
+        settingValue: date,
       });
     }
   } catch (e: any) {
@@ -136,6 +153,9 @@ export async function checkAndResetIfNeeded(): Promise<{ reset: boolean; deleted
     // Already reset today, nothing to do
     return { reset: false, deleted: 0 };
   }
+
+  // Log the mismatch for debugging
+  console.log(`[PaymentAuthReset] Date comparison: lastResetDate=${JSON.stringify(lastResetDate)} (type=${typeof lastResetDate}), todayBRT=${JSON.stringify(todayBRT)}`);
 
   // Last reset was on a different day (or never) — reset now
   console.log(`[PaymentAuthReset] Reset needed: last reset was ${lastResetDate || 'never'}, today is ${todayBRT}`);
