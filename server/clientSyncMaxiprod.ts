@@ -39,6 +39,11 @@ interface MaxiprodEmpresa {
       uf: { sigla: string } | null;
     } | null;
   } | null;
+  formaDeCobrancaPreferencial: {
+    boletoProtestarOuNegativar: string | null;
+    meioDePagamento: string | null;
+  } | null;
+  condicaoDePagamentoPreferencial: string | null;
   representanteOuVendedor1Preferencial: {
     nomeFantasia: string | null;
     razaoSocial: string | null;
@@ -67,6 +72,8 @@ const EMPRESAS_QUERY = (skip: number) => `{
       website
       limiteDeCredito
       crmSegmento { descricao }
+      formaDeCobrancaPreferencial { boletoProtestarOuNegativar meioDePagamento }
+      condicaoDePagamentoPreferencial
       endereco {
         logradouro
         numero
@@ -187,6 +194,17 @@ export async function syncClientsFromMaxiprod(): Promise<{ synced: number; error
           telefone2: emp.endereco?.telefone2 || null,
           email: emp.endereco?.email || null,
           segmento: emp.crmSegmento?.descricao || null,
+          // Cobrança - mapear boletoProtestarOuNegativar para situacaoCobranca
+          situacaoCobranca: emp.formaDeCobrancaPreferencial?.boletoProtestarOuNegativar
+            ? (emp.formaDeCobrancaPreferencial.boletoProtestarOuNegativar === "PROTESTAR" || emp.formaDeCobrancaPreferencial.boletoProtestarOuNegativar === "NEGATIVAR"
+              ? "COM PROTESTO" : "SEM PROTESTO")
+            : null,
+          // Forma de cobrança - mapear meioDePagamento
+          formaCobranca: emp.formaDeCobrancaPreferencial?.meioDePagamento
+            ? emp.formaDeCobrancaPreferencial.meioDePagamento.replace(/_/g, " ")
+            : null,
+          // Condição de pagamento preferencial
+          condicaoPagamento: emp.condicaoDePagamentoPreferencial || null,
           maxiprodId: emp.id,
           source: "maxiprod" as const,
           lastModifiedBy: "SYNC_MAXIPROD",
