@@ -393,7 +393,7 @@ export async function generateOrderPdf(order: OrderForPdf, showValues: boolean =
       String(idx + 1),
       item.codigoItem || "—",
       item.descricao,
-      `${item.quantidade.toLocaleString("pt-BR")} ${item.unidadeMedida || "un"}`,
+      `${item.quantidade.toLocaleString("pt-BR")} ${item.unidadeMedida || "CX"}`,
     ];
     if (showValues) {
       row.push(formatCurrency(item.valorUnitario));
@@ -450,7 +450,7 @@ export async function generateOrderPdf(order: OrderForPdf, showValues: boolean =
   // Calcular soma total de caixas/unidades
   const volumesByUnit: Record<string, number> = {};
   order.itens.forEach((item) => {
-    const unit = (item.unidadeMedida || "un").toLowerCase();
+    const unit = (item.unidadeMedida || "CX").toLowerCase();
     volumesByUnit[unit] = (volumesByUnit[unit] || 0) + item.quantidade;
   });
 

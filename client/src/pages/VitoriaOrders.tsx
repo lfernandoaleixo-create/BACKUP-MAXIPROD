@@ -731,7 +731,7 @@ export default function VitoriaOrders() {
                                           }`}>
                                             <div className="min-w-0 flex-1">
                                               <p className="text-sm font-semibold text-slate-700 truncate">{item.codigoItem} - {item.descricaoItem}</p>
-                                              <span className="text-xs text-slate-400">{Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(precoVenda)}</span>
+                                              <span className="text-xs text-slate-400">{Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "CX"} × {formatCurrency(precoVenda)}</span>
                                             </div>
                                             <p className="text-sm font-bold text-slate-700 ml-2">{formatCurrency(Number(item.totalItem))}</p>
                                           </div>
@@ -1018,7 +1018,7 @@ export default function VitoriaOrders() {
                                       {item.codigoItem} - {item.descricaoItem}
                                     </p>
                                     <span className="text-xs text-slate-400">
-                                      {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(precoVenda)}
+                                      {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "CX"} × {formatCurrency(precoVenda)}
                                     </span>
                                   </div>
                                   <p className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">

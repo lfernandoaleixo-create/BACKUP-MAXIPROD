@@ -547,7 +547,7 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                       }`}>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-slate-700 truncate">{item.descricaoItem}</p>
-                          <p className="text-[10px] text-slate-400">{item.quantidade} {item.unidadeMedida || "un"}</p>
+                          <p className="text-[10px] text-slate-400">{item.quantidade} {item.unidadeMedida || "CX"}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium">{Number(item.precoUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
@@ -6671,7 +6671,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   const fator = Number(p.unidadeDeVendaFator) || 1;
                   const qtdRaw = Number(p.disponivel) || 0;
                   const qtdCaixas = fator > 1 ? Math.floor(qtdRaw / fator) : qtdRaw;
-                  const unidadeVenda = p.unidadeDeVendaCodigo || (fator >= 1000 ? "CX" : p.unidadeMedida || "un");
+                  const unidadeVenda = p.unidadeDeVendaCodigo || (fator >= 1000 ? "CX" : p.unidadeMedida || "CX");
                   const dims = p.descricaoComplementar ? p.descricaoComplementar.match(/([\d,.]+)[xX]([\d,.]+)[xX]([\d,.]+)/) : null;
                   const isExpanded = expandedProduct === p.codigoItem;
                   const hasPOs = p.pendingPOs && p.pendingPOs.length > 0;

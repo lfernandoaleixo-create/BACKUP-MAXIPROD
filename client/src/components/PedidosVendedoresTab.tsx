@@ -438,7 +438,7 @@ export default function PedidosVendedoresTab() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-slate-700 truncate text-xs">{item.descricaoItem}</p>
                         <p className="text-[10px] text-slate-400">
-                          {item.codigoItem === '00556' ? Math.round(Number(item.quantidade) / 10.002) : item.codigoItem === '00808' ? Math.round(Number(item.quantidade) / 11.6) : Number(item.quantidade).toFixed(0)} {item.codigoItem === '00556' || item.codigoItem === '00808' ? 'cx' : (item.unidadeMedida || 'un')} × {formatCurrency(item.precoUnitario)}
+                          {item.codigoItem === '00556' ? Math.round(Number(item.quantidade) / 10.002) : item.codigoItem === '00808' ? Math.round(Number(item.quantidade) / 11.6) : Number(item.quantidade).toFixed(0)} {item.codigoItem === '00556' || item.codigoItem === '00808' ? 'cx' : (item.unidadeMedida || 'CX')} × {formatCurrency(item.precoUnitario)}
                           {item.abaixoDoMinimo && item.precoMinimo && (
                             <span className="text-red-500 ml-1">(mín: {formatCurrency(item.precoMinimo)})</span>
                           )}

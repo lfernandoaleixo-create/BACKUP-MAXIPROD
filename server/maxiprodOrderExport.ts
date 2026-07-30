@@ -309,7 +309,7 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
       item.codigoItem || "",                                  // K: Código do produto
       item.descricaoItem || "",                               // L: Descrição (se vazio, Maxiprod usa cadastro)
       item.quantidade || 1,                                   // M: Quantidade*
-      item.unidadeMedida || "un",                             // N: Unidade de venda*
+      item.unidadeMedida || "CX",                             // N: Unidade de venda*
       item.precoUnitario || 0,                                // O: Valor unitário
       item.valorDesconto || 0,                                // P: Valor de desconto
       null,                                                   // Q: Valor de frete (VAZIO conforme solicitado)
@@ -422,7 +422,7 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
       codigoItem: item.codigoItem || "",
       descricaoItem: item.descricaoItem || "",
       quantidade: Number(item.quantidade) || 1,
-      unidadeMedida: item.unidadeMedida || "un",
+      unidadeMedida: item.unidadeMedida || "CX",
       precoUnitario: Number(item.precoUnitario) || 0,
       valorDesconto: 0,
     })),

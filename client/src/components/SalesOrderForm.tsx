@@ -131,7 +131,7 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
       codigoItem: product.codigoItem,
       descricaoItem: product.descricaoItem,
       quantidade: 1,
-      unidadeMedida: product.unidadeMedida || "UN",
+      unidadeMedida: product.unidadeDeVendaCodigo || product.unidadeMedida || "CX",
       precoUnitario: product.precoMinimo ? Number(product.precoMinimo) : 0,
       precoMinimo: product.precoMinimo ? Number(product.precoMinimo) : null,
     }]);

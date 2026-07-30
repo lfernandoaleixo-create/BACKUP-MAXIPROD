@@ -699,7 +699,7 @@ export default function GestorAprovacoes(props: any = {}) {
                                     </p>
                                     <div className="flex items-center gap-2 mt-0.5">
                                       <span className="text-[10px] text-slate-400">
-                                        {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "un"} × {formatCurrency(Number(item.precoUnitario))}
+                                        {Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "CX"} × {formatCurrency(Number(item.precoUnitario))}
                                       </span>
                                       {item.abaixoDoMinimo && item.precoMinimo && (
                                         <span className="text-[9px] font-bold text-red-600 bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded">

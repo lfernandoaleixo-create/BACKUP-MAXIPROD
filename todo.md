@@ -6585,3 +6585,11 @@
 - [x] Corrigir cálculo de peso (usar quantidadeUnidadeItem × pesoBruto)
 - [x] Melhorar fallback para itens sem pesoBruto (10kg/cx ao invés de 0.5kg)
 - [x] Verificar com 5 pedidos reais - todos corretos
+
+## Fix: Unidade de medida exportada como "un" em vez de "CX" (30/07/2026)
+
+- [x] Frontend SalesOrderForm: usar unidadeDeVendaCodigo || "CX" ao adicionar produto
+- [x] Export maxiprodOrderExport: fallback para "CX" em vez de "un"
+- [x] Atualizar pedidos existentes no banco de "un" para "CX" (13 itens atualizados)
+- [x] Corrigir fallback em todos os componentes de display (PedidosVendedoresTab, GestorAprovacoes, VendedorDetalhe, VitoriaOrders, generateOrderPdf)
+- [x] TypeScript compila sem erros
