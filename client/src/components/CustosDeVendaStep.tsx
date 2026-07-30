@@ -65,6 +65,7 @@ interface CustosDeVendaStepProps {
   onBack: () => void;
   onNext: () => void;
   onRealCostsCalculated?: (data: { comissaoPerc: number; fretePerc: number; margemReal: number; comissaoFonte?: string; comissaoTier?: string }) => void;
+  skipMarginBlock?: boolean; // When true, gestor can proceed even with critico_bloqueado
 }
 
 function formatCurrency(value: number) {
@@ -175,6 +176,7 @@ export default function CustosDeVendaStep({
   onNext,
   sellerId,
   onRealCostsCalculated,
+  skipMarginBlock = false,
 }: CustosDeVendaStepProps) {
   const { hasGranularAccess } = useOperator();
   const canEditComissao = hasGranularAccess("gc.editarComissao");
@@ -787,7 +789,11 @@ export default function CustosDeVendaStep({
                   'text-blue-700 dark:text-blue-300'
                 }`}>
                   {(costsData.comissao as any).fonte === "critico_bloqueado" ? (
-                    <>⚠️ Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — <strong>Pedido BLOQUEADO</strong>. Média mensal do vendedor: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}% (≤ 15%). Não é possível fechar este pedido.</>
+                    skipMarginBlock ? (
+                      <>⚠️ Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — Média mensal: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}% (≤ 15%). <strong>Liberado para gestor.</strong></>
+                    ) : (
+                      <>⚠️ Margem Crítica ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}% &lt; 15%) — <strong>Pedido BLOQUEADO</strong>. Média mensal do vendedor: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}% (≤ 15%). Não é possível fechar este pedido.</>
+                    )
                   ) : (costsData.comissao as any).fonte === "critico_liberado" ? (
                     <>⚠️ Margem abaixo de 15% ({((costsData.comissao as any).margemSemComissao ?? 0).toFixed(1)}%) — Comissão travada em <strong>4%</strong> (Meta 120%). Média mensal: {((costsData.comissao as any).mediaMensalVendedor ?? 0).toFixed(1)}% (&gt; 15%, liberado).</>
                   ) : (costsData.comissao as any).critico ? (
@@ -1125,7 +1131,7 @@ export default function CustosDeVendaStep({
       {/* Dados para Maxiprod foram movidos para a tela principal de finalização do pedido */}
 
       {/* Alerta de bloqueio */}
-      {costsData && (costsData.comissao as any).fonte === "critico_bloqueado" && (
+      {costsData && (costsData.comissao as any).fonte === "critico_bloqueado" && !skipMarginBlock && (
         <div className="p-3 bg-red-100 dark:bg-red-900/30 border-2 border-red-400 dark:border-red-600 rounded-lg animate-pulse">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -1139,6 +1145,18 @@ export default function CustosDeVendaStep({
           </div>
         </div>
       )}
+      {/* Alerta informativo (gestor pode prosseguir) */}
+      {costsData && (costsData.comissao as any).fonte === "critico_bloqueado" && skipMarginBlock && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div>
+              <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Atenção: Margem Crítica</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">A margem deste pedido está abaixo de 15% e a média mensal do vendedor está ≤ 15%. Liberado para gestor.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex justify-between pt-2">
@@ -1147,15 +1165,15 @@ export default function CustosDeVendaStep({
         </button>
         <button
           onClick={() => {
-            if (costsData && (costsData.comissao as any).fonte === "critico_bloqueado") {
+            if (!skipMarginBlock && costsData && (costsData.comissao as any).fonte === "critico_bloqueado") {
               toast.error("Pedido bloqueado: margem abaixo de 15% e média mensal do vendedor ≤ 15%.");
               return;
             }
             onNext();
           }}
-          disabled={!!(costsData && (costsData.comissao as any).fonte === "critico_bloqueado")}
+          disabled={!skipMarginBlock && !!(costsData && (costsData.comissao as any).fonte === "critico_bloqueado")}
           className={`px-4 py-2 text-white text-xs font-medium rounded-lg transition-colors ${
-            costsData && (costsData.comissao as any).fonte === "critico_bloqueado"
+            !skipMarginBlock && costsData && (costsData.comissao as any).fonte === "critico_bloqueado"
               ? "bg-slate-400 cursor-not-allowed"
               : "bg-teal-600 hover:bg-teal-700"
           }`}

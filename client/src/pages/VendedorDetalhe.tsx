@@ -7370,6 +7370,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             uf={uf}
             items={items}
             sellerId={sellerId}
+            skipMarginBlock={!isMonthlyMarginBlockActive && isGestorMode}
             condicaoPagamento={condicaoPagamento}
             setCondicaoPagamento={setCondicaoPagamento}
             valorFrete={valorFrete}
