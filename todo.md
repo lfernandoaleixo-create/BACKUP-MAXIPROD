@@ -6519,3 +6519,20 @@
 - [x] Atualizar backend para respeitar a ordem sequencial de aprovação
 - [x] Atualizar frontend (UI) para permitir selecionar posição e condição ao ticar destinatários
 - [x] Testar fluxo completo end-to-end (evaluateOrder retorna approvalPosition, saveRules aceita approvalPosition)
+
+## Card "Aprovações de Pedidos" - Piscar quando tem pedido pendente (29/07/2026)
+
+- [x] Card "Aprovações de Pedidos" deve piscar/pulsar quando há pedidos pendentes para aquele gestor (já implementado com blink-approval animation)
+- [x] A animação deve ser visível e chamar atenção (borda pulsante vermelha + badge bounce)
+- [x] Deve parar de piscar quando não há pedidos pendentes ("Nenhum pedido pendente")
+
+## Configuração de Regras da Linha do Tempo (30/07/2026)
+
+- [x] Jordão -> Vitória (sempre, visualizar, pos 1)
+- [x] Paula -> Vitória (sempre, visualizar, pos 1)
+- [x] Juvenal -> Vitória (sempre, visualizar, pos 1)
+- [x] Rafael -> Renato Ledesma (pos 1, autorizar) -> Juvenal (pos 2, autorizar) -> Vitória (pos 3, após aprovação)
+- [x] Vendedores do Juvenal (Clarindo, Daniel, Francisco, Luiz, Patrick, Pedro, Renato Aleixo, Renato Ledesma, Romera, Wellington) -> Juvenal (pos 1, autorizar) -> Vitória (pos 2, após aprovação)
+- [x] TODOS os vendedores -> Guilherme/Fernando/Bruno (pos 1, sempre, visualizar)
+- [x] Guilherme/Fernando/Bruno: permissão gc.painelVendedores + gc.verVendedor.* para todos os 14 vendedores
+- [ ] Nota: Elias não existe no sistema de vendedores (seller_permissions) - ignorado
