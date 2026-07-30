@@ -6632,3 +6632,6 @@
 - [x] Bug: Pedido 1596 importado com unidade errada - produtos devem ser importados como "caixa" na tabela de importação, não como "unidade"
   - Causa raiz: stock_items.unidadeMedida (estoque) = 'un', mas unidadeDeVendaCodigo = 'CX'. Export usava o valor salvo no item que podia ser 'un'
   - Fix: Forçado 'CX' em todos os pontos: export Maxiprod, criação de pedido, edição, e getLastOrder
+- [x] Bug: API Camilo (SSW) retornando frete para Goiás quando não atende o estado
+  - Causa raiz: API SSW calcula frete com tabela "Generica" para rotas não atendidas, retornando valor mesmo sem cobertura real
+  - Fix: Adicionada validação de tabCalculo - rejeita cotações com tabCalculo="Generica" (rotas válidas usam "Combinada")

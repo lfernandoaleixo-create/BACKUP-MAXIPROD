@@ -192,6 +192,22 @@ export async function quoteSswFreight(params: SSWQuoteParams): Promise<SSWQuoteR
     throw new Error(`SSW: ${result.mensagem}`);
   }
 
+  // CRITICAL: The SSW API returns a calculated freight value even when the carrier
+  // does NOT serve the destination. It uses a "Generica" (generic) pricing table
+  // for routes it doesn't actually cover. The real table for valid routes is "Combinada".
+  // We must reject quotes calculated with the generic table.
+  //
+  // Evidence from testing:
+  //   - BH/MG: tabCalculo=Combinada (valid, Camilo serves)
+  //   - SP: tabCalculo=Combinada (valid, Camilo serves)
+  //   - RJ: tabCalculo=Combinada, erro=1 msg="área de risco" (valid, just a warning)
+  //   - Goiânia/GO: tabCalculo=Generica, erro=1 msg="não atende" (INVALID)
+  //   - Salvador/BA: tabCalculo=Generica, erro=1 msg="não atende" (INVALID)
+  //   - Curitiba/PR: erro=-1 (already handled above)
+  if (result.tabCalculo === "Generica" && result.totalFrete > 0) {
+    throw new Error(`SSW: Transportadora não atende esta rota (tabela genérica utilizada)`);
+  }
+
   // erro >= 1 means success (may include informational messages like "área de risco")
   return result;
 }
