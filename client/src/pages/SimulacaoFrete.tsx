@@ -20,6 +20,23 @@ interface CarrierResult {
   error?: string;
 }
 
+interface ItemBreakdown {
+  codigo: string;
+  descricao: string;
+  qtd: number;
+  unidade: string;
+  pesoBrutoUn: number;
+  fatorConv: number;
+  pesoCx: number;
+  pesoTotal: number;
+  dimensoes: string;
+  comprimento: number;
+  largura: number;
+  altura: number;
+  volCxM3: number;
+  cubagem: number;
+}
+
 interface QuoteResult {
   pedido: string;
   cliente: string;
@@ -28,7 +45,22 @@ interface QuoteResult {
   valorMercadoria: number;
   pesoTotal: number;
   volumes: number;
+  metroCubico?: number;
+  tipoContribuinte?: string;
   carriers: CarrierResult[];
+  itemsBreakdown?: ItemBreakdown[];
+  endereco?: {
+    logradouro: string;
+    numero: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+  };
+  dimensoes?: {
+    altura: number;
+    largura: number;
+    comprimento: number;
+  };
 }
 
 /**
@@ -105,8 +137,16 @@ export default function SimulacaoFrete() {
           valorMercadoria: result.valorMercadoria,
           pesoTotal: result.pesoTotal,
           volumes: result.volumes,
-          cubagemTotal: result.volumes * 0.05, // estimate
-          results: result.carriers,
+          cubagemTotal: result.metroCubico || result.volumes * 0.05,
+          tipoContribuinte: result.tipoContribuinte || undefined,
+          results: {
+            carriers: result.carriers,
+            pedido: result.pedido,
+            cliente: result.cliente,
+            itemsBreakdown: result.itemsBreakdown,
+            endereco: result.endereco,
+            dimensoes: result.dimensoes,
+          },
           operatorName: "Simulação de Frete (GC)",
         });
         simId = Number(saved.id);

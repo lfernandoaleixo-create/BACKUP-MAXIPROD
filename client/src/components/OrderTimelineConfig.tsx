@@ -59,33 +59,34 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
     },
   });
 
-  // Group existing rules by recipient
+  // Group existing rules by recipient using composite key (type_id) to handle ID collisions
   const rulesByRecipient = useMemo(() => {
-    const map = new Map<number, typeof existingRules>();
+    const map = new Map<string, typeof existingRules>();
     if (existingRules) {
       for (const rule of existingRules) {
-        const existing = map.get(rule.recipientId) || [];
+        const key = `${rule.recipientType}_${rule.recipientId}`;
+        const existing = map.get(key) || [];
         existing.push(rule);
-        map.set(rule.recipientId, existing);
+        map.set(key, existing);
       }
     }
     return map;
   }, [existingRules]);
 
-  // Local state for editing conditions per recipient
-  const [localConditions, setLocalConditions] = useState<Record<number, Array<{
+  // Local state for editing conditions per recipient (keyed by composite type_id)
+  const [localConditions, setLocalConditions] = useState<Record<string, Array<{
     conditionType: string;
     conditionValue: number | null;
     actionType: string;
-  }>>>({});
+  }>>>({}); 
 
-  // Local state for approval position per recipient
-  const [localPositions, setLocalPositions] = useState<Record<number, number>>({});
+  // Local state for approval position per recipient (keyed by composite type_id)
+  const [localPositions, setLocalPositions] = useState<Record<string, number>>({});
 
   // Get approval position for a recipient
-  const getPositionForRecipient = useCallback((recipientId: number) => {
-    if (localPositions[recipientId] !== undefined) return localPositions[recipientId];
-    const rules = rulesByRecipient.get(recipientId);
+  const getPositionForRecipient = useCallback((compositeKey: string) => {
+    if (localPositions[compositeKey] !== undefined) return localPositions[compositeKey];
+    const rules = rulesByRecipient.get(compositeKey);
     if (rules && rules.length > 0) {
       return rules[0].approvalPosition || 1;
     }
@@ -93,9 +94,9 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
   }, [localPositions, rulesByRecipient]);
 
   // Initialize local conditions from DB when rules load
-  const getConditionsForRecipient = useCallback((recipientId: number) => {
-    if (localConditions[recipientId]) return localConditions[recipientId];
-    const rules = rulesByRecipient.get(recipientId);
+  const getConditionsForRecipient = useCallback((compositeKey: string) => {
+    if (localConditions[compositeKey]) return localConditions[compositeKey];
+    const rules = rulesByRecipient.get(compositeKey);
     if (rules && rules.length > 0) {
       return rules.map(r => ({
         conditionType: r.conditionType,
@@ -106,28 +107,29 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
     return [];
   }, [localConditions, rulesByRecipient]);
 
-  const isRecipientEnabled = (recipientId: number) => {
-    return rulesByRecipient.has(recipientId) || (localConditions[recipientId] && localConditions[recipientId].length > 0);
+  const isRecipientEnabled = (compositeKey: string) => {
+    return rulesByRecipient.has(compositeKey) || (localConditions[compositeKey] && localConditions[compositeKey].length > 0);
   };
 
   const toggleRecipient = (person: Person) => {
-    if (isRecipientEnabled(person.id)) {
+    const compositeKey = `${person.type}_${person.id}`;
+    if (isRecipientEnabled(compositeKey)) {
       // Remove all rules for this recipient
-      deleteMutation.mutate({ sellerId, recipientId: person.id });
+      deleteMutation.mutate({ sellerId, recipientId: person.id, recipientType: person.type });
       setLocalConditions(prev => {
         const next = { ...prev };
-        delete next[person.id];
+        delete next[compositeKey];
         return next;
       });
       setLocalPositions(prev => {
         const next = { ...prev };
-        delete next[person.id];
+        delete next[compositeKey];
         return next;
       });
     } else {
       // Enable with default "sempre" + "visualizar"
       const defaultConditions = [{ conditionType: "sempre", conditionValue: null, actionType: "visualizar" }];
-      setLocalConditions(prev => ({ ...prev, [person.id]: defaultConditions }));
+      setLocalConditions(prev => ({ ...prev, [compositeKey]: defaultConditions }));
       saveMutation.mutate({
         sellerId,
         sellerName,
@@ -141,7 +143,8 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
   };
 
   const toggleCondition = (recipientId: number, recipientName: string, recipientType: string, conditionType: string) => {
-    const current = getConditionsForRecipient(recipientId);
+    const compositeKey = `${recipientType}_${recipientId}`;
+    const current = getConditionsForRecipient(compositeKey);
     let updated: typeof current;
 
     const exists = current.find(c => c.conditionType === conditionType);
@@ -152,7 +155,7 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
       updated = [...current, { conditionType, conditionValue: needsValue ? 10 : null, actionType: "visualizar" }];
     }
 
-    setLocalConditions(prev => ({ ...prev, [recipientId]: updated }));
+    setLocalConditions(prev => ({ ...prev, [compositeKey]: updated }));
 
     // Auto-save
     if (updated.length > 0) {
@@ -162,47 +165,50 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
         recipientId,
         recipientName,
         recipientType,
-        approvalPosition: getPositionForRecipient(recipientId),
+        approvalPosition: getPositionForRecipient(compositeKey),
         rules: updated,
       });
     } else {
-      deleteMutation.mutate({ sellerId, recipientId });
+      deleteMutation.mutate({ sellerId, recipientId, recipientType });
     }
   };
 
   const updateConditionValue = (recipientId: number, recipientName: string, recipientType: string, conditionType: string, value: number) => {
-    const current = getConditionsForRecipient(recipientId);
+    const compositeKey = `${recipientType}_${recipientId}`;
+    const current = getConditionsForRecipient(compositeKey);
     const updated = current.map(c => c.conditionType === conditionType ? { ...c, conditionValue: value } : c);
-    setLocalConditions(prev => ({ ...prev, [recipientId]: updated }));
+    setLocalConditions(prev => ({ ...prev, [compositeKey]: updated }));
     saveMutation.mutate({
       sellerId,
       sellerName,
       recipientId,
       recipientName,
       recipientType,
-      approvalPosition: getPositionForRecipient(recipientId),
+      approvalPosition: getPositionForRecipient(compositeKey),
       rules: updated,
     });
   };
 
   const updateActionType = (recipientId: number, recipientName: string, recipientType: string, conditionType: string, actionType: string) => {
-    const current = getConditionsForRecipient(recipientId);
+    const compositeKey = `${recipientType}_${recipientId}`;
+    const current = getConditionsForRecipient(compositeKey);
     const updated = current.map(c => c.conditionType === conditionType ? { ...c, actionType } : c);
-    setLocalConditions(prev => ({ ...prev, [recipientId]: updated }));
+    setLocalConditions(prev => ({ ...prev, [compositeKey]: updated }));
     saveMutation.mutate({
       sellerId,
       sellerName,
       recipientId,
       recipientName,
       recipientType,
-      approvalPosition: getPositionForRecipient(recipientId),
+      approvalPosition: getPositionForRecipient(compositeKey),
       rules: updated,
     });
   };
 
   const updatePosition = (recipientId: number, recipientName: string, recipientType: string, position: number) => {
-    setLocalPositions(prev => ({ ...prev, [recipientId]: position }));
-    const conditions = getConditionsForRecipient(recipientId);
+    const compositeKey = `${recipientType}_${recipientId}`;
+    setLocalPositions(prev => ({ ...prev, [compositeKey]: position }));
+    const conditions = getConditionsForRecipient(compositeKey);
     if (conditions.length > 0) {
       saveMutation.mutate({
         sellerId,
@@ -217,7 +223,7 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
   };
 
   const enabledCount = Array.from(rulesByRecipient.keys()).length + 
-    Object.keys(localConditions).filter(k => !rulesByRecipient.has(Number(k)) && localConditions[Number(k)]?.length > 0).length;
+    Object.keys(localConditions).filter(k => !rulesByRecipient.has(k) && localConditions[k]?.length > 0).length;
 
   return (
     <div className="mt-1">
@@ -235,13 +241,14 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
       {expanded && (
         <div className="ml-5 mt-2 space-y-1.5 border-l-2 border-purple-100 pl-2.5 pb-1">
           {allPeople.filter(p => p.id !== sellerId).map(person => {
-            const enabled = isRecipientEnabled(person.id);
+            const compositeKey = `${person.type}_${person.id}`;
+            const enabled = isRecipientEnabled(compositeKey);
             const isExpanded = expandedRecipients[person.id];
-            const conditions = getConditionsForRecipient(person.id);
-            const position = getPositionForRecipient(person.id);
+            const conditions = getConditionsForRecipient(compositeKey);
+            const position = getPositionForRecipient(compositeKey);
 
             return (
-              <div key={person.id} className="space-y-1">
+              <div key={compositeKey} className="space-y-1">
                 {/* Recipient name + checkbox */}
                 <div className="flex items-center gap-1.5">
                   <button

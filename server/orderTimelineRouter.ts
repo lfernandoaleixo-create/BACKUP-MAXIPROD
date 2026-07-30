@@ -73,11 +73,12 @@ export const orderTimelineRouter = router({
       const db = await getDb();
       if (!db) return { success: false };
 
-      // Delete existing rules for this seller-recipient pair
+      // Delete existing rules for this seller-recipient-type triple
       await db.delete(orderTimelineRules).where(
         and(
           eq(orderTimelineRules.sellerId, input.sellerId),
-          eq(orderTimelineRules.recipientId, input.recipientId)
+          eq(orderTimelineRules.recipientId, input.recipientId),
+          eq(orderTimelineRules.recipientType, input.recipientType)
         )
       );
 
@@ -112,16 +113,21 @@ export const orderTimelineRouter = router({
     .input(z.object({
       sellerId: z.number(),
       recipientId: z.number(),
+      recipientType: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) return { success: false };
 
+      const conditions = [
+        eq(orderTimelineRules.sellerId, input.sellerId),
+        eq(orderTimelineRules.recipientId, input.recipientId),
+      ];
+      if (input.recipientType) {
+        conditions.push(eq(orderTimelineRules.recipientType, input.recipientType));
+      }
       await db.delete(orderTimelineRules).where(
-        and(
-          eq(orderTimelineRules.sellerId, input.sellerId),
-          eq(orderTimelineRules.recipientId, input.recipientId)
-        )
+        and(...conditions)
       );
 
       return { success: true };
@@ -169,15 +175,17 @@ export const orderTimelineRouter = router({
         matchedConditions: string[];
       }> = [];
 
-      // Group rules by recipient
-      const byRecipient = new Map<number, typeof rules>();
+      // Group rules by recipient (composite key: type_id to handle ID collisions)
+      const byRecipient = new Map<string, typeof rules>();
       for (const rule of rules) {
-        const existing = byRecipient.get(rule.recipientId) || [];
+        const key = `${rule.recipientType}_${rule.recipientId}`;
+        const existing = byRecipient.get(key) || [];
         existing.push(rule);
-        byRecipient.set(rule.recipientId, existing);
+        byRecipient.set(key, existing);
       }
 
-      for (const [recipientId, recipientRules] of Array.from(byRecipient.entries())) {
+      for (const [_compositeKey, recipientRules] of Array.from(byRecipient.entries())) {
+        const recipientId = recipientRules[0].recipientId;
         const matchedConditions: string[] = [];
         let actionType = "visualizar"; // Default
 

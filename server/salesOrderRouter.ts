@@ -2714,9 +2714,14 @@ export const salesOrderRouter = router({
         quantidadeUnidadeItem: salesOrders.quantidadeUnidadeItem,
         unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
         codigoItem: salesOrders.codigoItem,
+        descricaoItem: salesOrders.descricaoItem,
         transportadora: salesOrders.transportadora,
         razaoSocial: salesOrders.razaoSocial,
         inscricaoEstadual: salesOrders.inscricaoEstadual,
+        enderecoLogradouro: salesOrders.enderecoLogradouro,
+        enderecoNumero: salesOrders.enderecoNumero,
+        enderecoBairro: salesOrders.enderecoBairro,
+        enderecoCidade: salesOrders.enderecoCidade,
       }).from(salesOrders)
         .where(eq(salesOrders.pedido, input.pedido));
 
@@ -2759,6 +2764,24 @@ export const salesOrderRouter = router({
       let totalVolumes = 0; // = sum of order quantities (each qty = 1 physical box/package)
       const codigosItens = orderItems.map(i => i.codigoItem).filter(Boolean) as string[];
       
+      // Detailed item breakdown for PDF report
+      const itemsBreakdown: Array<{
+        codigo: string;
+        descricao: string;
+        qtd: number;
+        unidade: string;
+        pesoBrutoUn: number;
+        fatorConv: number;
+        pesoCx: number;
+        pesoTotal: number;
+        dimensoes: string;
+        comprimento: number;
+        largura: number;
+        altura: number;
+        volCxM3: number;
+        cubagem: number;
+      }> = [];
+
       if (codigosItens.length > 0) {
         const stockData = await db.select({
           codigoItem: stockItems.codigoItem,
@@ -2767,6 +2790,7 @@ export const salesOrderRouter = router({
           unidadeMedida: stockItems.unidadeMedida,
           unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
           unidadeDeVendaCodigo: stockItems.unidadeDeVendaCodigo,
+          descricaoComplementar: stockItems.descricaoComplementar,
         }).from(stockItems)
           .where(inArray(stockItems.codigoItem, codigosItens));
 
@@ -2783,27 +2807,55 @@ export const salesOrderRouter = router({
           const qty = parseFloat(String(item.quantidade || 1));
           totalVolumes += qty;
           
+          const stockItem = stockData.find(s => s.codigoItem === item.codigoItem);
           const pesoBrutoPerUnit = pesoBrutoMap.get(item.codigoItem || "") || 0;
+          const fator = parseFloat(String(stockItem?.unidadeDeVendaFator || 1)) || 1;
+          let itemPesoTotal = 0;
+          
           if (pesoBrutoPerUnit > 0) {
-            // Use quantidadeUnidadeItem (total individual units) for precise weight
-            // This field is pre-calculated by Maxiprod and accounts for all conversions
             const qtyUnidadeItem = parseFloat(String(item.quantidadeUnidadeItem || 0));
             if (qtyUnidadeItem > 0) {
-              pesoTotal += pesoBrutoPerUnit * qtyUnidadeItem;
+              itemPesoTotal = pesoBrutoPerUnit * qtyUnidadeItem;
             } else {
-              // Fallback: use quantidade * fator from stock_items
-              const stockItem = stockData.find(s => s.codigoItem === item.codigoItem);
               const um = (stockItem?.unidadeMedida || '').toUpperCase().trim();
               const uvCodigo = (stockItem?.unidadeDeVendaCodigo || '').toUpperCase().trim();
-              const fator = parseFloat(String(stockItem?.unidadeDeVendaFator || 1)) || 1;
               if (um === 'UN' && (uvCodigo === 'CX' || uvCodigo === 'PC') && fator > 1) {
-                pesoTotal += pesoBrutoPerUnit * fator * qty;
+                itemPesoTotal = pesoBrutoPerUnit * fator * qty;
               } else {
-                pesoTotal += pesoBrutoPerUnit * qty;
+                itemPesoTotal = pesoBrutoPerUnit * qty;
               }
             }
+            pesoTotal += itemPesoTotal;
           }
-          // Items without pesoBruto contribute 0 to weight (handled by fallback below)
+
+          // Parse dimensions from descricaoComplementar (e.g., "42X24X39" = CxLxA in cm)
+          const dimStr = stockItem?.descricaoComplementar || "";
+          let comprCm = 0, largCm = 0, altCm = 0;
+          const dimMatch = dimStr.match(/(\d+)[xX](\d+)[xX](\d+)/);
+          if (dimMatch) {
+            comprCm = parseInt(dimMatch[1]);
+            largCm = parseInt(dimMatch[2]);
+            altCm = parseInt(dimMatch[3]);
+          }
+          const volCxM3 = comprCm > 0 ? (comprCm * largCm * altCm) / 1_000_000 : 0;
+          const cubagem = volCxM3 * qty;
+
+          itemsBreakdown.push({
+            codigo: item.codigoItem || "",
+            descricao: item.descricaoItem || "",
+            qtd: qty,
+            unidade: item.unidadeMedidaCodigo || "CX",
+            pesoBrutoUn: pesoBrutoPerUnit,
+            fatorConv: fator,
+            pesoCx: pesoBrutoPerUnit * fator,
+            pesoTotal: itemPesoTotal,
+            dimensoes: dimStr,
+            comprimento: comprCm,
+            largura: largCm,
+            altura: altCm,
+            volCxM3,
+            cubagem,
+          });
         }
       } else {
         totalVolumes = orderItems.reduce((sum, i) => sum + parseFloat(String(i.quantidade || 1)), 0);
@@ -2815,9 +2867,17 @@ export const salesOrderRouter = router({
       }
 
       const volumes = Math.max(1, Math.round(totalVolumes));
-      const metroCubico = volumes * 0.05; // ~0.05m³ per volume estimate
+      // Calculate real cubagem from item dimensions
+      const cubagemReal = itemsBreakdown.reduce((sum, i) => sum + i.cubagem, 0);
+      const metroCubico = cubagemReal > 0 ? cubagemReal : volumes * 0.05;
+      // Calculate real dimensions for Braspress (uses largest box dimensions)
+      const maxAltura = Math.max(...itemsBreakdown.map(i => i.altura), 0) / 100; // cm -> m
+      const maxComprimento = Math.max(...itemsBreakdown.map(i => i.comprimento), 0) / 100;
+      // Average width weighted by quantity
+      const totalQty = itemsBreakdown.reduce((s, i) => s + i.qtd, 0) || 1;
+      const avgLargura = itemsBreakdown.reduce((s, i) => s + i.largura * i.qtd, 0) / totalQty / 100;
 
-      console.log(`[QuoteByPedido] Pedido #${input.pedido}: CEP=${cepDestino}, CNPJ=${cnpjDestinatario}, Valor=${valorMercadoria}, Peso=${pesoTotal}kg, Volumes=${volumes}`);
+      console.log(`[QuoteByPedido] Pedido #${input.pedido}: CEP=${cepDestino}, CNPJ=${cnpjDestinatario}, Valor=${valorMercadoria}, Peso=${pesoTotal}kg, Volumes=${volumes}, Cubagem=${metroCubico}m³`);
 
       // 4. Get customer data for Rodonaves
       let customerData: { nome: string; email: string; telefone: string; cep: string; logradouro: string; numero: string; complemento?: string; bairro: string; cidade: string; uf: string; inscricaoEstadual?: string } | undefined;
@@ -2858,9 +2918,9 @@ export const salesOrderRouter = router({
           valorMercadoria,
           peso: pesoTotal,
           volumes,
-          altura: 0.5,
-          largura: 0.5,
-          comprimento: 0.5,
+          altura: maxAltura > 0 ? maxAltura : 0.5,
+          largura: avgLargura > 0 ? avgLargura : 0.5,
+          comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
         }),
         quoteAllAlfaCnpjs({
           cepDestino,
@@ -2965,7 +3025,23 @@ export const salesOrderRouter = router({
         valorMercadoria,
         pesoTotal,
         volumes,
+        metroCubico,
+        tipoContribuinte,
         carriers,
+        // Detailed data for PDF report
+        itemsBreakdown,
+        endereco: {
+          logradouro: firstItem.enderecoLogradouro || "",
+          numero: firstItem.enderecoNumero || "",
+          bairro: firstItem.enderecoBairro || "",
+          cidade: firstItem.enderecoCidade || "",
+          uf: firstItem.uf || "",
+        },
+        dimensoes: {
+          altura: maxAltura > 0 ? maxAltura : 0.5,
+          largura: avgLargura > 0 ? avgLargura : 0.5,
+          comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
+        },
       };
     }),
 

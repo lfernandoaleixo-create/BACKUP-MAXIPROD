@@ -6593,3 +6593,36 @@
 - [x] Atualizar pedidos existentes no banco de "un" para "CX" (13 itens atualizados)
 - [x] Corrigir fallback em todos os componentes de display (PedidosVendedoresTab, GestorAprovacoes, VendedorDetalhe, VitoriaOrders, generateOrderPdf)
 - [x] TypeScript compila sem erros
+
+## Redesign: Relatório PDF de Cotação de Frete (30/07/2026)
+
+- [ ] Redesenhar PDF para seguir o padrão profissional do relatório de referência (Pedido 1572)
+- [ ] Seção 1: Dados do Pedido (Cliente, CNPJ, Endereço, CEP, Valor NF, Fonte)
+- [ ] Seção 2: Itens do Pedido (Código, Produto, Qtd, Unidade)
+- [ ] Seção 3: Cálculo de Peso (Peso Bruto/Un, Fator Conv, Peso/CX, Qtd CX, Peso Total)
+- [ ] Seção 4: Dimensões Reais (C, L, A, Vol/CX, Qtd, Cubagem)
+- [ ] Seção 5: Medidas Enviadas às APIs (peso, volumes, metroCubico, altura, largura, comprimento)
+- [ ] Seção 6: CEPs de Origem por Transportadora
+- [ ] Seção 7: Como Cada API Utiliza (detalhes técnicos)
+- [ ] Seção 8: Resultados das Cotações (tabela ordenada por valor)
+- [ ] Testar com pedido real e verificar output
+
+## Redesign: Relatório PDF de Cotação de Frete (30/07/2026)
+
+- [ ] Redesenhar PDF para seguir o padrão profissional do relatório de referência (Pedido 1572)
+- [ ] Seção 1: Dados do Pedido (Cliente, CNPJ, Endereço, CEP, Valor NF, Fonte)
+- [ ] Seção 2: Itens do Pedido (Código, Produto, Qtd, Unidade)
+- [ ] Seção 3: Cálculo de Peso (Peso Bruto/Un, Fator Conv, Peso/CX, Qtd CX, Peso Total)
+- [ ] Seção 4: Dimensões Reais (C, L, A, Vol/CX, Qtd, Cubagem)
+- [ ] Seção 5: Medidas Enviadas às APIs (peso, volumes, metroCubico, altura, largura, comprimento)
+- [ ] Seção 6: CEPs de Origem por Transportadora
+- [ ] Seção 7: Como Cada API Utiliza (detalhes técnicos)
+- [ ] Seção 8: Peso Cubado vs Peso Real
+- [ ] Seção 9: Ranking Final - Cotação de Frete (tabela ordenada por valor com melhor opção)
+- [ ] Testar com pedido real e verificar output
+
+## Bug: Checkbox acoplado na Linha do Tempo (Configuração)
+- [x] Ao ticar "Fernando" (operador), estava ticando "Pedro Augusto" (vendedor) junto
+  - Causa raiz: Fernando (operador, ID=4) e Pedro Augusto (vendedor, ID=4) tinham o MESMO ID numérico de tabelas diferentes
+  - Fix: composite key (type_id) no frontend + WHERE recipientType no backend (saveRules, deleteRulesForRecipient)
+- [x] Cada checkbox agora é 100% individual - testado e verificado
