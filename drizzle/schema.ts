@@ -2253,6 +2253,9 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   dataAprovacao: timestamp("data_aprovacao"),
   observacaoAprovacao: text("observacao_aprovacao"), // Justificativa do gestor ao aprovar (preço, motivo, etc.)
   motivoRejeicao: text("motivo_rejeicao"),
+  // Posição atual na cadeia de aprovação sequencial (1=aguardando pos 1, 2=aguardando pos 2, etc.)
+  // Quando todos da posição N aprovam, avança para N+1. Quando não há mais posições, status vira 'aprovado'.
+  currentApprovalPosition: int("current_approval_position").default(1),
   
   // Processamento (Vitória)
   processadoPor: varchar("processado_por", { length: 100 }),
@@ -3306,13 +3309,16 @@ export const orderTimelineRules = mysqlTable("order_timeline_rules", {
   recipientType: varchar("recipient_type", { length: 20 }).notNull(), // 'gestor' | 'vendedor'
   // Condição para envio
   conditionType: varchar("condition_type", { length: 50 }).notNull(),
-  // Tipos: 'sempre', 'desconto_produto_acima', 'desconto_produto_abaixo',
+  // Tipos: 'sempre', 'apos_aprovacao_gestores', 'desconto_produto_acima', 'desconto_produto_abaixo',
   //        'margem_pedido_acima', 'margem_pedido_abaixo',
   //        'margem_mensal_acima', 'margem_mensal_abaixo',
   //        'media_ponderada_descontos_acima', 'media_ponderada_descontos_abaixo'
-  conditionValue: decimal("condition_value", { precision: 5, scale: 2 }), // Porcentagem (null para 'sempre')
+  conditionValue: decimal("condition_value", { precision: 5, scale: 2 }), // Porcentagem (null para 'sempre'/'apos_aprovacao_gestores')
   // Ação que o destinatário precisa fazer
   actionType: varchar("action_type", { length: 20 }).notNull(), // 'visualizar' | 'autorizar'
+  // Posição na ordem de aprovação sequencial (1=primeiro, 2=segundo, etc.)
+  // Mesma posição = recebem juntos; posição maior = só recebe após todos da posição anterior aprovarem
+  approvalPosition: int("approval_position").default(1).notNull(),
   // Ativo/inativo
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

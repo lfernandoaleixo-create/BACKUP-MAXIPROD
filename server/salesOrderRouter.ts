@@ -964,7 +964,11 @@ export const salesOrderRouter = router({
       }
 
       // === LINHA DO TEMPO: Evaluate timeline rules and route order ===
-      let timelineRecipients: Array<{ recipientId: number; recipientName: string; actionType: string }> = [];
+      // Now supports sequential approval positions:
+      // - Position 1 recipients receive the order immediately
+      // - Position 2+ recipients only receive after ALL position (N-1) recipients with actionType='autorizar' have approved
+      // - 'apos_aprovacao_gestores' condition: recipient only receives after ALL gestores (any position) have approved
+      let timelineRecipients: Array<{ recipientId: number; recipientName: string; actionType: string; approvalPosition: number }> = [];
       if (!input.isSimulation) {
         try {
           const timelineRules = await db.select().from(orderTimelineRules)
@@ -991,18 +995,19 @@ export const salesOrderRouter = router({
             for (const [recipientId, recipientRules] of Array.from(byRecipient.entries())) {
               let matched = false;
               let actionType = "visualizar";
+              const approvalPosition = recipientRules[0].approvalPosition;
               for (const rule of recipientRules) {
                 const val = rule.conditionValue ? parseFloat(String(rule.conditionValue)) : null;
                 let ruleMatches = false;
                 switch (rule.conditionType) {
                   case "sempre": ruleMatches = true; break;
+                  case "apos_aprovacao_gestores": ruleMatches = true; break; // Always matches, but position controls when they see it
                   case "desconto_produto_acima": ruleMatches = val !== null && descontoProdutoMax > val; break;
                   case "desconto_produto_abaixo": ruleMatches = val !== null && descontoProdutoMax < val; break;
-                  // margem_pedido and margem_mensal require more context - evaluate as true if configured
                   case "margem_pedido_acima": case "margem_pedido_abaixo":
                   case "margem_mensal_acima": case "margem_mensal_abaixo":
                   case "media_ponderada_descontos_acima": case "media_ponderada_descontos_abaixo":
-                    ruleMatches = true; // Will be evaluated more precisely in future with full margin data
+                    ruleMatches = true;
                     break;
                 }
                 if (ruleMatches) {
@@ -1015,11 +1020,12 @@ export const salesOrderRouter = router({
                   recipientId,
                   recipientName: recipientRules[0].recipientName,
                   actionType,
+                  approvalPosition,
                 });
               }
             }
-            // Timeline routing is stored via evaluateOrderTimeline above.
-            // The order stays as "pendente" - recipients will see/authorize it based on timeline rules.
+            // Sort by position for clarity
+            timelineRecipients.sort((a, b) => a.approvalPosition - b.approvalPosition);
           }
         } catch (err) {
           console.error("[SalesOrder] Timeline evaluation failed:", err);
@@ -1092,6 +1098,7 @@ export const salesOrderRouter = router({
       sellerId: z.number().optional(),
       gestorName: z.string().optional(),
       comissaoTravada: z.boolean().optional(), // Filter for orders with commission locked at 4%
+      recipientName: z.string().optional(), // Filter by recipient name for position-based visibility
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -1111,10 +1118,53 @@ export const salesOrderRouter = router({
         conditions.push(eq(salesOrderRequests.comissaoFonte, "critico_liberado"));
       }
 
-      const orders = await db.select().from(salesOrderRequests)
+      let orders = await db.select().from(salesOrderRequests)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(salesOrderRequests.createdAt))
-        .limit(100);
+        .limit(200);
+
+      // === POSITION-BASED FILTERING ===
+      // If recipientName is provided, filter orders to only show those where
+      // the current approval position matches this recipient's position in the timeline rules
+      if (input?.recipientName) {
+        const recipientNameUpper = input.recipientName.toUpperCase();
+        // Get all timeline rules for this recipient
+        const recipientRules = await db.select().from(orderTimelineRules)
+          .where(and(
+            eq(orderTimelineRules.active, true),
+            sql`UPPER(${orderTimelineRules.recipientName}) LIKE ${`%${recipientNameUpper.split(' ')[0]}%`}`
+          ));
+
+        if (recipientRules.length > 0) {
+          // Build a map of sellerId -> position for this recipient
+          const sellerPositionMap = new Map<number, number>();
+          const sellerConditionMap = new Map<number, string[]>();
+          for (const rule of recipientRules) {
+            sellerPositionMap.set(rule.sellerId, rule.approvalPosition);
+            const existing = sellerConditionMap.get(rule.sellerId) || [];
+            existing.push(rule.conditionType);
+            sellerConditionMap.set(rule.sellerId, existing);
+          }
+
+          // Filter orders: only show orders where currentApprovalPosition matches this recipient's position
+          orders = orders.filter(order => {
+            const myPosition = sellerPositionMap.get(order.sellerId);
+            if (myPosition === undefined) return true; // No rule for this seller, show anyway (legacy)
+            const conditions = sellerConditionMap.get(order.sellerId) || [];
+            const isAposAprovacao = conditions.includes("apos_aprovacao_gestores");
+
+            if (isAposAprovacao) {
+              // Only show if order is fully approved (status = 'aprovado')
+              return order.status === "aprovado" || order.status === "processado";
+            }
+
+            // For position-based: show if order's current position >= my position
+            // (so I can see orders at my position or that have already passed my position)
+            const orderPosition = order.currentApprovalPosition || 1;
+            return orderPosition >= myPosition;
+          });
+        }
+      }
 
       // Attach items to each order for margin calculation
       const orderIds = orders.map(o => o.id);
@@ -1310,9 +1360,8 @@ export const salesOrderRouter = router({
       }));
     }),
 
-  // ===== APPROVAL FLOW =====
-
-  /** Approve an order (gestor) */
+    // ===== APPROVAL FLOW =====
+  /** Approve an order (gestor) - supports sequential approval positions */
   approveOrder: publicProcedure
     .input(z.object({
       orderId: z.number(),
@@ -1323,19 +1372,16 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-
       // Validar senha: primeiro nome com inicial maiúscula
       const primeiroNome = input.aprovadoPor.split(" ")[0];
       const senhaEsperada = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1).toLowerCase();
       if (input.password !== senhaEsperada) {
         throw new Error("Senha incorreta");
       }
-
       // Get order details for history
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
       if (!order) throw new Error("Pedido não encontrado");
-
       // Check if Renato is approving one of his own sellers' orders
       const isRenatoApproving = input.aprovadoPor.toUpperCase().includes("RENATO");
       let needsGestorApproval = false;
@@ -1344,15 +1390,6 @@ export const salesOrderRouter = router({
           needsGestorApproval = true;
         }
       }
-
-      await db.update(salesOrderRequests)
-        .set({
-          status: needsGestorApproval ? "aprovado_subgestor" : "aprovado",
-          aprovadoPor: input.aprovadoPor,
-          dataAprovacao: new Date(),
-          observacaoAprovacao: input.observacaoAprovacao || null,
-        })
-        .where(eq(salesOrderRequests.id, input.orderId));
 
       // Registrar no histórico de aprovações
       await db.insert(orderApprovalHistory).values({
@@ -1365,7 +1402,75 @@ export const salesOrderRouter = router({
         observacao: input.observacaoAprovacao || null,
       });
 
-      return { success: true, needsGestorApproval };
+      // === SEQUENTIAL APPROVAL LOGIC ===
+      // Check if there are timeline rules with positions for this seller
+      const timelineRules = await db.select().from(orderTimelineRules)
+        .where(and(
+          eq(orderTimelineRules.sellerId, order.sellerId),
+          eq(orderTimelineRules.active, true)
+        ));
+
+      // Get all approval history for this order
+      const approvalHistory = await db.select().from(orderApprovalHistory)
+        .where(eq(orderApprovalHistory.orderId, input.orderId));
+
+      const currentPosition = order.currentApprovalPosition || 1;
+      const maxPosition = timelineRules.length > 0
+        ? Math.max(...timelineRules.map(r => r.approvalPosition))
+        : 1;
+
+      // Find all recipients at the current position who need to authorize
+      const currentPositionAuthRecipients = timelineRules.filter(
+        r => r.approvalPosition === currentPosition && r.actionType === "autorizar"
+      );
+      // Get unique recipient IDs at current position that need to authorize
+      const uniqueAuthRecipientIdsSet = new Set(currentPositionAuthRecipients.map(r => r.recipientId));
+      const uniqueAuthRecipientIds = Array.from(uniqueAuthRecipientIdsSet);
+
+      // Check who has already approved (including this approval)
+      const approvedNamesSet = new Set(approvalHistory.map(h => h.aprovadoPor.toUpperCase()));
+      approvedNamesSet.add(input.aprovadoPor.toUpperCase());
+      const approvedNamesArr = Array.from(approvedNamesSet);
+
+      // Check if all current position authorizers have approved
+      // Match by name (case-insensitive first name match)
+      const allCurrentPositionApproved = uniqueAuthRecipientIds.every(recipientId => {
+        const recipientRules = timelineRules.filter(r => r.recipientId === recipientId);
+        const recipientName = recipientRules[0]?.recipientName || "";
+        const firstName = recipientName.split(" ")[0].toUpperCase();
+        return approvedNamesArr.some(name => name.includes(firstName));
+      });
+
+      let newStatus = needsGestorApproval ? "aprovado_subgestor" : "aprovado";
+      let newPosition = currentPosition;
+
+      if (!needsGestorApproval) {
+        if (allCurrentPositionApproved && currentPosition < maxPosition) {
+          // Advance to next position
+          newPosition = currentPosition + 1;
+          newStatus = "pendente"; // Still pending for next position
+        } else if (allCurrentPositionApproved && currentPosition >= maxPosition) {
+          // All positions approved - order is fully approved
+          newStatus = "aprovado";
+        } else {
+          // Not all current position approvers have approved yet - stay pending
+          newStatus = "pendente";
+        }
+      }
+
+      await db.update(salesOrderRequests)
+        .set({
+          status: newStatus as any,
+          aprovadoPor: newStatus === "aprovado" ? input.aprovadoPor : order.aprovadoPor,
+          dataAprovacao: newStatus === "aprovado" ? new Date() : order.dataAprovacao,
+          observacaoAprovacao: input.observacaoAprovacao
+            ? (order.observacaoAprovacao ? order.observacaoAprovacao + "\n" : "") + `[${input.aprovadoPor}]: ${input.observacaoAprovacao}`
+            : order.observacaoAprovacao,
+          currentApprovalPosition: newPosition,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+
+      return { success: true, needsGestorApproval, newPosition, newStatus };
     }),
 
   /** Gestor (Juvenal) approves orders pre-approved by subgestor (Renato) */

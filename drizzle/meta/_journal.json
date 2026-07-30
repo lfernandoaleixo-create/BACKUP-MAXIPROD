@@ -1317,6 +1317,20 @@
       "when": 1785354864563,
       "tag": "0187_bent_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "5",
+      "when": 1785373457113,
+      "tag": "0188_thick_frank_castle",
+      "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "5",
+      "when": 1785373613641,
+      "tag": "0189_lush_the_captain",
+      "breakpoints": true
     }
   ]
 }

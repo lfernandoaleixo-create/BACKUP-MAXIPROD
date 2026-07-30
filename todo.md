@@ -6506,3 +6506,16 @@
 - [x] Após cotação SOAP, buscar número de cotação no sistema web SSW em paralelo
 - [x] Integrar protocolo Camilo no fluxo de simulação de frete (exibir junto com as demais)
 - [x] Testar end-to-end: cotação SOAP + protocolo web funcionando (Pedido 1594: Proto 2779801/2779802, Pedido 1572: Proto 2779799/2779800)
+
+## Linha do Tempo - Ordem Sequencial de Aprovação (29/07/2026)
+
+- [x] Adicionar campo "posição" (1, 2, 3...) ao ticar quem recebe o pedido de venda na Linha do Tempo
+- [x] Adicionar condição "Após aprovação dos gestores" como opção ao ticar um destinatário
+- [x] Lógica: mesma posição = recebem juntos; posição maior = só recebe após aprovação de todos da posição anterior
+- [x] Exemplo: Renato(1) e Juvenal(1) recebem juntos; se Renato(1) e Juvenal(2), Juvenal só recebe após Renato aprovar
+- [x] Condição "Após aprovação dos gestores": pessoa só recebe o pedido depois que TODOS os gestores aprovarem
+- [x] Vitória: visão global de todos os pedidos aprovados pelos gestores para lançar no Maxiprod
+- [x] Atualizar schema do banco para suportar posição e condição de aprovação (approval_position + current_approval_position)
+- [x] Atualizar backend para respeitar a ordem sequencial de aprovação
+- [x] Atualizar frontend (UI) para permitir selecionar posição e condição ao ticar destinatários
+- [x] Testar fluxo completo end-to-end (evaluateOrder retorna approvalPosition, saveRules aceita approvalPosition)

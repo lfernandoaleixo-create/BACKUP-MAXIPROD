@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { ChevronDown, ChevronRight, Check, Clock, Eye, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ interface OrderTimelineConfigProps {
 
 const CONDITION_OPTIONS = [
   { value: "sempre", label: "Sempre (todo pedido)", needsValue: false },
+  { value: "apos_aprovacao_gestores", label: "Após aprovação dos gestores", needsValue: false },
   { value: "desconto_produto_acima", label: "Desconto no produto acima de", needsValue: true, suffix: "%" },
   { value: "desconto_produto_abaixo", label: "Desconto no produto abaixo de", needsValue: true, suffix: "%" },
   { value: "margem_pedido_acima", label: "Margem de lucro do pedido acima de", needsValue: true, suffix: "%" },
@@ -78,6 +79,19 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
     actionType: string;
   }>>>({});
 
+  // Local state for approval position per recipient
+  const [localPositions, setLocalPositions] = useState<Record<number, number>>({});
+
+  // Get approval position for a recipient
+  const getPositionForRecipient = useCallback((recipientId: number) => {
+    if (localPositions[recipientId] !== undefined) return localPositions[recipientId];
+    const rules = rulesByRecipient.get(recipientId);
+    if (rules && rules.length > 0) {
+      return rules[0].approvalPosition || 1;
+    }
+    return 1;
+  }, [localPositions, rulesByRecipient]);
+
   // Initialize local conditions from DB when rules load
   const getConditionsForRecipient = useCallback((recipientId: number) => {
     if (localConditions[recipientId]) return localConditions[recipientId];
@@ -105,6 +119,11 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
         delete next[person.id];
         return next;
       });
+      setLocalPositions(prev => {
+        const next = { ...prev };
+        delete next[person.id];
+        return next;
+      });
     } else {
       // Enable with default "sempre" + "visualizar"
       const defaultConditions = [{ conditionType: "sempre", conditionValue: null, actionType: "visualizar" }];
@@ -115,6 +134,7 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
         recipientId: person.id,
         recipientName: person.name,
         recipientType: person.type,
+        approvalPosition: 1,
         rules: defaultConditions,
       });
     }
@@ -142,6 +162,7 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
         recipientId,
         recipientName,
         recipientType,
+        approvalPosition: getPositionForRecipient(recipientId),
         rules: updated,
       });
     } else {
@@ -159,6 +180,7 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
       recipientId,
       recipientName,
       recipientType,
+      approvalPosition: getPositionForRecipient(recipientId),
       rules: updated,
     });
   };
@@ -173,8 +195,25 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
       recipientId,
       recipientName,
       recipientType,
+      approvalPosition: getPositionForRecipient(recipientId),
       rules: updated,
     });
+  };
+
+  const updatePosition = (recipientId: number, recipientName: string, recipientType: string, position: number) => {
+    setLocalPositions(prev => ({ ...prev, [recipientId]: position }));
+    const conditions = getConditionsForRecipient(recipientId);
+    if (conditions.length > 0) {
+      saveMutation.mutate({
+        sellerId,
+        sellerName,
+        recipientId,
+        recipientName,
+        recipientType,
+        approvalPosition: position,
+        rules: conditions,
+      });
+    }
   };
 
   const enabledCount = Array.from(rulesByRecipient.keys()).length + 
@@ -199,6 +238,7 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
             const enabled = isRecipientEnabled(person.id);
             const isExpanded = expandedRecipients[person.id];
             const conditions = getConditionsForRecipient(person.id);
+            const position = getPositionForRecipient(person.id);
 
             return (
               <div key={person.id} className="space-y-1">
@@ -215,9 +255,16 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
                       {person.name}
                     </span>
                     <span className="text-[9px] text-slate-400">({person.type})</span>
+                    {enabled && (
+                      <span className="text-[9px] bg-indigo-100 text-indigo-700 px-1 rounded shrink-0 font-medium">
+                        Pos. {position}
+                      </span>
+                    )}
                     {enabled && conditions.length > 0 && (
                       <span className="text-[9px] bg-green-100 text-green-700 px-1 rounded shrink-0">
-                        {conditions.find(c => c.conditionType === "sempre") ? "sempre" : `${conditions.length} cond.`}
+                        {conditions.find(c => c.conditionType === "sempre") ? "sempre" : 
+                         conditions.find(c => c.conditionType === "apos_aprovacao_gestores") ? "após gestores" :
+                         `${conditions.length} cond.`}
                       </span>
                     )}
                   </button>
@@ -236,6 +283,29 @@ export function OrderTimelineConfig({ sellerId, sellerName, allPeople, gcEnabled
                 {/* Expanded conditions for this recipient */}
                 {enabled && isExpanded && (
                   <div className="ml-4 space-y-1.5 border-l border-purple-50 pl-2 pb-1">
+                    {/* Position selector */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] text-slate-500 font-medium">Posição na fila:</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map(pos => (
+                          <button
+                            key={pos}
+                            onClick={() => updatePosition(person.id, person.name, person.type, pos)}
+                            className={`w-5 h-5 rounded text-[10px] font-bold transition-all ${
+                              position === pos
+                                ? "bg-indigo-500 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-500 hover:bg-indigo-100 hover:text-indigo-600"
+                            }`}
+                          >
+                            {pos}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-[9px] text-slate-400 italic">
+                        {position === 1 ? "(recebe imediatamente)" : `(recebe após posição ${position - 1} aprovar)`}
+                      </span>
+                    </div>
+
                     <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Quando enviar para {person.name}?</p>
                     
                     {CONDITION_OPTIONS.map(opt => {

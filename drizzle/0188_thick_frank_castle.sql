@@ -1,0 +1,1 @@
+ALTER TABLE `order_timeline_rules` ADD `approval_position` int DEFAULT 1 NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE `sales_order_requests` ADD `current_approval_position` int DEFAULT 1;

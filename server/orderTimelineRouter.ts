@@ -9,6 +9,7 @@ import { eq, and, sql } from "drizzle-orm";
  */
 export const CONDITION_TYPES = [
   { value: "sempre", label: "Sempre (todo pedido)" },
+  { value: "apos_aprovacao_gestores", label: "Após aprovação dos gestores" },
   { value: "desconto_produto_acima", label: "Desconto dado no produto acima de" },
   { value: "desconto_produto_abaixo", label: "Desconto dado no produto abaixo de" },
   { value: "margem_pedido_acima", label: "Margem de lucro do pedido acima de" },
@@ -61,6 +62,7 @@ export const orderTimelineRouter = router({
       recipientId: z.number(),
       recipientName: z.string(),
       recipientType: z.string(),
+      approvalPosition: z.number().min(1).default(1),
       rules: z.array(z.object({
         conditionType: z.string(),
         conditionValue: z.number().nullable(),
@@ -92,6 +94,7 @@ export const orderTimelineRouter = router({
             conditionType: rule.conditionType,
             conditionValue: rule.conditionValue !== null ? String(rule.conditionValue) : null,
             actionType: rule.actionType,
+            approvalPosition: input.approvalPosition,
             active: true,
             createdAt: now,
             updatedAt: now,
@@ -162,6 +165,7 @@ export const orderTimelineRouter = router({
         recipientName: string;
         recipientType: string;
         actionType: string;
+        approvalPosition: number;
         matchedConditions: string[];
       }> = [];
 
@@ -242,6 +246,7 @@ export const orderTimelineRouter = router({
             recipientName: recipientRules[0].recipientName,
             recipientType: recipientRules[0].recipientType,
             actionType,
+            approvalPosition: recipientRules[0].approvalPosition,
             matchedConditions,
           });
         }
