@@ -32,6 +32,11 @@ export const WOOD_MEASURE_OPTIONS = [
   { value: "350mm", label: "350mm", color: "#eab308" },
 ] as const;
 
+/** Round to 5 decimal places to avoid floating-point drift in stock arithmetic */
+function roundDec(n: number): number {
+  return Math.round(n * 100000) / 100000;
+}
+
 export const productionRouter = router({
   getSectors: publicProcedure.query(async () => {
     const db = await getDb();
@@ -111,7 +116,7 @@ export const productionRouter = router({
       let previousQty = 0;
 
       if (existing.length > 0) {
-        previousQty = parseFloat(String(existing[0].quantidade)) || 0;
+        previousQty = roundDec(parseFloat(String(existing[0].quantidade)) || 0);
         await db
           .update(productionEntries)
           .set({
@@ -153,7 +158,7 @@ export const productionRouter = router({
 
         if (isEmbalagem) {
           const codigoItem = input.tipoMadeira; // Na embalagem, tipoMadeira armazena o codigoItem
-          const diff = input.quantidade - previousQty;
+          const diff = roundDec(input.quantidade - previousQty);
 
           if (diff !== 0) {
             // ─── Check if this is a Queijo Coalho product (Palitos Premium) ───
@@ -163,11 +168,11 @@ export const productionRouter = router({
             if (isQueijCoalho) {
               // Auto-feed Queijo Coalho: atualiza estoque_processado E abate do estoque_maxiprod
               const qcRows = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, codigoItem));
-              const currentProcessado = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0;
-              const currentMaxiprod = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueMaxiprod)) : 0;
-              const newProcessado = Math.max(0, currentProcessado + diff);
+              const currentProcessado = roundDec(qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0);
+              const currentMaxiprod = roundDec(qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueMaxiprod)) : 0);
+              const newProcessado = roundDec(Math.max(0, currentProcessado + diff));
               // Abater do estoque Maxiprod: quando processa, sai da matéria-prima
-              const newMaxiprod = Math.max(0, currentMaxiprod - diff);
+              const newMaxiprod = roundDec(Math.max(0, currentMaxiprod - diff));
 
               // Record history - processado
               await db.insert(queijoCoalhoStockHistory).values({
@@ -210,8 +215,8 @@ export const productionRouter = router({
               // Madeira PA auto-feed (existing logic)
               // Get current stock value (para registro no histórico)
               const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
-              const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
-              const newStock = Math.max(0, currentStock + diff);
+              const currentStock = roundDec(stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0);
+              const newStock = roundDec(Math.max(0, currentStock + diff));
 
               // Record history (SEMPRE registra, mesmo com auto-feed desabilitado)
               await db.insert(stockEditHistory).values({
@@ -305,7 +310,7 @@ export const productionRouter = router({
       const oldQtyMap = new Map<string, number>();
       for (const old of allExisting) {
         if (old.tipoMadeira) {
-          oldQtyMap.set(old.tipoMadeira, (oldQtyMap.get(old.tipoMadeira) || 0) + parseFloat(String(old.quantidade)));
+          oldQtyMap.set(old.tipoMadeira, roundDec((oldQtyMap.get(old.tipoMadeira) || 0) + parseFloat(String(old.quantidade))));
         }
       }
 
@@ -376,7 +381,7 @@ export const productionRouter = router({
         const newQtyMap = new Map<string, number>();
         for (const entry of input.entries) {
           if (entry.tipoMadeira) {
-            newQtyMap.set(entry.tipoMadeira, (newQtyMap.get(entry.tipoMadeira) || 0) + entry.quantidade);
+            newQtyMap.set(entry.tipoMadeira, roundDec((newQtyMap.get(entry.tipoMadeira) || 0) + entry.quantidade));
           }
         }
 
@@ -389,7 +394,7 @@ export const productionRouter = router({
         for (const codigoItem of allCodigos) {
           const oldQty = oldQtyMap.get(codigoItem) || 0;
           const newQty = newQtyMap.get(codigoItem) || 0;
-          const diff = newQty - oldQty;
+          const diff = roundDec(newQty - oldQty);
 
           if (diff !== 0) {
             const isQueijCoalho = QUEIJO_COALHO_CODES_BATCH.includes(codigoItem);
@@ -397,11 +402,11 @@ export const productionRouter = router({
             if (isQueijCoalho) {
               // Auto-feed Queijo Coalho: atualiza estoque_processado E abate do estoque_maxiprod
               const qcRows = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, codigoItem));
-              const currentProcessado = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0;
-              const currentMaxiprod = qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueMaxiprod)) : 0;
-              const newProcessado = Math.max(0, currentProcessado + diff);
+              const currentProcessado = roundDec(qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueProcessado)) : 0);
+              const currentMaxiprod = roundDec(qcRows.length > 0 ? parseFloat(String(qcRows[0].estoqueMaxiprod)) : 0);
+              const newProcessado = roundDec(Math.max(0, currentProcessado + diff));
               // Abater do estoque Maxiprod: quando processa, sai da matéria-prima
-              const newMaxiprod = Math.max(0, currentMaxiprod - diff);
+              const newMaxiprod = roundDec(Math.max(0, currentMaxiprod - diff));
 
               // Record history - processado
               await db.insert(queijoCoalhoStockHistory).values({
@@ -443,8 +448,8 @@ export const productionRouter = router({
             } else {
               // Madeira PA auto-feed (existing logic)
               const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
-              const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
-              const newStock = Math.max(0, currentStock + diff);
+              const currentStock = roundDec(stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0);
+              const newStock = roundDec(Math.max(0, currentStock + diff));
 
               await db.insert(stockEditHistory).values({
                 card: "madeira",
@@ -814,7 +819,7 @@ export const productionRouter = router({
       const embalagemMap = new Map<string, number>();
       for (const e of embalagemEntries) {
         if (e.tipoMadeira) {
-          embalagemMap.set(e.tipoMadeira, (embalagemMap.get(e.tipoMadeira) || 0) + (parseFloat(String(e.quantidade)) || 0));
+          embalagemMap.set(e.tipoMadeira, roundDec((embalagemMap.get(e.tipoMadeira) || 0) + (parseFloat(String(e.quantidade)) || 0)));
         }
       }
 
@@ -975,10 +980,10 @@ export const productionRouter = router({
         .limit(1);
 
       if (existingPE.length > 0) {
-        const oldQty = parseFloat(String(existingPE[0].quantidade)) || 0;
+        const oldQty = roundDec(parseFloat(String(existingPE[0].quantidade)) || 0);
         await db.update(productionEntries)
           .set({
-            quantidade: String(oldQty + input.quantidade),
+            quantidade: String(roundDec(oldQty + input.quantidade)),
             lancadoPor: input.lancadoPor || null,
           })
           .where(eq(productionEntries.id, existingPE[0].id));
@@ -1014,9 +1019,9 @@ export const productionRouter = router({
       const existing = await db.select().from(pirografiaEntries).where(eq(pirografiaEntries.id, input.id)).limit(1);
       if (existing.length === 0) throw new Error("Entry not found");
 
-      const oldQty = parseFloat(String(existing[0].quantidade)) || 0;
+      const oldQty = roundDec(parseFloat(String(existing[0].quantidade)) || 0);
       const newQty = input.quantidade !== undefined ? input.quantidade : oldQty;
-      const qtyDiff = newQty - oldQty;
+      const qtyDiff = roundDec(newQty - oldQty);
 
       const updates: Record<string, any> = {};
       if (input.nomePirografado !== undefined) updates.nomePirografado = input.nomePirografado;
@@ -1037,9 +1042,9 @@ export const productionRouter = router({
           ))
           .limit(1);
         if (pe.length > 0) {
-          const peQty = parseFloat(String(pe[0].quantidade)) || 0;
+          const peQty = roundDec(parseFloat(String(pe[0].quantidade)) || 0);
           await db.update(productionEntries)
-            .set({ quantidade: String(Math.max(0, peQty + qtyDiff)) })
+            .set({ quantidade: String(roundDec(Math.max(0, peQty + qtyDiff))) })
             .where(eq(productionEntries.id, pe[0].id));
         }
       }
@@ -1060,7 +1065,7 @@ export const productionRouter = router({
       if (existing.length === 0) throw new Error("Entry not found");
 
       const entry = existing[0];
-      const qty = parseFloat(String(entry.quantidade)) || 0;
+      const qty = roundDec(parseFloat(String(entry.quantidade)) || 0);
 
       // Subtrair do production_entries (NUNCA deletar, apenas reduzir quantidade)
       if (qty > 0) {
@@ -1073,8 +1078,8 @@ export const productionRouter = router({
           ))
           .limit(1);
         if (pe.length > 0) {
-          const peQty = parseFloat(String(pe[0].quantidade)) || 0;
-          const newPeQty = Math.max(0, peQty - qty);
+          const peQty = roundDec(parseFloat(String(pe[0].quantidade)) || 0);
+          const newPeQty = roundDec(Math.max(0, peQty - qty));
           // REGRA: NUNCA apagar histórico de produção. Setar quantidade para 0 em vez de deletar.
           await db.update(productionEntries)
             .set({ quantidade: String(newPeQty) })
@@ -1336,7 +1341,7 @@ export const productionRouter = router({
       // Check balance
       const lot = await db.select().from(productionLots).where(eq(productionLots.id, input.lotId)).limit(1);
       if (lot.length === 0) throw new Error("Lote não encontrado");
-      const saldo = parseFloat(String(lot[0].saldoAtual));
+      const saldo = roundDec(parseFloat(String(lot[0].saldoAtual)));
       if (input.qtdEnviada > saldo) {
         throw new Error(`Quantidade (${input.qtdEnviada}) excede saldo disponível (${saldo})`);
       }
@@ -1354,7 +1359,7 @@ export const productionRouter = router({
       });
 
       // Update balance
-      const newBalance = saldo - input.qtdEnviada;
+      const newBalance = roundDec(saldo - input.qtdEnviada);
       await db.update(productionLots)
         .set({ saldoAtual: String(newBalance) })
         .where(eq(productionLots.id, input.lotId));

@@ -190,14 +190,14 @@ function mapClientToMaxiprodRow(client: any): string[] {
   row[19] = client.cidade || "";
   // Col 21: UF - MUST have value
   row[20] = client.uf || "PR";
-  // Col 22: Região do cliente
-  row[21] = client.regiao || "";
-  // Col 23: Perfil do cliente
-  row[22] = client.perfil || "";
-  // Col 24: Segmento do cliente
-  row[23] = client.segmento || "";
-  // Col 25: Forma de pedido do cliente
-  row[24] = client.formaPedido || "";
+  // Col 22: Região do cliente - DEIXAR VAZIO (precisa estar cadastrado no Maxiprod)
+  row[21] = "";
+  // Col 23: Perfil do cliente - DEIXAR VAZIO (precisa estar cadastrado no Maxiprod)
+  row[22] = "";
+  // Col 24: Segmento do cliente - DEIXAR VAZIO (precisa estar cadastrado no Maxiprod)
+  row[23] = "";
+  // Col 25: Forma de pedido do cliente - DEIXAR VAZIO (precisa estar cadastrado no Maxiprod)
+  row[24] = "";
   // Col 26: Fone 1
   row[25] = client.telefone1 || "";
   // Col 27: Fone 2
@@ -224,8 +224,9 @@ function mapClientToMaxiprodRow(client: any): string[] {
   row[36] = "Não";
   // Col 38: E-mail
   row[37] = client.email || "";
-  // Col 39: Representante/Vendedor
-  row[38] = client.sellerName || "";
+  // Col 39: Representante/Vendedor - DEIXAR VAZIO (precisa estar cadastrado no Maxiprod com CPF/CNPJ)
+  // O nome do vendedor muitas vezes não está registrado no Maxiprod como representante
+  row[38] = "";
   // Col 40-41: Representante/Vendedor 2, 3
   row[39] = "";
   row[40] = "";

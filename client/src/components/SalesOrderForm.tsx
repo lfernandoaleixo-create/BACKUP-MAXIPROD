@@ -9,6 +9,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Search, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle, AlertTriangle, ArrowLeft, ShoppingCart, User, MapPin, Package as PackageIcon, CreditCard, Send } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { useCepLookup } from "@/hooks/useCepLookup";
 
 interface OrderItem {
   codigoItem: string;
@@ -45,6 +46,12 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
   const [bairro, setBairro] = useState("");
   const [municipio, setMunicipio] = useState("");
   const [uf, setUf] = useState("");
+  // CEP auto-lookup
+  const { fetchCep, isLoading: cepLoading, error: cepError } = useCepLookup();
+  const handleCepChange = (value: string) => {
+    setCep(value);
+    fetchCep(value, { setEndereco, setBairro, setMunicipio, setUf, setComplemento });
+  };
   const [telefone1, setTelefone1] = useState("");
   const [telefone2, setTelefone2] = useState("");
   const [emailContato, setEmailContato] = useState("");
@@ -243,7 +250,7 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
             regimeTributario={regimeTributario} setRegimeTributario={setRegimeTributario}
             emailNfe={emailNfe} setEmailNfe={setEmailNfe}
             cnaeFiscal={cnaeFiscal} setCnaeFiscal={setCnaeFiscal}
-            cep={cep} setCep={setCep}
+            cep={cep} setCep={setCep} handleCepChange={handleCepChange} cepLoading={cepLoading} cepError={cepError}
             endereco={endereco} setEndereco={setEndereco}
             numero={numero} setNumero={setNumero}
             complemento={complemento} setComplemento={setComplemento}
@@ -354,7 +361,7 @@ function ClientStep(props: any) {
     cnpjCpf, setCnpjCpf, razaoSocial, setRazaoSocial, nomeFantasia, setNomeFantasia,
     inscricaoEstadual, setInscricaoEstadual, tipoContribuinte, setTipoContribuinte,
     regimeTributario, setRegimeTributario, emailNfe, setEmailNfe, cnaeFiscal, setCnaeFiscal,
-    cep, setCep, endereco, setEndereco, numero, setNumero, complemento, setComplemento,
+    cep, setCep, handleCepChange, cepLoading, cepError, endereco, setEndereco, numero, setNumero, complemento, setComplemento,
     bairro, setBairro, municipio, setMunicipio, uf, setUf,
     telefone1, setTelefone1, telefone2, setTelefone2, emailContato, setEmailContato,
     segmento, setSegmento,
@@ -454,7 +461,11 @@ function ClientStep(props: any) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <InputField label="CEP" value={cep} onChange={setCep} placeholder="00000-000" />
+        <div className="relative">
+          <InputField label="CEP" value={cep} onChange={handleCepChange} placeholder="00000-000" />
+          {cepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+          {cepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{cepError}</span>}
+        </div>
         <div className="col-span-2">
           <InputField label="Endereço" value={endereco} onChange={setEndereco} placeholder="Rua/Av" />
         </div>

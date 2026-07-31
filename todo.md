@@ -6701,3 +6701,14 @@
   - Fix: enforcement server-side com enforceGranularPermission() em TODAS as mutations do billing
   - Fix: refresh automático de permissões a cada 30s no OperatorContext (sem precisar relogar)
   - Testado: Paula BLOCKED, Juvenal ALLOWED - funciona 100%
+
+## Importação Maxiprod - Pedido 450001
+- [ ] Corrigir exportação da planilha do pedido 450001 da Samanta Fernochi para ficar compatível com a importação do Maxiprod para a Vitória
+  - Comparar arquivo gerado vs arquivo de referência/resultado e documento PDF com colunas exigidas
+  - Ajustar ordem, nomes e preenchimento das colunas AD-AI (observações internas, transportadora, valor do frete, tipo de frete, forma de pagamento, situação de cobrança)
+  - Validar o arquivo final para importação sem erro
+
+## Integração API Correios - Busca CEP
+- [x] Integrar API de busca CEP dos Correios no cadastro de cliente (ao digitar CEP, preencher endereço automaticamente)
+- [ ] Fix Maxiprod export: só incluir campos obrigatórios, deixar em branco campos com valores não cadastrados (Região, Perfil, Forma de Pedido, Representante)
+- [x] Fix movimentação de estoque (aba Produção): Maria converte 1 caixa e vira 0.99 — manter valor exato inteiro sem decimal/arredondamento

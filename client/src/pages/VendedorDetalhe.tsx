@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
+import { useCepLookup } from "@/hooks/useCepLookup";
 import TopNav from "@/components/TopNav";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { trpc } from "@/lib/trpc";
@@ -2758,7 +2759,37 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  
+
+  // CEP auto-lookup (ViaCEP)
+  const { fetchCep: fetchMainCep, isLoading: cepLoading, error: cepError } = useCepLookup();
+  const { fetchCep: fetchRedespachoCep, isLoading: redespachoCepLoading, error: redespachoCepError } = useCepLookup();
+  const { fetchCep: fetchEntregaCep, isLoading: entregaCepLoading, error: entregaCepError } = useCepLookup();
+
+  const handleCepChange = (value: string) => {
+    setCep(value);
+    fetchMainCep(value, { setLogradouro, setBairro, setCidade, setUf, setComplemento });
+  };
+  const handleRedespachoCepChange = (value: string) => {
+    setRedespachoCep(value);
+    fetchRedespachoCep(value, {
+      setLogradouro: setRedespachoLogradouro,
+      setBairro: setRedespachoBairro,
+      setCidade: setRedespachoCidade,
+      setUf: setRedespachoUf,
+      setComplemento: setRedespachoComplemento,
+    });
+  };
+  const handleEntregaCepChange = (value: string) => {
+    setEntregaCep(value);
+    fetchEntregaCep(value, {
+      setLogradouro: setEntregaLogradouro,
+      setBairro: setEntregaBairro,
+      setCidade: setEntregaCidade,
+      setUf: setEntregaUf,
+      setComplemento: setEntregaComplemento,
+    });
+  };
+
   // Edit mode: when CNPJ duplicate is detected and user confirms edit
   const [editMode, setEditMode] = useState(false);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
@@ -2933,6 +2964,12 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
     // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
     if (!isGuilherme) {
       const strictMissing: string[] = [];
+      // Validação de formato CNPJ/CPF
+      const cleanDoc = cnpjCpf.replace(/\D/g, "");
+      if (cleanDoc.length > 0 && cleanDoc.length !== 11 && cleanDoc.length !== 14) {
+        setError("CNPJ/CPF inválido! \n\u2022 CPF deve ter 11 dígitos (ex: 123.456.789-00)\n\u2022 CNPJ deve ter 14 dígitos (ex: 12.345.678/0001-00)\n\nDica: Digite apenas os números, o sistema formata automaticamente.");
+        return;
+      }
       if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
       if (!cep.trim()) strictMissing.push("CEP");
       if (!uf.trim()) strictMissing.push("UF (estado)");
@@ -3245,12 +3282,21 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         </div>
       )}
 
+            {/* Dicas de preenchimento */}
+      {!editMode && (
+        <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-[10px] text-blue-700 space-y-0.5">
+          <p className="font-bold text-[11px] mb-1">💡 Dicas de preenchimento:</p>
+          <p>• <strong>CNPJ/CPF:</strong> Digite apenas os números (ex: 12345678000100). O sistema busca os dados automaticamente.</p>
+          <p>• <strong>CEP:</strong> Ao digitar o CEP completo, o endereço será preenchido automaticamente.</p>
+          <p>• <strong>Campos com *:</strong> São obrigatórios. O cadastro não será salvo sem eles.</p>
+          <p>• <strong>Redespacho:</strong> Se o cliente usa transportadora intermediária, selecione "Sim" e preencha os dados.</p>
+        </div>
+      )}
       {error && (
-        <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
+        <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 whitespace-pre-line">
           {error}
         </div>
       )}
-
       {/* Dados da Empresa */}
       <div className="mb-3">
         <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
@@ -3330,7 +3376,11 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           <MapPin className="w-3 h-3" /> Endereço
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <FormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" required />
+          <div className="relative">
+            <FormInput label="CEP" value={cep} onChange={handleCepChange} placeholder="00000-000" required />
+            {cepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+            {cepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{cepError}</span>}
+          </div>
           <div className="sm:col-span-2">
             <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" />
           </div>
@@ -3380,7 +3430,11 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
               <FormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão social do redespacho" required />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <FormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
+              <div className="relative">
+                <FormInput label="CEP" value={redespachoCep} onChange={handleRedespachoCepChange} placeholder="00000-000" />
+                {redespachoCepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+                {redespachoCepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{redespachoCepError}</span>}
+              </div>
               <div className="sm:col-span-2">
                 <FormInput label="Logradouro" value={redespachoLogradouro} onChange={setRedespachoLogradouro} placeholder="Rua/Av" />
               </div>
@@ -3426,7 +3480,11 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
               <MapPin className="w-3 h-3" /> Endereço de Entrega
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <FormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" required />
+              <div className="relative">
+                <FormInput label="CEP" value={entregaCep} onChange={handleEntregaCepChange} placeholder="00000-000" required />
+                {entregaCepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+                {entregaCepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{entregaCepError}</span>}
+              </div>
               <div className="sm:col-span-2">
                 <FormInput label="Logradouro" value={entregaLogradouro} onChange={setEntregaLogradouro} placeholder="Rua/Av" />
               </div>
@@ -3443,186 +3501,6 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             </div>
           </div>
         )}
-      </div>
-
-      {/* Dados Fiscais */}
-      <div className="mb-3">
-        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
-          <FileText className="w-3 h-3" /> Dados Fiscais
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Regime Tributário</label>
-            <select
-              value={regimeTributario}
-              onChange={(e) => setRegimeTributario(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="Normal">Normal</option>
-              <option value="Simples Nacional">Simples Nacional</option>
-              <option value="Simples Nacional - Excesso">Simples Nacional - Excesso</option>
-              <option value="MEI">MEI</option>
-            </select>
-          </div>
-          <FormInput label="Inscrição Municipal" value={inscricaoMunicipal} onChange={setInscricaoMunicipal} placeholder="IM" />
-          <FormInput label="Inscrição SUFRAMA" value={inscricaoSuframa} onChange={setInscricaoSuframa} placeholder="SUFRAMA" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação Fiscal Especial</label>
-            <select
-              value={situacaoFiscalEspecial}
-              onChange={(e) => setSituacaoFiscalEspecial(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Nenhuma</option>
-              <option value="Isento">Isento</option>
-              <option value="Imune">Imune</option>
-              <option value="Substituto Tributário">Substituto Tributário</option>
-            </select>
-          </div>
-          <FormInput label="CNAE Fiscal" value={cnaeFiscal} onChange={setCnaeFiscal} placeholder="0000000" />
-          <FormInput label="Email NF-e/NFC-e" value={emailNfe} onChange={setEmailNfe} placeholder="nfe@empresa.com" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <FormInput label="Website" value={website} onChange={setWebsite} placeholder="www.empresa.com.br" />
-        </div>
-      </div>
-
-      {/* Dados de Venda */}
-      <div className="mb-3">
-        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
-          <CreditCard className="w-3 h-3" /> Dados de Venda
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <FormInput label="Limite de Crédito (R$)" value={limiteCredito} onChange={setLimiteCredito} placeholder="999.999,99" />
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Cobrança (padrão)</label>
-            <select
-              value={formaCobranca}
-              onChange={(e) => setFormaCobranca(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="Boleto">Boleto</option>
-              <option value="Boleto (com registro)">Boleto (com registro)</option>
-              <option value="Depósito">Depósito</option>
-              <option value="PIX">PIX</option>
-              <option value="Cartão">Cartão</option>
-              <option value="Cheque">Cheque</option>
-              <option value="Dinheiro">Dinheiro</option>
-            </select>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <FormInput label="Tabela de Preços" value={tabelaPrecos} onChange={setTabelaPrecos} placeholder="Nome da tabela" />
-          <FormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="30/60/90 dias" />
-        </div>
-      </div>
-
-      {/* Dados de Relacionamento (CRM) */}
-      <div className="mb-3">
-        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
-          <Briefcase className="w-3 h-3" /> Dados de Relacionamento (CRM)
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <FormInput label="Região" value={regiao} onChange={setRegiao} placeholder="Região" />
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Perfil</label>
-            <select
-              value={perfil}
-              onChange={(e) => setPerfil(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Forma de Pedido</label>
-            <select
-              value={formaPedido}
-              onChange={(e) => setFormaPedido(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="Presencial">Presencial</option>
-              <option value="Telefone">Telefone</option>
-              <option value="WhatsApp">WhatsApp</option>
-              <option value="Email">Email</option>
-              <option value="App">App</option>
-            </select>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-          <FormInput label="Produtos" value={produtos} onChange={setProdutos} placeholder="Produtos de interesse" />
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Probabilidade de Negócio</label>
-            <select
-              value={probabilidadeNegocio}
-              onChange={(e) => setProbabilidadeNegocio(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="Alta">Alta</option>
-              <option value="Média">Média</option>
-              <option value="Baixa">Baixa</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Tamanho</label>
-            <select
-              value={tamanho}
-              onChange={(e) => setTamanho(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="Pequeno">Pequeno</option>
-              <option value="Médio">Médio</option>
-              <option value="Grande">Grande</option>
-            </select>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Atenção</label>
-            <select
-              value={atencao}
-              onChange={(e) => setAtencao(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="Normal">Normal</option>
-              <option value="Prioritário">Prioritário</option>
-              <option value="VIP">VIP</option>
-            </select>
-          </div>
-          <FormInput label="Fornecedor Atual" value={fornecedorAtual} onChange={setFornecedorAtual} placeholder="Concorrente atual" />
-        </div>
-      </div>
-
-      {/* Cobrança */}
-      <div className="mb-3">
-        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
-          <AlertTriangle className="w-3 h-3" /> Cobrança
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação</label>
-            <select
-              value={situacaoCobranca}
-              onChange={(e) => setSituacaoCobranca(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="">Selecione...</option>
-              <option value="COM PROTESTO">COM PROTESTO</option>
-              <option value="SEM PROTESTO">SEM PROTESTO</option>
-            </select>
-          </div>
-        </div>
       </div>
 
       {/* Observações */}
@@ -5110,6 +4988,37 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [entregaUf, setEntregaUf] = useState("");
   const [entregaTelefone, setEntregaTelefone] = useState("");
 
+  // CEP auto-lookup (ViaCEP) for order form
+  const { fetchCep: fetchOrderCep, isLoading: orderCepLoading, error: orderCepError } = useCepLookup();
+  const { fetchCep: fetchOrderRedespachoCep, isLoading: orderRedespachoCepLoading, error: orderRedespachoCepError } = useCepLookup();
+  const { fetchCep: fetchOrderEntregaCep, isLoading: orderEntregaCepLoading, error: orderEntregaCepError } = useCepLookup();
+
+  const handleOrderCepChange = (value: string) => {
+    setCep(value);
+    setShowClientValidationError(false);
+    fetchOrderCep(value, { setEndereco: setEndereco, setBairro, setMunicipio: setMunicipio, setUf, setComplemento });
+  };
+  const handleOrderRedespachoCepChange = (value: string) => {
+    setRedespachoCep(value);
+    fetchOrderRedespachoCep(value, {
+      setLogradouro: setRedespachoLogradouro,
+      setBairro: setRedespachoBairro,
+      setCidade: setRedespachoCidade,
+      setUf: setRedespachoUf,
+      setComplemento: setRedespachoComplemento,
+    });
+  };
+  const handleOrderEntregaCepChange = (value: string) => {
+    setEntregaCep(value);
+    fetchOrderEntregaCep(value, {
+      setLogradouro: setEntregaLogradouro,
+      setBairro: setEntregaBairro,
+      setCidade: setEntregaCidade,
+      setUf: setEntregaUf,
+      setComplemento: setEntregaComplemento,
+    });
+  };
+
   // Products
   interface OrderItem {
     codigoItem: string;
@@ -6030,7 +5939,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" />
               <OrderFormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia" />
               <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" />
-              <OrderFormInput label="CEP" value={cep} onChange={(v) => { setCep(v); setShowClientValidationError(false); }} placeholder="00000-000" required error={showClientValidationError} />
+              <div className="relative">
+              <OrderFormInput label="CEP" value={cep} onChange={handleOrderCepChange} placeholder="00000-000" required error={showClientValidationError} />
+              {orderCepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+              {orderCepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{orderCepError}</span>}
+              </div>
               <OrderFormInput label="Endereço" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" />
               <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" />
               <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" />
@@ -6078,7 +5991,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <OrderFormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
                   <OrderFormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão Social do Redespacho" required />
-                  <OrderFormInput label="CEP" value={redespachoCep} onChange={setRedespachoCep} placeholder="00000-000" />
+                  <div className="relative">
+                  <OrderFormInput label="CEP" value={redespachoCep} onChange={handleOrderRedespachoCepChange} placeholder="00000-000" />
+                  {orderRedespachoCepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+                  {orderRedespachoCepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{orderRedespachoCepError}</span>}
+                  </div>
                   <OrderFormInput label="Logradouro" value={redespachoLogradouro} onChange={setRedespachoLogradouro} placeholder="Rua/Av" />
                   <OrderFormInput label="Número" value={redespachoNumero} onChange={setRedespachoNumero} placeholder="Nº" />
                   <OrderFormInput label="Complemento" value={redespachoComplemento} onChange={setRedespachoComplemento} placeholder="Sala, Bloco..." />
@@ -6108,7 +6025,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
                 <p className="text-[10px] font-bold text-orange-600 dark:text-orange-300 uppercase mb-2">📦 ENDEREÇO DE ENTREGA</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <OrderFormInput label="CEP" value={entregaCep} onChange={setEntregaCep} placeholder="00000-000" required />
+                  <div className="relative">
+                  <OrderFormInput label="CEP" value={entregaCep} onChange={handleOrderEntregaCepChange} placeholder="00000-000" required />
+                  {orderEntregaCepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
+                  {orderEntregaCepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{orderEntregaCepError}</span>}
+                  </div>
                   <OrderFormInput label="Logradouro" value={entregaLogradouro} onChange={setEntregaLogradouro} placeholder="Rua/Av" />
                   <OrderFormInput label="Número" value={entregaNumero} onChange={setEntregaNumero} placeholder="Nº" />
                   <OrderFormInput label="Complemento" value={entregaComplemento} onChange={setEntregaComplemento} placeholder="Sala, Bloco..." />
