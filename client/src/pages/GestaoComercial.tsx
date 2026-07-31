@@ -154,7 +154,7 @@ export default function GestaoComercial() {
   const isBruno = operator?.name === "Bruno";
   const isFernando = operator?.name === "Fernando";
   const isRenato = operator?.name === "Renato";
-  const shouldRedirectToPedidos = isVitoria; // Only Vitória auto-redirects
+  const shouldRedirectToPedidos = false; // Removed: Vitória now sees the navigation hub like other operators
   // Navigation hub is shown to ALL operators with Gestão Comercial access
   // The cards inside the hub are individually controlled by granular permissions
   const showNavigationHub = true; // Always show hub - cards are permission-gated

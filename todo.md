@@ -6647,3 +6647,4 @@
 - [x] Remover bloqueio por margem mensal para gestores na tela de gestão comercial (/gestao-comercial/vendedor/:id) - gestor precisa conseguir tirar pedido sem ser bloqueado
 - [x] Adicionar campos formaDeCobrancaPreferencial (situacaoCobranca/formaCobranca) e corrigir segmento na sincronização do Maxiprod para vendor_clients
 - [x] Mostrar no resumo do pedido da Vitória (tela lançamento Maxiprod): condição de pagamento (tipo + config), transportadora selecionada e valor do frete
+- [x] Bug: Vitória tem permissão "Simulação de Frete" marcada mas não consegue acessar com a senha dela - fluxo de permissões não funciona (causa: auto-redirect impedia de ver o hub)
