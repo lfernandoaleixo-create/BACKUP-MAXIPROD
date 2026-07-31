@@ -6658,5 +6658,6 @@
 - [x] Corrigir erro de português: \u201c e \u201d aparecendo como texto nas observações de aprovação
 - [x] Verificar simulação de frete pedido #2746 não encontrado no Maxiprod (pedido não existe no banco - max é 1606)
 - [x] Fix card Aprovações de Pedidos - countPendingGestor agora inclui aprovado_subgestor
+- [x] Fix aba Aprovação de Pedidos - pedidos aprovado_subgestor agora aparecem para Juvenal (position-based filter corrigido)
 - [x] Simulação de Frete: suporte a múltiplos pedidos (adicionar mais de um número de pedido para simular frete combinado)
 - [x] Remover aba/seção Inadimplência da página dos vendedores

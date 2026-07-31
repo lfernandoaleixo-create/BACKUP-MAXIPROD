@@ -1153,6 +1153,9 @@ export const salesOrderRouter = router({
           }
           // Filter orders: only show orders where currentApprovalPosition matches this recipient's position
           orders = orders.filter(order => {
+            // Orders with status "aprovado_subgestor" always pass through - they explicitly
+            // need the parent gestor's approval regardless of position tracking
+            if (order.status === "aprovado_subgestor") return true;
             const orderSellerName = (order.sellerName || '').toUpperCase().trim();
             // Try exact match first, then first-name match for short names like 'Juvenal'
             let matchedKey: string | undefined = sellerPositionMap.has(orderSellerName) ? orderSellerName : undefined;
@@ -1492,6 +1495,12 @@ export const salesOrderRouter = router({
 
       let newStatus = needsGestorApproval ? "aprovado_subgestor" : "aprovado";
       let newPosition = currentPosition;
+
+      // When sub-gestor approves and it needs parent gestor approval,
+      // advance position to the next level (parent gestor's position)
+      if (needsGestorApproval && currentPosition < maxPosition) {
+        newPosition = currentPosition + 1;
+      }
 
       if (!needsGestorApproval) {
         if (allCurrentPositionApproved && currentPosition < maxPosition) {

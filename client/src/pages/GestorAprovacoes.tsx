@@ -126,9 +126,15 @@ export default function GestorAprovacoes(props: any = {}) {
   const [gestorPasswordReject, setGestorPasswordReject] = useState("");
 
   // Fetch orders - filtered by gestorName if provided (for Renato/Juvenal individual view)
-  // Also pass recipientName for position-based sequential approval filtering
+  // For "aprovado_subgestor" filter (Juvenal parent gestor view), don't filter by gestorName
+  // because those orders have gestorName=sub-gestor (e.g. RENATO LEDESMA), not the parent gestor
+  const isParentGestorView = isJuvenalInit && filter === "aprovado_subgestor";
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
-    { status: filter === "todos" ? "todos" : filter, ...(gestorName ? { gestorName, recipientName: gestorName } : {}) },
+    { 
+      status: filter === "todos" ? "todos" : filter, 
+      ...(gestorName && !isParentGestorView ? { gestorName } : {}),
+      ...(gestorName ? { recipientName: gestorName } : {})
+    },
     { staleTime: 30 * 1000 }
   );
 
