@@ -1262,7 +1262,7 @@ export default function GestorAprovacoes(props: any = {}) {
                               className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
                             >
                               <RotateCcw className="w-3 h-3" />
-                              {unrejectMutation.isPending ? "Desrecusando..." : "Desrecusar Pedido"}
+                              {unrejectMutation.isPending ? "Revendo..." : "Rever Pedido"}
                             </button>
                           )}
                         </div>
