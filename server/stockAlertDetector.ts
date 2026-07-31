@@ -136,25 +136,53 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   const stockMap = await fetchStockForItems(uniqueItemIds);
 
   // 3. Identificar itens insuficientes
-  // REGRA CORRIGIDA: Só considerar insuficiente se o item TEM registro em estoquesAgrupados
-  // e o disponível (total - reservado) < quantidade pedida.
-  // Itens SEM registro em estoquesAgrupados NÃO são insuficientes — o Maxiprod não os
-  // controla via estoque agrupado (ex: VARETAS AROMATIZADOR que têm estoque mas não aparecem
-  // no estoquesAgrupados). Se não tem bolinha vermelha no Maxiprod, não deve gerar alerta.
+  // REGRA ATUALIZADA (31/07/2026): Considerar insuficiente em DUAS situações:
+  // A) Item TEM registro em estoquesAgrupados e disponível < pedido
+  // B) Item NÃO tem registro em estoquesAgrupados MAS existe no stock_items local com
+  //    quantidade insuficiente (em caixas) para atender o pedido.
+  //    Isso captura VARETAS e ESPETOS que o Maxiprod não controla via estoquesAgrupados
+  //    mas que realmente não têm estoque suficiente.
+  
+  // Buscar estoque local para fallback
+  const localStockRowsForCheck = await db.select({
+    codigoItem: stockItems.codigoItem,
+    quantidade: stockItems.quantidade,
+    fator: stockItems.unidadeDeVendaFator,
+  }).from(stockItems);
+  const localStockForCheck = new Map<string, { qtyUnidades: number; fator: number }>();
+  for (const row of localStockRowsForCheck) {
+    const existing = localStockForCheck.get(row.codigoItem) || { qtyUnidades: 0, fator: parseFloat(row.fator || "1") };
+    existing.qtyUnidades += parseFloat(row.quantidade);
+    if (row.fator) existing.fator = parseFloat(row.fator);
+    localStockForCheck.set(row.codigoItem, existing);
+  }
+
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
     const stock = stockMap.get(item.itemId);
     
-    // Se NÃO tem registro em estoquesAgrupados → item não é controlado por estoque agrupado
-    // → NÃO considerar insuficiente (evita falsos positivos como VARETAS)
-    if (!stock) {
-      continue;
-    }
-    
-    // Tem registro em estoquesAgrupados → verificar se disponível < pedido
-    const available = stock.total - stock.reserved;
-    if (available < item.quantidade) {
-      insufficientItems.push(item);
+    if (stock) {
+      // Caso A: Tem registro em estoquesAgrupados → verificar se disponível < pedido
+      const available = stock.total - stock.reserved;
+      if (available < item.quantidade) {
+        insufficientItems.push(item);
+      }
+    } else {
+      // Caso B: NÃO tem registro em estoquesAgrupados
+      // Verificar estoque local (stock_items) como fallback
+      const localInfo = localStockForCheck.get(item.codigoItem);
+      if (localInfo) {
+        // Item existe no stock_items - converter para caixas e comparar
+        const fator = localInfo.fator || 1;
+        const localCaixas = fator > 1 ? localInfo.qtyUnidades / fator : localInfo.qtyUnidades;
+        if (localCaixas < item.quantidade) {
+          // Estoque local insuficiente → gerar alerta
+          insufficientItems.push(item);
+        }
+      } else {
+        // Item NÃO existe nem no stock_items → gerar alerta (produto desconhecido sem estoque)
+        insufficientItems.push(item);
+      }
     }
   }
 

@@ -6649,3 +6649,5 @@
 - [x] Mostrar no resumo do pedido da Vitória (tela lançamento Maxiprod): condição de pagamento (tipo + config), transportadora selecionada e valor do frete
 - [x] Bug: Vitória tem permissão "Simulação de Frete" marcada mas não consegue acessar com a senha dela - fluxo de permissões não funciona (causa: auto-redirect impedia de ver o hub)
 - [x] Bug: Hub da Gestão Comercial mostra cards sem verificar permissão granular (Painel Gestores, Painel Vendedores, Gerenciar Gestores aparecem para Vitória sem permissão)
+- [x] Bug: Tela Vitória - mostrar tipo de pagamento (Boleto/PIX/Dinheiro) além de "A prazo" com 30/60/90
+- [x] Bug: Aba Faturamento - estoque insuficiente incorreto para pedidos 1600, 1597, 1596, 1595, 1590

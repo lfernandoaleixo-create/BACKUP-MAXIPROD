@@ -1342,10 +1342,36 @@ export const salesOrderRouter = router({
         itemsByOrder.get(item.orderId)!.push(item);
       }
 
-      return orders.map(order => ({
-        ...order,
-        items: itemsByOrder.get(order.id) || [],
-      }));
+      // Enrich orders with formaCobranca from vendor_clients when order doesn't have it
+      const cnpjsToLookup = orders
+        .filter(o => !o.formaCobranca && o.cnpjCpf)
+        .map(o => (o.cnpjCpf || "").replace(/\D/g, ""));
+      
+      const clientFormaCobrancaMap = new Map<string, string>();
+      if (cnpjsToLookup.length > 0) {
+        const clients = await db.select({
+          cnpjCpf: vendorClients.cnpjCpf,
+          formaCobranca: vendorClients.formaCobranca,
+        }).from(vendorClients)
+          .where(sql`${vendorClients.formaCobranca} IS NOT NULL AND ${vendorClients.formaCobranca} != ''`);
+        
+        for (const c of clients) {
+          if (c.cnpjCpf && c.formaCobranca) {
+            clientFormaCobrancaMap.set((c.cnpjCpf || "").replace(/\D/g, ""), c.formaCobranca);
+          }
+        }
+      }
+
+      return orders.map(order => {
+        const cleanCnpj = (order.cnpjCpf || "").replace(/\D/g, "");
+        const clientFormaCobranca = clientFormaCobrancaMap.get(cleanCnpj);
+        return {
+          ...order,
+          // If order doesn't have formaCobranca, use client's formaCobranca
+          formaCobranca: order.formaCobranca || clientFormaCobranca || null,
+          items: itemsByOrder.get(order.id) || [],
+        };
+      });
     }),
 
   /** Get orders for a specific seller (seller app) */
@@ -2814,16 +2840,27 @@ export const salesOrderRouter = router({
           
           if (pesoBrutoPerUnit > 0) {
             const qtyUnidadeItem = parseFloat(String(item.quantidadeUnidadeItem || 0));
-            if (qtyUnidadeItem > 0) {
+            const um = (stockItem?.unidadeMedida || '').toUpperCase().trim();
+            const uvCodigo = (stockItem?.unidadeDeVendaCodigo || '').toUpperCase().trim();
+            
+            // The pesoBruto in stock_items is per BASE UNIT (e.g., per single stick/toothpick).
+            // The order quantity is in SALES UNITS (boxes/CX).
+            // To get box weight: pesoBruto * unidadeDeVendaFator (units per box)
+            // To get total weight: boxWeight * qty (number of boxes)
+            // 
+            // Special case: if quantidadeUnidadeItem is significantly larger than quantidade,
+            // it means Maxiprod already converted to base units (e.g., 3 CX * 5000 = 15000 UN)
+            // In that case, pesoBruto * quantidadeUnidadeItem gives the correct total weight.
+            
+            if (qtyUnidadeItem > 0 && qtyUnidadeItem > qty * 10) {
+              // quantidadeUnidadeItem is in base units (already converted by Maxiprod)
               itemPesoTotal = pesoBrutoPerUnit * qtyUnidadeItem;
+            } else if (um === 'UN' && (uvCodigo === 'CX' || uvCodigo === 'PC') && fator > 1) {
+              // pesoBruto is per base unit, need to multiply by fator to get per-box weight
+              itemPesoTotal = pesoBrutoPerUnit * fator * qty;
             } else {
-              const um = (stockItem?.unidadeMedida || '').toUpperCase().trim();
-              const uvCodigo = (stockItem?.unidadeDeVendaCodigo || '').toUpperCase().trim();
-              if (um === 'UN' && (uvCodigo === 'CX' || uvCodigo === 'PC') && fator > 1) {
-                itemPesoTotal = pesoBrutoPerUnit * fator * qty;
-              } else {
-                itemPesoTotal = pesoBrutoPerUnit * qty;
-              }
+              // pesoBruto is already per sales unit or no conversion needed
+              itemPesoTotal = pesoBrutoPerUnit * qty;
             }
             pesoTotal += itemPesoTotal;
           }

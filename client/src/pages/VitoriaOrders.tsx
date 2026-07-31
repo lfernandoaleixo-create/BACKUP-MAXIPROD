@@ -682,6 +682,14 @@ export default function VitoriaOrders() {
                                     <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
                                       {order.municipio && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{order.municipio}/{order.uf}</span>}
                                       <span>{order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR") : ""}</span>
+                                      {(order.formaPagamento || order.formaCobranca || order.condicaoPagamento) && (
+                                        <span className="flex items-center gap-1 text-[9px] font-semibold text-violet-600 dark:text-violet-400">
+                                          <CreditCard className="w-2.5 h-2.5" />
+                                          {order.formaPagamento || ""}
+                                          {order.formaCobranca && order.formaPagamento !== order.formaCobranca ? ` (${order.formaCobranca})` : ""}
+                                          {order.condicaoPagamento ? ` ${order.condicaoPagamento}` : ""}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="text-right flex-shrink-0 flex items-center gap-2">
@@ -936,7 +944,7 @@ export default function VitoriaOrders() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500 flex-wrap">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
                           {order.sellerName}
@@ -950,6 +958,14 @@ export default function VitoriaOrders() {
                         <span>
                           {order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR") : ""}
                         </span>
+                        {(order.formaPagamento || order.formaCobranca || order.condicaoPagamento) && (
+                          <span className="flex items-center gap-1 text-[9px] font-semibold text-violet-600 dark:text-violet-400">
+                            <CreditCard className="w-2.5 h-2.5" />
+                            {order.formaPagamento || ""}
+                            {order.formaCobranca && order.formaPagamento !== order.formaCobranca ? ` (${order.formaCobranca})` : ""}
+                            {order.condicaoPagamento ? ` ${order.condicaoPagamento}` : ""}
+                          </span>
+                        )}
                       </div>
                     </div>
 
