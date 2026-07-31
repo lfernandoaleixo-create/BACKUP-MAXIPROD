@@ -1011,8 +1011,22 @@ export const salesMetricsRouter = router({
         cep: string;
       }> = {};
 
+      // Smart vendedor matching: handles partial names (e.g. "LÍVIA" matches "LÍVIA PINHEIRO")
+      const inputVendedorUpper = input.vendedor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      const matchesVendedor = (vendedor: string): boolean => {
+        const v = vendedor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        if (v === inputVendedorUpper) return true;
+        // Check if one starts with the other (e.g. "LIVIA" starts "LIVIA PINHEIRO")
+        if (v.startsWith(inputVendedorUpper + " ") || inputVendedorUpper.startsWith(v + " ")) return true;
+        // Check first name match
+        const vFirst = v.split(" ")[0];
+        const iFirst = inputVendedorUpper.split(" ")[0];
+        if (vFirst === iFirst && vFirst.length >= 4) return true;
+        return false;
+      };
+
       for (const [_, data] of Array.from(pedidoMap.entries())) {
-        if (data.vendedor.toUpperCase() !== input.vendedor.toUpperCase()) continue;
+        if (!matchesVendedor(data.vendedor)) continue;
         const valor = data.valorTotalPedido || data.somaItens;
         const clienteKey = data.cliente;
         if (!clienteKey) continue;

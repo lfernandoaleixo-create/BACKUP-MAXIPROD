@@ -110,6 +110,24 @@ export async function syncClientsFromMaxiprod(): Promise<{ synced: number; error
   for (const s of sellers) {
     sellerMap[s.sellerName.toUpperCase()] = s.id;
   }
+  // Smart seller lookup: handles partial names (e.g. "LÍVIA PINHEIRO" matches "LÍVIA")
+  const findSellerId = (name: string): number => {
+    const upper = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    // Exact match first
+    for (const [key, id] of Object.entries(sellerMap)) {
+      const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      if (keyNorm === upper) return id;
+    }
+    // Partial match: first name or starts-with
+    for (const [key, id] of Object.entries(sellerMap)) {
+      const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      if (upper.startsWith(keyNorm + " ") || keyNorm.startsWith(upper + " ")) return id;
+      const keyFirst = keyNorm.split(" ")[0];
+      const nameFirst = upper.split(" ")[0];
+      if (keyFirst === nameFirst && keyFirst.length >= 4) return id;
+    }
+    return 0;
+  };
 
   let skip = 0;
   let totalCount = 0;
@@ -147,7 +165,7 @@ export async function syncClientsFromMaxiprod(): Promise<{ synced: number; error
           const repName = rep.nomeFantasia || rep.razaoSocial || "";
           if (repName) {
             sellerName = normalizeVendedorName(repName);
-            sellerId = sellerMap[sellerName.toUpperCase()] || 0;
+            sellerId = findSellerId(sellerName);
           }
         }
 
@@ -157,7 +175,7 @@ export async function syncClientsFromMaxiprod(): Promise<{ synced: number; error
           const rep2Name = rep2.nomeFantasia || rep2.razaoSocial || "";
           if (rep2Name) {
             const normalized2 = normalizeVendedorName(rep2Name);
-            const id2 = sellerMap[normalized2.toUpperCase()];
+            const id2 = findSellerId(normalized2);
             if (id2) {
               sellerName = normalized2;
               sellerId = id2;

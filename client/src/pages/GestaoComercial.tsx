@@ -543,7 +543,21 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     const gestorOnlyNames = activeGestorCards
       .filter(g => g.role === "Gestor" || g.role === "Gestora")
       .map(g => g.name.toUpperCase());
-    return vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
+    const filteredMaxiprod = vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
+    // Merge sellers from seller_permissions that aren't in the Maxiprod list
+    // (e.g. manually added sellers like LÍVIA)
+    const permsForGestor = permissions.filter(
+      p => p.gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+    );
+    const existingUpper = new Set(filteredMaxiprod.map(v => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()));
+    for (const p of permsForGestor) {
+      const normName = p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+      if (!existingUpper.has(normName) && !gestorOnlyNames.includes(normName)) {
+        filteredMaxiprod.push(p.sellerName);
+        existingUpper.add(normName);
+      }
+    }
+    return filteredMaxiprod;
   };
 
   const [panelOpen, setPanelOpen] = useState(true);

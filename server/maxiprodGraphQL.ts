@@ -717,12 +717,23 @@ function isEditorNaoVendedorSync(nome: string): boolean {
 const VENDEDOR_NAME_ALIASES: Record<string, string> = {
   "JUVENAL": "JUVENAL TEIXEIRA",
   "JORDAO LAINE": "JORDAO",
+  "JORDÃO LAINE": "JORDAO",
   "CLARINDO GONCALVES DOS SANTOS NETO": "CLARINDO GONCALVES",
   "DANIEL DA CONCEIÇÃO TAVARES": "DANIEL TAVARES",
   "ROMERA REPRESENTACAO COMERCIAL DE PRODUTOS DESCARTAVEIS LTDA": "ROMERA REPRESENTACOES",
   "LUIZ MATIAS DE SOUZA": "LUIZ MATIAS",
   "LUIZ ANTONIO MATIAS": "LUIZ MATIAS",
   "RAFAEL LEONEL": "RAFAEL LEONEL",
+  "RAFAEL LEONEL PEREIRA": "RAFAEL LEONEL PEREIRA",
+  "PATRICK LUCIO MODESTO": "PATRICK LUCIO",
+  "PATRICK LUCIO": "PATRICK LUCIO",
+  "LÍVIA PINHEIRO": "LÍVIA PINHEIRO",
+  "LIVIA PINHEIRO": "LÍVIA PINHEIRO",
+  "PEDRO AUGUSTO": "PEDRO AUGUSTO",
+  "WELLINGTON BRANCO": "WELLINGTON BRANCO",
+  "FRANCISCO JOSEANY ALBUQUERQUE FERREIRA": "FRANCISCO JOSEANY ALBUQUERQUE FERREIRA",
+  "RENATO LEDESMA": "RENATO LEDESMA",
+  "RENATO ALEIXO": "RENATO ALEIXO",
 };
 
 export function normalizeVendedorName(name: string): string {
@@ -750,6 +761,27 @@ export function normalizeVendedorName(name: string): string {
   
   // Check if name starts with LUIZ MATIAS
   if (upper.startsWith("LUIZ MATIAS")) return "LUIZ MATIAS";
+  
+  // Check if name contains PATRICK (handles "PATRICK LUCIO MODESTO")
+  if (upper.includes("PATRICK") && upper.includes("LUCIO")) return "PATRICK LUCIO";
+  
+  // Check if name contains LÍVIA or LIVIA (handles "LÍVIA PINHEIRO")
+  if (upper.includes("L\u00CDVIA") || upper.includes("LIVIA")) return "L\u00CDVIA PINHEIRO";
+  
+  // Check if name contains PEDRO AUGUSTO
+  if (upper.includes("PEDRO") && upper.includes("AUGUSTO")) return "PEDRO AUGUSTO";
+  
+  // Check if name contains WELLINGTON
+  if (upper.includes("WELLINGTON")) return "WELLINGTON BRANCO";
+  
+  // Check if name contains FRANCISCO JOSEANY
+  if (upper.includes("FRANCISCO") && upper.includes("JOSEANY")) return "FRANCISCO JOSEANY ALBUQUERQUE FERREIRA";
+  
+  // Check if name contains RENATO LEDESMA
+  if (upper.includes("RENATO") && upper.includes("LEDESMA")) return "RENATO LEDESMA";
+  
+  // Check if name contains RENATO ALEIXO
+  if (upper.includes("RENATO") && upper.includes("ALEIXO")) return "RENATO ALEIXO";
   
   return trimmed;
 }

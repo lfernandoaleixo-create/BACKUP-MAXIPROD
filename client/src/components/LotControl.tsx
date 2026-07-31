@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Package, Plus, Search, Loader2, ChevronDown, ChevronRight,
-  Box, History, Layers, X, Check, Trash2, Send, Clock, CheckCircle2, XCircle, Shield,
+  Box, History, Layers, X, Check, Trash2, Send, Clock, CheckCircle2, XCircle, Shield, FileDown,
 } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
 
@@ -736,6 +736,77 @@ function LotRow({ lot, expanded, onToggle, onDeleted }: { lot: any; expanded: bo
 /* ═══════════════════════════════════════════════════════════
    HISTÓRICO DE LOTES
    ═══════════════════════════════════════════════════════════ */
+// ─── PDF Export: Histórico de Lotes ───
+async function generateLotHistoryPdf(assignments: any[]) {
+  const { default: jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(0, 105, 62);
+  doc.text("GRUPO FOX — HISTÓRICO DE CONTROLE DE LOTES", 14, 15);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")} ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} — ${assignments.length} registro(s)`, 14, 21);
+  doc.text("Manos e Fernando", doc.internal.pageSize.getWidth() - 14, 21, { align: "right" });
+
+  // Table data
+  const tableData = assignments.map((a: any) => [
+    convertLotCode(a.codigoLote || ""),
+    a.codigoItem || "",
+    (a.descricaoItem || "").slice(0, 50),
+    a.pedidoNumero || "-",
+    parseFloat(String(a.qtdCaixas || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
+    a.atribuidoPor || "",
+    new Date(a.createdAt).toLocaleDateString("pt-BR") + " " + new Date(a.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+  ]);
+
+  autoTable(doc, {
+    startY: 26,
+    margin: { left: 14, right: 14 },
+    head: [["Lote", "Código", "Produto", "Pedido", "Caixas", "Atribuído por", "Data/Hora"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: {
+      fillColor: [0, 105, 62],
+      textColor: [255, 255, 255],
+      fontSize: 7.5,
+      fontStyle: "bold",
+      halign: "center",
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [30, 41, 59],
+      cellPadding: 1.5,
+    },
+    columnStyles: {
+      0: { halign: "left", cellWidth: 38, fontStyle: "bold", font: "courier" },
+      1: { halign: "center", cellWidth: 18 },
+      2: { halign: "left", cellWidth: "auto" },
+      3: { halign: "center", cellWidth: 20 },
+      4: { halign: "right", cellWidth: 18, fontStyle: "bold", textColor: [220, 38, 38] },
+      5: { halign: "left", cellWidth: 35 },
+      6: { halign: "center", cellWidth: 32 },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+  });
+
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Página ${i}/${pageCount}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 5, { align: "center" });
+  }
+
+  doc.save(`Historico_Lotes_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.pdf`);
+  toast.success("PDF do histórico gerado!");
+}
+
 function HistoricoLotes() {
   const [filterText, setFilterText] = useState("");
 
@@ -760,9 +831,19 @@ function HistoricoLotes() {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-slate-100 space-y-3">
-        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
-          <History className="w-4 h-4 text-violet-500" /> Histórico de Baixas
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+            <History className="w-4 h-4 text-violet-500" /> Histórico de Baixas
+          </h3>
+          {filteredAssignments.length > 0 && (
+            <button
+              onClick={() => generateLotHistoryPdf(filteredAssignments)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors"
+            >
+              <FileDown className="w-3.5 h-3.5" /> PDF
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />

@@ -140,9 +140,9 @@ export function startScheduler(): void {
   // Daily collection job removido conforme solicitação do Fernando (28/04/2026)
   console.log("[Scheduler] Daily collection job: DESABILITADO (cobrança 100% manual)");
 
-  // ─── Checklist de Desperdício: Gerar ronda Seg/Qua/Sex às 07:00 ───
+  // ─── Checklist de Desperdício: Gerar ronda Seg-Sáb às 07:00 ───
   if (!checklistGenerateTask) {
-    checklistGenerateTask = schedule("0 7 * * 1,3,5", async () => {
+    checklistGenerateTask = schedule("0 7 * * 1-6", async () => {
       console.log(`[Scheduler] Checklist: Gerando ronda do dia...`);
       try {
         const { getDb } = await import("./db");
@@ -162,12 +162,12 @@ export function startScheduler(): void {
         console.error(`[Scheduler] Checklist generate failed: ${error.message}`);
       }
     }, { timezone: "America/Sao_Paulo" });
-    console.log("[Scheduler] Checklist generate: Seg/Qua/Sex às 07:00 (America/Sao_Paulo)");
+    console.log("[Scheduler] Checklist generate: Seg-Sáb às 07:00 (America/Sao_Paulo)");
   }
 
   // ─── Checklist de Desperdício: Travar rondas abertas às 17:00 ───
   if (!checklistLockTask) {
-    checklistLockTask = schedule("0 17 * * 1,3,5", async () => {
+    checklistLockTask = schedule("0 17 * * 1-6", async () => {
       console.log(`[Scheduler] Checklist: Travando rondas abertas...`);
       try {
         const { getDb } = await import("./db");
@@ -184,7 +184,7 @@ export function startScheduler(): void {
         console.error(`[Scheduler] Checklist lock failed: ${error.message}`);
       }
     }, { timezone: "America/Sao_Paulo" });
-    console.log("[Scheduler] Checklist lock: Seg/Qua/Sex às 17:00 (America/Sao_Paulo)");
+    console.log("[Scheduler] Checklist lock: Seg-Sáb às 17:00 (America/Sao_Paulo)");
   }
 
   // Daily reset of payment authorizations at midnight (00:00) Brasilia time, every day

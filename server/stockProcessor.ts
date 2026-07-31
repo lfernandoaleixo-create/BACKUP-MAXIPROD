@@ -1052,14 +1052,14 @@ export async function processStockData(): Promise<void> {
       const virtualName = VIRTUAL_PARENT_NAMES[parentCode] || `Agrupador ${parentCode}`;
       
       // Create synthetic parent with aggregated stock from children
+      // NOTA: pedidos NÃO são pré-agregados aqui porque serão somados
+      // via extraPedidosUn no loop de variações abaixo (evita contagem dupla)
       let totalEstoqueUn = 0;
-      let totalPedidosUn = 0;
       let maxUpb = 0;
       for (const child of children) {
         const childItem = processedByCode.get(child.childCode);
         if (childItem) {
           totalEstoqueUn += childItem.estoqueUn;
-          totalPedidosUn += childItem.pedidosUn;
           if (childItem.unidadesPorCaixa && childItem.unidadesPorCaixa > maxUpb) {
             maxUpb = childItem.unidadesPorCaixa;
           }
@@ -1067,8 +1067,9 @@ export async function processStockData(): Promise<void> {
       }
       const upb = maxUpb || 1;
       const totalEstoqueCx = Math.floor(totalEstoqueUn / upb);
-      const totalPedidosCx = Math.ceil(totalPedidosUn / upb);
-      const disponivelUn = totalEstoqueUn - totalPedidosUn;
+      const totalPedidosUn = 0; // será preenchido pelo loop de variações
+      const totalPedidosCx = 0;
+      const disponivelUn = totalEstoqueUn; // será ajustado pelo loop de variações
       const disponivelCx = Math.floor(disponivelUn / upb);
       
       parent = {

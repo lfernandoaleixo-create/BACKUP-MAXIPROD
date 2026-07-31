@@ -2091,24 +2091,45 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                         <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <Layers className="w-4 h-4 text-emerald-600" />
-                            <h4 className="text-sm font-semibold text-emerald-800">Custo Real (Média Ponderada - POs 100% Concluído)</h4>
+                            <h4 className="text-sm font-semibold text-emerald-800">Custo Real (Média Ponderada Móvel - POs 100% Concluído)</h4>
                           </div>
+                          {/* Summary info */}
+                          {item.totalChegou > 0 && (
+                            <div className="mb-3 bg-emerald-100/50 rounded-lg px-3 py-2 border border-emerald-200/50">
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-emerald-800">
+                                <span>Total chegou: <b>{item.totalChegou?.toLocaleString("pt-BR")} cx</b></span>
+                                <span>Total vendido: <b>{item.totalVendido?.toLocaleString("pt-BR")} cx</b></span>
+                                <span>Estoque atual: <b>{item.caixasEstoque?.toLocaleString("pt-BR")} cx</b></span>
+                                <span>POs concluídas: <b>{item.breakdownReal.length}</b></span>
+                              </div>
+                              <p className="text-[9px] text-emerald-600 mt-1 italic">
+                                Cálculo: a cada PO que chega, recalcula média = (estoque restante × média anterior + nova PO × preço) ÷ total
+                              </p>
+                            </div>
+                          )}
                           {item.semEstoque && (
                             <p className="text-xs text-orange-600 mb-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
                               Sem estoque atual. Custo baseado na última PO concluída.
                             </p>
                           )}
                           {item.breakdownReal.length > 0 ? (
-                            <div className="space-y-1.5">
+                            <div className="space-y-1">
+                              {/* Table header */}
+                              <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 px-3 py-1 text-[9px] font-semibold text-emerald-700 border-b border-emerald-200/50">
+                                <span>PO</span>
+                                <span>Caixas</span>
+                                <span>Preço/cx</span>
+                                <span className="text-right">Média após</span>
+                              </div>
                               {item.breakdownReal.map((b: any, idx: number) => (
-                                <div key={idx} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-emerald-100/50">
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">{b.poNumber}</span>
-                                    <span className="text-xs text-slate-600">
-                                      {b.caixasUsadas > 0 ? `${b.caixasUsadas.toLocaleString("pt-BR")} caixas` : "Referência"}
-                                    </span>
-                                  </div>
-                                  <span className="text-xs font-semibold text-emerald-800 whitespace-nowrap">{displayVal(b.valorCaixa)}</span>
+                                <div key={idx} className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 items-center bg-white/80 rounded-lg px-3 py-1.5 border border-emerald-100/50">
+                                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">{b.poNumber}</span>
+                                  <span className="text-[10px] text-slate-600">
+                                    {b.caixasUsadas > 0 ? `${b.caixasUsadas.toLocaleString("pt-BR")} cx` : "Ref."}
+                                    {b.estoqueAntes > 0 && <span className="text-slate-400 ml-1">(estoque antes: {b.estoqueAntes.toLocaleString("pt-BR")})</span>}
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-emerald-800 whitespace-nowrap">{displayVal(b.valorCaixa)}</span>
+                                  <span className="text-[10px] font-bold text-emerald-900 whitespace-nowrap text-right">{b.mediaApos ? displayVal(b.mediaApos) : displayVal(b.valorCaixa)}</span>
                                 </div>
                               ))}
                             </div>
@@ -2117,7 +2138,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
                           )}
                           {!item.semEstoque && item.breakdownReal.length > 1 && (
                             <div className="mt-3 pt-3 border-t border-emerald-200/50 flex items-center justify-between">
-                              <span className="text-xs text-emerald-700 font-medium">Custo Médio Atual:</span>
+                              <span className="text-xs text-emerald-700 font-medium">Custo Médio Final (Estoque Atual):</span>
                               <span className="text-sm font-bold text-emerald-700">{displayVal(item.custoReal)}</span>
                             </div>
                           )}

@@ -2091,8 +2091,10 @@ export const importRouter = router({
       // Simulates the weighted average as each PO arrived chronologically.
       // Between POs, price stays fixed regardless of sales.
       let custoReal = 0;
-      let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
+      let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number; estoqueAntes?: number; vendasDeduzidas?: number; estoqueApos?: number; mediaApos?: number }> = [];
       let semEstoque = false;
+      let totalArrived = arrivedHistory ? arrivedHistory.reduce((sum: number, po: any) => sum + po.quantidade, 0) : 0;
+      let totalSold = Math.max(0, totalArrived - boxesInStock);
 
       if (!arrivedHistory || arrivedHistory.length === 0) {
         custoReal = 0;
@@ -2110,8 +2112,6 @@ export const importRouter = router({
         // Between POs, selling does NOT change the price.
         let runningAvg = 0;
         let runningStock = 0;
-        const totalArrived = arrivedHistory.reduce((sum, po) => sum + po.quantidade, 0);
-        const totalSold = Math.max(0, totalArrived - boxesInStock);
         
         // Distribute sales proportionally across time (oldest POs had more time to sell)
         // But since price doesn't change with sales, we just need the final average.
@@ -2134,31 +2134,21 @@ export const importRouter = router({
           // But sales DON'T change the average price - only reduce quantity
           // So we just need to track the running stock level for the weighted calc
           
+          let estoqueAntesPo = runningStock;
+          let vendasDeduzidasPo = 0;
           if (runningStock === 0 && runningAvg === 0) {
             // First PO: sets the initial price
+            estoqueAntesPo = 0;
             runningAvg = po.valorCaixaBrl;
             runningStock = po.quantidade;
           } else {
-            // Subsequent PO: recalculate average
-            // Deduct sales that happened before this PO arrived (proportional)
-            // Since we don't know exact timing, deduct sales proportionally
-            const salesBeforeThisPo = (i < arrivedHistory.length - 1) 
-              ? Math.min(salesRemaining, Math.round(salesRemaining * (po.quantidade / (totalArrived - arrivedHistory.slice(0, i).reduce((s, p) => s + p.quantidade, 0))))
-              ) : 0;
-            
-            // Actually, simpler approach: just deduct from running stock evenly
-            // The price doesn't change with sales, so the exact timing doesn't matter
-            // for the FINAL average. What matters is:
-            // At each PO arrival: avg = (stockAtThatMoment × prevAvg + newQty × newPrice) / total
-            
-            // For correctness with the user's rule:
-            // "when new PO arrives, recalculate with remaining boxes + new PO boxes"
-            // We need to know how many boxes remained when each PO arrived.
-            // Since we don't have exact sale dates, we'll distribute sales evenly.
+            // Deduct sales proportionally before this PO arrives
             const salesBetween = Math.min(salesRemaining, Math.floor(salesRemaining / (arrivedHistory.length - i)));
+            estoqueAntesPo = runningStock;
             runningStock = Math.max(0, runningStock - salesBetween);
+            vendasDeduzidasPo = estoqueAntesPo - runningStock;
             salesRemaining -= salesBetween;
-            
+            estoqueAntesPo = runningStock; // stock right before this PO arrives
             // New PO arrives: recalculate weighted average
             const newTotal = runningStock + po.quantidade;
             if (newTotal > 0) {
@@ -2166,11 +2156,14 @@ export const importRouter = router({
             }
             runningStock = newTotal;
           }
-          
           breakdownReal.push({ 
             poNumber: po.poNumber, 
             caixasUsadas: Math.round(po.quantidade * 100) / 100, 
-            valorCaixa: po.valorCaixaBrl 
+            valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
+            estoqueAntes: Math.round(estoqueAntesPo * 100) / 100,
+            vendasDeduzidas: Math.round(vendasDeduzidasPo * 100) / 100,
+            estoqueApos: Math.round(runningStock * 100) / 100,
+            mediaApos: Math.round(runningAvg * 100) / 100,
           });
         }
         
@@ -2219,6 +2212,8 @@ export const importRouter = router({
         codigoItem: code,
         descricao: item.descricaoItem,
         caixasEstoque: Math.round(boxesInStock * 100) / 100,
+        totalChegou: Math.round(totalArrived * 100) / 100,
+        totalVendido: Math.round(totalSold * 100) / 100,
         custoReal: Math.round(custoReal * 100) / 100,
         custoProjetado: Math.round(custoProjetado * 100) / 100,
         custoEstimativa: Math.round(custoEstimativa * 100) / 100,
@@ -2322,10 +2317,13 @@ export const importRouter = router({
         // Get description from catalog or from PO product description
         const descricao = catalogMap[code] || code;
 
+        const totalArrivedPo = arrivedHistory ? arrivedHistory.reduce((s: number, p: any) => s + p.quantidade, 0) : 0;
         results.push({
           codigoItem: code,
           descricao,
           caixasEstoque: 0,
+          totalChegou: totalArrivedPo,
+          totalVendido: totalArrivedPo,
           custoReal: Math.round(custoReal * 100) / 100,
           custoProjetado: Math.round(custoProjetado * 100) / 100,
           custoEstimativa: Math.round(custoEstimativa * 100) / 100,

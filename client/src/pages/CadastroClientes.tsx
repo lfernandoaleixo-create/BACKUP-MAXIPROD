@@ -182,7 +182,7 @@ export default function CadastroClientes() {
 
 /** Group card for app-registered clients by seller */
 function SellerGroupCard({ sellerName, clients, exportingClientId, setExportingClientId, exportVendorClientMutation, markExportedMutation, refetchClients, utils }: any) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 shadow-sm overflow-hidden">

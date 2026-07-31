@@ -1162,6 +1162,20 @@ export const productionRouter = router({
         .orderBy(sql`SUM(${pirografiaEntries.quantidade}) DESC`)
         .limit(50);
 
+      // Buscar unidadeDeVendaFator (5000 ou 10000) para cada produto pirografado
+      const prodCodes = topProdutos.map(p => p.codigoItem);
+      const stockInfoMap = new Map<string, number>();
+      if (prodCodes.length > 0) {
+        const stockRows = await db.select({
+          codigoItem: stockItems.codigoItem,
+          unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+        }).from(stockItems).where(inArray(stockItems.codigoItem, prodCodes));
+        for (const row of stockRows) {
+          const fator = parseFloat(String(row.unidadeDeVendaFator || "0"));
+          if (fator > 0) stockInfoMap.set(row.codigoItem, fator);
+        }
+      }
+
       // Total geral
       const totalRows = await db.select({
         total: sql<string>`COALESCE(SUM(${pirografiaEntries.quantidade}), 0)`,
@@ -1175,13 +1189,18 @@ export const productionRouter = router({
           quantidade: parseFloat(String(n.totalQuantidade)) || 0,
           registros: n.totalRegistros,
         })),
-        topProdutos: topProdutos.map(p => ({
-          codigoItem: p.codigoItem,
-          descricaoItem: String(p.descricaoItem || p.codigoItem),
-          materialOrigem: p.materialOrigem,
-          quantidade: parseFloat(String(p.totalQuantidade)) || 0,
-          registros: p.totalRegistros,
-        })),
+        topProdutos: topProdutos.map(p => {
+          const unPerCx = stockInfoMap.get(p.codigoItem) || 0;
+          const tipoCaixa = unPerCx >= 10000 ? "10k" : unPerCx >= 5000 ? "5k" : "";
+          return {
+            codigoItem: p.codigoItem,
+            descricaoItem: String(p.descricaoItem || p.codigoItem),
+            materialOrigem: p.materialOrigem,
+            quantidade: parseFloat(String(p.totalQuantidade)) || 0,
+            registros: p.totalRegistros,
+            tipoCaixa,
+          };
+        }),
         total: parseFloat(String(totalRows[0]?.total)) || 0,
       };
     }),

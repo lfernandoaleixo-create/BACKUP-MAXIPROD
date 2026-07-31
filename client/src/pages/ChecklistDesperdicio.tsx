@@ -226,7 +226,7 @@ export function ChecklistDesperdicio() {
         </div>
         <h3 className="text-lg font-bold text-slate-700 mb-2">Sem Checklist Hoje</h3>
         <p className="text-sm text-slate-500 text-center max-w-md">
-          O Checklist de Desperdício é gerado automaticamente às <span className="font-semibold">segundas, quartas e sextas</span> às 07:00h.
+          O Checklist de Desperdício é gerado automaticamente <span className="font-semibold">todos os dias úteis</span> às 07:00h.
         </p>
         <div className="mt-6 flex gap-2">
           <button

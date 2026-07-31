@@ -58,7 +58,7 @@ const C = {
 // ─── Types ───
 export type PirografiaHistoryData = {
   topNomes: { nome: string; quantidade: number; registros: number }[];
-  topProdutos: { codigoItem: string; descricaoItem: string; materialOrigem: string; quantidade: number; registros: number }[];
+  topProdutos: { codigoItem: string; descricaoItem: string; materialOrigem: string; quantidade: number; registros: number; tipoCaixa?: string }[];
   total: number;
 };
 
@@ -270,7 +270,7 @@ function drawProdutosTable(doc: jsPDF, data: PirografiaHistoryData, startY: numb
     item.descricaoItem || item.codigoItem,
     item.codigoItem,
     item.materialOrigem === "bambu" ? "Bambu" : "Madeira",
-    fmtNum(item.quantidade, 1) + " cx",
+    fmtNum(item.quantidade, 1) + " cx" + (item.tipoCaixa ? ` (${item.tipoCaixa})` : ""),
     String(item.registros),
   ]);
 

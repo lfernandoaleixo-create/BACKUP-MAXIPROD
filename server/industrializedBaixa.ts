@@ -170,14 +170,17 @@ export async function processIndustrializedBaixa(): Promise<void> {
           console.log(`  → Conversão kg→cx: ${codigoItem} | ${quantidadeFaturada} kg ÷ ${pesoporCaixa} = ${quantidadeAbater} cx`);
         }
 
-        // Se não encontrou no estoque, verificar se é uma VARIAÇÃO → baixar do produto MÃE
-        if (!madeiraItem && childToParentMap.has(codigoItem)) {
+        // Se não encontrou no estoque OU encontrou com saldo 0, verificar se é uma VARIAÇÃO → baixar do produto MÃE
+        // (fix 31/07/2026: produto 00130 existia no madeira_stock com qty=0, então não caía no fallback de variação)
+        const madeiraItemSaldo = madeiraItem ? parseFloat(madeiraItem.quantidade) : 0;
+        if ((!madeiraItem || madeiraItemSaldo <= 0) && childToParentMap.has(codigoItem)) {
           const variant = childToParentMap.get(codigoItem)!;
-          targetCode = variant.parentCode;
-          quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
-          madeiraItem = madeiraMap.get(targetCode);
-          if (madeiraItem) {
-            console.log(`  → Variação detectada: ${codigoItem} → pai ${targetCode} (fator: ${variant.conversionFactor})`);
+          const parentItem = madeiraMap.get(variant.parentCode);
+          if (parentItem && parseFloat(parentItem.quantidade) > 0) {
+            targetCode = variant.parentCode;
+            quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
+            madeiraItem = parentItem;
+            console.log(`  → Variação detectada (saldo 0 na filha): ${codigoItem} → pai ${targetCode} (fator: ${variant.conversionFactor})`);
           }
         }
         

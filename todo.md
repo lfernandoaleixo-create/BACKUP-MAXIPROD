@@ -6712,3 +6712,20 @@
 - [x] Integrar API de busca CEP dos Correios no cadastro de cliente (ao digitar CEP, preencher endereço automaticamente)
 - [ ] Fix Maxiprod export: só incluir campos obrigatórios, deixar em branco campos com valores não cadastrados (Região, Perfil, Forma de Pedido, Representante)
 - [x] Fix movimentação de estoque (aba Produção): Maria converte 1 caixa e vira 0.99 — manter valor exato inteiro sem decimal/arredondamento
+
+## Alterações 31/07/2026 (Caderno Abril 30)
+- [x] PDF Produção (Seleção Visual): converter "formas" em unidades (1 forma = 2.000 unidades) somente no PDF gerado
+- [x] PDF Produção (Seleção Visual): caixas pirografadas mostrar se é caixa de 5k ou 10k (puxar do estoque)
+- [x] Checklist: mostrar todos os dias (não só segunda, quarta e sexta)
+- [x] Histórico de Controle de Lotes: criar botão para gerar PDF com TODAS as colunas do histórico
+- [x] Estoque Madeira PA: produto 00074 NÃO é variação do produto 00077 (separar)
+- [x] Estoque Madeira PA: produto 00086 com pedido de venda duplicado (deveria ser 120cx, não 240cx)
+- [x] Pedido 1398 (Keure): não foi dada baixa no produto 00096 — verificar e corrigir
+
+## Alterações adicionais 31/07/2026 (prints)
+- [x] Cadastro de Clientes: cards dos vendedores começar recolhidos (não expandidos) por padrão
+- [x] Senhas/Autorização: ao criar nova senha (ex: Lívia), ela deve aparecer automaticamente na lista de Acesso ao Aplicativo e nas Configurações/Senhas
+- [x] Cadastro de Clientes: puxar clientes do Maxiprod por vendedor (ex: Patrick tem vários clientes no Maxiprod mas nenhum aparece no app)
+- [ ] Custo de Mercadoria: verificar custo projetado do Espeto 4,0x250 (00009) — valores mostram R$93/91 mas produto chega a R$79-80 nas planilhas. Revisar cálculo de custo para todos os produtos.
+- [x] Matching inteligente de nomes de vendedores no Cadastro de Clientes Maxiprod (Jordão=JORDÃO LAINE, Patrick=PATRICK LUCIO, Lívia=LÍVIA PINHEIRO, Juvenal=JUVENAL TEIXEIRA, etc.) — puxar clientes por nome parcial/primeiro nome
+- [x] Custo de Mercadoria: melhorar visualização mostrando claramente de quais POs vem o cálculo, quantas caixas de cada, preço de cada PO, e o cálculo da média ponderada — para todos os produtos

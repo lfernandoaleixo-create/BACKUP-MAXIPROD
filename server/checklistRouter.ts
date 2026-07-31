@@ -2,7 +2,7 @@
  * Checklist de Desperdício - Backend Router
  * 
  * Manages waste checklist rounds, items, and responses.
- * Auto-generates rounds Mon/Wed/Fri at 07:00 (America/Sao_Paulo).
+ * Auto-generates rounds Mon-Sat at 07:00 (America/Sao_Paulo).
  * Locks rounds at 17:00 if not completed.
  */
 import { publicProcedure, router } from "./_core/trpc";
@@ -45,11 +45,11 @@ function getTodayBR(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
-// Helper: check if a date is Mon/Wed/Fri
+// Helper: check if a date is a working day (Mon-Sat, all days except Sunday)
 function isChecklistDay(dateStr: string): boolean {
   const date = new Date(dateStr + "T12:00:00-03:00");
   const day = date.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  return day === 1 || day === 3 || day === 5;
+  return day !== 0; // Todos os dias exceto domingo
 }
 
 // Helper: check if current time in São Paulo is before 17:00
@@ -518,7 +518,7 @@ export const checklistRouter = router({
     const today = getTodayBR();
     
     if (!isChecklistDay(today)) {
-      return { created: false, reason: "Hoje não é dia de checklist (Seg/Qua/Sex)" };
+      return { created: false, reason: "Hoje não é dia de checklist (apenas domingo não tem)" };
     }
     
     // Check if already exists

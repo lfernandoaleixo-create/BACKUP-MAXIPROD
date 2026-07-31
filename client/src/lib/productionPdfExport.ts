@@ -163,9 +163,15 @@ function convertCxgToSaco(medida: string, caixas: number): number {
   return caixas * fator;
 }
 
+// Seleção Visual (ordem 5): 1 forma = 2.000 unidades — conversão SOMENTE no PDF
+function isSelecaoVisual(ordem: number) { return ordem === 5; }
+const FORMA_TO_UNIDADES = 2000;
+
 function convertedQty(entry: EntryData, sector: SectorData): number {
   const qty = Number(entry.quantidade);
   if (qty <= 0) return 0;
+  // Seleção Visual: converter formas → unidades no PDF
+  if (isSelecaoVisual(sector.ordem)) return qty * FORMA_TO_UNIDADES;
   if (!isDualUnitSector(sector.ordem)) return qty;
   const tipo = entry.tipoMadeira;
   if (!tipo) return qty;
@@ -179,6 +185,8 @@ function convertedQty(entry: EntryData, sector: SectorData): number {
 
 function displayUnit(sector: SectorData): string {
   if (isDualUnitSector(sector.ordem)) return "sacos";
+  // Seleção Visual: mostrar "unidades" no PDF (não "formas")
+  if (isSelecaoVisual(sector.ordem)) return "unidades";
   return pluralizeUnit(sector.unidadeMedida);
 }
 
@@ -225,7 +233,7 @@ function groupByUnit(sectors: SectorData[], entries: EntryData[]): UnitGroup[] {
   const nonSacoMap = new Map<string, { total: number; decimals: number }>();
   const unitLabels: Record<string, string> = {
     "caixa": "Caixas", "cx": "Caixas", "saco": "Sacos", "m³": "Metro Cúbico (m³)",
-    "forma": "Formas", "pç": "Peças", "un": "Unidades",
+    "forma": "Unidades", "pç": "Peças", "un": "Unidades", "unidades": "Unidades",
   };
 
   for (const sector of sectors) {
