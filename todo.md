@@ -6733,3 +6733,4 @@
 - [x] Produto 00007 não aparece no alerta de estoque insuficiente (pedido 1600 Lívia - Maxiprod mostra insuficiente mas dashboard não)
 - [x] Alerta de Estoque Insuficiente como permissão ticável nas Configurações (escolher quem vê e quem não)
 - [x] Juvenal não vê todos os pedidos em Aprovação de Pedidos (ex: Rafael Leonel #480001 não aparece para ele mas aparece para Guilherme)
+- [x] Aprovação de Pedidos: redesenhar layout de senha para modal centralizado profissional (em vez de inline)

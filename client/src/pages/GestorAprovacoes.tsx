@@ -11,7 +11,7 @@ import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
   ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2,
-  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search
+  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search, Lock
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -1064,47 +1064,6 @@ export default function GestorAprovacoes(props: any = {}) {
                                 </button>
                               </div>
                             </div>
-                          ) : approvingOrder === order.id ? (
-                            <div className="space-y-2 w-full">
-                              <label className="text-[10px] font-bold text-green-700 dark:text-green-400 block">
-                                Senha de aprovação (obrigatória):
-                              </label>
-                              <input
-                                type="password"
-                                value={approvalPassword}
-                                onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
-                                placeholder="Digite sua senha (primeiro nome)"
-                                className="w-full px-3 py-2 text-xs border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
-                              />
-                              {approvalPasswordError && (
-                                <p className="text-[10px] text-red-500 font-medium">{approvalPasswordError}</p>
-                              )}
-                              <label className="text-[10px] font-bold text-green-700 dark:text-green-400 block mt-2">
-                                Observação de aprovação (opcional):
-                              </label>
-                              <textarea
-                                value={approvalObs}
-                                onChange={(e) => setApprovalObs(e.target.value)}
-                                placeholder="Justifique a aprovação e/ou o preço praticado... (ex: cliente estratégico, volume alto, negociação especial)"
-                                rows={3}
-                                className="w-full px-3 py-2 text-xs border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
-                              />
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => { setApprovingOrder(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}
-                                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
-                                >
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={confirmApprove}
-                                  disabled={approveMutation.isPending}
-                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                                >
-                                  {approveMutation.isPending ? "Aprovando..." : "Confirmar Autorização"}
-                                </button>
-                              </div>
-                            </div>
                           ) : (
                             <>
                               <button
@@ -1140,36 +1099,8 @@ export default function GestorAprovacoes(props: any = {}) {
                             </p>
                           )}
                           {gestorApprovingOrder === order.id ? (
-                            <div className="space-y-2">
-                              <textarea
-                                value={gestorObs}
-                                onChange={(e) => setGestorObs(e.target.value)}
-                                placeholder="Observação do gestor (opcional)..."
-                                rows={2}
-                                className="w-full px-3 py-2 text-xs border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none"
-                              />
-                              <input
-                                type="password"
-                                value={gestorPassword}
-                                onChange={(e) => setGestorPassword(e.target.value)}
-                                placeholder="Senha do gestor"
-                                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
-                              />
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => { setGestorApprovingOrder(null); setGestorPassword(""); setGestorObs(""); }}
-                                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
-                                >
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={handleGestorApprove}
-                                  disabled={!gestorPassword.trim() || gestorApproveMutation.isPending}
-                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                                >
-                                  {gestorApproveMutation.isPending ? "Aprovando..." : "Confirmar Aprovação"}
-                                </button>
-                              </div>
+                            <div className="text-center py-2">
+                              <p className="text-[10px] text-green-600 font-medium animate-pulse">Confirme no modal de autorização...</p>
                             </div>
                           ) : gestorRejectingOrder === order.id ? (
                             <div className="space-y-2">
@@ -1332,6 +1263,171 @@ export default function GestorAprovacoes(props: any = {}) {
             })}
           </div>
         )}
+
+      {/* Gestor Approval Password Modal */}
+      {gestorApprovingOrder !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setGestorApprovingOrder(null); setGestorPassword(""); setGestorObs(""); }}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-5 text-center">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-white">Aprovação do Gestor</h3>
+              <p className="text-xs text-green-100 mt-1">Confirme sua identidade para aprovar como gestor</p>
+            </div>
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {(() => {
+                const order = orders?.find((o: any) => o.id === gestorApprovingOrder);
+                if (!order) return null;
+                return (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">#{order.orderNumber} - {order.razaoSocial || order.nomeFantasia}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{order.sellerName} • {order.municipio}/{order.uf}</p>
+                      </div>
+                      <p className="text-sm font-bold text-green-700 dark:text-green-400">{formatCurrency(Number(order.totalPedido))}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Senha do gestor
+                </label>
+                <input
+                  type="password"
+                  value={gestorPassword}
+                  onChange={(e) => setGestorPassword(e.target.value)}
+                  placeholder="Digite seu primeiro nome"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter" && gestorPassword.trim()) handleGestorApprove(); }}
+                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Observação <span className="text-slate-400 font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  value={gestorObs}
+                  onChange={(e) => setGestorObs(e.target.value)}
+                  placeholder="Observação do gestor..."
+                  rows={3}
+                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all resize-none"
+                />
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => { setGestorApprovingOrder(null); setGestorPassword(""); setGestorObs(""); }}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGestorApprove}
+                disabled={!gestorPassword.trim() || gestorApproveMutation.isPending}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-500 rounded-xl transition-colors cursor-pointer shadow-lg shadow-green-600/20"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {gestorApproveMutation.isPending ? "Aprovando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Password Modal */}
+      {approvingOrder !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setApprovingOrder(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-5 text-center">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-white">Autorizar Pedido</h3>
+              <p className="text-xs text-green-100 mt-1">Confirme sua identidade para aprovar</p>
+            </div>
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {/* Order summary */}
+              {(() => {
+                const order = orders?.find((o: any) => o.id === approvingOrder);
+                if (!order) return null;
+                return (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">#{order.orderNumber} - {order.razaoSocial || order.nomeFantasia}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{order.sellerName} • {order.municipio}/{order.uf}</p>
+                      </div>
+                      <p className="text-sm font-bold text-green-700 dark:text-green-400">{formatCurrency(Number(order.totalPedido))}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Password field */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Senha de aprovação
+                </label>
+                <input
+                  type="password"
+                  value={approvalPassword}
+                  onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                  placeholder="Digite seu primeiro nome"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter" && approvalPassword.trim()) confirmApprove(); }}
+                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
+                />
+                {approvalPasswordError && (
+                  <p className="text-[11px] text-red-500 font-medium mt-1.5 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {approvalPasswordError}
+                  </p>
+                )}
+              </div>
+
+              {/* Observation field */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Observação <span className="text-slate-400 font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  value={approvalObs}
+                  onChange={(e) => setApprovalObs(e.target.value)}
+                  placeholder="Justifique a aprovação e/ou o preço praticado..."
+                  rows={3}
+                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all resize-none"
+                />
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => { setApprovingOrder(null); setApprovalObs(""); setApprovalPassword(""); setApprovalPasswordError(""); }}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmApprove}
+                disabled={!approvalPassword.trim() || approveMutation.isPending}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-500 rounded-xl transition-colors cursor-pointer shadow-lg shadow-green-600/20"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {approveMutation.isPending ? "Aprovando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Item Modal */}
       {editingItem && (
