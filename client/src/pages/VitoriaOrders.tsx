@@ -1238,7 +1238,7 @@ export default function VitoriaOrders() {
                         )}
 
                         {/* Dados Comerciais / Venda */}
-                        {(order.segmento || order.condicaoPagamento || order.formaCobranca || order.limiteCredito || order.tabelaPrecos || order.observacoes) && (
+                        {(order.segmento || order.condicaoPagamento || order.formaCobranca || order.limiteCredito || order.tabelaPrecos || order.observacoes || order.formaPagamento || order.transportadora || order.valorFrete) && (
                           <div className="bg-green-50/50 dark:bg-green-900/10 rounded-lg p-3 border border-green-200 dark:border-green-700">
                             <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase flex items-center gap-1 mb-2">
                               <CreditCard className="w-3 h-3" />
@@ -1250,6 +1250,10 @@ export default function VitoriaOrders() {
                               {order.formaCobranca && (<div><span className="text-slate-400 font-semibold">Forma Cobrança</span><p className="text-slate-800 dark:text-slate-100">{order.formaCobranca}</p></div>)}
                               {order.tabelaPrecos && (<div><span className="text-slate-400 font-semibold">Tabela Preços</span><p className="text-slate-800 dark:text-slate-100">{order.tabelaPrecos}</p></div>)}
                               {order.condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800 dark:text-slate-100">{order.condicaoPagamento}</p></div>)}
+                              {order.formaPagamento && (<div><span className="text-slate-400 font-semibold">Forma Pagamento</span><p className="text-slate-800 dark:text-slate-100 font-bold">{order.formaPagamento}</p></div>)}
+                              {order.transportadora && (<div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-blue-700 dark:text-blue-300 font-bold">{order.transportadora}</p></div>)}
+                              {order.valorFrete && Number(order.valorFrete) > 0 && (<div><span className="text-slate-400 font-semibold">Valor Frete</span><p className="text-emerald-700 dark:text-emerald-300 font-bold">R$ {Number(order.valorFrete).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></div>)}
+                              {order.tipoFrete && (<div><span className="text-slate-400 font-semibold">Tipo Frete</span><p className="text-slate-800 dark:text-slate-100">{order.tipoFrete}</p></div>)}
                               {order.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 dark:text-slate-100 whitespace-pre-wrap">{order.observacoes}</p></div>)}
                             </div>
                           </div>
@@ -1799,7 +1803,7 @@ export default function VitoriaOrders() {
                                     </tbody>
                                   </table>
 
-                                  ${order.condicaoPagamento || order.formaCobranca || order.tabelaPrecos ? '<h2>CONDIÇÕES COMERCIAIS</h2><div class="grid">' + (order.condicaoPagamento ? '<div class="field"><span class="label">Cond. Pagamento:</span> <span class="value">' + order.condicaoPagamento + '</span></div>' : '') + (order.formaCobranca ? '<div class="field"><span class="label">Forma Cobrança:</span> <span class="value">' + order.formaCobranca + '</span></div>' : '') + (order.tabelaPrecos ? '<div class="field"><span class="label">Tabela Preços:</span> <span class="value">' + order.tabelaPrecos + '</span></div>' : '') + '</div>' : ''}
+                                  ${order.condicaoPagamento || order.formaCobranca || order.tabelaPrecos || order.formaPagamento || order.transportadora || order.valorFrete ? '<h2>CONDIÇÕES COMERCIAIS</h2><div class="grid">' + (order.condicaoPagamento ? '<div class="field"><span class="label">Cond. Pagamento:</span> <span class="value">' + order.condicaoPagamento + '</span></div>' : '') + (order.formaPagamento ? '<div class="field"><span class="label">Forma Pagamento:</span> <span class="value" style="font-weight:bold">' + order.formaPagamento + '</span></div>' : '') + (order.formaCobranca ? '<div class="field"><span class="label">Forma Cobrança:</span> <span class="value">' + order.formaCobranca + '</span></div>' : '') + (order.tabelaPrecos ? '<div class="field"><span class="label">Tabela Preços:</span> <span class="value">' + order.tabelaPrecos + '</span></div>' : '') + (order.transportadora ? '<div class="field"><span class="label">Transportadora:</span> <span class="value" style="font-weight:bold;color:#1d4ed8">' + order.transportadora + '</span></div>' : '') + (order.valorFrete && Number(order.valorFrete) > 0 ? '<div class="field"><span class="label">Valor Frete:</span> <span class="value" style="font-weight:bold;color:#047857">R$ ' + Number(order.valorFrete).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '</span></div>' : '') + (order.tipoFrete ? '<div class="field"><span class="label">Tipo Frete:</span> <span class="value">' + order.tipoFrete + '</span></div>' : '') + '</div>' : ''}
 
                                   ${order.observacoes ? '<h2>OBSERVAÇÕES</h2><p>' + order.observacoes + '</p>' : ''}
 
