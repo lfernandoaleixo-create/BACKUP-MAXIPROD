@@ -1103,6 +1103,26 @@ function OperatorManagementPanel() {
                                   </button>
                                   {gestoresExpanded && (
                                     <div className="ml-5 mt-1.5 space-y-1.5 border-l-2 border-cyan-100 pl-2.5">
+                                      {/* Botão Ticar Tudo / Desticar Tudo - Gestores */}
+                                      {dynamicGestorPerms.length > 0 && (
+                                        <div className="flex justify-end mb-1">
+                                          <button
+                                            onClick={() => {
+                                              if (!gcEnabled) return;
+                                              const allEnabled = dynamicGestorPerms.every(p => getGranularValue(op.id, p.key));
+                                              const permissions = dynamicGestorPerms.map(p => ({
+                                                permissionKey: p.key,
+                                                enabled: !allEnabled,
+                                              }));
+                                              setBulkGranularMutation.mutate({ operatorId: op.id, permissions });
+                                            }}
+                                            disabled={!gcEnabled}
+                                            className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 border border-cyan-200 dark:border-cyan-800 transition-colors"
+                                          >
+                                            {dynamicGestorPerms.every(p => getGranularValue(op.id, p.key)) ? "Desticar Tudo" : "Ticar Tudo"}
+                                          </button>
+                                        </div>
+                                      )}
                                       {dynamicGestorPerms.map(perm => {
                                         const enabled = getGranularValue(op.id, perm.key);
                                         return (
@@ -1144,6 +1164,26 @@ function OperatorManagementPanel() {
                                   </button>
                                   {vendedoresExpanded && (
                                     <div className="ml-5 mt-1.5 space-y-1.5 border-l-2 border-cyan-100 pl-2.5">
+                                      {/* Botão Ticar Tudo / Desticar Tudo - Vendedores */}
+                                      {dynamicVendedorPerms.length > 0 && (
+                                        <div className="flex justify-end mb-1">
+                                          <button
+                                            onClick={() => {
+                                              if (!gcEnabled) return;
+                                              const allEnabled = dynamicVendedorPerms.every(p => getGranularValue(op.id, p.key));
+                                              const permissions = dynamicVendedorPerms.map(p => ({
+                                                permissionKey: p.key,
+                                                enabled: !allEnabled,
+                                              }));
+                                              setBulkGranularMutation.mutate({ operatorId: op.id, permissions });
+                                            }}
+                                            disabled={!gcEnabled}
+                                            className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 border border-cyan-200 dark:border-cyan-800 transition-colors"
+                                          >
+                                            {dynamicVendedorPerms.every(p => getGranularValue(op.id, p.key)) ? "Desticar Tudo" : "Ticar Tudo"}
+                                          </button>
+                                        </div>
+                                      )}
                                       {dynamicVendedorPerms.map(perm => {
                                         const enabled = getGranularValue(op.id, perm.key);
                                         return (
@@ -1209,6 +1249,26 @@ function OperatorManagementPanel() {
                                       </div>
                                       {featureExpanded && (
                                         <div className="ml-5 mt-1.5 space-y-1 border-l-2 border-cyan-100 pl-2.5 pb-1">
+                                          {/* Botão Ticar Tudo / Desticar Tudo */}
+                                          {allPeoplePerms.length > 0 && (
+                                            <div className="flex justify-end mb-1">
+                                              <button
+                                                onClick={() => {
+                                                  if (!gcEnabled) return;
+                                                  const allEnabled = allPeoplePerms.every(p => getGranularValue(op.id, `${perm.key}.${p.slug}`));
+                                                  const permissions = allPeoplePerms.map(p => ({
+                                                    permissionKey: `${perm.key}.${p.slug}`,
+                                                    enabled: !allEnabled,
+                                                  }));
+                                                  setBulkGranularMutation.mutate({ operatorId: op.id, permissions });
+                                                }}
+                                                disabled={!gcEnabled}
+                                                className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 border border-cyan-200 dark:border-cyan-800 transition-colors"
+                                              >
+                                                {allPeoplePerms.every(p => getGranularValue(op.id, `${perm.key}.${p.slug}`)) ? "Desticar Tudo" : "Ticar Tudo"}
+                                              </button>
+                                            </div>
+                                          )}
                                           {allPeoplePerms.map(person => {
                                             const personEnabled = getGranularValue(op.id, `${perm.key}.${person.slug}`);
                                             return (

@@ -6687,3 +6687,9 @@
 - [x] Vendedor App: métrica de vendas deve refletir TODAS as vendas do Maxiprod mesmo sem vendas pelo app
   - SellerSalesView usa vendedorReal para métricas - Patrick sem vendas no app vê todas do Maxiprod
 - [x] Fix ticagem imediata: SettingsPage.tsx atualiza sessionStorage do operador atual instantaneamente quando suas permissões são alteradas (onSuccess em setGranularMutation e setBulkGranularMutation)
+
+## Botão "Ticar Tudo" nas sub-seções de permissões (Configurações)
+- [x] Adicionar botão "Ticar Tudo" / "Desticar Tudo" nas sub-seções expansíveis da Gestão Comercial (Cadastro de Clientes, Pedidos de Venda, Métricas, etc.)
+  - Adicionado em: Painel dos Gestores, Painel dos Vendedores, e todas as features (Cadastro de Clientes, Pedidos de Venda, Métricas, Simulação de Frete, etc.)
+  - Usa setBulkGranularMutation para ticar/desticar todos de uma vez
+  - Botão muda automaticamente entre "Ticar Tudo" e "Desticar Tudo" conforme estado atual
