@@ -163,8 +163,14 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     
     if (stock) {
       // Caso A: Tem registro em estoquesAgrupados → verificar se disponível < pedido
-      const available = stock.total - stock.reserved;
-      if (available < item.quantidade) {
+      // IMPORTANTE: estoquesAgrupados retorna quantidades em UNIDADES (peças individuais),
+      // mas o pedido é em CX (caixas). Precisamos converter usando o fator do stock_items.
+      // Ex: 00007 tem 25000 unidades, fator=5000, então 25000/5000 = 5 CX disponíveis.
+      const availableUnidades = stock.total - stock.reserved;
+      const localInfo = localStockForCheck.get(item.codigoItem);
+      const fator = localInfo?.fator && localInfo.fator > 1 ? localInfo.fator : 1;
+      const availableCaixas = fator > 1 ? availableUnidades / fator : availableUnidades;
+      if (availableCaixas < item.quantidade) {
         insufficientItems.push(item);
       }
     } else {
@@ -260,7 +266,11 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
       }
 
       const stock = stockMap.get(item.itemId) || { total: 0, reserved: 0 };
-      const available = stock.total - stock.reserved;
+      const availableUnidades = stock.total - stock.reserved;
+      // Convert to CX using fator from stock_items
+      const localInfoForAlert = localStockForCheck.get(item.codigoItem);
+      const fatorForAlert = localInfoForAlert?.fator && localInfoForAlert.fator > 1 ? localInfoForAlert.fator : 1;
+      const availableCaixas = fatorForAlert > 1 ? availableUnidades / fatorForAlert : availableUnidades;
 
       await db.insert(stockInsufficientAlerts).values({
         pedidoNumero: item.pedidoNumero,
@@ -269,7 +279,7 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
         descricaoItem: item.descricao,
         quantidadePedida: String(item.quantidade),
         unidadeMedida: item.unidade,
-        estoqueDisponivel: String(Math.max(0, available)),
+        estoqueDisponivel: String(Math.max(0, availableCaixas).toFixed(2)),
         status: "pendente",
         tipoItem: item.isMadeira ? "madeira" : "bambu",
         criadoPor: "sistema",

@@ -6729,3 +6729,7 @@
 - [ ] Custo de Mercadoria: verificar custo projetado do Espeto 4,0x250 (00009) — valores mostram R$93/91 mas produto chega a R$79-80 nas planilhas. Revisar cálculo de custo para todos os produtos.
 - [x] Matching inteligente de nomes de vendedores no Cadastro de Clientes Maxiprod (Jordão=JORDÃO LAINE, Patrick=PATRICK LUCIO, Lívia=LÍVIA PINHEIRO, Juvenal=JUVENAL TEIXEIRA, etc.) — puxar clientes por nome parcial/primeiro nome
 - [x] Custo de Mercadoria: melhorar visualização mostrando claramente de quais POs vem o cálculo, quantas caixas de cada, preço de cada PO, e o cálculo da média ponderada — para todos os produtos
+- [x] Aprovação de Pedidos: botão para Juvenal "desrecusar" pedido recusado e editar itens (trocar produto quando não tiver no estoque)
+- [x] Produto 00007 não aparece no alerta de estoque insuficiente (pedido 1600 Lívia - Maxiprod mostra insuficiente mas dashboard não)
+- [x] Alerta de Estoque Insuficiente como permissão ticável nas Configurações (escolher quem vê e quem não)
+- [x] Juvenal não vê todos os pedidos em Aprovação de Pedidos (ex: Rafael Leonel #480001 não aparece para ele mas aparece para Guilherme)

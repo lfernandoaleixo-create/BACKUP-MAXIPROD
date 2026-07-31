@@ -1183,6 +1183,11 @@ export const salesOrderRouter = router({
             }
             // For position-based: show if order's current position >= my position
             // (so I can see orders at my position or that have already passed my position)
+            // Also always show orders that are already fully approved/processed/rejected
+            // (they've completed the pipeline and should be visible for history)
+            if (order.status === "aprovado" || order.status === "processado" || order.status === "rejeitado") {
+              return true;
+            }
             const orderPosition = order.currentApprovalPosition || 1;
             return orderPosition >= myPosition;
           });
@@ -1677,6 +1682,112 @@ export const salesOrderRouter = router({
           aprovadoPor: input.aprovadoPor,
           dataAprovacao: new Date(),
           motivoRejeicao: input.motivoRejeicao,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+
+      return { success: true };
+    }),
+
+  /** Unreject (desrecusar) an order - resets it back to pendente so it can be re-evaluated */
+  unrejectOrder: publicProcedure
+    .input(z.object({
+      orderId: z.number(),
+      desrecusadoPor: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido não encontrado");
+      if (order.status !== "rejeitado") {
+        throw new Error("Apenas pedidos recusados podem ser desrecusados");
+      }
+
+      await db.update(salesOrderRequests)
+        .set({
+          status: "pendente",
+          motivoRejeicao: null,
+          aprovadoPor: null,
+          dataAprovacao: null,
+        })
+        .where(eq(salesOrderRequests.id, input.orderId));
+
+      // Create notification
+      try {
+        const { createNotification } = await import("./notificationRouter");
+        await createNotification({
+          type: "pedido_vendedor",
+          title: `Pedido #${order.orderNumber} Desrecusado`,
+          message: `Pedido #${order.orderNumber} foi desrecusado por ${input.desrecusadoPor} e voltou para pendente.`,
+          severity: "info",
+          metadata: { orderId: input.orderId, sellerName: order.sellerName, gestorName: order.gestorName, orderNumber: order.orderNumber },
+        });
+      } catch (err) {
+        console.error("[SalesOrder] Failed to create unreject notification:", err);
+      }
+
+      return { success: true };
+    }),
+
+  /** Update a single item in an order (swap product when out of stock) */
+  updateOrderItem: publicProcedure
+    .input(z.object({
+      itemId: z.number(),
+      orderId: z.number(),
+      codigoItem: z.string(),
+      descricaoItem: z.string(),
+      quantidade: z.number(),
+      unidadeMedida: z.string(),
+      precoUnitario: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Verify order exists and is pending or rejected
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId));
+      if (!order) throw new Error("Pedido não encontrado");
+      if (order.status !== "pendente" && order.status !== "rejeitado") {
+        throw new Error("Pedido já foi aprovado e não pode ser editado");
+      }
+
+      // Get price minimum for the new product
+      const minPriceRows = await db.select().from(productMinPrices)
+        .where(eq(productMinPrices.codigoItem, input.codigoItem))
+        .limit(1);
+      const precoMinimo = minPriceRows.length > 0 ? Number(minPriceRows[0].precoMinimo) : null;
+      const totalItem = input.quantidade * input.precoUnitario;
+      const abaixoDoMinimo = precoMinimo !== null && input.precoUnitario < precoMinimo;
+
+      // Update the item
+      await db.update(salesOrderRequestItems)
+        .set({
+          codigoItem: input.codigoItem,
+          descricaoItem: input.descricaoItem,
+          quantidade: String(input.quantidade),
+          unidadeMedida: input.unidadeMedida,
+          precoUnitario: String(input.precoUnitario),
+          precoMinimo: precoMinimo !== null ? String(precoMinimo) : null,
+          totalItem: String(totalItem),
+          abaixoDoMinimo,
+        })
+        .where(eq(salesOrderRequestItems.id, input.itemId));
+
+      // Recalculate order totals
+      const allItems = await db.select().from(salesOrderRequestItems)
+        .where(eq(salesOrderRequestItems.orderId, input.orderId));
+      const totalProdutos = allItems.reduce((sum, i) => sum + parseFloat(i.totalItem), 0);
+      const temPrecoAbaixoMinimo = allItems.some(i => i.abaixoDoMinimo);
+
+      await db.update(salesOrderRequests)
+        .set({
+          totalProdutos: String(totalProdutos),
+          totalPedido: String(totalProdutos),
+          temPrecoAbaixoMinimo,
+          motivoAlerta: temPrecoAbaixoMinimo ? allItems.filter(i => i.abaixoDoMinimo).map(i => `${i.descricaoItem}: R$ ${parseFloat(i.precoUnitario).toFixed(2)} (mín: R$ ${i.precoMinimo ? parseFloat(i.precoMinimo).toFixed(2) : 'N/A'})`).join("; ") : null,
         })
         .where(eq(salesOrderRequests.id, input.orderId));
 

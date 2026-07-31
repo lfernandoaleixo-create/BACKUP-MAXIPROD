@@ -11,7 +11,7 @@ import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
   ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2,
-  Building2, Phone, CreditCard, TrendingUp, Calendar
+  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -125,14 +125,13 @@ export default function GestorAprovacoes(props: any = {}) {
   const [gestorRejectReason, setGestorRejectReason] = useState("");
   const [gestorPasswordReject, setGestorPasswordReject] = useState("");
 
-  // Fetch orders - filtered by gestorName if provided (for Renato/Juvenal individual view)
-  // For "aprovado_subgestor" filter (Juvenal parent gestor view), don't filter by gestorName
-  // because those orders have gestorName=sub-gestor (e.g. RENATO LEDESMA), not the parent gestor
-  const isParentGestorView = isJuvenalInit && filter === "aprovado_subgestor";
+  // Fetch orders - use recipientName (timeline rules) for visibility filtering
+  // When recipientName is provided, the backend uses position-based filtering from timeline rules
+  // which correctly shows orders from ALL sellers assigned to this recipient (including sub-gestor's sellers)
+  // DO NOT pass gestorName together with recipientName - it would exclude orders from sub-gestor's sellers
   const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
     { 
       status: filter === "todos" ? "todos" : filter, 
-      ...(gestorName && !isParentGestorView ? { gestorName } : {}),
       ...(gestorName ? { recipientName: gestorName } : {})
     },
     { staleTime: 30 * 1000 }
@@ -173,11 +172,27 @@ export default function GestorAprovacoes(props: any = {}) {
   const resetMutation = trpc.salesOrders.resetOrderNumbers.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const updateObsMutation = trpc.salesOrders.updateObservacaoAprovacao.useMutation();
+  const unrejectMutation = trpc.salesOrders.unrejectOrder.useMutation();
+  const updateItemMutation = trpc.salesOrders.updateOrderItem.useMutation();
   const utils = trpc.useUtils();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [editingObsOrderId, setEditingObsOrderId] = useState<number | null>(null);
   const [editingObsText, setEditingObsText] = useState("");
+  // Unreject + Edit item state
+  const [editingItem, setEditingItem] = useState<{ itemId: number; orderId: number; sellerId: number; codigoItem: string; descricaoItem: string; quantidade: string; unidadeMedida: string; precoUnitario: string } | null>(null);
+  const [editItemSearch, setEditItemSearch] = useState("");
+  const [editItemNewCode, setEditItemNewCode] = useState("");
+  const [editItemNewDesc, setEditItemNewDesc] = useState("");
+  const [editItemNewQtd, setEditItemNewQtd] = useState("");
+  const [editItemNewPreco, setEditItemNewPreco] = useState("");
+  const [editItemNewUnidade, setEditItemNewUnidade] = useState("CX");
+
+  // Products query for item editing (only when editing)
+  const { data: editProducts } = trpc.salesOrders.getProductsForSeller.useQuery(
+    { sellerId: editingItem?.sellerId || 0 },
+    { enabled: !!editingItem }
+  );
 
   const handleApprove = (orderId: number) => {
     setApprovingOrder(orderId);
@@ -717,6 +732,34 @@ export default function GestorAprovacoes(props: any = {}) {
                                   <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 ml-2">
                                     {formatCurrency(Number(item.totalItem))}
                                   </p>
+                                  {/* Edit item button for Juvenal on rejected/pending orders */}
+                                  {isJuvenalViewing && (order.status === "rejeitado" || order.status === "pendente") && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingItem({
+                                          itemId: item.id,
+                                          orderId: order.id,
+                                          sellerId: order.sellerId,
+                                          codigoItem: item.codigoItem,
+                                          descricaoItem: item.descricaoItem,
+                                          quantidade: item.quantidade,
+                                          unidadeMedida: item.unidadeMedida || "CX",
+                                          precoUnitario: item.precoUnitario,
+                                        });
+                                        setEditItemNewCode(item.codigoItem);
+                                        setEditItemNewDesc(item.descricaoItem);
+                                        setEditItemNewQtd(String(Number(item.quantidade)));
+                                        setEditItemNewPreco(item.precoUnitario);
+                                        setEditItemNewUnidade(item.unidadeMedida || "CX");
+                                        setEditItemSearch("");
+                                      }}
+                                      className="ml-2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                      title="Editar item (trocar produto)"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </div>
                                 {/* Inline ProductMarginBar per product - based on discount from preço mostrado */}
                                 {(() => {
@@ -1200,6 +1243,28 @@ export default function GestorAprovacoes(props: any = {}) {
                           {order.aprovadoPor && (
                             <p className="text-[9px] text-red-500 mt-1">Recusado por: {order.aprovadoPor}</p>
                           )}
+                          {/* Desrecusar button - only for Juvenal */}
+                          {isJuvenalViewing && (
+                            <button
+                              onClick={() => {
+                                unrejectMutation.mutate(
+                                  { orderId: order.id, desrecusadoPor: gestorName || "Juvenal" },
+                                  {
+                                    onSuccess: () => {
+                                      utils.salesOrders.listOrders.invalidate();
+                                      utils.salesOrders.getOrdersForGestor.invalidate();
+                                    },
+                                    onError: (err) => alert(err.message || "Erro ao desrecusar"),
+                                  }
+                                );
+                              }}
+                              disabled={unrejectMutation.isPending}
+                              className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              {unrejectMutation.isPending ? "Desrecusando..." : "Desrecusar Pedido"}
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -1267,6 +1332,170 @@ export default function GestorAprovacoes(props: any = {}) {
             })}
           </div>
         )}
+
+      {/* Edit Item Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditingItem(null)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-blue-600" />
+                Editar Item do Pedido
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Troque o produto quando não houver estoque disponível</p>
+            </div>
+            <div className="p-4 space-y-3 overflow-y-auto flex-1">
+              {/* Current item info */}
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Item Atual</p>
+                <p className="text-xs text-slate-700 dark:text-slate-200 mt-0.5">
+                  <span className="font-mono text-slate-400">{editingItem.codigoItem}</span> {editingItem.descricaoItem}
+                </p>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  {Number(editingItem.quantidade)} {editingItem.unidadeMedida} × {formatCurrency(Number(editingItem.precoUnitario))}
+                </p>
+              </div>
+
+              {/* Product search */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Buscar Novo Produto</label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={editItemSearch}
+                    onChange={(e) => setEditItemSearch(e.target.value)}
+                    placeholder="Digite código ou nome do produto..."
+                    className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                </div>
+                {editItemSearch.length >= 2 && editProducts && (
+                  <div className="mt-1 max-h-32 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-lg divide-y divide-slate-100 dark:divide-slate-700">
+                    {editProducts
+                      .filter((p: any) => {
+                        const search = editItemSearch.toUpperCase();
+                        return p.codigoItem.includes(search) || p.descricaoItem.toUpperCase().includes(search);
+                      })
+                      .slice(0, 10)
+                      .map((p: any) => (
+                        <button
+                          key={p.codigoItem}
+                          onClick={() => {
+                            setEditItemNewCode(p.codigoItem);
+                            setEditItemNewDesc(p.descricaoItem);
+                            setEditItemNewPreco(p.precoVendedor || p.precoTabela || p.precoMinimo || editingItem.precoUnitario);
+                            setEditItemNewUnidade(p.unidadeMedida || "CX");
+                            setEditItemSearch("");
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+                        >
+                          <p className="text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                            <span className="font-mono text-slate-400">{p.codigoItem}</span> {p.descricaoItem}
+                          </p>
+                          <p className="text-[9px] text-slate-400">
+                            Estoque: {p.disponivel || 0} | Preço: {p.precoVendedor ? `R$ ${p.precoVendedor}` : "N/A"}
+                          </p>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* New item fields */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Código</label>
+                  <input
+                    type="text"
+                    value={editItemNewCode}
+                    onChange={(e) => setEditItemNewCode(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Unidade</label>
+                  <input
+                    type="text"
+                    value={editItemNewUnidade}
+                    onChange={(e) => setEditItemNewUnidade(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Quantidade</label>
+                  <input
+                    type="number"
+                    value={editItemNewQtd}
+                    onChange={(e) => setEditItemNewQtd(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Preço Unitário</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editItemNewPreco}
+                    onChange={(e) => setEditItemNewPreco(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Descrição</label>
+                <input
+                  type="text"
+                  value={editItemNewDesc}
+                  onChange={(e) => setEditItemNewDesc(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                  readOnly
+                />
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex gap-2 justify-end">
+              <button
+                onClick={() => setEditingItem(null)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (!editItemNewCode || !editItemNewDesc || !editItemNewQtd || !editItemNewPreco) {
+                    alert("Preencha todos os campos");
+                    return;
+                  }
+                  updateItemMutation.mutate(
+                    {
+                      itemId: editingItem.itemId,
+                      orderId: editingItem.orderId,
+                      codigoItem: editItemNewCode,
+                      descricaoItem: editItemNewDesc,
+                      quantidade: parseFloat(editItemNewQtd),
+                      unidadeMedida: editItemNewUnidade,
+                      precoUnitario: parseFloat(editItemNewPreco),
+                    },
+                    {
+                      onSuccess: () => {
+                        utils.salesOrders.listOrders.invalidate();
+                        utils.salesOrders.getOrdersForGestor.invalidate();
+                        utils.salesOrders.getOrderDetails.invalidate();
+                        setEditingItem(null);
+                      },
+                      onError: (err) => alert(err.message || "Erro ao atualizar item"),
+                    }
+                  );
+                }}
+                disabled={updateItemMutation.isPending}
+                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 rounded-lg cursor-pointer"
+              >
+                {updateItemMutation.isPending ? "Salvando..." : "Salvar Alteração"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {confirmDeleteId !== null && (

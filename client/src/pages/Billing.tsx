@@ -2516,10 +2516,12 @@ export default function Billing() {
             </div>
 
             {/* Alertas de Estoque Insuficiente - PRIMEIRO CARD */}
-            <StockInsufficientAlerts
-              operatorName={operator?.name}
-              canRespond={operator?.name === "Maria" || operator?.name === "Erica" || operator?.name === "Fernando"}
-            />
+            {hasGranularAccess("fat.alertaEstoqueInsuficiente") && (
+              <StockInsufficientAlerts
+                operatorName={operator?.name}
+                canRespond={operator?.name === "Maria" || operator?.name === "Erica" || operator?.name === "Fernando"}
+              />
+            )}
 
             {/* Card 0: Aceite da Produção */}
             <ProductionAcceptanceCard
