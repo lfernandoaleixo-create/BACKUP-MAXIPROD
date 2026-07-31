@@ -6651,3 +6651,9 @@
 - [x] Bug: Hub da Gestão Comercial mostra cards sem verificar permissão granular (Painel Gestores, Painel Vendedores, Gerenciar Gestores aparecem para Vitória sem permissão)
 - [x] Bug: Tela Vitória - mostrar tipo de pagamento (Boleto/PIX/Dinheiro) além de "A prazo" com 30/60/90
 - [x] Bug: Aba Faturamento - estoque insuficiente incorreto para pedidos 1600, 1597, 1596, 1595, 1590
+- [x] Refatorar fluxo de aprovação: mover aprovações de "Pedidos de Venda" para tela dedicada "Aprovações de Pedidos"
+- [x] Card "Aprovações de Pedidos" no hub deve piscar em vermelho e mostrar número de pedidos pendentes
+- [x] Tela "Aprovações de Pedidos" deve ter botão "Aprovar como Gestor" (e toda lógica de aprovação)
+- [x] Aba "Pedidos de Venda" vira apenas histórico (sem botão de aprovar)
+- [x] Corrigir erro de português: \u201c e \u201d aparecendo como texto nas observações de aprovação
+- [x] Verificar simulação de frete pedido #2746 não encontrado no Maxiprod (pedido não existe no banco - max é 1606)

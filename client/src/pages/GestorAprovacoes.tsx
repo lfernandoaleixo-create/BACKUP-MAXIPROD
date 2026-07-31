@@ -107,9 +107,9 @@ export default function GestorAprovacoes(props: any = {}) {
   const gestorNameProp = props?.gestorName as string | undefined;
   // Read gestorName from URL search params if not passed as prop
   const urlParams = new URLSearchParams(window.location.search);
-  const gestorName = gestorNameProp || urlParams.get("gestor") || undefined;
-
-  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "aprovado_subgestor" | "rejeitado">("todos");
+    const gestorName = gestorNameProp || urlParams.get("gestor") || undefined;
+  const isJuvenalInit = gestorName === "JUVENAL TEIXEIRA";
+  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "aprovado_subgestor" | "rejeitado">(isJuvenalInit ? "aprovado_subgestor" : "todos");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -1239,7 +1239,7 @@ export default function GestorAprovacoes(props: any = {}) {
                             <div className="flex items-start gap-1 mt-1">
                               {(order as any).observacaoAprovacao ? (
                                 <p className="text-[11px] text-green-600 dark:text-green-300 italic flex-1">
-                                  \u201c{(order as any).observacaoAprovacao}\u201d
+                                  “{(order as any).observacaoAprovacao}”
                                 </p>
                               ) : (
                                 <p className="text-[10px] text-slate-400 italic flex-1">Sem observação</p>

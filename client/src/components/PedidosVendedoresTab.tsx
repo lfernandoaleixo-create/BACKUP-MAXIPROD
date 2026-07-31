@@ -859,7 +859,7 @@ export default function PedidosVendedoresTab() {
                     <div className="flex items-start gap-1 mt-1">
                       {(detailsQuery.data.order as any).observacaoAprovacao ? (
                         <p className="text-sm text-green-700 italic flex-1">
-                          \u201c{(detailsQuery.data.order as any).observacaoAprovacao}\u201d
+                          “{(detailsQuery.data.order as any).observacaoAprovacao}”
                         </p>
                       ) : (
                         <p className="text-xs text-slate-400 italic flex-1">Sem observação</p>

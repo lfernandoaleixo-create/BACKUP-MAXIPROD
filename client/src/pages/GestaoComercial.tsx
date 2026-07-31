@@ -221,8 +221,13 @@ export default function GestaoComercial() {
   // Determine if current operator is a gestor (for pending orders)
   const currentOperatorGestor = useMemo(() => {
     if (!managersQuery.data || !operator?.name) return null;
+    const opNorm = operator.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    // Try exact match first, then partial match (e.g. "Juvenal" matches "Juvenal Teixeira")
     const match = managersQuery.data.find(
-      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === operator.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === opNorm
+    ) || managersQuery.data.find(
+      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes(opNorm)
+        || opNorm.includes(m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())
     );
     return match ? match.name.toUpperCase() : null;
   }, [managersQuery.data, operator?.name]);
@@ -259,6 +264,9 @@ export default function GestaoComercial() {
     // Also check if operator is a gestor (has a sales_managers record)
     const myGestorRecord = managersQuery.data?.find(
       (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    ) || managersQuery.data?.find(
+      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes(operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())
+        || operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes(m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())
     );
     const gestorNameForHub = myGestorRecord?.name?.toUpperCase() || (mySellerRecordForHub?.sellerName?.toUpperCase()) || null;
     const isGestorVendedor = !!mySellerRecordForHub && hasGranularAccess("gc.meuPainelVendedor"); // Operator is also a seller
