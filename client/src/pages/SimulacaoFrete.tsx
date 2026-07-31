@@ -1,11 +1,12 @@
 /**
  * Simulação de Frete - Card na Gestão Comercial
  * Permite cotar frete por número do pedido de venda (busca automática do Maxiprod)
+ * Suporta múltiplos pedidos combinados em uma única simulação
  */
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Truck, Search, Loader2, AlertCircle, CheckCircle2, FileText, Download } from "lucide-react";
+import { ArrowLeft, Truck, Search, Loader2, AlertCircle, CheckCircle2, FileText, Download, Plus, X } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ interface ItemBreakdown {
 
 interface QuoteResult {
   pedido: string;
+  pedidos?: string[];
   cliente: string;
   cepDestino: string;
   cnpjDestinatario: string;
@@ -91,30 +93,50 @@ function friendlyError(error: string): string {
 
 export default function SimulacaoFrete() {
   const { hasGranularAccess } = useOperator();
-  const [pedidoNumero, setPedidoNumero] = useState("");
+  // Multiple pedidos support
+  const [pedidoInputs, setPedidoInputs] = useState<string[]>([""]);
   const [result, setResult] = useState<QuoteResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const quoteMutation = trpc.salesOrders.quoteByPedido.useMutation();
+  const quoteSingleMutation = trpc.salesOrders.quoteByPedido.useMutation();
+  const quoteMultipleMutation = trpc.salesOrders.quoteByMultiplePedidos.useMutation();
   const saveSimMutation = trpc.salesOrders.saveFreightSimulation.useMutation();
   const [simulationId, setSimulationId] = useState<number | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  const addPedidoInput = () => {
+    setPedidoInputs(prev => [...prev, ""]);
+  };
+
+  const removePedidoInput = (index: number) => {
+    setPedidoInputs(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePedidoInput = (index: number, value: string) => {
+    setPedidoInputs(prev => prev.map((v, i) => i === index ? value : v));
+  };
+
+  const validPedidos = pedidoInputs.map(p => p.trim()).filter(Boolean);
+
   const handleSimular = async () => {
-    const num = pedidoNumero.trim();
-    if (!num) return;
+    if (validPedidos.length === 0) return;
     setIsLoading(true);
     setErrorMsg("");
     setResult(null);
     setSimulationId(null);
     setPdfUrl(null);
     try {
-      const res = await quoteMutation.mutateAsync({ pedido: num });
+      let res: any;
+      if (validPedidos.length === 1) {
+        res = await quoteSingleMutation.mutateAsync({ pedido: validPedidos[0] });
+      } else {
+        res = await quoteMultipleMutation.mutateAsync({ pedidos: validPedidos });
+      }
       setResult(res as QuoteResult);
     } catch (err: any) {
-      setErrorMsg(err?.message || "Erro ao simular frete. Verifique o número do pedido.");
+      setErrorMsg(err?.message || "Erro ao simular frete. Verifique o(s) número(s) do(s) pedido(s).");
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +164,7 @@ export default function SimulacaoFrete() {
           results: {
             carriers: result.carriers,
             pedido: result.pedido,
+            pedidos: result.pedidos || [result.pedido],
             cliente: result.cliente,
             itemsBreakdown: result.itemsBreakdown,
             endereco: result.endereco,
@@ -204,39 +227,72 @@ export default function SimulacaoFrete() {
             Cotar Frete por Número do Pedido
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Digite o número do pedido de venda e o sistema buscará automaticamente do Maxiprod todas as informações necessárias (peso, cubagem, valor, CEP) para simular o frete nas 5 transportadoras.
+            Digite o(s) número(s) do(s) pedido(s) de venda. Para simular frete de múltiplos pedidos juntos (mesmo cliente, mesma entrega), adicione mais pedidos com o botão <strong>+</strong>.
           </p>
-          <div className="flex gap-3 items-center flex-wrap">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                type="text"
-                placeholder="Número do pedido (ex: 1572)"
-                value={pedidoNumero}
-                onChange={(e) => setPedidoNumero(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="pl-10"
-                disabled={isLoading}
-              />
-            </div>
-            <Button
-              onClick={handleSimular}
-              disabled={isLoading || !pedidoNumero.trim()}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Simulando...
-                </>
-              ) : (
-                <>
-                  <Truck className="w-4 h-4 mr-2" />
-                  Simular Frete
-                </>
-              )}
-            </Button>
+
+          {/* Pedido inputs */}
+          <div className="space-y-3 mb-4">
+            {pedidoInputs.map((value, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder={index === 0 ? "Nº do pedido (ex: 1596)" : "Nº do pedido adicional"}
+                    value={value}
+                    onChange={(e) => updatePedidoInput(index, e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="pl-10"
+                    disabled={isLoading}
+                  />
+                </div>
+                {index > 0 && (
+                  <button
+                    onClick={() => removePedidoInput(index)}
+                    className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    title="Remover pedido"
+                    disabled={isLoading}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                {index === pedidoInputs.length - 1 && (
+                  <button
+                    onClick={addPedidoInput}
+                    className="p-2 rounded-lg text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors border border-cyan-200 dark:border-cyan-800"
+                    title="Adicionar outro pedido"
+                    disabled={isLoading}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+
+          {validPedidos.length > 1 && (
+            <p className="text-xs text-cyan-600 dark:text-cyan-400 mb-3 font-medium">
+              {validPedidos.length} pedidos serão combinados em uma única simulação de frete.
+            </p>
+          )}
+
+          <Button
+            onClick={handleSimular}
+            disabled={isLoading || validPedidos.length === 0}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Simulando...
+              </>
+            ) : (
+              <>
+                <Truck className="w-4 h-4 mr-2" />
+                Simular Frete
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Error message */}
@@ -256,7 +312,9 @@ export default function SimulacaoFrete() {
             {/* Order summary */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                Resultado - Pedido #{result.pedido}
+                Resultado - {result.pedidos && result.pedidos.length > 1
+                  ? `Pedidos #${result.pedidos.join(", #")}`
+                  : `Pedido #${result.pedido}`}
               </h3>
               <div className="flex items-center gap-2">
                 <Button

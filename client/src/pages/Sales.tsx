@@ -76,7 +76,7 @@ import {
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
-import SellerCobrancaView from "@/components/SellerCobrancaView";
+// import SellerCobrancaView from "@/components/SellerCobrancaView"; // REMOVIDO temporariamente
 import { generateSalesPDF } from "@/lib/salesPdfExport";
 import { generatePeriodPDF } from "@/lib/periodPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -4030,7 +4030,7 @@ export default function Sales() {
     "Gilson": "GILSON ALEIXO",
     "Renato": "RENATO LEDESMA",
   };
-  const sellerNameForCobranca = operator?.name ? OPERATOR_TO_SELLER_SALES[operator.name] : undefined;
+  // const sellerNameForCobranca = operator?.name ? OPERATOR_TO_SELLER_SALES[operator.name] : undefined; // REMOVIDO temporariamente
   // Permissões granulares para sub-abas de Vendas
   const canSeeVendas = hasGranularAccess("vnd.abaVendas");
   const canSeeFornecedores = hasGranularAccess("vnd.abaFornecedores");
@@ -5208,10 +5208,7 @@ export default function Sales() {
               <UnifiedUnbilledCard months={allUnbilled.months} orders={allUnbilled.orders} totalValue={allUnbilled.totalValue} />
             )}
 
-            {/* Seller Cobrança Alerts - for operators who are also sellers */}
-            {sellerNameForCobranca && (
-              <SellerCobrancaView sellerName={sellerNameForCobranca} />
-            )}
+            {/* Seller Cobrança Alerts - REMOVIDO: será configurado em outra oportunidade */}
 
             {/* Cards de Inadimplência - compartilhados com aba Financeiro */}
             {financialSummary && financialSummary.receber.vencidas.count > 0 && (

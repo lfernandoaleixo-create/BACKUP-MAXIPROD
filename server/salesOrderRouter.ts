@@ -1905,10 +1905,12 @@ export const salesOrderRouter = router({
   /** Count pending orders for gestores (pendente = needs approval) */
   countPendingGestor: publicProcedure.query(async () => {
     const db = await getDb();
-    if (!db) return { pending: 0 };
+    if (!db) return { pending: 0, pendente: 0, aprovadoSubgestor: 0 };
     const pendente = await db.select().from(salesOrderRequests)
       .where(eq(salesOrderRequests.status, "pendente"));
-    return { pending: pendente.length };
+    const aprovadoSubgestor = await db.select().from(salesOrderRequests)
+      .where(eq(salesOrderRequests.status, "aprovado_subgestor"));
+    return { pending: pendente.length + aprovadoSubgestor.length, pendente: pendente.length, aprovadoSubgestor: aprovadoSubgestor.length };
   }),
 
   // ===== MIN PRICE MANAGEMENT =====
@@ -3066,6 +3068,370 @@ export const salesOrderRouter = router({
         tipoContribuinte,
         carriers,
         // Detailed data for PDF report
+        itemsBreakdown,
+        endereco: {
+          logradouro: firstItem.enderecoLogradouro || "",
+          numero: firstItem.enderecoNumero || "",
+          bairro: firstItem.enderecoBairro || "",
+          cidade: firstItem.enderecoCidade || "",
+          uf: firstItem.uf || "",
+        },
+        dimensoes: {
+          altura: maxAltura > 0 ? maxAltura : 0.5,
+          largura: avgLargura > 0 ? avgLargura : 0.5,
+          comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
+        },
+      };
+    }),
+
+  /**
+   * Quote freight for MULTIPLE orders combined (by pedido numbers).
+   * Merges all items from all pedidos into one combined shipment.
+   */
+  quoteByMultiplePedidos: publicProcedure
+    .input(z.object({ pedidos: z.array(z.string()).min(1).max(10) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // 1. Get order items from ALL pedidos
+      const allOrderItems: any[] = [];
+      const pedidoLabels: string[] = [];
+
+      for (const pedidoNum of input.pedidos) {
+        const orderItems = await db.select({
+          cliente: salesOrders.cliente,
+          uf: salesOrders.uf,
+          enderecoCep: salesOrders.enderecoCep,
+          valorTotalPedido: salesOrders.valorTotalPedido,
+          valorTotal: salesOrders.valorTotal,
+          quantidade: salesOrders.quantidade,
+          quantidadeUnidadeItem: salesOrders.quantidadeUnidadeItem,
+          unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
+          codigoItem: salesOrders.codigoItem,
+          descricaoItem: salesOrders.descricaoItem,
+          transportadora: salesOrders.transportadora,
+          razaoSocial: salesOrders.razaoSocial,
+          inscricaoEstadual: salesOrders.inscricaoEstadual,
+          enderecoLogradouro: salesOrders.enderecoLogradouro,
+          enderecoNumero: salesOrders.enderecoNumero,
+          enderecoBairro: salesOrders.enderecoBairro,
+          enderecoCidade: salesOrders.enderecoCidade,
+          pedido: salesOrders.pedido,
+        }).from(salesOrders)
+          .where(eq(salesOrders.pedido, pedidoNum));
+
+        if (orderItems.length === 0) {
+          throw new Error(`Pedido #${pedidoNum} não encontrado no Maxiprod`);
+        }
+        allOrderItems.push(...orderItems);
+        pedidoLabels.push(pedidoNum);
+      }
+
+      const firstItem = allOrderItems[0];
+      const clienteName = firstItem.cliente || "";
+      let cepDestino = (firstItem.enderecoCep || "").replace(/\D/g, "");
+      let cnpjDestinatario = "";
+      let tipoContribuinte = "Contribuinte";
+
+      // Sum valorMercadoria from all pedidos (use valorTotalPedido per pedido, avoid double-counting)
+      const pedidoValorMap = new Map<string, number>();
+      for (const item of allOrderItems) {
+        const ped = item.pedido || "";
+        if (!pedidoValorMap.has(ped)) {
+          const val = parseFloat(String(item.valorTotalPedido || 0));
+          pedidoValorMap.set(ped, val);
+        }
+      }
+      let valorMercadoria = 0;
+      pedidoValorMap.forEach((val) => {
+        valorMercadoria += val;
+      });
+      // Fallback: sum individual item values if valorTotalPedido is 0
+      if (!valorMercadoria) {
+        valorMercadoria = allOrderItems.reduce((sum: number, i: any) => sum + parseFloat(String(i.valorTotal || 0)), 0);
+      }
+
+      // 2. Try to find client in vendor_clients for CNPJ and CEP
+      if (clienteName) {
+        const [client] = await db.select()
+          .from(vendorClients)
+          .where(sql`UPPER(${vendorClients.razaoSocial}) = ${clienteName.toUpperCase()}`)
+          .limit(1);
+        if (client) {
+          cnpjDestinatario = (client.cnpjCpf || "").replace(/\D/g, "");
+          if (client.cep) cepDestino = client.cep.replace(/\D/g, "");
+          tipoContribuinte = client.tipoContribuinte || "Contribuinte";
+        }
+      }
+
+      if (!cepDestino || cepDestino.length < 8) {
+        throw new Error(`CEP do destinatário não encontrado para os pedidos #${pedidoLabels.join(", #")}. Verifique o cadastro do cliente.`);
+      }
+
+      // 3. Calculate weight and volumes from ALL order items combined
+      let pesoTotal = 0;
+      let totalVolumes = 0;
+      const codigosItens = allOrderItems.map((i: any) => i.codigoItem).filter(Boolean) as string[];
+      const uniqueCodigos = Array.from(new Set(codigosItens));
+
+      const itemsBreakdown: Array<{
+        codigo: string;
+        descricao: string;
+        qtd: number;
+        unidade: string;
+        pesoBrutoUn: number;
+        fatorConv: number;
+        pesoCx: number;
+        pesoTotal: number;
+        dimensoes: string;
+        comprimento: number;
+        largura: number;
+        altura: number;
+        volCxM3: number;
+        cubagem: number;
+      }> = [];
+
+      if (uniqueCodigos.length > 0) {
+        const stockData = await db.select({
+          codigoItem: stockItems.codigoItem,
+          pesoBruto: stockItems.pesoBruto,
+          pesoLiquido: stockItems.pesoLiquido,
+          unidadeMedida: stockItems.unidadeMedida,
+          unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+          unidadeDeVendaCodigo: stockItems.unidadeDeVendaCodigo,
+          descricaoComplementar: stockItems.descricaoComplementar,
+        }).from(stockItems)
+          .where(inArray(stockItems.codigoItem, uniqueCodigos));
+
+        const pesoBrutoMap = new Map<string, number>();
+        for (const s of stockData) {
+          const pesoBase = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
+          if (pesoBase > 0 && s.codigoItem) {
+            pesoBrutoMap.set(s.codigoItem, pesoBase);
+          }
+        }
+
+        for (const item of allOrderItems) {
+          const qty = parseFloat(String(item.quantidade || 1));
+          totalVolumes += qty;
+
+          const stockItem = stockData.find((s: any) => s.codigoItem === item.codigoItem);
+          const pesoBrutoPerUnit = pesoBrutoMap.get(item.codigoItem || "") || 0;
+          const fator = parseFloat(String(stockItem?.unidadeDeVendaFator || 1)) || 1;
+          let itemPesoTotal = 0;
+
+          if (pesoBrutoPerUnit > 0) {
+            const qtyUnidadeItem = parseFloat(String(item.quantidadeUnidadeItem || 0));
+            const um = (stockItem?.unidadeMedida || '').toUpperCase().trim();
+            const uvCodigo = (stockItem?.unidadeDeVendaCodigo || '').toUpperCase().trim();
+
+            if (qtyUnidadeItem > 0 && qtyUnidadeItem > qty * 10) {
+              itemPesoTotal = pesoBrutoPerUnit * qtyUnidadeItem;
+            } else if (um === 'UN' && (uvCodigo === 'CX' || uvCodigo === 'PC') && fator > 1) {
+              itemPesoTotal = pesoBrutoPerUnit * fator * qty;
+            } else {
+              itemPesoTotal = pesoBrutoPerUnit * qty;
+            }
+            pesoTotal += itemPesoTotal;
+          }
+
+          const dimStr = stockItem?.descricaoComplementar || "";
+          let comprCm = 0, largCm = 0, altCm = 0;
+          const dimMatch = dimStr.match(/(\d+)[xX](\d+)[xX](\d+)/);
+          if (dimMatch) {
+            comprCm = parseInt(dimMatch[1]);
+            largCm = parseInt(dimMatch[2]);
+            altCm = parseInt(dimMatch[3]);
+          }
+          const volCxM3 = comprCm > 0 ? (comprCm * largCm * altCm) / 1_000_000 : 0;
+          const cubagem = volCxM3 * qty;
+
+          itemsBreakdown.push({
+            codigo: item.codigoItem || "",
+            descricao: item.descricaoItem || "",
+            qtd: qty,
+            unidade: "CX",
+            pesoBrutoUn: pesoBrutoPerUnit,
+            fatorConv: fator,
+            pesoCx: pesoBrutoPerUnit * fator,
+            pesoTotal: itemPesoTotal,
+            dimensoes: dimStr,
+            comprimento: comprCm,
+            largura: largCm,
+            altura: altCm,
+            volCxM3,
+            cubagem,
+          });
+        }
+      } else {
+        totalVolumes = allOrderItems.reduce((sum: number, i: any) => sum + parseFloat(String(i.quantidade || 1)), 0);
+      }
+
+      if (pesoTotal <= 0) {
+        pesoTotal = totalVolumes * 10;
+      }
+
+      const volumes = Math.max(1, Math.round(totalVolumes));
+      const cubagemReal = itemsBreakdown.reduce((sum, i) => sum + i.cubagem, 0);
+      const metroCubico = cubagemReal > 0 ? cubagemReal : volumes * 0.05;
+      const maxAltura = Math.max(...itemsBreakdown.map(i => i.altura), 0) / 100;
+      const maxComprimento = Math.max(...itemsBreakdown.map(i => i.comprimento), 0) / 100;
+      const totalQty = itemsBreakdown.reduce((s, i) => s + i.qtd, 0) || 1;
+      const avgLargura = itemsBreakdown.reduce((s, i) => s + i.largura * i.qtd, 0) / totalQty / 100;
+
+      console.log(`[QuoteByMultiplePedidos] Pedidos #${pedidoLabels.join(", #")}: CEP=${cepDestino}, CNPJ=${cnpjDestinatario}, Valor=${valorMercadoria}, Peso=${pesoTotal}kg, Volumes=${volumes}, Cubagem=${metroCubico}m³`);
+
+      // 4. Get customer data for Rodonaves
+      let customerData: { nome: string; email: string; telefone: string; cep: string; logradouro: string; numero: string; complemento?: string; bairro: string; cidade: string; uf: string; inscricaoEstadual?: string } | undefined;
+      if (cnpjDestinatario) {
+        const [client] = await db.select()
+          .from(vendorClients)
+          .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cnpjDestinatario}`)
+          .limit(1);
+        if (client) {
+          customerData = {
+            nome: client.razaoSocial || client.nomeFantasia || "Cliente",
+            email: client.emailNfe || client.email || "nfe@grupofox.com.br",
+            telefone: client.telefone1 || client.telefone2 || "31999999999",
+            cep: client.cep || cepDestino,
+            logradouro: client.logradouro || "Rua",
+            numero: client.numero || "S/N",
+            complemento: client.complemento || undefined,
+            bairro: client.bairro || "Centro",
+            cidade: client.cidade || "",
+            uf: client.uf || "",
+            inscricaoEstadual: client.inscricaoEstadual || undefined,
+          };
+        }
+      }
+
+      // 5. Quote all 5 carriers in parallel
+      const normalizeTipoContrib = (t: string) => {
+        const upper = t.toUpperCase();
+        if (upper.includes("NAO") || upper.includes("NÃO") || upper.includes("N")) return "Não Contribuinte";
+        return "Contribuinte";
+      };
+
+      const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
+        cotarTodosCnpjs({
+          cnpjDestinatario: cnpjDestinatario || "00000000000000",
+          cepOrigem: "37264000",
+          cepDestino,
+          valorMercadoria,
+          peso: pesoTotal,
+          volumes,
+          altura: maxAltura > 0 ? maxAltura : 0.5,
+          largura: avgLargura > 0 ? avgLargura : 0.5,
+          comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
+        }),
+        quoteAllAlfaCnpjs({
+          cepDestino,
+          cepOrigem: "37264000",
+          valorMercadoria,
+          peso: pesoTotal,
+          metroCubico,
+          volumes,
+          cnpjDestinatario,
+        }),
+        quoteAllSswCnpjsWithProtocol({
+          cepOrigem: "37260000",
+          cepDestino: cepDestino.replace(/\D/g, ""),
+          valorNF: valorMercadoria,
+          quantidade: volumes,
+          peso: pesoTotal,
+          cubagem: metroCubico,
+          cnpjDestinatario,
+          destContribuinte: normalizeTipoContrib(tipoContribuinte) === "Contribuinte" ? "S" : "N",
+        }),
+        quoteAllRodonavesCnpjs({
+          cepOrigem: "37264000",
+          cepDestino,
+          valorMercadoria,
+          peso: pesoTotal,
+          volumes,
+          cnpjDestinatario,
+          customerData,
+        }),
+        quoteFlordeMinas({
+          cepDestino,
+          valorMercadoria,
+          pesoKg: pesoTotal,
+        }),
+      ]);
+
+      const carriers: Array<{
+        transportadora: string;
+        cnpj: string;
+        totalFrete: number;
+        prazo: string;
+        protocolo?: string;
+        error?: string;
+      }> = [];
+
+      // Process Braspress
+      if (braspressResults.status === "fulfilled") {
+        for (const r of braspressResults.value) {
+          carriers.push({ transportadora: "Braspress", cnpj: r.cnpjUsado, totalFrete: r.totalFrete || 0, prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A", protocolo: r.id ? String(r.id) : undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Braspress", cnpj: "", totalFrete: 0, prazo: "N/A", error: braspressResults.reason?.message || "Erro" });
+      }
+
+      // Process Alfa
+      if (alfaResults.status === "fulfilled") {
+        for (const r of alfaResults.value) {
+          carriers.push({ transportadora: "Alfa Transportes", cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo || "N/A", protocolo: r.protocolo || undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Alfa Transportes", cnpj: "", totalFrete: 0, prazo: "N/A", error: alfaResults.reason?.message || "Erro" });
+      }
+
+      // Process Camilo (SSW)
+      if (sswResults.status === "fulfilled") {
+        for (const r of sswResults.value) {
+          carriers.push({ transportadora: "Camilo dos Santos", cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo ? `${r.prazo} dias úteis` : "N/A", protocolo: r.protocolo || undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Camilo dos Santos", cnpj: "", totalFrete: 0, prazo: "N/A", error: sswResults.reason?.message || "Erro" });
+      }
+
+      // Process Rodonaves
+      if (rodonavesResults.status === "fulfilled") {
+        for (const r of rodonavesResults.value) {
+          carriers.push({ transportadora: "Rodonaves", cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo || "N/A", protocolo: r.protocolo ? String(r.protocolo) : undefined, error: r.error });
+        }
+      } else {
+        carriers.push({ transportadora: "Rodonaves", cnpj: "", totalFrete: 0, prazo: "N/A", error: rodonavesResults.reason?.message || "Erro" });
+      }
+
+      // Process Flor de Minas
+      if (florDeMinasResult.status === "fulfilled") {
+        const r = florDeMinasResult.value;
+        carriers.push({ transportadora: r.transportadora, cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo, error: r.error });
+      } else {
+        carriers.push({ transportadora: "Flor de Minas", cnpj: "", totalFrete: 0, prazo: "N/A", error: florDeMinasResult.reason?.message || "Erro" });
+      }
+
+      // Sort by lowest freight (errors at the end)
+      carriers.sort((a, b) => {
+        if (a.error && !b.error) return 1;
+        if (!a.error && b.error) return -1;
+        return a.totalFrete - b.totalFrete;
+      });
+
+      return {
+        pedido: pedidoLabels.join(", "),
+        pedidos: pedidoLabels,
+        cliente: clienteName,
+        cepDestino,
+        cnpjDestinatario,
+        valorMercadoria,
+        pesoTotal,
+        volumes,
+        metroCubico,
+        tipoContribuinte,
+        carriers,
         itemsBreakdown,
         endereco: {
           logradouro: firstItem.enderecoLogradouro || "",

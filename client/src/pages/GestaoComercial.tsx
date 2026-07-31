@@ -218,37 +218,13 @@ export default function GestaoComercial() {
     return names;
   }, [representantesQuery.data]);
 
-  // Determine if current operator is a gestor (for pending orders)
-  const currentOperatorGestor = useMemo(() => {
-    if (!managersQuery.data || !operator?.name) return null;
-    const opNorm = operator.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-    // Try exact match first, then partial match (e.g. "Juvenal" matches "Juvenal Teixeira")
-    const match = managersQuery.data.find(
-      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === opNorm
-    ) || managersQuery.data.find(
-      (m: any) => m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes(opNorm)
-        || opNorm.includes(m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())
-    );
-    return match ? match.name.toUpperCase() : null;
-  }, [managersQuery.data, operator?.name]);
-
-  // Query pending orders count for gestores
-  const pendingOrdersQuery = trpc.salesOrders.listOrders.useQuery(
-    { status: "pendente", gestorName: currentOperatorGestor || undefined },
-    { staleTime: 30 * 1000, enabled: !!currentOperatorGestor && hasGranularAccess("gc.aprovacoesPedidos"), refetchInterval: 60 * 1000 }
-  );
-  // For parent gestores: also count orders pending their approval (aprovado_subgestor)
-  const isParentGestor = useMemo(() => {
-    if (!managersQuery.data || !currentOperatorGestor) return false;
-    const myRecord = managersQuery.data.find((m: any) => m.name?.toUpperCase() === currentOperatorGestor);
-    return myRecord && myRecord.role !== "sub-gestor";
-  }, [managersQuery.data, currentOperatorGestor]);
-  const subgestorPendingQuery = trpc.salesOrders.getOrdersPendingGestorApproval.useQuery(
+  // Query pending orders count for gestores - uses simple count endpoint that includes both
+  // "pendente" (awaiting sub-gestor) and "aprovado_subgestor" (awaiting gestor like Juvenal)
+  const pendingGestorCountQuery = trpc.salesOrders.countPendingGestor.useQuery(
     undefined,
-    { staleTime: 30 * 1000, enabled: !!isParentGestor && hasGranularAccess("gc.aprovacoesPedidos"), refetchInterval: 60 * 1000 }
+    { staleTime: 30 * 1000, enabled: hasGranularAccess("gc.aprovacoesPedidos"), refetchInterval: 30 * 1000 }
   );
-  const subgestorPendingCount = isParentGestor ? (subgestorPendingQuery.data?.length || 0) : 0;
-  const pendingCount = (pendingOrdersQuery.data?.length || 0) + subgestorPendingCount;
+  const pendingCount = pendingGestorCountQuery.data?.pending || 0;
 
   // If Vitória, show nothing (redirect will happen)
   if (shouldRedirectToPedidos) return null;

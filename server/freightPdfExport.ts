@@ -160,7 +160,7 @@ export async function freightPdfExportHandler(req: Request, res: Response) {
     if (rawResults && rawResults.carriers) {
       // New format: { carriers, pedido, cliente, itemsBreakdown, endereco, dimensoes }
       carriers = rawResults.carriers || [];
-      pedido = rawResults.pedido || "";
+      pedido = rawResults.pedidos ? rawResults.pedidos.join(", ") : (rawResults.pedido || "");
       cliente = rawResults.cliente || "";
       itemsBreakdown = rawResults.itemsBreakdown || [];
       endereco = rawResults.endereco;
@@ -196,7 +196,7 @@ export async function freightPdfExportHandler(req: Request, res: Response) {
       .text("Relatório de Cotação de Frete", { align: "center" });
     doc.moveDown(0.2);
     doc.fontSize(11).font("Helvetica-Bold")
-      .text(`PEDIDO Nº ${pedido || "—"}`, { align: "center" });
+      .text(`${pedido.includes(",") ? "PEDIDOS Nº" : "PEDIDO Nº"} ${pedido || "—"}`, { align: "center" });
     doc.moveDown(0.8);
 
     // ========== SECTION 1: DADOS DO PEDIDO ==========
@@ -397,7 +397,7 @@ export async function freightPdfExportHandler(req: Request, res: Response) {
       .text("Relatório de Cotação de Frete", { align: "center" });
     doc.moveDown(0.2);
     doc.fontSize(11).font("Helvetica-Bold")
-      .text(`PEDIDO Nº ${pedido || "—"}`, { align: "center" });
+      .text(`${pedido.includes(",") ? "PEDIDOS Nº" : "PEDIDO Nº"} ${pedido || "—"}`, { align: "center" });
     doc.moveDown(0.8);
 
     sectionHeader(doc, 9, "RANKING FINAL - COTAÇÃO DE FRETE");

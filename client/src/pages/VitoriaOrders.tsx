@@ -279,17 +279,17 @@ export default function VitoriaOrders() {
   const isFernandoViewer = (operator?.name || "").toLowerCase().includes("fernando");
   const isBrunoViewer = (operator?.name || "").toLowerCase().includes("bruno");
   const isJuvenalViewer = operator?.name === "Juvenal";
-  const canSeeAguardandoAprovacao = isGuilhermeViewer || isFernandoViewer || isBrunoViewer || isJuvenalViewer;
+  const canSeeAguardandoAprovacao = isGuilhermeViewer || isFernandoViewer || isBrunoViewer;
 
   // Filter orders based on status flow
-  // "Novos" tab: for Guilherme/Juvenal includes both 'pendente' (aguardando aprovacao) AND 'aprovado' not yet received
+  // "Novos" tab: for Guilherme/Fernando/Bruno includes 'pendente', 'aprovado_subgestor' AND 'aprovado' not yet received
+  // For Juvenal: same as Vitória (only 'aprovado' not received) - his approvals happen in "Aprovações de Pedidos"
   // For Vitória: only 'aprovado' not yet received
   // NOTE: For top gestores (Fernando/Guilherme/Bruno/Juvenal), apply gc.pedidosVenda sub-permission filter.
-  // For Vitória and other operators, do NOT apply sub-permission filter - the backend already controls
-  // visibility via status filtering, and timeline rules determine which orders they should process.
+  const isTopGestorFilter = canSeeAguardandoAprovacao || isJuvenalViewer;
   const filteredOrders = (orders || []).filter((o: any) => {
-    // Sub-permission filter: only for top gestores and Juvenal (who see ALL statuses and need filtering)
-    if (canSeeAguardandoAprovacao) {
+    // Sub-permission filter: only for top gestores (who see ALL statuses and need filtering)
+    if (isTopGestorFilter) {
       if (visibleSellersForOrders.length === 0) return false;
       const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
       if (!visibleSellersForOrders.includes(sellerSlug)) return false;
@@ -299,6 +299,7 @@ export default function VitoriaOrders() {
       if (canSeeAguardandoAprovacao) {
         return (o.status === "pendente" || o.status === "aprovado_subgestor" || (o.status === "aprovado" && !o.vitoriaRecebido));
       }
+      // Juvenal and Vitória: only see approved orders not yet received
       return o.status === "aprovado" && !o.vitoriaRecebido;
     }
     if (statusFilter === "recebido") return o.vitoriaRecebido && !o.vitoriaLancado;
@@ -346,8 +347,8 @@ export default function VitoriaOrders() {
     return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Comissão Alta' };
   };
 
-  // Group filtered orders by seller for Fernando/Guilherme/Bruno view
-  const isTopGestor = isFernandoViewer || isGuilhermeViewer || isBrunoViewer;
+  // Group filtered orders by seller for Fernando/Guilherme/Bruno/Juvenal view
+  const isTopGestor = isFernandoViewer || isGuilhermeViewer || isBrunoViewer || isJuvenalViewer;
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
 
   const sellerGroups = useMemo(() => {
