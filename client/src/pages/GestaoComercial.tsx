@@ -273,7 +273,7 @@ export default function GestaoComercial() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {/* Painel dos Gestores */}
-            {hasGranularAccess("gc.painelGestores") && <Link href="/gestao-comercial/painel-gestores">
+            {getVisiblePeopleForFeature("gc.verGestor").length > 0 && <Link href="/gestao-comercial/painel-gestores">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-200 dark:border-teal-700 shadow-sm p-6 hover:shadow-lg hover:border-teal-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 transition-colors">
@@ -288,7 +288,7 @@ export default function GestaoComercial() {
             </Link>}
 
             {/* Painel dos Vendedores (visão geral - para gestores que administram vendedores) */}
-            {hasGranularAccess("gc.painelVendedores") && <Link href="/vendedor-gestor">
+            {getVisiblePeopleForFeature("gc.verVendedor").length > 0 && <Link href="/vendedor-gestor">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-sm p-6 hover:shadow-lg hover:border-blue-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
@@ -398,7 +398,7 @@ export default function GestaoComercial() {
               </div>
             </Link>}
             {/* Cadastrar Gestores/Sub-gestores */}
-            {hasGranularAccess("gc.painelGestores") && <Link href="/gestao-comercial/gerenciar-gestores">
+            {hasGranularAccess("gc.gerenciarGestores") && <Link href="/gestao-comercial/gerenciar-gestores">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-sm p-6 hover:shadow-lg hover:border-purple-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors">
