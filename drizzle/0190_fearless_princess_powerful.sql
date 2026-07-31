@@ -1,0 +1,1 @@
+ALTER TABLE `sales_orders` ADD `representante3` varchar(200);

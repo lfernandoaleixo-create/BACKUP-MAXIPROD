@@ -4581,15 +4581,35 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                     <OrderDeleteButton orderId={pm.id} onDeleted={() => utils.salesOrders.getSellerOrders.invalidate()} />
                   </div>
                 </div>
+                {/* Approval notification */}
+                {pm.status === "aprovado" && (
+                  <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-[11px] font-bold text-green-700 dark:text-green-400 flex items-center gap-1">
+                      <span>✅</span> Pedido aprovado{pm.aprovadoPor ? ` por ${pm.aprovadoPor}` : ""}
+                    </p>
+                    {pm.dataAprovacao && (
+                      <p className="text-[10px] text-green-600 dark:text-green-300 mt-0.5">
+                        Em {new Date(pm.dataAprovacao).toLocaleDateString("pt-BR")}
+                      </p>
+                    )}
+                    {pm.observacaoAprovacao && (
+                      <p className="text-[10px] text-green-600 dark:text-green-300 mt-0.5">
+                        Obs: {pm.observacaoAprovacao}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {/* Rejection notification */}
-                {pm.status === "rejeitado" && pm.motivoRejeicao && (
+                {pm.status === "rejeitado" && (
                   <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                     <p className="text-[11px] font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
                       <span>⚠️</span> Gestor não autorizou este pedido
                     </p>
-                    <p className="text-[10px] text-red-600 dark:text-red-300 mt-0.5">
-                      Motivo: {pm.motivoRejeicao}
-                    </p>
+                    {pm.motivoRejeicao && (
+                      <p className="text-[10px] text-red-600 dark:text-red-300 mt-0.5">
+                        Motivo: {pm.motivoRejeicao}
+                      </p>
+                    )}
                     <p className="text-[10px] text-red-500 dark:text-red-400 mt-1 font-medium">
                       Por favor, reedite o pedido com os preços corretos.
                     </p>

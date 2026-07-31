@@ -664,6 +664,7 @@ const GRANULAR_GROUPS = [
 
 function OperatorManagementPanel() {
   const utils = trpc.useUtils();
+  const { operator, setGranularPermissions, granularPermissions } = useOperator();
   const { data: operatorList, isLoading } = trpc.settings.getOperators.useQuery();
   const { data: allGranularPerms } = trpc.settings.getAllGranularPermissions.useQuery();
   // Dynamic: load gestors and sellers for dynamic permission keys
@@ -703,6 +704,13 @@ function OperatorManagementPanel() {
       }
     },
     onSettled: () => utils.settings.getAllGranularPermissions.invalidate(),
+    onSuccess: (_data, variables) => {
+      // If the current operator's permissions were changed, update sessionStorage immediately
+      if (operator && variables.operatorId === operator.id) {
+        const updated = { ...granularPermissions, [variables.permissionKey]: variables.enabled };
+        setGranularPermissions(updated);
+      }
+    },
   });
   const createMutation = trpc.settings.createOperator.useMutation({
     onSuccess: () => {
@@ -874,7 +882,17 @@ function OperatorManagementPanel() {
   };
 
   const setBulkGranularMutation = trpc.settings.setBulkGranularPermissions.useMutation({
-    onSuccess: () => utils.settings.getAllGranularPermissions.invalidate(),
+    onSuccess: (_data, variables) => {
+      utils.settings.getAllGranularPermissions.invalidate();
+      // If the current operator's permissions were bulk-changed, update sessionStorage
+      if (operator && variables.operatorId === operator.id) {
+        const updated = { ...granularPermissions };
+        for (const perm of variables.permissions) {
+          updated[perm.permissionKey] = perm.enabled;
+        }
+        setGranularPermissions(updated);
+      }
+    },
   });
 
   // Map parent tab field to granular permission prefix

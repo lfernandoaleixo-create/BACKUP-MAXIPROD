@@ -339,20 +339,24 @@ export const salesMetricsRouter = router({
         }
       }
 
-      // Aggregate by vendedor (same value logic as Vendas tab)
+      // Aggregate by vendedorReal (who actually sold - Rep3 || Rep2 || Rep1)
+      // Rep1=Gestor, Rep2=Sub-gestor, Rep3=Vendedor
+      // vendedorReal resolves to the actual seller based on the representative hierarchy
       const vendedorStats: Record<string, { totalVendas: number; pedidos: Set<string>; clientes: Set<string>; vendedoresReais: Set<string> }> = {};
       for (const [pedido, data] of Array.from(pedidoMap.entries())) {
         // Use valorTotalPedido if available, otherwise sum of items (same as Vendas tab)
         const valor = data.valorTotalPedido || data.somaItens;
-        if (!vendedorStats[data.vendedor]) {
-          vendedorStats[data.vendedor] = { totalVendas: 0, pedidos: new Set(), clientes: new Set(), vendedoresReais: new Set() };
+        // Group by vendedorReal (actual seller) instead of representante (gestor)
+        const groupKey = data.vendedorReal || data.vendedor || "Não identificado";
+        if (!vendedorStats[groupKey]) {
+          vendedorStats[groupKey] = { totalVendas: 0, pedidos: new Set(), clientes: new Set(), vendedoresReais: new Set() };
         }
-        vendedorStats[data.vendedor].totalVendas += valor;
-        vendedorStats[data.vendedor].pedidos.add(pedido);
-        vendedorStats[data.vendedor].clientes.add(data.cliente);
-        // Track the real seller (before Grupo Fox override)
-        if (data.vendedorReal && data.vendedorReal !== "Grupo Fox") {
-          vendedorStats[data.vendedor].vendedoresReais.add(data.vendedorReal);
+        vendedorStats[groupKey].totalVendas += valor;
+        vendedorStats[groupKey].pedidos.add(pedido);
+        vendedorStats[groupKey].clientes.add(data.cliente);
+        // Track the gestor (Rep1) for reference
+        if (data.vendedor && data.vendedor !== groupKey && data.vendedor !== "Grupo Fox") {
+          vendedorStats[groupKey].vendedoresReais.add(data.vendedor);
         }
       }
 
@@ -464,9 +468,12 @@ export const salesMetricsRouter = router({
       }
 
       // Filter for this vendedor and group by client
+      // Match by vendedorReal (actual seller: Rep3 || Rep2 || Rep1) OR vendedor (Rep1/gestor)
       const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string; vendedoresReais: Set<string>; estadosConfiguraveis: Set<string>; segmentos: Set<string>; byEstado: Record<string, number>; bySegmento: Record<string, number> }> = {};
       for (const [_, data] of Array.from(pedidoMap.entries())) {
-        if (data.vendedor.toUpperCase() !== input.vendedor.toUpperCase()) continue;
+        const inputName = input.vendedor.toUpperCase();
+        // Match if vendedorReal (actual seller) matches OR vendedor (Rep1) matches
+        if (data.vendedorReal.toUpperCase() !== inputName && data.vendedor.toUpperCase() !== inputName) continue;
         const valor = data.valorTotalPedido || data.somaItens;
         if (!clienteMap[data.cliente]) {
           clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "", vendedoresReais: new Set(), estadosConfiguraveis: new Set(), segmentos: new Set(), byEstado: {}, bySegmento: {} };
@@ -1352,6 +1359,9 @@ export const salesMetricsRouter = router({
       const vendedorName = input.vendedor.toUpperCase();
 
       // Buscar todos os itens de pedido do vendedor
+      // Busca em vendedorReal (quem realmente vendeu), representante, e representante3
+      // Rep1=Gestor, Rep2=Sub-gestor, Rep3=Vendedor
+      // vendedorReal = Rep3 se preenchido, senão Rep2, senão Rep1
       const allItems = await db.select({
         pedido: salesOrders.pedido,
         cliente: salesOrders.cliente,
@@ -1373,7 +1383,7 @@ export const salesMetricsRouter = router({
         unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
       }).from(salesOrders)
         .where(
-          sql`UPPER(${salesOrders.representante}) LIKE ${`%${vendedorName}%`}`
+          sql`(UPPER(${salesOrders.vendedorReal}) LIKE ${`%${vendedorName}%`} OR UPPER(${salesOrders.representante}) LIKE ${`%${vendedorName}%`} OR UPPER(COALESCE(${salesOrders.representante3}, '')) LIKE ${`%${vendedorName}%`})`
         )
         .orderBy(desc(salesOrders.dataEmissao));
 

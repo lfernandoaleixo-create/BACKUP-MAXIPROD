@@ -6661,3 +6661,29 @@
 - [x] Fix aba Aprovação de Pedidos - pedidos aprovado_subgestor agora aparecem para Juvenal (position-based filter corrigido)
 - [x] Simulação de Frete: suporte a múltiplos pedidos (adicionar mais de um número de pedido para simular frete combinado)
 - [x] Remover aba/seção Inadimplência da página dos vendedores
+- [x] Métrica de Vendas: implementar lógica de representantes Maxiprod (Rep1=Gestor, Rep2=Sub-gestor, Rep3=Vendedor)
+  - Backend: campo representante3 adicionado ao schema, maxiprodGraphQL.ts busca representanteOuVendedor3
+  - resolveRepresentante: vendedorReal = Rep3 || Rep2 || Rep1
+  - salesMetricsRouter: getPedidosByVendedor busca vendedorReal+representante+representante3; getVendedorRanking agrupa por vendedorReal; getClientesByVendedor busca por vendedorReal
+- [x] Métrica de Vendas: se só Rep1 preenchido → gestor fez a venda; Rep1+Rep2 → sub-gestor vendeu; Rep3 → vendedor vendeu
+- [x] Cadastro de Clientes: puxar clientes cadastrados no Maxiprod por cada vendedor (não só do app)
+  - CadastroClientes.tsx reescrito com duas abas: "Cadastrados no App" e "Clientes Maxiprod"
+- [x] Cadastro de Clientes: organizar visualização por vendedor (ex: "Clientes cadastrados pelo Patrick", "pelo Rafael")
+  - Aba "Clientes Maxiprod" organizada por vendedor com MaxiprodSellerSection (lazy-loaded via getClientesByVendedor)
+  - Aba "Cadastrados no App" agrupada por vendedor com filtro de ticagem
+- [x] Fix fluxo vendedor: vendedor NÃO aprova nem "recebe" pedido - remover botão "Recebi esse pedido" do Rafael
+  - VitoriaOrders.tsx: isVitoriaViewer check - apenas Vitória vê botões "Recebi" e "Lançar"
+  - Non-Vitória viewers veem mensagens informativas ("Pedido aprovado — aguardando processamento")
+- [x] Fix fluxo vendedor: pedidos APROVADOS devem aparecer pro vendedor com check verde + observação
+  - VendedorDetalhe.tsx: SellerOrdersView mostra notificação verde com check para pedidos aprovados
+- [x] Fix fluxo vendedor: pedidos RECUSADOS devem voltar pro vendedor com motivo da recusa
+  - VendedorDetalhe.tsx: SellerOrdersView mostra motivo da rejeição para pedidos recusados
+- [x] Fix fluxo vendedor: vendedor deve ver lista de todos os seus pedidos aceitos e recusados
+  - SellerOrdersView mostra todos os pedidos do vendedor com status visual
+- [x] Vendedor App: puxar histórico de pedidos do Maxiprod (não só pedidos feitos pelo app)
+  - SellerOrdersView busca pedidos do Maxiprod via getPedidosByVendedor (vendedorReal)
+- [x] Vendedor App: puxar clientes cadastrados no Maxiprod (não só do app)
+  - SellerClientsView busca clientes do Maxiprod via getClientesByVendedor (vendedorReal)
+- [x] Vendedor App: métrica de vendas deve refletir TODAS as vendas do Maxiprod mesmo sem vendas pelo app
+  - SellerSalesView usa vendedorReal para métricas - Patrick sem vendas no app vê todas do Maxiprod
+- [x] Fix ticagem imediata: SettingsPage.tsx atualiza sessionStorage do operador atual instantaneamente quando suas permissões são alteradas (onSuccess em setGranularMutation e setBulkGranularMutation)

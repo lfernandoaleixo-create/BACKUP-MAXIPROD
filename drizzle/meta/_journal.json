@@ -1331,6 +1331,13 @@
       "when": 1785373613641,
       "tag": "0189_lush_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "5",
+      "when": 1785509886237,
+      "tag": "0190_fearless_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

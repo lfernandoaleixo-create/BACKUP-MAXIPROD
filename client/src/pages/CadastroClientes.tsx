@@ -1,14 +1,14 @@
 /**
- * Cadastro de Clientes - Painel dedicado para clientes cadastrados pelos vendedores (sem pedido)
- * Separado do painel de Pedidos de Vendas para cada um ter sua função específica
+ * Cadastro de Clientes - Painel dedicado para clientes cadastrados pelos vendedores
+ * Mostra clientes do App (pendentes de exportação) E clientes do Maxiprod, organizados por vendedor
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import {
-  User, MapPin, ArrowLeft, RefreshCw, ChevronDown,
-  Download, FileSpreadsheet, UserPlus
+  User, MapPin, ArrowLeft, RefreshCw, ChevronDown, ChevronRight,
+  Download, FileSpreadsheet, UserPlus, Users, Database, Search
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -16,21 +16,52 @@ import { toast } from "sonner";
 export default function CadastroClientes() {
   const { operator, getVisiblePeopleForFeature } = useOperator();
   const [exportingClientId, setExportingClientId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"app" | "maxiprod">("app");
+  const [searchTerm, setSearchTerm] = useState("");
   const visibleSellers = getVisiblePeopleForFeature("gc.cadastroClientes");
 
+  // App clients (pending export)
   const { data: rawClients, isLoading, refetch: refetchClients } = trpc.salesOrders.getNewClientsForOperator.useQuery(
     undefined,
     { staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   );
-  // Filter clients by visible sellers - STRICT: only show sellers that are explicitly ticked
-  const newClients = rawClients?.filter((c: any) => {
-    if (visibleSellers.length === 0) return false; // No sub-perms ticked = show nothing
-    const sellerSlug = (c.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    return visibleSellers.includes(sellerSlug);
-  });
+
+  // Seller list
+  const { data: sellerPerms } = trpc.sales.listSellerPermissions.useQuery(undefined, { staleTime: 60 * 1000 });
+
   const exportVendorClientMutation = trpc.salesOrders.exportVendorClientMaxiprod.useMutation();
   const markExportedMutation = trpc.salesOrders.markClientExported.useMutation();
   const utils = trpc.useUtils();
+
+  // Filter clients by visible sellers
+  const newClients = rawClients?.filter((c: any) => {
+    if (visibleSellers.length === 0) return false;
+    const sellerSlug = (c.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    return visibleSellers.includes(sellerSlug);
+  });
+
+  // Group app clients by seller
+  const clientsBySeller = useMemo(() => {
+    if (!newClients) return {};
+    const grouped: Record<string, any[]> = {};
+    for (const c of newClients) {
+      const seller = c.sellerName || "Não identificado";
+      if (!grouped[seller]) grouped[seller] = [];
+      grouped[seller].push(c);
+    }
+    return grouped;
+  }, [newClients]);
+
+  // Get visible seller names for Maxiprod tab
+  const visibleSellerNames = useMemo(() => {
+    if (!sellerPerms || visibleSellers.length === 0) return [];
+    return sellerPerms
+      .filter((sp: any) => {
+        const slug = (sp.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        return visibleSellers.includes(slug);
+      })
+      .map((sp: any) => sp.sellerName);
+  }, [sellerPerms, visibleSellers]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -46,7 +77,7 @@ export default function CadastroClientes() {
             </Link>
             <div>
               <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">Cadastro de Clientes</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Clientes cadastrados pelos vendedores que precisam ser exportados para o Maxiprod</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Clientes cadastrados pelos vendedores (App + Maxiprod)</p>
             </div>
           </div>
           <button
@@ -58,46 +89,257 @@ export default function CadastroClientes() {
           </button>
         </div>
 
-        {/* Client count */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 shadow-sm p-4">
-          <div className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
-              {newClients?.length || 0} cliente{(newClients?.length || 0) !== 1 ? "s" : ""} cadastrado{(newClients?.length || 0) !== 1 ? "s" : ""}
-            </span>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("app")}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+              activeTab === "app"
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            <UserPlus className="w-4 h-4" />
+            Cadastrados no App ({newClients?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab("maxiprod")}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+              activeTab === "maxiprod"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            <Database className="w-4 h-4" />
+            Clientes Maxiprod
+          </button>
         </div>
 
-        {/* Client list */}
-        {isLoading ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
-            <RefreshCw className="w-5 h-5 text-teal-500 animate-spin mx-auto mb-2" />
-            <p className="text-sm text-slate-500">Carregando clientes...</p>
-          </div>
-        ) : !newClients || newClients.length === 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
-            <UserPlus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm text-slate-500">Nenhum cliente cadastrado aguardando exportação</p>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 shadow-sm overflow-hidden">
-            <div className="divide-y divide-emerald-100 dark:divide-emerald-800">
-              {newClients.map((client: any) => (
-                <NewClientExpandableRow
-                  key={client.id}
-                  client={client}
-                  exportingClientId={exportingClientId}
-                  setExportingClientId={setExportingClientId}
-                  exportVendorClientMutation={exportVendorClientMutation}
-                  markExportedMutation={markExportedMutation}
-                  refetchClients={refetchClients}
-                  utils={utils}
-                />
-              ))}
+        {/* App Tab - grouped by seller */}
+        {activeTab === "app" && (
+          <>
+            {isLoading ? (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+                <RefreshCw className="w-5 h-5 text-teal-500 animate-spin mx-auto mb-2" />
+                <p className="text-sm text-slate-500">Carregando clientes...</p>
+              </div>
+            ) : !newClients || newClients.length === 0 ? (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+                <UserPlus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">Nenhum cliente cadastrado aguardando exportação</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(clientsBySeller).map(([sellerName, clients]) => (
+                  <SellerGroupCard
+                    key={sellerName}
+                    sellerName={sellerName}
+                    clients={clients}
+                    exportingClientId={exportingClientId}
+                    setExportingClientId={setExportingClientId}
+                    exportVendorClientMutation={exportVendorClientMutation}
+                    markExportedMutation={markExportedMutation}
+                    refetchClients={refetchClients}
+                    utils={utils}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Maxiprod Tab - clients from Maxiprod organized by seller */}
+        {activeTab === "maxiprod" && (
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar cliente por nome..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
+
+            {visibleSellerNames.length === 0 ? (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+                <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">Nenhum vendedor configurado</p>
+              </div>
+            ) : (
+              visibleSellerNames.map((sellerName: string) => (
+                <MaxiprodSellerSection key={sellerName} sellerName={sellerName} searchTerm={searchTerm} />
+              ))
+            )}
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+/** Group card for app-registered clients by seller */
+function SellerGroupCard({ sellerName, clients, exportingClientId, setExportingClientId, exportVendorClientMutation, markExportedMutation, refetchClients, utils }: any) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 shadow-sm overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-4 py-3 flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-emerald-600" />
+          <span className="text-sm font-bold text-emerald-800 dark:text-emerald-200">{sellerName}</span>
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
+            {clients.length} cliente{clients.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-emerald-500 transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
+      {expanded && (
+        <div className="divide-y divide-emerald-100 dark:divide-emerald-800">
+          {clients.map((client: any) => (
+            <NewClientExpandableRow
+              key={client.id}
+              client={client}
+              exportingClientId={exportingClientId}
+              setExportingClientId={setExportingClientId}
+              exportVendorClientMutation={exportVendorClientMutation}
+              markExportedMutation={markExportedMutation}
+              refetchClients={refetchClients}
+              utils={utils}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Maxiprod clients section for a single seller */
+function MaxiprodSellerSection({ sellerName, searchTerm }: { sellerName: string; searchTerm: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: clientes, isLoading } = trpc.salesMetrics.getClientesByVendedor.useQuery(
+    { vendedor: sellerName },
+    { staleTime: 5 * 60 * 1000, enabled: expanded }
+  );
+
+  const filteredClientes = useMemo(() => {
+    if (!clientes) return [];
+    if (!searchTerm) return clientes;
+    const term = searchTerm.toUpperCase();
+    return clientes.filter((c: any) =>
+      (c.cliente || "").toUpperCase().includes(term) ||
+      (c.razaoSocial || "").toUpperCase().includes(term)
+    );
+  }, [clientes, searchTerm]);
+
+  const totalVendas = filteredClientes.reduce((sum: number, c: any) => sum + (c.totalVendas || 0), 0);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-700 shadow-sm overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-4 py-3 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-blue-600" />
+          <span className="text-sm font-bold text-blue-800 dark:text-blue-200">{sellerName}</span>
+          {expanded && clientes && (
+            <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+              {filteredClientes.length} cliente{filteredClientes.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {expanded && clientes && (
+            <span className="text-xs font-medium text-blue-600">
+              R$ {totalVendas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+          )}
+          {expanded ? (
+            <ChevronDown className="w-4 h-4 text-blue-500" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-blue-500" />
+          )}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-4 py-3">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <RefreshCw className="w-4 h-4 text-blue-500 animate-spin mr-2" />
+              <span className="text-xs text-slate-500">Carregando clientes do Maxiprod...</span>
+            </div>
+          ) : filteredClientes.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-4">Nenhum cliente encontrado no Maxiprod</p>
+          ) : (
+            <div className="space-y-1">
+              {filteredClientes.map((c: any, i: number) => (
+                <MaxiprodClientRow key={`${c.cliente}-${i}`} client={c} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Single Maxiprod client row */
+function MaxiprodClientRow({ client }: { client: any }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border border-slate-100 dark:border-slate-700 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{client.cliente}</p>
+          <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500 flex-wrap">
+            {client.uf && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{client.cidade ? `${client.cidade}/${client.uf}` : client.uf}</span>}
+            {client.segmento && <span>{client.segmento}</span>}
+            <span>{client.qtdPedidos} pedido{client.qtdPedidos !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-xs font-bold text-emerald-600">
+            R$ {(client.totalVendas || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-3 pb-2 border-t border-slate-100 dark:border-slate-700 pt-2">
+          <div className="grid grid-cols-2 gap-1 text-[10px]">
+            {client.razaoSocial && client.razaoSocial !== client.cliente && (
+              <div className="col-span-2"><span className="text-slate-400">Razão Social:</span> <span className="text-slate-700 dark:text-slate-200">{client.razaoSocial}</span></div>
+            )}
+            {client.telefone && (
+              <div><span className="text-slate-400">Tel:</span> <span className="text-slate-700 dark:text-slate-200">{client.telefone}</span></div>
+            )}
+            {client.email && (
+              <div><span className="text-slate-400">Email:</span> <span className="text-slate-700 dark:text-slate-200">{client.email}</span></div>
+            )}
+            {client.endereco && (
+              <div className="col-span-2"><span className="text-slate-400">Endereço:</span> <span className="text-slate-700 dark:text-slate-200">{client.endereco}</span></div>
+            )}
+            {client.primeiroPedido && (
+              <div><span className="text-slate-400">1º Pedido:</span> <span className="text-slate-700 dark:text-slate-200">{new Date(client.primeiroPedido).toLocaleDateString("pt-BR")}</span></div>
+            )}
+            {client.ultimoPedido && (
+              <div><span className="text-slate-400">Último:</span> <span className="text-slate-700 dark:text-slate-200">{new Date(client.ultimoPedido).toLocaleDateString("pt-BR")}</span></div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -123,7 +365,6 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
             <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{client.razaoSocial}</p>
             <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500 flex-wrap">
               <span>{client.cnpjCpf}</span>
-              <span className="flex items-center gap-1"><User className="w-3 h-3" />{client.sellerName}</span>
               {client.cidade && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{client.cidade}/{client.uf}</span>}
               <span>{new Date(client.createdAt).toLocaleDateString("pt-BR")}</span>
             </div>
@@ -249,7 +490,6 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
 
           {/* Action buttons */}
           <div className="mt-3 flex gap-2">
-            {/* PDF Download button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -281,14 +521,9 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
                     ${client.formaCobranca ? '<div class="field"><span class="label">Forma Cobrança:</span> ' + client.formaCobranca + '</div>' : ''}
                     ${client.condicaoPagamento ? '<div class="field"><span class="label">Cond. Pagamento:</span> ' + client.condicaoPagamento + '</div>' : ''}
                     ${client.regiao ? '<div class="field"><span class="label">Região:</span> ' + client.regiao + '</div>' : ''}
-                    ${client.perfil ? '<div class="field"><span class="label">Perfil:</span> ' + client.perfil + '</div>' : ''}
-                    ${client.produtos ? '<div class="field" style="grid-column:span 2"><span class="label">Produtos:</span> ' + client.produtos + '</div>' : ''}
-                    ${client.probabilidadeNegocio ? '<div class="field"><span class="label">Probabilidade:</span> ' + client.probabilidadeNegocio + '</div>' : ''}
-                    ${client.tamanho ? '<div class="field"><span class="label">Tamanho:</span> ' + client.tamanho + '</div>' : ''}
-                    ${client.fornecedorAtual ? '<div class="field"><span class="label">Fornecedor Atual:</span> ' + client.fornecedorAtual + '</div>' : ''}
                     </div>
-                    ${client.possuiRedespacho === 1 ? '<h2>REDESPACHO</h2><div class="grid">' + (client.redespachoCnpj ? '<div class="field"><span class="label">CNPJ:</span> ' + client.redespachoCnpj + '</div>' : '') + (client.redespachoRazaoSocial ? '<div class="field"><span class="label">Razão:</span> ' + client.redespachoRazaoSocial + '</div>' : '') + (client.redespachoCep ? '<div class="field"><span class="label">CEP:</span> ' + client.redespachoCep + '</div>' : '') + (enderecoRedespacho ? '<div class="field" style="grid-column:span 2"><span class="label">Endereço:</span> ' + enderecoRedespacho + '</div>' : '') + (client.redespachoTelefone ? '<div class="field"><span class="label">Tel:</span> ' + client.redespachoTelefone + '</div>' : '') + '</div>' : ''}
-                    ${client.enderecoEntregaMesmo === 0 ? '<h2>ENDEREÇO DE ENTREGA</h2><div class="grid">' + (client.entregaCep ? '<div class="field"><span class="label">CEP:</span> ' + client.entregaCep + '</div>' : '') + (enderecoEntrega ? '<div class="field" style="grid-column:span 2"><span class="label">Endereço:</span> ' + enderecoEntrega + '</div>' : '') + (client.entregaTelefone ? '<div class="field"><span class="label">Tel:</span> ' + client.entregaTelefone + '</div>' : '') + '</div>' : ''}
+                    ${client.possuiRedespacho === 1 ? '<h2>REDESPACHO</h2><div class="grid">' + (client.redespachoCnpj ? '<div class="field"><span class="label">CNPJ:</span> ' + client.redespachoCnpj + '</div>' : '') + (client.redespachoRazaoSocial ? '<div class="field"><span class="label">Razão:</span> ' + client.redespachoRazaoSocial + '</div>' : '') + '</div>' : ''}
+                    ${client.enderecoEntregaMesmo === 0 ? '<h2>ENDEREÇO DE ENTREGA</h2><div class="grid">' + (client.entregaCep ? '<div class="field"><span class="label">CEP:</span> ' + client.entregaCep + '</div>' : '') + (enderecoEntrega ? '<div class="field" style="grid-column:span 2"><span class="label">Endereço:</span> ' + enderecoEntrega + '</div>' : '') + '</div>' : ''}
                     ${client.observacoes ? '<h2>OBSERVAÇÕES</h2><p>' + client.observacoes + '</p>' : ''}
                     <hr style="margin-top:20px">
                     <p style="color:#888;font-size:10px">Vendedor: ${client.sellerName || 'N/A'} | Cadastrado em: ${new Date(client.createdAt).toLocaleDateString('pt-BR')}</p>
@@ -304,7 +539,6 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
               Baixar PDF
             </button>
 
-            {/* Export Maxiprod button */}
             <button
               onClick={async (e) => {
                 e.stopPropagation();

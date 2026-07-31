@@ -279,6 +279,7 @@ export default function VitoriaOrders() {
   const isFernandoViewer = (operator?.name || "").toLowerCase().includes("fernando");
   const isBrunoViewer = (operator?.name || "").toLowerCase().includes("bruno");
   const isJuvenalViewer = operator?.name === "Juvenal";
+  const isVitoriaViewer = operator?.name === "Vitoria" || operator?.name === "Vitória";
   const canSeeAguardandoAprovacao = isGuilhermeViewer || isFernandoViewer || isBrunoViewer;
 
   // Filter orders based on status flow
@@ -1631,8 +1632,8 @@ export default function VitoriaOrders() {
                         </div>
                       )}
 
-                      {/* ACTION BUTTONS - Status flow */}
-                      {isNovo && (
+                      {/* ACTION BUTTONS - Status flow (only Vitória can mark as received/launched) */}
+                      {isNovo && isVitoriaViewer && (
                         <div className="mt-4">
                           <button
                             onClick={() => handleMarkRecebido(order.id)}
@@ -1644,8 +1645,19 @@ export default function VitoriaOrders() {
                           </button>
                         </div>
                       )}
+                      {/* For gestores/sellers viewing approved orders: show green confirmation */}
+                      {isNovo && !isVitoriaViewer && (
+                        <div className="mt-3">
+                          <div className="p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <p className="text-[10px] text-green-700 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Pedido aprovado — aguardando processamento
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
-                      {isRecebido && (
+                      {isRecebido && isVitoriaViewer && (
                         <div className="mt-4">
                           <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-3">
                             <p className="text-[10px] text-blue-700 dark:text-blue-400">
@@ -1661,6 +1673,16 @@ export default function VitoriaOrders() {
                             <CheckCheck className="w-4 h-4" />
                             {markLancadoMutation.isPending ? "Marcando..." : "✓ OK — Já lancei no Maxiprod"}
                           </button>
+                        </div>
+                      )}
+                      {isRecebido && !isVitoriaViewer && (
+                        <div className="mt-3">
+                          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p className="text-[10px] text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Pedido recebido — aguardando lançamento no Maxiprod
+                            </p>
+                          </div>
                         </div>
                       )}
 

@@ -361,6 +361,7 @@ async function fetchOpenSalesOrderItems(): Promise<any[]> {
           ultimaAlteracaoUsuario { nome }
           representanteOuVendedor1 { nomeFantasia razaoSocial }
           representanteOuVendedor2 { nomeFantasia razaoSocial }
+          representanteOuVendedor3 { nomeFantasia razaoSocial }
           responsavelUsuario { nome }
         }
       }
@@ -436,6 +437,7 @@ async function fetchAllSalesOrderItems(): Promise<any[]> {
           ultimaAlteracaoUsuario { nome }
           representanteOuVendedor1 { nomeFantasia razaoSocial }
           representanteOuVendedor2 { nomeFantasia razaoSocial }
+          representanteOuVendedor3 { nomeFantasia razaoSocial }
           responsavelUsuario { nome }
         }
       }
@@ -762,40 +764,46 @@ export function normalizeVendedorName(name: string): string {
  * Returns { representante, vendedorReal } where vendedorReal is the actual seller
  * (useful when representante is overridden to "Grupo Fox")
  */
-function resolveRepresentante(pv: any): { representante: string; vendedorReal: string; representante2: string } {
-  // ═══ REGRA REPRESENTANTE 2 (a partir de 20/07/2026) ═══
-  // Se o pedido tiver representanteOuVendedor2 preenchido, ELE é o vendedor real
-  // e a comissão vai para ele. O representante1 é apenas o "cadastro" original.
+function resolveRepresentante(pv: any): { representante: string; vendedorReal: string; representante2: string; representante3: string } {
+  // ═══ REGRA REPRESENTANTES (atualizado 31/07/2026) ═══
+  // Rep1 = Gestor | Rep2 = Sub-gestor | Rep3 = Vendedor
+  // Se só Rep1 preenchido → gestor fez a venda ele mesmo
+  // Se Rep1 + Rep2 → sub-gestor fez a venda
+  // Se Rep1 + Rep2 + Rep3 → vendedor fez a venda (comissão dele)
+  const rep1Nome = pv.representanteOuVendedor1?.nomeFantasia 
+    || pv.representanteOuVendedor1?.razaoSocial 
+    || "";
   const rep2Nome = pv.representanteOuVendedor2?.nomeFantasia 
     || pv.representanteOuVendedor2?.razaoSocial 
     || "";
-  const representante2 = normalizeVendedorName(rep2Nome);
-
-  // Resolve representante1 (seller original)
-  let vendedorOriginal = pv.representanteOuVendedor1?.nomeFantasia 
-    || pv.representanteOuVendedor1?.razaoSocial 
+  const rep3Nome = pv.representanteOuVendedor3?.nomeFantasia 
+    || pv.representanteOuVendedor3?.razaoSocial 
     || "";
-  
-  if (!vendedorOriginal) {
+
+  const representante1 = normalizeVendedorName(rep1Nome);
+  const representante2 = normalizeVendedorName(rep2Nome);
+  const representante3 = normalizeVendedorName(rep3Nome);
+
+  // Resolve representante1 fallback to responsavelUsuario
+  let gestor = representante1;
+  if (!gestor) {
     const responsavel = pv.responsavelUsuario?.nome || "";
     if (responsavel && !isEditorNaoVendedorSync(responsavel)) {
-      vendedorOriginal = responsavel;
+      gestor = normalizeVendedorName(responsavel);
     }
   }
 
-  vendedorOriginal = normalizeVendedorName(vendedorOriginal);
-
-  // Se representante2 está preenchido, ele é o vendedor real
-  const vendedorReal = representante2 || vendedorOriginal;
+  // Quem fez a venda: Rep3 se preenchido, senão Rep2, senão Rep1 (gestor)
+  const vendedorReal = representante3 || representante2 || gestor;
 
   const clienteNome = pv.cliente?.nomeFantasia || pv.cliente?.razaoSocial || "";
   
   // Override manual: clientes Johnson e Keure → "Grupo Fox"
   if (clienteNome && isClienteGrupoFoxSync(clienteNome)) {
-    return { representante: "Grupo Fox", vendedorReal, representante2 };
+    return { representante: "Grupo Fox", vendedorReal, representante2, representante3 };
   }
   
-  return { representante: vendedorReal, vendedorReal, representante2 };
+  return { representante: vendedorReal, vendedorReal, representante2, representante3 };
 }
 
 /**
@@ -826,8 +834,8 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       CANCELADO: "Cancelado",
     };
 
-    // Resolve representante with fallback logic (includes representante2 rule)
-    const { representante, vendedorReal, representante2 } = resolveRepresentante(pv);
+    // Resolve representante with fallback logic (Rep1=Gestor, Rep2=Sub-gestor, Rep3=Vendedor)
+    const { representante, vendedorReal, representante2, representante3 } = resolveRepresentante(pv);
     
     // Resolve transportadora with razaoSocial fallback
     const transportadoraNome = pv.transportadora?.nomeFantasia 
@@ -856,6 +864,7 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       representante: representante,
       vendedorReal: vendedorReal || null,
       representante2: representante2 || null,
+      representante3: representante3 || null,
       segmento: cliente.crmSegmento?.descricao || "",
       regiao: uf || "",
       // Novos campos
