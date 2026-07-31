@@ -308,8 +308,8 @@ export default function GestaoComercial() {
             })()}
 
             {/* Aprovações de Pedidos - for operators with approval permission */}
-            {gestorNameForHub && hasGranularAccess("gc.aprovacoesPedidos") && (
-              <Link href={`/gestao-comercial/aprovacoes?gestor=${encodeURIComponent(gestorNameForHub)}`}>
+            {hasGranularAccess("gc.aprovacoesPedidos") && (
+              <Link href={`/gestao-comercial/aprovacoes${gestorNameForHub ? `?gestor=${encodeURIComponent(gestorNameForHub)}` : ''}`}>
                 <div className={`rounded-xl border-2 shadow-sm p-6 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden ${
                   pendingCount > 0
                     ? "border-red-400 dark:border-red-500 shadow-lg shadow-red-200 dark:shadow-red-900/40 animate-[blink-approval_2s_ease-in-out_infinite]"

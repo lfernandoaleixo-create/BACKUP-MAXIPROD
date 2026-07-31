@@ -73,6 +73,29 @@ async function verifyBillingPassword(password: string): Promise<boolean> {
   return password === adminPwd;
 }
 
+/**
+ * Server-side granular permission enforcement.
+ * Checks if the operator (identified by password) has the specified permission.
+ * Returns the operator row if found, or null if password matches admin/billing.
+ * Throws an error if the operator exists but lacks the permission.
+ * Default: DENY if permission not found in DB.
+ */
+async function enforceGranularPermission(password: string, permissionKey: string, actionLabel: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const opRows = await db.select().from(operators).where(and(eq(operators.password, password), eq(operators.active, true))).limit(1);
+  if (opRows.length === 0) return; // Not an operator (admin/billing password) - allow
+  const permRows = await db.select().from(operatorGranularPermissions)
+    .where(and(
+      eq(operatorGranularPermissions.operatorId, opRows[0].id),
+      eq(operatorGranularPermissions.permissionKey, permissionKey)
+    )).limit(1);
+  const isAllowed = permRows.length > 0 && permRows[0].enabled === true;
+  if (!isAllowed) {
+    throw new Error(`Operador ${opRows[0].name} n\u00e3o tem permiss\u00e3o para ${actionLabel}`);
+  }
+}
+
 const GRAPHQL_URL = "https://api.maxiprod.com.br/graphql/";
 
 /**
@@ -977,12 +1000,12 @@ export const billingRouter = router({
       pedidos: z.array(z.string()).min(1).max(50),
     }))
     .mutation(async ({ input }) => {
-      const isValid = await verifyBillingPassword(input.password);
+            const isValid = await verifyBillingPassword(input.password);
       if (!isValid) return { success: false, error: "Senha incorreta" };
-
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.autorizarFaturamento", "Autorizar Faturamento");
       const db = await getDb();
       if (!db) return { success: false, error: "Database not available" };
-
       // Insert each pedido (ignore duplicates)
       for (const pedido of input.pedidos) {
         try {
@@ -1003,7 +1026,7 @@ export const billingRouter = router({
   /**
    * Remove authorization from one or more pedidos (requires password)
    */
-  deauthorizeOrders: publicProcedure
+    deauthorizeOrders: publicProcedure
     .input(z.object({
       password: z.string(),
       pedidos: z.array(z.string()).min(1).max(50),
@@ -1011,7 +1034,8 @@ export const billingRouter = router({
     .mutation(async ({ input }) => {
       const isValid = await verifyBillingPassword(input.password);
       if (!isValid) return { success: false, error: "Senha incorreta" };
-
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.desautorizarFaturamento", "Desautorizar Faturamento");
       const db = await getDb();
       if (!db) return { success: false, error: "Database not available" };
 
@@ -1377,7 +1401,7 @@ export const billingRouter = router({
   /**
    * Save or update a production note for a pedido (requires password)
    */
-  saveProductionNote: publicProcedure
+    saveProductionNote: publicProcedure
     .input(z.object({
       password: z.string(),
       pedido: z.string(),
@@ -1386,7 +1410,8 @@ export const billingRouter = router({
     .mutation(async ({ input }) => {
       const isValid = await verifyBillingPassword(input.password);
       if (!isValid) return { success: false, error: "Senha incorreta" };
-
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.notaProducao", "Nota de Produ\u00e7\u00e3o");
       const db = await getDb();
       if (!db) return { success: false, error: "Database not available" };
 
@@ -1586,13 +1611,13 @@ export const billingRouter = router({
       pedido: z.string(),
       status: z.string().max(50),
     }))
-    .mutation(async ({ input }) => {
+        .mutation(async ({ input }) => {
       const isValid = await verifyBillingPassword(input.password);
       if (!isValid) return { success: false, error: "Senha incorreta" };
-
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.statusProducao", "Status de Produ\u00e7\u00e3o");
       const db = await getDb();
       if (!db) return { success: false, error: "Database not available" };
-
       if (input.status.trim() === "") {
         // Delete status if empty
         await db.delete(productionStatus).where(eq(productionStatus.pedido, input.pedido));
@@ -1654,25 +1679,13 @@ export const billingRouter = router({
         throw new Error("Senha incorreta");
       }
 
-      // Verify operator has the specific granular permission for this action
+      // Server-side granular permission enforcement (default: deny)
       const permKey = input.field === "pedidoColeta" ? "fat.pedidoColeta" : "fat.coletado";
-      const opRows = await db.select().from(operators).where(and(eq(operators.password, input.password), eq(operators.active, true))).limit(1);
-      if (opRows.length > 0) {
-        // Check if permission exists and is explicitly disabled
-        const permRows = await db.select().from(operatorGranularPermissions)
-          .where(and(
-            eq(operatorGranularPermissions.operatorId, opRows[0].id),
-            eq(operatorGranularPermissions.permissionKey, permKey)
-          )).limit(1);
-        // If permission exists and is disabled, block
-        if (permRows.length > 0 && !permRows[0].enabled) {
-          throw new Error(`Operador ${opRows[0].name} não tem permissão para ${input.field === "pedidoColeta" ? "Pedido de Coleta" : "Marcar Coletado"}`);
-        }
-        // If permission doesn't exist in DB, allow by default (matches frontend hasGranularAccess behavior)
-      }
-
+      const actionLabel = input.field === "pedidoColeta" ? "Pedido de Coleta" : "Marcar Coletado";
+            await enforceGranularPermission(input.password, permKey, actionLabel);
       // Identify who is making the change (operator name from password)
       let operatorName: string | null = null;
+      const opRows = await db.select().from(operators).where(and(eq(operators.password, input.password), eq(operators.active, true))).limit(1);
       if (opRows.length > 0) {
         operatorName = opRows[0].name;
       } else {
@@ -1748,7 +1761,7 @@ export const billingRouter = router({
   /**
    * Set transport selection for a pedido (password-protected)
    */
-  setTransportSelection: publicProcedure
+    setTransportSelection: publicProcedure
     .input(z.object({
       pedido: z.string(),
       transportadora: z.string(),
@@ -1757,11 +1770,12 @@ export const billingRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-
       const isValid = await verifyBillingPassword(input.password);
       if (!isValid) {
         throw new Error("Senha incorreta");
       }
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.transportadora", "Selecionar Transportadora");
 
       // Identify who is making the change (operator name from password)
       let operatorName = "Desconhecido";
@@ -1867,19 +1881,8 @@ export const billingRouter = router({
         throw new Error("Senha incorreta");
       }
 
-      // Verify operator has fat.rastreio permission
-      const opRows = await db.select().from(operators).where(and(eq(operators.password, input.password), eq(operators.active, true))).limit(1);
-      if (opRows.length > 0) {
-        const permRows = await db.select().from(operatorGranularPermissions)
-          .where(and(
-            eq(operatorGranularPermissions.operatorId, opRows[0].id),
-            eq(operatorGranularPermissions.permissionKey, "fat.rastreio"),
-            eq(operatorGranularPermissions.enabled, true)
-          )).limit(1);
-        if (permRows.length === 0) {
-          throw new Error("Sem permissão para gerenciar links de rastreio");
-        }
-      }
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.rastreio", "Gerenciar Links de Rastreio");
 
       if (input.trackingUrl.trim() === "") {
         // Remove tracking link if empty
@@ -1929,7 +1932,7 @@ export const billingRouter = router({
   /**
    * Set pickup schedule for a pedido (password-protected)
    */
-  setPickupSchedule: publicProcedure
+    setPickupSchedule: publicProcedure
     .input(z.object({
       pedido: z.string(),
       pickupDate: z.string(),
@@ -1939,12 +1942,12 @@ export const billingRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       const isValid = await verifyBillingPassword(input.password);
       if (!isValid) {
         throw new Error("Senha incorreta");
       }
-
+      // Server-side granular permission enforcement (default: deny)
+      await enforceGranularPermission(input.password, "fat.agendamentoColeta", "Agendar Coleta");
       try {
         await db.insert(pickupSchedule).values({
           pedido: input.pedido,
@@ -1965,7 +1968,7 @@ export const billingRouter = router({
       return { success: true };
     }),
 
-  clearPickupSchedule: publicProcedure
+    clearPickupSchedule: publicProcedure
     .input(z.object({
       pedido: z.string(),
       password: z.string(),
@@ -1973,14 +1976,13 @@ export const billingRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       const isValid = await verifyBillingPassword(input.password);
       if (!isValid) {
         throw new Error("Senha incorreta");
       }
-
+      // Server-side granular permission enforcement (default: deny)
+      await enforceGranularPermission(input.password, "fat.agendamentoColeta", "Agendar Coleta");
       await db.delete(pickupSchedule).where(eq(pickupSchedule.pedido, input.pedido));
-
       return { success: true };
     }),
 
@@ -2013,37 +2015,18 @@ export const billingRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Verify password against any operator with fat.observacaoFaturar permission
-      const allOperators = await db.select().from(operators).where(eq(operators.active, true));
-      let operatorName: string | null = null;
-      for (const op of allOperators) {
-        if (op.password === input.password) {
-          // Check if this operator has the granular permission
-          const perms = await db.select().from(operatorGranularPermissions)
-            .where(and(
-              eq(operatorGranularPermissions.operatorId, op.id),
-              eq(operatorGranularPermissions.permissionKey, "fat.observacaoFaturar"),
-              eq(operatorGranularPermissions.enabled, true)
-            ));
-          if (perms.length > 0) {
-            operatorName = op.name;
-            break;
-          }
-        }
+      // Verify password
+      const isValid = await verifyBillingPassword(input.password);
+      if (!isValid) {
+        return { success: false, error: "Senha incorreta" };
       }
-
-      // Also check admin password as fallback
-      if (!operatorName) {
-        const settings = await db.select().from(appSettings)
-          .where(eq(appSettings.settingKey, "billing_admin_password"));
-        const adminPassword = settings.length > 0 ? settings[0].settingValue : DEFAULT_ADMIN_PASSWORD;
-        if (input.password === adminPassword) {
-          operatorName = "Admin";
-        }
-      }
-
-      if (!operatorName) {
-        return { success: false, error: "Senha incorreta ou sem permissão" };
+      // Server-side granular permission enforcement
+      await enforceGranularPermission(input.password, "fat.observacaoFaturar", "Observação de Faturamento");
+      // Identify operator
+      let operatorName: string | null = "Admin";
+      const opRows = await db.select().from(operators).where(and(eq(operators.password, input.password), eq(operators.active, true))).limit(1);
+      if (opRows.length > 0) {
+        operatorName = opRows[0].name;
       }
 
       if (input.observation.trim() === "") {

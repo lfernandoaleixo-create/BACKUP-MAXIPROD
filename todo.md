@@ -6693,3 +6693,11 @@
   - Adicionado em: Painel dos Gestores, Painel dos Vendedores, e todas as features (Cadastro de Clientes, Pedidos de Venda, Métricas, Simulação de Frete, etc.)
   - Usa setBulkGranularMutation para ticar/desticar todos de uma vez
   - Botão muda automaticamente entre "Ticar Tudo" e "Desticar Tudo" conforme estado atual
+
+## Bugs Críticos - Permissões não funcionando
+- [x] BUG: Guilherme com permissão "Aprovações de Pedido" ticada mas NÃO aparece o card/seção de aprovações
+  - Fix: removida exigência de ser gestor/vendedor - agora basta ter gc.aprovacoesPedidos ticado
+- [x] BUG: Paula com permissão de agendar/pedir coleta DESTICADA mas ainda consegue fazer essas ações
+  - Fix: enforcement server-side com enforceGranularPermission() em TODAS as mutations do billing
+  - Fix: refresh automático de permissões a cada 30s no OperatorContext (sem precisar relogar)
+  - Testado: Paula BLOCKED, Juvenal ALLOWED - funciona 100%
