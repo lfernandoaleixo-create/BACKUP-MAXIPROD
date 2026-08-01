@@ -1,0 +1,478 @@
+========================================================================================================================
+RELATÓRIO DE CUSTOS - LÓGICA LIFO (Manos e Fernando)
+========================================================================================================================
+Total de produtos com POs: 45
+
+----------------------------------------------------------------------------------------------------
+00001 | ESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.
+  Estoque: 93 CX | Total Chegou (concluídas): 267 CX
+  CUSTO REAL: R$ 130.75 | CUSTO PROJETADO: R$ 147.27 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO45: 43 CX × R$ 130.68
+    → PO50: 50 CX × R$ 130.82
+  [PROJETADO] POs usadas no cálculo:
+    → PO45 [concluida]: 43 CX × R$ 130.68
+    → PO50 [concluida]: 50 CX × R$ 130.82
+    → 01PH202603 [patio]: 102 CX × R$ 162.34
+----------------------------------------------------------------------------------------------------
+00003 | ESPETO DE BAMBU 4,0 X 200 MM  C/ 5 X 1.000 UNID.
+  Estoque: 599 CX | Total Chegou (concluídas): 559 CX
+  CUSTO REAL: R$ 75.29 | CUSTO PROJETADO: R$ 72.34 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO44: 100 CX × R$ 78.80
+    → PO45: 100 CX × R$ 78.00
+    → PO47: 100 CX × R$ 62.26
+    → PO49: 100 CX × R$ 77.47
+    → PO50: 59 CX × R$ 78.08
+    → PO52: 100 CX × R$ 78.27
+  [PROJETADO] POs usadas no cálculo:
+    → PO44 [concluida]: 100 CX × R$ 78.80
+    → PO45 [concluida]: 100 CX × R$ 78.00
+    → PO47 [concluida]: 100 CX × R$ 62.26
+    → PO49 [concluida]: 100 CX × R$ 77.47
+    → PO50 [concluida]: 59 CX × R$ 78.08
+    → PO52 [concluida]: 100 CX × R$ 78.27
+    → PO60 [patio]: 100 CX × R$ 67.95
+    → PO58 [patio]: 10 CX × R$ 60.39
+    → PO63 [patio]: 93 CX × R$ 60.60
+----------------------------------------------------------------------------------------------------
+00004 | ESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.0
+  Estoque: 324 CX | Total Chegou (concluídas): 591 CX
+  CUSTO REAL: R$ 75.61 | CUSTO PROJETADO: R$ 72.02 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO44: 45 CX × R$ 78.80
+    → PO45: 100 CX × R$ 78.00
+    → PO47: 50 CX × R$ 62.26
+    → PO49: 57 CX × R$ 77.47
+    → PO50: 72 CX × R$ 78.08
+  [PROJETADO] POs usadas no cálculo:
+    → PO44 [concluida]: 45 CX × R$ 78.80
+    → PO45 [concluida]: 100 CX × R$ 78.00
+    → PO47 [concluida]: 50 CX × R$ 62.26
+    → PO49 [concluida]: 57 CX × R$ 77.47
+    → PO50 [concluida]: 72 CX × R$ 78.08
+    → PO60 [patio]: 50 CX × R$ 67.95
+    → PO63 [patio]: 84 CX × R$ 60.60
+----------------------------------------------------------------------------------------------------
+00005 | ESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID.
+  Estoque: 676 CX | Total Chegou (concluídas): 541 CX
+  CUSTO REAL: R$ 84.10 | CUSTO PROJETADO: R$ 79.71 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO44: 100 CX × R$ 86.99
+    → PO45: 100 CX × R$ 86.11
+    → PO47: 60 CX × R$ 68.73
+    → PO49: 243 CX × R$ 85.52
+    → PO52: 38 CX × R$ 86.40
+  [PROJETADO] POs usadas no cálculo:
+    → PO44 [concluida]: 100 CX × R$ 86.99
+    → PO45 [concluida]: 100 CX × R$ 86.11
+    → PO47 [concluida]: 60 CX × R$ 68.73
+    → PO49 [concluida]: 243 CX × R$ 85.52
+    → PO52 [concluida]: 38 CX × R$ 86.40
+    → PO51 [patio]: 200 CX × R$ 76.96
+    → PO55 [patio]: 194 CX × R$ 77.00
+    → PO58 [patio]: 100 CX × R$ 66.66
+----------------------------------------------------------------------------------------------------
+00006 | ESPETO DE BAMBU 4,0 X 220 MM MEIA PONTA C/ 5 X 1.0
+  Estoque: 600 CX | Total Chegou (concluídas): 815 CX
+  CUSTO REAL: R$ 103.00 | CUSTO PROJETADO: R$ 80.47 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO27: 71 CX × R$ 220.85
+    → PO31: 168 CX × R$ 95.53
+    → PO44: 100 CX × R$ 86.99
+    → PO45: 100 CX × R$ 86.11
+    → PO47: 60 CX × R$ 68.73
+    → PO49: 101 CX × R$ 85.52
+  [PROJETADO] POs usadas no cálculo:
+    → PO27 [concluida]: 71 CX × R$ 220.85
+    → PO31 [concluida]: 168 CX × R$ 95.53
+    → PO44 [concluida]: 100 CX × R$ 86.99
+    → PO45 [concluida]: 100 CX × R$ 86.11
+    → PO47 [concluida]: 60 CX × R$ 68.73
+    → PO49 [concluida]: 101 CX × R$ 85.52
+    → PO55 [patio]: 300 CX × R$ 77.00
+    → PO56 [patio]: 300 CX × R$ 70.29
+    → PO60 [patio]: 350 CX × R$ 75.01
+    → PO58 [patio]: 200 CX × R$ 66.66
+    → PO63 [patio]: 350 CX × R$ 66.89
+----------------------------------------------------------------------------------------------------
+00007Z | ESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - Z
+  Estoque: 322 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 84.53 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO55 [patio]: 998 CX × R$ 83.34
+    → PO61 [patio]: 1200 CX × R$ 85.53
+----------------------------------------------------------------------------------------------------
+00009 | ESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.
+  Estoque: 35 CX | Total Chegou (concluídas): 7944 CX
+  CUSTO REAL: R$ 93.51 | CUSTO PROJETADO: R$ 91.45 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO52: 35 CX × R$ 93.51
+  [PROJETADO] POs usadas no cálculo:
+    → PO52 [concluida]: 35 CX × R$ 93.51
+    → PO53 [patio]: 58 CX × R$ 85.73
+    → PO61 [patio]: 50 CX × R$ 75.74
+    → PO56 [patio]: 520 CX × R$ 76.08
+    → PO60 [patio]: 639 CX × R$ 81.19
+    → PO59 [patio]: 464 CX × R$ 92.72
+    → PO65 [patio]: 365 CX × R$ 79.93
+    → 01PH202603 [patio]: 881 CX × R$ 113.26
+----------------------------------------------------------------------------------------------------
+00011 | ESPETO DE BAMBU 4,0 X 250 MM MEIA PONTA C/ 5 X 1.0
+  Estoque: 71 CX | Total Chegou (concluídas): 2187 CX
+  CUSTO REAL: R$ 93.42 | CUSTO PROJETADO: R$ 104.34 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO46: 71 CX × R$ 93.42
+  [PROJETADO] POs usadas no cálculo:
+    → PO46 [concluida]: 71 CX × R$ 93.42
+    → PO53 [patio]: 199 CX × R$ 85.73
+    → 01PH202603 [patio]: 502 CX × R$ 113.26
+----------------------------------------------------------------------------------------------------
+00013 | ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.
+  Estoque: 446 CX | Total Chegou (concluídas): 4299 CX
+  CUSTO REAL: R$ 106.38 | CUSTO PROJETADO: R$ 114.51 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO44: 2 CX × R$ 107.46
+    → PO45: 100 CX × R$ 106.37
+    → PO46: 100 CX × R$ 106.62
+    → PO49: 100 CX × R$ 105.65
+    → PO52: 144 CX × R$ 106.73
+  [PROJETADO] POs usadas no cálculo:
+    → PO44 [concluida]: 2 CX × R$ 107.46
+    → PO45 [concluida]: 100 CX × R$ 106.37
+    → PO46 [concluida]: 100 CX × R$ 106.62
+    → PO49 [concluida]: 100 CX × R$ 105.65
+    → PO52 [concluida]: 144 CX × R$ 106.73
+    → PO59 [patio]: 400 CX × R$ 105.82
+    → 01PH202603 [patio]: 403 CX × R$ 132.13
+----------------------------------------------------------------------------------------------------
+00017 | ESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.
+  Estoque: 448 CX | Total Chegou (concluídas): 4897 CX
+  CUSTO REAL: R$ 112.05 | CUSTO PROJETADO: R$ 103.73 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO49: 2 CX × R$ 111.18
+    → PO50: 446 CX × R$ 112.05
+  [PROJETADO] POs usadas no cálculo:
+    → PO49 [concluida]: 2 CX × R$ 111.18
+    → PO50 [concluida]: 446 CX × R$ 112.05
+    → PO51 [patio]: 600 CX × R$ 100.05
+    → PO56 [patio]: 284 CX × R$ 91.38
+    → PO60 [patio]: 300 CX × R$ 97.51
+    → PO59 [patio]: 951 CX × R$ 111.36
+    → PO58 [patio]: 200 CX × R$ 86.66
+----------------------------------------------------------------------------------------------------
+00018 | ESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID.
+  Estoque: 16 CX | Total Chegou (concluídas): 1061 CX
+  CUSTO REAL: R$ 104.70 | CUSTO PROJETADO: R$ 88.25 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO52: 16 CX × R$ 104.70
+  [PROJETADO] POs usadas no cálculo:
+    → PO52 [concluida]: 16 CX × R$ 104.70
+    → PO53 [patio]: 59 CX × R$ 95.98
+    → PO51 [patio]: 373 CX × R$ 93.26
+    → PO56 [patio]: 70 CX × R$ 85.18
+    → PO60 [patio]: 224 CX × R$ 90.89
+    → PO65 [patio]: 180 CX × R$ 89.49
+    → PO58 [patio]: 171 CX × R$ 81.64
+    → PO63 [patio]: 326 CX × R$ 81.92
+----------------------------------------------------------------------------------------------------
+00020 | ESPETO DE BAMBU 4,5 X 250 MM MEIA PONTA C/ 5 X 1.0
+  Estoque: 31 CX | Total Chegou (concluídas): 514 CX
+  CUSTO REAL: R$ 104.70 | CUSTO PROJETADO: R$ 97.79 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO52: 31 CX × R$ 104.70
+  [PROJETADO] POs usadas no cálculo:
+    → PO52 [concluida]: 31 CX × R$ 104.70
+    → PO53 [patio]: 118 CX × R$ 95.98
+----------------------------------------------------------------------------------------------------
+00021 | ESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.
+  Estoque: 70 CX | Total Chegou (concluídas): 8725 CX
+  CUSTO REAL: R$ 116.49 | CUSTO PROJETADO: R$ 97.58 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO52: 70 CX × R$ 116.49
+  [PROJETADO] POs usadas no cálculo:
+    → PO52 [concluida]: 70 CX × R$ 116.49
+    → PO51 [patio]: 401 CX × R$ 103.76
+    → PO60 [patio]: 184 CX × R$ 101.13
+    → PO65 [patio]: 402 CX × R$ 99.57
+    → PO58 [patio]: 166 CX × R$ 89.88
+    → PO63 [patio]: 537 CX × R$ 90.19
+----------------------------------------------------------------------------------------------------
+00024 | ESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.
+  Estoque: 45 CX | Total Chegou (concluídas): 5305 CX
+  CUSTO REAL: R$ 100.27 | CUSTO PROJETADO: R$ 109.05 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO47: 45 CX × R$ 100.27
+  [PROJETADO] POs usadas no cálculo:
+    → PO47 [concluida]: 45 CX × R$ 100.27
+    → PO53 [patio]: 959 CX × R$ 115.55
+    → PO51 [patio]: 277 CX × R$ 112.28
+    → PO60 [patio]: 253 CX × R$ 109.42
+    → PO65 [patio]: 420 CX × R$ 107.74
+    → PO63 [patio]: 547 CX × R$ 97.58
+----------------------------------------------------------------------------------------------------
+00028 | ESPETO DE BAMBU 5,0 X 280 MM C/ 5 X 1.000 UNID.
+  Estoque: 0 CX | Total Chegou (concluídas): 251 CX
+  CUSTO REAL: R$ 155.86 | CUSTO PROJETADO: R$ 120.54 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO50: 0 CX × R$ 155.86 (ref (sem estoque))
+  [PROJETADO] POs usadas no cálculo:
+    → PO58 [patio]: 98 CX × R$ 120.54
+----------------------------------------------------------------------------------------------------
+00029 | ESPETO DE BAMBU 5,0 X 300 MM C/ 5 X 1.000 UNID.
+  Estoque: 67 CX | Total Chegou (concluídas): 290 CX
+  CUSTO REAL: R$ 167.21 | CUSTO PROJETADO: R$ 137.09 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO50: 17 CX × R$ 166.92
+    → PO52: 50 CX × R$ 167.31
+  [PROJETADO] POs usadas no cálculo:
+    → PO50 [concluida]: 17 CX × R$ 166.92
+    → PO52 [concluida]: 50 CX × R$ 167.31
+    → PO56 [patio]: 252 CX × R$ 136.12
+    → PO65 [patio]: 140 CX × R$ 143.01
+    → PO58 [patio]: 325 CX × R$ 129.09
+----------------------------------------------------------------------------------------------------
+00030 | ESPETO DE BAMBU 5,0 X 330 MM C/ 5 X 1.000 UNID.
+  Estoque: 221 CX | Total Chegou (concluídas): 263 CX
+  CUSTO REAL: R$ 183.09 | CUSTO PROJETADO: R$ 162.22 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO49: 58 CX × R$ 181.91
+    → PO50: 100 CX × R$ 183.34
+    → PO52: 63 CX × R$ 183.78
+  [PROJETADO] POs usadas no cálculo:
+    → PO49 [concluida]: 58 CX × R$ 181.91
+    → PO50 [concluida]: 100 CX × R$ 183.34
+    → PO52 [concluida]: 63 CX × R$ 183.78
+    → PO65 [patio]: 103 CX × R$ 157.09
+    → PO58 [patio]: 200 CX × R$ 141.80
+----------------------------------------------------------------------------------------------------
+00031 | ESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.
+  Estoque: 364 CX | Total Chegou (concluídas): 933 CX
+  CUSTO REAL: R$ 194.54 | CUSTO PROJETADO: R$ 178.46 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO49: 123 CX × R$ 193.28
+    → PO50: 41 CX × R$ 194.80
+    → PO52: 200 CX × R$ 195.26
+  [PROJETADO] POs usadas no cálculo:
+    → PO49 [concluida]: 123 CX × R$ 193.28
+    → PO50 [concluida]: 41 CX × R$ 194.80
+    → PO52 [concluida]: 200 CX × R$ 195.26
+    → PO53 [patio]: 18 CX × R$ 179.00
+    → PO51 [patio]: 100 CX × R$ 173.94
+    → PO65 [patio]: 100 CX × R$ 166.90
+    → PO58 [patio]: 153 CX × R$ 150.66
+----------------------------------------------------------------------------------------------------
+00032 | PALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.
+  Estoque: 455 CX | Total Chegou (concluídas): 834 CX
+  CUSTO REAL: R$ 252.41 | CUSTO PROJETADO: R$ 252.41 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO19: 27 CX × R$ 165.86
+    → PO21: 428 CX × R$ 257.87
+----------------------------------------------------------------------------------------------------
+00033 | PALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE C/ 
+  Estoque: 26 CX | Total Chegou (concluídas): 1003 CX
+  CUSTO REAL: R$ 152.15 | CUSTO PROJETADO: R$ 152.15 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO19: 26 CX × R$ 152.15
+----------------------------------------------------------------------------------------------------
+00036 | PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125MM C
+  Estoque: 133 CX | Total Chegou (concluídas): 5069 CX
+  CUSTO REAL: R$ 114.56 | CUSTO PROJETADO: R$ 105.82 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO46: 83 CX × R$ 114.74
+    → PO49: 18 CX × R$ 113.70
+    → PO50: 32 CX × R$ 114.59
+  [PROJETADO] POs usadas no cálculo:
+    → PO46 [concluida]: 83 CX × R$ 114.74
+    → PO49 [concluida]: 18 CX × R$ 113.70
+    → PO50 [concluida]: 32 CX × R$ 114.59
+    → PO56 [patio]: 94 CX × R$ 93.44
+----------------------------------------------------------------------------------------------------
+00037 | PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM 
+  Estoque: 323 CX | Total Chegou (concluídas): 502 CX
+  CUSTO REAL: R$ 172.49 | CUSTO PROJETADO: R$ 172.49 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO29: 123 CX × R$ 187.00
+    → PO34: 200 CX × R$ 163.56
+----------------------------------------------------------------------------------------------------
+00040 | PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM 
+  Estoque: 157 CX | Total Chegou (concluídas): 246 CX
+  CUSTO REAL: R$ 280.25 | CUSTO PROJETADO: R$ 232.96 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO22: 10 CX × R$ 228.44
+    → PO30: 100 CX × R$ 324.83
+    → PO50: 47 CX × R$ 196.43
+  [PROJETADO] POs usadas no cálculo:
+    → PO22 [concluida]: 10 CX × R$ 228.44
+    → PO30 [concluida]: 100 CX × R$ 324.83
+    → PO50 [concluida]: 47 CX × R$ 196.43
+    → PO56 [patio]: 102 CX × R$ 160.18
+----------------------------------------------------------------------------------------------------
+00045 | PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 180 MM 
+  Estoque: 0 CX | Total Chegou (concluídas): 911 CX
+  CUSTO REAL: R$ 85.43 | CUSTO PROJETADO: R$ 85.43 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO11: 0 CX × R$ 85.43 (ref (sem estoque))
+----------------------------------------------------------------------------------------------------
+00046 | PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 M
+  Estoque: 313 CX | Total Chegou (concluídas): 60 CX
+  CUSTO REAL: R$ 154.58 | CUSTO PROJETADO: R$ 154.58 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO30: 60 CX × R$ 154.58
+----------------------------------------------------------------------------------------------------
+00051 | PALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 M
+  Estoque: 264 CX | Total Chegou (concluídas): 506 CX
+  CUSTO REAL: R$ 174.08 | CUSTO PROJETADO: R$ 174.08 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO29: 64 CX × R$ 192.34
+    → PO34: 200 CX × R$ 168.24
+----------------------------------------------------------------------------------------------------
+00054 | PALITO HASHI DE BAMBU 20 CM  C/ 20 X 100 UNID.
+  Estoque: 10 CX | Total Chegou (concluídas): 170 CX
+  CUSTO REAL: R$ 95.76 | CUSTO PROJETADO: R$ 95.76 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO22: 10 CX × R$ 95.76
+----------------------------------------------------------------------------------------------------
+00057B | PALITO PARA PETISCO DE BAMBU GOLF 15 CM C/ 100 X 5
+  Estoque: 114 CX | Total Chegou (concluídas): 171 CX
+  CUSTO REAL: R$ 153.31 | CUSTO PROJETADO: R$ 140.62 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO17: 89 CX × R$ 146.15
+    → PO22: 25 CX × R$ 178.79
+  [PROJETADO] POs usadas no cálculo:
+    → PO17 [concluida]: 89 CX × R$ 146.15
+    → PO22 [concluida]: 25 CX × R$ 178.79
+    → PO56 [patio]: 97 CX × R$ 125.70
+----------------------------------------------------------------------------------------------------
+00058 | VARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG
+  Estoque: 4390 CX | Total Chegou (concluídas): 1051 CX
+  CUSTO REAL: R$ 6.34 | CUSTO PROJETADO: R$ 6.66 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO09: 128 CX × R$ 10.98
+    → PO01: 200 CX × R$ 16.29
+    → PO16: 100 CX × R$ 0.02
+    → PO17: 179 CX × R$ 0.02
+    → PO19: 202 CX × R$ 0.01
+    → PO29: 67 CX × R$ 8.55
+    → PO36: 36 CX × R$ 7.74
+    → PO34: 34 CX × R$ 7.48
+    → PO38: 70 CX × R$ 8.64
+    → PO46: 35 CX × R$ 8.12
+  [PROJETADO] POs usadas no cálculo:
+    → PO09 [concluida]: 128 CX × R$ 10.98
+    → PO01 [concluida]: 200 CX × R$ 16.29
+    → PO16 [concluida]: 100 CX × R$ 0.02
+    → PO17 [concluida]: 179 CX × R$ 0.02
+    → PO19 [concluida]: 202 CX × R$ 0.01
+    → PO29 [concluida]: 67 CX × R$ 8.55
+    → PO36 [concluida]: 36 CX × R$ 7.74
+    → PO34 [concluida]: 34 CX × R$ 7.48
+    → PO38 [concluida]: 70 CX × R$ 8.64
+    → PO46 [concluida]: 35 CX × R$ 8.12
+    → PO56 [patio]: 134 CX × R$ 6.62
+    → 01PH202603 [patio]: 98 CX × R$ 10.07
+----------------------------------------------------------------------------------------------------
+00061 | VARETA MULTI-USO BAMBU 3,8 X 200 MM C/ 10.000 UNID
+  Estoque: 20 CX | Total Chegou (concluídas): 146 CX
+  CUSTO REAL: R$ 89.42 | CUSTO PROJETADO: R$ 89.42 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO09: 20 CX × R$ 89.42
+----------------------------------------------------------------------------------------------------
+00063 | VARETA MULTI-USO BAMBU 3,8 X 250 MM C/ 10.000 UNID
+  Estoque: 40.5 CX | Total Chegou (concluídas): 167 CX
+  CUSTO REAL: R$ 112.86 | CUSTO PROJETADO: R$ 112.86 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO09: 40.5 CX × R$ 112.86
+----------------------------------------------------------------------------------------------------
+00065 | VARETA PARA ALGODÃO DOCE BAMBU 4,0 X 400 MM C/ 10.
+  Estoque: 0 CX | Total Chegou (concluídas): 250 CX
+  CUSTO REAL: R$ 203.09 | CUSTO PROJETADO: R$ 203.09 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO19: 0 CX × R$ 203.09 (ref (sem estoque))
+----------------------------------------------------------------------------------------------------
+00070 | VARETA PARA MINI ROJAO 5,0 X 500MM C/ 5.000 UNID
+  Estoque: 10 CX | Total Chegou (concluídas): 20 CX
+  CUSTO REAL: R$ 305.14 | CUSTO PROJETADO: R$ 272.45 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO23: 10 CX × R$ 305.14
+  [PROJETADO] POs usadas no cálculo:
+    → PO23 [concluida]: 10 CX × R$ 305.14
+    → PO56 [patio]: 20 CX × R$ 256.11
+----------------------------------------------------------------------------------------------------
+00110 | VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM 
+  Estoque: 441 CX | Total Chegou (concluídas): 905 CX
+  CUSTO REAL: R$ 483.55 | CUSTO PROJETADO: R$ 483.55 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO47: 441 CX × R$ 483.55
+----------------------------------------------------------------------------------------------------
+00148 | PALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 10.000 U
+  Estoque: 10 CX | Total Chegou (concluídas): 57 CX
+  CUSTO REAL: R$ 86.20 | CUSTO PROJETADO: R$ 86.20 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO50: 10 CX × R$ 86.20
+----------------------------------------------------------------------------------------------------
+00198 | ESPETO DE BAMBU CASCA VERDE  4,5 X 250 MM  C/ 5 X 
+  Estoque: 37 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 95.98 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO53 [patio]: 101 CX × R$ 95.98
+----------------------------------------------------------------------------------------------------
+00199 | ESPETO DE BAMBU CASCA VERDE 4,5 X 300 MM C/ 5 X 1.
+  Estoque: 450 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 113.77 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO53 [patio]: 288 CX × R$ 113.77
+----------------------------------------------------------------------------------------------------
+00274Z | ESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - Z
+  Estoque: 440 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 95.54 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO55 [patio]: 600 CX × R$ 95.11
+    → PO61 [patio]: 700 CX × R$ 95.90
+----------------------------------------------------------------------------------------------------
+00406 | ESPETO DE BAMBU 3,5 X 250 MM C/ 100 x 40 UNID. - P
+  Estoque: 931 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 57.93 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO57 [patio]: 952 CX × R$ 57.93
+----------------------------------------------------------------------------------------------------
+00407 | ESPETO DE BAMBU 3,5 X 280 MM C/ 100 x 40 UNID. - P
+  Estoque: 391 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 67.99 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO57 [patio]: 395 CX × R$ 67.99
+----------------------------------------------------------------------------------------------------
+00408 | ESPETO DE BAMBU 3,5 X 300 MM C/ 100 x 40 UNID. - P
+  Estoque: 982 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 68.68 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → PO57 [patio]: 988 CX × R$ 68.68
+----------------------------------------------------------------------------------------------------
+00522 | LÂMINA DE SERRA DE FITA
+  Estoque: 0 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 3292.41 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → 01PH202603 [patio]: 1 CX × R$ 3292.41
+----------------------------------------------------------------------------------------------------
+00523 | LÂMINA DE SERRA CIRCULAR
+  Estoque: 0 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 2112.64 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → 01PH202603 [patio]: 1 CX × R$ 2112.64
+----------------------------------------------------------------------------------------------------
+00526 | INCUBADORA PARA AVICULTURA
+  Estoque: 0 CX | Total Chegou (concluídas): 0 CX
+  CUSTO REAL: R$ 0.00 | CUSTO PROJETADO: R$ 2536.57 | ESTIMATIVA: R$ N/A
+  [PROJETADO] POs usadas no cálculo:
+    → 01PH202603 [patio]: 9 CX × R$ 598.63
+    → 01PH202603 [patio]: 3 CX × R$ 8350.38
+----------------------------------------------------------------------------------------------------
+00808 | VARETA GLADE REEDS 100 ML = 3,5 X 200 MM 10.002
+  Estoque: 0 CX | Total Chegou (concluídas): 3262 CX
+  CUSTO REAL: R$ 181.23 | CUSTO PROJETADO: R$ 181.23 | ESTIMATIVA: R$ N/A
+  [REAL] POs usadas no cálculo:
+    → PO34: 0 CX × R$ 181.23 (ref (sem estoque))
+
+========================================================================================================================
+FIM DO RELATÓRIO
+========================================================================================================================

@@ -2087,9 +2087,12 @@ export const importRouter = router({
       const stockUnits = Number(item.quantidade || 0);
       const boxesInStock = fator > 0 ? stockUnits / fator : 0;
 
-      // --- GREEN COLUMN: Custo Real - Média Ponderada Móvel (POs 100% Concluídas) ---
-      // Simulates the weighted average as each PO arrived chronologically.
-      // Between POs, price stays fixed regardless of sales.
+      // --- GREEN COLUMN: Custo Real - LIFO (POs 100% Concluídas) ---
+      // Lógica: Olhar o estoque atual e verificar de trás pra frente (POs mais recentes primeiro)
+      // quais POs ainda têm caixas no estoque. POs cujas caixas já foram vendidas NÃO entram.
+      // Se estoque = 0, custo real = preço da última PO concluída (referência).
+      // Se estoque < última PO concluída, 100% do estoque veio dessa PO → custo = preço dessa PO.
+      // Se estoque > última PO, faz média ponderada com a penúltima, e assim por diante.
       let custoReal = 0;
       let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number; estoqueAntes?: number; vendasDeduzidas?: number; estoqueApos?: number; mediaApos?: number }> = [];
       let semEstoque = false;
@@ -2100,94 +2103,77 @@ export const importRouter = router({
         custoReal = 0;
         semEstoque = boxesInStock <= 0;
       } else if (boxesInStock <= 0) {
-        // Sem estoque: mostra o custo médio calculado com todas as POs (referência)
+        // Sem estoque de POs concluídas: custo real = preço da última PO concluída (referência)
         const lastPo = arrivedHistory[arrivedHistory.length - 1];
         custoReal = lastPo.valorCaixaBrl;
         breakdownReal = [{ poNumber: lastPo.poNumber, caixasUsadas: 0, valorCaixa: lastPo.valorCaixaBrl }];
         semEstoque = true;
       } else {
-        // Custo Médio Ponderado Móvel:
-        // Process POs in chronological order. Each new PO recalculates the average
-        // using (remaining stock at that point × current avg + new PO qty × new PO price) / total.
-        // Between POs, selling does NOT change the price.
-        let runningAvg = 0;
-        let runningStock = 0;
+        // LIFO: Percorrer POs de trás pra frente (mais recente primeiro)
+        // Atribuir caixas do estoque às POs mais recentes até esgotar o estoque
+        let remainingStock = boxesInStock;
+        let totalWeightedCost = 0;
+        let totalBoxesUsed = 0;
         
-        // Distribute sales proportionally across time (oldest POs had more time to sell)
-        // But since price doesn't change with sales, we just need the final average.
-        // The key insight: we simulate PO arrivals in order, and at each arrival
-        // the stock at that moment = previous running stock - sales between POs + new PO.
-        // Since we don't track exact sale dates, we use the simplified approach:
-        // Calculate the running weighted average as each PO arrives, assuming
-        // sales happen evenly. The final average is what matters.
-        
-        // Simplified correct approach: iterate POs chronologically.
-        // At each PO arrival: newAvg = (currentStock × currentAvg + newQty × newPrice) / (currentStock + newQty)
-        // After processing all POs, the remaining stock has this final average price.
-        // Sales between POs don't change the price - they only reduce quantity.
-        
-        let salesRemaining = totalSold;
-        for (let i = 0; i < arrivedHistory.length; i++) {
+        for (let i = arrivedHistory.length - 1; i >= 0 && remainingStock > 0; i--) {
           const po = arrivedHistory[i];
+          // Quantas caixas dessa PO ainda estão no estoque?
+          const boxesFromThisPo = Math.min(remainingStock, po.quantidade);
+          totalWeightedCost += boxesFromThisPo * po.valorCaixaBrl;
+          totalBoxesUsed += boxesFromThisPo;
+          remainingStock -= boxesFromThisPo;
           
-          // Before this PO arrives, some sales may have happened from previous stock
-          // But sales DON'T change the average price - only reduce quantity
-          // So we just need to track the running stock level for the weighted calc
-          
-          let estoqueAntesPo = runningStock;
-          let vendasDeduzidasPo = 0;
-          if (runningStock === 0 && runningAvg === 0) {
-            // First PO: sets the initial price
-            estoqueAntesPo = 0;
-            runningAvg = po.valorCaixaBrl;
-            runningStock = po.quantidade;
-          } else {
-            // Deduct sales proportionally before this PO arrives
-            const salesBetween = Math.min(salesRemaining, Math.floor(salesRemaining / (arrivedHistory.length - i)));
-            estoqueAntesPo = runningStock;
-            runningStock = Math.max(0, runningStock - salesBetween);
-            vendasDeduzidasPo = estoqueAntesPo - runningStock;
-            salesRemaining -= salesBetween;
-            estoqueAntesPo = runningStock; // stock right before this PO arrives
-            // New PO arrives: recalculate weighted average
-            const newTotal = runningStock + po.quantidade;
-            if (newTotal > 0) {
-              runningAvg = (runningStock * runningAvg + po.quantidade * po.valorCaixaBrl) / newTotal;
-            }
-            runningStock = newTotal;
-          }
-          breakdownReal.push({ 
-            poNumber: po.poNumber, 
-            caixasUsadas: Math.round(po.quantidade * 100) / 100, 
+          breakdownReal.push({
+            poNumber: po.poNumber,
+            caixasUsadas: Math.round(boxesFromThisPo * 100) / 100,
             valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
-            estoqueAntes: Math.round(estoqueAntesPo * 100) / 100,
-            vendasDeduzidas: Math.round(vendasDeduzidasPo * 100) / 100,
-            estoqueApos: Math.round(runningStock * 100) / 100,
-            mediaApos: Math.round(runningAvg * 100) / 100,
           });
         }
         
-        custoReal = runningAvg;
+        custoReal = totalBoxesUsed > 0 ? totalWeightedCost / totalBoxesUsed : 0;
+        // Reverse breakdown so it shows oldest-used first (natural reading order)
+        breakdownReal.reverse();
       }
 
-      // --- ORANGE COLUMN: Custo Projetado - POs "Chegou no Pátio" ---
-      // When a new PO arrives at the yard, recalculate:
-      // (current stock × custo real + new PO qty × new PO price) / total
-      // Price stays fixed until next PO arrives at yard
+      // --- ORANGE COLUMN: Custo Projetado - LIFO incluindo POs "Chegou no Pátio" ---
+      // Mesma lógica LIFO, mas inclui as POs do pátio como as mais recentes.
+      // O estoque total considerado = estoque atual + caixas no pátio (que vão entrar).
+      // Percorre de trás pra frente: pátio primeiro (mais recente), depois concluídas.
       let custoProjetado = custoReal; // default = custo real
       let breakdownProjetado: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
       if (patioHistory && patioHistory.length > 0) {
-        const currentStockCost = custoReal * boxesInStock;
-        let totalPatioQty = 0;
-        let totalPatioCost = 0;
-        for (const po of patioHistory) {
-          totalPatioQty += po.quantidade;
-          totalPatioCost += po.quantidade * po.valorCaixaBrl;
-          breakdownProjetado.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
+        // Total de caixas a considerar = estoque atual + todas as caixas do pátio
+        const totalPatioQty = patioHistory.reduce((sum: number, po: any) => sum + po.quantidade, 0);
+        const totalProjectedStock = boxesInStock + totalPatioQty;
+        
+        // LIFO: Percorrer de trás pra frente (pátio mais recente → pátio mais antigo → concluídas mais recentes)
+        // A "pilha" completa é: [...arrivedHistory, ...patioHistory] (pátio é mais recente)
+        const allPosForProjected = [
+          ...(arrivedHistory || []).map((po: any) => ({ ...po, source: 'concluida' })),
+          ...patioHistory.map((po: any) => ({ ...po, source: 'patio' })),
+        ];
+        
+        let remainingProjected = totalProjectedStock;
+        let totalWeightedCostProj = 0;
+        let totalBoxesUsedProj = 0;
+        
+        for (let i = allPosForProjected.length - 1; i >= 0 && remainingProjected > 0; i--) {
+          const po = allPosForProjected[i];
+          const boxesFromThisPo = Math.min(remainingProjected, po.quantidade);
+          totalWeightedCostProj += boxesFromThisPo * po.valorCaixaBrl;
+          totalBoxesUsedProj += boxesFromThisPo;
+          remainingProjected -= boxesFromThisPo;
+          
+          breakdownProjetado.push({
+            poNumber: po.poNumber,
+            caixasUsadas: Math.round(boxesFromThisPo * 100) / 100,
+            valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
+          });
         }
-        const totalProjectedBoxes = boxesInStock + totalPatioQty;
-        custoProjetado = totalProjectedBoxes > 0 ? (currentStockCost + totalPatioCost) / totalProjectedBoxes : custoReal;
+        
+        custoProjetado = totalBoxesUsedProj > 0 ? totalWeightedCostProj / totalBoxesUsedProj : custoReal;
+        breakdownProjetado.reverse();
       }
 
       // --- BLUE COLUMN: Estimativa - POs "Navegando" ---
