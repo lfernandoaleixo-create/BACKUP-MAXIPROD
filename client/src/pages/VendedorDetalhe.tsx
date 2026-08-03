@@ -4026,8 +4026,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const { hasDraft } = useOrderDraft();
-  const resumeDraft = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
-  const [showNewOrder, setShowNewOrder] = useState(resumeDraft && hasDraft);
+  const resumeDraftParam = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
+  const [isResumingDraft, setIsResumingDraft] = useState(resumeDraftParam && hasDraft);
+  const [showNewOrder, setShowNewOrder] = useState(resumeDraftParam && hasDraft);
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
@@ -4332,7 +4333,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
             </Popover>
           </div>
           <button
-            onClick={() => setShowNewOrder(true)}
+            onClick={() => { setIsResumingDraft(false); setShowNewOrder(true); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-5 h-5" />
@@ -4401,9 +4402,32 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
         </div>
       </div>
 
+      {/* Card "Continuar Pedido" - mostra quando há rascunho salvo e o form não está aberto */}
+      {!showNewOrder && hasDraft && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-700 shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Pedido em andamento</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">Você tem um rascunho salvo. Clique para continuar.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => { setIsResumingDraft(true); setShowNewOrder(true); }}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-all shadow-sm hover:shadow-md"
+            >
+              Continuar Pedido
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Novo Pedido de Venda Form */}
       {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); }} />
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
       )}
 
       {/* Pedidos manuais (via App) */}
@@ -4922,7 +4946,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
  * NewOrderInline - Formulário inline para criar novo pedido de venda
  * Puxa produtos do estoque visível do vendedor com especificações
  */
-function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; onClose: () => void }) {
+function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, resumeDraft: shouldResumeDraft = false, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; resumeDraft?: boolean; onClose: () => void }) {
   const isEditMode = editOrderId !== null;
   const [isSimulation, setIsSimulation] = useState(false);
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
@@ -5115,9 +5139,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   // === ORDER DRAFT PERSISTENCE ===
   const { draft, saveDraft, clearDraft } = useOrderDraft();
 
-  // Load draft on mount (only for new orders, not edits)
+  // Load draft on mount (only when resuming draft, not for "Novo Pedido")
   useEffect(() => {
     if (isEditMode) return;
+    if (!shouldResumeDraft) return; // "Novo Pedido" = fresh start, don't load draft
     if (draft && draft.sellerId === sellerId && draft.items.length > 0) {
       setItems(draft.items as OrderItem[]);
       if (draft.client) {

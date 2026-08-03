@@ -120,6 +120,7 @@ interface PedidoCliente {
   status: string;
   estadoConfiguravel?: string;
   crmSegmento?: string;
+  numeroPedidos?: string[];
 }
 
 interface StockItem {
@@ -1099,6 +1100,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                             <table className="w-full text-base">
                                               <thead>
                                                 <tr className="bg-slate-50 text-slate-500">
+                                                  <th className="text-left px-4 py-2.5 font-semibold text-sm">Pedido</th>
                                                   <th className="text-left px-4 py-2.5 font-semibold text-sm">Cliente</th>
                                                   <th className="text-right px-4 py-2.5 font-semibold text-sm">Qtd</th>
                                                   <th className="text-center px-4 py-2.5 font-semibold text-sm">Status</th>
@@ -1107,6 +1109,9 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {clienteReservados.map((pc, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+<td className="px-4 py-3 text-blue-600 font-mono text-xs whitespace-nowrap">
+                                      {pc.numeroPedidos?.length ? pc.numeroPedidos.join(', ') : '—'}
+                                    </td>
 <td className="px-4 py-3 text-slate-700 text-sm" title={pc.cliente}>
                                       {pc.cliente}
                                     </td>
@@ -1152,6 +1157,9 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                   {vReservados.map((pc, idx) => (
                                                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+<td className="px-4 py-3 text-blue-600 font-mono text-xs whitespace-nowrap">
+                                      {pc.numeroPedidos?.length ? pc.numeroPedidos.join(', ') : '—'}
+                                    </td>
 <td className="px-4 py-3 text-slate-700 text-sm" title={pc.cliente}>
                                       {pc.cliente}
                                     </td>
@@ -1258,6 +1266,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                       <table className="w-full text-xs">
                                         <thead>
                                           <tr className="bg-slate-50">
+                                            <th className="text-left px-3 py-1.5 font-semibold text-slate-500">Pedido</th>
                                             <th className="text-left px-3 py-1.5 font-semibold text-slate-500">Cliente</th>
                                             <th className="text-right px-3 py-1.5 font-semibold text-slate-500">Qtd</th>
                                           </tr>
@@ -1265,6 +1274,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                         <tbody className="divide-y divide-slate-100">
                                           {digitacaoClientes.map((pc, idx) => (
                                             <tr key={idx} className="hover:bg-slate-50">
+                                              <td className="px-3 py-1.5 text-blue-600 font-mono text-xs whitespace-nowrap">{pc.numeroPedidos?.length ? pc.numeroPedidos.join(', ') : '—'}</td>
                                               <td className="px-3 py-1.5 text-slate-700 max-w-[220px] truncate" title={pc.cliente}>{pc.cliente}</td>
                                               <td className="px-3 py-1.5 text-right font-bold text-amber-600 whitespace-nowrap">{formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}</td>
                                             </tr>
@@ -5212,6 +5222,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                 <table className="w-full text-xs">
                                   <thead className="bg-slate-50 dark:bg-slate-800">
                                     <tr>
+                                      <th className="px-2 py-1 text-left font-medium">Pedido</th>
                                       <th className="px-2 py-1 text-left font-medium">Cliente</th>
                                       <th className="px-2 py-1 text-right font-medium">Total (cx)</th>
                                       <th className="px-2 py-1 text-right font-medium">Faturado</th>
@@ -5225,6 +5236,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                       const aFaturar = total - faturado;
                                       return (
                                         <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                          <td className="px-2 py-1 text-xs text-blue-600 font-mono whitespace-nowrap">
+                                            {pc.numeroPedidos?.length ? pc.numeroPedidos.join(', ') : '—'}
+                                          </td>
                                           <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[250px] text-wrap" title={pc.cliente}>
                                             {pc.cliente}
                                           </td>
@@ -5376,6 +5390,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                   <table className="w-full text-xs">
                                     <thead className="bg-slate-50 dark:bg-slate-800">
                                       <tr>
+                                        <th className="px-2 py-1 text-left font-medium">Pedido</th>
                                         <th className="px-2 py-1 text-left font-medium">Cliente</th>
                                         <th className="px-2 py-1 text-right font-medium">Total (cx)</th>
                                         <th className="px-2 py-1 text-right font-medium">Faturado</th>
@@ -5389,6 +5404,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                         const aFaturar = total - faturado;
                                         return (
                                           <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                            <td className="px-2 py-1 text-xs text-blue-600 font-mono whitespace-nowrap">
+                                              {pc.numeroPedidos?.length ? pc.numeroPedidos.join(', ') : '—'}
+                                            </td>
                                             <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[250px] text-wrap" title={pc.cliente}>
                                               {pc.cliente}
                                             </td>

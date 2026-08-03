@@ -481,13 +481,9 @@ export const salesOrderRouter = router({
       })
       .from(stockItems);
 
-      // Filter by visibility: only show products in seller's price table or manual overrides
-      // In gestorMode, bypass filtering - gestor sees ALL products (including sob encomenda)
-      const filteredItems = isGestorMode
-        ? items
-        : (visibleCodes.size > 0
-          ? items.filter(item => visibleCodes.has(item.codigoItem))
-          : items);
+      // All products in stock_items are available to all sellers
+      // The price table is used for pricing only, not for restricting visibility
+      const filteredItems = items;
 
       // Get min prices
       const prices = await db.select().from(productMinPrices);

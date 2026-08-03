@@ -708,3 +708,218 @@ export function stopScraper(): void {
 export async function forceSyncNow(): Promise<void> {
   await syncData();
 }
+
+/**
+ * Scrape reservation status for Digitação orders.
+ * Navigates to the PedidoVenda grid filtered for Digitação only,
+ * then checks each order's items for "(reservado)" vs "(reservar)" in the Estoque column.
+ * Updates the estoqueReservado field in order_items table.
+ * 
+ * This function is called after the GraphQL sync to enrich Digitação orders
+ * with reservation status that is NOT available via the GraphQL API.
+ */
+export async function scrapeReservationStatus(): Promise<{ updated: number; errors: string[] }> {
+  const db = await getDb();
+  if (!db) return { updated: 0, errors: ["No database connection"] };
+  
+  const errors: string[] = [];
+  let updated = 0;
+  
+  try {
+    // Get all unique Digitação order numbers from order_items
+    const digitacaoItems = await db.select({
+      numeroPedido: orderItems.numeroPedido,
+      maxiprodId: orderItems.maxiprodId,
+    }).from(orderItems).where(
+      eq(orderItems.estadoNota, "Digitação")
+    );
+    
+    if (digitacaoItems.length === 0) {
+      console.log("[Scraper Reserva] No Digitação orders to check");
+      return { updated: 0, errors: [] };
+    }
+    
+    // Get unique order numbers
+    const uniqueOrders = Array.from(new Set(digitacaoItems.map(i => i.numeroPedido).filter(Boolean))) as string[];
+    console.log(`[Scraper Reserva] Checking reservation status for ${uniqueOrders.length} Digitação orders`);
+    
+    // Try to get the page (requires active browser session)
+    let p: Page;
+    try {
+      p = await getPage();
+    } catch (e: any) {
+      errors.push(`Browser not available: ${e.message}`);
+      return { updated: 0, errors };
+    }
+    
+    // Navigate to the PedidoVenda list page filtered for Digitação
+    // Use the NotaFiscal/ItemPedidoVenda grid with Digitação filter ON
+    try {
+      await p.goto(`${SYSTEM_URL}/ItemNotaFiscal/ItemPedidoVenda`, {
+        waitUntil: "networkidle2",
+        timeout: 30000,
+      });
+    } catch (e: any) {
+      errors.push(`Navigation failed: ${e.message}`);
+      return { updated: 0, errors };
+    }
+    
+    // Extract the GridId
+    const gridId = await p.evaluate(() => {
+      const el = document.querySelector('[id^="GridItemNotaFiscal"]');
+      return el ? el.id : null;
+    });
+    
+    if (!gridId) {
+      errors.push("Could not find order grid ID");
+      return { updated: 0, errors };
+    }
+    
+    // Fetch Digitação orders from the grid API
+    // EstadoNota~0=1 means Digitação ON, all others OFF
+    const data = await p.evaluate(async (gId: string) => {
+      const url = `/ItemNotaFiscal/GridQuery?tipo=P&entradaSaida=S&gridComImpostos=False&${gId}-size=500&GridQuery=true`;
+      
+      const body = 'page=1&size=500&orderBy=&aggregates=Selected-count~Quantidade-sum~ValorTotalComDesconto-sum~ValorTotalFaturar-sum' +
+        '&~~Filtros~EstadoNota~0=1&~~Filtros~EstadoNota~1=0&~~Filtros~EstadoNota~2=0&~~Filtros~EstadoNota~3=0&~~Filtros~EstadoNota~4=0&~~Filtros~EstadoNota~5=0' +
+        '&~~Filtros~Estado~0=1&~~Filtros~Estado~1=1&~~Filtros~Estado~2=1&~~Filtros~Estado~3=1&~~Filtros~Estado~4=0&~~Filtros~Estado~5=0' +
+        '&~~Filtros~TipoNotaFiscal~0=P&~~Filtros~EntradaSaida~0=S&~~Filtros~Orfa~0=Não';
+      
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: body,
+        credentials: 'include',
+      });
+      
+      if (!resp.ok) throw new Error(`Grid API returned ${resp.status}`);
+      const result = await resp.json();
+      return { data: result.data || [], total: result.total || 0 };
+    }, gridId);
+    
+    console.log(`[Scraper Reserva] Grid API returned ${data.data.length} Digitação items`);
+    
+    // Log the first item's fields to understand what's available
+    if (data.data.length > 0) {
+      const sampleItem = data.data[0];
+      const fieldNames = Object.keys(sampleItem);
+      console.log(`[Scraper Reserva] Available fields: ${fieldNames.join(', ')}`);
+      
+      // Look for reservation-related fields
+      const reservaFields = fieldNames.filter(f => 
+        f.toLowerCase().includes('estoque') || 
+        f.toLowerCase().includes('reserv') ||
+        f.toLowerCase().includes('separar') ||
+        f.toLowerCase().includes('situacao')
+      );
+      console.log(`[Scraper Reserva] Reservation-related fields: ${reservaFields.join(', ')}`);
+      
+      if (reservaFields.length > 0) {
+        console.log(`[Scraper Reserva] Sample values:`, 
+          reservaFields.reduce((acc: any, f: string) => { acc[f] = sampleItem[f]; return acc; }, {})
+        );
+      }
+    }
+    
+    // Try to determine reservation status from the grid data
+    // The grid might have a field like 'Estoque', 'EstoqueReservado', 'SituacaoEstoque', etc.
+    for (const item of data.data) {
+      const numeroPedido = item.NumeroNota || item.NumeroPedido || "";
+      const codigoItem = item.CodItem || item.CodigoItem || "";
+      
+      // Check various possible field names for reservation status
+      const estoqueField = item.Estoque || item.EstoqueReservado || item.SituacaoEstoque || 
+                          item.EstoqueStatus || item.ReservaEstoque || "";
+      const estoqueStr = String(estoqueField).toLowerCase();
+      
+      // "(reservado)" means reserved, "(reservar)" or empty means not reserved
+      const isReserved = estoqueStr.includes('reservado') && !estoqueStr.includes('reservar');
+      
+      // Also check SepararParaExpedicao field which might indicate reservation
+      const separarField = item.SepararParaExpedicao || item.Separar || "";
+      const isSeparado = String(separarField).toLowerCase() === 'true' || separarField === true;
+      
+      const finalReserved = isReserved || isSeparado;
+      
+      if (numeroPedido && codigoItem) {
+        try {
+          await db.update(orderItems)
+            .set({ estoqueReservado: finalReserved })
+            .where(
+              eq(orderItems.numeroPedido, numeroPedido)
+            );
+          updated++;
+        } catch (e: any) {
+          // Silently continue - some items might not match
+        }
+      }
+    }
+    
+    // If no grid field was found for reservation, try navigating to individual order pages
+    if (data.data.length > 0 && updated === 0) {
+      console.log("[Scraper Reserva] Grid API didn't have reservation field, trying individual order pages...");
+      
+      for (const orderNum of uniqueOrders.slice(0, 20)) { // Limit to 20 orders to avoid timeout
+        try {
+          // Navigate to the order's edit page
+          // The URL pattern is: /NotaFiscal/Edit?numero={orderNum}&tipo=P&entradaSaida=S
+          await p.goto(`${SYSTEM_URL}/NotaFiscal/Edit?numero=${orderNum}&tipo=P&entradaSaida=S`, {
+            waitUntil: "networkidle2",
+            timeout: 15000,
+          });
+          
+          // Wait for the items grid to load
+          await p.waitForSelector('table, .k-grid', { timeout: 5000 }).catch(() => {});
+          
+          // Read reservation status from the DOM
+          const reservationData = await p.evaluate(() => {
+            const results: Array<{ codigo: string; reservado: boolean }> = [];
+            
+            // Look for the items table rows
+            const rows = Array.from(document.querySelectorAll('tr[role="row"], .k-grid tr'));
+            for (const row of rows) {
+              const cells = row.querySelectorAll('td');
+              if (cells.length < 6) continue;
+              
+              // The "Código" is typically in the 2nd column, "Estoque" in the 6th
+              const codigoCell = cells[1]?.textContent?.trim() || "";
+              const estoqueCell = cells[5]?.textContent?.trim() || "";
+              
+              if (codigoCell && estoqueCell) {
+                const isReserved = estoqueCell.toLowerCase().includes('reservado') && 
+                                  !estoqueCell.toLowerCase().includes('reservar');
+                results.push({ codigo: codigoCell, reservado: isReserved });
+              }
+            }
+            return results;
+          });
+          
+          // Update the database
+          for (const item of reservationData) {
+            if (item.codigo) {
+              await db.update(orderItems)
+                .set({ estoqueReservado: item.reservado })
+                .where(
+                  eq(orderItems.numeroPedido, orderNum)
+                );
+              updated++;
+            }
+          }
+        } catch (e: any) {
+          errors.push(`Order ${orderNum}: ${e.message}`);
+        }
+      }
+    }
+    
+    console.log(`[Scraper Reserva] Updated ${updated} items, ${errors.length} errors`);
+    return { updated, errors };
+    
+  } catch (error: any) {
+    console.error("[Scraper Reserva] Error:", error.message);
+    errors.push(error.message);
+    return { updated: 0, errors };
+  }
+}

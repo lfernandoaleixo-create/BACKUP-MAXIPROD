@@ -8,6 +8,7 @@ import { getDb } from "./db";
 import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments, importSuppliers, trackingCache, queijoCoalhoStock, queijoCoalhoStockHistory } from "../drizzle/schema";
 import { sql, desc, eq, and, gte, or } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
+import { scrapeReservationStatus } from "./maxiprodScraper";
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
 import { getEcommerceTransferHistoryData, getPendingEcommerceTransfers } from "./ecommerceHistory";
@@ -167,6 +168,15 @@ export const appRouter = router({
      */
     forceSync: publicProcedure.mutation(async () => {
       const result = await runGraphQLSync();
+      // After sync, try to scrape reservation status for Digitação orders
+      // This runs in background and doesn't block the sync response
+      scrapeReservationStatus().then(res => {
+        if (res.updated > 0) {
+          console.log(`[Reserva] Updated ${res.updated} items after sync`);
+          // Re-process stock data to reflect new reservation status
+          processStockData().catch(e => console.error("[Reserva] Stock reprocess error:", e));
+        }
+      }).catch(e => console.error("[Reserva] Scrape error:", e));
       return {
         success: result.success,
         message: result.success
@@ -174,6 +184,17 @@ export const appRouter = router({
           : result.error || "Erro na sincronização",
         counts: result.counts,
       };
+    }),
+
+    /**
+     * Manually trigger reservation status scraping for Digitação orders
+     */
+    scrapeReservations: publicProcedure.mutation(async () => {
+      const result = await scrapeReservationStatus();
+      if (result.updated > 0) {
+        await processStockData();
+      }
+      return result;
     }),
 
     /**

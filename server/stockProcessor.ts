@@ -49,6 +49,7 @@ interface PedidoCliente {
   status: string; // Aprovado, A aprovar, Digitação, etc.
   estadoConfiguravel?: string; // Estado configurável do pedido (BAMBU, FIBRA, MADEIRA, etc.)
   crmSegmento?: string; // Segmento CRM do cliente (DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.)
+  numeroPedidos?: string[]; // Números dos pedidos de venda no Maxiprod
 }
 
 interface VariantChild {
@@ -493,14 +494,26 @@ export async function processStockData(): Promise<void> {
   const ecommerceOrders = allValidOrders.filter(isEcommerceTransfer);
   const nonEcommerceOrders = allValidOrders.filter(o => !isEcommerceTransfer(o));
   
-  // Pedidos que RESERVAM estoque (TODOS não-cancelados, não-ecommerce)
-  // Inclui Digitação pois o Maxiprod confirma reserva (estadoItem="A faturar")
-  const reservingOrders = nonEcommerceOrders;
+  // Pedidos que RESERVAM estoque:
+  // - Aprovado, A aprovar, Faturado parcial: SEMPRE reservam
+  // - Digitação: SÓ reserva se estoqueReservado=true (confirmado via scraping do Maxiprod)
+  //   Se estoqueReservado=null (não verificado ainda), assume NÃO reservado por segurança
+  const reservingOrders = nonEcommerceOrders.filter(o => {
+    const isDigitacao = o.estadoNota === "Digitação" || o.estadoNota === "Digitacao";
+    if (isDigitacao) {
+      return o.estoqueReservado === true;
+    }
+    return true; // Outros estados sempre reservam
+  });
   
   // Pedidos em Digitação (separados para exibição no card explicativo)
+  // Inclui TODOS os Digitação (reservados e não-reservados) para o card mostrar a composição
   const digitacaoOrders = nonEcommerceOrders.filter(
     (o) => o.estadoNota === "Digitação" || o.estadoNota === "Digitacao"
   );
+  // Separar os que estão reservados vs pendentes de reserva
+  const digitacaoReservados = digitacaoOrders.filter(o => o.estoqueReservado === true);
+  const digitacaoPendentes = digitacaoOrders.filter(o => o.estoqueReservado !== true);
   
   // ─── Build E-COMMERCE order map by codigoItem (para breakdown) ───
   const ecommerceByCode = new Map<string, { totalUn: number; totalCx: number; items: typeof ecommerceOrders }>();
@@ -674,12 +687,17 @@ export async function processStockData(): Promise<void> {
       const estadoConf = order.estadoConfiguravel || undefined;
       const segCRM = order.crmSegmento || undefined;
       
+      const numPedido = order.numeroPedido || undefined;
       const existing = byClientStatus.get(key);
       if (existing) {
         existing.quantidadeCx += qtyCx;
         existing.quantidadeUn += qtyUn;
         existing.quantidadeOriginalCx += qtyTotalCx;
         existing.quantidadeFaturadaCx += qtyFaturada;
+        if (numPedido && !existing.numeroPedidos?.includes(numPedido)) {
+          existing.numeroPedidos = existing.numeroPedidos || [];
+          existing.numeroPedidos.push(numPedido);
+        }
       } else {
         byClientStatus.set(key, {
           cliente,
@@ -690,6 +708,7 @@ export async function processStockData(): Promise<void> {
           status,
           estadoConfiguravel: estadoConf,
           crmSegmento: segCRM,
+          numeroPedidos: numPedido ? [numPedido] : [],
         });
       }
     }
@@ -780,6 +799,7 @@ export async function processStockData(): Promise<void> {
               status: tipo,
               estadoConfiguravel: fat.estadoConfiguravel || undefined,
               crmSegmento: undefined,
+              numeroPedidos: fat.pedido ? [fat.pedido] : [],
             });
           }
         }

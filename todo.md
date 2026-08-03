@@ -6764,5 +6764,6 @@
 - [x] Adicionar campo obrigatório "Meio de Pagamento" (Boleto/Dinheiro/Cartão/PIX/Cheque) para vendedor preencher
 - [x] Meio de Pagamento visível para subgestor/gestor/Vitória no resumo do pedido
 - [x] Meio de Pagamento NÃO exportado para Maxiprod (Column I continua usando normalizeFormaPagamento)
-- [ ] Pedidos em Digitação: só descontar do estoque se caixas estiverem RESERVADAS (não apenas "reservar"). Se não tiver reserva efetiva, não desconta.
-- [ ] Estoque: pedidos em Digitação no Maxiprod só descontam se caixas estiverem efetivamente RESERVADAS (não apenas com indicação "reservar")
+- [x] Pedidos em Digitação: só descontar do estoque se caixas estiverem RESERVADAS (não apenas "reservar"). Se não tiver reserva efetiva, não desconta.
+- [x] Estoque: pedidos em Digitação no Maxiprod só descontam se caixas estiverem efetivamente RESERVADAS (não apenas com indicação "reservar")
+- [x] "Novo Pedido" deve começar do zero; carrinho para continuar pedido em andamento. Opção "Continuar Pedido de Venda" ticada para todos vendedores

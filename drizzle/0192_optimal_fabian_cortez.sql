@@ -1,0 +1,1 @@
+ALTER TABLE `order_items` ADD `estoqueReservado` boolean DEFAULT false;
