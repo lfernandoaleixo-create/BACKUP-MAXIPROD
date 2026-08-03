@@ -743,7 +743,7 @@ export default function GestorAprovacoes(props: any = {}) {
                                     {formatCurrency(Number(item.totalItem))}
                                   </p>
                                   {/* Edit item button - permission-based (gc.reverEditarPedido) */}
-                                  {canReverEditarOrder(order.sellerName) && (order.status === "rejeitado" || order.status === "pendente") && (
+                                  {canReverEditarOrder(order.sellerName) && (order.status === "rejeitado" || order.status === "pendente" || order.status === "aprovado_subgestor") && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
