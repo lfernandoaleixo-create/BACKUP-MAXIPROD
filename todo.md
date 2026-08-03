@@ -6747,3 +6747,7 @@
 - [x] Criar barra de pesquisa na aba Produção > Movimentação de Estoque (busca por código da operação, nome do produto, qualquer caractere; prioridade para código da operação)
 - [x] Bug: Juvenal ao editar pedido após "Rever Pedido" e clicar "Salvar Alterações" recebe erro "Pedido já foi aprovado" — gestor deve conseguir salvar edições após rever
 - [ ] Bug URGENTE: Juvenal não consegue salvar cadastro de cliente
+- [ ] Bug Simulação de Frete: Pedido 1608 (produto 00406, C=42 L=28 A=19) cubagem errada - API cotando R$92 vs manual R$75. Verificar cálculo de cubagem
+- [ ] Bug Simulação de Frete: Botão 'Gerar Relatório PDF' não está funcionando
+- [x] Bug Simulação de Frete: Cubagem errada para produtos com formato "C=42, L= 28, A= 19" (regex só reconhecia "42X28X19")
+- [ ] Bug PDF: Usuário reporta que não consegue gerar relatório PDF (investigado - funciona corretamente, possível bloqueador de popup)

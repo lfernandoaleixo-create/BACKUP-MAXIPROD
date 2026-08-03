@@ -2994,14 +2994,22 @@ export const salesOrderRouter = router({
             pesoTotal += itemPesoTotal;
           }
 
-          // Parse dimensions from descricaoComplementar (e.g., "42X24X39" = CxLxA in cm)
+          // Parse dimensions from descricaoComplementar
+          // Supports formats: "42X24X39", "420x330x280", "C=42, L= 28, A= 19", "C=42, L=31, A=19"
           const dimStr = stockItem?.descricaoComplementar || "";
           let comprCm = 0, largCm = 0, altCm = 0;
-          const dimMatch = dimStr.match(/(\d+)[xX](\d+)[xX](\d+)/);
+          // Format 1: NxNxN (e.g., "42X24X39", "420x330x280")
+          const dimMatch = dimStr.match(/(\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)/);
+          // Format 2: C=N, L=N, A=N (e.g., "C=42, L= 28, A= 19")
+          const claMatch = dimStr.match(/C\s*=\s*(\d+(?:[.,]\d+)?).*?L\s*=\s*(\d+(?:[.,]\d+)?).*?A\s*=\s*(\d+(?:[.,]\d+)?)/i);
           if (dimMatch) {
-            comprCm = parseInt(dimMatch[1]);
-            largCm = parseInt(dimMatch[2]);
-            altCm = parseInt(dimMatch[3]);
+            comprCm = parseFloat(dimMatch[1].replace(",", "."));
+            largCm = parseFloat(dimMatch[2].replace(",", "."));
+            altCm = parseFloat(dimMatch[3].replace(",", "."));
+          } else if (claMatch) {
+            comprCm = parseFloat(claMatch[1].replace(",", "."));
+            largCm = parseFloat(claMatch[2].replace(",", "."));
+            altCm = parseFloat(claMatch[3].replace(",", "."));
           }
           const volCxM3 = comprCm > 0 ? (comprCm * largCm * altCm) / 1_000_000 : 0;
           const cubagem = volCxM3 * qty;
@@ -3364,13 +3372,20 @@ export const salesOrderRouter = router({
             pesoTotal += itemPesoTotal;
           }
 
+          // Parse dimensions from descricaoComplementar
+          // Supports formats: "42X24X39", "420x330x280", "C=42, L= 28, A= 19"
           const dimStr = stockItem?.descricaoComplementar || "";
           let comprCm = 0, largCm = 0, altCm = 0;
-          const dimMatch = dimStr.match(/(\d+)[xX](\d+)[xX](\d+)/);
+          const dimMatch = dimStr.match(/(\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)/);
+          const claMatch2 = dimStr.match(/C\s*=\s*(\d+(?:[.,]\d+)?).*?L\s*=\s*(\d+(?:[.,]\d+)?).*?A\s*=\s*(\d+(?:[.,]\d+)?)/i);
           if (dimMatch) {
-            comprCm = parseInt(dimMatch[1]);
-            largCm = parseInt(dimMatch[2]);
-            altCm = parseInt(dimMatch[3]);
+            comprCm = parseFloat(dimMatch[1].replace(",", "."));
+            largCm = parseFloat(dimMatch[2].replace(",", "."));
+            altCm = parseFloat(dimMatch[3].replace(",", "."));
+          } else if (claMatch2) {
+            comprCm = parseFloat(claMatch2[1].replace(",", "."));
+            largCm = parseFloat(claMatch2[2].replace(",", "."));
+            altCm = parseFloat(claMatch2[3].replace(",", "."));
           }
           const volCxM3 = comprCm > 0 ? (comprCm * largCm * altCm) / 1_000_000 : 0;
           const cubagem = volCxM3 * qty;

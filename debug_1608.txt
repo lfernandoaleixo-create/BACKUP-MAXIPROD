@@ -1,0 +1,31 @@
+Pedido 1608 - Produto 00406 - Bug de cubagem
+
+DADOS DO MAXIPROD (print do usuário):
+- Código: 00406
+- Descrição complementar: C=42, L=28, A=19
+- Produto: ESPETO DE BAMBU 3,5 X 250 MM C/ 100 x 40 UNID. - PALITIN
+- Qt: 1,0000 CX
+- Valor unitário: 151,00
+- Valor total: 151,00
+
+RELATÓRIO DO DASHBOARD (print do usuário):
+- Seção "DIMENSÕES REAIS (descricaoComplementar Maxiprod)"
+- Código 00406: Dimensões (cm) = C=42, L=28, A=19
+- C (cm): - | L (cm): - | A (cm): - | Vol/CX (m3): - | Cubagem (m3): -
+- TOTAL: Qtd 1, Cubagem (m3) = 0.050000
+
+PROBLEMA:
+O relatório mostra que NÃO está parseando as dimensões C=42, L=28, A=19 corretamente.
+As colunas C, L, A estão vazias ("-") para o produto 00406.
+Porém o TOTAL mostra cubagem 0.050000 m3 (50 dm3).
+
+CÁLCULO CORRETO:
+42 × 28 × 19 = 22.344 cm3 = 0.022344 m3
+Para 1 caixa: 0.022344 m3
+
+O dashboard está usando 0.050000 m3 (provavelmente um fallback ou valor errado).
+A cubagem correta é 0.022344 m3.
+
+Isso explica a divergência: 
+- Com 0.050 m3, a transportadora cobra mais (R$92)
+- Com 0.022344 m3, a cotação seria menor (~R$75)
