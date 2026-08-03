@@ -1836,6 +1836,7 @@ interface POSummary {
 function POOverviewCard({ items }: { items: StockItem[] }) {
   const [isListOpen, setIsListOpen] = useState(false);
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
+  const [poSearch, setPoSearch] = useState("");
   const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
   const [trackingBl, setTrackingBl] = useState<string | null>(null);
   const [trackingContainer, setTrackingContainer] = useState<string | null>(null);
@@ -1945,7 +1946,35 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
 
       {/* PO List - Collapsible */}
       {isListOpen && <div className="divide-y divide-slate-100 dark:divide-slate-700">
-        {poSummaries.map((po) => {
+        {/* Search bar */}
+        <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Buscar produto, código..."
+              value={poSearch}
+              onChange={(e) => setPoSearch(e.target.value)}
+              className="pl-9 bg-white h-8 md:h-9 text-sm"
+            />
+            {poSearch && (
+              <button onClick={() => setPoSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+        {(poSearch.trim()
+          ? poSummaries.filter(po => {
+              const q = poSearch.trim().toLowerCase();
+              // Search in PO reference name
+              if (po.referenciaPO.toLowerCase().includes(q)) return true;
+              // Search in supplier name
+              if (po.fornecedor.toLowerCase().includes(q)) return true;
+              // Search in product names and codes within this PO
+              return po.produtos.some(p => p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q));
+            })
+          : poSummaries
+        ).map((po) => {
           const isExpanded = expandedPO === po.referenciaPO;
           // Parse date for proximity indicator
           const isUrgent = (() => {
