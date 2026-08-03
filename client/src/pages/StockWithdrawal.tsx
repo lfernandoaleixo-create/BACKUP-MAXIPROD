@@ -980,6 +980,7 @@ function HistoricoList() {
   const [editObsSenha, setEditObsSenha] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | "pendente" | "aprovada" | "concluida" | "recusada">("todas");
   const [motivoFilter, setMotivoFilter] = useState<string>("todos");
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: requests, isLoading } = trpc.stockWithdrawal.list.useQuery({ status: statusFilter, limit: 200 });
   const utils = trpc.useUtils();
   const deleteMutation = trpc.stockWithdrawal.delete.useMutation({
@@ -1016,17 +1017,52 @@ function HistoricoList() {
     updateObsMutation.mutate({ id, motivoDescricao: editObsText.trim(), senha: editObsSenha.trim() });
   }
 
-  // Filtrar por motivo no client-side
+  // Filtrar por motivo e busca textual no client-side
   const filteredRequests = useMemo(() => {
     if (!requests) return [];
-    if (motivoFilter === "todos") return requests;
-    return requests.filter((r) => r.motivo === motivoFilter);
-  }, [requests, motivoFilter]);
+    let result = requests;
+    if (motivoFilter !== "todos") {
+      result = result.filter((r) => r.motivo === motivoFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((r) => {
+        const code = (r.productCode || "").toLowerCase();
+        const name = (r.productName || "").toLowerCase();
+        const destCode = (r.produtoDestinoCode || "").toLowerCase();
+        const destName = (r.produtoDestinoName || "").toLowerCase();
+        const solicitante = (r.solicitanteName || "").toLowerCase();
+        const id = String(r.id);
+        return code.includes(q) || name.includes(q) || destCode.includes(q) || destName.includes(q) || solicitante.includes(q) || id.includes(q);
+      });
+    }
+    return result;
+  }, [requests, motivoFilter, searchQuery]);
 
   if (isLoading) return <div className="flex items-center gap-2 text-slate-500 py-8 justify-center"><Loader2 className="w-5 h-5 animate-spin" /> Carregando...</div>;
 
   return (
     <div className="space-y-4">
+      {/* Barra de Pesquisa */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar por código, nome do produto, solicitante, ID..."
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {/* Filtro por Status */}
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-slate-500" />
