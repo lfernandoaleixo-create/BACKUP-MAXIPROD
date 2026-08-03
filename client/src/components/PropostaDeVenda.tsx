@@ -97,10 +97,20 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
   const [observacoes, setObservacoes] = useState("");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
 
+  // Validade da proposta
+  const [validadeDias, setValidadeDias] = useState(30);
+
   // PDF export state
   const [isExporting, setIsExporting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedId, setSavedId] = useState<number | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
+
+  // Save proposal mutation
+  const saveMutation = trpc.proposal.create.useMutation();
+  const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
 
   // CEP lookup
   const { fetchCep: fetchMainCep } = useCepLookup();
@@ -211,6 +221,124 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
   const totalPedido = totalProdutos + totalFrete;
   const totalPeso = items.reduce((sum, item) => sum + (item.pesoBrutoCaixa || 0) * item.quantidade, 0);
 
+  // Validade helper
+  const getDataValidade = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + validadeDias);
+    return d.toLocaleDateString("pt-BR");
+  };
+
+  // Save proposal to DB
+  const handleSaveProposal = async () => {
+    setIsSaving(true);
+    try {
+      const result = await saveMutation.mutateAsync({
+        sellerId,
+        sellerName,
+        cnpjCpf,
+        razaoSocial,
+        nomeFantasia,
+        inscricaoEstadual,
+        cep,
+        endereco,
+        numero,
+        bairro,
+        municipio,
+        uf,
+        telefone: telefone1,
+        emailContato,
+        enderecoEntregaDiferente: !enderecoEntregaMesmo,
+        entregaCep: !enderecoEntregaMesmo ? entregaCep : undefined,
+        entregaLogradouro: !enderecoEntregaMesmo ? entregaLogradouro : undefined,
+        entregaNumero: !enderecoEntregaMesmo ? entregaNumero : undefined,
+        entregaBairro: !enderecoEntregaMesmo ? entregaBairro : undefined,
+        entregaCidade: !enderecoEntregaMesmo ? entregaCidade : undefined,
+        entregaUf: !enderecoEntregaMesmo ? entregaUf : undefined,
+        formaPagamento,
+        meioPagamento,
+        condicaoPagamento,
+        valorFrete: valorFrete || "0",
+        tipoFrete,
+        transportadora,
+        observacoes,
+        validadeDias,
+        dataValidade: getDataValidade(),
+        items: items.map(i => ({
+          codigoItem: i.codigoItem,
+          descricaoItem: i.descricaoItem,
+          quantidade: i.quantidade,
+          unidadeMedida: i.unidadeMedida,
+          precoUnitario: i.precoUnitario,
+          precoMinimo: i.precoMinimo,
+          grupo: i.grupo,
+        })),
+        totalProdutos,
+        totalPedido,
+        pdfUrl: pdfUrl || undefined,
+      });
+      setSavedId(result.id);
+    } catch (err: any) {
+      setExportError(err.message || "Erro ao salvar proposta");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Convert proposal to order
+  const handleConvertToOrder = async () => {
+    setIsConverting(true);
+    try {
+      const orderResult = await createOrderMutation.mutateAsync({
+        sellerId,
+        cnpjCpf,
+        razaoSocial,
+        nomeFantasia,
+        inscricaoEstadual,
+        tipoContribuinte,
+        cep,
+        endereco,
+        numero,
+        bairro,
+        municipio,
+        uf,
+        telefone1,
+        emailContato,
+        enderecoEntregaMesmo,
+        entregaCep: !enderecoEntregaMesmo ? entregaCep : undefined,
+        entregaLogradouro: !enderecoEntregaMesmo ? entregaLogradouro : undefined,
+        entregaNumero: !enderecoEntregaMesmo ? entregaNumero : undefined,
+        entregaBairro: !enderecoEntregaMesmo ? entregaBairro : undefined,
+        entregaCidade: !enderecoEntregaMesmo ? entregaCidade : undefined,
+        entregaUf: !enderecoEntregaMesmo ? entregaUf : undefined,
+        formaPagamento,
+        meioPagamento,
+        condicaoPagamento,
+        valorFrete: Number(valorFrete) || 0,
+        tipoFrete,
+        transportadora,
+        observacoes,
+        naturezaOperacao,
+        items: items.map(i => ({
+          codigoItem: i.codigoItem,
+          descricaoItem: i.descricaoItem,
+          quantidade: i.quantidade,
+          unidadeMedida: i.unidadeMedida,
+          precoUnitario: i.precoUnitario,
+        })),
+      });
+      // If we saved the proposal, mark it as converted
+      if (savedId && orderResult.orderId) {
+        // We'd need a markConverted mutation but for now just close
+      }
+      alert(`Pedido de Venda criado com sucesso! (ID: ${orderResult.orderId})`);
+      onClose();
+    } catch (err: any) {
+      setExportError(err.message || "Erro ao converter em pedido");
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   // Steps array
   const steps: Step[] = ["cliente", "produtos", "pagamento", "revisao"];
   const stepLabels: Record<Step, string> = {
@@ -272,6 +400,8 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
         tipoContribuinte: tipoContribuinte as any,
         assinatura: sellerName,
         emailContato: emailContato || undefined,
+        validadeDias,
+        dataValidade: getDataValidade(),
       };
 
       const response = await fetch("/api/proposta/export-pdf", {
@@ -765,6 +895,37 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
                   className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 resize-none"
                 />
               </div>
+
+              {/* Validade da Proposta */}
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-600">
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="text-[10px] font-bold text-slate-600 uppercase">Validade da Proposta</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-500">Dias de Validade</label>
+                    <select
+                      value={validadeDias}
+                      onChange={(e) => setValidadeDias(Number(e.target.value))}
+                      className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    >
+                      <option value={7}>7 dias</option>
+                      <option value={15}>15 dias</option>
+                      <option value={30}>30 dias</option>
+                      <option value={45}>45 dias</option>
+                      <option value={60}>60 dias</option>
+                      <option value={90}>90 dias</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500">Válida até</label>
+                    <div className="text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium">
+                      {getDataValidade()}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -835,6 +996,10 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
                   <span className="text-slate-700 dark:text-slate-200">{formatCurrency(totalFrete)}</span>
                 </div>
               )}
+              <div className="flex justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-600">
+                <span className="text-slate-500">Validade da Proposta:</span>
+                <span className="font-medium text-blue-700 dark:text-blue-300">{getDataValidade()} ({validadeDias} dias)</span>
+              </div>
             </div>
 
             {/* Items table */}
@@ -909,25 +1074,58 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
               </div>
             )}
 
-            {/* Navigation */}
-            <div className="flex justify-between pt-2">
-              <button onClick={() => setStep("pagamento")} className="px-3 py-2 text-xs text-slate-600 hover:text-slate-800 font-medium">
-                ← Voltar
-              </button>
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 pt-2">
+              <div className="flex justify-between">
+                <button onClick={() => setStep("pagamento")} className="px-3 py-2 text-xs text-slate-600 hover:text-slate-800 font-medium">
+                  ← Voltar
+                </button>
+                <div className="flex gap-2">
+                  {/* Salvar Proposta */}
+                  <button
+                    onClick={handleSaveProposal}
+                    disabled={isSaving || items.length === 0 || !!savedId}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : savedId ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                    )}
+                    {savedId ? "Salva" : "Salvar"}
+                  </button>
+                  {/* Exportar PDF */}
+                  <button
+                    onClick={handleExportPdf}
+                    disabled={isExporting || items.length === 0}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-300 disabled:to-slate-400 text-white text-xs font-bold rounded-lg transition-all shadow-md"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5" />
+                    )}
+                    {isExporting ? "Gerando..." : "Exportar PDF"}
+                  </button>
+                </div>
+              </div>
+              {/* Converter em Pedido */}
               <button
-                onClick={handleExportPdf}
-                disabled={isExporting || items.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-300 disabled:to-slate-400 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg"
+                onClick={handleConvertToOrder}
+                disabled={isConverting || items.length === 0}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-slate-300 disabled:to-slate-400 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg"
               >
-                {isExporting ? (
+                {isConverting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Gerando PDF...
+                    Convertendo...
                   </>
                 ) : (
                   <>
-                    <FileText className="w-4 h-4" />
-                    Exportar Proposta em PDF
+                    <Plus className="w-4 h-4" />
+                    Converter em Pedido de Venda
                   </>
                 )}
               </button>

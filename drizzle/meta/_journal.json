@@ -1352,6 +1352,13 @@
       "when": 1785775287520,
       "tag": "0192_optimal_fabian_cortez",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "5",
+      "when": 1785782792260,
+      "tag": "0193_goofy_sphinx",
+      "breakpoints": true
     }
   ]
 }

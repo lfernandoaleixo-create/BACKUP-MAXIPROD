@@ -83,6 +83,9 @@ interface PropostaData {
   // Tax info
   tipoProduto?: TipoProduto;
   tipoContribuinte?: TipoContribuinte;
+  // Validade
+  validadeDias?: number;
+  dataValidade?: string;
   // Signature
   assinatura?: string;
   emailContato?: string;
@@ -143,7 +146,13 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     }
     doc.fontSize(8).font("Helvetica-Bold")
       .text(`Emissão ${data.dataEmissao || new Date().toLocaleDateString("pt-BR")}`, leftMargin + pageWidth - 150, y, { width: 150, align: "right" });
-    y += 15;
+    y += 12;
+    if (data.dataValidade) {
+      doc.fontSize(8).font("Helvetica-Bold")
+        .text(`Validade: ${data.dataValidade}${data.validadeDias ? ` (${data.validadeDias} dias)` : ""}`, leftMargin + pageWidth - 200, y, { width: 200, align: "right" });
+      y += 12;
+    }
+    y += 3;
 
     // ========== CLIENT DATA ==========
     doc.fontSize(8).font("Helvetica-Bold").text("Cliente: ", leftMargin, y, { continued: true });
@@ -315,6 +324,11 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     doc.font("Helvetica-Bold").text("Condição de pagamento: ", leftMargin + 10, y, { continued: true });
     doc.font("Helvetica").text(data.condicaoPagamento || "—");
     y += 12;
+    if (data.dataValidade) {
+      doc.font("Helvetica-Bold").text("Validade da proposta: ", leftMargin + 10, y, { continued: true });
+      doc.font("Helvetica").text(`${data.dataValidade}${data.validadeDias ? ` (${data.validadeDias} dias)` : ""}`);
+      y += 12;
+    }
 
     // ========== TRANSPORT ==========
     y += 10;

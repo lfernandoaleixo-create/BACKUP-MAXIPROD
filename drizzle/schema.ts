@@ -3362,3 +3362,51 @@ export const freightSimulations = mysqlTable("freight_simulations", {
 });
 export type FreightSimulation = typeof freightSimulations.$inferSelect;
 export type InsertFreightSimulation = typeof freightSimulations.$inferInsert;
+
+// ===== Propostas de Venda (simulação para cliente) =====
+export const proposals = mysqlTable("proposals", {
+  id: int("id").primaryKey().autoincrement(),
+  sellerId: int("seller_id").notNull(),
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  status: varchar("status", { length: 30 }).notNull().default("rascunho"),
+  cnpjCpf: varchar("cnpj_cpf", { length: 20 }),
+  razaoSocial: varchar("razao_social", { length: 300 }).notNull(),
+  nomeFantasia: varchar("nome_fantasia", { length: 300 }),
+  inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
+  cep: varchar("cep", { length: 10 }),
+  endereco: varchar("endereco", { length: 300 }),
+  numero: varchar("numero", { length: 20 }),
+  bairro: varchar("bairro", { length: 100 }),
+  municipio: varchar("municipio", { length: 100 }),
+  uf: varchar("uf", { length: 2 }),
+  telefone: varchar("telefone", { length: 30 }),
+  emailContato: varchar("email_contato", { length: 200 }),
+  enderecoEntregaDiferente: boolean("endereco_entrega_diferente").default(false),
+  entregaCep: varchar("entrega_cep", { length: 10 }),
+  entregaLogradouro: varchar("entrega_logradouro", { length: 300 }),
+  entregaNumero: varchar("entrega_numero", { length: 20 }),
+  entregaBairro: varchar("entrega_bairro", { length: 100 }),
+  entregaCidade: varchar("entrega_cidade", { length: 100 }),
+  entregaUf: varchar("entrega_uf", { length: 2 }),
+  formaPagamento: varchar("forma_pagamento", { length: 50 }),
+  meioPagamento: varchar("meio_pagamento", { length: 50 }),
+  condicaoPagamento: varchar("condicao_pagamento", { length: 100 }),
+  valorFrete: decimal("valor_frete", { precision: 18, scale: 2 }),
+  tipoFrete: varchar("tipo_frete", { length: 10 }),
+  transportadora: varchar("transportadora", { length: 200 }),
+  observacoes: text("observacoes"),
+  validadeDias: int("validade_dias").default(30),
+  dataValidade: varchar("data_validade", { length: 10 }),
+  items: json("items").notNull(),
+  totalProdutos: decimal("total_produtos", { precision: 18, scale: 2 }).notNull(),
+  totalPedido: decimal("total_pedido", { precision: 18, scale: 2 }).notNull(),
+  pdfUrl: text("pdf_url"),
+  convertedToOrderId: int("converted_to_order_id"),
+  convertedAt: timestamp("converted_at"),
+  operatorId: int("operator_id"),
+  operatorName: varchar("operator_name", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type Proposal = typeof proposals.$inferSelect;
+export type InsertProposal = typeof proposals.$inferInsert;

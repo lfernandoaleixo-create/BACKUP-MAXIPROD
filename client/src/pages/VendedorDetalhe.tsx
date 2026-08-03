@@ -70,6 +70,7 @@ import {
   Eye,
   ClipboardCheck,
   TrendingDown,
+  Copy,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TrackingModal } from "@/components/TrackingModal";
@@ -4048,6 +4049,18 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     { staleTime: 60 * 1000 }
   );
 
+  // Buscar propostas salvas do vendedor
+  const { data: propostas, refetch: refetchPropostas } = trpc.proposal.list.useQuery(
+    { sellerId },
+    { staleTime: 60 * 1000 }
+  );
+  const duplicateProposal = trpc.proposal.duplicate.useMutation({
+    onSuccess: () => refetchPropostas(),
+  });
+  const deleteProposal = trpc.proposal.delete.useMutation({
+    onSuccess: () => refetchPropostas(),
+  });
+
   const filteredPedidos = useMemo(() => {
     if (!pedidos) return [];
     let result = [...pedidos];
@@ -4442,6 +4455,88 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       {showProposal && (
         <PropostaDeVenda sellerId={sellerId} sellerName={sellerName} onClose={() => setShowProposal(false)} />
       )}
+
+      {/* Histórico de Propostas */}
+      {propostas && propostas.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-700 shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Propostas Salvas ({propostas.length})</span>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {propostas.map((prop: any) => {
+              const isExpired = prop.dataValidade && new Date(prop.dataValidade.split('/').reverse().join('-')) < new Date();
+              const statusColor = prop.status === 'convertida' ? 'bg-green-50 text-green-600' :
+                prop.status === 'rascunho' && isExpired ? 'bg-red-50 text-red-600' :
+                'bg-blue-50 text-blue-600';
+              const statusLabel = prop.status === 'convertida' ? 'Convertida' :
+                isExpired ? 'Expirada' : 'Rascunho';
+              return (
+                <div key={prop.id} className="px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-400">#{String(prop.id).padStart(3, '0')}</span>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                          {prop.razaoSocial || 'Sem cliente'}
+                        </p>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${statusColor}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500">
+                        <span>{new Date(prop.createdAt).toLocaleDateString('pt-BR')}</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.totalPedido || 0)}
+                        </span>
+                        {prop.validadeDias && (
+                          <span className={isExpired ? 'text-red-500' : 'text-slate-500'}>Validade: {prop.dataValidade || `${prop.validadeDias}d`}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {prop.pdfUrl && (
+                        <a
+                          href={prop.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                          title="Baixar PDF"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => duplicateProposal.mutate({ id: prop.id })}
+                        className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                        title="Duplicar proposta"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      {prop.status !== 'convertida' && (
+                        <button
+                          onClick={() => {
+                            if (confirm('Excluir esta proposta?')) {
+                              deleteProposal.mutate({ id: prop.id });
+                            }
+                          }}
+                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Excluir proposta"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Pedidos manuais (via App) */}
       {pedidosManuais && pedidosManuais.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-teal-200 dark:border-teal-700 shadow-sm overflow-hidden">

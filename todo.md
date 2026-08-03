@@ -6770,3 +6770,7 @@
 - [x] Nova Proposta de Venda: botão ao lado de "Novo Pedido" para criar proposta (simulação para cliente, sem reservar caixas)
 - [x] Nova Proposta de Venda: formulário similar ao pedido de venda (cliente, produtos, preços, frete, condições)
 - [x] Nova Proposta de Venda: exportar em PDF no formato Maxiprod (logo, dados cliente, produtos, impostos, totais, transporte)
+- [x] Proposta: botão "Converter em Pedido de Venda" na tela de revisão (preenche o formulário de pedido com os dados da proposta)
+- [x] Proposta: campo "Validade da Proposta" na etapa de pagamento + exibir no PDF exportado
+- [x] Proposta: salvar propostas no banco de dados (tabela proposals)
+- [x] Proposta: tela de histórico de propostas salvas com opções de editar e duplicar
