@@ -6751,3 +6751,6 @@
 - [ ] Bug Simulação de Frete: Botão 'Gerar Relatório PDF' não está funcionando
 - [x] Bug Simulação de Frete: Cubagem errada para produtos com formato "C=42, L= 28, A= 19" (regex só reconhecia "42X28X19")
 - [ ] Bug PDF: Usuário reporta que não consegue gerar relatório PDF (investigado - funciona corretamente, possível bloqueador de popup)
+- [ ] Bug Valorização do Estoque: Valor Estoque + PO não está batendo com Projetado em alguns casos (em estoque e sob encomenda)
+- [x] Bug: Tooltip de pedidos por cliente cortando informações ao passar cursor - corrigido posicionamento (side=bottom com collisionPadding) e removido truncate dos nomes
+- [x] Reverter alertas de estoque insuficiente recusados do Pedido 1606 para status pendente (Maria poder aceitar)

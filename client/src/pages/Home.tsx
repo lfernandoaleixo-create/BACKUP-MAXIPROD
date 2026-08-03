@@ -590,7 +590,7 @@ function POCell({ item }: { item: StockItem }) {
           )}
         </div>
       </TooltipTrigger>
-      <TooltipContent side="left" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl">
+      <TooltipContent side="bottom" align="end" className="max-w-[90vw] w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl" collisionPadding={16}>
         <div className="p-3 space-y-2">
           <p className="font-semibold text-sm flex items-center gap-1.5">
             <Ship className="w-4 h-4 text-blue-500" />
@@ -1079,7 +1079,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                 {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${unit}`}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-4xl w-[750px] p-0" sideOffset={8}>
+                            <TooltipContent side="bottom" align="end" className="max-w-[90vw] w-[750px] p-0" sideOffset={8} collisionPadding={16}>
                               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 overflow-hidden">
 
                                 {/* Detalhamento por cliente (pedidos próprios do pai se for pai, ou todos se não for) */}
@@ -1107,10 +1107,10 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {clienteReservados.map((pc, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                                                    <td className="px-4 py-3 text-slate-700 max-w-[450px] truncate text-sm" title={pc.cliente}>
-                                                      {pc.cliente}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-bold text-orange-600 whitespace-nowrap text-sm">
+<td className="px-4 py-3 text-slate-700 text-sm" title={pc.cliente}>
+                                      {pc.cliente}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-bold text-orange-600 whitespace-nowrap text-sm">
                                                       {pc.quantidadeFaturadaCx > 0 ? (
                                                         <div className="flex flex-col items-end gap-0.5">
                                                           <span className="text-orange-600 font-bold">{formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}</span>
@@ -1152,10 +1152,10 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                   {vReservados.map((pc, idx) => (
                                                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                                                      <td className="px-4 py-3 text-slate-700 max-w-[450px] truncate text-sm" title={pc.cliente}>
-                                                        {pc.cliente}
-                                                      </td>
-                                                      <td className="px-4 py-3 text-right font-bold text-violet-600 whitespace-nowrap text-sm">
+<td className="px-4 py-3 text-slate-700 text-sm" title={pc.cliente}>
+                                      {pc.cliente}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-bold text-violet-600 whitespace-nowrap text-sm">
                                                         {pc.quantidadeFaturadaCx > 0 ? (
                                                           <div className="flex flex-col items-end gap-0.5">
                                                             <span className="text-violet-600 font-bold">{formatNumber(Math.ceil(pc.quantidadeCx), true)} cx</span>
@@ -1220,7 +1220,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                 {dispVal} {unit}
                               </span>
                             </PopoverTrigger>
-                            <PopoverContent side="left" className="w-[380px] p-0" sideOffset={8}>
+                            <PopoverContent side="bottom" align="end" className="w-[380px] max-w-[90vw] p-0" sideOffset={8} collisionPadding={16}>
                               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 overflow-hidden">
                                 {/* Header */}
                                 <div className="bg-emerald-50 px-4 py-3 border-b border-emerald-100">
@@ -2495,10 +2495,10 @@ function ClassificationCard({
         comPreco++;
         const estCx = item.estoqueCx ?? 0;
         const poCx = item.poCx ?? 0;
-        const projCx = item.projetadoCx ?? 0;
         valorEstoque += estCx * price.avgPrice;
         valorPO += poCx * price.avgPrice;
-        valorProjetado += projCx * price.avgPrice;
+        // Projetado = Estoque + PO (valor total de ativos: o que tem + o que vem)
+        valorProjetado += (estCx + poCx) * price.avgPrice;
       } else {
         semPreco++;
       }
@@ -2595,8 +2595,8 @@ function ClassificationCard({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-                  <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto + PO</strong></p>
-                  <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos) e soma os pedidos de compra (PO) a caminho. Por isso pode ser menor que o Vlr Estoque.</p>
+                  <p className="text-xs leading-relaxed"><strong>Projetado = Estoque + PO</strong></p>
+                  <p className="text-[10px] text-slate-500 mt-1">O valor projetado soma o estoque atual com os pedidos de compra (PO) a caminho. Representa o valor total dos ativos (o que tem + o que vem).</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -2651,8 +2651,8 @@ function ClassificationCard({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto + PO</strong></p>
-                <p className="text-[10px] text-slate-500 mt-1">Desconta pedidos já comprometidos e soma PO a caminho.</p>
+                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque + PO</strong></p>
+                <p className="text-[10px] text-slate-500 mt-1">Valor total dos ativos: estoque atual + PO a caminho.</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -2799,13 +2799,11 @@ function MadeiraValorizacaoCard({
       if (preco && preco > 0) {
         comPreco++;
         const estoque = madeiraStockMap.get(item.codigoItem) || 0;
-        const pedidos = item.pedidosCx ?? 0;
-        const disponivel = estoque - pedidos;
         const po = item.poCx ?? 0;
-        const projetado = disponivel + po;
         valorEstoque += estoque * preco;
         valorPO += po * preco;
-        valorProjetado += projetado * preco;
+        // Projetado = Estoque + PO (valor total de ativos: o que tem + o que vem)
+        valorProjetado += (estoque + po) * preco;
       } else {
         semPreco++;
       }
@@ -2892,8 +2890,8 @@ function MadeiraValorizacaoCard({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
-                <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos). Por isso pode ser menor que o Vlr Estoque. Não envolve PO por enquanto.</p>
+                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque + PO</strong></p>
+                <p className="text-[10px] text-slate-500 mt-1">O valor projetado soma o estoque atual com os pedidos de compra (PO) a caminho. Representa o valor total dos ativos.</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -3788,8 +3786,8 @@ function SemiProntoValorizacaoInline({
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-            <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
-            <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
+            <p className="text-xs leading-relaxed"><strong>Projetado = Estoque</strong></p>
+            <p className="text-[10px] text-slate-500 mt-1">Nesta seção não há PO, então o projetado é igual ao estoque.</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -3866,8 +3864,8 @@ function AguardandoValorizacaoInline({
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-            <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
-            <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
+            <p className="text-xs leading-relaxed"><strong>Projetado = Estoque</strong></p>
+            <p className="text-[10px] text-slate-500 mt-1">Nesta seção não há PO, então o projetado é igual ao estoque.</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -4935,7 +4933,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                               )}
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="left" className="max-w-[420px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl">
+                          <TooltipContent side="bottom" align="end" className="max-w-[90vw] w-[500px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl" collisionPadding={16}>
                             <div className="p-3 space-y-2">
                               <p className="font-semibold text-sm flex items-center gap-1.5">
                                 <Ship className="w-4 h-4 text-blue-500" />
@@ -5164,7 +5162,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                               )}
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="left" className="max-w-[420px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-rose-500/50 shadow-xl">
+                          <TooltipContent side="bottom" align="end" className="max-w-[90vw] w-[500px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-rose-500/50 shadow-xl" collisionPadding={16}>
                             <div className="p-3 space-y-2">
                               <p className="font-semibold text-sm flex items-center gap-1.5">
                                 <ShoppingCart className="w-4 h-4 text-rose-500" />
@@ -5193,7 +5191,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                       const aFaturar = total - faturado;
                                       return (
                                         <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                                          <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={pc.cliente}>
+                                          <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[250px] text-wrap" title={pc.cliente}>
                                             {pc.cliente}
                                           </td>
                                           <td className="px-2 py-1 text-right font-semibold text-rose-700">
@@ -5328,7 +5326,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                 )}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-[420px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-rose-500/50 shadow-xl">
+                            <TooltipContent side="bottom" align="end" className="max-w-[90vw] w-[500px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-rose-500/50 shadow-xl" collisionPadding={16}>
                               <div className="p-3 space-y-2">
                                 <p className="font-semibold text-sm flex items-center gap-1.5">
                                   <ShoppingCart className="w-4 h-4 text-rose-500" />
@@ -5357,7 +5355,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                                         const aFaturar = total - faturado;
                                         return (
                                           <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                                            <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[180px] truncate" title={pc.cliente}>
+                                            <td className="px-2 py-1 font-medium text-slate-700 dark:text-slate-200 max-w-[250px] text-wrap" title={pc.cliente}>
                                               {pc.cliente}
                                             </td>
                                             <td className="px-2 py-1 text-right font-semibold text-rose-700">
@@ -6119,9 +6117,12 @@ function DashboardContent({ items }: { items: StockItem[] }) {
             const price = priceMap[item.descricaoItem];
             if (price) {
               comPreco++;
-              valorEstoque += (item.estoqueCx ?? 0) * price.avgPrice;
-              valorPO += (item.poCx ?? 0) * price.avgPrice;
-              valorProjetado += (item.projetadoCx ?? 0) * price.avgPrice;
+              const estCx = item.estoqueCx ?? 0;
+              const poCx = item.poCx ?? 0;
+              valorEstoque += estCx * price.avgPrice;
+              valorPO += poCx * price.avgPrice;
+              // Projetado = Estoque + PO (valor total de ativos)
+              valorProjetado += (estCx + poCx) * price.avgPrice;
             } else {
               semPreco++;
             }
@@ -6217,8 +6218,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-                      <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto + PO</strong></p>
-                      <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos) e soma os pedidos de compra (PO) a caminho. Por isso pode ser menor que o Vlr Estoque.</p>
+                      <p className="text-xs leading-relaxed"><strong>Projetado = Estoque + PO</strong></p>
+                      <p className="text-[10px] text-slate-500 mt-1">O valor projetado soma o estoque atual com os pedidos de compra (PO) a caminho. Representa o valor total dos ativos.</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
