@@ -1975,7 +1975,8 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
             })
           : poSummaries
         ).map((po) => {
-          const isExpanded = expandedPO === po.referenciaPO;
+          // Auto-expand when search is active (so user sees the products immediately)
+          const isExpanded = poSearch.trim() ? true : expandedPO === po.referenciaPO;
           // Parse date for proximity indicator
           const isUrgent = (() => {
             if (!po.dataEntrega) return false;
@@ -2131,10 +2132,13 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                     <tbody className="divide-y divide-blue-100">
                       {po.produtos
                         .sort((a, b) => b.quantidade - a.quantidade)
-                        .map((prod, idx) => (
-                        <tr key={idx} className="hover:bg-blue-100/50">
+                        .map((prod, idx) => {
+                        const isMatch = poSearch.trim() && (prod.descricaoItem.toLowerCase().includes(poSearch.trim().toLowerCase()) || prod.codigoItem.toLowerCase().includes(poSearch.trim().toLowerCase()));
+                        return (
+                        <tr key={idx} className={isMatch ? "bg-yellow-100 ring-1 ring-yellow-300" : "hover:bg-blue-100/50"}>
                           <td className="py-2 text-slate-700 font-medium text-xs pr-4">
                             {prod.descricaoItem}
+                            {isMatch && <span className="ml-2 text-[10px] text-yellow-700 bg-yellow-200 px-1.5 py-0.5 rounded font-semibold">encontrado</span>}
                           </td>
                           <td className="py-2 text-slate-400 text-xs">
                             {prod.codigoItem}
@@ -2143,7 +2147,8 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                             {formatNumber(prod.quantidade, true)} cx
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-blue-200">
