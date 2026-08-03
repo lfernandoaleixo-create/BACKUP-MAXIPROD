@@ -6736,5 +6736,6 @@
 - [x] Aprovação de Pedidos: redesenhar layout de senha para modal centralizado profissional (em vez de inline)
 - [x] Reescrever cálculo do Custo Real e Custo Projetado usando lógica LIFO: só incluir POs cujas caixas ainda estão fisicamente no estoque, trabalhando de trás pra frente. POs cujas caixas já foram vendidas NÃO entram na média ponderada.
 - [x] Adicionar "Continuação de Pedido" como permissão ticável nas Configurações (com expansão para escolher de quais vendedores pode ver)
-- [ ] Garantir que botão de editar (lápis) aparece nos itens APÓS o gestor clicar "Rever Pedido" (pedido volta a pendente)
-- [ ] Adicionar "Rever/Editar Pedido" como permissão ticável nas Configurações > Gestão Comercial (com expansão por vendedor)
+- [x] Garantir que botão de editar (lápis) aparece nos itens APÓS o gestor clicar "Rever Pedido" (pedido volta a pendente)
+- [x] Adicionar "Rever/Editar Pedido" como permissão ticável nas Configurações > Gestão Comercial (com expansão por vendedor)
+- [x] Fluxo completo: Gestor recusa → Rever Pedido → Editar itens → Aprovar → cai pra Vitória (fluxo normal da timeline)

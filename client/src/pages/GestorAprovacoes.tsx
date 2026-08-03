@@ -5,6 +5,7 @@
  * - Vermelho: pedidos com preço abaixo do mínimo (precisa aprovar/recusar)
  */
 import { useState, useMemo } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
 import { ProductMarginBar } from "@/components/ProductMarginBar";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
@@ -108,6 +109,8 @@ export default function GestorAprovacoes(props: any = {}) {
   // Read gestorName from URL search params if not passed as prop
   const urlParams = new URLSearchParams(window.location.search);
     const gestorName = gestorNameProp || urlParams.get("gestor") || undefined;
+  const { hasGranularAccess, getVisiblePeopleForFeature } = useOperator();
+  const visibleSellersForReverEditar = getVisiblePeopleForFeature("gc.reverEditarPedido");
   const isJuvenalInit = gestorName === "JUVENAL TEIXEIRA";
   const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "aprovado_subgestor" | "rejeitado">(isJuvenalInit ? "aprovado_subgestor" : "todos");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
@@ -291,6 +294,13 @@ export default function GestorAprovacoes(props: any = {}) {
   };
 
   const isJuvenalViewing = gestorName === "JUVENAL TEIXEIRA";
+
+  // Permission-based check: can this gestor rever/editar orders for a given seller?
+  const canReverEditarOrder = (sellerName: string): boolean => {
+    if (!hasGranularAccess("gc.reverEditarPedido")) return false;
+    const sellerSlug = sellerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    return visibleSellersForReverEditar.includes(sellerSlug);
+  };
 
   const stats = useMemo(() => {
     if (!orders) return { pendentes: 0, aprovados: 0, rejeitados: 0, aguardandoGestor: 0, total: 0 };
@@ -732,8 +742,8 @@ export default function GestorAprovacoes(props: any = {}) {
                                   <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 ml-2">
                                     {formatCurrency(Number(item.totalItem))}
                                   </p>
-                                  {/* Edit item button for Juvenal on rejected/pending orders */}
-                                  {isJuvenalViewing && (order.status === "rejeitado" || order.status === "pendente") && (
+                                  {/* Edit item button - permission-based (gc.reverEditarPedido) */}
+                                  {canReverEditarOrder(order.sellerName) && (order.status === "rejeitado" || order.status === "pendente") && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1174,12 +1184,12 @@ export default function GestorAprovacoes(props: any = {}) {
                           {order.aprovadoPor && (
                             <p className="text-[9px] text-red-500 mt-1">Recusado por: {order.aprovadoPor}</p>
                           )}
-                          {/* Desrecusar button - only for Juvenal */}
-                          {isJuvenalViewing && (
+                          {/* Desrecusar button - permission-based (gc.reverEditarPedido) */}
+                          {canReverEditarOrder(order.sellerName) && (
                             <button
                               onClick={() => {
                                 unrejectMutation.mutate(
-                                  { orderId: order.id, desrecusadoPor: gestorName || "Juvenal" },
+                                  { orderId: order.id, desrecusadoPor: gestorName || "Gestor" },
                                   {
                                     onSuccess: () => {
                                       utils.salesOrders.listOrders.invalidate();
