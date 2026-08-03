@@ -406,10 +406,13 @@ export const salesOrderRouter = router({
 
   /** Get available products with min prices for the seller */
   getProductsForSeller: publicProcedure
-    .input(z.object({ sellerId: z.number() }))
+    .input(z.object({ sellerId: z.number(), gestorMode: z.boolean().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
+
+      // In gestorMode, skip seller visibility filtering - gestor sees ALL products
+      const isGestorMode = input.gestorMode === true;
 
       // Get seller's visible product codes (manual overrides)
       const visibleProducts = await db.select()
@@ -479,9 +482,12 @@ export const salesOrderRouter = router({
       .from(stockItems);
 
       // Filter by visibility: only show products in seller's price table or manual overrides
-      const filteredItems = visibleCodes.size > 0
-        ? items.filter(item => visibleCodes.has(item.codigoItem))
-        : items;
+      // In gestorMode, bypass filtering - gestor sees ALL products (including sob encomenda)
+      const filteredItems = isGestorMode
+        ? items
+        : (visibleCodes.size > 0
+          ? items.filter(item => visibleCodes.has(item.codigoItem))
+          : items);
 
       // Get min prices
       const prices = await db.select().from(productMinPrices);
@@ -2945,7 +2951,8 @@ export const salesOrderRouter = router({
         // Build map: codigoItem -> pesoBruto per base unit (UN)
         const pesoBrutoMap = new Map<string, number>();
         for (const s of stockData) {
-          const pesoBase = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
+          // MUST use pesoBruto only (not pesoLiquido) for freight quoting per business rule
+          const pesoBase = parseFloat(String(s.pesoBruto || 0));
           if (pesoBase > 0 && s.codigoItem) {
             pesoBrutoMap.set(s.codigoItem, pesoBase);
           }
@@ -3326,7 +3333,8 @@ export const salesOrderRouter = router({
 
         const pesoBrutoMap = new Map<string, number>();
         for (const s of stockData) {
-          const pesoBase = parseFloat(String(s.pesoBruto || s.pesoLiquido || 0));
+          // MUST use pesoBruto only (not pesoLiquido) for freight quoting per business rule
+          const pesoBase = parseFloat(String(s.pesoBruto || 0));
           if (pesoBase > 0 && s.codigoItem) {
             pesoBrutoMap.set(s.codigoItem, pesoBase);
           }

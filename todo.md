@@ -6740,3 +6740,7 @@
 - [x] Adicionar "Rever/Editar Pedido" como permissão ticável nas Configurações > Gestão Comercial (com expansão por vendedor)
 - [x] Fluxo completo: Gestor recusa → Rever Pedido → Editar itens → Aprovar → cai pra Vitória (fluxo normal da timeline)
 - [x] Bug Custo Projetado produto 00009 (Espeto 4,0x250): mostra R$113,26 mas PO mais recente (01PH...) tem preço R$68,08/cx. Verificar cálculo LIFO e corrigir.
+- [x] Busca de produtos na edição de pedido (gestor) deve incluir produtos sob encomenda (ex: Casca Verde)
+- [ ] Pedido 1583 (Frigorífico do Lúcio - JUVENAL TEIXEIRA) aprovado no Maxiprod mas não aparece no Aceite da Produção / aba Faturamento
+- [x] Cotação de frete com transportadoras: usar PESO BRUTO ao invés de peso líquido nas APIs (Rodonaves, SSW, etc.)
+- [x] Barra de pesquisa na edição/revisão de pedidos deve funcionar igual à do pedido normal (mínimo de caracteres já puxa produto)

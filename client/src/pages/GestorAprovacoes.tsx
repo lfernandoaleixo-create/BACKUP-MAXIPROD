@@ -191,9 +191,9 @@ export default function GestorAprovacoes(props: any = {}) {
   const [editItemNewPreco, setEditItemNewPreco] = useState("");
   const [editItemNewUnidade, setEditItemNewUnidade] = useState("CX");
 
-  // Products query for item editing (only when editing)
+  // Products query for item editing (only when editing) - gestorMode bypasses seller visibility
   const { data: editProducts } = trpc.salesOrders.getProductsForSeller.useQuery(
-    { sellerId: editingItem?.sellerId || 0 },
+    { sellerId: editingItem?.sellerId || 0, gestorMode: true },
     { enabled: !!editingItem }
   );
 
@@ -1471,18 +1471,18 @@ export default function GestorAprovacoes(props: any = {}) {
                     type="text"
                     value={editItemSearch}
                     onChange={(e) => setEditItemSearch(e.target.value)}
-                    placeholder="Digite código ou nome do produto..."
+                    placeholder="Buscar produto..."
                     className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                 </div>
-                {editItemSearch.length >= 2 && editProducts && (
-                  <div className="mt-1 max-h-32 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-lg divide-y divide-slate-100 dark:divide-slate-700">
+                {editItemSearch.length >= 1 && editProducts && (
+                  <div className="mt-1 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-lg divide-y divide-slate-100 dark:divide-slate-700">
                     {editProducts
                       .filter((p: any) => {
                         const search = editItemSearch.toUpperCase();
                         return p.codigoItem.includes(search) || p.descricaoItem.toUpperCase().includes(search);
                       })
-                      .slice(0, 10)
+                      .slice(0, 20)
                       .map((p: any) => (
                         <button
                           key={p.codigoItem}
