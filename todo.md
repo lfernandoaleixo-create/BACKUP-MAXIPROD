@@ -6774,3 +6774,4 @@
 - [x] Proposta: campo "Validade da Proposta" na etapa de pagamento + exibir no PDF exportado
 - [x] Proposta: salvar propostas no banco de dados (tabela proposals)
 - [x] Proposta: tela de histórico de propostas salvas com opções de editar e duplicar
+- [x] Alerta de estoque: excluir ESPETO PREMIUM P/ QUEIJO COALHO (código 00546 e variações) dos alertas de insuficiência

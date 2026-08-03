@@ -157,8 +157,22 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     localStockForCheck.set(row.codigoItem, existing);
   }
 
+  // REGRA (03/08/2026): Excluir ESPETO PREMIUM P/ QUEIJO COALHO (código 00546 e variações)
+  // Esses produtos não devem gerar alertas de estoque insuficiente
+  const EXCLUDED_QUEIJO_COALHO_CODES = new Set(["00546", "00547", "00548", "00549", "00550"]);
+  const isQueijoCoalho = (desc: string, code: string) => {
+    if (EXCLUDED_QUEIJO_COALHO_CODES.has(code)) return true;
+    const upper = desc.toUpperCase();
+    return upper.includes("QUEIJO") && upper.includes("COALHO");
+  };
+
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
+    // Pular itens de Queijo Coalho - não gerar alerta
+    if (isQueijoCoalho(item.descricao, item.codigoItem)) {
+      continue;
+    }
+
     const stock = stockMap.get(item.itemId);
     
     if (stock) {
