@@ -1752,11 +1752,11 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) throw new Error("DB not available");
 
-      // Verify order exists and is pending or rejected
+      // Verify order exists and is editable (pendente, rejeitado, or aprovado_subgestor for gestor review)
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
       if (!order) throw new Error("Pedido não encontrado");
-      if (order.status !== "pendente" && order.status !== "rejeitado") {
+      if (order.status !== "pendente" && order.status !== "rejeitado" && order.status !== "aprovado_subgestor") {
         throw new Error("Pedido já foi aprovado e não pode ser editado");
       }
 
@@ -4522,11 +4522,11 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) throw new Error("DB not available");
 
-      // Verify order exists and is still pending
+      // Verify order exists and is editable (pendente, rejeitado, or aprovado_subgestor for gestor review)
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
       if (!order) throw new Error("Pedido não encontrado");
-      if (order.status !== "pendente" && order.status !== "rejeitado") {
+      if (order.status !== "pendente" && order.status !== "rejeitado" && order.status !== "aprovado_subgestor") {
         throw new Error("Pedido já foi aprovado e não pode ser editado");
       }
 

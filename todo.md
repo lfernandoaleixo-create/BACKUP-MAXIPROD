@@ -6744,3 +6744,5 @@
 - [ ] Pedido 1583 (Frigorífico do Lúcio - JUVENAL TEIXEIRA) aprovado no Maxiprod mas não aparece no Aceite da Produção / aba Faturamento
 - [x] Cotação de frete com transportadoras: usar PESO BRUTO ao invés de peso líquido nas APIs (Rodonaves, SSW, etc.)
 - [x] Barra de pesquisa na edição/revisão de pedidos deve funcionar igual à do pedido normal (mínimo de caracteres já puxa produto)
+- [ ] Criar barra de pesquisa na aba Produção > Movimentação de Estoque (busca por código da operação, nome do produto, qualquer caractere; prioridade para código da operação)
+- [x] Bug: Juvenal ao editar pedido após "Rever Pedido" e clicar "Salvar Alterações" recebe erro "Pedido já foi aprovado" — gestor deve conseguir salvar edições após rever
