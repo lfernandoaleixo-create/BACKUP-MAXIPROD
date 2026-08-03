@@ -2882,9 +2882,15 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       setCnpjLookupDone(false);
       const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
       const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+      const safeFetch = (url: string) => fetch(url).then(r => {
+        if (!r.ok) return null;
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json")) return null;
+        return r.json();
+      }).catch(() => null);
       Promise.allSettled([
-        fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`).then(r => r.json()),
-        fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`).then(r => r.json()),
+        safeFetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`),
+        safeFetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`),
       ]).then(([rfRes, stRes]) => {
         const rfData = rfRes.status === "fulfilled" ? rfRes.value : null;
         const stData = stRes.status === "fulfilled" ? stRes.value : null;
@@ -2937,7 +2943,12 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
       const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
       fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cpf=${cleanCpf}&data-nascimento=${cleanDt}&plugin=CPF`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error("API indisponível");
+          const ct = r.headers.get("content-type") || "";
+          if (!ct.includes("json")) throw new Error("Resposta inválida da API");
+          return r.json();
+        })
         .then((cpfData) => {
           if (cpfData && cpfData.code === "0") {
             if (cpfData.nome && !razaoSocial) setRazaoSocial(cpfData.nome);

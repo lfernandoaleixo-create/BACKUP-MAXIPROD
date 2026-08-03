@@ -6746,3 +6746,4 @@
 - [x] Barra de pesquisa na edição/revisão de pedidos deve funcionar igual à do pedido normal (mínimo de caracteres já puxa produto)
 - [x] Criar barra de pesquisa na aba Produção > Movimentação de Estoque (busca por código da operação, nome do produto, qualquer caractere; prioridade para código da operação)
 - [x] Bug: Juvenal ao editar pedido após "Rever Pedido" e clicar "Salvar Alterações" recebe erro "Pedido já foi aprovado" — gestor deve conseguir salvar edições após rever
+- [ ] Bug URGENTE: Juvenal não consegue salvar cadastro de cliente

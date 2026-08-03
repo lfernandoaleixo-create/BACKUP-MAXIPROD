@@ -859,9 +859,15 @@ async function consultaCnpjClientSide(cnpj: string) {
   if (cleanCnpj.length !== 14) return { success: false, error: "CNPJ inválido" };
 
   // Consultar Receita Federal (RF) e Sintegra (ST) em paralelo
+  const safeFetch = (url: string) => fetch(url).then(r => {
+    if (!r.ok) return null;
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("json")) return null;
+    return r.json();
+  }).catch(() => null);
   const [rfRes, stRes] = await Promise.allSettled([
-    fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`).then(r => r.json()),
-    fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`).then(r => r.json()),
+    safeFetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`),
+    safeFetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`),
   ]);
 
   const rfData = rfRes.status === "fulfilled" ? rfRes.value : null;
