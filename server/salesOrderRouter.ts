@@ -2904,6 +2904,36 @@ export const salesOrderRouter = router({
         }
       }
 
+      // 2b. REGRA (03/08/2026): Usar endereço de ENTREGA quando diferente do endereço do cliente.
+      // O frete é calculado com base em onde vai ser entregue, não no endereço do cadastro do CNPJ.
+      // Verificar se existe um pedido em sales_order_requests com endereço de entrega diferente.
+      let enderecoEntregaUsado = false;
+      let cepOriginalCliente = cepDestino; // Guardar CEP original para histórico
+      const [orderRequest] = await db.select({
+        enderecoEntregaMesmo: salesOrderRequests.enderecoEntregaMesmo,
+        entregaCep: salesOrderRequests.entregaCep,
+        entregaLogradouro: salesOrderRequests.entregaLogradouro,
+        entregaNumero: salesOrderRequests.entregaNumero,
+        entregaBairro: salesOrderRequests.entregaBairro,
+        entregaCidade: salesOrderRequests.entregaCidade,
+        entregaUf: salesOrderRequests.entregaUf,
+      }).from(salesOrderRequests)
+        .where(and(
+          sql`${salesOrderRequests.orderNumber} = ${parseInt(input.pedido) || 0}`,
+          eq(salesOrderRequests.enderecoEntregaMesmo, false),
+        ))
+        .limit(1);
+      
+      if (orderRequest && orderRequest.entregaCep) {
+        const entregaCepClean = orderRequest.entregaCep.replace(/\D/g, "");
+        if (entregaCepClean.length >= 8 && entregaCepClean !== cepDestino) {
+          console.log(`[QuoteByPedido] Pedido #${input.pedido}: Usando endereço de ENTREGA (CEP ${entregaCepClean}) ao invés do endereço do cliente (CEP ${cepDestino})`);
+          cepOriginalCliente = cepDestino;
+          cepDestino = entregaCepClean;
+          enderecoEntregaUsado = true;
+        }
+      }
+
       if (!cepDestino || cepDestino.length < 8) {
         throw new Error(`CEP do destinatário não encontrado para o pedido #${input.pedido}. Verifique o cadastro do cliente.`);
       }
@@ -3189,6 +3219,52 @@ export const salesOrderRouter = router({
         return a.totalFrete - b.totalFrete;
       });
 
+      // Build CEP change history for this order
+      let cepChangeHistory: Array<{ de: string; para: string; data: string; motivo: string }> = [];
+      // Check if there was a CEP change (delivery address different from client)
+      if (enderecoEntregaUsado) {
+        cepChangeHistory.push({
+          de: cepOriginalCliente,
+          para: cepDestino,
+          data: new Date().toISOString(),
+          motivo: "Endereço de entrega diferente do cadastro do cliente",
+        });
+      }
+      // Also check freight_simulations history for previous CEP changes on this order
+      const previousSims = await db.select({
+        cepDestino: freightSimulations.cepDestino,
+        createdAt: freightSimulations.createdAt,
+        results: freightSimulations.results,
+      }).from(freightSimulations)
+        .where(sql`JSON_EXTRACT(${freightSimulations.results}, '$.pedido') = ${input.pedido}`)
+        .orderBy(freightSimulations.createdAt);
+      
+      if (previousSims.length > 0) {
+        // Check if CEP changed between simulations
+        for (let i = 1; i < previousSims.length; i++) {
+          const prev = previousSims[i - 1];
+          const curr = previousSims[i];
+          if (prev.cepDestino !== curr.cepDestino) {
+            cepChangeHistory.push({
+              de: prev.cepDestino,
+              para: curr.cepDestino,
+              data: curr.createdAt?.toISOString() || "",
+              motivo: "CEP alterado entre simulações",
+            });
+          }
+        }
+        // Check if current CEP is different from last simulation
+        const lastSim = previousSims[previousSims.length - 1];
+        if (lastSim.cepDestino !== cepDestino && !enderecoEntregaUsado) {
+          cepChangeHistory.push({
+            de: lastSim.cepDestino,
+            para: cepDestino,
+            data: new Date().toISOString(),
+            motivo: "CEP atualizado no cadastro do cliente",
+          });
+        }
+      }
+
       return {
         pedido: input.pedido,
         cliente: clienteName,
@@ -3202,7 +3278,13 @@ export const salesOrderRouter = router({
         carriers,
         // Detailed data for PDF report
         itemsBreakdown,
-        endereco: {
+        endereco: enderecoEntregaUsado && orderRequest ? {
+          logradouro: orderRequest.entregaLogradouro || firstItem.enderecoLogradouro || "",
+          numero: orderRequest.entregaNumero || firstItem.enderecoNumero || "",
+          bairro: orderRequest.entregaBairro || firstItem.enderecoBairro || "",
+          cidade: orderRequest.entregaCidade || firstItem.enderecoCidade || "",
+          uf: orderRequest.entregaUf || firstItem.uf || "",
+        } : {
           logradouro: firstItem.enderecoLogradouro || "",
           numero: firstItem.enderecoNumero || "",
           bairro: firstItem.enderecoBairro || "",
@@ -3214,6 +3296,10 @@ export const salesOrderRouter = router({
           largura: avgLargura > 0 ? avgLargura : 0.5,
           comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
         },
+        // Histórico de mudanças de CEP
+        enderecoEntregaUsado,
+        cepOriginalCliente: enderecoEntregaUsado ? cepOriginalCliente : undefined,
+        cepChangeHistory: cepChangeHistory.length > 0 ? cepChangeHistory : undefined,
       };
     }),
 

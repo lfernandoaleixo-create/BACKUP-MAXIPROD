@@ -11,7 +11,7 @@
  * 5. Expira alertas pendentes de pedidos que não estão mais em "A aprovar"
  */
 import { getDb } from "./db";
-import { stockInsufficientAlerts, stockItems } from "../drizzle/schema";
+import { stockInsufficientAlerts, stockItems, productVariants } from "../drizzle/schema";
 import { eq, and, inArray, gte, sql } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -166,8 +166,25 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
     return upper.includes("QUEIJO") && upper.includes("COALHO");
   };
 
+  // REGRA (03/08/2026): Alertar APENAS variações, NUNCA produto mãe (a granel).
+  // Produto mãe é matéria-prima que chega a granel. Variações são transformadas a partir do granel.
+  // Se o pedido é de um produto mãe, não gera alerta — é só aguardar a chegada.
+  // Se o pedido é de uma variação e não tem estoque, aí sim gera alerta para a produção transformar.
+  const allVariants = await db.select({
+    parentCode: productVariants.parentCode,
+    childCode: productVariants.childCode,
+  }).from(productVariants);
+  const parentCodes = new Set(allVariants.map(v => v.parentCode));
+  // childCodes are the variations - these CAN generate alerts
+  // parentCodes are the product mãe - these should NEVER generate alerts
+
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
+    // Pular produtos mãe (a granel) - NUNCA gerar alerta para eles
+    if (parentCodes.has(item.codigoItem)) {
+      continue;
+    }
+
     // Pular itens de Queijo Coalho - não gerar alerta
     if (isQueijoCoalho(item.descricao, item.codigoItem)) {
       continue;

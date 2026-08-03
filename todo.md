@@ -6775,3 +6775,9 @@
 - [x] Proposta: salvar propostas no banco de dados (tabela proposals)
 - [x] Proposta: tela de histórico de propostas salvas com opções de editar e duplicar
 - [x] Alerta de estoque: excluir ESPETO PREMIUM P/ QUEIJO COALHO (código 00546 e variações) dos alertas de insuficiência
+- [ ] Alerta estoque: emitir alerta APENAS para variações (produto transformado), NUNCA para produto mãe (a granel) - aguardando definição do usuário
+- [x] Simulador de frete (Gestão Comercial): detectar mudança de CEP em pedidos antes do faturamento
+- [x] Simulador de frete: registrar histórico de mudança de CEP (de CEP X para CEP Y) no mesmo pedido
+- [x] Simulador de frete: permitir recalcular frete com o novo CEP mantendo registro da mudança
+- [x] Simulador de frete: usar endereço de ENTREGA (não do CNPJ do cliente) quando forem diferentes para calcular frete
+- [x] URGENTE: Rastrear pedido 1511 Max Protet - verificar se passou por alerta de estoque insuficiente, se houve aceite da produção, e todo o histórico

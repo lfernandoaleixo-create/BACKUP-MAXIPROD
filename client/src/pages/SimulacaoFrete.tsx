@@ -38,6 +38,13 @@ interface ItemBreakdown {
   cubagem: number;
 }
 
+interface CepChange {
+  de: string;
+  para: string;
+  data: string;
+  motivo: string;
+}
+
 interface QuoteResult {
   pedido: string;
   pedidos?: string[];
@@ -63,6 +70,10 @@ interface QuoteResult {
     largura: number;
     comprimento: number;
   };
+  // Histórico de mudanças de CEP
+  enderecoEntregaUsado?: boolean;
+  cepOriginalCliente?: string;
+  cepChangeHistory?: CepChange[];
 }
 
 /**
@@ -359,6 +370,37 @@ export default function SimulacaoFrete() {
                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{result.pesoTotal.toFixed(1)} kg / {result.volumes} vol</p>
               </div>
             </div>
+
+            {/* Endereço de entrega diferente - aviso */}
+            {result.enderecoEntregaUsado && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300">Endereço de entrega diferente do cadastro</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                    CEP do cliente: {result.cepOriginalCliente?.replace(/(\d{5})(\d{3})/, "$1-$2")} → CEP de entrega usado: {result.cepDestino.replace(/(\d{5})(\d{3})/, "$1-$2")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Histórico de mudanças de CEP */}
+            {result.cepChangeHistory && result.cepChangeHistory.length > 0 && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">Histórico de Mudanças de CEP</p>
+                <div className="space-y-1.5">
+                  {result.cepChangeHistory.map((change: { de: string; para: string; data: string; motivo: string }, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                      <span className="font-mono bg-blue-100 dark:bg-blue-800 px-1.5 py-0.5 rounded">{change.de.replace(/(\d{5})(\d{3})/, "$1-$2")}</span>
+                      <span>→</span>
+                      <span className="font-mono bg-blue-100 dark:bg-blue-800 px-1.5 py-0.5 rounded">{change.para.replace(/(\d{5})(\d{3})/, "$1-$2")}</span>
+                      <span className="text-blue-500">({change.motivo})</span>
+                      {change.data && <span className="text-blue-400 ml-auto">{new Date(change.data).toLocaleDateString("pt-BR")}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Carriers table */}
             <div className="overflow-x-auto">
