@@ -1730,8 +1730,19 @@ export const importRouter = router({
 
     let currentRate = 5.50;
     try {
-      if (exchangeRateCache) {
+      if (exchangeRateCache && (Date.now() - exchangeRateCache.timestamp < 600_000)) {
         currentRate = exchangeRateCache.data.rate;
+      } else {
+        // Fetch fresh rate from AwesomeAPI (fast fallback)
+        const rateRes = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { signal: AbortSignal.timeout(5000) });
+        if (rateRes.ok) {
+          const rateData = await rateRes.json();
+          const ask = Number(rateData?.USDBRL?.ask || 0);
+          if (ask > 0) {
+            currentRate = ask;
+            exchangeRateCache = { data: { rate: ask, source: 'AwesomeAPI', timestamp: new Date().toISOString() }, timestamp: Date.now() };
+          }
+        }
       }
     } catch (e) { /* use fallback */ }
     const SPREAD = 0.20;
@@ -1786,8 +1797,9 @@ export const importRouter = router({
       // Check if products have saved valorCaixaBrl
       const hasSavedCosts = poProducts.some(p => Number(p.valorCaixaBrl || 0) > 0);
 
-      if (isLegacy || hasSavedCosts) {
-        // Use stored values directly
+      if (isLegacy) {
+        // Only spreadsheet POs use stored values directly (prices are frozen from Excel)
+        // Non-spreadsheet patio POs always recalculate dynamically to reflect latest costs/rates
         for (const pp of poProducts) {
           if (Number(pp.valorCaixaBrl || 0) > 0 || Number(pp.precoMilUnid || 0) > 0) {
             patioPoProducts.push({

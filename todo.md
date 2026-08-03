@@ -6739,3 +6739,4 @@
 - [x] Garantir que botão de editar (lápis) aparece nos itens APÓS o gestor clicar "Rever Pedido" (pedido volta a pendente)
 - [x] Adicionar "Rever/Editar Pedido" como permissão ticável nas Configurações > Gestão Comercial (com expansão por vendedor)
 - [x] Fluxo completo: Gestor recusa → Rever Pedido → Editar itens → Aprovar → cai pra Vitória (fluxo normal da timeline)
+- [x] Bug Custo Projetado produto 00009 (Espeto 4,0x250): mostra R$113,26 mas PO mais recente (01PH...) tem preço R$68,08/cx. Verificar cálculo LIFO e corrigir.
