@@ -1,16 +1,30 @@
 /**
  * FloatingOrderDraft - Botão flutuante que aparece quando há um pedido em andamento
- * Visível em qualquer aba do sistema. Clicar navega de volta ao pedido.
+ * Visível apenas se o operador tem permissão gc.continuacaoPedido para o vendedor do rascunho.
+ * Clicar navega de volta ao pedido.
  */
 import { useOrderDraft } from "@/contexts/OrderDraftContext";
+import { useOperator } from "@/contexts/OperatorContext";
 import { ShoppingCart, X } from "lucide-react";
 import { useLocation } from "wouter";
 
+function getSellerSlug(name: string): string {
+  return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+}
+
 export default function FloatingOrderDraft() {
   const { draft, hasDraft, clearDraft } = useOrderDraft();
+  const { hasGranularAccess } = useOperator();
   const [, setLocation] = useLocation();
 
   if (!hasDraft || !draft) return null;
+
+  // Check permission: gc.continuacaoPedido must be enabled AND gc.continuacaoPedido.<seller_slug> must be enabled
+  const sellerSlug = getSellerSlug(draft.sellerName);
+  const hasFeatureAccess = hasGranularAccess("gc.continuacaoPedido");
+  const hasSellerAccess = hasGranularAccess(`gc.continuacaoPedido.${sellerSlug}`);
+  
+  if (!hasFeatureAccess || !hasSellerAccess) return null;
 
   const itemCount = draft.items.length;
   const totalValue = draft.items.reduce((sum, i) => sum + i.precoUnitario * i.quantidade, 0);

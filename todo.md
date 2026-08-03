@@ -6735,3 +6735,4 @@
 - [x] Juvenal não vê todos os pedidos em Aprovação de Pedidos (ex: Rafael Leonel #480001 não aparece para ele mas aparece para Guilherme)
 - [x] Aprovação de Pedidos: redesenhar layout de senha para modal centralizado profissional (em vez de inline)
 - [x] Reescrever cálculo do Custo Real e Custo Projetado usando lógica LIFO: só incluir POs cujas caixas ainda estão fisicamente no estoque, trabalhando de trás pra frente. POs cujas caixas já foram vendidas NÃO entram na média ponderada.
+- [x] Adicionar "Continuação de Pedido" como permissão ticável nas Configurações (com expansão para escolher de quais vendedores pode ver)
