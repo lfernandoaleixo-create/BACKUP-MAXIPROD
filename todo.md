@@ -6767,3 +6767,6 @@
 - [x] Pedidos em Digitação: só descontar do estoque se caixas estiverem RESERVADAS (não apenas "reservar"). Se não tiver reserva efetiva, não desconta.
 - [x] Estoque: pedidos em Digitação no Maxiprod só descontam se caixas estiverem efetivamente RESERVADAS (não apenas com indicação "reservar")
 - [x] "Novo Pedido" deve começar do zero; carrinho para continuar pedido em andamento. Opção "Continuar Pedido de Venda" ticada para todos vendedores
+- [x] Nova Proposta de Venda: botão ao lado de "Novo Pedido" para criar proposta (simulação para cliente, sem reservar caixas)
+- [x] Nova Proposta de Venda: formulário similar ao pedido de venda (cliente, produtos, preços, frete, condições)
+- [x] Nova Proposta de Venda: exportar em PDF no formato Maxiprod (logo, dados cliente, produtos, impostos, totais, transporte)

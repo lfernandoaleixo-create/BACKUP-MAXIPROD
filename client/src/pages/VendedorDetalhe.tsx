@@ -78,6 +78,7 @@ import { ProductMarginBar, MarginParamsEditor } from "@/components/ProductMargin
 import { RealCostMarginBar, MarginSimulationParams } from "@/components/RealCostMarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
 import { SerasaConsulta } from "@/components/SerasaConsulta";
+import PropostaDeVenda from "@/components/PropostaDeVenda";
 
 type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes" | "aprovacoes";
 
@@ -4029,6 +4030,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const resumeDraftParam = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
   const [isResumingDraft, setIsResumingDraft] = useState(resumeDraftParam && hasDraft);
   const [showNewOrder, setShowNewOrder] = useState(resumeDraftParam && hasDraft);
+  const [showProposal, setShowProposal] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
@@ -4333,7 +4335,14 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
             </Popover>
           </div>
           <button
-            onClick={() => { setIsResumingDraft(false); setShowNewOrder(true); }}
+            onClick={() => { setShowProposal(true); setShowNewOrder(false); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <FileText className="w-4 h-4" />
+            Nova Proposta
+          </button>
+          <button
+            onClick={() => { setIsResumingDraft(false); setShowNewOrder(true); setShowProposal(false); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-5 h-5" />
@@ -4426,10 +4435,13 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       )}
 
       {/* Novo Pedido de Venda Form */}
-      {showNewOrder && (
+            {showNewOrder && (
         <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
       )}
-
+      {/* Nova Proposta de Venda */}
+      {showProposal && (
+        <PropostaDeVenda sellerId={sellerId} sellerName={sellerName} onClose={() => setShowProposal(false)} />
+      )}
       {/* Pedidos manuais (via App) */}
       {pedidosManuais && pedidosManuais.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-teal-200 dark:border-teal-700 shadow-sm overflow-hidden">
