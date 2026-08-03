@@ -6754,3 +6754,4 @@
 - [ ] Bug Valorização do Estoque: Valor Estoque + PO não está batendo com Projetado em alguns casos (em estoque e sob encomenda)
 - [x] Bug: Tooltip de pedidos por cliente cortando informações ao passar cursor - corrigido posicionamento (side=bottom com collisionPadding) e removido truncate dos nomes
 - [x] Reverter alertas de estoque insuficiente recusados do Pedido 1606 para status pendente (Maria poder aceitar)
+- [x] Aba Produção: Checklist aparece apenas segunda, quarta e sexta; Histórico aparece todos os dias

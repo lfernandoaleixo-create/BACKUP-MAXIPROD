@@ -942,6 +942,13 @@ export default function Production() {
 
   const isToday = selectedDate === getTodayBR();
   const isFutureDate = selectedDate > getTodayBR();
+  // Checklist aparece apenas segunda (1), quarta (3) e sexta (5)
+  const isChecklistDay = useMemo(() => {
+    const now = new Date();
+    const brNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const day = brNow.getDay();
+    return day === 1 || day === 3 || day === 5;
+  }, []);
 
   if (loadingSectors) {
     return (
@@ -986,7 +993,7 @@ export default function Production() {
               <BarChart3 className="w-4 h-4" /> Gráficos
             </button>
             )}
-            {hasGranularAccess("prod.checklist") && (
+            {hasGranularAccess("prod.checklist") && isChecklistDay && (
             <button onClick={() => setViewMode("checklist")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "checklist" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <CheckCircle2 className="w-4 h-4" /> Checklist
             </button>
