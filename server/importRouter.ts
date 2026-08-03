@@ -2087,93 +2087,91 @@ export const importRouter = router({
       const stockUnits = Number(item.quantidade || 0);
       const boxesInStock = fator > 0 ? stockUnits / fator : 0;
 
-      // --- GREEN COLUMN: Custo Real - LIFO (POs 100% Concluídas) ---
-      // Lógica: Olhar o estoque atual e verificar de trás pra frente (POs mais recentes primeiro)
-      // quais POs ainda têm caixas no estoque. POs cujas caixas já foram vendidas NÃO entram.
-      // Se estoque = 0, custo real = preço da última PO concluída (referência).
-      // Se estoque < última PO concluída, 100% do estoque veio dessa PO → custo = preço dessa PO.
-      // Se estoque > última PO, faz média ponderada com a penúltima, e assim por diante.
+      // --- ATRIBUIÇÃO LIFO UNIFICADA ---
+      // Regra do Fernando: O estoque atual é SEMPRE atribuído à PO mais recente (por data de chegada).
+      // Vendas são abatidas das mais antigas primeiro. O que sobra no estoque = POs mais recentes.
+      // Juntamos TODAS as POs (concluídas + pátio), ordenamos por data, e atribuímos LIFO.
+      // Depois separamos: caixas de concluídas = custo real, todas = custo projetado.
+      const allPosForAttribution = [
+        ...(arrivedHistory || []).map((po: any) => ({ ...po, source: 'concluida' as const })),
+        ...(patioHistory || []).map((po: any) => ({ ...po, source: 'patio' as const })),
+      ];
+      // Sort by arrival date (oldest first) so LIFO traversal from end = most recent first
+      allPosForAttribution.sort((a, b) => {
+        const da = a.previsaoEntrega ? new Date(a.previsaoEntrega).getTime() : 0;
+        const db2 = b.previsaoEntrega ? new Date(b.previsaoEntrega).getTime() : 0;
+        return da - db2;
+      });
+
+      // LIFO attribution: assign stock boxes to most recent POs first
+      let remainingForAttribution = boxesInStock;
+      let boxesFromConcluidas = 0;
+      let weightedCostConcluidas = 0;
+      let boxesFromPatio = 0;
+      let weightedCostPatio = 0;
+      const attributionBreakdown: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number; source: string }> = [];
+
+      for (let i = allPosForAttribution.length - 1; i >= 0 && remainingForAttribution > 0; i--) {
+        const po = allPosForAttribution[i];
+        const boxesFromThisPo = Math.min(remainingForAttribution, po.quantidade);
+        remainingForAttribution -= boxesFromThisPo;
+        attributionBreakdown.push({
+          poNumber: po.poNumber,
+          caixasUsadas: Math.round(boxesFromThisPo * 100) / 100,
+          valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
+          source: po.source,
+        });
+        if (po.source === 'concluida') {
+          boxesFromConcluidas += boxesFromThisPo;
+          weightedCostConcluidas += boxesFromThisPo * po.valorCaixaBrl;
+        } else {
+          boxesFromPatio += boxesFromThisPo;
+          weightedCostPatio += boxesFromThisPo * po.valorCaixaBrl;
+        }
+      }
+
+      // --- GREEN COLUMN: Custo Real - Apenas caixas de POs Concluídas no estoque ---
       let custoReal = 0;
-      let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number; estoqueAntes?: number; vendasDeduzidas?: number; estoqueApos?: number; mediaApos?: number }> = [];
+      let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
       let semEstoque = false;
-      let totalArrived = arrivedHistory ? arrivedHistory.reduce((sum: number, po: any) => sum + po.quantidade, 0) : 0;
-      let totalSold = Math.max(0, totalArrived - boxesInStock);
 
       if (!arrivedHistory || arrivedHistory.length === 0) {
         custoReal = 0;
         semEstoque = boxesInStock <= 0;
-      } else if (boxesInStock <= 0) {
-        // Sem estoque de POs concluídas: custo real = preço da última PO concluída (referência)
-        const lastPo = arrivedHistory[arrivedHistory.length - 1];
-        custoReal = lastPo.valorCaixaBrl;
-        breakdownReal = [{ poNumber: lastPo.poNumber, caixasUsadas: 0, valorCaixa: lastPo.valorCaixaBrl }];
-        semEstoque = true;
+      } else if (boxesFromConcluidas <= 0) {
+        // Todas as caixas no estoque vieram do pátio (PO mais recente que as concluídas)
+        // Custo real = preço da última PO concluída como referência (já vendeu tudo)
+        const lastConcluida = arrivedHistory[arrivedHistory.length - 1];
+        custoReal = lastConcluida.valorCaixaBrl;
+        breakdownReal = [{ poNumber: lastConcluida.poNumber, caixasUsadas: 0, valorCaixa: lastConcluida.valorCaixaBrl }];
+        semEstoque = true; // sem caixas de concluídas no estoque
       } else {
-        // LIFO: Percorrer POs de trás pra frente (mais recente primeiro)
-        // Atribuir caixas do estoque às POs mais recentes até esgotar o estoque
-        let remainingStock = boxesInStock;
-        let totalWeightedCost = 0;
-        let totalBoxesUsed = 0;
-        
-        for (let i = arrivedHistory.length - 1; i >= 0 && remainingStock > 0; i--) {
-          const po = arrivedHistory[i];
-          // Quantas caixas dessa PO ainda estão no estoque?
-          const boxesFromThisPo = Math.min(remainingStock, po.quantidade);
-          totalWeightedCost += boxesFromThisPo * po.valorCaixaBrl;
-          totalBoxesUsed += boxesFromThisPo;
-          remainingStock -= boxesFromThisPo;
-          
-          breakdownReal.push({
-            poNumber: po.poNumber,
-            caixasUsadas: Math.round(boxesFromThisPo * 100) / 100,
-            valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
-          });
-        }
-        
-        custoReal = totalBoxesUsed > 0 ? totalWeightedCost / totalBoxesUsed : 0;
-        // Reverse breakdown so it shows oldest-used first (natural reading order)
-        breakdownReal.reverse();
+        // Há caixas de POs concluídas no estoque
+        custoReal = weightedCostConcluidas / boxesFromConcluidas;
+        breakdownReal = attributionBreakdown
+          .filter(b => b.source === 'concluida')
+          .map(b => ({ poNumber: b.poNumber, caixasUsadas: b.caixasUsadas, valorCaixa: b.valorCaixa }))
+          .reverse(); // natural reading order (oldest first)
       }
 
-      // --- ORANGE COLUMN: Custo Projetado - LIFO incluindo POs "Chegou no Pátio" ---
-      // Mesma lógica LIFO, mas inclui as POs do pátio como as mais recentes.
-      // O estoque total considerado = estoque atual + caixas no pátio (que vão entrar).
-      // Percorre de trás pra frente: pátio primeiro (mais recente), depois concluídas.
+      // --- ORANGE COLUMN: Custo Projetado - Todas as caixas no estoque (concluídas + pátio) ---
+      // Regra: O estoque atual já INCLUI caixas do pátio (chegou fisicamente).
+      // NÃO soma pátio ao estoque. Usa a mesma atribuição LIFO já calculada.
       let custoProjetado = custoReal; // default = custo real
       let breakdownProjetado: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
-      if (patioHistory && patioHistory.length > 0) {
-        // Total de caixas a considerar = estoque atual + todas as caixas do pátio
-        const totalPatioQty = patioHistory.reduce((sum: number, po: any) => sum + po.quantidade, 0);
-        const totalProjectedStock = boxesInStock + totalPatioQty;
-        
-        // LIFO: Percorrer de trás pra frente (pátio mais recente → pátio mais antigo → concluídas mais recentes)
-        // A "pilha" completa é: [...arrivedHistory, ...patioHistory] (pátio é mais recente)
-        const allPosForProjected = [
-          ...(arrivedHistory || []).map((po: any) => ({ ...po, source: 'concluida' })),
-          ...patioHistory.map((po: any) => ({ ...po, source: 'patio' })),
-        ];
-        
-        let remainingProjected = totalProjectedStock;
-        let totalWeightedCostProj = 0;
-        let totalBoxesUsedProj = 0;
-        
-        for (let i = allPosForProjected.length - 1; i >= 0 && remainingProjected > 0; i--) {
-          const po = allPosForProjected[i];
-          const boxesFromThisPo = Math.min(remainingProjected, po.quantidade);
-          totalWeightedCostProj += boxesFromThisPo * po.valorCaixaBrl;
-          totalBoxesUsedProj += boxesFromThisPo;
-          remainingProjected -= boxesFromThisPo;
-          
-          breakdownProjetado.push({
-            poNumber: po.poNumber,
-            caixasUsadas: Math.round(boxesFromThisPo * 100) / 100,
-            valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
-          });
-        }
-        
-        custoProjetado = totalBoxesUsedProj > 0 ? totalWeightedCostProj / totalBoxesUsedProj : custoReal;
-        breakdownProjetado.reverse();
+      if (boxesInStock > 0 && allPosForAttribution.length > 0) {
+        const totalBoxesAttributed = boxesFromConcluidas + boxesFromPatio;
+        const totalWeightedCostAll = weightedCostConcluidas + weightedCostPatio;
+        custoProjetado = totalBoxesAttributed > 0 ? totalWeightedCostAll / totalBoxesAttributed : custoReal;
+        breakdownProjetado = attributionBreakdown
+          .map(b => ({ poNumber: b.poNumber, caixasUsadas: b.caixasUsadas, valorCaixa: b.valorCaixa }))
+          .reverse(); // natural reading order
+      } else if (patioHistory && patioHistory.length > 0) {
+        // Sem estoque mas tem POs no pátio: mostrar preço da PO pátio mais recente como referência
+        const lastPatio = patioHistory[patioHistory.length - 1];
+        custoProjetado = lastPatio.valorCaixaBrl;
+        breakdownProjetado = [{ poNumber: lastPatio.poNumber, caixasUsadas: 0, valorCaixa: lastPatio.valorCaixaBrl }];
       }
 
       // --- BLUE COLUMN: Estimativa - POs "Navegando" ---
@@ -2193,6 +2191,11 @@ export const importRouter = router({
         // Direct valor da caixa from navegando POs (no mixing with existing stock)
         custoEstimativa = totalNavQty > 0 ? totalNavCost / totalNavQty : 0;
       }
+
+      // Compute totalArrived/totalSold for display purposes
+      const totalArrived = (arrivedHistory || []).reduce((sum: number, po: any) => sum + po.quantidade, 0)
+        + (patioHistory || []).reduce((sum: number, po: any) => sum + po.quantidade, 0);
+      const totalSold = Math.max(0, totalArrived - boxesInStock);
 
       results.push({
         codigoItem: code,
