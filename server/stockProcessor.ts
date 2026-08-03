@@ -597,8 +597,13 @@ export async function processStockData(): Promise<void> {
       existing.totalUn += qtyUnEstoque * ratio;
     } else {
       const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
-      const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
-      existing.totalUn += unitsPerBox ? qtyCx * unitsPerBox : qtyCx;
+      // Quando fatorConversao=1 e unidade='un', o pedido foi feito na unidade base (CX)
+      // Nesse caso, usar unitsPerBox da descrição para converter corretamente
+      const descUnitsPerBox = extractUnitsPerBox(order.descricao);
+      const effectiveUnitsPerBox = (fator <= 1 && descUnitsPerBox && descUnitsPerBox > 1)
+        ? descUnitsPerBox
+        : (fator > 0 ? fator : descUnitsPerBox);
+      existing.totalUn += effectiveUnitsPerBox ? qtyCx * effectiveUnitsPerBox : qtyCx;
     }
     orderByCode.set(code, existing);
   }
@@ -655,12 +660,17 @@ export async function processStockData(): Promise<void> {
         // Proporcional ao faturamento parcial
         const ratio = qtyTotalCx > 0 ? qtyCx / qtyTotalCx : 1;
         qtyUn = qtyUnEstoque * ratio;
-      } else {
+            } else {
         const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
-        const upb = fator > 0 ? fator : (unitsPerBox || 0);
-        qtyUn = upb ? qtyCx * upb : qtyCx;
+        // Quando fator=1 e produto tem unitsPerBox maior (ex: 5000), usar unitsPerBox
+        const descUpb = extractUnitsPerBox(order.descricao);
+        const effectiveUpb = (fator <= 1 && unitsPerBox && unitsPerBox > 1)
+          ? unitsPerBox
+          : (fator <= 1 && descUpb && descUpb > 1)
+            ? descUpb
+            : (fator > 0 ? fator : (unitsPerBox || 0));
+        qtyUn = effectiveUpb ? qtyCx * effectiveUpb : qtyCx;
       }
-      
       const estadoConf = order.estadoConfiguravel || undefined;
       const segCRM = order.crmSegmento || undefined;
       

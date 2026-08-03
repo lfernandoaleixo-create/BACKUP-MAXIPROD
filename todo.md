@@ -6756,3 +6756,13 @@
 - [x] Reverter alertas de estoque insuficiente recusados do Pedido 1606 para status pendente (Maria poder aceitar)
 - [x] Aba Produção: Checklist aparece apenas segunda, quarta e sexta; Histórico aparece todos os dias
 - [x] Adicionar barra de pesquisa na seção POs para filtrar por nome do produto ou código
+- [ ] Bug: Produto 00199 (Casca Verde) mostra apenas 7cx de pedidos de venda mas Maxiprod mostra 26cx reservadas só do Paulo + outros pedidos
+- [x] Bug: Observações do vendedor estão aparecendo na coluna de itens na exportação para Maxiprod (e na nota fiscal). Devem ir para 'observações internas' se existir coluna, senão mostrar apenas na Manus para Vitória preencher manualmente
+- [x] Meio de pagamento obrigatório para vendedor (Boleto/Dinheiro/Cartão/PIX) visível na Manus para todos, mas exportação Maxiprod continua apenas com À vista/A Prazo/Outros
+- [x] Fix: Observações do vendedor NÃO exportar para Maxiprod (apareciam na NF). Removido de Column V e Column W. Ficam apenas no Manus para Vitória/gestores verem.
+- [x] Mostrar observacoesInternas na tela da Vitória com aviso "preencher manualmente no Maxiprod"
+- [x] Adicionar campo obrigatório "Meio de Pagamento" (Boleto/Dinheiro/Cartão/PIX/Cheque) para vendedor preencher
+- [x] Meio de Pagamento visível para subgestor/gestor/Vitória no resumo do pedido
+- [x] Meio de Pagamento NÃO exportado para Maxiprod (Column I continua usando normalizeFormaPagamento)
+- [ ] Pedidos em Digitação: só descontar do estoque se caixas estiverem RESERVADAS (não apenas "reservar"). Se não tiver reserva efetiva, não desconta.
+- [ ] Estoque: pedidos em Digitação no Maxiprod só descontam se caixas estiverem efetivamente RESERVADAS (não apenas com indicação "reservar")

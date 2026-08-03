@@ -46,6 +46,7 @@ export interface OrderDraft {
   client: DraftClientData | null;
   observacoes: string;
   formaPagamento: string;
+  meioPagamento: string;
   condicaoPagamento: string;
   updatedAt: number; // timestamp
 }

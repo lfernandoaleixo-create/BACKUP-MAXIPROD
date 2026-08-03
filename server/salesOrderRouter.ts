@@ -677,6 +677,7 @@ export const salesOrderRouter = router({
       naturezaOperacao: z.string().optional(),
       estadoConfiguravel: z.string().optional(),
       formaPagamento: z.string().optional(),
+      meioPagamento: z.string().optional(), // Boleto, Dinheiro, Cartão, PIX, Cheque, Depósito (obrigatório no frontend, visível no Manus, NÃO exportado para Maxiprod)
       dataEntrega: z.string().optional(),
       previsaoEntrega: z.string().optional(),
       // Items
@@ -802,6 +803,7 @@ export const salesOrderRouter = router({
         naturezaOperacao: input.naturezaOperacao || null,
         estadoConfiguravel: input.estadoConfiguravel || null,
         formaPagamento: input.formaPagamento || null,
+        meioPagamento: input.meioPagamento || null,
         dataEntrega: input.dataEntrega || null,
         previsaoEntrega: input.previsaoEntrega || null,
         possuiRedespacho: input.possuiRedespacho || false,
@@ -946,7 +948,7 @@ export const salesOrderRouter = router({
           const orderInfo = [
             `Pedido #${orderNumber}`,
             `Vendedor: ${seller.sellerName} (Gestor: ${seller.gestorName})`,
-            `Forma Pagamento: ${input.formaPagamento || 'N/A'}`,
+            `Forma Pagamento: ${input.formaPagamento || 'N/A'} | Meio: ${input.meioPagamento || 'N/A'}`,
             input.condicaoPagamento ? `Condição: ${input.condicaoPagamento}` : null,
             input.tipoFrete ? `Frete: ${input.tipoFrete}${valorFrete > 0 ? ' - R$ ' + valorFrete.toFixed(2) : ''}` : (valorFrete > 0 ? `Frete: R$ ${valorFrete.toFixed(2)}` : null),
             input.dataEntrega ? `Data Entrega: ${input.dataEntrega}` : null,
@@ -4495,6 +4497,7 @@ export const salesOrderRouter = router({
       naturezaOperacao: z.string().optional(),
       estadoConfiguravel: z.string().optional(),
       formaPagamento: z.string().optional(),
+      meioPagamento: z.string().optional(),
       dataEntrega: z.string().optional(),
       previsaoEntrega: z.string().optional(),
       regiao: z.string().optional(),
@@ -4601,6 +4604,7 @@ export const salesOrderRouter = router({
           naturezaOperacao: input.naturezaOperacao || null,
           estadoConfiguravel: input.estadoConfiguravel || null,
           formaPagamento: input.formaPagamento || null,
+          meioPagamento: input.meioPagamento || null,
           dataEntrega: input.dataEntrega || null,
           previsaoEntrega: input.previsaoEntrega || null,
           regiao: input.regiao || null,

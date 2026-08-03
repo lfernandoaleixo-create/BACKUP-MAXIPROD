@@ -5108,6 +5108,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
   const [estadoConfiguravel, setEstadoConfiguravel] = useState("MADEIRA");
   const [formaPagamento, setFormaPagamento] = useState("");
+  const [meioPagamento, setMeioPagamento] = useState("");
   const [dataEntregaPedido, setDataEntregaPedido] = useState("");
   const [previsaoEntregaPedido, setPrevisaoEntregaPedido] = useState("");
 
@@ -5139,6 +5140,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       }
       if (draft.observacoes) setObservacoes(draft.observacoes);
       if (draft.formaPagamento) setFormaPagamento(draft.formaPagamento);
+      if (draft.meioPagamento) setMeioPagamento(draft.meioPagamento);
       if (draft.condicaoPagamento) setCondicaoPagamento(draft.condicaoPagamento);
       if (draft.step) setStep(draft.step);
     }
@@ -5161,10 +5163,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       client: clientData,
       observacoes,
       formaPagamento,
+      meioPagamento,
       condicaoPagamento,
       updatedAt: Date.now()
     });
-  }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, condicaoPagamento]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, meioPagamento, condicaoPagamento]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(
@@ -5243,6 +5246,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setNaturezaOperacao(order.naturezaOperacao || "Venda de produção do estabelecimento");
       setEstadoConfiguravel(order.estadoConfiguravel || "MADEIRA");
       setFormaPagamento(order.formaPagamento || "");
+      setMeioPagamento((order as any).meioPagamento || "");
       setDataEntregaPedido(order.dataEntrega || "");
       setPrevisaoEntregaPedido(order.previsaoEntrega || "");
       // CRM fields
@@ -5424,21 +5428,30 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     if (client.condicaoPagamento && !condicaoPagamento) {
       setCondicaoPagamento(client.condicaoPagamento);
     }
-    // Auto-fill formaPagamento from client's formaCobranca
+    // Auto-fill formaPagamento (Maxiprod: À vista / A prazo) e meioPagamento (detalhado: Boleto, PIX, etc.)
     if (client.formaCobranca && !formaPagamento) {
       const fc = client.formaCobranca.toLowerCase();
-      if (fc.includes('boleto')) {
-        setFormaPagamento('Boleto');
-      } else if (fc.includes('prazo')) {
+      // Determinar forma (Maxiprod): boleto/prazo/faturado = A prazo, demais = À vista
+      if (fc.includes('boleto') || fc.includes('prazo') || fc.includes('faturad')) {
         setFormaPagamento('A prazo');
-      } else if (fc.includes('pix')) {
-        setFormaPagamento('PIX');
-      } else if (fc.includes('depósito') || fc.includes('deposito')) {
-        setFormaPagamento('Depósito');
-      } else if (fc.includes('cartão') || fc.includes('cartao')) {
-        setFormaPagamento('Cartão');
       } else {
         setFormaPagamento('À vista');
+      }
+      // Determinar meio de pagamento (detalhado, visível apenas no Manus)
+      if (!meioPagamento) {
+        if (fc.includes('boleto')) {
+          setMeioPagamento('Boleto');
+        } else if (fc.includes('pix')) {
+          setMeioPagamento('PIX');
+        } else if (fc.includes('depósito') || fc.includes('deposito')) {
+          setMeioPagamento('Depósito');
+        } else if (fc.includes('cartão') || fc.includes('cartao')) {
+          setMeioPagamento('Cartão');
+        } else if (fc.includes('dinheiro')) {
+          setMeioPagamento('Dinheiro');
+        } else if (fc.includes('cheque')) {
+          setMeioPagamento('Cheque');
+        }
       }
     }
     setVendorClientId(client.vendorClientId || null);
@@ -5523,6 +5536,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       alert("Selecione a Forma de Pagamento antes de finalizar o pedido.");
       return;
     }
+    if (!meioPagamento) {
+      alert("Selecione o Meio de Pagamento (Boleto, Dinheiro, Cartão, PIX, etc.) antes de finalizar o pedido.");
+      return;
+    }
     if (formaPagamento === "A prazo" && !condicaoPagamento) {
       alert("Preencha a Condição de Pagamento (ex: 21/35 ou 30/60/90) para pagamentos a prazo.");
       return;
@@ -5567,6 +5584,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         naturezaOperacao: naturezaOperacao || undefined,
         estadoConfiguravel: estadoConfiguravel || undefined,
         formaPagamento: formaPagamento || undefined,
+        meioPagamento: meioPagamento || undefined,
         dataEntrega: dataEntregaPedido || undefined,
         previsaoEntrega: previsaoEntregaPedido || undefined,
         regiao: regiao || undefined,
@@ -5665,6 +5683,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       naturezaOperacao: naturezaOperacao || undefined,
       estadoConfiguravel: estadoConfiguravel || undefined,
       formaPagamento: formaPagamento || undefined,
+      meioPagamento: meioPagamento || undefined,
       dataEntrega: dataEntregaPedido || undefined,
       previsaoEntrega: previsaoEntregaPedido || undefined,
       // CRM / Relacionamento
@@ -7014,7 +7033,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             {true && (
               <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-3">
                 <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase mb-2">💰 Pagamento</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="text-[10px] text-slate-500 font-medium">Forma de Pagamento <span className="text-red-500">*</span></label>
                     <select
@@ -7023,20 +7042,34 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!formaPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
                     >
                       <option value="">Selecione...</option>
-                      <option value="Boleto">Boleto</option>
                       <option value="A prazo">A prazo</option>
                       <option value="À vista">À vista</option>
-                      <option value="PIX">PIX</option>
-                      <option value="Depósito">Depósito</option>
-                      <option value="Cartão">Cartão</option>
-                      <option value="Sem pagamento">Sem pagamento</option>
-                      <option value="Outros">Outros</option>
                     </select>
                     {!formaPagamento && <p className="text-[8px] text-red-500 mt-0.5">Campo obrigatório</p>}
+                    <p className="text-[7px] text-slate-400 mt-0.5">Exportado p/ Maxiprod</p>
                   </div>
-                  {(formaPagamento === 'A prazo' || formaPagamento === 'Boleto') && (
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-medium">Meio de Pagamento <span className="text-red-500">*</span></label>
+                    <select
+                      value={meioPagamento}
+                      onChange={(e) => setMeioPagamento(e.target.value)}
+                      className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!meioPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="Boleto">Boleto</option>
+                      <option value="PIX">PIX</option>
+                      <option value="Dinheiro">Dinheiro</option>
+                      <option value="Cartão">Cartão</option>
+                      <option value="Depósito">Depósito</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Outros">Outros</option>
+                    </select>
+                    {!meioPagamento && <p className="text-[8px] text-red-500 mt-0.5">Campo obrigatório</p>}
+                    <p className="text-[7px] text-slate-400 mt-0.5">Visível apenas no Manus</p>
+                  </div>
+                  {(formaPagamento === 'A prazo') && (
                     <div>
-                      <label className="text-[10px] text-slate-500 font-medium">Condição de Pagamento {formaPagamento === 'A prazo' && <span className="text-red-500">*</span>}</label>
+                      <label className="text-[10px] text-slate-500 font-medium">Condição de Pagamento <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={condicaoPagamento}

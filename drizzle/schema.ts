@@ -2200,6 +2200,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   naturezaOperacao: varchar("natureza_operacao", { length: 100 }),
   estadoConfiguravel: varchar("estado_configuravel", { length: 50 }),
   formaPagamento: varchar("forma_pagamento", { length: 50 }), // À vista, A prazo, Outros
+  meioPagamento: varchar("meio_pagamento", { length: 50 }), // Boleto, Dinheiro, Cartão, PIX, Cheque, Depósito (campo obrigatório para vendedor, visível no Manus, NÃO exportado para Maxiprod)
   dataEntrega: varchar("data_entrega_pedido", { length: 20 }),
   previsaoEntrega: varchar("previsao_entrega_pedido", { length: 20 }),
   

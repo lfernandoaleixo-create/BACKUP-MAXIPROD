@@ -206,8 +206,13 @@ function tipoFreteToCode(tipoFrete: string | null | undefined): string {
 
 /**
  * Build the "Informações adicionais do produto" (col V) content.
- * Concatena: estado configurável + condição frete + transportadora + protocolo + obs internas
+ * Concatena: estado configurável + condição frete + transportadora + protocolo
  * Separados por " | "
+ * 
+ * IMPORTANTE: Observações internas NÃO são incluídas aqui.
+ * Column V = "Informações adicionais do produto" aparece na NF/invoice.
+ * As observações ficam apenas no Manus (visíveis para subgestor/gestor/Vitória)
+ * e a Vitória preenche manualmente no Maxiprod quando necessário.
  */
 function buildInfoAdicionais(orderData: OrderExportData): string {
   const parts: string[] = [];
@@ -237,10 +242,9 @@ function buildInfoAdicionais(orderData: OrderExportData): string {
     parts.push(`Protocolo: ${orderData.protocoloCotacao}`);
   }
   
-  // Observações internas (texto livre do vendedor)
-  if (orderData.observacoesInternas) {
-    parts.push(orderData.observacoesInternas);
-  }
+  // NOTA: observacoesInternas NÃO são exportadas para o Maxiprod.
+  // Elas aparecem apenas no Manus para Vitória/gestores consultarem.
+  // Se incluídas em Column V, aparecem na nota fiscal como info do item.
   
   return parts.join(" | ");
 }
@@ -318,7 +322,7 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
       formatDateBR(orderData.dataEntrega) || todayBR,         // T: Entrega
       formatDateBR(orderData.previsaoEntrega) || todayBR,     // U: Previsão entrega
       isFirst ? buildInfoAdicionais(orderData) : "",          // V: Informações adicionais do produto
-      isFirst ? (orderData.observacoes || "") : "",           // W: Observações técnicas (produção)
+      "",                                                     // W: Observações técnicas (NÃO exportar - aparece na NF)
       "",                                                     // X: Tipo de comissão (vazio)
       null,                                                   // Y: Valor da comissão (VAZIO, não "0"!)
       "",                                                     // Z: Pedido do cliente

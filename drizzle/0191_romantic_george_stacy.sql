@@ -1,0 +1,1 @@
+ALTER TABLE `sales_order_requests` ADD `meio_pagamento` varchar(50);

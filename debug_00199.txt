@@ -1,0 +1,43 @@
+BUG: Product 00199 (Casca Verde) shows pedidosCx=7 but should be 32
+
+ROOT CAUSE:
+- Pedido 1594: qty=26, unit='un', fatorConversao=1
+- Pedido 1587: qty=1, unit='CX', fatorConversao=5000
+- Pedido 1583: qty=5, unit='CX', fatorConversao=5000
+
+In stockProcessor.ts line 588: totalCx += qtyCx (adds 26+1+5 = 32, CORRECT)
+In stockProcessor.ts line 597-601: totalUn calculation
+  - For CX orders (fator=5000): totalUn += 5000 * qty = 25000 + 5000 = 30000
+  - For un order (fator=1): totalUn += 1 * 26 = 26
+  - Total: totalUn = 30026
+
+Then at line 830-834: pedidosCxVal = Math.ceil(pedidosUn / unitsPerBox) = Math.ceil(30026/5000) = 7
+
+THE FIX:
+The issue is that fatorConversao=1 with unidadeMedidaCodigo='un' means 1 selling unit = 1 stock unit.
+But the stock unit IS the CX (box) for this product. So 26 un = 26 CX = 26*5000 = 130000 individual units.
+
+Fix option 1: In the totalUn calculation, when fatorConversao <= 1 (or =1), 
+check if extractUnitsPerBox gives a higher value from description. If so, use that.
+
+Fix option 2: Use totalCx directly for pedidosCxVal instead of pedidosUn/unitsPerBox.
+This is simpler but might break other products.
+
+BEST FIX: In line 597-601, when fator=1 and the description has a higher unitsPerBox,
+use the description's unitsPerBox instead. This handles the case where the order was placed
+in the product's base unit (CX) but the unidadeMedidaCodigo says 'un'.
+
+Code change needed in server/stockProcessor.ts around line 597:
+  } else {
+    const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
+    const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
+    // FIX: when fator is 1 (or very low), check if description has higher unitsPerBox
+    // This handles orders placed in 'un' where 1 un = 1 CX
+    const descUnits = extractUnitsPerBox(order.descricao || '');
+    const effectiveUnitsPerBox = (fator <= 1 && descUnits && descUnits > 1) ? descUnits : (unitsPerBox || 1);
+    existing.totalUn += effectiveUnitsPerBox * qtyCx;
+  }
+
+USER REQUESTS PENDING:
+1. Fix observations going to items column in Maxiprod export (should go to observações internas)
+2. Add mandatory payment method field (Boleto/Dinheiro/Cartão/PIX) visible in Manus, export only À vista/A Prazo
