@@ -4515,6 +4515,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   const [showLossModal, setShowLossModal] = useState(false);
   const [lossItem, setLossItem] = useState<string>("00648");
   const [lossValue, setLossValue] = useState("");
+  const [showLossPasswordModal, setShowLossPasswordModal] = useState(false);
+  const [pendingLossItem, setPendingLossItem] = useState<string>("00648");
   const lossMutation = trpc.dashboard.registerQueijoCoalhoLoss.useMutation({
     onSuccess: (result: any) => {
       if (result.success === false && result.error === "senha_incorreta") {
@@ -4527,13 +4529,21 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     },
     onError: () => toast.error("Erro ao registrar perda"),
   });
+  const handleLossPasswordConfirm = (pwd: string) => {
+    if (pwd === "Maria") {
+      setShowLossPasswordModal(false);
+      setLossItem(pendingLossItem);
+      setShowLossModal(true);
+    } else {
+      toast.error("Senha incorreta");
+      setShowLossPasswordModal(false);
+    }
+  };
   const handleRegisterLoss = () => {
     const qty = parseInt(lossValue);
     if (!qty || qty <= 0) { toast.error("Informe a quantidade de caixas perdidas"); return; }
-    if (!qcAuth) return;
-    const operatorName = qcAuth.role === "maria" ? "Maria" : "Guilherme";
     lossMutation.mutate(
-      { codigoItem: lossItem, qtdPerda: qty, operatorName, senha: operatorName },
+      { codigoItem: lossItem, qtdPerda: qty, operatorName: "Maria", senha: "Maria" },
       { onSuccess: () => utils.dashboard.getQueijoCoalhoStock.invalidate() }
     );
   };
@@ -4544,6 +4554,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   const [arrivalItem, setArrivalItem] = useState<string>("00648");
   const [arrivalPO, setArrivalPO] = useState("");
   const [arrivalQty, setArrivalQty] = useState("");
+  const [showArrivalPasswordModal, setShowArrivalPasswordModal] = useState(false);
+  const [pendingArrivalItem, setPendingArrivalItem] = useState<string>("00648");
   const arrivalMutation = trpc.dashboard.registerQueijoCoalhoArrival.useMutation({
     onSuccess: (result: any) => {
       if (result.success === false && result.error === "senha_incorreta") {
@@ -4559,13 +4571,21 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     },
     onError: () => toast.error("Erro ao registrar chegada"),
   });
+  const handleArrivalPasswordConfirm = (pwd: string) => {
+    if (pwd === "Guilherme") {
+      setShowArrivalPasswordModal(false);
+      setArrivalItem(pendingArrivalItem);
+      setShowArrivalModal(true);
+    } else {
+      toast.error("Senha incorreta");
+      setShowArrivalPasswordModal(false);
+    }
+  };
   const handleRegisterArrival = () => {
     const qty = parseInt(arrivalQty);
     if (!qty || qty <= 0) { toast.error("Informe a quantidade de caixas"); return; }
     if (!arrivalPO.trim()) { toast.error("Informe o número da PO"); return; }
-    if (!qcAuth) return;
-    const operatorName = qcAuth.role === "maria" ? "Maria" : "Guilherme";
-    arrivalMutation.mutate({ codigoItem: arrivalItem, numeroPO: arrivalPO.trim(), qtdCaixas: qty, operatorName, senha: operatorName });
+    arrivalMutation.mutate({ codigoItem: arrivalItem, numeroPO: arrivalPO.trim(), qtdCaixas: qty, operatorName: "Guilherme", senha: "Guilherme" });
   };
 
   // Movements detail card state
@@ -4829,6 +4849,8 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   return (
     <div className="mt-6 md:mt-10">
       <PasswordModal open={showAuthModal} onClose={() => setShowAuthModal(false)} onConfirm={handleAuthConfirm} title="Acesso restrito" />
+      <PasswordModal open={showArrivalPasswordModal} onClose={() => setShowArrivalPasswordModal(false)} onConfirm={handleArrivalPasswordConfirm} />
+      <PasswordModal open={showLossPasswordModal} onClose={() => setShowLossPasswordModal(false)} onConfirm={handleLossPasswordConfirm} />
 
       {/* History Dialog */}
       {showHistory && (
@@ -5181,13 +5203,13 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           </button>
                           <div className="flex items-center gap-1 flex-wrap justify-center">
                             <button
-                              onClick={() => { setArrivalItem(row.codigoItem); setShowArrivalModal(true); }}
+                              onClick={() => { setPendingArrivalItem(row.codigoItem); setShowArrivalPasswordModal(true); }}
                               className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors"
                             >
                               + Chegada
                             </button>
                             <button
-                              onClick={() => { setLossItem(row.codigoItem); setShowLossModal(true); }}
+                              onClick={() => { setPendingLossItem(row.codigoItem); setShowLossPasswordModal(true); }}
                               className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors"
                             >
                               - Perda

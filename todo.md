@@ -6818,3 +6818,5 @@
 - [x] Queijo Coalho: Card/painel detalhando todas as chegadas por PO e perdas
 - [x] Queijo Coalho: Seed PO ZYZ2026-018 com 1650 cx
 - [x] Palitos Premium: Modal de desbloqueio mostra "Área protegida por senha" sem pistas, aceita apenas "Maria" com M maiúsculo
+- [x] Queijo Coalho: Chegada exige senha "Guilherme" (G maiúsculo), Perda exige senha "Maria" (M maiúsculo), cada com modal próprio
+- [x] Queijo Coalho: Corrigir registro histórico da PO ZYZ2026-018 de "Fernando" para "Guilherme"
