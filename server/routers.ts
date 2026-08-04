@@ -945,6 +945,99 @@ export const appRouter = router({
 
         return { history: rows };
       }),
+
+    /**
+     * Registrar chegada de caixas por PO no "Aguardando Processamento".
+     * Soma ao estoque_maxiprod e registra histórico com número da PO.
+     */
+    registerQueijoCoalhoArrival: publicProcedure
+      .input(z.object({
+        codigoItem: z.string(),
+        numeroPO: z.string().min(1),
+        qtdCaixas: z.number().min(1),
+        operatorName: z.string(),
+        senha: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB not available");
+
+        // Validação: Maria ou Guilherme
+        const senhaLower = (input.senha || "").toLowerCase();
+        if (senhaLower !== "maria" && senhaLower !== "guilherme") {
+          return { success: false, error: "senha_incorreta" };
+        }
+
+        // Get current estoque_maxiprod
+        const existing = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, input.codigoItem));
+        const currentMaxiprod = existing.length > 0 ? parseFloat(String(existing[0].estoqueMaxiprod)) || 0 : 0;
+        const newMaxiprod = currentMaxiprod + input.qtdCaixas;
+
+        // Count existing arrival records for numbered label
+        const [countResult] = await db.select({ count: sql<number>`COUNT(*)` })
+          .from(queijoCoalhoStockHistory)
+          .where(and(
+            eq(queijoCoalhoStockHistory.codigoItem, input.codigoItem),
+            sql`${queijoCoalhoStockHistory.observacao} LIKE '%chegada PO%'`
+          ));
+        const arrivalNumber = (countResult?.count || 0) + 1;
+
+        // Record history
+        await db.insert(queijoCoalhoStockHistory).values({
+          codigoItem: input.codigoItem,
+          campo: "estoque_maxiprod",
+          valorAnterior: String(currentMaxiprod),
+          valorNovo: String(newMaxiprod),
+          operador: input.operatorName,
+          observacao: `${arrivalNumber}º chegada PO ${input.numeroPO}: +${input.qtdCaixas} cx`,
+        });
+
+        // Update stock
+        await db.insert(queijoCoalhoStock)
+          .values({
+            codigoItem: input.codigoItem,
+            estoqueMaxiprod: String(newMaxiprod),
+            updatedBy: input.operatorName,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              estoqueMaxiprod: sql`${String(newMaxiprod)}`,
+              updatedBy: sql`${input.operatorName}`,
+            },
+          });
+
+        return { success: true, arrivalNumber, qtdCaixas: input.qtdCaixas, numeroPO: input.numeroPO, novoEstoque: newMaxiprod };
+      }),
+
+    /**
+     * Listar todas as chegadas e perdas do Queijo Coalho para exibição no card detalhado.
+     */
+    getQueijoCoalhoMovements: publicProcedure
+      .input(z.object({
+        codigoItem: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { arrivals: [], losses: [] };
+
+        // Buscar chegadas (PO)
+        const arrivals = await db.select().from(queijoCoalhoStockHistory)
+          .where(and(
+            eq(queijoCoalhoStockHistory.codigoItem, input.codigoItem),
+            sql`${queijoCoalhoStockHistory.observacao} LIKE '%chegada PO%'`
+          ))
+          .orderBy(desc(queijoCoalhoStockHistory.createdAt));
+
+        // Buscar perdas
+        const losses = await db.select().from(queijoCoalhoStockHistory)
+          .where(and(
+            eq(queijoCoalhoStockHistory.codigoItem, input.codigoItem),
+            sql`${queijoCoalhoStockHistory.observacao} LIKE '%registro de perda%'`
+          ))
+          .orderBy(desc(queijoCoalhoStockHistory.createdAt));
+
+        return { arrivals, losses };
+      }),
   }),
 });
 

@@ -6812,3 +6812,8 @@
 - [x] Backend getOrdersForOperator retorna rejeitado + pendente para todos os viewers
 - [x] Queijo Coalho: Campo de registro de perda (abate do Aguardando Processamento, histórico numerado)
 - [x] Lotes: Acumular no mesmo lote (mesmo codigoItem + notaCarga) independente do dia, registrar histórico com datas
+- [x] Queijo Coalho: Tabela de chegadas por PO (queijoCoalhoArrivals)
+- [x] Queijo Coalho: Backend mutations para registrar chegada por PO e listar chegadas
+- [x] Queijo Coalho: Botão (+) para registrar chegada com número da PO e quantidade
+- [x] Queijo Coalho: Card/painel detalhando todas as chegadas por PO e perdas
+- [x] Queijo Coalho: Seed PO ZYZ2026-018 com 1650 cx

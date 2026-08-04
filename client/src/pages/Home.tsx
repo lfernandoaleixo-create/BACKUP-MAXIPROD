@@ -4538,6 +4538,43 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   };
   const utils = trpc.useUtils();
 
+  // Arrival (chegada por PO) state
+  const [showArrivalModal, setShowArrivalModal] = useState(false);
+  const [arrivalItem, setArrivalItem] = useState<string>("00648");
+  const [arrivalPO, setArrivalPO] = useState("");
+  const [arrivalQty, setArrivalQty] = useState("");
+  const arrivalMutation = trpc.dashboard.registerQueijoCoalhoArrival.useMutation({
+    onSuccess: (result: any) => {
+      if (result.success === false && result.error === "senha_incorreta") {
+        toast.error("Senha incorreta!");
+      } else {
+        toast.success(`${result.arrivalNumber}º chegada PO ${result.numeroPO}: +${result.qtdCaixas} cx registrada!`);
+      }
+      setShowArrivalModal(false);
+      setArrivalPO("");
+      setArrivalQty("");
+      utils.dashboard.getQueijoCoalhoStock.invalidate();
+      utils.dashboard.getQueijoCoalhoMovements.invalidate();
+    },
+    onError: () => toast.error("Erro ao registrar chegada"),
+  });
+  const handleRegisterArrival = () => {
+    const qty = parseInt(arrivalQty);
+    if (!qty || qty <= 0) { toast.error("Informe a quantidade de caixas"); return; }
+    if (!arrivalPO.trim()) { toast.error("Informe o número da PO"); return; }
+    if (!qcAuth) return;
+    const operatorName = qcAuth.role === "maria" ? "Maria" : "Guilherme";
+    arrivalMutation.mutate({ codigoItem: arrivalItem, numeroPO: arrivalPO.trim(), qtdCaixas: qty, operatorName, senha: operatorName });
+  };
+
+  // Movements detail card state
+  const [showMovementsCard, setShowMovementsCard] = useState(false);
+  const [movementsItem, setMovementsItem] = useState<string>("00648");
+  const movementsQuery = trpc.dashboard.getQueijoCoalhoMovements.useQuery(
+    { codigoItem: movementsItem },
+    { enabled: showMovementsCard }
+  );
+
   // Build stock map from DB
   const qcStockMap = useMemo(() => {
     const map = new Map<string, { maxiprod: number; processado: number; regulador: number }>();
@@ -4858,6 +4895,134 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
         </Dialog>
       )}
 
+      {/* Arrival Modal */}
+      {showArrivalModal && (
+        <Dialog open={showArrivalModal} onOpenChange={(v) => !v && setShowArrivalModal(false)}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-green-700">
+                <Package className="w-5 h-5" />
+                Registrar Chegada (PO)
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Informe o número da PO e a quantidade de caixas que chegaram. O valor será <strong>somado</strong> ao Aguardando Processamento.
+              </p>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Número da PO</label>
+                <input
+                  type="text"
+                  value={arrivalPO}
+                  onChange={(e) => setArrivalPO(e.target.value)}
+                  placeholder="Ex: ZYZ2026-018"
+                  className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Quantidade de caixas</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={arrivalQty}
+                  onChange={(e) => setArrivalQty(e.target.value)}
+                  placeholder="Ex: 1650"
+                  className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleRegisterArrival(); }}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => { setShowArrivalModal(false); setArrivalPO(""); setArrivalQty(""); }}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleRegisterArrival}
+                  disabled={arrivalMutation.isPending || !arrivalPO.trim() || !arrivalQty || parseInt(arrivalQty) <= 0}
+                  className="px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-slate-300 rounded-lg transition-colors"
+                >
+                  {arrivalMutation.isPending ? "Registrando..." : "Registrar Chegada"}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Movements Detail Card */}
+      {showMovementsCard && (
+        <Dialog open={showMovementsCard} onOpenChange={(v) => !v && setShowMovementsCard(false)}>
+          <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-blue-700">
+                <ClipboardList className="w-5 h-5" />
+                Movimentações — Aguardando Processamento
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {movementsQuery.isLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>
+              ) : (
+                <>
+                  {/* Chegadas */}
+                  <div>
+                    <h4 className="text-sm font-bold text-green-700 mb-2 flex items-center gap-1">
+                      <Package className="w-4 h-4" /> Chegadas por PO
+                    </h4>
+                    {(movementsQuery.data?.arrivals?.length || 0) === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Nenhuma chegada registrada</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {movementsQuery.data?.arrivals?.map((a: any) => (
+                          <div key={a.id} className="flex items-center justify-between bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+                            <div>
+                              <span className="text-sm font-semibold text-green-800">{a.observacao}</span>
+                              <p className="text-[10px] text-slate-500">{a.operador} — {new Date(a.createdAt).toLocaleString("pt-BR")}</p>
+                            </div>
+                            <span className="text-sm font-bold text-green-700">+{parseFloat(String(a.valorNovo)) - parseFloat(String(a.valorAnterior))} cx</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2 text-right text-xs font-bold text-green-800">
+                      Total chegadas: {movementsQuery.data?.arrivals?.reduce((sum: number, a: any) => sum + (parseFloat(String(a.valorNovo)) - parseFloat(String(a.valorAnterior))), 0) || 0} cx
+                    </div>
+                  </div>
+
+                  {/* Perdas */}
+                  <div className="border-t pt-3">
+                    <h4 className="text-sm font-bold text-red-700 mb-2 flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4" /> Perdas de Processamento
+                    </h4>
+                    {(movementsQuery.data?.losses?.length || 0) === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Nenhuma perda registrada</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {movementsQuery.data?.losses?.map((l: any) => (
+                          <div key={l.id} className="flex items-center justify-between bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                            <div>
+                              <span className="text-sm font-semibold text-red-800">{l.observacao}</span>
+                              <p className="text-[10px] text-slate-500">{l.operador} — {new Date(l.createdAt).toLocaleString("pt-BR")}</p>
+                            </div>
+                            <span className="text-sm font-bold text-red-700">{parseFloat(String(l.valorNovo)) - parseFloat(String(l.valorAnterior))} cx</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2 text-right text-xs font-bold text-red-800">
+                      Total perdas: {movementsQuery.data?.losses?.reduce((sum: number, l: any) => sum + Math.abs(parseFloat(String(l.valorNovo)) - parseFloat(String(l.valorAnterior))), 0) || 0} cx
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Section Header */}
       <div className="mb-3 md:mb-5">
         <div className="flex items-center gap-2 md:gap-3">
@@ -5008,7 +5173,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           className="w-20 text-center text-sm border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400"
                         />
                       ) : qcAuth ? (
-                        <div className="inline-flex items-center gap-1">
+                        <div className="flex flex-col items-center gap-1">
                           <button
                             onClick={() => handleStartEdit(row.codigoItem, "estoque_maxiprod")}
                             className="inline-flex items-center gap-0.5 text-sm font-semibold text-orange-700 hover:bg-orange-50 rounded px-1.5 py-0.5 transition-colors"
@@ -5017,13 +5182,26 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                             {formatNumber(row.estoqueMaxiprod, true)} cx
                             <Pencil className="w-3 h-3 text-orange-400" />
                           </button>
-                          <button
-                            onClick={() => { setLossItem(row.codigoItem); setShowLossModal(true); }}
-                            className="p-0.5 rounded hover:bg-red-50 transition-colors"
-                            title="Registrar perda de processamento"
-                          >
-                            <Minus className="w-3.5 h-3.5 text-red-500" />
-                          </button>
+                          <div className="flex items-center gap-1 flex-wrap justify-center">
+                            <button
+                              onClick={() => { setArrivalItem(row.codigoItem); setShowArrivalModal(true); }}
+                              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors"
+                            >
+                              + Chegada
+                            </button>
+                            <button
+                              onClick={() => { setLossItem(row.codigoItem); setShowLossModal(true); }}
+                              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors"
+                            >
+                              - Perda
+                            </button>
+                            <button
+                              onClick={() => { setMovementsItem(row.codigoItem); setShowMovementsCard(true); }}
+                              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
+                            >
+                              Detalhes
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <span className="text-sm font-semibold text-orange-700">{formatNumber(row.estoqueMaxiprod, true)} cx</span>
