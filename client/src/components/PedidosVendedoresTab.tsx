@@ -57,8 +57,9 @@ export default function PedidosVendedoresTab() {
   const [maxiprodNumber, setMaxiprodNumber] = useState("");
   const [showProcessDialog, setShowProcessDialog] = useState(false);
 
+  // Always fetch ALL orders - filter client-side to keep stats accurate
   const ordersQuery = trpc.salesOrders.listOrders.useQuery(
-    { status: statusFilter === "todos" ? undefined : statusFilter, comissaoTravada: extraFilter === "comissao_travada" ? true : undefined },
+    { comissaoTravada: extraFilter === "comissao_travada" ? true : undefined },
     { refetchInterval: 30000 }
   );
 
@@ -133,13 +134,15 @@ export default function PedidosVendedoresTab() {
   const [editingObsOrderId, setEditingObsOrderId] = useState<number | null>(null);
   const [editingObsText, setEditingObsText] = useState("");
 
-  const orders = ordersQuery.data || [];
+  const allOrders = ordersQuery.data || [];
+  // Client-side filter for display
+  const orders = statusFilter === "todos" ? allOrders : allOrders.filter(o => o.status === statusFilter);
 
   const statusCounts = {
-    pendente: orders.filter(o => o.status === "pendente").length,
-    aprovado: orders.filter(o => o.status === "aprovado").length,
-    processado: orders.filter(o => o.status === "processado").length,
-    rejeitado: orders.filter(o => o.status === "rejeitado").length,
+    pendente: allOrders.filter(o => o.status === "pendente").length,
+    aprovado: allOrders.filter(o => o.status === "aprovado").length,
+    processado: allOrders.filter(o => o.status === "processado").length,
+    rejeitado: allOrders.filter(o => o.status === "rejeitado").length,
   };
 
   const formatCurrency = (val: string | null) => {
@@ -963,11 +966,11 @@ export default function PedidosVendedoresTab() {
           <div className="space-y-3">
             <p className="text-sm font-medium text-slate-700">Senha de aprovação (obrigatória):</p>
             <input
-              type="password"
+              type="text" autoComplete="off" data-form-type="other"
               value={approvalPassword}
               onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
               placeholder="Digite sua senha (primeiro nome)"
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+              className="input-masked w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
             />
             {approvalPasswordError && (
               <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>

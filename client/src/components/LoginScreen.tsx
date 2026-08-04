@@ -288,11 +288,11 @@ export default function LoginScreen() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
             <Input
-              type={showPassword ? "text" : "password"}
+              type="text" autoComplete="off" data-form-type="other"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Senha"
-              className="h-11 text-center text-base pr-10 rounded-xl"
+              className={`h-11 text-center text-base pr-10 rounded-xl ${!showPassword ? 'input-masked' : ''}`}
               style={{
                 background: isDark ? "#1a1a1a" : "#ffffff",
                 border: isDark ? "1px solid rgba(218,165,32,0.3)" : "1px solid #e2e8f0",

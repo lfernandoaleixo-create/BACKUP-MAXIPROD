@@ -1257,12 +1257,12 @@ export default function WeekReconciliationCard() {
           }}>
             <div className="py-4">
               <Input
-                type="password"
+                type="text" autoComplete="off" data-form-type="other"
                 placeholder="Digite a senha..."
                 value={authCompletionPassword}
                 onChange={(e) => { setAuthCompletionPassword(e.target.value); setAuthCompletionError(false); }}
                 autoFocus
-                className={`text-center text-lg tracking-widest ${authCompletionError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+                className={`input-masked text-center text-lg tracking-widest ${authCompletionError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
               />
               {authCompletionError && (
                 <p className="text-xs text-red-500 text-center mt-2">Senha incorreta. Tente novamente.</p>
@@ -1296,12 +1296,12 @@ export default function WeekReconciliationCard() {
           <form onSubmit={handlePasswordSubmit}>
             <div className="py-4">
               <Input
-                type="password"
+                type="text" autoComplete="off" data-form-type="other"
                 placeholder="Digite a senha..."
                 value={passwordInput}
                 onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
                 autoFocus
-                className={`text-center text-lg tracking-widest ${passwordError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+                className={`input-masked text-center text-lg tracking-widest ${passwordError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
               />
               {passwordError && (
                 <p className="text-xs text-red-500 text-center mt-2">Senha incorreta. Tente novamente.</p>
@@ -1335,12 +1335,12 @@ export default function WeekReconciliationCard() {
           <form onSubmit={handlePriorityPasswordSubmit}>
             <div className="py-4">
               <Input
-                type="password"
+                type="text" autoComplete="off" data-form-type="other"
                 placeholder="Senha do Flávio..."
                 value={priorityPasswordInput}
                 onChange={(e) => { setPriorityPasswordInput(e.target.value); setPriorityPasswordError(false); }}
                 autoFocus
-                className={`text-center text-lg tracking-widest ${priorityPasswordError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+                className={`input-masked text-center text-lg tracking-widest ${priorityPasswordError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
               />
               {priorityPasswordError && (
                 <p className="text-xs text-red-500 text-center mt-2">Senha incorreta. Tente novamente.</p>

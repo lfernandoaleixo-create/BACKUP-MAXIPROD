@@ -363,12 +363,12 @@ function PasswordDialog({ open, onOpenChange, title, description, onConfirm, loa
         <form onSubmit={handleSubmit}>
           <div className="py-4">
             <Input
-              type="password"
+              type="text" autoComplete="off" data-form-type="other"
               placeholder="Digite a senha..."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
-              className="text-center text-lg tracking-widest"
+              className="input-masked text-center text-lg tracking-widest"
             />
           </div>
           <DialogFooter>
@@ -473,11 +473,11 @@ function ProductionNoteDialog({ open, onOpenChange, pedido, currentNote, onSave,
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">Senha da Produção</label>
                 <Input
-                  type="password"
+                  type="text" autoComplete="off" data-form-type="other"
                   placeholder="Digite a senha..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="text-center text-lg tracking-widest"
+                  className="input-masked text-center text-lg tracking-widest"
                 />
               </div>
             </div>

@@ -132,13 +132,21 @@ export default function GestorAprovacoes(props: any = {}) {
   // When recipientName is provided, the backend uses position-based filtering from timeline rules
   // which correctly shows orders from ALL sellers assigned to this recipient (including sub-gestor's sellers)
   // DO NOT pass gestorName together with recipientName - it would exclude orders from sub-gestor's sellers
-  const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
+  // Always fetch ALL orders for this recipient - filter client-side for display
+  // This ensures stats always show correct counts regardless of active filter
+  const { data: allOrders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
     { 
-      status: filter === "todos" ? "todos" : filter, 
+      status: "todos", 
       ...(gestorName ? { recipientName: gestorName } : {})
     },
     { staleTime: 30 * 1000 }
   );
+  // Client-side filter for display
+  const orders = useMemo(() => {
+    if (!allOrders) return undefined;
+    if (filter === "todos") return allOrders;
+    return allOrders.filter((o: any) => o.status === filter);
+  }, [allOrders, filter]);
 
   // Get items for expanded order
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
@@ -303,15 +311,15 @@ export default function GestorAprovacoes(props: any = {}) {
   };
 
   const stats = useMemo(() => {
-    if (!orders) return { pendentes: 0, aprovados: 0, rejeitados: 0, aguardandoGestor: 0, total: 0 };
+    if (!allOrders) return { pendentes: 0, aprovados: 0, rejeitados: 0, aguardandoGestor: 0, total: 0 };
     return {
-      pendentes: orders.filter((o: any) => o.status === "pendente").length,
-      aprovados: orders.filter((o: any) => o.status === "aprovado" || o.status === "processado").length,
-      rejeitados: orders.filter((o: any) => o.status === "rejeitado").length,
-      aguardandoGestor: orders.filter((o: any) => o.status === "aprovado_subgestor").length,
-      total: orders.length,
+      pendentes: allOrders.filter((o: any) => o.status === "pendente").length,
+      aprovados: allOrders.filter((o: any) => o.status === "aprovado" || o.status === "processado").length,
+      rejeitados: allOrders.filter((o: any) => o.status === "rejeitado").length,
+      aguardandoGestor: allOrders.filter((o: any) => o.status === "aprovado_subgestor").length,
+      total: allOrders.length,
     };
-  }, [orders]);
+  }, [allOrders]);
 
   // Calculate order margin for each order (for collapsed card badges)
   const orderMarginsMap = useMemo(() => {
@@ -1163,11 +1171,15 @@ export default function GestorAprovacoes(props: any = {}) {
                                 className="w-full px-3 py-2 text-xs border border-red-200 dark:border-red-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
                               />
                               <input
-                                type="password"
+                                type="text"
+                                autoComplete="off"
+                                data-lpignore="true"
+                                data-form-type="other"
+                                
                                 value={gestorPasswordReject}
                                 onChange={(e) => setGestorPasswordReject(e.target.value)}
                                 placeholder="Senha do gestor"
-                                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                                className="input-masked w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
                               />
                               <div className="flex gap-2">
                                 <button
@@ -1349,13 +1361,17 @@ export default function GestorAprovacoes(props: any = {}) {
                   Senha do gestor
                 </label>
                 <input
-                  type="password"
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  
                   value={gestorPassword}
                   onChange={(e) => setGestorPassword(e.target.value)}
                   placeholder="Digite seu primeiro nome"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Enter" && gestorPassword.trim()) handleGestorApprove(); }}
-                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
+                  className="input-masked w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
                 />
               </div>
               <div>
@@ -1429,13 +1445,17 @@ export default function GestorAprovacoes(props: any = {}) {
                   Senha de aprovação
                 </label>
                 <input
-                  type="password"
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  
                   value={approvalPassword}
                   onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
                   placeholder="Digite seu primeiro nome"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Enter" && approvalPassword.trim()) confirmApprove(); }}
-                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
+                  className="input-masked w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
                 />
                 {approvalPasswordError && (
                   <p className="text-[11px] text-red-500 font-medium mt-1.5 flex items-center gap-1">

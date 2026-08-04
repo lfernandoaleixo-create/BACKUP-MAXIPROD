@@ -1713,7 +1713,7 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
             <h4 className="font-bold text-slate-800 mb-2">Confirmar Conciliação</h4>
             <p className="text-sm text-slate-500 mb-4">Digite a senha para marcar a conciliação como feita.</p>
             <input
-              type="password"
+              type="text" autoComplete="off" data-form-type="other"
               placeholder="Senha"
               value={passwordInput}
               onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(""); }}
@@ -1722,7 +1722,7 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
                   setReconMutation.mutate({ password: passwordInput, reconciled: true });
                 }
               }}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="input-masked w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               autoFocus
             />
             {passwordError && <p className="text-xs text-red-500 mb-2">{passwordError}</p>}

@@ -699,3 +699,10 @@
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
   }
 }
+
+/* Prevent Chrome data breach popup on password fields */
+.input-masked {
+  -webkit-text-security: disc;
+  -moz-text-security: disc;
+  text-security: disc;
+}

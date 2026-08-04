@@ -2003,12 +2003,12 @@ export default function InadimplenciaTab() {
           <form onSubmit={(e) => { e.preventDefault(); handlePasswordConfirm(); }}>
             <div className="py-4">
               <Input
-                type="password"
+                type="text" autoComplete="off" data-form-type="other"
                 placeholder="Digite a senha..."
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 autoFocus
-                className="text-center text-lg tracking-widest"
+                className="input-masked text-center text-lg tracking-widest"
               />
             </div>
             <DialogFooter>

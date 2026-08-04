@@ -6788,3 +6788,7 @@
 - [x] Simulador de frete avulso: garantir que gere protocolos de frete nos 3 CNPJs de cada uma das 5 transportadoras (igual à simulação por pedido) [já funcionava - quoteAllCarriers usa cotarTodosCnpjs/quoteAllAlfaCnpjs/quoteAllSswCnpjsWithProtocol/quoteAllRodonavesCnpjs]
 - [x] Alertas de estoque: esconder alertas "Recusado" da tela principal (manter apenas no histórico)
 - [x] Registrar container YMLU5427811 (Hank) no sistema de rastreio com dados Yang Ming + Logcomex AI (ETD 02/08, ETA 02/09, navio ONE CONTINUITY 078W, Shekou→Santos)
+- [ ] BUG: Popup Chrome 'vazamento de dados' nos campos de senha de aprovação - trocar type=password por type=text com CSS masking
+- [ ] BUG: Filtro 'Pendente' do vendedor não mostra pedidos pendentes - precisa ir em 'Todos' para ver
+- [ ] Renomear aba 'Vendas' para 'Métricas de Vendas' no VendedorDetalhe
+- [ ] Corrigir lógica de métricas de vendas para puxar do vendedor correto (último representante preenchido na hierarquia)

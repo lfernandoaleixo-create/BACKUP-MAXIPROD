@@ -1154,12 +1154,12 @@ function ContaFiltersAndTable({
               <div className="text-lg font-bold text-teal-800">{formatCurrency(selectedContaTotal)}</div>
             </div>
             <input
-              type="password"
+              type="text" autoComplete="off" data-form-type="other"
               value={passwordInput}
               onChange={e => { setPasswordInput(e.target.value); setPasswordError(""); }}
               onKeyDown={e => e.key === "Enter" && handleFinalize()}
               placeholder="Senha de autorização"
-              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:border-teal-500 focus:outline-none mb-2"
+              className="input-masked w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:border-teal-500 focus:outline-none mb-2"
               autoFocus
             />
             {passwordError && <p className="text-red-500 text-xs mb-2">{passwordError}</p>}
@@ -3135,7 +3135,7 @@ export default function ReceivablesTab() {
           <form onSubmit={handleExchangePasswordSubmit}>
             <div className="py-4">
               <Input
-                type="password"
+                type="text" autoComplete="off" data-form-type="other"
                 placeholder="Digite a senha..."
                 value={exchangePasswordInput}
                 onChange={(e) => { setExchangePasswordInput(e.target.value); setExchangePasswordError(false); }}

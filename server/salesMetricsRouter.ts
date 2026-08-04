@@ -469,11 +469,24 @@ export const salesMetricsRouter = router({
 
       // Filter for this vendedor and group by client
       // Match by vendedorReal (actual seller: Rep3 || Rep2 || Rep1) OR vendedor (Rep1/gestor)
+      // Uses partial/first-name matching to handle seller_permissions short names vs full Maxiprod names
       const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string; vendedoresReais: Set<string>; estadosConfiguraveis: Set<string>; segmentos: Set<string>; byEstado: Record<string, number>; bySegmento: Record<string, number> }> = {};
+      const inputName = input.vendedor.toUpperCase().trim();
+      const inputFirstName = inputName.split(' ')[0];
+      const matchesVendedor = (name: string) => {
+        const n = name.toUpperCase().trim();
+        if (!n) return false;
+        if (n === inputName) return true;
+        // First-name match: "LÍVIA" matches "LÍVIA PINHEIRO"
+        const nFirst = n.split(' ')[0];
+        if (nFirst === inputFirstName) return true;
+        // Full input starts with name or name starts with full input
+        if (n.startsWith(inputName + ' ') || inputName.startsWith(n + ' ')) return true;
+        return false;
+      };
       for (const [_, data] of Array.from(pedidoMap.entries())) {
-        const inputName = input.vendedor.toUpperCase();
         // Match if vendedorReal (actual seller) matches OR vendedor (Rep1) matches
-        if (data.vendedorReal.toUpperCase() !== inputName && data.vendedor.toUpperCase() !== inputName) continue;
+        if (!matchesVendedor(data.vendedorReal) && !matchesVendedor(data.vendedor)) continue;
         const valor = data.valorTotalPedido || data.somaItens;
         if (!clienteMap[data.cliente]) {
           clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "", vendedoresReais: new Set(), estadosConfiguraveis: new Set(), segmentos: new Set(), byEstado: {}, bySegmento: {} };

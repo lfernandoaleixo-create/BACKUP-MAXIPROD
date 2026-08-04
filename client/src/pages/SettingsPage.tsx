@@ -94,7 +94,7 @@ function PasswordGate({ onUnlock }: { onUnlock: (pwd: string) => void }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            type="password"
+            type="text" autoComplete="off" data-form-type="other"
             placeholder="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -1466,8 +1466,8 @@ function OperatorManagementPanel() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Senha"
-            type="password"
-            className="h-8 text-sm flex-1 max-w-[160px]"
+            type="text" autoComplete="off" data-form-type="other"
+            className="input-masked h-8 text-sm flex-1 max-w-[160px]"
             onKeyDown={(e) => {
               if (e.key === "Enter" && newName.trim() && newPassword.trim()) {
                 createMutation.mutate({ name: newName.trim(), password: newPassword.trim() });

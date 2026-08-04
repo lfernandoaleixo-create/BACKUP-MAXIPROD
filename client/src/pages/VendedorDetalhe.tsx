@@ -202,7 +202,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
         { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
         { id: "catalogos", label: "Documentos/Catálogos", icon: FolderOpen },
         { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
-        { id: "vendas", label: "Vendas", icon: BarChart3 },
+        { id: "vendas", label: "Métricas de Vendas", icon: BarChart3 },
       ];
 
   const tabs = allTabs;
@@ -382,10 +382,16 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
   const [approvalPassword, setApprovalPassword] = useState("");
   const [approvalPasswordError, setApprovalPasswordError] = useState("");
 
-  const { data: orders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
-    { status: filter === "todos" ? "todos" : filter, gestorName },
+  // Always fetch ALL orders for stats accuracy - filter client-side
+  const { data: allOrders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
+    { status: "todos", gestorName },
     { staleTime: 30 * 1000 }
   );
+  const orders = useMemo(() => {
+    if (!allOrders) return undefined;
+    if (filter === "todos") return allOrders;
+    return allOrders.filter((o: any) => o.status === filter);
+  }, [allOrders, filter]);
 
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
     { orderId: expandedOrder! },
@@ -446,9 +452,9 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
   };
 
   const stats = {
-    pendentes: orders?.filter((o: any) => o.status === "pendente").length || 0,
-    aprovados: orders?.filter((o: any) => o.status === "aprovado").length || 0,
-    rejeitados: orders?.filter((o: any) => o.status === "rejeitado").length || 0,
+    pendentes: allOrders?.filter((o: any) => o.status === "pendente").length || 0,
+    aprovados: allOrders?.filter((o: any) => o.status === "aprovado").length || 0,
+    rejeitados: allOrders?.filter((o: any) => o.status === "rejeitado").length || 0,
   };
 
   return (
@@ -595,11 +601,11 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                         <div className="flex-1 space-y-2">
                           <label className="text-[10px] font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
                           <input
-                            type="password"
+                            type="text" autoComplete="off" data-form-type="other"
                             value={approvalPassword}
                             onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
                             placeholder="Digite sua senha (primeiro nome)"
-                            className="w-full px-3 py-2 border border-green-200 rounded-lg text-xs bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                            className="input-masked w-full px-3 py-2 border border-green-200 rounded-lg text-xs bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
                           />
                           {approvalPasswordError && (
                             <p className="text-[10px] text-red-500 font-medium">{approvalPasswordError}</p>
@@ -7879,11 +7885,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 mb-2">Aprovação do Gestor</p>
                       <div className="flex gap-2">
                         <input
-                          type="password"
+                          type="text" autoComplete="off" data-form-type="other"
                           value={managerPassword}
                           onChange={(e) => { setManagerPassword(e.target.value); setManagerPasswordError(""); }}
                           placeholder="Senha do gestor"
-                          className="flex-1 px-3 py-1.5 text-xs border border-amber-300 dark:border-amber-600 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="input-masked flex-1 px-3 py-1.5 text-xs border border-amber-300 dark:border-amber-600 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && managerPassword.trim()) {
                               verifyManagerMutation.mutate({ password: managerPassword }, {
@@ -8491,13 +8497,19 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
     { staleTime: 60 * 1000 }
   );
 
-  // Encontrar posição no ranking
-  const sellerRankData = ranking?.find(
-    (r) => r.vendedor.toUpperCase() === sellerName.toUpperCase()
-  );
-  const rankPosition = ranking?.findIndex(
-    (r) => r.vendedor.toUpperCase() === sellerName.toUpperCase()
-  );
+  // Encontrar posição no ranking (partial/first-name match para lidar com nomes curtos vs completos)
+  const matchSellerName = (rankName: string) => {
+    const a = rankName.toUpperCase().trim();
+    const b = sellerName.toUpperCase().trim();
+    if (a === b) return true;
+    const aFirst = a.split(' ')[0];
+    const bFirst = b.split(' ')[0];
+    if (aFirst === bFirst) return true;
+    if (a.startsWith(b + ' ') || b.startsWith(a + ' ')) return true;
+    return false;
+  };
+  const sellerRankData = ranking?.find((r) => matchSellerName(r.vendedor));
+  const rankPosition = ranking?.findIndex((r) => matchSellerName(r.vendedor));
   const position = rankPosition !== undefined && rankPosition >= 0 ? rankPosition + 1 : null;
 
   const totalVendas = sellerRankData?.totalVendas || 0;
@@ -8563,7 +8575,7 @@ function SellerSalesView({ sellerId, sellerName, gestorName }: { sellerId: numbe
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-teal-600" />
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              Vendas de {sellerName}
+              Métricas de Vendas de {sellerName}
             </h3>
           </div>
 

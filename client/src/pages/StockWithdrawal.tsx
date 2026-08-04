@@ -433,7 +433,7 @@ function SolicitarBaixaForm() {
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Sua Senha (para confirmar) *</label>
         <input
-          type="password"
+          type="text" autoComplete="off" data-form-type="other"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           placeholder="Digite sua senha"
@@ -590,7 +590,7 @@ function SolicitarAcrescimoForm() {
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Sua Senha (para confirmar) *</label>
         <input
-          type="password"
+          type="text" autoComplete="off" data-form-type="other"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           placeholder="Digite sua senha"
@@ -733,7 +733,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                       <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                         <Lock className="w-4 h-4 text-emerald-600 shrink-0" />
                         <input
-                          type="password"
+                          type="text" autoComplete="off" data-form-type="other"
                           value={approveSenha}
                           onChange={(e) => setApproveSenha(e.target.value)}
                           placeholder="Senha da Larissa"
@@ -756,7 +756,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                         <div className="flex items-center gap-2">
                           <Lock className="w-4 h-4 text-red-600 shrink-0" />
                           <input
-                            type="password"
+                            type="text" autoComplete="off" data-form-type="other"
                             value={rejectSenha}
                             onChange={(e) => setRejectSenha(e.target.value)}
                             placeholder="Senha da Larissa"
@@ -805,7 +805,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                         {canDelete && (
                           deleteId === req.id ? (
                             <div className="flex items-center gap-2 ml-auto">
-                              <input type="password" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                              <input type="text" autoComplete="off" data-form-type="other" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="input-masked px-2 py-1 border rounded text-sm w-28" />
                               <button onClick={() => handleDelete(req.id)} disabled={deleteMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{deleteMutation.isPending ? "..." : "Confirmar"}</button>
                               <button onClick={() => { setDeleteId(null); setDeleteSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
                             </div>
@@ -851,7 +851,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                           <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg w-full">
                             <Lock className="w-4 h-4 text-blue-600 shrink-0" />
                             <input
-                              type="password"
+                              type="text" autoComplete="off" data-form-type="other"
                               value={completeSenha}
                               onChange={(e) => setCompleteSenha(e.target.value)}
                               placeholder="Senha da Larissa"
@@ -884,7 +884,7 @@ function PendingList({ canApprove }: { canApprove: boolean }) {
                     {canDelete && (
                       deleteId === req.id ? (
                         <div className="flex items-center gap-2 ml-auto">
-                          <input type="password" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                          <input type="text" autoComplete="off" data-form-type="other" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="input-masked px-2 py-1 border rounded text-sm w-28" />
                           <button onClick={() => handleDelete(req.id)} disabled={deleteMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{deleteMutation.isPending ? "..." : "Confirmar"}</button>
                           <button onClick={() => { setDeleteId(null); setDeleteSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
                         </div>
@@ -1125,7 +1125,7 @@ function HistoricoList() {
                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                       />
                       <div className="flex items-center gap-2">
-                        <input type="password" placeholder="Sua senha" value={editObsSenha} onChange={e => setEditObsSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                        <input type="text" autoComplete="off" data-form-type="other" placeholder="Sua senha" value={editObsSenha} onChange={e => setEditObsSenha(e.target.value)} className="input-masked px-2 py-1 border rounded text-sm w-28" />
                         <button onClick={() => handleSaveObs(req.id)} disabled={updateObsMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{updateObsMutation.isPending ? "..." : "Salvar"}</button>
                         <button onClick={() => { setEditObsId(null); setEditObsText(""); setEditObsSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
                       </div>
@@ -1144,7 +1144,7 @@ function HistoricoList() {
                   <div className="ml-auto">
                     {deleteId === req.id ? (
                       <div className="flex items-center gap-2">
-                        <input type="password" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="px-2 py-1 border rounded text-sm w-28" />
+                        <input type="text" autoComplete="off" data-form-type="other" placeholder="Sua senha" value={deleteSenha} onChange={e => setDeleteSenha(e.target.value)} className="input-masked px-2 py-1 border rounded text-sm w-28" />
                         <button onClick={() => handleDelete(req.id)} disabled={deleteMutation.isPending} className="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50">{deleteMutation.isPending ? "..." : "Confirmar"}</button>
                         <button onClick={() => { setDeleteId(null); setDeleteSenha(""); }} className="px-2 py-1 bg-slate-200 text-slate-600 text-sm rounded">Cancelar</button>
                       </div>
