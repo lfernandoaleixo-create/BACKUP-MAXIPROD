@@ -213,7 +213,12 @@ export async function quoteSswFreight(params: SSWQuoteParams): Promise<SSWQuoteR
 }
 
 /**
- * Quote freight from Camilo dos Santos for all 3 CNPJs
+ * Quote freight from Camilo dos Santos for all 3 CNPJs.
+ * 
+ * BUSINESS RULE: If at least one CNPJ returns a valid quote, ALL CNPJs should
+ * return a quote (they share the same freight table). If one fails, retry it once.
+ * If it still fails, use the successful quote's value as reference for the failed ones
+ * (same table = same price), marking it as "estimado".
  */
 export async function quoteAllSswCnpjs(params: Omit<SSWQuoteParams, "cnpjPagador">): Promise<Array<{
   cnpj: string;
@@ -221,17 +226,27 @@ export async function quoteAllSswCnpjs(params: Omit<SSWQuoteParams, "cnpjPagador
   prazo: number;
   protocolo?: string;
   error?: string;
+  estimado?: boolean;
   details?: SSWQuoteResult;
 }>> {
   const cnpjs = ["36562762000129", "45558059000138", "50128808000127"];
 
+  // First attempt for all 3 CNPJs
   const results = await Promise.allSettled(
     cnpjs.map(cnpj =>
       quoteSswFreight({ ...params, cnpjPagador: cnpj })
     )
   );
 
-  return results.map((result, idx) => {
+  const mapped: Array<{
+    cnpj: string;
+    totalFrete: number;
+    prazo: number;
+    protocolo?: string;
+    error?: string;
+    estimado?: boolean;
+    details?: SSWQuoteResult;
+  }> = results.map((result, idx) => {
     if (result.status === "fulfilled") {
       return {
         cnpj: cnpjs[idx],
@@ -249,6 +264,53 @@ export async function quoteAllSswCnpjs(params: Omit<SSWQuoteParams, "cnpjPagador
       };
     }
   });
+
+  // Check if we have mixed results (some success, some failure)
+  const successes = mapped.filter(r => !r.error && r.totalFrete > 0);
+  const failures = mapped.filter(r => r.error || r.totalFrete <= 0);
+
+  if (successes.length > 0 && failures.length > 0) {
+    console.log(`[SSW] Mixed results: ${successes.length} success, ${failures.length} failed. Retrying failed CNPJs...`);
+    
+    // Retry failed CNPJs once
+    for (const failed of failures) {
+      const idx = mapped.findIndex(r => r.cnpj === failed.cnpj);
+      try {
+        await new Promise(r => setTimeout(r, 300)); // Small delay before retry
+        const retryResult = await quoteSswFreight({ ...params, cnpjPagador: failed.cnpj });
+        mapped[idx] = {
+          cnpj: failed.cnpj,
+          totalFrete: retryResult.totalFrete,
+          prazo: retryResult.prazo,
+          protocolo: retryResult.numeroCotacao || undefined,
+          details: retryResult,
+        };
+        console.log(`[SSW] Retry succeeded for ${failed.cnpj}: R$${retryResult.totalFrete}`);
+      } catch (retryErr: any) {
+        // Retry also failed - use the successful quote as estimate
+        // (all 3 CNPJs share the same freight table per business rule)
+        const reference = successes[0];
+        const isRouteError = (retryErr?.message || '').includes('não atende') || (retryErr?.message || '').includes('Generica');
+        
+        if (isRouteError) {
+          // Route genuinely not served - keep error
+          console.log(`[SSW] CNPJ ${failed.cnpj} route not served (confirmed on retry)`);
+        } else {
+          // Transient error - use reference value
+          mapped[idx] = {
+            cnpj: failed.cnpj,
+            totalFrete: reference.totalFrete,
+            prazo: reference.prazo,
+            estimado: true,
+            protocolo: undefined,
+          };
+          console.log(`[SSW] Using estimated value for ${failed.cnpj} based on ${reference.cnpj}: R$${reference.totalFrete}`);
+        }
+      }
+    }
+  }
+
+  return mapped;
 }
 
 

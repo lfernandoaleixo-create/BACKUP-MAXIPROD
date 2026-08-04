@@ -691,7 +691,17 @@ export async function quoteAllRodonavesCnpjs(params: {
   error?: string;
 }>> {
   const cepOrigem = params.cepOrigem || DEFAULT_ORIGIN_CEP;
-  const cnpjDest = params.cnpjDestinatario || "00000000000000";
+  const cnpjDest = params.cnpjDestinatario || "";
+
+  // Rodonaves requires a valid CNPJ/CPF for the recipient
+  if (!cnpjDest || cnpjDest.length < 11 || cnpjDest === "00000000000000") {
+    return RODONAVES_CNPJS.map(config => ({
+      cnpj: config.cnpj,
+      totalFrete: 0,
+      prazo: "",
+      error: "CNPJ do destinatário não cadastrado no sistema",
+    }));
+  }
 
   // Step 1: Try quoting first
   const results = await Promise.allSettled(

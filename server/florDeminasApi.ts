@@ -37,6 +37,7 @@ const CIDADES_ATENDIDAS: Array<{ cidade: string; estado: string; prazo: string }
   { cidade: "Cotia", estado: "SP", prazo: "48 horas" },
   { cidade: "Diadema", estado: "SP", prazo: "48 horas" },
   { cidade: "Embu", estado: "SP", prazo: "48 horas" },
+  { cidade: "Embu das Artes", estado: "SP", prazo: "48 horas" },
   { cidade: "Embu-Guaçu", estado: "SP", prazo: "48 horas" },
   { cidade: "Ferraz de Vasconcelos", estado: "SP", prazo: "48 horas" },
   { cidade: "Francisco Morato", estado: "SP", prazo: "48 horas" },
@@ -58,6 +59,7 @@ const CIDADES_ATENDIDAS: Array<{ cidade: string; estado: string; prazo: string }
   { cidade: "Rio Grande da Serra", estado: "SP", prazo: "48 horas" },
   { cidade: "Santa Isabel", estado: "SP", prazo: "48 horas" },
   { cidade: "Santana do Parnaíba", estado: "SP", prazo: "48 horas" },
+  { cidade: "Santana de Parnaíba", estado: "SP", prazo: "48 horas" },
   { cidade: "Santo André", estado: "SP", prazo: "48 horas" },
   { cidade: "São Bernardo do Campo", estado: "SP", prazo: "48 horas" },
   { cidade: "São Caetano do Sul", estado: "SP", prazo: "48 horas" },
@@ -127,6 +129,7 @@ const CIDADES_ATENDIDAS: Array<{ cidade: string; estado: string; prazo: string }
   { cidade: "São Francisco de Paula", estado: "MG", prazo: "24 horas" },
   { cidade: "São Gonçalo do Sapucaí", estado: "MG", prazo: "48 horas" },
   { cidade: "São João Del Rey", estado: "MG", prazo: "48 horas" },
+  { cidade: "São João del Rei", estado: "MG", prazo: "48 horas" },
   { cidade: "São Joaquim de Bicas", estado: "MG", prazo: "48 horas" },
   { cidade: "São José da Lapa", estado: "MG", prazo: "48 horas" },
   { cidade: "São Tiago", estado: "MG", prazo: "48 horas" },
@@ -150,26 +153,44 @@ function normalizeCidade(cidade: string): string {
 }
 
 /**
- * Find a city in the Flor de Minas coverage table
+ * Find a city in the Flor de Minas coverage table.
+ * Uses multiple matching strategies:
+ * 1. Exact normalized match
+ * 2. Partial/substring match
+ * 3. Word-boundary match (for compound names)
  */
 function findCidade(cidade: string, estado?: string): typeof CIDADES_ATENDIDAS[0] | null {
   const normalizedInput = normalizeCidade(cidade);
   
+  // Strategy 1: Exact match
   for (const entry of CIDADES_ATENDIDAS) {
     const normalizedEntry = normalizeCidade(entry.cidade);
     if (normalizedEntry === normalizedInput) {
-      // If estado is provided, also match it
       if (estado && entry.estado.toLowerCase() !== estado.toLowerCase()) continue;
       return entry;
     }
   }
   
-  // Try partial match (for cases like "Embu das Artes" vs "Embu")
+  // Strategy 2: Partial/substring match (for cases like "Embu das Artes" vs "Embu")
   for (const entry of CIDADES_ATENDIDAS) {
     const normalizedEntry = normalizeCidade(entry.cidade);
     if (normalizedInput.includes(normalizedEntry) || normalizedEntry.includes(normalizedInput)) {
       if (estado && entry.estado.toLowerCase() !== estado.toLowerCase()) continue;
       return entry;
+    }
+  }
+
+  // Strategy 3: Word-start match (for "São João del-Rei" vs "São João Del Rey")
+  const inputWords = normalizedInput.split(" ").filter(w => w.length > 2);
+  if (inputWords.length >= 2) {
+    for (const entry of CIDADES_ATENDIDAS) {
+      if (estado && entry.estado.toLowerCase() !== estado.toLowerCase()) continue;
+      const entryWords = normalizeCidade(entry.cidade).split(" ").filter(w => w.length > 2);
+      // If at least 2 significant words match
+      const matchCount = inputWords.filter(w => entryWords.some(ew => ew.startsWith(w.slice(0, 3)) || w.startsWith(ew.slice(0, 3)))).length;
+      if (matchCount >= 2 && matchCount >= Math.min(inputWords.length, entryWords.length) - 1) {
+        return entry;
+      }
     }
   }
   
@@ -199,41 +220,76 @@ function calcularFrete(pesoKg: number, valorNF: number): number {
 }
 
 /**
- * Look up city from CEP using ViaCEP API
+ * Look up city from CEP using multiple APIs with retry and fallback.
+ * Priority: ViaCEP → BrasilAPI → OpenCEP
  */
 async function lookupCidadeFromCep(cep: string): Promise<{ cidade: string; estado: string } | null> {
-  try {
-    const cleanCep = cep.replace(/\D/g, "");
-    if (cleanCep.length !== 8) return null;
-    
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    
-    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    
-    if (!response.ok) {
-      console.log(`[FlorDeMinas] ViaCEP response not ok: ${response.status}`);
-      return null;
-    }
-    
-    const data = await response.json() as any;
-    if (data.erro) {
-      console.log(`[FlorDeMinas] ViaCEP returned erro for CEP ${cleanCep}`);
-      return null;
-    }
-    
-    return {
-      cidade: data.localidade || "",
-      estado: data.uf || "",
-    };
-  } catch (e: any) {
-    console.log(`[FlorDeMinas] ViaCEP lookup failed for CEP ${cep}:`, e?.message || e);
-    return null;
-  }
+  const cleanCep = cep.replace(/\D/g, "");
+  if (cleanCep.length !== 8) return null;
+
+  // Try ViaCEP first
+  const viacepResult = await fetchWithRetry(
+    `https://viacep.com.br/ws/${cleanCep}/json/`,
+    (data: any) => !data.erro ? { cidade: data.localidade || "", estado: data.uf || "" } : null,
+    "ViaCEP"
+  );
+  if (viacepResult) return viacepResult;
+
+  // Fallback: BrasilAPI
+  const brasilapiResult = await fetchWithRetry(
+    `https://brasilapi.com.br/api/cep/v2/${cleanCep}`,
+    (data: any) => data.city ? { cidade: data.city, estado: data.state } : null,
+    "BrasilAPI"
+  );
+  if (brasilapiResult) return brasilapiResult;
+
+  // Fallback: OpenCEP
+  const opencepResult = await fetchWithRetry(
+    `https://opencep.com/v1/${cleanCep}`,
+    (data: any) => data.localidade ? { cidade: data.localidade, estado: data.uf } : null,
+    "OpenCEP"
+  );
+  if (opencepResult) return opencepResult;
+
+  console.error(`[FlorDeMinas] All CEP APIs failed for ${cleanCep}`);
+  return null;
 }
+
+/**
+ * Fetch with timeout and 1 retry
+ */
+async function fetchWithRetry(
+  url: string,
+  parser: (data: any) => { cidade: string; estado: string } | null,
+  label: string,
+  retries = 1
+): Promise<{ cidade: string; estado: string } | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        console.log(`[FlorDeMinas] ${label} returned ${response.status} (attempt ${attempt + 1})`);
+        if (attempt < retries) { await sleep(500); continue; }
+        return null;
+      }
+
+      const data = await response.json();
+      const result = parser(data);
+      if (result && result.cidade) return result;
+      return null;
+    } catch (e: any) {
+      console.log(`[FlorDeMinas] ${label} failed (attempt ${attempt + 1}): ${e?.message || e}`);
+      if (attempt < retries) { await sleep(500); continue; }
+    }
+  }
+  return null;
+}
+
+function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 export interface FlorDeMinasQuoteResult {
   transportadora: string;
@@ -252,7 +308,14 @@ export interface FlorDeMinasQuoteResult {
 }
 
 /**
- * Quote freight from Flor de Minas based on spreadsheet data
+ * Quote freight from Flor de Minas based on spreadsheet data.
+ * 
+ * Improvements:
+ * - Multiple CEP API fallbacks (ViaCEP → BrasilAPI → OpenCEP)
+ * - Retry on API failure
+ * - Better city name matching (partial, word-boundary)
+ * - State-level check: if destination is MG or SP but city not in list, returns
+ *   informative error instead of generic failure
  * 
  * @param cepDestino - CEP de destino
  * @param valorMercadoria - Valor da NF-e
@@ -266,7 +329,7 @@ export async function quoteFlordeMinas(params: {
 }): Promise<FlorDeMinasQuoteResult> {
   const { cepDestino, valorMercadoria, pesoKg } = params;
   
-  // Look up city from CEP
+  // Look up city from CEP (with retry + fallback APIs)
   const cidadeInfo = await lookupCidadeFromCep(cepDestino);
   
   if (!cidadeInfo) {
@@ -275,10 +338,22 @@ export async function quoteFlordeMinas(params: {
       cnpj: "",
       totalFrete: 0,
       prazo: "N/A",
-      error: "Não foi possível identificar a cidade pelo CEP",
+      error: `Não foi possível identificar a cidade pelo CEP ${cepDestino} (todas as APIs de CEP falharam)`,
     };
   }
   
+  // Quick state check: Flor de Minas only serves MG and SP
+  const estadoUpper = cidadeInfo.estado.toUpperCase();
+  if (estadoUpper !== "MG" && estadoUpper !== "SP") {
+    return {
+      transportadora: "Flor de Minas",
+      cnpj: "",
+      totalFrete: 0,
+      prazo: "N/A",
+      error: `Não atende ${cidadeInfo.estado} (apenas MG e SP)`,
+    };
+  }
+
   // Check if city is covered
   const cidadeAtendida = findCidade(cidadeInfo.cidade, cidadeInfo.estado);
   
@@ -288,7 +363,7 @@ export async function quoteFlordeMinas(params: {
       cnpj: "",
       totalFrete: 0,
       prazo: "N/A",
-      error: `Cidade não atendida: ${cidadeInfo.cidade} - ${cidadeInfo.estado}`,
+      error: `Cidade não atendida: ${cidadeInfo.cidade} - ${cidadeInfo.estado} (fora da área de cobertura)`,
     };
   }
   
@@ -302,7 +377,7 @@ export async function quoteFlordeMinas(params: {
   if (pesoKg <= 50) faixaPeso = "até 50kg";
   else if (pesoKg <= 150) faixaPeso = "51 a 150kg";
   else if (pesoKg <= 250) faixaPeso = "151 a 250kg";
-  else faixaPeso = `acima de 250kg (${pesoKg}kg × R$22,41)`;
+  else faixaPeso = `acima de 250kg (${pesoKg}kg × R$0,747/kg)`;
   
   return {
     transportadora: "Flor de Minas",

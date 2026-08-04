@@ -79,9 +79,20 @@ export async function cotarBraspress(input: BraspressQuoteInput): Promise<Braspr
   // Basic Auth
   const authString = Buffer.from(`${config.usuario}:${config.senha}`).toString("base64");
 
+  // Validate CNPJ - Braspress requires a valid CNPJ
+  const cleanCnpjDest = input.cnpjDestinatario.replace(/\D/g, "");
+  if (!cleanCnpjDest || cleanCnpjDest.length < 11 || cleanCnpjDest === "00000000000000") {
+    return {
+      success: false,
+      cnpjUsado: config.cnpj,
+      labelCnpj: config.label,
+      error: "CNPJ do destinatário não cadastrado no sistema",
+    };
+  }
+
   const body = {
     cnpjRemetente: parseInt(config.cnpj),
-    cnpjDestinatario: parseInt(input.cnpjDestinatario.replace(/\D/g, "")),
+    cnpjDestinatario: parseInt(cleanCnpjDest),
     modal: "R", // Rodoviário
     tipoFrete: "1", // Normal (1=Normal, 2=Subcontratação, 3=Redespacho)
     cepOrigem: parseInt(input.cepOrigem.replace(/\D/g, "")),
@@ -141,13 +152,50 @@ export async function cotarBraspress(input: BraspressQuoteInput): Promise<Braspr
 }
 
 /**
- * Cota frete em todos os 3 CNPJs simultaneamente
+ * Cota frete em todos os 3 CNPJs simultaneamente.
+ * Uses allSettled to ensure one failure doesn't block others.
+ * Retries failed CNPJs once before giving up.
  */
 export async function cotarTodosCnpjs(
   input: Omit<BraspressQuoteInput, "cnpjIndex">
 ): Promise<BraspressQuoteResult[]> {
-  const promises = BRASPRESS_CNPJS.map((_, index) =>
-    cotarBraspress({ ...input, cnpjIndex: index })
+  const results = await Promise.allSettled(
+    BRASPRESS_CNPJS.map((_, index) =>
+      cotarBraspress({ ...input, cnpjIndex: index })
+    )
   );
-  return Promise.all(promises);
+
+  const mapped = results.map((result, idx) => {
+    if (result.status === "fulfilled") {
+      return result.value;
+    } else {
+      return {
+        success: false,
+        cnpjUsado: BRASPRESS_CNPJS[idx].cnpj,
+        labelCnpj: BRASPRESS_CNPJS[idx].label,
+        error: result.reason?.message || "Erro desconhecido",
+      } as BraspressQuoteResult;
+    }
+  });
+
+  // Retry failed ones once
+  const hasSuccess = mapped.some(r => r.success);
+  if (hasSuccess) {
+    for (let i = 0; i < mapped.length; i++) {
+      if (!mapped[i].success && mapped[i].error && !mapped[i].error!.includes("não atende")) {
+        try {
+          await new Promise(r => setTimeout(r, 200));
+          const retry = await cotarBraspress({ ...input, cnpjIndex: i });
+          if (retry.success) {
+            mapped[i] = retry;
+            console.log(`[Braspress] Retry succeeded for CNPJ index ${i}`);
+          }
+        } catch (e) {
+          // Keep original error
+        }
+      }
+    }
+  }
+
+  return mapped;
 }

@@ -2,6 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules, freightSimulations } from "../drizzle/schema";
+import { parseDimensions } from "../shared/parseDimensions";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
@@ -2923,15 +2924,77 @@ export const salesOrderRouter = router({
       }
 
       // 2. Try to find client in vendor_clients for CNPJ and CEP (more reliable)
+      // Strategy: exact razaoSocial match → LIKE match → nomeFantasia match
+      let foundClient: any = null;
       if (clienteName) {
-        const [client] = await db.select()
+        // Strategy 1: Exact match on razaoSocial
+        const [exactMatch] = await db.select()
           .from(vendorClients)
           .where(sql`UPPER(${vendorClients.razaoSocial}) = ${clienteName.toUpperCase()}`)
           .limit(1);
-        if (client) {
-          cnpjDestinatario = (client.cnpjCpf || "").replace(/\D/g, "");
-          if (client.cep) cepDestino = client.cep.replace(/\D/g, "");
-          tipoContribuinte = client.tipoContribuinte || "Contribuinte";
+        foundClient = exactMatch;
+
+        // Strategy 2: LIKE match (partial name)
+        if (!foundClient) {
+          const searchName = clienteName.toUpperCase().replace(/\s+(LTDA|ME|EPP|EIRELI|S\.?A\.?|LTDA\.?)\s*$/i, '').trim();
+          if (searchName.length >= 5) {
+            const [likeMatch] = await db.select()
+              .from(vendorClients)
+              .where(sql`UPPER(${vendorClients.razaoSocial}) LIKE ${`%${searchName}%`}`)
+              .limit(1);
+            foundClient = likeMatch;
+          }
+        }
+
+        // Strategy 3: Match on nomeFantasia
+        if (!foundClient) {
+          const [fantasyMatch] = await db.select()
+            .from(vendorClients)
+            .where(sql`UPPER(${vendorClients.nomeFantasia}) = ${clienteName.toUpperCase()}`)
+            .limit(1);
+          foundClient = fantasyMatch;
+        }
+
+        // Strategy 4: If clienteName contains a CNPJ/CPF number, extract and search by it
+        if (!foundClient) {
+          const cnpjMatch = clienteName.match(/(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}|\d{3}\.?\d{3}\.?\d{3}-?\d{2})/);
+          if (cnpjMatch) {
+            const cleanDoc = cnpjMatch[1].replace(/\D/g, "");
+            const [docMatch] = await db.select()
+              .from(vendorClients)
+              .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cleanDoc}`)
+              .limit(1);
+            foundClient = docMatch;
+          }
+        }
+
+        if (foundClient) {
+          cnpjDestinatario = (foundClient.cnpjCpf || "").replace(/\D/g, "");
+          if (foundClient.cep) cepDestino = foundClient.cep.replace(/\D/g, "");
+          tipoContribuinte = foundClient.tipoContribuinte || "Contribuinte";
+          console.log(`[QuoteByPedido] Found client in vendor_clients: ${foundClient.razaoSocial}, CNPJ: ${cnpjDestinatario}`);
+        } else {
+          console.log(`[QuoteByPedido] Client not in vendor_clients, trying sales_order_requests...`);
+          // Strategy 5: Search in sales_order_requests (manual orders) for the CNPJ
+          const [orderReqClient] = await db.select({
+            cnpjCpf: salesOrderRequests.cnpjCpf,
+            cep: salesOrderRequests.cep,
+            tipoContribuinte: salesOrderRequests.tipoContribuinte,
+          }).from(salesOrderRequests)
+            .where(sql`UPPER(${salesOrderRequests.razaoSocial}) LIKE ${`%${clienteName.toUpperCase().substring(0, 20)}%`}`)
+            .limit(1);
+          if (orderReqClient && orderReqClient.cnpjCpf) {
+            cnpjDestinatario = orderReqClient.cnpjCpf.replace(/\D/g, "");
+            if (orderReqClient.cep && !cepDestino) cepDestino = orderReqClient.cep.replace(/\D/g, "");
+            tipoContribuinte = orderReqClient.tipoContribuinte || "Contribuinte";
+            console.log(`[QuoteByPedido] Found client in sales_order_requests: CNPJ: ${cnpjDestinatario}`);
+          } else {
+            // Strategy 6: Use inscricaoEstadual from sales_orders as a hint (it's not CNPJ but helps identify contribuinte)
+            if (firstItem.inscricaoEstadual) {
+              tipoContribuinte = "Contribuinte";
+            }
+            console.log(`[QuoteByPedido] WARNING: Client CNPJ not found anywhere: "${clienteName}". Some carriers may fail.`);
+          }
         }
       }
 
@@ -3053,22 +3116,14 @@ export const salesOrderRouter = router({
             pesoTotal += itemPesoTotal;
           }
 
-          // Parse dimensions from descricaoComplementar
-          // Supports formats: "42X24X39", "420x330x280", "C=42, L= 28, A= 19", "C=42, L=31, A=19"
+          // Parse dimensions from descricaoComplementar using shared utility
           const dimStr = stockItem?.descricaoComplementar || "";
           let comprCm = 0, largCm = 0, altCm = 0;
-          // Format 1: NxNxN (e.g., "42X24X39", "420x330x280")
-          const dimMatch = dimStr.match(/(\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)/);
-          // Format 2: C=N, L=N, A=N (e.g., "C=42, L= 28, A= 19")
-          const claMatch = dimStr.match(/C\s*=\s*(\d+(?:[.,]\d+)?).*?L\s*=\s*(\d+(?:[.,]\d+)?).*?A\s*=\s*(\d+(?:[.,]\d+)?)/i);
-          if (dimMatch) {
-            comprCm = parseFloat(dimMatch[1].replace(",", "."));
-            largCm = parseFloat(dimMatch[2].replace(",", "."));
-            altCm = parseFloat(dimMatch[3].replace(",", "."));
-          } else if (claMatch) {
-            comprCm = parseFloat(claMatch[1].replace(",", "."));
-            largCm = parseFloat(claMatch[2].replace(",", "."));
-            altCm = parseFloat(claMatch[3].replace(",", "."));
+          const parsedDims = parseDimensions(dimStr);
+          if (parsedDims) {
+            comprCm = parsedDims.comprimento;
+            largCm = parsedDims.largura;
+            altCm = parsedDims.altura;
           }
           const volCxM3 = comprCm > 0 ? (comprCm * largCm * altCm) / 1_000_000 : 0;
           const cubagem = volCxM3 * qty;
@@ -3487,20 +3542,14 @@ export const salesOrderRouter = router({
             pesoTotal += itemPesoTotal;
           }
 
-          // Parse dimensions from descricaoComplementar
-          // Supports formats: "42X24X39", "420x330x280", "C=42, L= 28, A= 19"
+          // Parse dimensions from descricaoComplementar using shared utility
           const dimStr = stockItem?.descricaoComplementar || "";
           let comprCm = 0, largCm = 0, altCm = 0;
-          const dimMatch = dimStr.match(/(\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)[xX×](\d+(?:[.,]\d+)?)/);
-          const claMatch2 = dimStr.match(/C\s*=\s*(\d+(?:[.,]\d+)?).*?L\s*=\s*(\d+(?:[.,]\d+)?).*?A\s*=\s*(\d+(?:[.,]\d+)?)/i);
-          if (dimMatch) {
-            comprCm = parseFloat(dimMatch[1].replace(",", "."));
-            largCm = parseFloat(dimMatch[2].replace(",", "."));
-            altCm = parseFloat(dimMatch[3].replace(",", "."));
-          } else if (claMatch2) {
-            comprCm = parseFloat(claMatch2[1].replace(",", "."));
-            largCm = parseFloat(claMatch2[2].replace(",", "."));
-            altCm = parseFloat(claMatch2[3].replace(",", "."));
+          const parsedDims2 = parseDimensions(dimStr);
+          if (parsedDims2) {
+            comprCm = parsedDims2.comprimento;
+            largCm = parsedDims2.largura;
+            altCm = parsedDims2.altura;
           }
           const volCxM3 = comprCm > 0 ? (comprCm * largCm * altCm) / 1_000_000 : 0;
           const cubagem = volCxM3 * qty;
