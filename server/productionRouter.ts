@@ -1535,25 +1535,28 @@ export const productionRouter = router({
       // Verificar se o lote já existe
       const existing = await db.select().from(productionLots)
         .where(eq(productionLots.codigo, request.codigoLotePreview)).limit(1);
+      
+      let newLot;
       if (existing.length > 0) {
-        throw new Error(`Lote ${request.codigoLotePreview} já existe no sistema`);
+        // Lote já existe - apenas vincular ao existente
+        newLot = existing[0];
+      } else {
+        // Criar o lote com a data retroativa
+        await db.insert(productionLots).values({
+          codigo: request.codigoLotePreview,
+          codigoItem: request.codigoItem,
+          descricaoItem: request.descricaoItem,
+          notaCarga: request.notaCarga,
+          dataProducao: request.dataProducao,
+          qtdProduzida: String(request.qtdProduzida),
+          saldoAtual: String(request.qtdProduzida),
+          lancadoPor: request.solicitanteNome,
+        });
+
+        // Buscar o ID do lote criado
+        [newLot] = await db.select().from(productionLots)
+          .where(eq(productionLots.codigo, request.codigoLotePreview)).limit(1);
       }
-
-      // Criar o lote com a data retroativa
-      await db.insert(productionLots).values({
-        codigo: request.codigoLotePreview,
-        codigoItem: request.codigoItem,
-        descricaoItem: request.descricaoItem,
-        notaCarga: request.notaCarga,
-        dataProducao: request.dataProducao,
-        qtdProduzida: String(request.qtdProduzida),
-        saldoAtual: String(request.qtdProduzida),
-        lancadoPor: request.solicitanteNome,
-      });
-
-      // Buscar o ID do lote criado
-      const [newLot] = await db.select().from(productionLots)
-        .where(eq(productionLots.codigo, request.codigoLotePreview)).limit(1);
 
       // Atualizar a solicitação como aprovada
       await db.update(retroactiveLotRequests)

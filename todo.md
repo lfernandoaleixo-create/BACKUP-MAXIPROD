@@ -6798,3 +6798,4 @@
 - [x] Fix approval logic: when gestor (Juvenal) approves, order becomes 'aprovado' immediately
 - [x] Add success toast after approval and move to Aprovados tab
 - [ ] Verificar que o resumão do pedido aparece na Vitória
+- [x] Fix produção: permitir aprovar lote retroativo mesmo quando lote já existe no sistema (vincular ao existente)
