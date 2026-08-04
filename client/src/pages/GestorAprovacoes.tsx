@@ -1042,6 +1042,47 @@ export default function GestorAprovacoes(props: any = {}) {
                             </div>
                           )}
                         </div>
+
+                        {/* Frete / Protocolo Transportadora */}
+                        {(order.transportadora || order.protocoloCotacao || order.valorFrete) && (
+                          <div className="bg-teal-50/50 dark:bg-teal-900/10 rounded-lg p-3 border border-teal-200 dark:border-teal-700">
+                            <p className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase flex items-center gap-1 mb-2">
+                              🚛 Frete / Transportadora
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                              {order.transportadora && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Transportadora</span>
+                                  <p className="text-slate-800 dark:text-slate-100 font-medium">{order.transportadora}</p>
+                                </div>
+                              )}
+                              {order.protocoloCotacao && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Protocolo</span>
+                                  <p className="text-teal-700 dark:text-teal-300 font-mono font-bold">{order.protocoloCotacao}</p>
+                                </div>
+                              )}
+                              {order.valorFrete && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Valor Frete</span>
+                                  <p className="text-slate-800 dark:text-slate-100">R$ {Number(order.valorFrete).toFixed(2)}</p>
+                                </div>
+                              )}
+                              {order.tipoFrete && (
+                                <div>
+                                  <span className="text-slate-400 font-semibold">Tipo</span>
+                                  <p className="text-slate-800 dark:text-slate-100">{order.tipoFrete}</p>
+                                </div>
+                              )}
+                              {order.trackingUrl && (
+                                <div className="col-span-2">
+                                  <span className="text-slate-400 font-semibold">Rastreio</span>
+                                  <a href={order.trackingUrl as string} target="_blank" rel="noopener noreferrer" className="text-teal-600 dark:text-teal-400 underline text-[9px] block truncate">{order.trackingUrl}</a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
 
