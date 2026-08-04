@@ -706,3 +706,13 @@
   -moz-text-security: disc;
   text-security: disc;
 }
+
+/* SecureInput: contenteditable div that Chrome cannot detect as password */
+.secure-input-field {
+  -webkit-user-select: text;
+  user-select: text;
+  white-space: nowrap;
+  overflow: hidden;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+}

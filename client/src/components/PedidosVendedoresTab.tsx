@@ -4,6 +4,7 @@
  */
 import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import SecureInput from "@/components/SecureInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -965,12 +966,11 @@ export default function PedidosVendedoresTab() {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm font-medium text-slate-700">Senha de aprovação (obrigatória):</p>
-            <input
-              type="text" autoComplete="off" data-form-type="other"
+            <SecureInput
               value={approvalPassword}
-              onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+              onChange={(v) => { setApprovalPassword(v); setApprovalPasswordError(""); }}
               placeholder="Digite sua senha (primeiro nome)"
-              className="input-masked w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500/30"
             />
             {approvalPasswordError && (
               <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>

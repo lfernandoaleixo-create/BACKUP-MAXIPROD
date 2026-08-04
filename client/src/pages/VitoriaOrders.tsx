@@ -4,6 +4,7 @@
  */
 import { useState, useMemo } from "react";
 import TopNav from "@/components/TopNav";
+import SecureInput from "@/components/SecureInput";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { RealCostMarginBar } from "@/components/RealCostMarginBar";
@@ -766,12 +767,11 @@ export default function VitoriaOrders() {
                                       {approvingOrderId === order.id ? (
                                         <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                                           <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
-                                          <input
-                                            type="text" autoComplete="off" data-form-type="other"
+                                          <SecureInput
                                             value={approvalPassword}
-                                            onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                            onChange={(v) => { setApprovalPassword(v); setApprovalPasswordError(""); }}
                                             placeholder="Digite sua senha (primeiro nome)"
-                                            className="input-masked w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                            className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500/30"
                                           />
                                           {approvalPasswordError && (
                                             <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>
@@ -1574,12 +1574,11 @@ export default function VitoriaOrders() {
                           {approvingOrderId === order.id ? (
                             <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                               <label className="text-xs font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
-                              <input
-                                type="text" autoComplete="off" data-form-type="other"
+                              <SecureInput
                                 value={approvalPassword}
-                                onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                                onChange={(v) => { setApprovalPassword(v); setApprovalPasswordError(""); }}
                                 placeholder="Digite sua senha (primeiro nome)"
-                                className="input-masked w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                className="w-full px-3 py-2 text-xs border border-green-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500/30"
                               />
                               {approvalPasswordError && (
                                 <p className="text-xs text-red-500 font-medium">{approvalPasswordError}</p>

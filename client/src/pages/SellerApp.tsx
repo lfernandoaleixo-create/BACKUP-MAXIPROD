@@ -15,6 +15,7 @@ import { trpc } from "@/lib/trpc";
 import VendedorDetalhe from "./VendedorDetalhe";
 import { GestaoComercialFullInline } from "./GestaoComercial";
 import TopNav from "@/components/TopNav";
+import SecureInput from "@/components/SecureInput";
 import { useOperator } from "@/contexts/OperatorContext";
 
 interface SellerSession {
@@ -331,13 +332,12 @@ function LoginView({
             <label className="block text-xs font-medium text-slate-600 mb-1.5">Senha</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text" autoComplete="off" data-form-type="other"
+              <SecureInput
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(v) => setPassword(v)}
                 onKeyDown={(e) => e.key === "Enter" && onLogin()}
                 placeholder="Digite sua senha"
-                className="input-masked w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 autoFocus
               />
             </div>

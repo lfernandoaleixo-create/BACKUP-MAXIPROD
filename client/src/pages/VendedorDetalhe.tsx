@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import TopNav from "@/components/TopNav";
+import SecureInput from "@/components/SecureInput";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { trpc } from "@/lib/trpc";
 import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
@@ -600,12 +601,11 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                       ) : approvingOrder === order.id ? (
                         <div className="flex-1 space-y-2">
                           <label className="text-[10px] font-bold text-green-700 block">Senha de aprovação (obrigatória):</label>
-                          <input
-                            type="text" autoComplete="off" data-form-type="other"
+                          <SecureInput
                             value={approvalPassword}
-                            onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                            onChange={(v) => { setApprovalPassword(v); setApprovalPasswordError(""); }}
                             placeholder="Digite sua senha (primeiro nome)"
-                            className="input-masked w-full px-3 py-2 border border-green-200 rounded-lg text-xs bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                            className="w-full px-3 py-2 border border-green-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-green-500/30"
                           />
                           {approvalPasswordError && (
                             <p className="text-[10px] text-red-500 font-medium">{approvalPasswordError}</p>
@@ -7884,12 +7884,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     <div className="mt-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
                       <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 mb-2">Aprovação do Gestor</p>
                       <div className="flex gap-2">
-                        <input
-                          type="text" autoComplete="off" data-form-type="other"
+                        <SecureInput
                           value={managerPassword}
-                          onChange={(e) => { setManagerPassword(e.target.value); setManagerPasswordError(""); }}
+                          onChange={(v) => { setManagerPassword(v); setManagerPasswordError(""); }}
                           placeholder="Senha do gestor"
-                          className="input-masked flex-1 px-3 py-1.5 text-xs border border-amber-300 dark:border-amber-600 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="flex-1 px-3 py-1.5 text-xs border border-amber-300 dark:border-amber-600 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && managerPassword.trim()) {
                               verifyManagerMutation.mutate({ password: managerPassword }, {

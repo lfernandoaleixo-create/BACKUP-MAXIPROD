@@ -6792,3 +6792,6 @@
 - [ ] BUG: Filtro 'Pendente' do vendedor não mostra pedidos pendentes - precisa ir em 'Todos' para ver
 - [ ] Renomear aba 'Vendas' para 'Métricas de Vendas' no VendedorDetalhe
 - [ ] Corrigir lógica de métricas de vendas para puxar do vendedor correto (último representante preenchido na hierarquia)
+- [x] Redirecionar para aba Pendentes quando há pedidos pendentes na aprovação
+- [ ] Remover aba 'Aguardando Gestor' da tela de aprovações
+- [ ] Investigar e corrigir problema de aprovação do Juvenal (popup ainda aparece)

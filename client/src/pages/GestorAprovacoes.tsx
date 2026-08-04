@@ -7,6 +7,7 @@
 import { useState, useMemo } from "react";
 import { useOperator } from "@/contexts/OperatorContext";
 import { ProductMarginBar } from "@/components/ProductMarginBar";
+import SecureInput from "@/components/SecureInput";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
@@ -112,7 +113,7 @@ export default function GestorAprovacoes(props: any = {}) {
   const { hasGranularAccess, getVisiblePeopleForFeature } = useOperator();
   const visibleSellersForReverEditar = getVisiblePeopleForFeature("gc.reverEditarPedido");
   const isJuvenalInit = gestorName === "JUVENAL TEIXEIRA";
-  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "aprovado_subgestor" | "rejeitado">(isJuvenalInit ? "aprovado_subgestor" : "todos");
+  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado">("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -145,6 +146,7 @@ export default function GestorAprovacoes(props: any = {}) {
   const orders = useMemo(() => {
     if (!allOrders) return undefined;
     if (filter === "todos") return allOrders;
+    if (filter === "pendente") return allOrders.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
     return allOrders.filter((o: any) => o.status === filter);
   }, [allOrders, filter]);
 
@@ -311,12 +313,11 @@ export default function GestorAprovacoes(props: any = {}) {
   };
 
   const stats = useMemo(() => {
-    if (!allOrders) return { pendentes: 0, aprovados: 0, rejeitados: 0, aguardandoGestor: 0, total: 0 };
+    if (!allOrders) return { pendentes: 0, aprovados: 0, rejeitados: 0, total: 0 };
     return {
-      pendentes: allOrders.filter((o: any) => o.status === "pendente").length,
+      pendentes: allOrders.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor").length,
       aprovados: allOrders.filter((o: any) => o.status === "aprovado" || o.status === "processado").length,
       rejeitados: allOrders.filter((o: any) => o.status === "rejeitado").length,
-      aguardandoGestor: allOrders.filter((o: any) => o.status === "aprovado_subgestor").length,
       total: allOrders.length,
     };
   }, [allOrders]);
@@ -456,17 +457,17 @@ export default function GestorAprovacoes(props: any = {}) {
         {/* Filter Tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
           <Filter className="w-4 h-4 text-slate-400 ml-2" />
-          {(["todos", "pendente", ...(isJuvenalViewing ? ["aprovado_subgestor" as const] : []), "aprovado", "rejeitado"] as const).map((f) => (
+          {(["todos", "pendente", "aprovado", "rejeitado"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 filter === f
-                  ? f === "aprovado_subgestor" ? "bg-amber-500 text-white shadow-sm" : "bg-teal-600 text-white shadow-sm"
+                  ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              {f === "todos" ? "Todos" : f === "pendente" ? "Pendentes" : f === "aprovado_subgestor" ? `Aguardando Gestor (${stats.aguardandoGestor})` : f === "aprovado" ? "Aprovados" : "Recusados"}
+              {f === "todos" ? "Todos" : f === "pendente" ? `Pendentes (${stats.pendentes})` : f === "aprovado" ? "Aprovados" : "Recusados"}
             </button>
           ))}
         </div>
@@ -1170,16 +1171,11 @@ export default function GestorAprovacoes(props: any = {}) {
                                 rows={2}
                                 className="w-full px-3 py-2 text-xs border border-red-200 dark:border-red-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
                               />
-                              <input
-                                type="text"
-                                autoComplete="off"
-                                data-lpignore="true"
-                                data-form-type="other"
-                                
+                              <SecureInput
                                 value={gestorPasswordReject}
-                                onChange={(e) => setGestorPasswordReject(e.target.value)}
+                                onChange={(v) => setGestorPasswordReject(v)}
                                 placeholder="Senha do gestor"
-                                className="input-masked w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500/30"
                               />
                               <div className="flex gap-2">
                                 <button
@@ -1360,18 +1356,13 @@ export default function GestorAprovacoes(props: any = {}) {
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
                   Senha do gestor
                 </label>
-                <input
-                  type="text"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  
+                <SecureInput
                   value={gestorPassword}
-                  onChange={(e) => setGestorPassword(e.target.value)}
+                  onChange={(v) => setGestorPassword(v)}
                   placeholder="Digite seu primeiro nome"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Enter" && gestorPassword.trim()) handleGestorApprove(); }}
-                  className="input-masked w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
+                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
                 />
               </div>
               <div>
@@ -1444,18 +1435,13 @@ export default function GestorAprovacoes(props: any = {}) {
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
                   Senha de aprovação
                 </label>
-                <input
-                  type="text"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  
+                <SecureInput
                   value={approvalPassword}
-                  onChange={(e) => { setApprovalPassword(e.target.value); setApprovalPasswordError(""); }}
+                  onChange={(v) => { setApprovalPassword(v); setApprovalPasswordError(""); }}
                   placeholder="Digite seu primeiro nome"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Enter" && approvalPassword.trim()) confirmApprove(); }}
-                  className="input-masked w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
+                  className="w-full px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-400 transition-all"
                 />
                 {approvalPasswordError && (
                   <p className="text-[11px] text-red-500 font-medium mt-1.5 flex items-center gap-1">
