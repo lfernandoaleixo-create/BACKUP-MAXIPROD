@@ -6787,3 +6787,4 @@
 - [x] Controle de Acesso: adicionar opção de editar o nome do operador (para substituição de funcionário mantendo permissões)
 - [x] Simulador de frete avulso: garantir que gere protocolos de frete nos 3 CNPJs de cada uma das 5 transportadoras (igual à simulação por pedido) [já funcionava - quoteAllCarriers usa cotarTodosCnpjs/quoteAllAlfaCnpjs/quoteAllSswCnpjsWithProtocol/quoteAllRodonavesCnpjs]
 - [x] Alertas de estoque: esconder alertas "Recusado" da tela principal (manter apenas no histórico)
+- [x] Registrar container YMLU5427811 (Hank) no sistema de rastreio com dados Yang Ming + Logcomex AI (ETD 02/08, ETA 02/09, navio ONE CONTINUITY 078W, Shekou→Santos)
