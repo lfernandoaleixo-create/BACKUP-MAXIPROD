@@ -6782,3 +6782,4 @@
 - [x] Simulador de frete: usar endereço de ENTREGA (não do CNPJ do cliente) quando forem diferentes para calcular frete
 - [x] URGENTE: Rastrear pedido 1511 Max Protet - verificar se passou por alerta de estoque insuficiente, se houve aceite da produção, e todo o histórico
 - [x] Redespacho: integrar API do Sintegra quando digitar CNPJ no campo de redespacho para preencher automaticamente razão social, CEP, logradouro, número, bairro, cidade, UF
+- [ ] Exibir número do protocolo da transportadora (frete) nas telas do gestor, subgestor e Vitória
