@@ -116,8 +116,12 @@ function LancamentoLote() {
   const utils = trpc.useUtils();
 
   const createLot = trpc.production.createLot.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Lote ${data.codigo} criado com sucesso!`);
+    onSuccess: (data: any) => {
+      if (data.acumulado) {
+        toast.success(`+${data.qtdAdicionada} cx acumuladas no lote ${data.codigo} (total: ${data.novoTotal} cx)`);
+      } else {
+        toast.success(`Lote ${data.codigo} criado com sucesso!`);
+      }
       resetForm();
       utils.production.getAllLots.invalidate();
       utils.production.getLotsWithBalance.invalidate();

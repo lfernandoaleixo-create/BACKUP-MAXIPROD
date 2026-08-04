@@ -1262,7 +1262,7 @@ export const productionRouter = router({
       });
   }),
 
-  /** Criar um novo lote */
+  /** Criar um novo lote ou acumular no existente (mesmo codigoItem + notaCarga) */
   createLot: publicProcedure
     .input(z.object({
       codigoItem: z.string(),
@@ -1281,12 +1281,45 @@ export const productionRouter = router({
       const dataProducao = today.toISOString().slice(0, 10);
       const codigo = `${input.codigoItem}-${dd}${mm}${aa}-${input.notaCarga}`;
 
-      // Check if lot code already exists
-      const existing = await db.select().from(productionLots).where(eq(productionLots.codigo, codigo)).limit(1);
+      // Check if a lot with same codigoItem + notaCarga already exists (any date)
+      const existing = await db.select().from(productionLots)
+        .where(and(
+          eq(productionLots.codigoItem, input.codigoItem),
+          eq(productionLots.notaCarga, input.notaCarga)
+        ))
+        .orderBy(desc(productionLots.createdAt))
+        .limit(1);
+
       if (existing.length > 0) {
-        throw new Error(`Lote ${codigo} já existe. Use outra nota de carga.`);
+        // Acumular no lote existente
+        const lot = existing[0];
+        const oldQtd = parseFloat(String(lot.qtdProduzida)) || 0;
+        const oldSaldo = parseFloat(String(lot.saldoAtual)) || 0;
+        const newQtd = oldQtd + input.qtdProduzida;
+        const newSaldo = oldSaldo + input.qtdProduzida;
+
+        await db.update(productionLots)
+          .set({
+            qtdProduzida: String(newQtd),
+            saldoAtual: String(newSaldo),
+          })
+          .where(eq(productionLots.id, lot.id));
+
+        // Registrar no histórico de movimentações
+        await db.insert(lotMovements).values({
+          lotId: lot.id,
+          codigoLote: lot.codigo,
+          cliente: "Produção (acumulado)",
+          qtdEnviada: String(input.qtdProduzida),
+          dataEnvio: dataProducao,
+          lancadoPor: input.lancadoPor,
+          observacoes: `Lançamento acumulado em ${dataProducao}: +${input.qtdProduzida} cx (saldo anterior: ${oldSaldo}, novo: ${newSaldo})`,
+        });
+
+        return { codigo: lot.codigo, acumulado: true, qtdAdicionada: input.qtdProduzida, novoTotal: newQtd };
       }
 
+      // Criar novo lote
       await db.insert(productionLots).values({
         codigo,
         codigoItem: input.codigoItem,
@@ -1297,7 +1330,7 @@ export const productionRouter = router({
         saldoAtual: String(input.qtdProduzida),
         lancadoPor: input.lancadoPor,
       });
-      return { codigo };
+      return { codigo, acumulado: false };
     }),
 
   /** Listar lotes com saldo > 0 (para seleção em pedidos) */

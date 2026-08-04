@@ -6811,3 +6811,4 @@
 - [x] VitoriaOrders: Status visuais diferenciados para aprovado (teal) e recusado (vermelho)
 - [x] Backend getOrdersForOperator retorna rejeitado + pendente para todos os viewers
 - [x] Queijo Coalho: Campo de registro de perda (abate do Aguardando Processamento, histórico numerado)
+- [x] Lotes: Acumular no mesmo lote (mesmo codigoItem + notaCarga) independente do dia, registrar histórico com datas
