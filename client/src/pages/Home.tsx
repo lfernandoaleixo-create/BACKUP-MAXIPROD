@@ -2232,7 +2232,7 @@ function PasswordModal({ open, onClose, onConfirm, title }: {
   const handleSubmit = () => {
     const trimmed = password.trim();
     if (!trimmed) {
-      setError("Digite seu nome");
+      setError("Digite a senha");
       return;
     }
     onConfirm(trimmed);
@@ -2246,13 +2246,14 @@ function PasswordModal({ open, onClose, onConfirm, title }: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="w-5 h-5 text-amber-600" />
-            {title || "Identificação"}
+            {"Área protegida por senha"}
           </DialogTitle>
-          <DialogDescription>Digite seu nome para registrar a alteração</DialogDescription>
+          <DialogDescription>Insira a senha para continuar</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <Input
             ref={inputRef}
+            type="password"
             placeholder=""
             value={password}
             onChange={(e) => { setPassword(e.target.value); setError(""); }}
@@ -4762,13 +4763,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
 
   // Authenticate to unlock edit buttons
   const handleAuthConfirm = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower === "maria") {
+    const trimmed = name.trim();
+    if (trimmed === "Maria") {
       setQcAuth({ role: "maria" });
-      setShowAuthModal(false);
-      toast.success("Acesso liberado");
-    } else if (lower === "guilherme") {
-      setQcAuth({ role: "guilherme" });
       setShowAuthModal(false);
       toast.success("Acesso liberado");
     } else {

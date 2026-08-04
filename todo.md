@@ -6817,3 +6817,4 @@
 - [x] Queijo Coalho: Botão (+) para registrar chegada com número da PO e quantidade
 - [x] Queijo Coalho: Card/painel detalhando todas as chegadas por PO e perdas
 - [x] Queijo Coalho: Seed PO ZYZ2026-018 com 1650 cx
+- [x] Palitos Premium: Modal de desbloqueio mostra "Área protegida por senha" sem pistas, aceita apenas "Maria" com M maiúsculo
