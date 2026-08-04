@@ -863,6 +863,68 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /**
+     * Registrar perda de caixas no processamento (Queijo Coalho).
+     * Abate do "Aguardando Processamento" (estoque_maxiprod) e salva no histórico numerado.
+     */
+    registerQueijoCoalhoLoss: publicProcedure
+      .input(z.object({
+        codigoItem: z.string(),
+        qtdPerda: z.number().min(1),
+        operatorName: z.string(),
+        senha: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB not available");
+
+        // Validação: Maria ou Guilherme
+        const senhaLower = (input.senha || "").toLowerCase();
+        if (senhaLower !== "maria" && senhaLower !== "guilherme") {
+          return { success: false, error: "senha_incorreta" };
+        }
+
+        // Get current estoque_maxiprod
+        const existing = await db.select().from(queijoCoalhoStock).where(eq(queijoCoalhoStock.codigoItem, input.codigoItem));
+        const currentMaxiprod = existing.length > 0 ? parseFloat(String(existing[0].estoqueMaxiprod)) || 0 : 0;
+        const newMaxiprod = Math.max(0, currentMaxiprod - input.qtdPerda);
+
+        // Count existing loss records for this item to generate numbered label
+        const [countResult] = await db.select({ count: sql<number>`COUNT(*)` })
+          .from(queijoCoalhoStockHistory)
+          .where(and(
+            eq(queijoCoalhoStockHistory.codigoItem, input.codigoItem),
+            sql`${queijoCoalhoStockHistory.observacao} LIKE '%registro de perda%'`
+          ));
+        const lossNumber = (countResult?.count || 0) + 1;
+
+        // Record history with numbered loss label
+        await db.insert(queijoCoalhoStockHistory).values({
+          codigoItem: input.codigoItem,
+          campo: "estoque_maxiprod",
+          valorAnterior: String(currentMaxiprod),
+          valorNovo: String(newMaxiprod),
+          operador: input.operatorName,
+          observacao: `${lossNumber}º registro de perda: -${input.qtdPerda} cx`,
+        });
+
+        // Update stock
+        await db.insert(queijoCoalhoStock)
+          .values({
+            codigoItem: input.codigoItem,
+            estoqueMaxiprod: String(newMaxiprod),
+            updatedBy: input.operatorName,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              estoqueMaxiprod: sql`${String(newMaxiprod)}`,
+              updatedBy: sql`${input.operatorName}`,
+            },
+          });
+
+        return { success: true, lossNumber, qtdPerda: input.qtdPerda, novoEstoque: newMaxiprod };
+      }),
+
     getQueijoCoalhoHistory: publicProcedure
       .input(z.object({
         codigoItem: z.string().optional(),

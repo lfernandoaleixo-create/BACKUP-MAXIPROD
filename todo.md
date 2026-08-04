@@ -6810,3 +6810,4 @@
 - [x] VitoriaOrders: Histórico/audit trail ao marcar como lançado (orderApprovalHistory tipo lancado_maxiprod)
 - [x] VitoriaOrders: Status visuais diferenciados para aprovado (teal) e recusado (vermelho)
 - [x] Backend getOrdersForOperator retorna rejeitado + pendente para todos os viewers
+- [x] Queijo Coalho: Campo de registro de perda (abate do Aguardando Processamento, histórico numerado)

@@ -83,6 +83,7 @@ import {
   ShoppingBag,
   Navigation,
   Waves,
+  Minus,
 } from "lucide-react";
 import {
   Dialog,
@@ -4509,6 +4510,32 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     },
     onError: () => toast.error("Erro ao salvar"),
   });
+  // Loss registration
+  const [showLossModal, setShowLossModal] = useState(false);
+  const [lossItem, setLossItem] = useState<string>("00648");
+  const [lossValue, setLossValue] = useState("");
+  const lossMutation = trpc.dashboard.registerQueijoCoalhoLoss.useMutation({
+    onSuccess: (result: any) => {
+      if (result.success === false && result.error === "senha_incorreta") {
+        toast.error("Senha incorreta!");
+      } else {
+        toast.success(`${result.lossNumber}º registro de perda: -${result.qtdPerda} cx registrado!`);
+      }
+      setShowLossModal(false);
+      setLossValue("");
+    },
+    onError: () => toast.error("Erro ao registrar perda"),
+  });
+  const handleRegisterLoss = () => {
+    const qty = parseInt(lossValue);
+    if (!qty || qty <= 0) { toast.error("Informe a quantidade de caixas perdidas"); return; }
+    if (!qcAuth) return;
+    const operatorName = qcAuth.role === "maria" ? "Maria" : "Guilherme";
+    lossMutation.mutate(
+      { codigoItem: lossItem, qtdPerda: qty, operatorName, senha: operatorName },
+      { onSuccess: () => utils.dashboard.getQueijoCoalhoStock.invalidate() }
+    );
+  };
   const utils = trpc.useUtils();
 
   // Build stock map from DB
@@ -4784,6 +4811,53 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
         </Dialog>
       )}
 
+      {/* Loss Registration Modal */}
+      {showLossModal && (
+        <Dialog open={showLossModal} onOpenChange={(v) => !v && setShowLossModal(false)}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-700">
+                <AlertTriangle className="w-5 h-5" />
+                Registrar Perda de Processamento
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Informe a quantidade de caixas perdidas no processamento. Este valor será abatido do <strong>Aguardando Processamento</strong>.
+              </p>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Quantidade de caixas perdidas</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={lossValue}
+                  onChange={(e) => setLossValue(e.target.value)}
+                  placeholder="Ex: 5"
+                  className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") handleRegisterLoss(); }}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => { setShowLossModal(false); setLossValue(""); }}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleRegisterLoss}
+                  disabled={lossMutation.isPending || !lossValue || parseInt(lossValue) <= 0}
+                  className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-slate-300 rounded-lg transition-colors"
+                >
+                  {lossMutation.isPending ? "Registrando..." : "Registrar Perda"}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Section Header */}
       <div className="mb-3 md:mb-5">
         <div className="flex items-center gap-2 md:gap-3">
@@ -4934,14 +5008,23 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           className="w-20 text-center text-sm border border-orange-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-orange-400"
                         />
                       ) : qcAuth ? (
-                        <button
-                          onClick={() => handleStartEdit(row.codigoItem, "estoque_maxiprod")}
-                          className="inline-flex items-center gap-0.5 text-sm font-semibold text-orange-700 hover:bg-orange-50 rounded px-1.5 py-0.5 transition-colors"
-                          title="Editar estoque maxiprod"
-                        >
-                          {formatNumber(row.estoqueMaxiprod, true)} cx
-                          <Pencil className="w-3 h-3 text-orange-400" />
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={() => handleStartEdit(row.codigoItem, "estoque_maxiprod")}
+                            className="inline-flex items-center gap-0.5 text-sm font-semibold text-orange-700 hover:bg-orange-50 rounded px-1.5 py-0.5 transition-colors"
+                            title="Editar estoque maxiprod"
+                          >
+                            {formatNumber(row.estoqueMaxiprod, true)} cx
+                            <Pencil className="w-3 h-3 text-orange-400" />
+                          </button>
+                          <button
+                            onClick={() => { setLossItem(row.codigoItem); setShowLossModal(true); }}
+                            className="p-0.5 rounded hover:bg-red-50 transition-colors"
+                            title="Registrar perda de processamento"
+                          >
+                            <Minus className="w-3.5 h-3.5 text-red-500" />
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-sm font-semibold text-orange-700">{formatNumber(row.estoqueMaxiprod, true)} cx</span>
                       )}
