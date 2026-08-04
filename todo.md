@@ -6783,3 +6783,4 @@
 - [x] URGENTE: Rastrear pedido 1511 Max Protet - verificar se passou por alerta de estoque insuficiente, se houve aceite da produção, e todo o histórico
 - [x] Redespacho: integrar API do Sintegra quando digitar CNPJ no campo de redespacho para preencher automaticamente razão social, CEP, logradouro, número, bairro, cidade, UF
 - [x] Exibir número do protocolo da transportadora (frete) nas telas do gestor, subgestor e Vitória
+- [x] Simulador de frete: adicionar opção de cálculo avulso (sem pedido) com CEP, CNPJ, peso, cubagem e valor NF manual

@@ -104,6 +104,8 @@ function friendlyError(error: string): string {
 
 export default function SimulacaoFrete() {
   const { hasGranularAccess } = useOperator();
+  // Tab mode: "pedido" or "manual"
+  const [mode, setMode] = useState<"pedido" | "manual">("pedido");
   // Multiple pedidos support
   const [pedidoInputs, setPedidoInputs] = useState<string[]>([""]);
   const [result, setResult] = useState<QuoteResult | null>(null);
@@ -112,10 +114,64 @@ export default function SimulacaoFrete() {
 
   const quoteSingleMutation = trpc.salesOrders.quoteByPedido.useMutation();
   const quoteMultipleMutation = trpc.salesOrders.quoteByMultiplePedidos.useMutation();
+  const quoteManualMutation = trpc.salesOrders.quoteAllCarriers.useMutation();
   const saveSimMutation = trpc.salesOrders.saveFreightSimulation.useMutation();
   const [simulationId, setSimulationId] = useState<number | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  // Manual mode fields
+  const [manualCep, setManualCep] = useState("");
+  const [manualCnpj, setManualCnpj] = useState("");
+  const [manualPeso, setManualPeso] = useState("");
+  const [manualCubagem, setManualCubagem] = useState("");
+  const [manualValorNf, setManualValorNf] = useState("");
+  const [manualVolumes, setManualVolumes] = useState("1");
+  const [manualResult, setManualResult] = useState<any>(null);
+
+  const handleSimularManual = async () => {
+    const cep = manualCep.replace(/\D/g, "");
+    if (cep.length !== 8) { setErrorMsg("CEP deve ter 8 d\u00edgitos"); return; }
+    const peso = parseFloat(manualPeso);
+    const cubagem = parseFloat(manualCubagem);
+    const valorNf = parseFloat(manualValorNf.replace(/[^\d.,]/g, "").replace(",", "."));
+    if (!peso || peso <= 0) { setErrorMsg("Informe o peso em kg"); return; }
+    if (!valorNf || valorNf <= 0) { setErrorMsg("Informe o valor da NF"); return; }
+    setIsLoading(true);
+    setErrorMsg("");
+    setResult(null);
+    setManualResult(null);
+    setSimulationId(null);
+    setPdfUrl(null);
+    try {
+      const carriers = await quoteManualMutation.mutateAsync({
+        cepDestino: cep,
+        cnpjDestinatario: manualCnpj.replace(/\D/g, "") || undefined,
+        peso,
+        metroCubico: cubagem || peso * 0.004,
+        valorMercadoria: valorNf,
+        volumes: parseInt(manualVolumes) || 1,
+      });
+      // Build a QuoteResult-like object for display
+      const manualRes: QuoteResult = {
+        pedido: "AVULSO",
+        cliente: manualCnpj ? `CNPJ: ${manualCnpj}` : "Simula\u00e7\u00e3o Avulsa",
+        cepDestino: cep,
+        cnpjDestinatario: manualCnpj.replace(/\D/g, ""),
+        valorMercadoria: valorNf,
+        pesoTotal: peso,
+        volumes: parseInt(manualVolumes) || 1,
+        metroCubico: cubagem || peso * 0.004,
+        carriers: carriers as CarrierResult[],
+      };
+      setResult(manualRes);
+      setManualResult(manualRes);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Erro ao simular frete.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const addPedidoInput = () => {
     setPedidoInputs(prev => [...prev, ""]);
@@ -232,8 +288,28 @@ export default function SimulacaoFrete() {
           </div>
         </div>
 
+        {/* Mode tabs */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex gap-1">
+          <button
+            onClick={() => { setMode("pedido"); setResult(null); setErrorMsg(""); }}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${mode === "pedido" ? "bg-cyan-600 text-white shadow-sm" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+          >
+            <Search className="w-4 h-4 inline mr-1.5" />
+            Por Nº do Pedido
+          </button>
+          <button
+            onClick={() => { setMode("manual"); setResult(null); setErrorMsg(""); }}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${mode === "manual" ? "bg-cyan-600 text-white shadow-sm" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+          >
+            <Truck className="w-4 h-4 inline mr-1.5" />
+            Estimativa Avulsa
+          </button>
+        </div>
+
         {/* Input card */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+          {mode === "pedido" ? (
+          <>
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
             Cotar Frete por Número do Pedido
           </h2>
@@ -304,6 +380,105 @@ export default function SimulacaoFrete() {
               </>
             )}
           </Button>
+          </>
+          ) : (
+          <>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
+            Estimativa Avulsa (Sem Pedido)
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Preencha os dados manualmente para obter uma estimativa de frete nas 5 transportadoras.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">CEP Destino *</label>
+              <Input
+                type="text"
+                placeholder="00000-000"
+                value={manualCep}
+                onChange={(e) => setManualCep(e.target.value)}
+                disabled={isLoading}
+                maxLength={9}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">CNPJ Destinat\u00e1rio</label>
+              <Input
+                type="text"
+                placeholder="00.000.000/0001-00"
+                value={manualCnpj}
+                onChange={(e) => setManualCnpj(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Peso (kg) *</label>
+              <Input
+                type="number"
+                placeholder="Ex: 150"
+                value={manualPeso}
+                onChange={(e) => setManualPeso(e.target.value)}
+                disabled={isLoading}
+                step="0.1"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Cubagem (m\u00b3)</label>
+              <Input
+                type="number"
+                placeholder="Ex: 0.5"
+                value={manualCubagem}
+                onChange={(e) => setManualCubagem(e.target.value)}
+                disabled={isLoading}
+                step="0.01"
+                min="0"
+              />
+              <p className="text-[10px] text-slate-400 mt-0.5">Se vazio, estima automaticamente pelo peso</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Valor da NF (R$) *</label>
+              <Input
+                type="text"
+                placeholder="Ex: 5000.00"
+                value={manualValorNf}
+                onChange={(e) => setManualValorNf(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Volumes</label>
+              <Input
+                type="number"
+                placeholder="1"
+                value={manualVolumes}
+                onChange={(e) => setManualVolumes(e.target.value)}
+                disabled={isLoading}
+                min="1"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={handleSimularManual}
+            disabled={isLoading}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Simulando...
+              </>
+            ) : (
+              <>
+                <Truck className="w-4 h-4 mr-2" />
+                Simular Frete
+              </>
+            )}
+          </Button>
+          </>
+          )}
         </div>
 
         {/* Error message */}
