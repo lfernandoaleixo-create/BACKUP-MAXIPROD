@@ -2973,6 +2973,45 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
     }
   }, [cnpjCpf, dataNascimento]);
 
+  // Redespacho CNPJ: consulta Sintegra quando 14 dígitos
+  const [redespachoCnpjLoading, setRedespachoCnpjLoading] = useState(false);
+  const [redespachoCnpjDone, setRedespachoCnpjDone] = useState(false);
+  const lastLookedUpRedespachoCnpj = useRef("");
+  useEffect(() => {
+    const cleanCnpj = redespachoCnpj.replace(/\D/g, "");
+    if (cleanCnpj.length === 14 && cleanCnpj !== lastLookedUpRedespachoCnpj.current) {
+      lastLookedUpRedespachoCnpj.current = cleanCnpj;
+      setRedespachoCnpjLoading(true);
+      setRedespachoCnpjDone(false);
+      const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
+      const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+      const safeFetchR = (url: string) => fetch(url).then(r => {
+        if (!r.ok) return null;
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json")) return null;
+        return r.json();
+      }).catch(() => null);
+      safeFetchR(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`)
+        .then((rfData) => {
+          if (rfData && rfData.code === "0") {
+            if (rfData.nome) setRedespachoRazaoSocial(rfData.nome);
+            if (rfData.cep) setRedespachoCep(rfData.cep.replace(/[^\d]/g, ""));
+            if (rfData.logradouro) setRedespachoLogradouro(rfData.logradouro);
+            if (rfData.numero) setRedespachoNumero(rfData.numero);
+            if (rfData.complemento) setRedespachoComplemento(rfData.complemento);
+            if (rfData.bairro) setRedespachoBairro(rfData.bairro);
+            if (rfData.municipio) setRedespachoCidade(rfData.municipio);
+            if (rfData.uf) setRedespachoUf(rfData.uf);
+            if (rfData.telefone) setRedespachoTelefone(rfData.telefone);
+          }
+          setRedespachoCnpjDone(true);
+          setTimeout(() => setRedespachoCnpjDone(false), 3000);
+        })
+        .catch(() => {})
+        .finally(() => setRedespachoCnpjLoading(false));
+    }
+  }, [redespachoCnpj]);
+
   const handleSave = async () => {
     // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
     if (!isGuilherme) {
@@ -3439,7 +3478,11 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
               <Truck className="w-3 h-3" /> Endereço Redespacho
             </p>
             <div className="grid grid-cols-2 gap-2 mb-2">
-              <FormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+              <div className="relative">
+                <FormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+                {redespachoCnpjLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Consultando Sintegra...</span>}
+                {redespachoCnpjDone && <span className="absolute right-2 top-6 text-[9px] text-green-500">✓ Preenchido</span>}
+              </div>
               <FormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão social do redespacho" required />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -5161,6 +5204,45 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     });
   };
 
+  // Redespacho CNPJ: consulta Sintegra quando 14 dígitos (pedido de venda)
+  const [redespachoCnpjLoading, setRedespachoCnpjLoading] = useState(false);
+  const [redespachoCnpjDone, setRedespachoCnpjDone] = useState(false);
+  const lastLookedUpRedespachoCnpjOrder = useRef("");
+  useEffect(() => {
+    const cleanCnpj = redespachoCnpj.replace(/\D/g, "");
+    if (cleanCnpj.length === 14 && cleanCnpj !== lastLookedUpRedespachoCnpjOrder.current) {
+      lastLookedUpRedespachoCnpjOrder.current = cleanCnpj;
+      setRedespachoCnpjLoading(true);
+      setRedespachoCnpjDone(false);
+      const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
+      const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+      fetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`)
+        .then(r => {
+          if (!r.ok) return null;
+          const ct = r.headers.get("content-type") || "";
+          if (!ct.includes("json")) return null;
+          return r.json();
+        })
+        .then((rfData) => {
+          if (rfData && rfData.code === "0") {
+            if (rfData.nome) setRedespachoRazaoSocial(rfData.nome);
+            if (rfData.cep) setRedespachoCep(rfData.cep.replace(/[^\d]/g, ""));
+            if (rfData.logradouro) setRedespachoLogradouro(rfData.logradouro);
+            if (rfData.numero) setRedespachoNumero(rfData.numero);
+            if (rfData.complemento) setRedespachoComplemento(rfData.complemento);
+            if (rfData.bairro) setRedespachoBairro(rfData.bairro);
+            if (rfData.municipio) setRedespachoCidade(rfData.municipio);
+            if (rfData.uf) setRedespachoUf(rfData.uf);
+            if (rfData.telefone) setRedespachoTelefone(rfData.telefone);
+          }
+          setRedespachoCnpjDone(true);
+          setTimeout(() => setRedespachoCnpjDone(false), 3000);
+        })
+        .catch(() => {})
+        .finally(() => setRedespachoCnpjLoading(false));
+    }
+  }, [redespachoCnpj]);
+
   // Products
   interface OrderItem {
     codigoItem: string;
@@ -6152,7 +6234,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
                 <p className="text-[10px] font-bold text-blue-600 dark:text-blue-300 uppercase mb-2">🚚 ENDEREÇO REDESPACHO</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <OrderFormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+                  <div className="relative">
+                    <OrderFormInput label="CNPJ do Redespacho" value={redespachoCnpj} onChange={setRedespachoCnpj} placeholder="00.000.000/0001-00" required />
+                    {redespachoCnpjLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Consultando Sintegra...</span>}
+                    {redespachoCnpjDone && <span className="absolute right-2 top-6 text-[9px] text-green-500">✓ Preenchido</span>}
+                  </div>
                   <OrderFormInput label="Razão Social" value={redespachoRazaoSocial} onChange={setRedespachoRazaoSocial} placeholder="Razão Social do Redespacho" required />
                   <div className="relative">
                   <OrderFormInput label="CEP" value={redespachoCep} onChange={handleOrderRedespachoCepChange} placeholder="00000-000" />
