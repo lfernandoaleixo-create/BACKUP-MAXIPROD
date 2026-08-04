@@ -4499,7 +4499,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Fetch queijo coalho stock data
-  const { data: qcStockData } = trpc.dashboard.getQueijoCoalhoStock.useQuery(undefined, { refetchInterval: 30000 });
+  const { data: qcStockData, isLoading: qcStockLoading } = trpc.dashboard.getQueijoCoalhoStock.useQuery(undefined, { refetchInterval: 30000, staleTime: 25000 });
   const updateMutation = trpc.dashboard.updateQueijoCoalhoStock.useMutation({
     onSuccess: (result) => {
       if (result.success === false && result.error === "senha_incorreta") {
@@ -5164,7 +5164,9 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                     </td>
                     {/* Aguardando Processamento (editable by Maria) */}
                     <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">
-                      {editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
+                      {qcStockLoading && !qcStockData ? (
+                        <span className="inline-block w-16 h-5 bg-orange-100 animate-pulse rounded" />
+                      ) : editingCell?.codigo === row.codigoItem && editingCell?.campo === "estoque_maxiprod" ? (
                         <input
                           ref={inputRef}
                           type="text"
@@ -5747,7 +5749,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                 {/* Totals row */}
                 <tr className="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 font-bold">
                   <td className="py-2 px-1 md:px-2 text-sm text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-600">TOTAL</td>
-                  <td className="py-2 px-1 md:px-2 text-center text-sm text-orange-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.maxiprod, true)} cx</td>
+                  <td className="py-2 px-1 md:px-2 text-center text-sm text-orange-700 border-r border-slate-200 dark:border-slate-600">{qcStockLoading && !qcStockData ? <span className="inline-block w-16 h-5 bg-orange-100 animate-pulse rounded" /> : <>{formatNumber(totals.maxiprod, true)} cx</>}</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-blue-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.po, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center text-sm text-indigo-700 border-r border-slate-200 dark:border-slate-600">{formatNumber(totals.projetado, true)} cx</td>
                   <td className="py-2 px-1 md:px-2 text-center border-r border-slate-200 dark:border-slate-600">

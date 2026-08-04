@@ -6820,3 +6820,4 @@
 - [x] Palitos Premium: Modal de desbloqueio mostra "Área protegida por senha" sem pistas, aceita apenas "Maria" com M maiúsculo
 - [x] Queijo Coalho: Chegada exige senha "Guilherme" (G maiúsculo), Perda exige senha "Maria" (M maiúsculo), cada com modal próprio
 - [x] Queijo Coalho: Corrigir registro histórico da PO ZYZ2026-018 de "Fernando" para "Guilherme"
+- [x] Queijo Coalho: Aguardando Processamento mostra skeleton loading ao invés de 0 enquanto carrega
