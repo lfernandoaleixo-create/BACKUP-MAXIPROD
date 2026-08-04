@@ -131,7 +131,7 @@ export default function SimulacaoFrete() {
 
   const handleSimularManual = async () => {
     const cep = manualCep.replace(/\D/g, "");
-    if (cep.length !== 8) { setErrorMsg("CEP deve ter 8 d\u00edgitos"); return; }
+    if (cep.length !== 8) { setErrorMsg("CEP deve ter 8 dígitos"); return; }
     const peso = parseFloat(manualPeso);
     const cubagem = parseFloat(manualCubagem);
     const valorNf = parseFloat(manualValorNf.replace(/[^\d.,]/g, "").replace(",", "."));
@@ -155,7 +155,7 @@ export default function SimulacaoFrete() {
       // Build a QuoteResult-like object for display
       const manualRes: QuoteResult = {
         pedido: "AVULSO",
-        cliente: manualCnpj ? `CNPJ: ${manualCnpj}` : "Simula\u00e7\u00e3o Avulsa",
+        cliente: manualCnpj ? `CNPJ: ${manualCnpj}` : "Simulação Avulsa",
         cepDestino: cep,
         cnpjDestinatario: manualCnpj.replace(/\D/g, ""),
         valorMercadoria: valorNf,
@@ -403,7 +403,7 @@ export default function SimulacaoFrete() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">CNPJ Destinat\u00e1rio</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">CNPJ Destinatário</label>
               <Input
                 type="text"
                 placeholder="00.000.000/0001-00"
@@ -425,7 +425,7 @@ export default function SimulacaoFrete() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Cubagem (m\u00b3)</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Cubagem (m³)</label>
               <Input
                 type="number"
                 placeholder="Ex: 0.5"
