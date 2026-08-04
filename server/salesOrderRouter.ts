@@ -1320,18 +1320,21 @@ export const salesOrderRouter = router({
         // Top gestores see everything except simulations
         conditions.push(sql`${salesOrderRequests.status} != 'simulacao'`);
       } else if (isJuvenal) {
-        // Juvenal sees pending (his sellers) + aprovado_subgestor (needs his approval) + approved + processed
+        // Juvenal sees pending (his sellers) + aprovado_subgestor (needs his approval) + approved + processed + rejeitado
         conditions.push(or(
           eq(salesOrderRequests.status, "pendente"),
           eq(salesOrderRequests.status, "aprovado_subgestor"),
           eq(salesOrderRequests.status, "aprovado"),
-          eq(salesOrderRequests.status, "processado")
+          eq(salesOrderRequests.status, "processado"),
+          eq(salesOrderRequests.status, "rejeitado")
         ));
       } else {
-        // Vitória and others: only approved + processed (already approved by gestor)
+        // Vitória and others: approved + processed + rejeitado + pendente (full visibility)
         conditions.push(or(
           eq(salesOrderRequests.status, "aprovado"),
-          eq(salesOrderRequests.status, "processado")
+          eq(salesOrderRequests.status, "processado"),
+          eq(salesOrderRequests.status, "rejeitado"),
+          eq(salesOrderRequests.status, "pendente")
         ));
       }
 
@@ -1847,20 +1850,38 @@ export const salesOrderRouter = router({
 
   /** Mark order as entered in Maxiprod by Vitória */
   markLancado: publicProcedure
-    .input(z.object({ orderId: z.number(), numeroPedidoMaxiprod: z.string().optional() }))
+    .input(z.object({ orderId: z.number(), numeroPedidoMaxiprod: z.string().optional(), operadorNome: z.string().optional() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
+      
+      // Get order info for history
+      const [order] = await db.select().from(salesOrderRequests)
+        .where(eq(salesOrderRequests.id, input.orderId))
+        .limit(1);
+      
       await db.update(salesOrderRequests)
         .set({
           vitoriaLancado: true,
           vitoriaLancadoAt: new Date(),
           status: "processado",
-          processadoPor: "Vit\u00f3ria",
+          processadoPor: input.operadorNome || "Vitória",
           dataProcessamento: new Date(),
           numeroPedidoMaxiprod: input.numeroPedidoMaxiprod || null,
         })
         .where(eq(salesOrderRequests.id, input.orderId));
+      
+      // Record history trail
+      await db.insert(orderApprovalHistory).values({
+        orderId: input.orderId,
+        pedidoNumero: order?.numeroPedidoMaxiprod || null,
+        cliente: order?.razaoSocial || order?.nomeFantasia || null,
+        vendedor: order?.sellerName || null,
+        aprovadoPor: input.operadorNome || "Vitória",
+        tipoAprovacao: "lancado_maxiprod",
+        observacao: `Pedido lançado no Maxiprod por ${input.operadorNome || "Vitória"}`,
+      });
+      
       return { success: true };
     }),
 

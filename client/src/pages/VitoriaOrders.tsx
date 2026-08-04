@@ -23,7 +23,7 @@ function formatCurrency(value: number | string) {
   return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-type VitoriaFilter = "pendente" | "recebido" | "lancado" | "todos";
+type VitoriaFilter = "pendente" | "aprovado" | "recusado" | "recebido" | "lancado" | "todos";
 
 export default function VitoriaOrders() {
   const { operator, hasGranularAccess, getVisiblePeopleForFeature } = useOperator();
@@ -264,7 +264,7 @@ export default function VitoriaOrders() {
 
   const handleMarkLancado = (orderId: number) => {
     markLancadoMutation.mutate(
-      { orderId },
+      { orderId, operadorNome: operator?.name || "Vitória" },
       {
         onSuccess: () => {
           toast.success("Pedido marcado como lançado no Maxiprod!");
@@ -299,19 +299,23 @@ export default function VitoriaOrders() {
     if (statusFilter === "todos") return true;
     if (statusFilter === "pendente") {
       if (canSeeAguardandoAprovacao) {
-        return (o.status === "pendente" || o.status === "aprovado_subgestor" || (o.status === "aprovado" && !o.vitoriaRecebido));
+        return (o.status === "pendente" || o.status === "aprovado_subgestor");
       }
-      // Juvenal and Vitória: only see approved orders not yet received
-      return o.status === "aprovado" && !o.vitoriaRecebido;
+      return o.status === "pendente" || o.status === "aprovado_subgestor";
     }
+    if (statusFilter === "aprovado") {
+      // Aprovados que ainda não foram lançados
+      return o.status === "aprovado" && !o.vitoriaLancado;
+    }
+    if (statusFilter === "recusado") return o.status === "rejeitado";
     if (statusFilter === "recebido") return o.vitoriaRecebido && !o.vitoriaLancado;
     if (statusFilter === "lancado") return o.vitoriaLancado;
     return true;
   });
 
-  const pendingCount = canSeeAguardandoAprovacao
-    ? (orders || []).filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor" || (o.status === "aprovado" && !o.vitoriaRecebido)).length
-    : (orders || []).filter((o: any) => o.status === "aprovado" && !o.vitoriaRecebido).length;
+  const pendingCount = (orders || []).filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor").length;
+  const aprovadoCount = (orders || []).filter((o: any) => o.status === "aprovado" && !o.vitoriaLancado).length;
+  const recusadoCount = (orders || []).filter((o: any) => o.status === "rejeitado").length;
   const recebidoCount = (orders || []).filter((o: any) => o.vitoriaRecebido && !o.vitoriaLancado).length;
   const lancadoCount = (orders || []).filter((o: any) => o.vitoriaLancado).length;
 
@@ -419,44 +423,67 @@ export default function VitoriaOrders() {
           </button>
         </div>
 
-        {/* Stats - 3 cards showing the flow */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+        {/* Stats - 5 cards showing the flow */}
+        <div className="grid grid-cols-5 gap-2">
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 cursor-pointer transition-all ${
             statusFilter === "pendente" ? "border-amber-400 ring-2 ring-amber-200" : "border-amber-200 dark:border-amber-800"
           }`} onClick={() => setStatusFilter("pendente")}>
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle className="w-4 h-4 text-amber-500" />
-              <span className="text-[9px] text-amber-600 uppercase font-bold">Novos</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[8px] text-amber-600 uppercase font-bold">Pendentes</span>
             </div>
-            <p className={`text-2xl font-bold ${pendingCount > 0 ? "text-amber-600" : "text-slate-300"}`}>{pendingCount}</p>
+            <p className={`text-xl font-bold ${pendingCount > 0 ? "text-amber-600" : "text-slate-300"}`}>{pendingCount}</p>
           </div>
-          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 cursor-pointer transition-all relative ${
+            statusFilter === "aprovado" ? "border-teal-400 ring-2 ring-teal-200" : "border-teal-200 dark:border-teal-800"
+          }`} onClick={() => setStatusFilter("aprovado")}>
+            {aprovadoCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-teal-500 rounded-full animate-ping" />
+            )}
+            {aprovadoCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-teal-500 rounded-full" />
+            )}
+            <div className="flex items-center gap-1.5 mb-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-teal-500" />
+              <span className="text-[8px] text-teal-600 uppercase font-bold">Aprovados</span>
+            </div>
+            <p className={`text-xl font-bold ${aprovadoCount > 0 ? "text-teal-600" : "text-slate-300"}`}>{aprovadoCount}</p>
+          </div>
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 cursor-pointer transition-all ${
+            statusFilter === "recusado" ? "border-red-400 ring-2 ring-red-200" : "border-red-200 dark:border-red-800"
+          }`} onClick={() => setStatusFilter("recusado")}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+              <span className="text-[8px] text-red-600 uppercase font-bold">Recusados</span>
+            </div>
+            <p className={`text-xl font-bold ${recusadoCount > 0 ? "text-red-600" : "text-slate-300"}`}>{recusadoCount}</p>
+          </div>
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 cursor-pointer transition-all ${
             statusFilter === "recebido" ? "border-blue-400 ring-2 ring-blue-200" : "border-blue-200 dark:border-blue-800"
           }`} onClick={() => setStatusFilter("recebido")}>
-            <div className="flex items-center gap-2 mb-1">
-              <Inbox className="w-4 h-4 text-blue-500" />
-              <span className="text-[9px] text-blue-600 uppercase font-bold">Recebidos</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Inbox className="w-3.5 h-3.5 text-blue-500" />
+              <span className="text-[8px] text-blue-600 uppercase font-bold">Recebidos</span>
             </div>
-            <p className={`text-2xl font-bold ${recebidoCount > 0 ? "text-blue-600" : "text-slate-300"}`}>{recebidoCount}</p>
+            <p className={`text-xl font-bold ${recebidoCount > 0 ? "text-blue-600" : "text-slate-300"}`}>{recebidoCount}</p>
           </div>
-          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+          <div className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 cursor-pointer transition-all ${
             statusFilter === "lancado" ? "border-green-400 ring-2 ring-green-200" : "border-green-200 dark:border-green-800"
           }`} onClick={() => setStatusFilter("lancado")}>
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCheck className="w-4 h-4 text-green-500" />
-              <span className="text-[9px] text-green-600 uppercase font-bold">Lançados</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <CheckCheck className="w-3.5 h-3.5 text-green-500" />
+              <span className="text-[8px] text-green-600 uppercase font-bold">Lançados</span>
             </div>
-            <p className={`text-2xl font-bold ${lancadoCount > 0 ? "text-green-600" : "text-slate-300"}`}>{lancadoCount}</p>
+            <p className={`text-xl font-bold ${lancadoCount > 0 ? "text-green-600" : "text-slate-300"}`}>{lancadoCount}</p>
           </div>
         </div>
 
-
-
         {/* Filter tabs */}
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
+        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 flex-wrap">
           {([
-            { key: "pendente", label: "Novos", icon: AlertCircle, color: "amber" },
-            { key: "recebido", label: "Recebidos", icon: Inbox, color: "blue" },
+            { key: "pendente", label: "Pendentes", icon: Clock, color: "amber" },
+            { key: "aprovado", label: "Aprovados", icon: CheckCircle2, color: "teal" },
+            { key: "recusado", label: "Recusados", icon: AlertTriangle, color: "red" },
             { key: "lancado", label: "Lançados", icon: CheckCheck, color: "green" },
             { key: "todos", label: "Todos", icon: Package, color: "slate" },
           ] as const).map((f) => (
@@ -485,7 +512,9 @@ export default function VitoriaOrders() {
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
             <ClipboardCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
             <p className="text-sm text-slate-500">
-              {statusFilter === "pendente" ? "Nenhum pedido novo aguardando" :
+              {statusFilter === "pendente" ? "Nenhum pedido pendente de aprovação" :
+               statusFilter === "aprovado" ? "Nenhum pedido aprovado aguardando lançamento" :
+               statusFilter === "recusado" ? "Nenhum pedido recusado" :
                statusFilter === "recebido" ? "Nenhum pedido recebido pendente de lançamento" :
                statusFilter === "lancado" ? "Nenhum pedido lançado ainda" :
                "Nenhum pedido encontrado"}
@@ -640,11 +669,16 @@ export default function VitoriaOrders() {
                           const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
                           const isPendente = order.status === "pendente";
                           const isAwaitingGestor = order.status === "aprovado_subgestor";
-                          const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
+                          const isAprovado = order.status === "aprovado" && !order.vitoriaLancado;
+                          const isRecusado = order.status === "rejeitado";
                           const borderClass = isLancado
                             ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
+                            : isRecusado
+                              ? "border-red-200 dark:border-red-800 border-l-4 border-l-red-500"
                             : isRecebido
                               ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
+                              : isAprovado
+                                ? "border-teal-200 dark:border-teal-800 border-l-4 border-l-teal-500"
                               : (isPendente || isAwaitingGestor)
                                 ? "border-orange-200 dark:border-orange-800 border-l-4 border-l-orange-500"
                                 : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
@@ -660,12 +694,16 @@ export default function VitoriaOrders() {
                                 <div className="flex items-center gap-3">
                                   <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                                     isLancado ? "bg-green-100 dark:bg-green-900/30" :
+                                    isRecusado ? "bg-red-100 dark:bg-red-900/30" :
                                     isRecebido ? "bg-blue-100 dark:bg-blue-900/30" :
+                                    isAprovado ? "bg-teal-100 dark:bg-teal-900/30" :
                                     (isPendente || isAwaitingGestor) ? "bg-orange-100 dark:bg-orange-900/30" :
                                     "bg-amber-100 dark:bg-amber-900/30"
                                   }`}>
                                     {isLancado ? <CheckCheck className="w-4.5 h-4.5 text-green-600" /> :
+                                     isRecusado ? <AlertTriangle className="w-4.5 h-4.5 text-red-600" /> :
                                      isRecebido ? <Inbox className="w-4.5 h-4.5 text-blue-600" /> :
+                                     isAprovado ? <CheckCircle2 className="w-4.5 h-4.5 text-teal-600" /> :
                                      (isPendente || isAwaitingGestor) ? <Clock className="w-4.5 h-4.5 text-orange-600" /> :
                                      <AlertCircle className="w-4.5 h-4.5 text-amber-600" />}
                                   </div>
@@ -675,11 +713,13 @@ export default function VitoriaOrders() {
                                       <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{order.razaoSocial || order.nomeFantasia}</p>
                                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                                         isLancado ? "bg-green-50 text-green-600" :
+                                        isRecusado ? "bg-red-50 text-red-600" :
                                         isRecebido ? "bg-blue-50 text-blue-600" :
+                                        isAprovado ? "bg-teal-50 text-teal-600" :
                                         (isPendente || isAwaitingGestor) ? "bg-orange-50 text-orange-700" :
                                         "bg-amber-50 text-amber-700"
                                       }`}>
-                                        {isLancado ? "LANÇADO" : isRecebido ? "RECEBIDO" : isAwaitingGestor ? "AGUARDANDO GESTOR" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
+                                        {isLancado ? "LANÇADO" : isRecusado ? "RECUSADO" : isRecebido ? "RECEBIDO" : isAprovado ? "APROVADO" : isAwaitingGestor ? "AGUARDANDO GESTOR" : isPendente ? "AGUARDANDO APROVAÇÃO" : "NOVO"}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
@@ -844,13 +884,19 @@ export default function VitoriaOrders() {
               const isExpanded = expandedOrder === order.id;
               const isLancado = order.vitoriaLancado;
               const isRecebido = order.vitoriaRecebido && !order.vitoriaLancado;
-                            const isPendente = order.status === "pendente";
+              const isPendente = order.status === "pendente";
               const isAwaitingGestor = order.status === "aprovado_subgestor";
+              const isAprovado = order.status === "aprovado" && !order.vitoriaLancado;
+              const isRecusado = order.status === "rejeitado";
               const isNovo = order.status === "aprovado" && !order.vitoriaRecebido;
               const borderClass = isLancado
                 ? "border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
+                : isRecusado
+                  ? "border-red-200 dark:border-red-800 border-l-4 border-l-red-500"
                 : isRecebido
                   ? "border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400"
+                  : isAprovado
+                    ? "border-teal-200 dark:border-teal-800 border-l-4 border-l-teal-500"
                   : (isPendente || isAwaitingGestor)
                     ? "border-orange-200 dark:border-orange-800 border-l-4 border-l-orange-500"
                     : "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500";
@@ -1648,15 +1694,24 @@ export default function VitoriaOrders() {
                           </button>
                         </div>
                       )}
-                      {/* For gestores/sellers viewing approved orders: show green confirmation */}
-                      {isNovo && !isVitoriaViewer && (
-                        <div className="mt-3">
-                          <div className="p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                            <p className="text-[10px] text-green-700 dark:text-green-400 flex items-center gap-1">
+                      {/* Button "Lançado no Maxiprod" for approved orders */}
+                      {isAprovado && !isLancado && (
+                        <div className="mt-4">
+                          <div className="p-2.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg mb-3">
+                            <p className="text-[10px] text-teal-700 dark:text-teal-400 flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
-                              Pedido aprovado — aguardando processamento
+                              Pedido aprovado{order.dataAprovacao ? ` em ${new Date(order.dataAprovacao).toLocaleString("pt-BR")}` : ""}
+                              {order.aprovadoPor ? ` por ${order.aprovadoPor}` : ""}
                             </p>
                           </div>
+                          <button
+                            onClick={() => handleMarkLancado(order.id)}
+                            disabled={markLancadoMutation.isPending}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+                          >
+                            <CheckCheck className="w-4 h-4" />
+                            {markLancadoMutation.isPending ? "Marcando..." : "✓ Lançado no Maxiprod"}
+                          </button>
                         </div>
                       )}
 

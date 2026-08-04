@@ -6799,3 +6799,14 @@
 - [x] Add success toast after approval and move to Aprovados tab
 - [ ] Verificar que o resumão do pedido aparece na Vitória
 - [x] Fix produção: permitir aprovar lote retroativo mesmo quando lote já existe no sistema (vincular ao existente)
+- [ ] Vitória: Organizar abas (Todos, Pendentes, Aprovados, Recusados, Lançados)
+- [ ] Vitória: Alerta piscante quando pedido é aprovado
+- [ ] Vitória: Botão 'Lançado no Maxiprod' nos pedidos aprovados
+- [ ] Vitória: Nova aba 'Lançados' com histórico
+- [ ] Vitória: Rastro/histórico de todas ações (aprovação, recusa, lançamento)
+- [x] VitoriaOrders: 5 cards de stats (Pendentes, Aprovados com pulse, Recusados, Recebidos, Lançados)
+- [x] VitoriaOrders: Novas abas de filtro (Pendentes | Aprovados | Recusados | Lançados | Todos)
+- [x] VitoriaOrders: Botão "✓ Lançado no Maxiprod" nos pedidos aprovados
+- [x] VitoriaOrders: Histórico/audit trail ao marcar como lançado (orderApprovalHistory tipo lancado_maxiprod)
+- [x] VitoriaOrders: Status visuais diferenciados para aprovado (teal) e recusado (vermelho)
+- [x] Backend getOrdersForOperator retorna rejeitado + pendente para todos os viewers
