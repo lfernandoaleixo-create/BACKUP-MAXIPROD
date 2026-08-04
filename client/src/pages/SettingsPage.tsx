@@ -724,9 +724,14 @@ function OperatorManagementPanel() {
   const deleteMutation = trpc.settings.deleteOperator.useMutation({
     onSuccess: () => utils.settings.getOperators.invalidate(),
   });
+  const renameMutation = trpc.settings.renameOperator.useMutation({
+    onSuccess: () => utils.settings.getOperators.invalidate(),
+  });
 
   const [passwordVisibility, setPasswordVisibility] = useState<Record<number, boolean>>({});
   const [editingPasswords, setEditingPasswords] = useState<Record<number, string>>({});
+  const [editingNameId, setEditingNameId] = useState<number | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState("");
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [expandedOperator, setExpandedOperator] = useState<number | null>(null);
@@ -1005,7 +1010,54 @@ function OperatorManagementPanel() {
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
-                      <span className="font-medium text-slate-800 text-sm">{op.name}</span>
+                      {editingNameId === op.id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="text"
+                            value={editingNameValue}
+                            onChange={(e) => setEditingNameValue(e.target.value)}
+                            className="h-7 text-sm w-32"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && editingNameValue.trim()) {
+                                renameMutation.mutate({ id: op.id, name: editingNameValue.trim() });
+                                setEditingNameId(null);
+                              }
+                              if (e.key === "Escape") setEditingNameId(null);
+                            }}
+                            onBlur={() => {
+                              setTimeout(() => {
+                                if (editingNameValue.trim() && editingNameValue.trim() !== op.name) {
+                                  renameMutation.mutate({ id: op.id, name: editingNameValue.trim() });
+                                }
+                                setEditingNameId(null);
+                              }, 150);
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (editingNameValue.trim()) {
+                                renameMutation.mutate({ id: op.id, name: editingNameValue.trim() });
+                              }
+                              setEditingNameId(null);
+                            }}
+                            className="text-emerald-500 hover:text-emerald-700"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 group">
+                          <span className="font-medium text-slate-800 text-sm">{op.name}</span>
+                          <button
+                            onClick={() => { setEditingNameId(op.id); setEditingNameValue(op.name); }}
+                            className="text-slate-300 hover:text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Editar nome"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-2 py-2">

@@ -37,7 +37,8 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
   });
 
   const pendingAlerts = alerts.filter((a: any) => a.status === "pendente");
-  const resolvedAlerts = alerts.filter((a: any) => a.status !== "pendente");
+  // Only show "aceito" in the main view; "recusado" goes to history only
+  const resolvedAlerts = alerts.filter((a: any) => a.status === "aceito");
 
   // History: all resolved (aceito/recusado/expirado) alerts
   const historyResolved = historyAlerts.filter(

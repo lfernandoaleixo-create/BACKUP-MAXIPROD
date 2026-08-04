@@ -6784,3 +6784,6 @@
 - [x] Redespacho: integrar API do Sintegra quando digitar CNPJ no campo de redespacho para preencher automaticamente razão social, CEP, logradouro, número, bairro, cidade, UF
 - [x] Exibir número do protocolo da transportadora (frete) nas telas do gestor, subgestor e Vitória
 - [x] Simulador de frete: adicionar opção de cálculo avulso (sem pedido) com CEP, CNPJ, peso, cubagem e valor NF manual
+- [x] Controle de Acesso: adicionar opção de editar o nome do operador (para substituição de funcionário mantendo permissões)
+- [x] Simulador de frete avulso: garantir que gere protocolos de frete nos 3 CNPJs de cada uma das 5 transportadoras (igual à simulação por pedido) [já funcionava - quoteAllCarriers usa cotarTodosCnpjs/quoteAllAlfaCnpjs/quoteAllSswCnpjsWithProtocol/quoteAllRodonavesCnpjs]
+- [x] Alertas de estoque: esconder alertas "Recusado" da tela principal (manter apenas no histórico)

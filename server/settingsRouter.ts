@@ -669,6 +669,23 @@ export const settingsRouter = router({
     }),
 
   /**
+   * Rename operator (for employee replacement)
+   */
+  renameOperator: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(operators)
+        .set({ name: input.name })
+        .where(eq(operators.id, input.id));
+      return { success: true };
+    }),
+
+  /**
    * Update operator permission
    */
   updateOperatorPermission: publicProcedure
