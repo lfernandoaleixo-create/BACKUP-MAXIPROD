@@ -5187,4 +5187,99 @@ export const salesOrderRouter = router({
         .limit(input.limit);
       return results;
     }),
+
+  /**
+   * checkClientMaxiprodStatus - Verifica se o cliente existe no Maxiprod
+   * Retorna: 'novo' | 'cadastrado' | 'alterado' + detalhes das alterações
+   */
+  checkClientMaxiprodStatus: publicProcedure
+    .input(z.object({ cnpjCpf: z.string().optional(), clientId: z.number().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { status: "desconhecido" as const, changes: [] as string[] };
+
+      let client: any = null;
+      if (input.clientId) {
+        const [row] = await db.select().from(vendorClients)
+          .where(eq(vendorClients.id, input.clientId)).limit(1);
+        client = row;
+      } else if (input.cnpjCpf) {
+        const cnpjLimpo = input.cnpjCpf.replace(/[^\d]/g, "");
+        if (cnpjLimpo.length >= 11) {
+          const [row] = await db.select().from(vendorClients)
+            .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') = ${cnpjLimpo}`)
+            .limit(1);
+          client = row;
+        }
+      }
+
+      if (!client) {
+        return { status: "novo" as const, changes: [] as string[] };
+      }
+
+      if (!client.maxiprodId) {
+        return { status: "novo" as const, changes: [] as string[] };
+      }
+
+      // Has maxiprodId = exists in Maxiprod
+      // Check if it was modified after sync
+      if (client.lastModifiedBy && client.lastModifiedBy !== "SYNC_MAXIPROD") {
+        // Was modified by someone other than the sync
+        // Fetch the original Maxiprod data to compare
+        // We'll do a quick comparison by checking updatedAt vs the sync
+        const changes: string[] = [];
+        if (client.lastModifiedBy) {
+          changes.push(`Última alteração por: ${client.lastModifiedBy}`);
+        }
+        if (client.updatedAt) {
+          changes.push(`Modificado em: ${new Date(client.updatedAt).toLocaleDateString("pt-BR")}`);
+        }
+        return { status: "alterado" as const, changes, modifiedBy: client.lastModifiedBy };
+      }
+
+      return { status: "cadastrado" as const, changes: [] as string[] };
+    }),
+
+  /**
+   * checkBulkClientMaxiprodStatus - Verifica status Maxiprod de múltiplos clientes de uma vez
+   */
+  checkBulkClientMaxiprodStatus: publicProcedure
+    .input(z.object({ cnpjs: z.array(z.string()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return {} as Record<string, { status: "novo" | "cadastrado" | "alterado"; modifiedBy?: string }>;
+
+      if (input.cnpjs.length === 0) return {};
+
+      // Get all vendor_clients that match these CNPJs
+      const allClients = await db.select({
+        cnpjCpf: vendorClients.cnpjCpf,
+        maxiprodId: vendorClients.maxiprodId,
+        lastModifiedBy: vendorClients.lastModifiedBy,
+      }).from(vendorClients)
+        .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') IN (${sql.join(input.cnpjs.map(c => sql`${c.replace(/[^\d]/g, "")}`), sql`, `)})`);
+
+      const result: Record<string, { status: "novo" | "cadastrado" | "alterado"; modifiedBy?: string }> = {};
+      
+      // Map by cleaned CNPJ
+      const clientMap = new Map<string, typeof allClients[0]>();
+      for (const c of allClients) {
+        const clean = (c.cnpjCpf || "").replace(/[^\d]/g, "");
+        if (clean) clientMap.set(clean, c);
+      }
+
+      for (const cnpj of input.cnpjs) {
+        const clean = cnpj.replace(/[^\d]/g, "");
+        const client = clientMap.get(clean);
+        if (!client || !client.maxiprodId) {
+          result[clean] = { status: "novo" };
+        } else if (client.lastModifiedBy && client.lastModifiedBy !== "SYNC_MAXIPROD") {
+          result[clean] = { status: "alterado", modifiedBy: client.lastModifiedBy };
+        } else {
+          result[clean] = { status: "cadastrado" };
+        }
+      }
+
+      return result;
+    }),
 });

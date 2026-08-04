@@ -233,9 +233,14 @@ export default function GestaoComercial() {
   if (showNavigationHub) {
     // Determine if this operator is also a seller (has a matching seller_permissions record)
     const operatorNameUpper = operator?.name?.toUpperCase() || "";
+    const operatorNameNorm = operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const mySellerRecordForHub = permissionsQuery.data?.find(
-      (p: any) => p.sellerName?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
-        || p.sellerName?.toUpperCase().includes(operatorNameUpper)
+      (p: any) => {
+        const sellerNorm = p.sellerName?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() || "";
+        return sellerNorm === operatorNameNorm
+          || sellerNorm.includes(operatorNameNorm)
+          || operatorNameNorm.includes(sellerNorm.split(" ")[0] || "___");
+      }
     );
     // Also check if operator is a gestor (has a sales_managers record)
     const myGestorRecord = managersQuery.data?.find(

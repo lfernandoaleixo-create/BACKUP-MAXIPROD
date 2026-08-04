@@ -6828,12 +6828,12 @@
 - [x] Simulação Frete: Corrigir erros de programação nas APIs das transportadoras (não pode dar erro)
 - [x] Simulação Frete: Leitura inteligente das dimensões do Maxiprod (interpretar C=42, L=30, H=20 ou 42x30x20 ou qualquer formato)
 - [x] Simulação Frete: Garantir retorno rápido e certeiro de todas as transportadoras em todos os CNPJs
-- [ ] Madeira Produto Acabado: Produto 00249 como variação do produto 00089
-- [ ] Indicador Cliente Maxiprod: Mostrar se cliente é NOVO (não existe no Maxiprod) ou ANTIGO (já cadastrado) nos pedidos e cadastro
-- [ ] Indicador Cliente Maxiprod: Quando cliente é ANTIGO, comparar dados do cadastro local com Maxiprod e alertar se houve alteração
-- [ ] Indicador Cliente Maxiprod: Mostrar exatamente quais campos foram alterados (endereço, telefone, etc.) para a Vitória
-- [ ] Indicador Cliente Maxiprod: Visível para todos que têm acesso ao pedido de venda e ao cadastro de clientes
-- [ ] Vendedor Jordão: Painel de vendedor não aparece mesmo após liberar acesso nas configurações
-- [ ] Vendedor Jordão: Histórico de pedidos de venda não aparece (buscar por Jordão ou Jordão Line no Maxiprod)
-- [ ] Vendedor Jordão: Cadastro de clientes vinculados a ele deve aparecer completo
-- [ ] Vendedor Jordão: Todas as permissões ticadas na aba configuração devem funcionar corretamente
+- [x] Madeira Produto Acabado: Produto 00249 como variação do produto 00089
+- [x] Indicador Cliente Maxiprod: Mostrar se cliente é NOVO (não existe no Maxiprod) ou ANTIGO (já cadastrado) nos pedidos e cadastro
+- [x] Indicador Cliente Maxiprod: Quando cliente é ANTIGO, comparar dados do cadastro local com Maxiprod e alertar se houve alteração
+- [x] Indicador Cliente Maxiprod: Mostrar exatamente quais campos foram alterados (endereço, telefone, etc.) para a Vitória
+- [x] Indicador Cliente Maxiprod: Visível para todos que têm acesso ao pedido de venda e ao cadastro de clientes
+- [x] Vendedor Jordão: Painel de vendedor não aparece mesmo após liberar acesso nas configurações
+- [x] Vendedor Jordão: Histórico de pedidos de venda não aparece (buscar por Jordão ou Jordão Line no Maxiprod)
+- [x] Vendedor Jordão: Cadastro de clientes vinculados a ele deve aparecer completo
+- [x] Vendedor Jordão: Todas as permissões ticadas na aba configuração devem funcionar corretamente

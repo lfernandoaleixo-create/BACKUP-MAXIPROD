@@ -1384,6 +1384,12 @@ export const salesMetricsRouter = router({
       if (!db) return [];
 
       const vendedorName = input.vendedor.toUpperCase();
+      // Also search by first name and normalized (no accents) version
+      const firstName = vendedorName.split(" ")[0] || vendedorName;
+      const vendedorNorm = vendedorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const firstNameNorm = vendedorNorm.split(" ")[0] || vendedorNorm;
+      // Build search terms: full name, first name, normalized versions
+      const searchTerms = Array.from(new Set([vendedorName, firstName, vendedorNorm, firstNameNorm].filter(t => t.length >= 3)));
 
       // Buscar todos os itens de pedido do vendedor
       // Busca em vendedorReal (quem realmente vendeu), representante, e representante3
@@ -1410,7 +1416,9 @@ export const salesMetricsRouter = router({
         unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
       }).from(salesOrders)
         .where(
-          sql`(UPPER(${salesOrders.vendedorReal}) LIKE ${`%${vendedorName}%`} OR UPPER(${salesOrders.representante}) LIKE ${`%${vendedorName}%`} OR UPPER(COALESCE(${salesOrders.representante3}, '')) LIKE ${`%${vendedorName}%`})`
+          sql`(${sql.join(searchTerms.map(term => 
+            sql`(UPPER(${salesOrders.vendedorReal}) LIKE ${`%${term}%`} OR UPPER(${salesOrders.representante}) LIKE ${`%${term}%`} OR UPPER(COALESCE(${salesOrders.representante3}, '')) LIKE ${`%${term}%`})`
+          ), sql` OR `)})`
         )
         .orderBy(desc(salesOrders.dataEmissao));
 

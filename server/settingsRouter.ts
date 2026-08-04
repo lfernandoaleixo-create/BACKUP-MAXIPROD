@@ -835,7 +835,11 @@ export const settingsRouter = router({
         let validOp = null;
         for (const op of rows) {
           const sellerForThisOp = matchingSellers.find(
-            s => s.sellerName.toUpperCase() === op.name.toUpperCase()
+            s => {
+              const sellerNorm = s.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              const opNorm = op.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              return sellerNorm === opNorm || sellerNorm.includes(opNorm) || opNorm.includes(sellerNorm.split(" ")[0]);
+            }
           );
           if (!sellerForThisOp) {
             // Not a seller-operator, always allowed

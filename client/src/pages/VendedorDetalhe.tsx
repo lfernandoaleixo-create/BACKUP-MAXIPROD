@@ -3670,9 +3670,20 @@ function ManualClientRow({ client, onDeleted, onEdit }: { client: any; onDeleted
                 {client.segmento}
               </span>
             )}
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 flex-shrink-0">
-              NOVO
-            </span>
+            {/* Maxiprod Status Badge */}
+            {!client.maxiprodId ? (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 flex-shrink-0" title="Cliente não existe no Maxiprod - precisa exportar">
+                ✨ NOVO
+              </span>
+            ) : client.lastModifiedBy && client.lastModifiedBy !== "SYNC_MAXIPROD" ? (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex-shrink-0" title={`Cadastro alterado por ${client.lastModifiedBy} - verificar se precisa atualizar no Maxiprod`}>
+                ⚠️ ALTERADO
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex-shrink-0" title="Cliente já cadastrado no Maxiprod - não precisa exportar">
+                ✅ CADASTRADO
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-[10px] text-slate-400">{client.cnpjCpf}</span>
@@ -4627,6 +4638,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                           Preço abaixo do mínimo
                         </span>
                       )}
+                      {/* Maxiprod Client Status Badge */}
+                      <ClientMaxiprodBadge cnpjCpf={pm.cnpjCpf} />
                     </div>
                     <p className="text-[10px] text-slate-400 mt-0.5">
                       {pm.createdAt ? new Date(pm.createdAt).toLocaleDateString("pt-BR") : ""}
@@ -8836,5 +8849,39 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * ClientMaxiprodBadge - Shows whether a client is NEW, REGISTERED, or MODIFIED in Maxiprod
+ */
+function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
+  const { data } = trpc.salesOrders.checkClientMaxiprodStatus.useQuery(
+    { cnpjCpf: cnpjCpf || "" },
+    { enabled: !!cnpjCpf && cnpjCpf.replace(/[^\d]/g, "").length >= 11, staleTime: 5 * 60 * 1000 }
+  );
+
+  if (!data || data.status === "desconhecido") return null;
+
+  if (data.status === "novo") {
+    return (
+      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 flex-shrink-0" title="Cliente NÃO existe no Maxiprod - precisa exportar cadastro">
+        ✨ NOVO
+      </span>
+    );
+  }
+
+  if (data.status === "alterado") {
+    return (
+      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex-shrink-0" title={`Cadastro alterado por ${data.modifiedBy || "vendedor"} - verificar se precisa atualizar no Maxiprod`}>
+        ⚠️ ALTERADO
+      </span>
+    );
+  }
+
+  return (
+    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex-shrink-0" title="Cliente já cadastrado no Maxiprod - não precisa exportar cadastro">
+      ✅ CADASTRADO
+    </span>
   );
 }
