@@ -1571,8 +1571,31 @@ export const productionRouter = router({
       
       let newLot;
       if (existing.length > 0) {
-        // Lote já existe - apenas vincular ao existente
+        // Lote já existe - acumular a quantidade solicitada ao saldo
         newLot = existing[0];
+        const oldQtd = parseFloat(String(newLot.qtdProduzida)) || 0;
+        const oldSaldo = parseFloat(String(newLot.saldoAtual)) || 0;
+        const addQty = Number(request.qtdProduzida) || 0;
+        const newQtd = oldQtd + addQty;
+        const newSaldo = oldSaldo + addQty;
+
+        await db.update(productionLots)
+          .set({
+            qtdProduzida: String(newQtd),
+            saldoAtual: String(newSaldo),
+          })
+          .where(eq(productionLots.id, newLot.id));
+
+        // Registrar histórico
+        await db.insert(lotMovements).values({
+          lotId: newLot.id,
+          codigoLote: newLot.codigo,
+          cliente: "Aprovação retroativa",
+          qtdEnviada: String(addQty),
+          dataEnvio: request.dataProducao,
+          lancadoPor: input.aprovadorNome,
+          observacoes: `Aprovação retroativa: +${addQty} cx (solicitado por ${request.solicitanteNome}, saldo anterior: ${oldSaldo}, novo: ${newSaldo})`,
+        });
       } else {
         // Criar o lote com a data retroativa
         await db.insert(productionLots).values({
