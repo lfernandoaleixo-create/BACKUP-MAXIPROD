@@ -7319,164 +7319,70 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               />
             </div>
 
-            {/* ===== DADOS DO CLIENTE (pré-preenchidos do cadastro) ===== */}
+            {/* ===== DADOS DO CADASTRO DO CLIENTE (read-only, vindos do cadastro) ===== */}
+            {(regimeTributario || inscricaoMunicipal || formaCobranca || regiao || situacaoCobranca) && (
             <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-3">
-              <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">📋 Dados Fiscais do Cliente</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Regime Tributário</label>
-                  <select value={regimeTributario} onChange={(e) => setRegimeTributario(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="Normal">Normal</option>
-                    <option value="Simples Nacional">Simples Nacional</option>
-                    <option value="MEI">MEI</option>
-                    <option value="Lucro Presumido">Lucro Presumido</option>
-                    <option value="Lucro Real">Lucro Real</option>
-                  </select>
+              <details className="group">
+                <summary className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-2 list-none [&::-webkit-details-marker]:hidden">
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  Dados do Cadastro do Cliente (somente leitura)
+                </summary>
+                <div className="space-y-3 mt-2">
+                  {/* Dados Fiscais */}
+                  <div>
+                    <p className="text-[9px] font-bold text-blue-500 dark:text-blue-400 uppercase mb-1.5">Dados Fiscais</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      {regimeTributario && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Regime Tributário</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{regimeTributario}</p></div>}
+                      {inscricaoMunicipal && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Inscrição Municipal</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{inscricaoMunicipal}</p></div>}
+                      {inscricaoSuframa && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Inscrição SUFRAMA</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{inscricaoSuframa}</p></div>}
+                      {situacaoFiscalEspecial && situacaoFiscalEspecial !== 'Nenhuma' && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Situação Fiscal Especial</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{situacaoFiscalEspecial}</p></div>}
+                      {cnaeFiscal && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">CNAE Fiscal</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{cnaeFiscal}</p></div>}
+                      {emailNfe && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Email NF-e</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium truncate">{emailNfe}</p></div>}
+                      {websiteCliente && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Website</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium truncate">{websiteCliente}</p></div>}
+                    </div>
+                  </div>
+                  {/* Dados de Venda */}
+                  {(limiteCredito || formaCobranca || tabelaPrecos || condicaoPagamento) && (
+                  <div>
+                    <p className="text-[9px] font-bold text-purple-500 dark:text-purple-400 uppercase mb-1.5">Dados de Venda</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                      {limiteCredito && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Limite de Crédito</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{limiteCredito}</p></div>}
+                      {formaCobranca && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Forma de Cobrança</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{formaCobranca}</p></div>}
+                      {tabelaPrecos && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Tabela de Preços</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{tabelaPrecos}</p></div>}
+                      {condicaoPagamento && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Condição Pagamento</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{condicaoPagamento}</p></div>}
+                    </div>
+                  </div>
+                  )}
+                  {/* CRM */}
+                  {(regiao || perfil || formaPedido || probabilidadeNegocio) && (
+                  <div>
+                    <p className="text-[9px] font-bold text-teal-500 dark:text-teal-400 uppercase mb-1.5">Relacionamento (CRM)</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      {regiao && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Região</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{regiao}</p></div>}
+                      {perfil && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Perfil</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{perfil}</p></div>}
+                      {formaPedido && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Forma de Pedido</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{formaPedido}</p></div>}
+                      {produtosInteresse && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Produtos</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium truncate">{produtosInteresse}</p></div>}
+                      {probabilidadeNegocio && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Probabilidade</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{probabilidadeNegocio}</p></div>}
+                      {tamanho && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Tamanho</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{tamanho}</p></div>}
+                      {atencao && atencao !== 'Normal' && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Atenção</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{atencao}</p></div>}
+                      {fornecedorAtual && <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1.5"><p className="text-[8px] text-slate-400">Fornecedor Atual</p><p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium">{fornecedorAtual}</p></div>}
+                    </div>
+                  </div>
+                  )}
+                  {/* Cobrança */}
+                  {situacaoCobranca && situacaoCobranca !== 'SEM PROTESTO' && (
+                  <div>
+                    <p className="text-[9px] font-bold text-orange-500 dark:text-orange-400 uppercase mb-1.5">Cobrança</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg px-2 py-1.5 border border-red-200 dark:border-red-800"><p className="text-[8px] text-red-400">Situação</p><p className="text-[10px] text-red-700 dark:text-red-300 font-bold">{situacaoCobranca}</p></div>
+                    </div>
+                  </div>
+                  )}
+                  <p className="text-[8px] text-blue-400 dark:text-blue-500 italic">Estes dados vêm do cadastro do cliente e não podem ser editados no pedido.</p>
                 </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Inscrição Municipal</label>
-                  <input type="text" value={inscricaoMunicipal} onChange={(e) => setInscricaoMunicipal(e.target.value)} placeholder="IM" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Inscrição SUFRAMA</label>
-                  <input type="text" value={inscricaoSuframa} onChange={(e) => setInscricaoSuframa(e.target.value)} placeholder="SUFRAMA" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Situação Fiscal Especial</label>
-                  <select value={situacaoFiscalEspecial} onChange={(e) => setSituacaoFiscalEspecial(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="Nenhuma">Nenhuma</option>
-                    <option value="Zona Franca de Manaus">Zona Franca de Manaus</option>
-                    <option value="Área de Livre Comércio">Área de Livre Comércio</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">CNAE Fiscal</label>
-                  <input type="text" value={cnaeFiscal} onChange={(e) => setCnaeFiscal(e.target.value)} placeholder="0000000" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Email NF-e/NFC-e</label>
-                  <input type="text" value={emailNfe} onChange={(e) => setEmailNfe(e.target.value)} placeholder="nfe@empresa.com" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Website</label>
-                  <input type="text" value={websiteCliente} onChange={(e) => setWebsiteCliente(e.target.value)} placeholder="www.empresa.com.br" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-              </div>
+              </details>
             </div>
-
-            {/* Dados de Venda */}
-            <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-2">
-              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase mb-2">💼 Dados de Venda</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Limite de Crédito (R$)</label>
-                  <input type="text" value={limiteCredito} onChange={(e) => setLimiteCredito(e.target.value)} placeholder="999.999,99" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Forma de Cobrança (padrão)</label>
-                  <select value={formaCobranca} onChange={(e) => setFormaCobranca(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Boleto">Boleto</option>
-                    <option value="A prazo">A prazo</option>
-                    <option value="À vista">À vista</option>
-                    <option value="PIX">PIX</option>
-                    <option value="Depósito">Depósito</option>
-                    <option value="Cartão">Cartão</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Tabela de Preços</label>
-                  <input type="text" value={tabelaPrecos} onChange={(e) => setTabelaPrecos(e.target.value)} placeholder="Nome da tabela" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Condição de Pagamento</label>
-                  <input type="text" value={condicaoPagamento} onChange={(e) => setCondicaoPagamento(e.target.value)} placeholder="30/60/90 dias" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Dados de Relacionamento (CRM) */}
-            <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-2">
-              <p className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase mb-2">🌐 Dados de Relacionamento (CRM)</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Região</label>
-                  <input type="text" value={regiao} onChange={(e) => setRegiao(e.target.value)} placeholder="Região" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Perfil</label>
-                  <select value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Distribuidor">Distribuidor</option>
-                    <option value="Varejista">Varejista</option>
-                    <option value="Atacadista">Atacadista</option>
-                    <option value="Indústria">Indústria</option>
-                    <option value="Consumidor Final">Consumidor Final</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Forma de Pedido</label>
-                  <select value={formaPedido} onChange={(e) => setFormaPedido(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Telefone">Telefone</option>
-                    <option value="WhatsApp">WhatsApp</option>
-                    <option value="Email">Email</option>
-                    <option value="Presencial">Presencial</option>
-                    <option value="App">App</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Produtos de Interesse</label>
-                  <input type="text" value={produtosInteresse} onChange={(e) => setProdutosInteresse(e.target.value)} placeholder="Produtos de interesse" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Probabilidade de Negócio</label>
-                  <select value={probabilidadeNegocio} onChange={(e) => setProbabilidadeNegocio(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Média">Média</option>
-                    <option value="Baixa">Baixa</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Tamanho</label>
-                  <select value={tamanho} onChange={(e) => setTamanho(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="">Selecione...</option>
-                    <option value="Pequeno">Pequeno</option>
-                    <option value="Médio">Médio</option>
-                    <option value="Grande">Grande</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Atenção</label>
-                  <select value={atencao} onChange={(e) => setAtencao(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="Normal">Normal</option>
-                    <option value="Prioritário">Prioritário</option>
-                    <option value="VIP">VIP</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Fornecedor Atual</label>
-                  <input type="text" value={fornecedorAtual} onChange={(e) => setFornecedorAtual(e.target.value)} placeholder="Concorrente atual" className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Cobrança */}
-            <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-2">
-              <p className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase mb-2">⚠️ Cobrança</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Situação</label>
-                  <select value={situacaoCobranca} onChange={(e) => setSituacaoCobranca(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="SEM PROTESTO">SEM PROTESTO</option>
-                    <option value="EM PROTESTO">EM PROTESTO</option>
-                    <option value="PROTESTADO">PROTESTADO</option>
-                    <option value="NEGATIVADO">NEGATIVADO</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* ===== DADOS PARA MAXIPROD (movidos de Custos de Venda) ===== */}
             <div className="pt-3 pb-1 border-t border-slate-100 dark:border-slate-700 mt-2">

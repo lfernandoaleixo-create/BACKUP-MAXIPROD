@@ -6821,3 +6821,11 @@
 - [x] Queijo Coalho: Chegada exige senha "Guilherme" (G maiúsculo), Perda exige senha "Maria" (M maiúsculo), cada com modal próprio
 - [x] Queijo Coalho: Corrigir registro histórico da PO ZYZ2026-018 de "Fernando" para "Guilherme"
 - [x] Queijo Coalho: Aguardando Processamento mostra skeleton loading ao invés de 0 enquanto carrega
+- [x] Pedido de Venda: Remover seções Dados Fiscais, Dados de Venda (exceto forma pagamento), CRM e Cobrança do formulário
+- [x] Pedido de Venda: Auto-preencher dados do cliente (fiscais, CRM, cobrança, venda) ao selecionar cliente no pedido
+- [ ] Simulação Frete: Camilo deve cotar nos 3 CNPJs obrigatoriamente (se cota em 1, cota nos 3)
+- [ ] Simulação Frete: Flor de Minas deve retornar cotação para MG e SP sempre
+- [ ] Simulação Frete: Corrigir erros de programação nas APIs das transportadoras (não pode dar erro)
+- [ ] Simulação Frete: Leitura inteligente das dimensões do Maxiprod (interpretar C=42, L=30, H=20 ou 42x30x20 ou qualquer formato)
+- [ ] Simulação Frete: Garantir retorno rápido e certeiro de todas as transportadoras em todos os CNPJs
+- [ ] Madeira Produto Acabado: Produto 00249 como variação do produto 00089

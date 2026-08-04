@@ -4,10 +4,13 @@
  * - Seleção de produtos com quantidade e preço
  * - Condição de pagamento e frete
  * - Validação de preço mínimo antes de enviar
+ * 
+ * NOTA: Dados Fiscais, Dados de Venda (exceto forma pagamento), CRM e Cobrança
+ * vêm do cadastro do cliente e são exibidos como read-only no pedido.
  */
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Search, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle, AlertTriangle, ArrowLeft, ShoppingCart, User, MapPin, Package as PackageIcon, CreditCard, Send } from "lucide-react";
+import { Search, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle, AlertTriangle, ArrowLeft, ShoppingCart, User, MapPin, Package as PackageIcon, CreditCard, Send, Info } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useCepLookup } from "@/hooks/useCepLookup";
 
@@ -56,6 +59,9 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
   const [telefone2, setTelefone2] = useState("");
   const [emailContato, setEmailContato] = useState("");
   const [segmento, setSegmento] = useState("");
+
+  // Client extra data (read-only, from cadastro)
+  const [clientCadastroData, setClientCadastroData] = useState<any>(null);
 
   // Products
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -114,6 +120,8 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
     setTelefone2(client.telefone2 || "");
     setEmailContato(client.emailContato || "");
     setSegmento(client.segmento || "");
+    // Store full client data for read-only display
+    setClientCadastroData(client);
     setShowClientDropdown(false);
     setClientSearch("");
   };
@@ -261,6 +269,7 @@ export default function SalesOrderForm({ sellerId, onBack, onSuccess }: SalesOrd
             telefone2={telefone2} setTelefone2={setTelefone2}
             emailContato={emailContato} setEmailContato={setEmailContato}
             segmento={segmento} setSegmento={setSegmento}
+            clientCadastroData={clientCadastroData}
           />
         )}
 
@@ -364,8 +373,10 @@ function ClientStep(props: any) {
     cep, setCep, handleCepChange, cepLoading, cepError, endereco, setEndereco, numero, setNumero, complemento, setComplemento,
     bairro, setBairro, municipio, setMunicipio, uf, setUf,
     telefone1, setTelefone1, telefone2, setTelefone2, emailContato, setEmailContato,
-    segmento, setSegmento,
+    segmento, setSegmento, clientCadastroData,
   } = props;
+
+  const [showCadastroInfo, setShowCadastroInfo] = useState(false);
 
   return (
     <div className="space-y-4 pb-24">
@@ -409,7 +420,7 @@ function ClientStep(props: any) {
       </div>
 
       {/* CNPJ/CPF with lookup button */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         <div>
           <InputField label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" />
           {cnpjCpf.replace(/\D/g, "").length >= 14 && (
@@ -435,23 +446,78 @@ function ClientStep(props: any) {
             />
           )}
         </div>
-        <SelectField label="Regime Tributário" value={regimeTributario} onChange={setRegimeTributario} options={["Normal", "Simples Nacional", "MEI"]} />
       </div>
 
       <InputField label="Razão Social *" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome da empresa" />
       <InputField label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />
 
-      <div className="grid grid-cols-2 gap-3">
-        <SelectField label="Tipo Contribuinte" value={tipoContribuinte} onChange={setTipoContribuinte} options={["Contribuinte", "Isento", "Não contribuinte"]} />
-        <InputField label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <InputField label="Email NF-e" value={emailNfe} onChange={setEmailNfe} placeholder="email@empresa.com" type="email" />
-        <InputField label="CNAE Fiscal" value={cnaeFiscal} onChange={setCnaeFiscal} placeholder="0000000" />
-      </div>
-
-      <SelectField label="Segmento" value={segmento} onChange={setSegmento} options={["", "DISTRIBUIDORA", "SUPERMERCADO", "ATACADO", "VAREJO", "INDÚSTRIA", "RESTAURANTE", "OUTROS"]} />
+      {/* Read-only client cadastro info (Dados Fiscais, CRM, Cobrança, Venda) */}
+      {clientCadastroData && (
+        <div className="border border-blue-200 bg-blue-50/50 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowCadastroInfo(!showCadastroInfo)}
+            className="w-full flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-blue-50"
+          >
+            <span className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5" /> Dados do Cadastro do Cliente
+            </span>
+            {showCadastroInfo ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />}
+          </button>
+          {showCadastroInfo && (
+            <div className="px-3 pb-3 space-y-3">
+              {/* Dados Fiscais */}
+              <div>
+                <p className="text-[9px] font-bold text-blue-500 uppercase mb-1.5">Dados Fiscais</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <ReadOnlyField label="Regime Tributário" value={clientCadastroData.regimeTributario} />
+                  <ReadOnlyField label="Tipo Contribuinte" value={clientCadastroData.tipoContribuinte} />
+                  <ReadOnlyField label="Inscrição Estadual" value={clientCadastroData.inscricaoEstadual} />
+                  <ReadOnlyField label="Email NF-e" value={clientCadastroData.emailNfe} />
+                  <ReadOnlyField label="CNAE Fiscal" value={clientCadastroData.cnaeFiscal} />
+                  <ReadOnlyField label="Segmento" value={clientCadastroData.segmento} />
+                </div>
+              </div>
+              {/* Dados de Venda */}
+              {(clientCadastroData.limiteCredito || clientCadastroData.formaCobranca || clientCadastroData.tabelaPrecos || clientCadastroData.condicaoPagamento) && (
+                <div>
+                  <p className="text-[9px] font-bold text-purple-500 uppercase mb-1.5">Dados de Venda</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <ReadOnlyField label="Limite de Crédito" value={clientCadastroData.limiteCredito} />
+                    <ReadOnlyField label="Forma de Cobrança" value={clientCadastroData.formaCobranca} />
+                    <ReadOnlyField label="Tabela de Preços" value={clientCadastroData.tabelaPrecos} />
+                    <ReadOnlyField label="Condição Pagamento (cadastro)" value={clientCadastroData.condicaoPagamento} />
+                  </div>
+                </div>
+              )}
+              {/* CRM */}
+              {(clientCadastroData.regiao || clientCadastroData.perfil || clientCadastroData.formaPedido || clientCadastroData.probabilidadeNegocio) && (
+                <div>
+                  <p className="text-[9px] font-bold text-teal-500 uppercase mb-1.5">Relacionamento (CRM)</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <ReadOnlyField label="Região" value={clientCadastroData.regiao} />
+                    <ReadOnlyField label="Perfil" value={clientCadastroData.perfil} />
+                    <ReadOnlyField label="Forma de Pedido" value={clientCadastroData.formaPedido} />
+                    <ReadOnlyField label="Probabilidade" value={clientCadastroData.probabilidadeNegocio} />
+                    <ReadOnlyField label="Tamanho" value={clientCadastroData.tamanho} />
+                    <ReadOnlyField label="Atenção" value={clientCadastroData.atencao} />
+                    <ReadOnlyField label="Fornecedor Atual" value={clientCadastroData.fornecedorAtual} />
+                  </div>
+                </div>
+              )}
+              {/* Cobrança */}
+              {clientCadastroData.situacaoCobranca && (
+                <div>
+                  <p className="text-[9px] font-bold text-orange-500 uppercase mb-1.5">Cobrança</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <ReadOnlyField label="Situação" value={clientCadastroData.situacaoCobranca} />
+                  </div>
+                </div>
+              )}
+              <p className="text-[8px] text-blue-400 italic">Estes dados vêm do cadastro do cliente e não podem ser editados aqui.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Address */}
       <div className="border-t border-slate-200 pt-4">
@@ -699,15 +765,15 @@ function ReviewStep({
 }: any) {
   // Calculate DIFAL for Contribuinte in interestadual sales
   const isInterestadual = uf && uf.toUpperCase() !== "MG";
-  const isContribuinte = (tipoContribuinte || "").toLowerCase().includes("contribuinte") && !(tipoContribuinte || "").toLowerCase().includes("n\u00e3o");
+  const isContribuinte = (tipoContribuinte || "").toLowerCase().includes("contribuinte") && !(tipoContribuinte || "").toLowerCase().includes("não");
   
-  // Query DIFAL value: we ask the backend what DIFAL would be if it were "N\u00e3o contribuinte"
+  // Query DIFAL value: we ask the backend what DIFAL would be if it were "Não contribuinte"
   // (because for Contribuinte the backend returns 0, but the client still has to pay it)
   const difalQuery = trpc.salesOrders.calculateSalesCosts.useQuery(
     {
       items: items.map((i: OrderItem) => ({ codigoItem: i.codigoItem, quantidade: i.quantidade, precoUnitario: i.precoUnitario })),
       ufDestino: uf || "MG",
-      tipoContribuinte: "N\u00e3o contribuinte", // Force to get DIFAL value
+      tipoContribuinte: "Não contribuinte", // Force to get DIFAL value
       tipoProduto: "importado",
       freteValor: valorFrete || 0,
     },
@@ -845,6 +911,16 @@ function SelectField({ label, value, onChange, options }: {
           <option key={opt} value={opt}>{opt || "Selecione..."}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div className="bg-white/80 rounded-lg px-2 py-1.5">
+      <p className="text-[8px] text-slate-400 font-medium">{label}</p>
+      <p className="text-[10px] text-slate-700 font-medium truncate">{value}</p>
     </div>
   );
 }
@@ -1028,7 +1104,7 @@ function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: a
             <CheckCircle className="w-3 h-3" /> Dados preenchidos!
           </span>
         ) : (
-          isCpf ? "🔍 Consultar CPF (Receita Federal)" : "🔍 Consultar CNPJ (Receita Federal + Sintegra)"
+          isCpf ? "Consultar CPF (Receita Federal)" : "Consultar CNPJ (Receita Federal + Sintegra)"
         )}
       </button>
       {error && (
@@ -1039,3 +1115,4 @@ function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: a
     </div>
   );
 }
+
