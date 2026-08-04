@@ -4515,8 +4515,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   const [showLossModal, setShowLossModal] = useState(false);
   const [lossItem, setLossItem] = useState<string>("00648");
   const [lossValue, setLossValue] = useState("");
-  const [showLossPasswordModal, setShowLossPasswordModal] = useState(false);
-  const [pendingLossItem, setPendingLossItem] = useState<string>("00648");
+
   const lossMutation = trpc.dashboard.registerQueijoCoalhoLoss.useMutation({
     onSuccess: (result: any) => {
       if (result.success === false && result.error === "senha_incorreta") {
@@ -4529,16 +4528,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     },
     onError: () => toast.error("Erro ao registrar perda"),
   });
-  const handleLossPasswordConfirm = (pwd: string) => {
-    if (pwd === "Maria") {
-      setShowLossPasswordModal(false);
-      setLossItem(pendingLossItem);
-      setShowLossModal(true);
-    } else {
-      toast.error("Senha incorreta");
-      setShowLossPasswordModal(false);
-    }
-  };
+
   const handleRegisterLoss = () => {
     const qty = parseInt(lossValue);
     if (!qty || qty <= 0) { toast.error("Informe a quantidade de caixas perdidas"); return; }
@@ -4554,8 +4544,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   const [arrivalItem, setArrivalItem] = useState<string>("00648");
   const [arrivalPO, setArrivalPO] = useState("");
   const [arrivalQty, setArrivalQty] = useState("");
-  const [showArrivalPasswordModal, setShowArrivalPasswordModal] = useState(false);
-  const [pendingArrivalItem, setPendingArrivalItem] = useState<string>("00648");
+
   const arrivalMutation = trpc.dashboard.registerQueijoCoalhoArrival.useMutation({
     onSuccess: (result: any) => {
       if (result.success === false && result.error === "senha_incorreta") {
@@ -4571,16 +4560,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     },
     onError: () => toast.error("Erro ao registrar chegada"),
   });
-  const handleArrivalPasswordConfirm = (pwd: string) => {
-    if (pwd === "Guilherme") {
-      setShowArrivalPasswordModal(false);
-      setArrivalItem(pendingArrivalItem);
-      setShowArrivalModal(true);
-    } else {
-      toast.error("Senha incorreta");
-      setShowArrivalPasswordModal(false);
-    }
-  };
+
   const handleRegisterArrival = () => {
     const qty = parseInt(arrivalQty);
     if (!qty || qty <= 0) { toast.error("Informe a quantidade de caixas"); return; }
@@ -4787,7 +4767,11 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
     if (trimmed === "Maria") {
       setQcAuth({ role: "maria" });
       setShowAuthModal(false);
-      toast.success("Acesso liberado");
+      toast.success("Acesso liberado — Perdas");
+    } else if (trimmed === "Guilherme") {
+      setQcAuth({ role: "guilherme" });
+      setShowAuthModal(false);
+      toast.success("Acesso liberado — Chegadas");
     } else {
       toast.error("Senha incorreta");
       setShowAuthModal(false);
@@ -4849,8 +4833,7 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
   return (
     <div className="mt-6 md:mt-10">
       <PasswordModal open={showAuthModal} onClose={() => setShowAuthModal(false)} onConfirm={handleAuthConfirm} title="Acesso restrito" />
-      <PasswordModal open={showArrivalPasswordModal} onClose={() => setShowArrivalPasswordModal(false)} onConfirm={handleArrivalPasswordConfirm} />
-      <PasswordModal open={showLossPasswordModal} onClose={() => setShowLossPasswordModal(false)} onConfirm={handleLossPasswordConfirm} />
+
 
       {/* History Dialog */}
       {showHistory && (
@@ -5202,18 +5185,22 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                             <Pencil className="w-3 h-3 text-orange-400" />
                           </button>
                           <div className="flex items-center gap-1 flex-wrap justify-center">
-                            <button
-                              onClick={() => { setPendingArrivalItem(row.codigoItem); setShowArrivalPasswordModal(true); }}
-                              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors"
-                            >
-                              + Chegada
-                            </button>
-                            <button
-                              onClick={() => { setPendingLossItem(row.codigoItem); setShowLossPasswordModal(true); }}
-                              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors"
-                            >
-                              - Perda
-                            </button>
+                            {qcAuth.role === "guilherme" && (
+                              <button
+                                onClick={() => { setArrivalItem(row.codigoItem); setShowArrivalModal(true); }}
+                                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors"
+                              >
+                                + Chegada
+                              </button>
+                            )}
+                            {qcAuth.role === "maria" && (
+                              <button
+                                onClick={() => { setLossItem(row.codigoItem); setShowLossModal(true); }}
+                                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors"
+                              >
+                                - Perda
+                              </button>
+                            )}
                             <button
                               onClick={() => { setMovementsItem(row.codigoItem); setShowMovementsCard(true); }}
                               className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
@@ -5223,7 +5210,15 @@ function QueijoCoalhoSection({ items, showHistory: showHistoryBtn = true }: { it
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm font-semibold text-orange-700">{formatNumber(row.estoqueMaxiprod, true)} cx</span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-sm font-semibold text-orange-700">{formatNumber(row.estoqueMaxiprod, true)} cx</span>
+                          <button
+                            onClick={() => { setMovementsItem(row.codigoItem); setShowMovementsCard(true); }}
+                            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
+                          >
+                            Detalhes
+                          </button>
+                        </div>
                       )}
                     </td>
                     {/* PO (Mar) - POCell style with tooltip - shows 10k→5k conversion */}
