@@ -1440,11 +1440,17 @@ export const salesOrderRouter = router({
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
       if (!order) throw new Error("Pedido não encontrado");
-      // Check if Renato is approving one of his own sellers' orders
+      // Check if the approver is the order's gestor (final authority)
+      const approverFirstName = input.aprovadoPor.split(" ")[0].toUpperCase();
+      const gestorFirstName = (order.gestorName || "").split(" ")[0].toUpperCase();
+      const isGestorApproving = approverFirstName === gestorFirstName && gestorFirstName.length > 0;
+      
+      // Check if Renato is approving one of his own sellers' orders (subgestor flow)
       const isRenatoApproving = input.aprovadoPor.toUpperCase().includes("RENATO");
       let needsGestorApproval = false;
       if (isRenatoApproving) {
-        if (order.gestorName === "RENATO LEDESMA") {
+        if (order.gestorName !== "RENATO LEDESMA") {
+          // Renato is subgestor, needs parent gestor (Juvenal) approval
           needsGestorApproval = true;
         }
       }
@@ -1512,7 +1518,11 @@ export const salesOrderRouter = router({
       }
 
       if (!needsGestorApproval) {
-        if (allCurrentPositionApproved && currentPosition < maxPosition) {
+        // If the GESTOR (final authority) is approving, always fully approve
+        if (isGestorApproving) {
+          newStatus = "aprovado";
+          newPosition = maxPosition;
+        } else if (allCurrentPositionApproved && currentPosition < maxPosition) {
           // Advance to next position
           newPosition = currentPosition + 1;
           newStatus = "pendente"; // Still pending for next position

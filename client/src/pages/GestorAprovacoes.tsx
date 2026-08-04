@@ -5,6 +5,7 @@
  * - Vermelho: pedidos com preço abaixo do mínimo (precisa aprovar/recusar)
  */
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 import { useOperator } from "@/contexts/OperatorContext";
 import { ProductMarginBar } from "@/components/ProductMarginBar";
 import SecureInput from "@/components/SecureInput";
@@ -232,16 +233,20 @@ export default function GestorAprovacoes(props: any = {}) {
         onSuccess: () => {
           utils.salesOrders.listOrders.invalidate();
           utils.salesOrders.getOrdersForGestor.invalidate();
+          toast.success("Pedido aprovado com sucesso! Enviado para a Vitória.");
           setApprovingOrder(null);
           setApprovalObs("");
           setApprovalPassword("");
           setApprovalPasswordError("");
+          setFilter("aprovado");
         },
         onError: (err) => {
           if (err.message.includes("Senha incorreta")) {
             setApprovalPasswordError("Senha incorreta. Use seu primeiro nome com inicial maiúscula.");
+            toast.error("Senha incorreta");
           } else {
             setApprovalPasswordError(err.message);
+            toast.error(err.message);
           }
         },
       }
@@ -273,12 +278,14 @@ export default function GestorAprovacoes(props: any = {}) {
           utils.salesOrders.listOrders.invalidate();
           utils.salesOrders.getOrdersForGestor.invalidate();
           utils.salesOrders.getOrdersPendingGestorApproval.invalidate();
+          toast.success("Pedido aprovado com sucesso! Enviado para a Vitória.");
           setGestorApprovingOrder(null);
           setGestorPassword("");
           setGestorObs("");
+          setFilter("aprovado");
         },
         onError: (err: any) => {
-          alert(err.message || "Erro ao aprovar");
+          toast.error(err.message || "Erro ao aprovar");
         },
       }
     );

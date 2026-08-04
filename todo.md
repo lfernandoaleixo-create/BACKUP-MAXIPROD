@@ -6795,3 +6795,6 @@
 - [x] Redirecionar para aba Pendentes quando há pedidos pendentes na aprovação
 - [ ] Remover aba 'Aguardando Gestor' da tela de aprovações
 - [ ] Investigar e corrigir problema de aprovação do Juvenal (popup ainda aparece)
+- [x] Fix approval logic: when gestor (Juvenal) approves, order becomes 'aprovado' immediately
+- [x] Add success toast after approval and move to Aprovados tab
+- [ ] Verificar que o resumão do pedido aparece na Vitória
