@@ -6849,3 +6849,8 @@
 - [x] Validação no pedido de venda: não permitir concluir sem preencher todos os obrigatórios
 - [x] Alerta para clientes antigos: ao puxar cliente já cadastrado no Maxiprod com campos obrigatórios faltando, exibir alerta informando quais campos precisam ser preenchidos
 - [x] Exigir preenchimento dos campos faltantes antes de prosseguir com o pedido
+
+## UX: Campos Obrigatórios - Melhorias
+- [x] Botão no alerta de campos faltando para abrir modal de preenchimento inline (sem sair da tela do pedido)
+- [x] Validação de formato de e-mail nos campos Email e Email NF-e
+- [x] Validação de formato de CNPJ/CPF (11 ou 14 dígitos)

@@ -3040,10 +3040,18 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       if (!uf.trim()) strictMissing.push("UF (estado)");
       // Contato
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
-      if (!email.trim()) strictMissing.push("E-mail");
+      if (!email.trim()) {
+        strictMissing.push("E-mail");
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        strictMissing.push("E-mail (formato inválido)");
+      }
       // Fiscal
       if (!inscricaoEstadual.trim()) strictMissing.push("Inscrição Estadual");
-      if (!emailNfe.trim()) strictMissing.push("E-mail NF-e");
+      if (!emailNfe.trim()) {
+        strictMissing.push("E-mail NF-e");
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNfe.trim())) {
+        strictMissing.push("E-mail NF-e (formato inválido)");
+      }
       // Cobrança
       if (!situacaoCobranca || situacaoCobranca === "") strictMissing.push("Situação de Cobrança (Com/Sem Protesto)");
       // Perguntas obrigatórias: devem ser respondidas (Sim ou Não)
@@ -5610,6 +5618,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [clientInfoExpanded, setClientInfoExpanded] = useState(false);
   const [vendorClientId, setVendorClientId] = useState<number | null>(null);
   const [showClientValidationError, setShowClientValidationError] = useState(false);
+  const [showMissingFieldsModal, setShowMissingFieldsModal] = useState(false);
 
   // Client history query - fires when a client is selected
   const clientHistoryQuery = trpc.salesOrders.getClientHistory.useQuery(
@@ -6093,10 +6102,25 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     if (!uf.trim()) missing.push("UF");
     // Contato
     if (!telefone1.trim()) missing.push("Telefone 1");
-    if (!emailContato.trim()) missing.push("Email");
+    if (!emailContato.trim()) {
+      missing.push("Email");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailContato.trim())) {
+      missing.push("Email (formato inválido)");
+    }
     // Fiscal
     if (!inscricaoEstadual.trim()) missing.push("Inscrição Estadual");
-    if (!emailNfe.trim()) missing.push("E-mail NF-e");
+    if (!emailNfe.trim()) {
+      missing.push("E-mail NF-e");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNfe.trim())) {
+      missing.push("E-mail NF-e (formato inválido)");
+    }
+    // CNPJ/CPF formato
+    if (cnpjCpf.trim()) {
+      const digits = cnpjCpf.replace(/\D/g, "");
+      if (digits.length !== 11 && digits.length !== 14) {
+        missing.push("CNPJ/CPF (formato inválido - deve ter 11 ou 14 dígitos)");
+      }
+    }
     // Cobrança
     if (!situacaoCobranca || situacaoCobranca === "") missing.push("Situação de Cobrança (Com/Sem Protesto)");
     return missing;
@@ -6380,7 +6404,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             {/* Validation error message */}
             {showClientValidationError && clientMissingFields.length > 0 && (
               <div className="mt-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg">
-                <p className="text-xs font-bold text-red-600 dark:text-red-400 mb-1">Campos obrigatórios não preenchidos ({clientMissingFields.length}):</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-bold text-red-600 dark:text-red-400">Campos obrigatórios não preenchidos ({clientMissingFields.length}):</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowMissingFieldsModal(true)}
+                    className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-semibold rounded-md transition-colors cursor-pointer"
+                  >
+                    Preencher agora
+                  </button>
+                </div>
                 <ul className="list-disc list-inside">
                   {clientMissingFields.map(f => (
                     <li key={f} className="text-xs text-red-500 dark:text-red-300">{f}</li>
@@ -8409,6 +8442,83 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
           onClose={() => setReservePO(null)}
           onSuccess={() => setReservePO(null)}
         />
+      )}
+
+      {/* Modal para preencher campos obrigatórios faltando */}
+      {showMissingFieldsModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowMissingFieldsModal(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-5 py-3 flex items-center justify-between rounded-t-xl">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Preencher Campos Obrigatórios</h3>
+              <button onClick={() => setShowMissingFieldsModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Preencha os campos abaixo para poder prosseguir com o pedido:</p>
+              {clientMissingFields.includes("CNPJ/CPF") && (
+                <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={(v) => { setCnpjCpf(v); setShowClientValidationError(false); }} placeholder="00.000.000/0001-00" required error />
+              )}
+              {clientMissingFields.includes("Razão Social") && (
+                <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social" required error />
+              )}
+              {clientMissingFields.includes("Inscrição Estadual") && (
+                <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" required error />
+              )}
+              {clientMissingFields.includes("CEP") && (
+                <OrderFormInput label="CEP" value={cep} onChange={handleOrderCepChange} placeholder="00000-000" required error />
+              )}
+              {clientMissingFields.includes("Logradouro") && (
+                <OrderFormInput label="Logradouro" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" required error />
+              )}
+              {clientMissingFields.includes("Número") && (
+                <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" required error />
+              )}
+              {clientMissingFields.includes("Bairro") && (
+                <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" required error />
+              )}
+              {clientMissingFields.includes("Cidade") && (
+                <OrderFormInput label="Cidade/Município" value={municipio} onChange={(v) => { setMunicipio(v); setShowClientValidationError(false); }} placeholder="Cidade" required error />
+              )}
+              {clientMissingFields.includes("UF") && (
+                <OrderFormInput label="UF" value={uf} onChange={(v) => { setUf(v); setShowClientValidationError(false); }} placeholder="UF" required error />
+              )}
+              {clientMissingFields.includes("Telefone 1") && (
+                <OrderFormInput label="Telefone 1" value={telefone1} onChange={(v) => { setTelefone1(v); setShowClientValidationError(false); }} placeholder="(00) 00000-0000" required error />
+              )}
+              {clientMissingFields.includes("Email") && (
+                <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error />
+              )}
+              {clientMissingFields.includes("E-mail NF-e") && (
+                <OrderFormInput label="E-mail NF-e" value={emailNfe} onChange={(v) => { setEmailNfe(v); setShowClientValidationError(false); }} placeholder="email-nfe@empresa.com" required error />
+              )}
+              {clientMissingFields.includes("Situação de Cobrança (Com/Sem Protesto)") && (
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação de Cobrança <span className="text-red-500">*</span></label>
+                  <select value={situacaoCobranca} onChange={(e) => { setSituacaoCobranca(e.target.value); setShowClientValidationError(false); }} className="w-full px-3 py-2 text-xs border border-red-300 dark:border-red-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    <option value="">Selecione... *</option>
+                    <option value="SEM PROTESTO">SEM PROTESTO</option>
+                    <option value="COM PROTESTO">COM PROTESTO</option>
+                    <option value="NEGATIVADO">NEGATIVADO</option>
+                    <option value="INADIMPLENTE">INADIMPLENTE</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-5 py-3 flex justify-end gap-2 rounded-b-xl">
+              <button
+                onClick={() => setShowMissingFieldsModal(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => { setShowMissingFieldsModal(false); setShowClientValidationError(true); }}
+                className="px-4 py-2 text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Salvar e Verificar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
