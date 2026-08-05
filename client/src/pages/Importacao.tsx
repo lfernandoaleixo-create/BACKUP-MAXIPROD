@@ -1723,8 +1723,8 @@ function CustoMercadoria() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
   const [pdfViewerTitle, setPdfViewerTitle] = useState("");
-  const exchangeRate = exchangeData?.rate || 5.50;
-
+    const exchangeRate = exchangeData?.rate || 5.50;
+  const rmbRate = (exchangeData as any)?.rmbRate || 7.25;
   const handleExportCustoPdf = async () => {
     setExportingPdf(true);
     try {
@@ -1853,7 +1853,7 @@ function CustoMercadoria() {
       </div>
 
       {custoTab === "realtime" && <CustoTempoReal exchangeRate={exchangeRate} currency={currency} />}
-      {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
+      {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
       {custoTab === "config" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
           <CustoConfigView />
@@ -2217,7 +2217,7 @@ function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; curr
   );
 }
 
-function CustoPosView({ currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { currency: "USD" | "BRL" | "RMB"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
+function CustoPosView({ currency, exchangeRate, rmbRate = 7.25, setPdfViewerUrl, setPdfViewerTitle }: { currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate?: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
   const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
   const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
@@ -2340,6 +2340,7 @@ function CustoPosView({ currency, exchangeRate, setPdfViewerUrl, setPdfViewerTit
                 onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
                 currency={currency}
                 exchangeRate={exchangeRate}
+                rmbRate={rmbRate}
                 setPdfViewerUrl={setPdfViewerUrl}
                 setPdfViewerTitle={setPdfViewerTitle}
               />
@@ -2639,12 +2640,13 @@ function NcmTaxesSection() {
   );
 }
 
-function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: {
+function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate, rmbRate = 7.25, setPdfViewerUrl, setPdfViewerTitle }: {
   supplier: { id: number; name: string; displayName: string | null; category: string | null; poCount: number };
   isExpanded: boolean;
   onToggle: () => void;
   currency: "USD" | "BRL" | "RMB";
   exchangeRate: number;
+  rmbRate?: number;
   setPdfViewerUrl: (url: string | null) => void;
   setPdfViewerTitle: (title: string) => void;
 }) {
@@ -2780,12 +2782,12 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
           </button>
         </div>
       </div>
-      {isExpanded && <SupplierPoList supplierId={supplier.id} currency={currency} exchangeRate={exchangeRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
+      {isExpanded && <SupplierPoList supplierId={supplier.id} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
     </div>
   );
 }
 
-function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { supplierId: number; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
+function SupplierPoList({ supplierId, currency, exchangeRate, rmbRate = 7.25, setPdfViewerUrl, setPdfViewerTitle }: { supplierId: number; currency: "USD" | "BRL" | "RMB"; exchangeRate: number; rmbRate?: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
   const { data: pos, isLoading } = trpc.import.getPosBySupplier.useQuery({ supplierId });
   const [expandedPo, setExpandedPo] = useState<number | null>(null);
   const [showNewPo, setShowNewPo] = useState(false);
@@ -3375,7 +3377,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
             <div>
               {/* PoLogisticsPanel só para POs legacy (Guangzhou - têm valorFator preenchido) */}
               {po.valorFator && <PoLogisticsPanel po={po} currency={currency} exchangeRate={exchangeRate} />}
-              <PoProductsTable poId={po.id} po={po} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} onCollapse={() => setExpandedPo(null)} />
+              <PoProductsTable poId={po.id} po={po} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} rmbRate={rmbRate} onCollapse={() => setExpandedPo(null)} />
             </div>
           )}
         </div>
@@ -3731,7 +3733,7 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
   );
 }
 
-function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50, onCollapse }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; onCollapse?: () => void }) {
+function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50, rmbRate = 7.25, onCollapse }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL" | "RMB"; exchangeRate?: number; rmbRate?: number; onCollapse?: () => void }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
   const { data: vilelaConfig } = trpc.import.getVilelaPercent.useQuery();
@@ -3852,13 +3854,17 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     if (!usdVal) return '';
     const n = Number(usdVal);
     if (isNaN(n)) return usdVal;
-    return currency === 'BRL' ? (n * effectiveRate).toFixed(2) : n.toFixed(2);
+    if (currency === 'BRL') return (n * effectiveRate).toFixed(2);
+    if (currency === 'RMB') return (n * rmbRate).toFixed(2);
+    return n.toFixed(2);
   };
   // Helper: convert input from current currency to USD for storage
   const toUsd = (inputVal: string) => {
     const n = Number(inputVal.replace(',', '.'));
     if (isNaN(n)) return '0';
-    return currency === 'BRL' ? String(n / effectiveRate) : String(n);
+    if (currency === 'BRL') return String(n / effectiveRate);
+    if (currency === 'RMB') return String(n / rmbRate);
+    return String(n);
   };
   // Aliases for compatibility
   const valorCi = valorCiUsd;
