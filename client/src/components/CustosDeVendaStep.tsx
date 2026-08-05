@@ -1012,7 +1012,10 @@ export default function CustosDeVendaStep({
                             {!quote.error ? (
                               <div className="flex items-center gap-2">
                                 <div className="text-right">
-                                  <p className="text-[11px] font-bold text-green-700">{formatCurrency(quote.totalFrete)}</p>
+                                  <p className="text-[11px] font-bold text-green-700">
+                                    {formatCurrency(quote.totalFrete)}
+                                    {totalProdutos > 0 && <span className="ml-1 font-normal text-[8px] text-slate-500">({((quote.totalFrete / totalProdutos) * 100).toFixed(1)}%)</span>}
+                                  </p>
                                   <p className="text-[8px] text-slate-400">{quote.prazo}</p>
                                 </div>
                                 <button

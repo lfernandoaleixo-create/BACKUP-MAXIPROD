@@ -1195,6 +1195,7 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
                             <span className="text-slate-500">{carrier.prazo} dias</span>
                             <span className={`font-bold ${idx === 0 ? 'text-green-700' : 'text-slate-700 dark:text-slate-200'}`}>
                               {formatCurrency(carrier.totalFrete)}
+                              {totalProdutos > 0 && <span className="ml-1 font-normal text-[10px] text-slate-500">({((carrier.totalFrete / totalProdutos) * 100).toFixed(1)}%)</span>}
                             </span>
                           </div>
                         )}

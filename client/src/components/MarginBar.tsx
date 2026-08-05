@@ -274,7 +274,10 @@ export default function MarginBar({ orderId, orderUf, orderCep, orderCnpj, order
                     {!quote.error ? (
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <p className="font-bold text-green-700">{formatCurrency(quote.totalFrete)}</p>
+                          <p className="font-bold text-green-700">
+                            {formatCurrency(quote.totalFrete)}
+                            {orderTotal > 0 && <span className="ml-1 font-normal text-[9px] text-slate-500">({((quote.totalFrete / orderTotal) * 100).toFixed(1)}%)</span>}
+                          </p>
                           <p className="text-slate-400">{quote.prazo}</p>
                         </div>
                         <button

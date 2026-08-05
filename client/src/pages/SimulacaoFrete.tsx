@@ -603,6 +603,11 @@ export default function SimulacaoFrete() {
                         ) : (
                           <span className="font-bold text-green-600 dark:text-green-400">
                             R$ {carrier.totalFrete.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            {result.valorMercadoria > 0 && (
+                              <span className="ml-1 text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                                ({((carrier.totalFrete / result.valorMercadoria) * 100).toFixed(1)}%)
+                              </span>
+                            )}
                           </span>
                         )}
                       </td>

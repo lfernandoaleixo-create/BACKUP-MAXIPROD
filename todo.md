@@ -6880,3 +6880,6 @@
 - [x] Implementar regra de prioridade: Rep3 > Rep2 > Rep1 para identificar vendedor (já implementado em resolveRepresentante)
 - [x] A partir de agosto/2026, todos os vendedores usam essa regra (vendedorReal já populado corretamente)
 - [x] Puxar métricas de venda do Maxiprod por representante para Jordão, Paula, Juvenal e demais (getVendedorRanking já agrupa por vendedorReal)
+
+## Feature: Porcentagem do Frete sobre Valor do Pedido
+- [x] Exibir % do frete sobre valor total em todas as telas de cotação (pedido, proposta, avulsa, margem)
