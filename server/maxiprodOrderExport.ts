@@ -404,9 +404,9 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
   // Buscar peso dos produtos na tabela stock_items
   const itemCodes = items.map(i => i.codigoItem).filter(Boolean);
   const stockData = itemCodes.length > 0
-    ? await db.select({ codigo: stockItems.codigo, pesoLiquido: stockItems.pesoLiquido, pesoBruto: stockItems.pesoBruto })
+    ? await db.select({ codigo: stockItems.codigoItem, pesoLiquido: stockItems.pesoLiquido, pesoBruto: stockItems.pesoBruto })
         .from(stockItems)
-        .where(inArray(stockItems.codigo, itemCodes))
+        .where(inArray(stockItems.codigoItem, itemCodes))
     : [];
   const pesoMap = new Map(stockData.map(s => [s.codigo, { pesoLiquido: Number(s.pesoLiquido) || 0, pesoBruto: Number(s.pesoBruto) || 0 }]));
 

@@ -6838,3 +6838,5 @@
 - [x] Vendedor Jordão: Cadastro de clientes vinculados a ele deve aparecer completo
 - [x] Vendedor Jordão: Todas as permissões ticadas na aba configuração devem funcionar corretamente
 - [x] Exportação Maxiprod: Incluir peso em kg (líquido e bruto) por item no Excel de pedido de venda
+
+- [x] Fix parseDimensions: detecção de unidade por contagem de dígitos (3 casas = mm ÷10, 2 casas = cm, 0.xxx = metros ×100). Produto 00468 "415x280x405" agora corretamente interpretado como 41.5x28x40.5 cm (cubagem 0.047m³ por caixa, não 47m³)
