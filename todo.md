@@ -6883,3 +6883,9 @@
 
 ## Feature: Porcentagem do Frete sobre Valor do Pedido
 - [x] Exibir % do frete sobre valor total em todas as telas de cotação (pedido, proposta, avulsa, margem)
+
+## Feature: Gestão Comercial Mobile - Aprovação de Pedidos
+- [x] Toda lógica de aprovação/rejeição de pedidos deve funcionar no mobile igual ao desktop (já implementado)
+- [x] Detalhes do pedido visíveis no mobile (já responsivo)
+- [x] Botões de aprovar/rejeitar funcionais no mobile (já touch-friendly)
+- [x] Adicionado Jordão e Ana Paula na lista de gestores com hub mobile

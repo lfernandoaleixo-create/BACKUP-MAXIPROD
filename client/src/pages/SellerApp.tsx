@@ -25,7 +25,7 @@ interface SellerSession {
 }
 
 // Nomes que são gestores E vendedores ao mesmo tempo
-const GESTOR_VENDEDOR_NAMES = ["RENATO LEDESMA", "JUVENAL TEIXEIRA"];
+const GESTOR_VENDEDOR_NAMES = ["RENATO LEDESMA", "JUVENAL TEIXEIRA", "JORDAO", "JORDAO LAINE", "ANA PAULA ALEIXO", "PAULA"];
 
 function isGestorVendedor(name: string): boolean {
   return GESTOR_VENDEDOR_NAMES.some(
