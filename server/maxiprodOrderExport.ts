@@ -21,8 +21,8 @@
  */
 import ExcelJS from "exceljs";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { salesOrderRequests, salesOrderRequestItems, stockItems } from "../drizzle/schema";
+import { eq, inArray } from "drizzle-orm";
 
 // EXACT column headers from Maxiprod official template (MAXIPROD.xls)
 // ATENÇÃO: Espaços extras em " Representante/ vendedor " são INTENCIONAIS
@@ -56,6 +56,8 @@ const PEDIDO_HEADERS = [
   "Pedido do cliente (Item)",                                   // AA
   "Item (nº) do pedido do cliente",                             // AB
   "Resultado da importação",                                    // AC
+  "Peso Líquido Total (kg)",                                    // AD (extra - peso por item)
+  "Peso Bruto Total (kg)",                                      // AE (extra - peso por item)
 ];
 
 interface OrderExportData {
@@ -83,6 +85,8 @@ interface OrderExportData {
     unidadeMedida: string;
     precoUnitario: number;
     valorDesconto: number;
+    pesoLiquidoKg?: number;
+    pesoBrutoKg?: number;
   }>;
 }
 
@@ -329,6 +333,9 @@ export async function generateMaxiprodOrderExcel(orderData: OrderExportData): Pr
       "",                                                     // AA: Pedido do cliente (Item)
       "0",                                                    // AB: Item (nº) do pedido do cliente
       "",                                                     // AC: Resultado da importação (preenchido pelo Maxiprod)
+      // Colunas extras (peso em kg)
+      item.pesoLiquidoKg ? (item.pesoLiquidoKg * (item.quantidade || 1)).toFixed(3) : "",  // AD: Peso Líquido Total (kg)
+      item.pesoBrutoKg ? (item.pesoBrutoKg * (item.quantidade || 1)).toFixed(3) : "",      // AE: Peso Bruto Total (kg)
     ];
 
     worksheet.addRow(row);
@@ -394,6 +401,15 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     .where(eq(salesOrderRequestItems.orderId, orderId));
   if (items.length === 0) throw new Error("Pedido sem itens");
 
+  // Buscar peso dos produtos na tabela stock_items
+  const itemCodes = items.map(i => i.codigoItem).filter(Boolean);
+  const stockData = itemCodes.length > 0
+    ? await db.select({ codigo: stockItems.codigo, pesoLiquido: stockItems.pesoLiquido, pesoBruto: stockItems.pesoBruto })
+        .from(stockItems)
+        .where(inArray(stockItems.codigo, itemCodes))
+    : [];
+  const pesoMap = new Map(stockData.map(s => [s.codigo, { pesoLiquido: Number(s.pesoLiquido) || 0, pesoBruto: Number(s.pesoBruto) || 0 }]));
+
   // Determine operação fiscal based on UF (apenas código numérico)
   const uf = order.uf || "";
   const operacaoFiscal = deriveOperacaoFiscal(order.operacaoFiscal || null, uf);
@@ -425,14 +441,19 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     // REGRA: Todos os produtos do Grupo Fox são vendidos em CAIXA (CX).
     // Independente do que está salvo no item (pode vir 'un' da unidade de estoque),
     // a exportação para Maxiprod SEMPRE deve usar 'CX' como unidade de venda.
-    items: items.map(item => ({
-      codigoItem: item.codigoItem || "",
-      descricaoItem: item.descricaoItem || "",
-      quantidade: Number(item.quantidade) || 1,
-      unidadeMedida: "CX",
-      precoUnitario: Number(item.precoUnitario) || 0,
-      valorDesconto: 0,
-    })),
+    items: items.map(item => {
+      const peso = pesoMap.get(item.codigoItem) || { pesoLiquido: 0, pesoBruto: 0 };
+      return {
+        codigoItem: item.codigoItem || "",
+        descricaoItem: item.descricaoItem || "",
+        quantidade: Number(item.quantidade) || 1,
+        unidadeMedida: "CX",
+        precoUnitario: Number(item.precoUnitario) || 0,
+        valorDesconto: 0,
+        pesoLiquidoKg: peso.pesoLiquido,
+        pesoBrutoKg: peso.pesoBruto,
+      };
+    }),
   };
 
   const buffer = await generateMaxiprodOrderExcel(orderData);

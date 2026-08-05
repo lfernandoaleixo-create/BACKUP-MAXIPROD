@@ -616,8 +616,8 @@ function ContainerTracker({ container, onDataReadyRef }: {
           { lat: -23.95, lng: -46.30 }, // Santos
         ];
 
-        const originKey = (d.origin_port || '').toUpperCase().split(',')[0].trim();
-        const destKey = (d.destination_port || '').toUpperCase().split(',')[0].trim();
+        const originKey = (d.origin_port || '').toUpperCase().split(',')[0].split('(')[0].trim();
+        const destKey = (d.destination_port || '').toUpperCase().split(',')[0].split('(')[0].trim();
         const originCoord = portCoords[originKey] || null;
         const destCoord = portCoords[destKey] || null;
         originPosition = originCoord;

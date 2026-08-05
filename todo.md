@@ -6837,3 +6837,4 @@
 - [x] Vendedor Jordão: Histórico de pedidos de venda não aparece (buscar por Jordão ou Jordão Line no Maxiprod)
 - [x] Vendedor Jordão: Cadastro de clientes vinculados a ele deve aparecer completo
 - [x] Vendedor Jordão: Todas as permissões ticadas na aba configuração devem funcionar corretamente
+- [x] Exportação Maxiprod: Incluir peso em kg (líquido e bruto) por item no Excel de pedido de venda
