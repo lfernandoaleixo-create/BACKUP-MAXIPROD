@@ -235,6 +235,8 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
   // Freight simulation
   const [showFreightModal, setShowFreightModal] = useState(false);
   const [freightResult, setFreightResult] = useState<any>(null);
+  const [freightManualVolumes, setFreightManualVolumes] = useState("");
+  const [freightManualValorNf, setFreightManualValorNf] = useState("");
   const quoteFreightMutation = trpc.salesOrders.quoteAllCarriers.useMutation();
 
   // Validade helper
@@ -1071,24 +1073,11 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
 
             {/* Simular Frete Avulso */}
             <button
-              onClick={async () => {
+              onClick={() => {
                 setShowFreightModal(true);
                 setFreightResult(null);
-                const cepClean = cep.replace(/\D/g, "");
-                if (cepClean.length !== 8) return;
-                try {
-                  const result = await quoteFreightMutation.mutateAsync({
-                    cepDestino: cepClean,
-                    cnpjDestinatario: cnpjCpf.replace(/\D/g, "") || undefined,
-                    peso: totalPeso > 0 ? totalPeso : totalVolumes * 10,
-                    metroCubico: totalCubagem > 0 ? totalCubagem : (totalPeso > 0 ? totalPeso * 0.004 : totalVolumes * 0.05),
-                    valorMercadoria: totalProdutos,
-                    volumes: totalVolumes || 1,
-                  });
-                  setFreightResult(result);
-                } catch (err: any) {
-                  setFreightResult({ error: err?.message || "Erro ao simular frete" });
-                }
+                setFreightManualVolumes(String(totalVolumes || 1));
+                setFreightManualValorNf(String(totalProdutos.toFixed(2)));
               }}
               disabled={items.length === 0 || !cep}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-slate-300 disabled:to-slate-400 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
@@ -1120,7 +1109,7 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
 
             {/* Freight Simulation Results */}
             {showFreightModal && (
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600 rounded-lg p-3 space-y-2">
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600 rounded-lg p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">Simulação de Frete</span>
                   <button onClick={() => setShowFreightModal(false)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
@@ -1129,15 +1118,62 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
                   <span>CEP: {cep}</span>
                   <span>Peso: {totalPeso.toFixed(1)}kg</span>
                   <span>Cubagem: {totalCubagem.toFixed(4)}m³</span>
-                  <span>Valor NF: {formatCurrency(totalProdutos)}</span>
-                  <span>Volumes: {totalVolumes}</span>
                 </div>
-                {quoteFreightMutation.isPending && (
-                  <div className="flex items-center gap-2 py-3">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    <span className="text-xs text-slate-500">Cotando nas 5 transportadoras...</span>
+                {/* Manual input fields */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-600 dark:text-slate-300">Volumes *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={freightManualVolumes}
+                      onChange={(e) => setFreightManualVolumes(e.target.value)}
+                      className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      placeholder="Ex: 10"
+                    />
                   </div>
-                )}
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-600 dark:text-slate-300">Valor da NF (R$) *</label>
+                    <input
+                      type="text"
+                      value={freightManualValorNf}
+                      onChange={(e) => setFreightManualValorNf(e.target.value)}
+                      className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      placeholder="Ex: 5000.00"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    setFreightResult(null);
+                    const cepClean = cep.replace(/\D/g, "");
+                    if (cepClean.length !== 8) { setFreightResult({ error: "CEP inválido" }); return; }
+                    const valorNf = parseFloat(freightManualValorNf.replace(/[^\d.,]/g, "").replace(",", "."));
+                    const volumes = parseInt(freightManualVolumes) || 1;
+                    if (!valorNf || valorNf <= 0) { setFreightResult({ error: "Informe o valor da NF" }); return; }
+                    try {
+                      const result = await quoteFreightMutation.mutateAsync({
+                        cepDestino: cepClean,
+                        cnpjDestinatario: cnpjCpf.replace(/\D/g, "") || undefined,
+                        peso: totalPeso > 0 ? totalPeso : volumes * 10,
+                        metroCubico: totalCubagem > 0 ? totalCubagem : (totalPeso > 0 ? totalPeso * 0.004 : volumes * 0.05),
+                        valorMercadoria: valorNf,
+                        volumes,
+                      });
+                      setFreightResult(result);
+                    } catch (err: any) {
+                      setFreightResult({ error: err?.message || "Erro ao simular frete" });
+                    }
+                  }}
+                  disabled={quoteFreightMutation.isPending}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  {quoteFreightMutation.isPending ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Cotando...</>
+                  ) : (
+                    <><Truck className="w-3.5 h-3.5" /> Simular Frete</>
+                  )}
+                </button>
                 {freightResult?.error && (
                   <p className="text-xs text-red-600">{freightResult.error}</p>
                 )}
