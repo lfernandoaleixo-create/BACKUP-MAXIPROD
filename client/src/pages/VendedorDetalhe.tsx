@@ -6674,6 +6674,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       const lastItems = lastOrderQuery.data!.items;
                       const availableProds = productsQuery.data || [];
                       const newItems: typeof items = [];
+                      // Reset data de entrega to today (avoid retroactive date from last order)
+                      const today = new Date().toISOString().split('T')[0];
+                      setDataEntregaPedido(today);
+                      setPrevisaoEntregaPedido(today);
                       for (const li of lastItems) {
                         const prod = availableProds.find((p: any) => p.codigoItem === li.codigoItem);
                         // Usar o preço EXATO do último pedido (li.precoUnitario) - idêntico ao original

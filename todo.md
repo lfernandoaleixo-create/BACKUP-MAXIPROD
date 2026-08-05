@@ -6889,3 +6889,11 @@
 - [x] Detalhes do pedido visíveis no mobile (já responsivo)
 - [x] Botões de aprovar/rejeitar funcionais no mobile (já touch-friendly)
 - [x] Adicionado Jordão e Ana Paula na lista de gestores com hub mobile
+
+## Bug: Checkboxes de Estoque para Ana Paula (Gestor sem subordinados)
+- [x] Incluir o próprio gestor como vendedor na matriz de estoque quando não tem vendedores subordinados (criado seller_permissions record)
+- [x] Checkboxes devem aparecer para ticar produtos individualmente ou todos
+
+## Feature: Data de Entrega Editável ao Repetir Pedido
+- [x] Quando vendedor repete último pedido, data de entrega é resetada para hoje (não puxa data retroativa)
+- [x] Campo de data de entrega continua editável no step de pagamento para o vendedor ajustar
