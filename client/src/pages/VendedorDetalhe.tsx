@@ -3019,7 +3019,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
   }, [redespachoCnpj]);
 
   const handleSave = async () => {
-    // Campos obrigatórios que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
+    // Campos obrigatórios para exportação Maxiprod (exceto Guilherme que pode pular)
     if (!isGuilherme) {
       const strictMissing: string[] = [];
       // Validação de formato CNPJ/CPF
@@ -3028,11 +3028,24 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         setError("CNPJ/CPF inválido! \n\u2022 CPF deve ter 11 dígitos (ex: 123.456.789-00)\n\u2022 CNPJ deve ter 14 dígitos (ex: 12.345.678/0001-00)\n\nDica: Digite apenas os números, o sistema formata automaticamente.");
         return;
       }
+      // Dados básicos
       if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
+      if (!razaoSocial.trim()) strictMissing.push("Razão Social");
+      // Endereço completo
       if (!cep.trim()) strictMissing.push("CEP");
+      if (!logradouro.trim()) strictMissing.push("Logradouro");
+      if (!numero.trim()) strictMissing.push("Número");
+      if (!bairro.trim()) strictMissing.push("Bairro");
+      if (!cidade.trim()) strictMissing.push("Cidade");
       if (!uf.trim()) strictMissing.push("UF (estado)");
+      // Contato
       if (!telefone1.trim()) strictMissing.push("Telefone 1");
       if (!email.trim()) strictMissing.push("E-mail");
+      // Fiscal
+      if (!inscricaoEstadual.trim()) strictMissing.push("Inscrição Estadual");
+      if (!emailNfe.trim()) strictMissing.push("E-mail NF-e");
+      // Cobrança
+      if (!situacaoCobranca || situacaoCobranca === "") strictMissing.push("Situação de Cobrança (Com/Sem Protesto)");
       // Perguntas obrigatórias: devem ser respondidas (Sim ou Não)
       if (possuiRedespacho === null) strictMissing.push("Possui redespacho? (selecione Sim ou Não)");
       if (enderecoEntregaMesmo === null) strictMissing.push("Endereço de entrega (selecione Sim ou Não)");
@@ -3047,7 +3060,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         if (!entregaTelefone.trim()) strictMissing.push("Telefone da Entrega");
       }
       if (strictMissing.length > 0) {
-        setError(`Campos obrigatórios não preenchidos: ${strictMissing.join(", ")}`);
+        setError(`Campos obrigatórios não preenchidos:\n\n${strictMissing.map(f => `• ${f}`).join("\n")}`);
         return;
       }
     }
@@ -3402,13 +3415,13 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             </div>
           )}
           {!isCpf && (
-            <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
+            <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" required />
           )}
         </div>
 
         {/* Contribuinte determinado automaticamente pela IE - DESATIVADO temporariamente */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <FormInput label="Razão Social" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" />
+          <FormInput label="Razão Social" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" required />
           <FormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
@@ -3440,17 +3453,17 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             {cepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{cepError}</span>}
           </div>
           <div className="sm:col-span-2">
-            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" />
+            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" required />
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" />
+          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" required />
           <FormInput label="Complemento" value={complemento} onChange={setComplemento} placeholder="Sala, Bloco..." />
-          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" />
-          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" />
+          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" required />
+          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" required />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" />
+          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" required />
           <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" required />
           <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
           <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" required />
@@ -3563,6 +3576,27 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             </div>
           </div>
         )}
+      </div>
+
+      {/* Situação de Cobrança (obrigatório) */}
+      <div className="mb-3">
+        <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação de Cobrança <span className="text-red-500">*</span></label>
+        <select
+          value={situacaoCobranca}
+          onChange={(e) => setSituacaoCobranca(e.target.value)}
+          className={`w-full px-3 py-2 border rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 ${!situacaoCobranca ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
+        >
+          <option value="">Selecione... *</option>
+          <option value="SEM PROTESTO">SEM PROTESTO</option>
+          <option value="COM PROTESTO">COM PROTESTO</option>
+          <option value="NEGATIVADO">NEGATIVADO</option>
+          <option value="INADIMPLENTE">INADIMPLENTE</option>
+        </select>
+      </div>
+
+      {/* E-mail NF-e (obrigatório) */}
+      <div className="mb-3">
+        <FormInput label="E-mail NF-e" value={emailNfe} onChange={setEmailNfe} placeholder="email-nfe@empresa.com" required />
       </div>
 
       {/* Observações */}
@@ -5168,7 +5202,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [tamanho, setTamanho] = useState("");
   const [atencao, setAtencao] = useState("Normal");
   // Cobrança
-  const [situacaoCobranca, setSituacaoCobranca] = useState("SEM PROTESTO");
+  const [situacaoCobranca, setSituacaoCobranca] = useState("");
   // Redespacho
   const [possuiRedespacho, setPossuiRedespacho] = useState(false);
   const [redespachoCnpj, setRedespachoCnpj] = useState("");
@@ -5490,7 +5524,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setProbabilidadeNegocio(order.probabilidadeNegocio || "");
       setTamanho(order.tamanho || "");
       setAtencao(order.atencao || "Normal");
-      setSituacaoCobranca(order.situacaoCobranca || "SEM PROTESTO");
+      setSituacaoCobranca(order.situacaoCobranca || "");
       // Redespacho
       setPossuiRedespacho(order.possuiRedespacho || false);
       setRedespachoCnpj(order.redespachoCnpj || "");
@@ -5634,7 +5668,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     setTamanho(client.tamanho || "");
     setAtencao(client.atencao || "Normal");
     // Cobrança
-    setSituacaoCobranca(client.situacaoCobranca || "SEM PROTESTO");
+    setSituacaoCobranca(client.situacaoCobranca || "");
     // Redespacho
     setPossuiRedespacho(!!client.possuiRedespacho);
     setRedespachoCnpj(client.redespachoCnpj || "");
@@ -5690,9 +5724,29 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     setVendorClientId(client.vendorClientId || null);
     setShowClientDropdown(false);
     setClientSearch("");
-    setShowClientValidationError(false);
     // Set client name for history lookup
     setSelectedClientName(client.razaoSocial || client.nomeFantasia || "");
+
+    // Verificar campos obrigatórios faltando no cliente importado
+    const importedMissing: string[] = [];
+    if (!client.cnpjCpf) importedMissing.push("CNPJ/CPF");
+    if (!client.razaoSocial) importedMissing.push("Razão Social");
+    if (!client.cep) importedMissing.push("CEP");
+    if (!client.endereco && !client.logradouro) importedMissing.push("Logradouro");
+    if (!client.numero) importedMissing.push("Número");
+    if (!client.bairro) importedMissing.push("Bairro");
+    if (!client.municipio && !client.cidade) importedMissing.push("Cidade");
+    if (!client.uf) importedMissing.push("UF");
+    if (!client.telefone1) importedMissing.push("Telefone 1");
+    if (!client.emailContato && !client.email) importedMissing.push("Email");
+    if (!client.inscricaoEstadual) importedMissing.push("Inscrição Estadual");
+    if (!client.emailNfe) importedMissing.push("E-mail NF-e");
+    if (!client.situacaoCobranca) importedMissing.push("Situação de Cobrança (Com/Sem Protesto)");
+    if (importedMissing.length > 0) {
+      setShowClientValidationError(true);
+    } else {
+      setShowClientValidationError(false);
+    }
   };
 
   // Filtered products for selection
@@ -5777,6 +5831,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       alert("Preencha a Condição de Pagamento (ex: 21/35 ou 30/60/90) para pagamentos a prazo.");
       return;
     }
+    if (!isSimulation && !situacaoCobranca) {
+      alert("Selecione a Situação de Cobrança (Com Protesto / Sem Protesto) antes de finalizar o pedido.");
+      return;
+    }
     if (isEditMode && editOrderId) {
       // Update existing order
       updateOrderMutation.mutate({
@@ -5827,7 +5885,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         probabilidadeNegocio: probabilidadeNegocio || undefined,
         tamanho: tamanho || undefined,
         atencao: atencao !== "Normal" ? atencao : undefined,
-        situacaoCobranca: situacaoCobranca !== "SEM PROTESTO" ? situacaoCobranca : undefined,
+        situacaoCobranca: situacaoCobranca || undefined,
         possuiRedespacho: possuiRedespacho || undefined,
         redespachoCnpj: possuiRedespacho ? (redespachoCnpj || undefined) : undefined,
         redespachoRazaoSocial: possuiRedespacho ? (redespachoRazaoSocial || undefined) : undefined,
@@ -5928,7 +5986,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       tamanho: tamanho || undefined,
       atencao: atencao !== "Normal" ? atencao : undefined,
       // Cobrança
-      situacaoCobranca: situacaoCobranca !== "SEM PROTESTO" ? situacaoCobranca : undefined,
+      situacaoCobranca: situacaoCobranca || undefined,
       // Redespacho
       possuiRedespacho: possuiRedespacho || undefined,
       redespachoCnpj: possuiRedespacho ? (redespachoCnpj || undefined) : undefined,
@@ -6023,10 +6081,24 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   // Required fields for client (same as new client registration)
   const getClientMissingFields = () => {
     const missing: string[] = [];
+    // Dados básicos
     if (!cnpjCpf.trim()) missing.push("CNPJ/CPF");
+    if (!razaoSocial.trim()) missing.push("Razão Social");
+    // Endereço completo
     if (!cep.trim()) missing.push("CEP");
+    if (!endereco.trim()) missing.push("Logradouro");
+    if (!numero.trim()) missing.push("Número");
+    if (!bairro.trim()) missing.push("Bairro");
+    if (!municipio.trim()) missing.push("Cidade");
+    if (!uf.trim()) missing.push("UF");
+    // Contato
     if (!telefone1.trim()) missing.push("Telefone 1");
     if (!emailContato.trim()) missing.push("Email");
+    // Fiscal
+    if (!inscricaoEstadual.trim()) missing.push("Inscrição Estadual");
+    if (!emailNfe.trim()) missing.push("E-mail NF-e");
+    // Cobrança
+    if (!situacaoCobranca || situacaoCobranca === "") missing.push("Situação de Cobrança (Com/Sem Protesto)");
     return missing;
   };
   const clientMissingFields = getClientMissingFields();
@@ -6034,24 +6106,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const canProceedProdutos = items.length > 0 && items.every(i => i.quantidade > 0 && i.precoUnitario > 0);
 
   const handleProceedToProducts = async () => {
-    // Campos OBRIGATÓRIOS que bloqueiam: CNPJ, CEP, Telefone 1, Email (exceto Guilherme)
+    // Campos OBRIGATÓRIOS para exportação Maxiprod - BLOQUEIAM avanço (exceto simulação)
     if (!canSkipClient) {
-      const strictMissing: string[] = [];
-      if (!cnpjCpf.trim()) strictMissing.push("CNPJ/CPF");
-      if (!cep.trim()) strictMissing.push("CEP");
-      if (!telefone1.trim()) strictMissing.push("Telefone 1");
-      if (!emailContato.trim()) strictMissing.push("Email");
-      if (strictMissing.length > 0) {
+      if (clientMissingFields.length > 0) {
         setShowClientValidationError(true);
         return; // Bloqueia avanço
       }
     }
-    // Campos com asterisco continuam sinalizados, mas não bloqueiam o avanço
-    if (!canProceedCliente) {
-      setShowClientValidationError(true);
-    } else {
-      setShowClientValidationError(false);
-    }
+    setShowClientValidationError(false);
     // If this client came from vendor_clients, save any completed fields back
     if (vendorClientId) {
       try {
@@ -6200,22 +6262,27 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <OrderFormInput label="CNPJ/CPF" value={cnpjCpf} onChange={(v) => { setCnpjCpf(v); setShowClientValidationError(false); }} placeholder="00.000.000/0001-00" required error={showClientValidationError} />
-              <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" />
+              <OrderFormInput label="Razão Social" value={razaoSocial} onChange={(v) => { setRazaoSocial(v); setShowClientValidationError(false); }} placeholder="Razão social do cliente" required error={showClientValidationError} />
               <OrderFormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia" />
-              <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" />
+              <OrderFormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={(v) => { setInscricaoEstadual(v); setShowClientValidationError(false); }} placeholder="IE" required error={showClientValidationError} />
               <div className="relative">
               <OrderFormInput label="CEP" value={cep} onChange={handleOrderCepChange} placeholder="00000-000" required error={showClientValidationError} />
               {orderCepLoading && <span className="absolute right-2 top-6 text-[9px] text-teal-500 animate-pulse">Buscando...</span>}
               {orderCepError && <span className="absolute right-2 top-6 text-[9px] text-red-500">{orderCepError}</span>}
               </div>
-              <OrderFormInput label="Endereço" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" />
-              <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" />
-              <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" />
-              <OrderFormInput label="Município" value={municipio} onChange={(v) => { setMunicipio(v); setShowClientValidationError(false); }} placeholder="Cidade" />
-              <OrderFormInput label="UF" value={uf} onChange={(v) => { setUf(v); setShowClientValidationError(false); }} placeholder="UF" />
+              <OrderFormInput label="Endereço" value={endereco} onChange={(v) => { setEndereco(v); setShowClientValidationError(false); }} placeholder="Rua/Av" required error={showClientValidationError} />
+              <OrderFormInput label="Número" value={numero} onChange={(v) => { setNumero(v); setShowClientValidationError(false); }} placeholder="Nº" required error={showClientValidationError} />
+              <OrderFormInput label="Bairro" value={bairro} onChange={(v) => { setBairro(v); setShowClientValidationError(false); }} placeholder="Bairro" required error={showClientValidationError} />
+              <OrderFormInput label="Município" value={municipio} onChange={(v) => { setMunicipio(v); setShowClientValidationError(false); }} placeholder="Cidade" required error={showClientValidationError} />
+              <OrderFormInput label="UF" value={uf} onChange={(v) => { setUf(v); setShowClientValidationError(false); }} placeholder="UF" required error={showClientValidationError} />
               <OrderFormInput label="Telefone 1" value={telefone1} onChange={(v) => { setTelefone1(v); setShowClientValidationError(false); }} placeholder="(00) 00000-0000" required error={showClientValidationError} />
               <OrderFormInput label="Email" value={emailContato} onChange={(v) => { setEmailContato(v); setShowClientValidationError(false); }} placeholder="email@empresa.com" required error={showClientValidationError} />
               <OrderFormInput label="Segmento" value={segmento} onChange={setSegmento} placeholder="Indústria, Loja, Distribuidora..." />
+            </div>
+
+            {/* E-mail NF-e (obrigatório) */}
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <OrderFormInput label="E-mail NF-e" value={emailNfe} onChange={(v) => { setEmailNfe(v); setShowClientValidationError(false); }} placeholder="email-nfe@empresa.com" required error={showClientValidationError} />
             </div>
 
             {/* COBRANÇA */}
@@ -6223,8 +6290,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase mb-2">⚠️ COBRANÇA</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação</label>
-                  <select value={situacaoCobranca} onChange={(e) => setSituacaoCobranca(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Situação de Cobrança <span className="text-red-500">*</span></label>
+                  <select value={situacaoCobranca} onChange={(e) => { setSituacaoCobranca(e.target.value); setShowClientValidationError(false); }} className={`w-full px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 ${!situacaoCobranca && showClientValidationError ? 'border-red-400 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}>
+                    <option value="">Selecione... *</option>
                     <option value="SEM PROTESTO">SEM PROTESTO</option>
                     <option value="COM PROTESTO">COM PROTESTO</option>
                     <option value="NEGATIVADO">NEGATIVADO</option>
@@ -6310,33 +6378,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             )}
 
             {/* Validation error message */}
-            {showClientValidationError && (() => {
-              const strictMissing = ["CNPJ/CPF", "CEP", "Telefone 1", "Email"].filter(f => {
-                if (f === "CNPJ/CPF") return !cnpjCpf.trim();
-                if (f === "CEP") return !cep.trim();
-                if (f === "Telefone 1") return !telefone1.trim();
-                if (f === "Email") return !emailContato.trim();
-                return false;
-              });
-              const hasStrictError = !canSkipClient && strictMissing.length > 0;
-              return (
-                <div className={`mt-3 px-3 py-2.5 ${hasStrictError ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700' : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700'} rounded-lg`}>
-                  {hasStrictError && (
-                    <>
-                      <p className="text-xs font-bold text-red-600 dark:text-red-400 mb-1">Campos obrigatórios (bloqueiam avanço):</p>
-                      <p className="text-xs text-red-500 dark:text-red-300">{strictMissing.join(", ")}</p>
-                    </>
-                  )}
-                  {clientMissingFields.length > 0 && !hasStrictError && (
-                    <>
-                      <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Campos pendentes (não obrigatórios para avançar):</p>
-                      <p className="text-xs text-amber-500 dark:text-amber-300">{clientMissingFields.join(", ")}</p>
-                      <p className="text-[10px] text-amber-400 dark:text-amber-500 mt-1">Você pode avançar e preencher depois.</p>
-                    </>
-                  )}
-                </div>
-              );
-            })()}
+            {showClientValidationError && clientMissingFields.length > 0 && (
+              <div className="mt-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg">
+                <p className="text-xs font-bold text-red-600 dark:text-red-400 mb-1">Campos obrigatórios não preenchidos ({clientMissingFields.length}):</p>
+                <ul className="list-disc list-inside">
+                  {clientMissingFields.map(f => (
+                    <li key={f} className="text-xs text-red-500 dark:text-red-300">{f}</li>
+                  ))}
+                </ul>
+                <p className="text-[10px] text-red-400 dark:text-red-500 mt-2">Preencha todos os campos obrigatórios para avançar.</p>
+              </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <button

@@ -6840,3 +6840,12 @@
 - [x] Exportação Maxiprod: Incluir peso em kg (líquido e bruto) por item no Excel de pedido de venda
 
 - [x] Fix parseDimensions: detecção de unidade por contagem de dígitos (3 casas = mm ÷10, 2 casas = cm, 0.xxx = metros ×100). Produto 00468 "415x280x405" agora corretamente interpretado como 41.5x28x40.5 cm (cubagem 0.047m³ por caixa, não 47m³)
+
+## Feature: Campos Obrigatórios (Maxiprod Export)
+- [x] Definir lista de campos obrigatórios baseados nas 29 colunas exportáveis para Maxiprod
+- [x] Campo "com protesto / sem protesto" obrigatório no cadastro de cliente e pedido de venda
+- [x] Adicionar asterisco (*) visual em todos os campos obrigatórios
+- [x] Validação no cadastro de cliente: não permitir salvar sem preencher todos os obrigatórios
+- [x] Validação no pedido de venda: não permitir concluir sem preencher todos os obrigatórios
+- [x] Alerta para clientes antigos: ao puxar cliente já cadastrado no Maxiprod com campos obrigatórios faltando, exibir alerta informando quais campos precisam ser preenchidos
+- [x] Exigir preenchimento dos campos faltantes antes de prosseguir com o pedido
