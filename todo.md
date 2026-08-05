@@ -6861,3 +6861,6 @@
 ## Feature: Condição de Frete na Aba Faturamento
 - [x] Adicionar checkbox de permissão nas Configurações para "Visualizar Condição de Frete" na aba Faturamento
 - [x] Exibir Condição de Frete (CIF, FOB, Sem ocorrência, etc.) nos pedidos da aba Faturamento para quem tem permissão
+
+## Bug: Observações Internas aparecendo na NF
+- [x] Remover Estado/Frete/Transportadora/Protocolo da coluna V (Informações adicionais do produto) na exportação Maxiprod — essa coluna aparece na NF e não deve conter info interna

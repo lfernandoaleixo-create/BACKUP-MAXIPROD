@@ -219,38 +219,12 @@ function tipoFreteToCode(tipoFrete: string | null | undefined): string {
  * e a Vitória preenche manualmente no Maxiprod quando necessário.
  */
 function buildInfoAdicionais(orderData: OrderExportData): string {
-  const parts: string[] = [];
-  
-  // Estado configurável (ex: MADEIRA)
-  if (orderData.estadoConfiguravel) {
-    parts.push(`Estado: ${orderData.estadoConfiguravel}`);
-  }
-  
-  // Condição do frete (0=CIF, 1=FOB, 9=Retira)
-  const codFrete = tipoFreteToCode(orderData.tipoFrete);
-  const descFrete = orderData.tipoFrete || "CIF";
-  parts.push(`Frete: ${codFrete} (${descFrete})`);
-  
-  // Transportadora selecionada
-  if (orderData.transportadora) {
-    parts.push(`Transportadora: ${orderData.transportadora}`);
-  }
-  
-  // Valor do frete (informativo)
-  if (orderData.valorFrete && orderData.valorFrete > 0) {
-    parts.push(`Valor frete: R$ ${orderData.valorFrete.toFixed(2).replace('.', ',')}`);
-  }
-  
-  // Protocolo da cotação
-  if (orderData.protocoloCotacao) {
-    parts.push(`Protocolo: ${orderData.protocoloCotacao}`);
-  }
-  
-  // NOTA: observacoesInternas NÃO são exportadas para o Maxiprod.
-  // Elas aparecem apenas no Manus para Vitória/gestores consultarem.
-  // Se incluídas em Column V, aparecem na nota fiscal como info do item.
-  
-  return parts.join(" | ");
+  // IMPORTANTE: Coluna V ("Informações adicionais do produto") aparece na NOTA FISCAL
+  // junto com a descrição do item. NÃO colocar informações internas aqui!
+  // Estado, Frete, Transportadora, Protocolo etc. são informações internas
+  // e NÃO devem aparecer na NF.
+  // Retorna vazio para não poluir a nota fiscal.
+  return "";
 }
 
 /**
