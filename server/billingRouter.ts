@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, billingAuthorizations, appSettings, productionAcceptance, productionNotes, productionStatus, collectionStatus, transportSelection, transportSelectionHistory, pickupSchedule, operators, billingObservations, trackingLinks, operatorGranularPermissions } from "../drizzle/schema";
+import { salesOrders, salesOrderRequests, billingAuthorizations, appSettings, productionAcceptance, productionNotes, productionStatus, collectionStatus, transportSelection, transportSelectionHistory, pickupSchedule, operators, billingObservations, trackingLinks, operatorGranularPermissions } from "../drizzle/schema";
 import { sql, and, desc, eq, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { estadoToGrupo, GRUPO_LABELS, GRUPO_LABELS_SHORT, isOutros, isDigitacao, isAprovadoOuFaturado, getTipoEspecial, isAmostraBonificacao, inferGrupoFromItems, getAmostraBonificacaoLabel, type GrupoKey, type TipoEspecialPedido } from "../shared/grupoClassification";
@@ -249,6 +249,29 @@ export const billingRouter = router({
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(salesOrders.dataEmissao));
 
+      // Fetch tipoFrete from sales_order_requests (our internal orders have the freight condition)
+      const pedidoNumbers = Array.from(new Set(allItems.map(i => i.pedido).filter((p): p is string => !!p)));
+      const freteMap = new Map<string, string>();
+      if (pedidoNumbers.length > 0) {
+        // Query in batches to avoid SQL limit
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < pedidoNumbers.length; i += BATCH_SIZE) {
+          const batch = pedidoNumbers.slice(i, i + BATCH_SIZE);
+          const freteRows = await db
+            .select({
+              numeroPedidoMaxiprod: salesOrderRequests.numeroPedidoMaxiprod,
+              tipoFrete: salesOrderRequests.tipoFrete,
+            })
+            .from(salesOrderRequests)
+            .where(inArray(salesOrderRequests.numeroPedidoMaxiprod, batch));
+          for (const row of freteRows) {
+            if (row.numeroPedidoMaxiprod && row.tipoFrete) {
+              freteMap.set(row.numeroPedidoMaxiprod, row.tipoFrete);
+            }
+          }
+        }
+      }
+
       // Separate open vs billed - EXCLUIR pedidos NÃO aprovados
       // REGRA DE NEGÓCIO: Na aba Faturamento, APENAS pedidos APROVADOS devem aparecer.
       // Pedidos "A aprovar" e "Digitação" NÃO devem aparecer.
@@ -360,6 +383,7 @@ export const billingRouter = router({
             regiao: item.regiao || "",
             observacoes: item.observacoes || "",
             _estadoConfiguravel: item.estadoConfiguravel || "",
+            tipoFrete: freteMap.get(item.pedido || "") || null,
             itens: [] as any[],
           });
         }
@@ -473,6 +497,7 @@ export const billingRouter = router({
             regiao: item.regiao || "",
             observacoes: item.observacoes || "",
             _estadoConfiguravel: item.estadoConfiguravel || "",
+            tipoFrete: freteMap.get(item.pedido || "") || null,
             itens: [] as any[],
           });
         }

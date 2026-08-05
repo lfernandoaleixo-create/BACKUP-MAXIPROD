@@ -6854,3 +6854,10 @@
 - [x] Botão no alerta de campos faltando para abrir modal de preenchimento inline (sem sair da tela do pedido)
 - [x] Validação de formato de e-mail nos campos Email e Email NF-e
 - [x] Validação de formato de CNPJ/CPF (11 ou 14 dígitos)
+
+## Bug: Exportação Maxiprod - Equivalente A
+- [x] NÃO alterar o campo Equivalente A na exportação do pedido para Maxiprod. Quantidade deve ser em caixas e o Maxiprod usa o equivalente já cadastrado no produto para abater estoque em unidades. (Confirmado: sistema já funciona corretamente - exporta em CX sem mexer no equivalente)
+
+## Feature: Condição de Frete na Aba Faturamento
+- [x] Adicionar checkbox de permissão nas Configurações para "Visualizar Condição de Frete" na aba Faturamento
+- [x] Exibir Condição de Frete (CIF, FOB, Sem ocorrência, etc.) nos pedidos da aba Faturamento para quem tem permissão

@@ -223,6 +223,7 @@ type BillingOrder = {
   crmSegmento?: string;
   regiao?: string;
   observacoes?: string;
+  tipoFrete?: string | null; // Condição de frete (CIF/FOB/RETIRA)
   orderHash?: string; // Hash dos dados do pedido para detectar alterações
   dataFaturamento?: string | null; // Data da NF mais recente (quando disponível)
   grupo?: string;
@@ -679,7 +680,8 @@ function TransportHistoryPopover({ pedido }: { pedido: string }) {
 }
 
 /* ---- Order Row ---- */
-function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, isAuthorized, showValues = true, showPrint = false, productionNote, onOpenProductionNote, productionStatusValue, onChangeProductionStatus, collectionStatus, onToggleCollection, transportadora, onChangeTransportadora, pickupSchedule, onChangePickupSchedule, onClearPickupSchedule, billingObservation, onSetBillingObservation, trackingLink, onSetTrackingLink, authorizedTime, compact = false }: {
+function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, isAuthorized, showValues = true, showPrint = false, productionNote, onOpenProductionNote, productionStatusValue, onChangeProductionStatus, collectionStatus, onToggleCollection, transportadora, onChangeTransportadora, pickupSchedule, onChangePickupSchedule, onClearPickupSchedule, billingObservation, onSetBillingObservation, trackingLink, onSetTrackingLink, authorizedTime, compact = false, showCondicaoFrete = false }: 
+{
   order: BillingOrder;
   nfs?: NfInfo[];
   showNf?: boolean;
@@ -707,6 +709,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
   onSetTrackingLink?: (pedido: string, trackingUrl: string) => void;
   authorizedTime?: string;
   compact?: boolean;
+  showCondicaoFrete?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingTracking, setEditingTracking] = useState(false);
@@ -813,8 +816,15 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         </div>
 
         {/* Client name - clean, aligned with consistent left padding */}
-        <div className="flex-1 min-w-0 flex items-center pl-2">
+        <div className="flex-1 min-w-0 flex items-center pl-2 gap-2">
           <span className={`text-slate-700 font-medium ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} truncate`} title={order.cliente}>{displayName}</span>
+          {showCondicaoFrete && order.tipoFrete && (
+            <span className={`flex-shrink-0 inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+              order.tipoFrete === 'CIF' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+              order.tipoFrete === 'FOB' ? 'bg-orange-100 text-orange-700 border border-orange-200' :
+              'bg-slate-100 text-slate-600 border border-slate-200'
+            }`}>{order.tipoFrete}</span>
+          )}
         </div>
 
         {/* Production note icon + alert icons - fixed width column */}
@@ -1278,6 +1288,12 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                 </div>
                 <p className="text-sm font-medium text-slate-700 mt-0.5">{order.transportadora || "—"}</p>
               </div>
+              {showCondicaoFrete && order.tipoFrete && (
+                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2">
+                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Cond. Frete</p>
+                  <p className={`text-sm font-medium mt-0.5 ${order.tipoFrete === 'CIF' ? 'text-blue-600' : order.tipoFrete === 'FOB' ? 'text-orange-600' : 'text-slate-700'}`}>{order.tipoFrete}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1480,7 +1496,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 }
 
 /* ---- Collapsible Orders Card ---- */
-function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverColor, filterBgColor, filterBorderColor, activeFilterColor, invoicesByPedido, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, authorizedPedidos, badgeExtra, showValues = true, showPrint = false, productionNotes, onOpenProductionNote, productionStatuses, onChangeProductionStatus, collectionStatuses, onToggleCollection, transportSelections, onChangeTransportadora, pickupSchedules, onChangePickupSchedule, onClearPickupSchedule, billingObservations, onSetBillingObservation, trackingLinks, onSetTrackingLink, authorizedTimes, compact = false }: {
+function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverColor, filterBgColor, filterBorderColor, activeFilterColor, invoicesByPedido, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, authorizedPedidos, badgeExtra, showValues = true, showPrint = false, productionNotes, onOpenProductionNote, productionStatuses, onChangeProductionStatus, collectionStatuses, onToggleCollection, transportSelections, onChangeTransportadora, pickupSchedules, onChangePickupSchedule, onClearPickupSchedule, billingObservations, onSetBillingObservation, trackingLinks, onSetTrackingLink, authorizedTimes, compact = false, showCondicaoFrete = false }: {
   title: string;
   icon: React.ElementType;
   orders: BillingOrder[];
@@ -1517,6 +1533,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
   onSetTrackingLink?: (pedido: string, trackingUrl: string) => void;
   authorizedTimes?: Record<string, string>;
   compact?: boolean;
+  showCondicaoFrete?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -1911,6 +1928,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 onSetTrackingLink={onSetTrackingLink}
                 authorizedTime={authorizedTimes?.[order.pedido]}
                 compact={compact}
+                showCondicaoFrete={showCondicaoFrete}
               />
             ))}
             {filtered.length === 0 && (
@@ -2555,11 +2573,11 @@ export default function Billing() {
               onOpenProductionNote={hasGranularAccess("fat.notaProducao") ? handleOpenProductionNote : undefined}
               productionStatuses={productionStatusesMap}
               onChangeProductionStatus={hasGranularAccess("fat.statusProducao") ? handleChangeProductionStatus : undefined}
-              billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
+                            billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
               onSetBillingObservation={hasGranularAccess("fat.observacaoFaturar") ? handleSetBillingObservation : undefined}
               compact
+              showCondicaoFrete={hasGranularAccess("fat.verCondicaoFrete")}
             />
-
             {/* Card 2: Autorizado a Faturar (entre Em Aberto e Faturados) */}
             <BillingCard
               title="Autorizado a Faturar"
@@ -2578,6 +2596,7 @@ export default function Billing() {
                 billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
                 onSetBillingObservation={hasGranularAccess("fat.observacaoFaturar") ? handleSetBillingObservation : undefined}
                 authorizedTimes={authorizedTimesMap}
+                showCondicaoFrete={hasGranularAccess("fat.verCondicaoFrete")}
                 badgeExtra={
                 authorizedOrders.length === 0 ? (
                   <span className="text-xs text-slate-400 italic">Nenhum pedido autorizado</span>
@@ -2607,11 +2626,11 @@ export default function Billing() {
                 pickupSchedules={pickupSchedulesMap}
                 onChangePickupSchedule={hasGranularAccess("fat.agendamentoColeta") ? handleChangePickupSchedule : undefined}
                 onClearPickupSchedule={hasGranularAccess("fat.agendamentoColeta") ? handleClearPickupSchedule : undefined}
-                billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
+                                billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
                 onSetBillingObservation={hasGranularAccess("fat.observacaoFaturar") ? handleSetBillingObservation : undefined}
+                showCondicaoFrete={hasGranularAccess("fat.verCondicaoFrete")}
               />
             )}
-
             {/* Loading NFs indicator */}
             {isLoadingNfs && billedOrders.length > 0 && (
               <div className="text-center py-2">

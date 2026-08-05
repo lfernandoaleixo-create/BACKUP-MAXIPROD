@@ -573,6 +573,7 @@ const GRANULAR_FATURAMENTO: GranularPermDef[] = [
   { key: "fat.verRastreio", label: "Ver Link de Rastreio", parentTab: "faturamento" },
   { key: "fat.rastreio", label: "Editar Link de Rastreio", parentTab: "faturamento" },
   { key: "fat.alertaEstoqueInsuficiente", label: "Alertas de Estoque Insuficiente", parentTab: "faturamento" },
+  { key: "fat.verCondicaoFrete", label: "Ver Condição de Frete", parentTab: "faturamento" },
 ];
 
 const GRANULAR_FINANCEIRO: GranularPermDef[] = [
