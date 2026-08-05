@@ -144,7 +144,34 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
     staleTime: 30 * 1000,
   });
 
-    const seller = permissionsQuery.data?.find((p: any) => p.id === sellerId);
+    const managersQueryForSeller = trpc.sales.listSalesManagers.useQuery(undefined, { staleTime: 60 * 1000 });
+  const { operator: currentOperator } = useOperator();
+  // Try to find seller in seller_permissions first
+  const sellerFromPermissions = permissionsQuery.data?.find((p: any) => p.id === sellerId);
+  // Fallback: if not found in seller_permissions, check if this is a gestor accessing their own panel
+  // Gestores (Jordão, Ana Paula, Juvenal) don't have seller_permissions records but should still access their panel
+  const seller = sellerFromPermissions || (() => {
+    if (!managersQueryForSeller.data || !currentOperator) return undefined;
+    // The sellerId is the operator ID - find the matching gestor
+    if (currentOperator.id === sellerId) {
+      const opNameNorm = currentOperator.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() || "";
+      const mgr = managersQueryForSeller.data.find((m: any) => {
+        const mgrNorm = m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() || "";
+        return mgrNorm.includes(opNameNorm) || opNameNorm.includes(mgrNorm.split(" ")[0] || "___");
+      });
+      if (mgr) {
+        return {
+          id: sellerId,
+          sellerName: mgr.maxiprodName || mgr.name,
+          gestorName: mgr.name,
+          password: "",
+          authorized: true,
+          priceTableCode: null,
+        };
+      }
+    }
+    return undefined;
+  })();
   const sellerNameForAlerts = seller?.sellerName || "";
   // Always-on query to check for pending alerts (even when not on clientes tab)
   const sellerAlertsQuery = trpc.cobrancaPlanilha.getSellerAlerts.useQuery(

@@ -250,7 +250,11 @@ export default function GestaoComercial() {
         || operatorNameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes(m.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())
     );
     const gestorNameForHub = myGestorRecord?.name?.toUpperCase() || (mySellerRecordForHub?.sellerName?.toUpperCase()) || null;
-    const isGestorVendedor = !!mySellerRecordForHub && hasGranularAccess("gc.meuPainelVendedor"); // Operator is also a seller
+    // Operator can see "Meu Painel de Vendedor" if:
+    // 1) Has a seller_permissions record (vendedor de rua), OR
+    // 2) Is a gestor (sales_managers record) — gestores also sell directly
+    // AND has gc.meuPainelVendedor permission
+    const isGestorVendedor = (!!mySellerRecordForHub || !!myGestorRecord) && hasGranularAccess("gc.meuPainelVendedor");
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
@@ -291,12 +295,14 @@ export default function GestaoComercial() {
               </div>
             </Link>}
 
-            {/* Meu Painel de Vendedor - for operators who are also sellers */}
+            {/* Meu Painel de Vendedor - for operators who are also sellers/gestores */}
             {isGestorVendedor && (() => {
               const mySellerRecord = mySellerRecordForHub;
-              if (!mySellerRecord) return null;
+              // For gestores without seller_permissions, use their operator id directly
+              const sellerId = mySellerRecord?.id || operator?.id;
+              if (!sellerId) return null;
               return (
-                <Link href={`/gestao-comercial/vendedor/${mySellerRecord.id}`}>
+                <Link href={`/gestao-comercial/vendedor/${sellerId}`}>
                   <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-sm p-6 hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer group">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">

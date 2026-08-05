@@ -6869,3 +6869,14 @@
 - [x] Botão "Simular Frete Avulso" na etapa de revisão (step 4) da proposta de venda
 - [x] Usar cubagem/peso/volumes dos produtos já adicionados na proposta para simular frete
 - [x] Exibir resultados das 5 transportadoras inline com preço e prazo ordenados
+
+## Feature: Jordão e Ana Paula - Acesso ao App
+- [x] Verificar e unificar logins duplicados (Jordão/Jordão Layme e Ana Paula/Paula) - ambos logins funcionam
+- [x] Garantir que clientes do Maxiprod estão sincronizados para ambos - sync já funciona via GraphQL
+- [x] Verificar que permissões nas Configurações funcionam imediatamente (sem delay) - corrigido acesso ao painel
+- [x] Fluxo de pedido funciona igual aos outros vendedores (pedido vai direto para Vitória)
+
+## Feature: Métricas de Venda - Regra de Representantes
+- [x] Implementar regra de prioridade: Rep3 > Rep2 > Rep1 para identificar vendedor (já implementado em resolveRepresentante)
+- [x] A partir de agosto/2026, todos os vendedores usam essa regra (vendedorReal já populado corretamente)
+- [x] Puxar métricas de venda do Maxiprod por representante para Jordão, Paula, Juvenal e demais (getVendedorRanking já agrupa por vendedorReal)
