@@ -9,6 +9,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useCepLookup } from "@/hooks/useCepLookup";
+import { parseDimensions } from "@shared/parseDimensions";
 import {
   X,
   Search,
@@ -220,6 +221,21 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
   const totalFrete = Number(valorFrete) || 0;
   const totalPedido = totalProdutos + totalFrete;
   const totalPeso = items.reduce((sum, item) => sum + (item.pesoBrutoCaixa || 0) * item.quantidade, 0);
+  const totalVolumes = items.reduce((sum, item) => sum + item.quantidade, 0);
+  const totalCubagem = useMemo(() => {
+    return items.reduce((sum, item) => {
+      if (!item.dimsStr) return sum;
+      const dims = parseDimensions(item.dimsStr);
+      if (!dims) return sum;
+      const volM3 = (dims.comprimento * dims.largura * dims.altura) / 1_000_000;
+      return sum + volM3 * item.quantidade;
+    }, 0);
+  }, [items]);
+
+  // Freight simulation
+  const [showFreightModal, setShowFreightModal] = useState(false);
+  const [freightResult, setFreightResult] = useState<any>(null);
+  const quoteFreightMutation = trpc.salesOrders.quoteAllCarriers.useMutation();
 
   // Validade helper
   const getDataValidade = () => {
@@ -1053,6 +1069,34 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
               </div>
             </div>
 
+            {/* Simular Frete Avulso */}
+            <button
+              onClick={async () => {
+                setShowFreightModal(true);
+                setFreightResult(null);
+                const cepClean = cep.replace(/\D/g, "");
+                if (cepClean.length !== 8) return;
+                try {
+                  const result = await quoteFreightMutation.mutateAsync({
+                    cepDestino: cepClean,
+                    cnpjDestinatario: cnpjCpf.replace(/\D/g, "") || undefined,
+                    peso: totalPeso > 0 ? totalPeso : totalVolumes * 10,
+                    metroCubico: totalCubagem > 0 ? totalCubagem : (totalPeso > 0 ? totalPeso * 0.004 : totalVolumes * 0.05),
+                    valorMercadoria: totalProdutos,
+                    volumes: totalVolumes || 1,
+                  });
+                  setFreightResult(result);
+                } catch (err: any) {
+                  setFreightResult({ error: err?.message || "Erro ao simular frete" });
+                }
+              }}
+              disabled={items.length === 0 || !cep}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-slate-300 disabled:to-slate-400 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
+            >
+              <Truck className="w-3.5 h-3.5" />
+              Simular Frete Avulso
+            </button>
+
             {/* Export PDF */}
             {pdfUrl && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3">
@@ -1071,6 +1115,57 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
             {exportError && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-2">
                 <p className="text-xs text-red-700 dark:text-red-300">{exportError}</p>
+              </div>
+            )}
+
+            {/* Freight Simulation Results */}
+            {showFreightModal && (
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600 rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">Simulação de Frete</span>
+                  <button onClick={() => setShowFreightModal(false)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                </div>
+                <div className="text-[10px] text-slate-500 space-x-3">
+                  <span>CEP: {cep}</span>
+                  <span>Peso: {totalPeso.toFixed(1)}kg</span>
+                  <span>Cubagem: {totalCubagem.toFixed(4)}m³</span>
+                  <span>Valor NF: {formatCurrency(totalProdutos)}</span>
+                  <span>Volumes: {totalVolumes}</span>
+                </div>
+                {quoteFreightMutation.isPending && (
+                  <div className="flex items-center gap-2 py-3">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <span className="text-xs text-slate-500">Cotando nas 5 transportadoras...</span>
+                  </div>
+                )}
+                {freightResult?.error && (
+                  <p className="text-xs text-red-600">{freightResult.error}</p>
+                )}
+                {freightResult && !freightResult.error && Array.isArray(freightResult) && (
+                  <div className="space-y-1">
+                    {(freightResult as any[]).sort((a: any, b: any) => {
+                      if (a.error && !b.error) return 1;
+                      if (!a.error && b.error) return -1;
+                      return (a.totalFrete || 999999) - (b.totalFrete || 999999);
+                    }).map((carrier: any, idx: number) => (
+                      <div key={idx} className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                        carrier.error ? 'bg-red-50 dark:bg-red-900/20' : idx === 0 ? 'bg-green-50 dark:bg-green-900/20 border border-green-200' : 'bg-white dark:bg-slate-700'
+                      }`}>
+                        <span className="font-medium text-slate-700 dark:text-slate-200 truncate">{carrier.transportadora}</span>
+                        {carrier.error ? (
+                          <span className="text-red-500 text-[10px] truncate ml-2">{carrier.error.substring(0, 40)}</span>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="text-slate-500">{carrier.prazo} dias</span>
+                            <span className={`font-bold ${idx === 0 ? 'text-green-700' : 'text-slate-700 dark:text-slate-200'}`}>
+                              {formatCurrency(carrier.totalFrete)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

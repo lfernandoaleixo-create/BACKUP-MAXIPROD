@@ -6864,3 +6864,8 @@
 
 ## Bug: Observações Internas aparecendo na NF
 - [x] Remover Estado/Frete/Transportadora/Protocolo da coluna V (Informações adicionais do produto) na exportação Maxiprod — essa coluna aparece na NF e não deve conter info interna
+
+## Feature: Simular Frete Avulso na Proposta de Venda
+- [x] Botão "Simular Frete Avulso" na etapa de revisão (step 4) da proposta de venda
+- [x] Usar cubagem/peso/volumes dos produtos já adicionados na proposta para simular frete
+- [x] Exibir resultados das 5 transportadoras inline com preço e prazo ordenados
