@@ -2944,8 +2944,13 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           if (rfData.email && !email) setEmail(rfData.email);
           if (rfData.atividade_principal?.[0]?.code && !cnaeFiscal) setCnaeFiscal(rfData.atividade_principal[0].code);
         }
-        if (stData && stData.code === "0") {
-          if (stData.inscricao_estadual) setInscricaoEstadual(stData.inscricao_estadual);
+      if (stData && stData.code === "0") {
+          if (stData.inscricao_estadual) {
+            setInscricaoEstadual(stData.inscricao_estadual);
+          } else {
+            // Cliente sem IE na API do Sintegra - preencher automaticamente
+            setInscricaoEstadual("ISENTO");
+          }
           if (stData.contribuinte_icms === true) {
             setTipoContribuinte("Contribuinte");
           } else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") {
@@ -2957,6 +2962,8 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           }
           if (stData.regime_tributacao && !regimeTributario) setRegimeTributario(stData.regime_tributacao);
         } else {
+          // Sintegra não retornou dados (code != 0) - preencher IE como ISENTO
+          if (!inscricaoEstadual.trim()) setInscricaoEstadual("ISENTO");
           setTipoContribuinte("Não contribuinte");
         }
         setCnpjLookupDone(true);
