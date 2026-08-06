@@ -27,6 +27,7 @@ import {
   Send,
   Filter,
 } from "lucide-react";
+import { MessageCircle, History } from "lucide-react";
 
 interface SellerCobrancaViewProps {
   sellerName: string;
@@ -117,7 +118,7 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
   const markInProgressMutation = trpc.cobrancaPlanilha.markAlertInProgress.useMutation({
     onSuccess: () => {
       refetchAlerts();
-      toast.info('Alerta marcado como "Em Andamento"');
+      toast.info('Alerta marcado como "Em Andamento". Resposta enviada ao financeiro.');
     },
   });
 
@@ -178,11 +179,29 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
   // Handle "Resolvido" with response text
   const handleResolved = (alertId: number) => {
     const resposta = respostaTexts[alertId]?.trim();
+    if (!resposta) {
+      toast.error("Observação obrigatória! Descreva o que foi feito antes de marcar como resolvido.");
+      return;
+    }
     markResolvedMutation.mutate({
       id: alertId,
-      respostaVendedor: resposta || undefined,
+      respostaVendedor: resposta,
     });
     // Clear the text
+    setRespostaTexts(prev => ({ ...prev, [alertId]: "" }));
+  };
+
+  // Handle "Em Andamento" with response text (mandatory)
+  const handleInProgress = (alertId: number) => {
+    const resposta = respostaTexts[alertId]?.trim();
+    if (!resposta) {
+      toast.error("Observação obrigatória! Descreva o que está sendo feito antes de marcar como em andamento.");
+      return;
+    }
+    markInProgressMutation.mutate({
+      id: alertId,
+      respostaVendedor: resposta,
+    });
     setRespostaTexts(prev => ({ ...prev, [alertId]: "" }));
   };
 
@@ -258,19 +277,28 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                       {alert.mensagem}
                     </p>
 
+                    {/* Histórico de interações (conversa ping-pong) */}
+                    <AlertInteractionHistory alertId={alert.id} />
+
+                    {/* Etapas de cobrança (se tiver planilhaId) */}
+                    {alert.planilhaId && <AlertEtapaHistory planilhaId={alert.planilhaId} />}
+
                     {/* Campo de resposta do vendedor */}
                     <div className="mt-3">
                       <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                        Sua resposta ao financeiro (resultado da negociação):
+                        Sua resposta ao financeiro (OBRIGATÓRIO) *:
                       </label>
                       <textarea
                         value={respostaTexts[alert.id] || ""}
                         onChange={(e) => setRespostaTexts(prev => ({ ...prev, [alert.id]: e.target.value }))}
                         placeholder="Descreva o resultado do contato com o cliente... Ex: Liguei para o cliente, ele disse que vai pagar dia 25/07."
-                        className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                        className={`w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none ${respostaTexts[alert.id]?.trim() ? 'border-emerald-300 dark:border-emerald-600' : 'border-red-300 dark:border-red-600'}`}
                         rows={3}
                         onClick={(e) => e.stopPropagation()}
                       />
+                      {!respostaTexts[alert.id]?.trim() && (
+                        <p className="text-[9px] text-red-500 mt-0.5 font-medium">* Preencha a observação antes de clicar em "Em Andamento" ou "Resolvido"</p>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -286,9 +314,10 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          markInProgressMutation.mutate({ id: alert.id });
+                          handleInProgress(alert.id);
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 text-[11px] font-medium rounded-lg hover:bg-blue-200 transition-colors"
+                        disabled={markInProgressMutation.isPending || !respostaTexts[alert.id]?.trim()}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 text-[11px] font-medium rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Clock className="w-3 h-3" /> Em Andamento
                       </button>
@@ -297,16 +326,11 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
                           e.stopPropagation();
                           handleResolved(alert.id);
                         }}
-                        disabled={markResolvedMutation.isPending}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50"
+                        disabled={markResolvedMutation.isPending || !respostaTexts[alert.id]?.trim()}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <CheckCircle2 className="w-3 h-3" /> Resolvido
                       </button>
-                      {respostaTexts[alert.id]?.trim() && (
-                        <span className="text-[9px] text-blue-500 flex items-center gap-0.5">
-                          <Send className="w-2.5 h-2.5" /> Resposta será enviada ao financeiro
-                        </span>
-                      )}
                     </div>
                   </div>
                 )}
@@ -544,6 +568,93 @@ export default function SellerCobrancaView({ sellerName, onAlertCount }: SellerC
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Sub-component: shows the full interaction history (ping-pong messages) for an alert */
+function AlertInteractionHistory({ alertId }: { alertId: number }) {
+  const { data: interactions } = trpc.cobrancaPlanilha.getAlertInteractions.useQuery(
+    { alertId },
+    { staleTime: 10 * 1000 }
+  );
+
+  if (!interactions || interactions.length === 0) return null;
+
+  return (
+    <div className="mt-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2 border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center gap-1 mb-2">
+        <MessageCircle className="w-3 h-3 text-slate-500" />
+        <span className="text-[10px] font-bold text-slate-500 uppercase">Histórico da conversa</span>
+      </div>
+      <div className="space-y-1.5 max-h-40 overflow-y-auto">
+        {interactions.map((msg) => (
+          <div
+            key={msg.id}
+            className={`px-2 py-1.5 rounded text-[11px] ${
+              msg.tipo === "financeiro_msg"
+                ? "bg-orange-50 border-l-2 border-orange-400 text-orange-800"
+                : "bg-blue-50 border-l-2 border-blue-400 text-blue-800"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[10px]">
+                {msg.tipo === "financeiro_msg" ? "Financeiro" : "Vendedor"} ({msg.autor})
+              </span>
+              <span className="text-[9px] text-slate-400">
+                {new Date(msg.createdAt).toLocaleDateString("pt-BR")} {new Date(msg.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+            <p className="mt-0.5 whitespace-pre-wrap">{msg.mensagem}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Sub-component: shows the etapa history (cobrancaEtapaObs) for the planilha related to this alert */
+function AlertEtapaHistory({ planilhaId }: { planilhaId: number }) {
+  const { data: etapas } = trpc.cobrancaPlanilha.getAllEtapaObs.useQuery(
+    { planilhaId },
+    { staleTime: 30 * 1000 }
+  );
+
+  if (!etapas || etapas.length === 0) return null;
+
+  const etapaLabels: Record<string, string> = {
+    promessaPgto: "Promessa de Pagamento",
+    primeiraCobranca: "1ª Cobrança",
+    semAcao1: "Sem Ação 1",
+    segundaCobranca: "2ª Cobrança",
+    semAcao2: "Sem Ação 2",
+    terceiraCobranca: "3ª Cobrança",
+    semAcao3: "Sem Ação 3",
+    acaoFinal: "Ação Final",
+    intervencaoVendedor: "Intervenção Vendedor",
+  };
+
+  return (
+    <div className="mt-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 border border-amber-200 dark:border-amber-700">
+      <div className="flex items-center gap-1 mb-2">
+        <History className="w-3 h-3 text-amber-600" />
+        <span className="text-[10px] font-bold text-amber-700 uppercase">Etapas de cobrança realizadas</span>
+      </div>
+      <div className="space-y-1 max-h-32 overflow-y-auto">
+        {etapas.slice(0, 10).map((obs) => (
+          <div key={obs.id} className="px-2 py-1 bg-white dark:bg-slate-800 rounded text-[10px] border border-amber-100 dark:border-amber-800">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-amber-700">
+                {etapaLabels[obs.etapa] || obs.etapa}
+              </span>
+              <span className="text-[9px] text-slate-400">
+                {new Date(obs.createdAt).toLocaleDateString("pt-BR")} • {obs.registradoPor}
+              </span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 mt-0.5">{obs.observacao}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

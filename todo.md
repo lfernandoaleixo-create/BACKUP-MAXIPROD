@@ -6926,3 +6926,11 @@
 - [x] Quando comercial preenche, alerta volta para o financeiro com a resposta
 - [x] Financeiro marca como "Resolvido" → some da aba Vendas, vai para histórico
 - [x] Botão de histórico na Planilha de Cobrança para ver todos os resolvidos
+- [x] Data de pagamento no histórico em formato brasileiro (DD/MM/YYYY) em vez de americano
+- [x] Corrigir TS errors em VendedorDetalhe.tsx (comprimentoCm→comprimento, larguraCm→largura, alturaCm→altura)
+- [x] Sistema ping-pong alertas: observação OBRIGATÓRIA para vendedor responder (Em Andamento/Resolvido)
+- [x] Sistema ping-pong alertas: financeiro pode responder de volta ao vendedor (reply-back)
+- [x] Sistema ping-pong alertas: mostrar histórico de etapas de cobrança no detalhe do alerta
+- [x] Sistema ping-pong alertas: piscar apenas o título/alerta específico, não todos os inadimplentes
+- [x] Sistema ping-pong alertas: status dinâmicos (Aguardando Comercial / Aguardando Financeiro)
+- [x] Sistema ping-pong alertas: tabela de interações para guardar conversa completa

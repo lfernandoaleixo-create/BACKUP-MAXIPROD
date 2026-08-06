@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp, Bell, BellOff } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp, Bell, BellOff, MessageSquare } from "lucide-react";
 import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
 import CobrancaPlanilhaView from "@/components/CobrancaPlanilhaView";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
@@ -581,6 +581,19 @@ export default function InadimplenciaTab() {
       inadimUtils.cobrancaPlanilha.getUnacknowledgedAlerts.invalidate();
       toast.success("Devolutiva confirmada.");
     },
+  });
+  // Reply-back from financeiro to vendedor (ping-pong)
+  const [replyDialog, setReplyDialog] = useState<{ id: number; empresa: string; vendedor: string } | null>(null);
+  const [replyMessage, setReplyMessage] = useState("");
+  const replyMutation = trpc.cobrancaPlanilha.replyFromFinanceiro.useMutation({
+    onSuccess: () => {
+      toast.success("Resposta enviada ao vendedor!");
+      setReplyDialog(null);
+      setReplyMessage("");
+      inadimUtils.cobrancaPlanilha.getUnacknowledgedAlerts.invalidate();
+      inadimUtils.cobrancaPlanilha.getAllSellerAlerts.invalidate();
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao responder."),
   });
   const [cancelAlertDialog, setCancelAlertDialog] = useState<{ id: number; empresa: string; vendedor: string } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -1519,7 +1532,11 @@ export default function InadimplenciaTab() {
           )}
           {clienteGroups.map(group => {
             const isOpen = expandedCliente === group.cliente;
-            const unackAlert = unacknowledgedAlerts?.find(a => a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim());
+            // Only pulse client card if there's an unacknowledged alert WITHOUT planilhaId (legacy alerts pulse the whole client)
+            // Alerts WITH planilhaId pulse only at the specific title level
+            const unackAlert = unacknowledgedAlerts?.find(a => 
+              !a.planilhaId && a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim()
+            );
             return (
               <div key={group.cliente} className={`rounded-xl border overflow-hidden transition-all ${getAgingBg(group.maxDias)} ${unackAlert ? 'ring-2 ring-green-500 animate-pulse' : ''}`}>
                 <button
@@ -1549,31 +1566,54 @@ export default function InadimplenciaTab() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {unackAlert && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          acknowledgeMutation.mutate({ id: unackAlert.id });
-                        }}
-                        className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white text-[11px] font-bold rounded-lg hover:bg-green-700 transition-colors shadow-sm cursor-pointer animate-bounce"
-                        title="Confirmar que viu a devolutiva do vendedor"
-                      >
-                        <Bell className="w-3.5 h-3.5" />
-                        Confirmar
+                      <div className="flex items-center gap-1">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            acknowledgeMutation.mutate({ id: unackAlert.id });
+                          }}
+                          className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white text-[10px] font-bold rounded-lg hover:bg-green-700 transition-colors shadow-sm cursor-pointer animate-bounce"
+                          title="Confirmar que viu a devolutiva do vendedor"
+                        >
+                          <Bell className="w-3 h-3" />
+                          OK
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReplyDialog({ id: unackAlert.id, empresa: unackAlert.empresa, vendedor: unackAlert.vendedor });
+                          }}
+                          className="flex items-center gap-1 px-2 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                          title="Responder de volta ao vendedor"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          Responder
+                        </div>
                       </div>
                     )}
                     {(() => {
                       const activeAlert = inadimSellerAlerts?.find(a => a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
                       return activeAlert ? (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCancelAlertDialog({ id: activeAlert.id, empresa: activeAlert.empresa, vendedor: activeAlert.vendedor });
-                          }}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500 text-white text-[11px] font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm cursor-pointer animate-pulse"
-                          title={`Cancelar alerta para ${activeAlert.vendedor}`}
-                        >
-                          <BellOff className="w-3.5 h-3.5" />
-                          Cancelar
+                        <div className="flex items-center gap-1">
+                          <span className={`px-2 py-1 text-[9px] font-bold rounded ${
+                            activeAlert.status === 'pendente' ? 'bg-red-100 text-red-700' :
+                            activeAlert.status === 'em_andamento' || activeAlert.status === 'visto' ? 'bg-blue-100 text-blue-700' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {activeAlert.status === 'pendente' ? 'Aguardando Comercial' :
+                             activeAlert.status === 'em_andamento' || activeAlert.status === 'visto' ? 'Aguardando Financeiro' :
+                             activeAlert.status}
+                          </span>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCancelAlertDialog({ id: activeAlert.id, empresa: activeAlert.empresa, vendedor: activeAlert.vendedor });
+                            }}
+                            className="flex items-center gap-1 px-2 py-1.5 bg-orange-500 text-white text-[10px] font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm cursor-pointer"
+                            title={`Cancelar alerta para ${activeAlert.vendedor}`}
+                          >
+                            <BellOff className="w-3 h-3" />
+                          </div>
                         </div>
                       ) : (
                         <div
@@ -1703,7 +1743,11 @@ export default function InadimplenciaTab() {
               </div>
             )}
             {filteredTitles.map((title) => {
-              const titleUnackAlert = unacknowledgedAlerts?.find(a => a.empresa.toUpperCase().trim() === title.cliente.toUpperCase().trim());
+              // Match by planilhaId first (specific title), then fallback to empresa name
+              const titleUnackAlert = unacknowledgedAlerts?.find(a => 
+                (a.planilhaId && a.planilhaId === title.id) ||
+                (!a.planilhaId && a.empresa.toUpperCase().trim() === title.cliente.toUpperCase().trim())
+              );
               return (
               <div key={title.id} className={titleUnackAlert ? 'ring-2 ring-green-500 animate-pulse rounded-lg' : ''}>
               <TitleRow
@@ -1741,13 +1785,20 @@ export default function InadimplenciaTab() {
               {titleUnackAlert && (
                 <div className="flex items-center justify-between px-3 py-1.5 bg-green-50 border-t border-green-200">
                   <span className="text-[10px] font-bold text-green-700">Vendedor respondeu: {titleUnackAlert.status === 'visto' ? 'Visto' : titleUnackAlert.status === 'em_andamento' ? 'Em andamento' : 'Resolvido'}{titleUnackAlert.respostaVendedor ? ` — ${titleUnackAlert.respostaVendedor}` : ''}</span>
-                  <button
-                    onClick={() => acknowledgeMutation.mutate({ id: titleUnackAlert.id })}
-                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 transition-colors cursor-pointer"
-                  >
-                    <Bell className="w-3 h-3" />
-                    Confirmar
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => acknowledgeMutation.mutate({ id: titleUnackAlert.id })}
+                      className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 transition-colors cursor-pointer"
+                    >
+                      <Bell className="w-3 h-3" /> OK
+                    </button>
+                    <button
+                      onClick={() => setReplyDialog({ id: titleUnackAlert.id, empresa: titleUnackAlert.empresa, vendedor: titleUnackAlert.vendedor })}
+                      className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[10px] font-bold rounded hover:bg-blue-700 transition-colors cursor-pointer"
+                    >
+                      <MessageSquare className="w-3 h-3" /> Responder
+                    </button>
+                  </div>
                 </div>
               )}
               </div>
@@ -2230,6 +2281,62 @@ export default function InadimplenciaTab() {
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cancelando...</>
                   ) : (
                     <><BellOff className="w-4 h-4 mr-2" /> Confirmar Cancelamento</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+      </Dialog>
+      )}
+
+      {/* Reply-back dialog: financeiro responds to vendedor */}
+      {replyDialog && (
+        <Dialog open={true} onOpenChange={() => setReplyDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-blue-700">
+                <MessageSquare className="w-5 h-5" /> Responder ao Vendedor
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  Enviar resposta de volta para <strong>{replyDialog.vendedor}</strong> sobre o cliente <strong>{replyDialog.empresa}</strong>.
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  O alerta voltará a piscar para o vendedor com sua nova mensagem.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700">Sua mensagem ao vendedor *</label>
+                <textarea
+                  value={replyMessage}
+                  onChange={e => setReplyMessage(e.target.value)}
+                  placeholder="Ex: Cliente não pagou ainda, preciso que entre em contato novamente..."
+                  className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none h-24 focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setReplyDialog(null)}>Cancelar</Button>
+                <Button
+                  onClick={() => {
+                    if (!replyMessage.trim()) {
+                      toast.error("Preencha a mensagem antes de enviar.");
+                      return;
+                    }
+                    replyMutation.mutate({
+                      id: replyDialog.id,
+                      mensagem: replyMessage.trim(),
+                      autor: operator?.name || "Financeiro",
+                    });
+                  }}
+                  disabled={replyMutation.isPending || !replyMessage.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {replyMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
+                  ) : (
+                    <><Send className="w-4 h-4 mr-2" /> Enviar Resposta</>
                   )}
                 </Button>
               </DialogFooter>

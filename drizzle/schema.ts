@@ -3431,3 +3431,19 @@ export const unidentifiedPayments = mysqlTable("unidentified_payments", {
 });
 export type UnidentifiedPayment = typeof unidentifiedPayments.$inferSelect;
 export type InsertUnidentifiedPayment = typeof unidentifiedPayments.$inferInsert;
+
+/**
+ * seller_alert_interactions - Histórico de interações do ping-pong entre financeiro e comercial
+ * Cada mensagem na conversa é um registro aqui.
+ * Tipo: "financeiro_msg" (financeiro envia/responde) ou "vendedor_msg" (vendedor responde)
+ */
+export const sellerAlertInteractions = mysqlTable("seller_alert_interactions", {
+  id: int("id").autoincrement().primaryKey(),
+  alertId: int("alert_id").notNull(), // FK para seller_alerts.id
+  tipo: varchar("tipo", { length: 30 }).notNull(), // "financeiro_msg" | "vendedor_msg"
+  mensagem: text("mensagem").notNull(),
+  autor: varchar("autor", { length: 200 }).notNull(), // quem escreveu
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type SellerAlertInteraction = typeof sellerAlertInteractions.$inferSelect;
+export type InsertSellerAlertInteraction = typeof sellerAlertInteractions.$inferInsert;

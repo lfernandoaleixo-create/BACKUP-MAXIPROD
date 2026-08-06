@@ -5436,7 +5436,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         if (item.dimsStr) {
           const dims = parseDimensions(item.dimsStr);
           if (dims) {
-            totalCubagem += (dims.comprimentoCm / 100) * (dims.larguraCm / 100) * (dims.alturaCm / 100) * qty;
+            totalCubagem += (dims.comprimento / 100) * (dims.largura / 100) * (dims.altura / 100) * qty;
           }
         }
       }

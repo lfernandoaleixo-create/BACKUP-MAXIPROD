@@ -10,6 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+function formatDateBR(dateStr: string | null): string {
+  if (!dateStr) return "-";
+  // Handle YYYY-MM-DD format → DD/MM/YYYY
+  if (dateStr.includes("-") && dateStr.length >= 10) {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
 
 export function UnidentifiedPaymentsButton() {
   const [open, setOpen] = useState(false);
@@ -202,7 +211,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                     <tbody>
                       {activePayments.map(p => (
                         <tr key={p.id} className={`border-b border-slate-100 hover:bg-slate-50 ${p.status === "identificado" ? "bg-green-50 animate-pulse" : ""}`}>
-                          <td className="py-2 px-2 text-slate-700">{p.dataPagamento}</td>
+                          <td className="py-2 px-2 text-slate-700">{formatDateBR(p.dataPagamento)}</td>
                           <td className="py-2 px-2 text-slate-700">{p.formaPagamento}</td>
                           <td className="py-2 px-2 text-right font-semibold text-slate-800">{formatCurrency(Number(p.valorPagamento))}</td>
                           <td className="py-2 px-2 text-slate-700 font-medium">{(p as any).nomePagador || "-"}</td>
@@ -269,7 +278,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                 <tbody>
                   {history.map(p => (
                     <tr key={p.id} className="border-b border-slate-100">
-                      <td className="py-1.5 px-2 text-slate-600">{p.dataPagamento}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{formatDateBR(p.dataPagamento)}</td>
                       <td className="py-1.5 px-2 text-slate-600">{p.formaPagamento}</td>
                       <td className="py-1.5 px-2 text-right font-medium text-slate-700">{formatCurrency(Number(p.valorPagamento))}</td>
                       <td className="py-1.5 px-2 text-slate-700 font-medium">{p.nomeCliente || "-"}</td>
