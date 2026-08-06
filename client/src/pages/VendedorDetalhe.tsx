@@ -7650,8 +7650,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   {inlineFreightLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
                   Simular Frete
                 </button>
-                {items.length > 0 && (
-                  <button>
+               {items.length > 0 && (
+                  <button
                     onClick={handleSubmit}
                     disabled={createOrderMutation.isPending || !canProceedProdutos}
                     className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
