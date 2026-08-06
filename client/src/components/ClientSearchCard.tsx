@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * Card: Consulta de Cliente
  * Busca por nome com autocomplete e exibe resumo completo do cliente
@@ -331,6 +332,42 @@ function InadimplenciaPanel({ inadimplencia, overdue }: { inadimplencia: any; ov
   );
 }
 
+
+/** Sub-component that fetches and displays order items when a pedido is expanded */
+function OrderItemsDetail({ pedido }: { pedido: string }) {
+  const { data: items, isLoading } = trpc.sales.getOrderItemsByPedido.useQuery({ pedido });
+  if (isLoading) return <div className="p-3 text-center text-xs text-slate-400">Carregando itens...</div>;
+  if (!items || items.length === 0) return <div className="p-3 text-center text-xs text-slate-400">Nenhum item encontrado</div>;
+  return (
+    <div className="px-4 py-2 bg-blue-50/30 border-t border-blue-100">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-[10px] text-slate-500 uppercase">
+            <th className="text-left py-1 px-1">Código</th>
+            <th className="text-left py-1 px-1">Produto</th>
+            <th className="text-right py-1 px-1">Qtd</th>
+            <th className="text-left py-1 px-1">Un</th>
+            <th className="text-right py-1 px-1">Preço Unit.</th>
+            <th className="text-right py-1 px-1">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, i) => (
+            <tr key={i} className="border-b border-blue-100/50">
+              <td className="py-1 px-1 font-mono text-slate-600">{item.codigoItem}</td>
+              <td className="py-1 px-1 text-slate-700 font-medium max-w-[200px] truncate">{item.descricao}</td>
+              <td className="py-1 px-1 text-right font-semibold text-slate-700">{item.quantidade}</td>
+              <td className="py-1 px-1 text-slate-500">{item.unidadeMedida}</td>
+              <td className="py-1 px-1 text-right text-slate-600">R$ {item.valorUnitario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="py-1 px-1 text-right font-semibold text-slate-700">R$ {item.valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function ClientSearchCard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -349,6 +386,7 @@ export function ClientSearchCard() {
     titles: true,
     pending: false,
   });
+  const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -801,12 +839,20 @@ export function ClientSearchCard() {
                       </thead>
                       <tbody>
                         {clientSummary.recentOrders.map((order, idx) => (
-                          <tr key={idx} className={`border-b border-slate-100 hover:bg-slate-50 ${
+                          <React.Fragment key={idx}>
+                          <tr
+                            onClick={() => setExpandedPedido(expandedPedido === order.pedido ? null : order.pedido)}
+                            className={`border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors ${
                             order.status === "Faturado" ? "bg-emerald-50/30" :
                             order.status === "A faturar" || order.status === "Aprovado" ? "bg-amber-50/30" :
                             ""
-                          }`}>
-                            <td className="py-1.5 px-2 font-mono text-xs text-slate-700 font-semibold">{order.pedido}</td>
+                          } ${expandedPedido === order.pedido ? "!bg-blue-50 border-blue-200" : ""}`}>
+                            <td className="py-1.5 px-2 font-mono text-xs text-slate-700 font-semibold">
+                              <span className="flex items-center gap-1">
+                                <ChevronDown className={`w-3 h-3 transition-transform ${expandedPedido === order.pedido ? "rotate-180" : ""}`} />
+                                {order.pedido}
+                              </span>
+                            </td>
                             <td className="py-1.5 px-2 text-xs text-slate-600">{formatDate(order.data)}</td>
                             <td className="py-1.5 px-2 text-right text-xs text-slate-700 font-medium">{formatCurrency(order.valor)}</td>
                             <td className="py-1.5 px-2">
@@ -834,6 +880,14 @@ export function ClientSearchCard() {
                             </td>
                             <td className="py-1.5 px-2 text-xs text-slate-500">{(order as any).condicaoPagamento || "-"}</td>
                           </tr>
+                          {expandedPedido === order.pedido && (
+                            <tr className="bg-blue-50/50">
+                              <td colSpan={6} className="p-0">
+                                <OrderItemsDetail pedido={order.pedido} />
+                              </td>
+                            </tr>
+                          )}
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>

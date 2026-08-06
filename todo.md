@@ -6906,3 +6906,23 @@
 ## Bug: Nome do Cliente na Exportação Maxiprod
 - [ ] Quando vendedor seleciona cliente existente do Maxiprod, usar a Razão Social exata do cadastro (não permitir alteração)
 - [ ] Avisar vendedor se o nome digitado não corresponde ao cadastro do Maxiprod
+
+## Feature: Consulta ao Cliente na Planilha de Cobrança
+- [x] Adicionar ClientSearchCard na aba Financeiro > Inadimplência > Planilha de Cobrança
+- [x] Busca fluida - qualquer caractere já filtra resultados
+
+## Feature: Detalhamento de Itens nos Pedidos (Consulta ao Cliente)
+- [x] Ao clicar em um pedido na consulta ao cliente, mostrar todos os itens vendidos
+- [x] Exibir: produto, quantidade de caixas, preço unitário por caixa
+- [x] Funcionar tanto na aba Vendas quanto na aba Financeiro
+- [x] Testar com múltiplos pedidos para garantir que todos os itens batem
+
+## Feature: Planilha de Pagamentos Não Identificados
+- [x] Criar tabela no banco para pagamentos não identificados (data, forma, valor, nomeCliente, vendedorResponsavel, status, criadoPor)
+- [x] Botão "Planilha de Pagamentos Não Identificados" no topo da Planilha de Cobrança
+- [x] Financeiro preenche: data, forma de pagamento, valor → dá OK
+- [x] Alerta piscando na aba Vendas quando há pagamento não identificado pendente
+- [x] Comercial preenche: nome do cliente (vendedor responsável puxado automaticamente pelo login)
+- [x] Quando comercial preenche, alerta volta para o financeiro com a resposta
+- [x] Financeiro marca como "Resolvido" → some da aba Vendas, vai para histórico
+- [x] Botão de histórico na Planilha de Cobrança para ver todos os resolvidos

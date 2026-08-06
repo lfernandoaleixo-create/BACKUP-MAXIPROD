@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
+import { ClientSearchCard } from "@/components/ClientSearchCard";
+import { UnidentifiedPaymentsButton } from "@/components/UnidentifiedPayments";
 import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare, BellOff,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
@@ -1177,6 +1179,7 @@ function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
         </div>
         {/* Sync + Backup + Export buttons */}
         <div className="flex items-center gap-2">
+          <UnidentifiedPaymentsButton />
           <button
             onClick={handleExportPdf}
             disabled={isGeneratingPdf}
@@ -1232,6 +1235,9 @@ function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
           </button>
         </div>
       </div>
+
+      {/* Consulta ao Cliente */}
+      <ClientSearchCard />
 
       {/* Backup info panel */}
       {showBackupInfo && backups && (

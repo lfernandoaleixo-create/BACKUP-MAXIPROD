@@ -37,6 +37,7 @@ import { serasaRouter } from "./serasaRouter";
 import { stockAlertRouter } from "./stockAlertRouter";
 import { orderTimelineRouter } from "./orderTimelineRouter";
 import { proposalRouter } from "./proposalRouter";
+import { unidentifiedPaymentsRouter } from "./unidentifiedPaymentsRouter";
 import { syncClientsFromMaxiprod } from "./clientSyncMaxiprod";
 
 export const appRouter = router({
@@ -64,6 +65,7 @@ export const appRouter = router({
   stockAlert: stockAlertRouter,
   orderTimeline: orderTimelineRouter,
   proposal: proposalRouter,
+  unidentifiedPayments: router(unidentifiedPaymentsRouter),
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

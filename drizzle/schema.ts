@@ -3410,3 +3410,23 @@ export const proposals = mysqlTable("proposals", {
 });
 export type Proposal = typeof proposals.$inferSelect;
 export type InsertProposal = typeof proposals.$inferInsert;
+
+// Planilha de Pagamentos Não Identificados
+export const unidentifiedPayments = mysqlTable("unidentified_payments", {
+  id: int("id").autoincrement().primaryKey(),
+  dataPagamento: varchar("dataPagamento", { length: 20 }).notNull(),
+  formaPagamento: varchar("formaPagamento", { length: 50 }).notNull(),
+  valorPagamento: decimal("valorPagamento", { precision: 18, scale: 2 }).notNull(),
+  nomeCliente: varchar("nomeCliente", { length: 200 }),
+  vendedorResponsavel: varchar("vendedorResponsavel", { length: 100 }),
+  status: varchar("status", { length: 20 }).notNull().default("pendente"),
+  criadoPor: varchar("criadoPor", { length: 100 }).notNull(),
+  identificadoPor: varchar("identificadoPor", { length: 100 }),
+  resolvidoPor: varchar("resolvidoPor", { length: 100 }),
+  dataIdentificado: timestamp("dataIdentificado"),
+  dataResolvido: timestamp("dataResolvido"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type UnidentifiedPayment = typeof unidentifiedPayments.$inferSelect;
+export type InsertUnidentifiedPayment = typeof unidentifiedPayments.$inferInsert;
