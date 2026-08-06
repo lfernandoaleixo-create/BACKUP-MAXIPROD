@@ -14,6 +14,7 @@ import { useCepLookup } from "@/hooks/useCepLookup";
 import TopNav from "@/components/TopNav";
 import SecureInput from "@/components/SecureInput";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
+import { parseDimensions } from "@shared/parseDimensions";
 import { trpc } from "@/lib/trpc";
 import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
 import {
@@ -5404,6 +5405,59 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [transportadoraSelecionada, setTransportadoraSelecionada] = useState("");
   const [protocoloCotacao, setProtocoloCotacao] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
+  // Freight simulation inline (next to Concluir Pedido)
+  const [showInlineFreight, setShowInlineFreight] = useState(false);
+  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ carrier: string; totalFrete: number; prazo: string; error?: string }> | null>(null);
+  const [inlineFreightLoading, setInlineFreightLoading] = useState(false);
+  const quoteAllCarriersMut = trpc.salesOrders.quoteAllCarriers.useMutation();
+
+  const handleInlineFreightSimulation = async () => {
+    if (!cep || cep.replace(/\D/g, '').length < 8) {
+      alert('CEP do cliente não preenchido');
+      return;
+    }
+    if (items.length === 0) {
+      alert('Nenhum produto adicionado');
+      return;
+    }
+    setInlineFreightLoading(true);
+    setShowInlineFreight(true);
+    setInlineFreightResults(null);
+    try {
+      let totalPeso = 0;
+      let totalCubagem = 0;
+      let totalVolumes = 0;
+      for (const item of items) {
+        const qty = item.quantidade || 1;
+        totalVolumes += qty;
+        if (item.pesoBrutoCaixa && item.pesoBrutoCaixa > 0) {
+          totalPeso += item.pesoBrutoCaixa * qty;
+        }
+        if (item.dimsStr) {
+          const dims = parseDimensions(item.dimsStr);
+          if (dims) {
+            totalCubagem += (dims.comprimentoCm / 100) * (dims.larguraCm / 100) * (dims.alturaCm / 100) * qty;
+          }
+        }
+      }
+      if (totalPeso === 0) totalPeso = 30;
+      const totalValor = items.reduce((sum, i) => sum + (i.precoUnitario * i.quantidade), 0);
+      const result = await quoteAllCarriersMut.mutateAsync({
+        cepDestino: cep.replace(/\D/g, ''),
+        cnpjDestinatario: cnpjCpf?.replace(/\D/g, '') || undefined,
+        peso: totalPeso,
+        metroCubico: totalCubagem > 0 ? totalCubagem : undefined as any,
+        volumes: totalVolumes,
+        valorMercadoria: totalValor,
+      });
+      setInlineFreightResults(result as any);
+    } catch (err: any) {
+      setInlineFreightResults([{ carrier: 'Erro', totalFrete: 0, prazo: '', error: err.message || 'Erro na simulação' }]);
+    } finally {
+      setInlineFreightLoading(false);
+    }
+  };
+
   // Campos Maxiprod
   const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
@@ -8199,7 +8253,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <button onClick={() => showCustosDeVenda ? setStep("pagamento") : setStep("produtos")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar
               </button>
-              <button
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleInlineFreightSimulation}
+                  disabled={inlineFreightLoading}
+                  className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {inlineFreightLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                  Simular Frete
+                </button>
+                <button
                 onClick={handleSubmit}
                 disabled={createOrderMutation.isPending || (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved)}
                 className={`px-5 py-2 ${isSimulation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5`}
@@ -8212,8 +8275,76 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <Save className="w-3.5 h-3.5" />
                 )}
                 {isSimulation ? 'Concluir Simulação' : (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved) ? 'Bloqueado (Margem Mensal)' : 'Pedido Concluído'}
-              </button>
+                </button>
+              </div>
             </div>
+            {/* Inline Freight Results */}
+            {showInlineFreight && (
+              <div className="mt-3 p-3 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-200 flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5" /> Resultado da Simulação de Frete
+                  </h4>
+                  <button onClick={() => setShowInlineFreight(false)} className="text-slate-400 hover:text-slate-600 text-xs">Fechar</button>
+                </div>
+                {inlineFreightLoading && (
+                  <div className="flex items-center gap-2 py-3 justify-center">
+                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
+                    <span className="text-xs text-indigo-600">Cotando nas transportadoras...</span>
+                  </div>
+                )}
+                {inlineFreightResults && (
+                  <div className="space-y-1.5">
+                    {inlineFreightResults
+                      .filter(r => !r.error && r.totalFrete > 0)
+                      .sort((a, b) => a.totalFrete - b.totalFrete)
+                      .map((r, i) => {
+                        const totalValor = items.reduce((sum, it) => sum + (it.precoUnitario * it.quantidade), 0);
+                        const pct = totalValor > 0 ? ((r.totalFrete / totalValor) * 100).toFixed(1) : '0';
+                        const isSelected = transportadoraSelecionada === r.carrier;
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setTransportadoraSelecionada(r.carrier);
+                              setValorFrete(r.totalFrete.toFixed(2));
+                              setTipoFrete("CIF");
+                            }}
+                            className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${isSelected ? 'bg-indigo-200 dark:bg-indigo-800 border-2 border-indigo-500' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-indigo-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
+                                {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                              </div>
+                              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{r.carrier}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">R$ {r.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              <span className="text-[9px] text-slate-500 ml-1">({pct}%)</span>
+                              {r.prazo && <span className="text-[9px] text-slate-400 ml-2">{r.prazo}</span>}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    {inlineFreightResults.filter(r => r.error).map((r, i) => (
+                      <div key={`err-${i}`} className="text-[10px] text-red-500 bg-red-50 dark:bg-red-900/20 p-1.5 rounded">
+                        {r.carrier}: {r.error}
+                      </div>
+                    ))}
+                    {inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).length === 0 && !inlineFreightLoading && (
+                      <p className="text-xs text-slate-500 text-center py-2">Nenhuma cotação disponível</p>
+                    )}
+                    {transportadoraSelecionada && (
+                      <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                        <p className="text-[10px] text-green-700 dark:text-green-300 font-medium">
+                          Transportadora selecionada: <strong>{transportadoraSelecionada}</strong> — R$ {valorFrete}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

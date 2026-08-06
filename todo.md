@@ -6897,3 +6897,8 @@
 ## Feature: Data de Entrega Editável ao Repetir Pedido
 - [x] Quando vendedor repete último pedido, data de entrega é resetada para hoje (não puxa data retroativa)
 - [x] Campo de data de entrega continua editável no step de pagamento para o vendedor ajustar
+
+## Feature: Botão Simular Frete ao lado de Concluir Pedido
+- [x] Adicionar botão "Simular Frete" ao lado de "Concluir Pedido" na etapa de revisão
+- [x] Vendedor pode simular frete sem precisar acessar Custos de Venda
+- [x] Após simulação, vendedor pode selecionar a transportadora desejada
