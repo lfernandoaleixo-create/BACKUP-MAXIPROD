@@ -2287,7 +2287,7 @@ export const salesOrderRequestItems = mysqlTable("sales_order_request_items", {
   descricaoItem: text("descricao_item").notNull(),
   quantidade: decimal("quantidade", { precision: 18, scale: 3 }).notNull(),
   unidadeMedida: varchar("unidade_medida", { length: 10 }),
-  precoUnitario: decimal("preco_unitario", { precision: 18, scale: 2 }).notNull(),
+  precoUnitario: decimal("preco_unitario", { precision: 18, scale: 5 }).notNull(),
   precoMinimo: decimal("preco_minimo", { precision: 18, scale: 2 }), // snapshot do preço mínimo na hora do pedido
   totalItem: decimal("total_item", { precision: 18, scale: 2 }).notNull(),
   abaixoDoMinimo: boolean("abaixo_do_minimo").default(false).notNull(),
@@ -3410,3 +3410,41 @@ export const proposals = mysqlTable("proposals", {
 });
 export type Proposal = typeof proposals.$inferSelect;
 export type InsertProposal = typeof proposals.$inferInsert;
+
+// Planilha de Pagamentos Não Identificados
+export const unidentifiedPayments = mysqlTable("unidentified_payments", {
+  id: int("id").autoincrement().primaryKey(),
+  dataPagamento: varchar("dataPagamento", { length: 20 }).notNull(),
+  formaPagamento: varchar("formaPagamento", { length: 50 }).notNull(),
+  valorPagamento: decimal("valorPagamento", { precision: 18, scale: 2 }).notNull(),
+  nomePagador: varchar("nomePagador", { length: 200 }),
+  nomeCliente: varchar("nomeCliente", { length: 200 }),
+  vendedorResponsavel: varchar("vendedorResponsavel", { length: 100 }),
+  numeroPedido: varchar("numeroPedido", { length: 50 }),
+  status: varchar("status", { length: 20 }).notNull().default("pendente"),
+  criadoPor: varchar("criadoPor", { length: 100 }).notNull(),
+  identificadoPor: varchar("identificadoPor", { length: 100 }),
+  resolvidoPor: varchar("resolvidoPor", { length: 100 }),
+  dataIdentificado: timestamp("dataIdentificado"),
+  dataResolvido: timestamp("dataResolvido"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type UnidentifiedPayment = typeof unidentifiedPayments.$inferSelect;
+export type InsertUnidentifiedPayment = typeof unidentifiedPayments.$inferInsert;
+
+/**
+ * seller_alert_interactions - Histórico de interações do ping-pong entre financeiro e comercial
+ * Cada mensagem na conversa é um registro aqui.
+ * Tipo: "financeiro_msg" (financeiro envia/responde) ou "vendedor_msg" (vendedor responde)
+ */
+export const sellerAlertInteractions = mysqlTable("seller_alert_interactions", {
+  id: int("id").autoincrement().primaryKey(),
+  alertId: int("alert_id").notNull(), // FK para seller_alerts.id
+  tipo: varchar("tipo", { length: 30 }).notNull(), // "financeiro_msg" | "vendedor_msg"
+  mensagem: text("mensagem").notNull(),
+  autor: varchar("autor", { length: 200 }).notNull(), // quem escreveu
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type SellerAlertInteraction = typeof sellerAlertInteractions.$inferSelect;
+export type InsertSellerAlertInteraction = typeof sellerAlertInteractions.$inferInsert;

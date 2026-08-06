@@ -1,7 +1,7 @@
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders, sellerAlerts } from "../drizzle/schema";
+import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders, sellerAlerts, sellerAlertInteractions } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull, like, or, gte } from "drizzle-orm";
 import { gql, normalizeVendedorName } from "./maxiprodGraphQL";
 
@@ -1826,13 +1826,23 @@ export const cobrancaPlanilhaRouter = router({
    * Indica que o vendedor está trabalhando no caso mas ainda não resolveu
    */
   markAlertInProgress: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.number(), respostaVendedor: z.string().min(1, "Observação obrigatória") }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      // Get alert details
+      const [alert] = await db.select().from(sellerAlerts).where(eq(sellerAlerts.id, input.id));
+      if (!alert) throw new Error("Alert not found");
       await db.update(sellerAlerts)
-        .set({ status: 'em_andamento', viewedAt: new Date() })
+        .set({ status: 'em_andamento', viewedAt: new Date(), respostaVendedor: input.respostaVendedor, financeiroAcknowledgedAt: null })
         .where(eq(sellerAlerts.id, input.id));
+      // Save interaction
+      await db.insert(sellerAlertInteractions).values({
+        alertId: input.id,
+        tipo: "vendedor_msg",
+        mensagem: input.respostaVendedor,
+        autor: alert.vendedor,
+      });
       return { success: true };
     }),
 
@@ -1842,7 +1852,7 @@ export const cobrancaPlanilhaRouter = router({
   markAlertResolved: publicProcedure
     .input(z.object({
       id: z.number(),
-      respostaVendedor: z.string().optional(),
+      respostaVendedor: z.string().min(1, "Observação obrigatória"),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1857,14 +1867,21 @@ export const cobrancaPlanilhaRouter = router({
         .set({
           status: 'resolvido',
           resolvedAt: new Date(),
-          respostaVendedor: input.respostaVendedor || null,
+          respostaVendedor: input.respostaVendedor,
+          financeiroAcknowledgedAt: null,
         })
         .where(eq(sellerAlerts.id, input.id));
 
+      // Save interaction
+      await db.insert(sellerAlertInteractions).values({
+        alertId: input.id,
+        tipo: "vendedor_msg",
+        mensagem: input.respostaVendedor,
+        autor: alert.vendedor,
+      });
+
       // Add a note in the cobrança history for the financeiro to see
-      const nota = input.respostaVendedor
-        ? `[VENDEDOR ATUOU] ${alert.vendedor} resolveu o alerta. Resposta: ${input.respostaVendedor}`
-        : `[VENDEDOR ATUOU] ${alert.vendedor} marcou o alerta como resolvido.`;
+      const nota = `[VENDEDOR ATUOU] ${alert.vendedor} resolveu o alerta. Resposta: ${input.respostaVendedor}`;
 
       if (alert.planilhaId) {
         await db.insert(cobrancaEtapaObs).values({
@@ -2077,5 +2094,62 @@ export const cobrancaPlanilhaRouter = router({
         ))
         .orderBy(desc(sellerAlerts.updatedAt));
       return result;
+    }),
+
+  /**
+   * Financeiro responde de volta ao vendedor (ping-pong)
+   * Reseta o status para 'pendente' e cria nova interação
+   */
+  replyFromFinanceiro: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      mensagem: z.string().min(1, "Mensagem obrigatória"),
+      autor: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [alert] = await db.select().from(sellerAlerts).where(eq(sellerAlerts.id, input.id));
+      if (!alert) throw new Error("Alerta não encontrado");
+      // Reset alert back to pendente for vendedor
+      await db.update(sellerAlerts)
+        .set({
+          status: 'pendente',
+          financeiroAcknowledgedAt: new Date(), // mark current response as acknowledged
+          resolvedAt: null,
+          respostaVendedor: null,
+        })
+        .where(eq(sellerAlerts.id, input.id));
+      // Save the financeiro reply as interaction
+      await db.insert(sellerAlertInteractions).values({
+        alertId: input.id,
+        tipo: "financeiro_msg",
+        mensagem: input.mensagem,
+        autor: input.autor,
+      });
+      // Also add to cobrancaEtapaObs for history
+      if (alert.planilhaId) {
+        await db.insert(cobrancaEtapaObs).values({
+          planilhaId: alert.planilhaId,
+          etapa: "intervencaoVendedor",
+          observacao: `[FINANCEIRO RESPONDEU] ${input.autor}: ${input.mensagem}`,
+          registradoPor: input.autor,
+        });
+      }
+      return { success: true };
+    }),
+
+  /**
+   * Buscar histórico de interações de um alerta (conversa completa)
+   */
+  getAlertInteractions: publicProcedure
+    .input(z.object({ alertId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select()
+        .from(sellerAlertInteractions)
+        .where(eq(sellerAlertInteractions.alertId, input.alertId))
+        .orderBy(asc(sellerAlertInteractions.createdAt));
     }),
 });

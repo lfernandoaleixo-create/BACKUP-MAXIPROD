@@ -844,7 +844,7 @@ export const salesOrderRouter = router({
             descricaoItem: item.descricaoItem,
             quantidade: item.quantidade.toFixed(3),
             unidadeMedida: item.unidadeMedida || "CX", // Grupo Fox: default sempre caixa
-            precoUnitario: item.precoUnitario.toFixed(2),
+            precoUnitario: item.precoUnitario.toFixed(5),
             precoMinimo: item.precoMinimo !== null ? item.precoMinimo.toFixed(2) : null,
             totalItem: item.totalItem.toFixed(2),
             abaixoDoMinimo: item.abaixoDoMinimo,

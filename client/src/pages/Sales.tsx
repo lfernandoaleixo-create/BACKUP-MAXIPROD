@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import ConnectionStatusCard from "@/components/ConnectionStatusCard";
 import { ClientSearchCard } from "@/components/ClientSearchCard";
+import { UnidentifiedPaymentsAlert } from "@/components/UnidentifiedPayments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -4447,6 +4448,7 @@ export default function Sales() {
         <>
         <ConnectionStatusCard />
 
+        <UnidentifiedPaymentsAlert />
         <ClientSearchCard />
 
         {!hasData ? (

@@ -965,7 +965,7 @@ async function consultaCnpjClientSide(cnpj: string) {
     success: true,
     razaoSocial: rfData.nome || "",
     nomeFantasia: rfData.fantasia && rfData.fantasia !== "********" ? rfData.fantasia : "",
-    inscricaoEstadual: stData?.inscricao_estadual || "",
+    inscricaoEstadual: stData?.inscricao_estadual || "ISENTO",
     tipoContribuinte,
     regimeTributacao: stData?.regime_tributacao || "",
     cnaePrincipal: rfData.atividade_principal?.[0]?.code || "",
@@ -1115,4 +1115,3 @@ function CnpjLookupButton({ cnpj, onResult }: { cnpj: string; onResult: (data: a
     </div>
   );
 }
-

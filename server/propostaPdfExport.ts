@@ -114,27 +114,31 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
 
     // ========== HEADER ==========
     doc.fillColor("#000");
-    // Logo area (text-based since we don't have the image file)
-    doc.fontSize(16).font("Helvetica-Bold")
-      .text("GRUPO", leftMargin, 40);
-    doc.fontSize(16).font("Helvetica-Bold")
-      .text("FOX", leftMargin, 56);
-    
-    // Title
+    // Company info (emitente)
+    doc.fontSize(14).font("Helvetica-Bold")
+      .text("PALITOS FOX", leftMargin, 40);
+    doc.fontSize(8).font("Helvetica")
+      .text("PALITOS INDÚSTRIA E COMÉRCIO LTDA", leftMargin, 58);
+    doc.fontSize(7).font("Helvetica")
+      .text("CNPJ: 36.562.762/0001-29", leftMargin, 69);
+    doc.fontSize(7).font("Helvetica")
+      .text("Rod. AMG 1650, 1070 - Zona Rural - Ribeirão Vermelho/MG - CEP 37.264-000", leftMargin, 79);
+    doc.fontSize(7).font("Helvetica")
+      .text("Tel: (35) 3864-7008 | administrativo@grupo-fox.com", leftMargin, 89);
+
+    // Title (right side)
     const numProposta = data.numeroProposta || `P${Date.now().toString(36).toUpperCase()}`;
     doc.fontSize(12).font("Helvetica-Bold")
-      .text(`Proposta de Venda ${numProposta}`, leftMargin + 150, 40, { width: 250, align: "center" });
+      .text(`Proposta de Venda`, leftMargin + 300, 40, { width: 215, align: "right" });
+    doc.fontSize(10).font("Helvetica")
+      .text(`Nº ${numProposta}`, leftMargin + 300, 56, { width: 215, align: "right" });
 
     // Page info (top right)
     doc.fontSize(8).font("Helvetica")
-      .text("Página 1 de 1", leftMargin + pageWidth - 80, 40, { width: 80, align: "right" });
-    
-    // Date (right aligned)
-    doc.fontSize(8).font("Helvetica")
-      .text(data.dataEmissao || new Date().toLocaleDateString("pt-BR"), leftMargin + pageWidth - 120, 55, { width: 120, align: "right" });
+      .text(data.dataEmissao || new Date().toLocaleDateString("pt-BR"), leftMargin + 300, 72, { width: 215, align: "right" });
 
-    doc.moveDown(1);
-    let y = 80;
+    doc.moveDown(2);
+    let y = 105;
 
     // ========== BORDER BOX ==========
     doc.rect(leftMargin - 5, y - 5, pageWidth + 10, 2).fill("#000");

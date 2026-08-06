@@ -2944,8 +2944,13 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           if (rfData.email && !email) setEmail(rfData.email);
           if (rfData.atividade_principal?.[0]?.code && !cnaeFiscal) setCnaeFiscal(rfData.atividade_principal[0].code);
         }
-        if (stData && stData.code === "0") {
-          if (stData.inscricao_estadual) setInscricaoEstadual(stData.inscricao_estadual);
+      if (stData && stData.code === "0") {
+          if (stData.inscricao_estadual) {
+            setInscricaoEstadual(stData.inscricao_estadual);
+          } else {
+            // Cliente sem IE na API do Sintegra - preencher automaticamente
+            setInscricaoEstadual("ISENTO");
+          }
           if (stData.contribuinte_icms === true) {
             setTipoContribuinte("Contribuinte");
           } else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") {
@@ -2957,6 +2962,8 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           }
           if (stData.regime_tributacao && !regimeTributario) setRegimeTributario(stData.regime_tributacao);
         } else {
+          // Sintegra não retornou dados (code != 0) - preencher IE como ISENTO
+          if (!inscricaoEstadual.trim()) setInscricaoEstadual("ISENTO");
           setTipoContribuinte("Não contribuinte");
         }
         setCnpjLookupDone(true);
@@ -5407,7 +5414,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [trackingUrl, setTrackingUrl] = useState("");
   // Freight simulation inline (next to Concluir Pedido)
   const [showInlineFreight, setShowInlineFreight] = useState(false);
-  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ carrier?: string; transportadora?: string; totalFrete: number; prazo: string; error?: string; cnpj?: string }> | null>(null);
+  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ transportadora: string; totalFrete: number; prazo: string; error?: string }> | null>(null);
   const [inlineFreightLoading, setInlineFreightLoading] = useState(false);
   const quoteAllCarriersMut = trpc.salesOrders.quoteAllCarriers.useMutation();
 
@@ -5436,7 +5443,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         if (item.dimsStr) {
           const dims = parseDimensions(item.dimsStr);
           if (dims) {
-            totalCubagem += (dims.comprimentoCm / 100) * (dims.larguraCm / 100) * (dims.alturaCm / 100) * qty;
+            totalCubagem += (dims.comprimento / 100) * (dims.largura / 100) * (dims.altura / 100) * qty;
           }
         }
       }
@@ -5452,7 +5459,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       });
       setInlineFreightResults(result as any);
     } catch (err: any) {
-      setInlineFreightResults([{ carrier: 'Erro', totalFrete: 0, prazo: '', error: err.message || 'Erro na simulação' }]);
+      setInlineFreightResults([{ transportadora: 'Erro', totalFrete: 0, prazo: '', error: err.message || 'Erro na simulação' }]);
     } finally {
       setInlineFreightLoading(false);
     }
@@ -7629,11 +7636,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
             </div>
 
-            <div className="flex justify-between pt-2">
-              <button onClick={() => isSimulation ? onClose() : setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
-                {isSimulation ? 'Cancelar' : 'Voltar'}
-              </button>
-              <div className="flex gap-2">
+            <div className="flex justify-between items-center pt-2">
+             <button onClick={() => isSimulation ? onClose() : setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+               {isSimulation ? 'Cancelar' : 'Voltar'}
+             </button>
+              <div className="flex gap-2 items-center flex-wrap justify-end">
                 {showCustosDeVenda && (
                 <button
                   onClick={() => setStep("pagamento")}
@@ -7688,13 +7695,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       .map((r, i) => {
                         const totalValor = items.reduce((sum, it) => sum + (it.precoUnitario * it.quantidade), 0);
                         const pct = totalValor > 0 ? ((r.totalFrete / totalValor) * 100).toFixed(1) : '0';
-                        const carrierName = r.transportadora || r.carrier || "Desconhecida";
-                        const isSelected = transportadoraSelecionada === carrierName && valorFrete === r.totalFrete.toFixed(2);
+                        const isSelected = transportadoraSelecionada === r.transportadora && valorFrete === r.totalFrete.toFixed(2);
                         return (
                           <button
                             key={i}
                             onClick={() => {
-                              setTransportadoraSelecionada(carrierName);
+                              setTransportadoraSelecionada(r.transportadora);
                               setValorFrete(r.totalFrete.toFixed(2));
                               setTipoFrete("CIF");
                             }}
@@ -7704,7 +7710,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
                                 {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                               </div>
-                              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{carrierName}</span>
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">R$ {r.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -7716,7 +7722,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       })}
                     {inlineFreightResults.filter(r => r.error).map((r, i) => (
                       <div key={`err-${i}`} className="text-[10px] text-red-500 bg-red-50 dark:bg-red-900/20 p-1.5 rounded">
-                        {r.transportadora || r.carrier}: {r.error}
+                        {r.transportadora}: {r.error}
                       </div>
                     ))}
                     {inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).length === 0 && !inlineFreightLoading && (
@@ -8377,13 +8383,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       .map((r, i) => {
                         const totalValor = items.reduce((sum, it) => sum + (it.precoUnitario * it.quantidade), 0);
                         const pct = totalValor > 0 ? ((r.totalFrete / totalValor) * 100).toFixed(1) : '0';
-                        const carrierName = r.transportadora || r.carrier || "Desconhecida";
-                        const isSelected = transportadoraSelecionada === carrierName && valorFrete === r.totalFrete.toFixed(2);
+                        const isSelected = transportadoraSelecionada === r.transportadora && valorFrete === r.totalFrete.toFixed(2);
                         return (
                           <button
                             key={i}
                             onClick={() => {
-                              setTransportadoraSelecionada(carrierName);
+                              setTransportadoraSelecionada(r.transportadora);
                               setValorFrete(r.totalFrete.toFixed(2));
                               setTipoFrete("CIF");
                             }}
@@ -8393,7 +8398,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
                                 {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                               </div>
-                              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{carrierName}</span>
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">R$ {r.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -8405,7 +8410,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       })}
                     {inlineFreightResults.filter(r => r.error).map((r, i) => (
                       <div key={`err-${i}`} className="text-[10px] text-red-500 bg-red-50 dark:bg-red-900/20 p-1.5 rounded">
-                        {r.transportadora || r.carrier}: {r.error}
+                        {r.transportadora}: {r.error}
                       </div>
                     ))}
                     {inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).length === 0 && !inlineFreightLoading && (

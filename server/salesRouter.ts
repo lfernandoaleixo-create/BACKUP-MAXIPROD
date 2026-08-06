@@ -2361,6 +2361,54 @@ export const salesRouter = router({
       };
     }),
 
+
+  /** Get order items (products) for a specific pedido number */
+  getOrderItemsByPedido: publicProcedure
+    .input(z.object({ pedido: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      // First try order_items (from our app's orders)
+      let items = await db.select({
+        codigoItem: orderItems.codigoItem,
+        descricao: orderItems.descricao,
+        quantidade: orderItems.quantidade,
+        unidadeMedida: orderItems.unidadeMedida,
+        valorUnitario: orderItems.valorUnitario,
+        valorTotal: orderItems.valorTotal,
+      }).from(orderItems)
+        .where(eq(orderItems.numeroPedido, input.pedido));
+      
+      // If no items found, try salesOrders table (Maxiprod synced - each row is an item line)
+      if (items.length === 0) {
+        const soItems = await db.select({
+          codigoItem: salesOrders.codigoItem,
+          descricao: salesOrders.descricao,
+          quantidade: salesOrders.quantidade,
+          unidadeMedida: salesOrders.unidadeMedidaCodigo,
+          valorUnitario: salesOrders.valorUnitario,
+          valorTotal: salesOrders.valorTotal,
+        }).from(salesOrders)
+          .where(eq(salesOrders.pedido, input.pedido));
+        return soItems.map(i => ({
+          codigoItem: i.codigoItem || "",
+          descricao: i.descricao || "",
+          quantidade: Number(i.quantidade) || 0,
+          unidadeMedida: i.unidadeMedida || "CX",
+          valorUnitario: Number(i.valorUnitario) || 0,
+          valorTotal: Number(i.valorTotal) || 0,
+        }));
+      }
+      
+      return items.map(i => ({
+        codigoItem: i.codigoItem,
+        descricao: i.descricao,
+        quantidade: Number(i.quantidade) || 0,
+        unidadeMedida: i.unidadeMedida || "CX",
+        valorUnitario: Number(i.valorUnitario) || 0,
+        valorTotal: Number(i.valorTotal) || 0,
+      }));
+    }),
   /**
    * Get monthly sales quantity by product (codigoItem) for the last 3 months + current month.
    * Used for the hidden informational columns in the Estoque and Sob Encomenda cards.

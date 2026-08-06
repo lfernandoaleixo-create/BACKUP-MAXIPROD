@@ -6907,6 +6907,39 @@
 - [ ] Quando vendedor seleciona cliente existente do Maxiprod, usar a Razão Social exata do cadastro (não permitir alteração)
 - [ ] Avisar vendedor se o nome digitado não corresponde ao cadastro do Maxiprod
 
+## Feature: Consulta ao Cliente na Planilha de Cobrança
+- [x] Adicionar ClientSearchCard na aba Financeiro > Inadimplência > Planilha de Cobrança
+- [x] Busca fluida - qualquer caractere já filtra resultados
+
+## Feature: Detalhamento de Itens nos Pedidos (Consulta ao Cliente)
+- [x] Ao clicar em um pedido na consulta ao cliente, mostrar todos os itens vendidos
+- [x] Exibir: produto, quantidade de caixas, preço unitário por caixa
+- [x] Funcionar tanto na aba Vendas quanto na aba Financeiro
+- [x] Testar com múltiplos pedidos para garantir que todos os itens batem
+
+## Feature: Planilha de Pagamentos Não Identificados
+- [x] Criar tabela no banco para pagamentos não identificados (data, forma, valor, nomeCliente, vendedorResponsavel, status, criadoPor)
+- [x] Botão "Planilha de Pagamentos Não Identificados" no topo da Planilha de Cobrança
+- [x] Financeiro preenche: data, forma de pagamento, valor → dá OK
+- [x] Alerta piscando na aba Vendas quando há pagamento não identificado pendente
+- [x] Comercial preenche: nome do cliente (vendedor responsável puxado automaticamente pelo login)
+- [x] Quando comercial preenche, alerta volta para o financeiro com a resposta
+- [x] Financeiro marca como "Resolvido" → some da aba Vendas, vai para histórico
+- [x] Botão de histórico na Planilha de Cobrança para ver todos os resolvidos
+- [x] Data de pagamento no histórico em formato brasileiro (DD/MM/YYYY) em vez de americano
+- [x] Corrigir TS errors em VendedorDetalhe.tsx (comprimentoCm→comprimento, larguraCm→largura, alturaCm→altura)
+- [x] Sistema ping-pong alertas: observação OBRIGATÓRIA para vendedor responder (Em Andamento/Resolvido)
+- [x] Sistema ping-pong alertas: financeiro pode responder de volta ao vendedor (reply-back)
+- [x] Sistema ping-pong alertas: mostrar histórico de etapas de cobrança no detalhe do alerta
+- [x] Sistema ping-pong alertas: piscar apenas o título/alerta específico, não todos os inadimplentes
+- [x] Sistema ping-pong alertas: status dinâmicos (Aguardando Comercial / Aguardando Financeiro)
+- [x] Sistema ping-pong alertas: tabela de interações para guardar conversa completa
+- [x] Cadastro cliente: preencher automaticamente "ISENTO" quando Sintegra não retorna Inscrição Estadual
+- [x] Proposta de Venda PDF: adicionar cabeçalho profissional com dados da empresa (razão social, nome fantasia, telefone, endereço, CEP)
+- [x] Pagamentos Não Identificados: data formato BR na aba Ativos (robustez do formatDateBR)
+- [x] Pagamentos Não Identificados: aumentar tamanho do card/dialog (max-w-3xl → max-w-5xl)
+- [x] Pagamentos Não Identificados: trocar "Vendedor" por "Identificador" e adicionar campo opcional para número do pedido
+- [x] App de Vendas (repetir pedido): corrigir precisão do preço para vir exatamente igual ao último pedido no Maxiprod
 - [x] App de Vendas (frete): corrigir seleção múltipla de cotações - deve selecionar apenas uma cotação por vez
 - [x] App de Vendas (frete): nome da transportadora não aparece na conclusão do pedido (só o valor)
 - [x] App de Vendas (frete): exibir nome da transportadora na view de aprovação do gestor/Vitória
