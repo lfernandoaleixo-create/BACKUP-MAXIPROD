@@ -14,18 +14,25 @@ function formatCurrency(v: number) {
 export function UnidentifiedPaymentsButton() {
   const [open, setOpen] = useState(false);
   const { data: count } = trpc.unidentifiedPayments.getPendingCount.useQuery(undefined, { refetchInterval: 30000 });
+  const { data: activePayments } = trpc.unidentifiedPayments.getActive.useQuery(undefined, { refetchInterval: 15000 });
+  const identifiedCount = activePayments?.filter(p => p.status === "identificado").length || 0;
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors shadow-sm"
+        className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-white text-xs font-semibold transition-colors shadow-sm ${identifiedCount > 0 ? "bg-green-600 hover:bg-green-700 animate-pulse" : "bg-purple-600 hover:bg-purple-700"}`}
       >
         <DollarSign className="w-3.5 h-3.5" />
         Pagamentos Não Identificados
         {(count || 0) > 0 && (
           <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
             {count}
+          </span>
+        )}
+        {identifiedCount > 0 && (
+          <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+            {identifiedCount}
           </span>
         )}
       </button>
@@ -182,7 +189,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                     </thead>
                     <tbody>
                       {activePayments.map(p => (
-                        <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <tr key={p.id} className={`border-b border-slate-100 hover:bg-slate-50 ${p.status === "identificado" ? "bg-green-50 animate-pulse" : ""}`}>
                           <td className="py-2 px-2 text-slate-700">{p.dataPagamento}</td>
                           <td className="py-2 px-2 text-slate-700">{p.formaPagamento}</td>
                           <td className="py-2 px-2 text-right font-semibold text-slate-800">{formatCurrency(Number(p.valorPagamento))}</td>
