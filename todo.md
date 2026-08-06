@@ -6906,3 +6906,7 @@
 ## Bug: Nome do Cliente na Exportação Maxiprod
 - [ ] Quando vendedor seleciona cliente existente do Maxiprod, usar a Razão Social exata do cadastro (não permitir alteração)
 - [ ] Avisar vendedor se o nome digitado não corresponde ao cadastro do Maxiprod
+
+- [x] App de Vendas (frete): corrigir seleção múltipla de cotações - deve selecionar apenas uma cotação por vez
+- [x] App de Vendas (frete): nome da transportadora não aparece na conclusão do pedido (só o valor)
+- [x] App de Vendas (frete): exibir nome da transportadora na view de aprovação do gestor/Vitória

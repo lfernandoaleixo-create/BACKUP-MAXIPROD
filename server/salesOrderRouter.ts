@@ -947,7 +947,7 @@ export const salesOrderRouter = router({
             `Vendedor: ${seller.sellerName} (Gestor: ${seller.gestorName})`,
             `Forma Pagamento: ${input.formaPagamento || 'N/A'} | Meio: ${input.meioPagamento || 'N/A'}`,
             input.condicaoPagamento ? `Condição: ${input.condicaoPagamento}` : null,
-            input.tipoFrete ? `Frete: ${input.tipoFrete}${valorFrete > 0 ? ' - R$ ' + valorFrete.toFixed(2) : ''}` : (valorFrete > 0 ? `Frete: R$ ${valorFrete.toFixed(2)}` : null),
+            input.tipoFrete ? `Frete: ${input.tipoFrete}${valorFrete > 0 ? ' - R$ ' + valorFrete.toFixed(2) : ''}${input.transportadora ? ' (' + input.transportadora + ')' : ''}` : (valorFrete > 0 ? `Frete: R$ ${valorFrete.toFixed(2)}${input.transportadora ? ' (' + input.transportadora + ')' : ''}` : (input.transportadora ? `Transportadora: ${input.transportadora}` : null)),
             input.dataEntrega ? `Data Entrega: ${input.dataEntrega}` : null,
             input.observacoes ? `Obs: ${input.observacoes}` : null,
             `--- ITENS (${itemsWithValidation.length}) ---`,
