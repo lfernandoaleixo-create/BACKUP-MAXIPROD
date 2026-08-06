@@ -3448,3 +3448,19 @@ export const sellerAlertInteractions = mysqlTable("seller_alert_interactions", {
 });
 export type SellerAlertInteraction = typeof sellerAlertInteractions.$inferSelect;
 export type InsertSellerAlertInteraction = typeof sellerAlertInteractions.$inferInsert;
+
+/**
+ * sku_code_mappings - Mapeamento de códigos de produto para SKUs de exibição nos lotes.
+ * Gerenciado pela Maria/Érica na aba Produção.
+ * Ex: 00541 → AR218, 00086 → AR218, 00103 → EC20
+ */
+export const skuCodeMappings = mysqlTable("sku_code_mappings", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoOrigem: varchar("codigo_origem", { length: 20 }).notNull().unique(),
+  skuDestino: varchar("sku_destino", { length: 30 }).notNull(),
+  criadoPor: varchar("criado_por", { length: 200 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+export type SkuCodeMapping = typeof skuCodeMappings.$inferSelect;
+export type InsertSkuCodeMapping = typeof skuCodeMappings.$inferInsert;

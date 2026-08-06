@@ -9,14 +9,15 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Package, Plus, Search, Loader2, ChevronDown, ChevronRight,
-  Box, History, Layers, X, Check, Trash2, Send, Clock, CheckCircle2, XCircle, Shield, FileDown,
+  Box, History, Layers, X, Check, Trash2, Send, Clock, CheckCircle2, XCircle, Shield, FileDown, Settings, Edit,
 } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
 
 type Tab = "lancamento" | "estoque" | "historico" | "autorizacoes";
 
 export default function LotControl() {
-  const [tab, setTab] = useState<Tab>("lancamento");
+  type TabExt = Tab | "skuMappings";
+  const [tab, setTab] = useState<TabExt>("lancamento");
   const { operator } = useOperator();
   const isApprover = operator?.name === "Bruno" || operator?.name === "Guilherme" || operator?.name === "Fernando";
   const { data: pendingCount } = trpc.production.countPendingRetroactive.useQuery(undefined, {
@@ -77,6 +78,14 @@ export default function LotControl() {
               )}
             </button>
           )}
+          <button
+            onClick={() => setTab("skuMappings")}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              tab === "skuMappings" ? "bg-purple-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            <Settings className="w-4 h-4" /> SKU
+          </button>
         </div>
       </div>
 
@@ -84,6 +93,7 @@ export default function LotControl() {
       {tab === "estoque" && <EstoqueLotes />}
       {tab === "historico" && <HistoricoLotes />}
       {tab === "autorizacoes" && isApprover && <AutorizacoesRetroativas />}
+      {tab === "skuMappings" && <SkuMappingsManager />}
     </div>
   );
 }
@@ -93,6 +103,7 @@ export default function LotControl() {
    ═══════════════════════════════════════════════════════════ */
 function LancamentoLote() {
   const { operator } = useOperator();
+  useSkuMap(); // Load dynamic SKU map
   const [codigoItem, setCodigoItem] = useState("");
   const [descricaoItem, setDescricaoItem] = useState("");
   const [notaCarga, setNotaCarga] = useState("");
@@ -502,24 +513,23 @@ function LancamentoLote() {
    ESTOQUE DE LOTES
    ═══════════════════════════════════════════════════════════ */
 // Mapa de conversão de códigos SKU para códigos de exibição
-const SKU_CODE_MAP: Record<string, string> = {
-  "00077": "AR125",
-  "00080": "AR15",
-  "00082": "AR18",
-  "00084": "AR20",
-  "00095": "AR20",
-  "00086": "AR218",
-  "00541": "AR218",
-  "00089": "AR25",
-  "00249": "AR25-3.2",
-  "00091": "AR30",
-  "00112": "AR35",
-  "00103": "EC20",
-  "00147": "EC25",
-  "00577": "ECP15",
-  "00547": "ECP20",
-  "00648": "ECP20",
-};
+// Mapa dinâmico carregado do banco de dados (preenchido pelo SkuMapProvider)
+let SKU_CODE_MAP: Record<string, string> = {};
+
+/** Hook para carregar e manter o mapa de SKU atualizado */
+function useSkuMap() {
+  const { data } = trpc.production.getSkuMappings.useQuery(undefined, {
+    staleTime: 30000,
+  });
+  if (data && data.length > 0) {
+    const map: Record<string, string> = {};
+    for (const m of data) {
+      map[m.codigoOrigem] = m.skuDestino;
+    }
+    SKU_CODE_MAP = map;
+  }
+  return SKU_CODE_MAP;
+}
 
 /** Converte a primeira sequência do código do lote (ex: 00103-160726-12345 → EC20-160726-12345) */
 function convertLotCode(codigo: string): string {
@@ -531,6 +541,7 @@ function convertLotCode(codigo: string): string {
 }
 
 function EstoqueLotes() {
+  useSkuMap(); // Load dynamic SKU map
   const [filterSku, setFilterSku] = useState("");
   const [searchText, setSearchText] = useState("");
   const { data: lots, isLoading, refetch: refetchLots } = trpc.production.getAllLots.useQuery({ onlyWithBalance: true, codigoItem: filterSku || undefined });
@@ -814,6 +825,7 @@ async function generateLotHistoryPdf(assignments: any[]) {
 }
 
 function HistoricoLotes() {
+  useSkuMap(); // Load dynamic SKU map
   const [filterText, setFilterText] = useState("");
 
   // Carrega todas as baixas (atribuições de lotes) diretamente
@@ -1103,6 +1115,186 @@ function AutorizacoesRetroativas() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SKU Mappings Manager ───────────────────────────────────────────────────
+function SkuMappingsManager() {
+  const { operator } = useOperator();
+  const { data: mappings, isLoading, refetch } = trpc.production.getSkuMappings.useQuery();
+  const [newCodigo, setNewCodigo] = useState("");
+  const [newSku, setNewSku] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editSku, setEditSku] = useState("");
+
+  const upsertMutation = trpc.production.upsertSkuMapping.useMutation({
+    onSuccess: () => {
+      toast.success("Mapeamento salvo com sucesso!");
+      setNewCodigo("");
+      setNewSku("");
+      setEditingId(null);
+      refetch();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const deleteMutation = trpc.production.deleteSkuMapping.useMutation({
+    onSuccess: () => {
+      toast.success("Mapeamento removido!");
+      refetch();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const handleAdd = () => {
+    if (!newCodigo.trim() || !newSku.trim()) {
+      toast.error("Preencha o código e o SKU");
+      return;
+    }
+    upsertMutation.mutate({
+      codigoOrigem: newCodigo.trim(),
+      skuDestino: newSku.trim(),
+      criadoPor: operator?.name || "Desconhecido",
+    });
+  };
+
+  const handleUpdate = (codigoOrigem: string) => {
+    if (!editSku.trim()) {
+      toast.error("Preencha o SKU");
+      return;
+    }
+    upsertMutation.mutate({
+      codigoOrigem,
+      skuDestino: editSku.trim(),
+      criadoPor: operator?.name || "Desconhecido",
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+          <Settings className="w-4 h-4 text-purple-600" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-800">Conversão de Códigos → SKU</h3>
+          <p className="text-[11px] text-slate-500">Defina qual código do Maxiprod vira qual SKU no lote. Ex: 00541 → AR218</p>
+        </div>
+      </div>
+
+      {/* Formulário de adição */}
+      <div className="flex items-end gap-3 mb-5 p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <div className="flex-1">
+          <label className="text-[10px] font-medium text-slate-500 block mb-1">Código Maxiprod</label>
+          <input
+            type="text"
+            value={newCodigo}
+            onChange={(e) => setNewCodigo(e.target.value)}
+            placeholder="Ex: 00541"
+            className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          />
+        </div>
+        <div className="text-lg font-bold text-purple-400 pb-2">→</div>
+        <div className="flex-1">
+          <label className="text-[10px] font-medium text-slate-500 block mb-1">SKU de Exibição</label>
+          <input
+            type="text"
+            value={newSku}
+            onChange={(e) => setNewSku(e.target.value.toUpperCase())}
+            placeholder="Ex: AR218"
+            className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          />
+        </div>
+        <button
+          onClick={handleAdd}
+          disabled={upsertMutation.isPending}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1.5"
+        >
+          <Plus className="w-4 h-4" /> Salvar
+        </button>
+      </div>
+
+      {/* Lista de mapeamentos existentes */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+        </div>
+      ) : !mappings || mappings.length === 0 ? (
+        <p className="text-sm text-slate-400 text-center py-6">Nenhum mapeamento cadastrado</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/50">
+                <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
+                <th className="text-center px-4 py-2 text-xs font-semibold text-slate-500 uppercase">→</th>
+                <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase">SKU</th>
+                <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase">Criado por</th>
+                <th className="text-right px-4 py-2 text-xs font-semibold text-slate-500 uppercase">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mappings.map(m => (
+                <tr key={m.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-2.5 font-mono text-xs font-medium text-slate-700">{m.codigoOrigem}</td>
+                  <td className="px-4 py-2.5 text-center text-slate-400">→</td>
+                  <td className="px-4 py-2.5">
+                    {editingId === m.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editSku}
+                          onChange={(e) => setEditSku(e.target.value.toUpperCase())}
+                          className="border border-purple-300 rounded px-2 py-1 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                          autoFocus
+                        />
+                        <button onClick={() => handleUpdate(m.codigoOrigem)} className="text-green-600 hover:text-green-700">
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-slate-600">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="font-mono text-xs font-bold text-purple-700">{m.skuDestino}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-slate-500">{m.criadoPor}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => { setEditingId(m.id); setEditSku(m.skuDestino); }}
+                        className="text-slate-400 hover:text-purple-600"
+                        title="Editar"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Remover mapeamento ${m.codigoOrigem} → ${m.skuDestino}?`)) {
+                            deleteMutation.mutate({ id: m.id });
+                          }
+                        }}
+                        className="text-slate-400 hover:text-red-600"
+                        title="Remover"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <p className="text-[11px] text-amber-700">
+          <strong>Como funciona:</strong> Quando um lote é criado com o código (ex: 00541), ele será exibido automaticamente com o SKU correspondente (ex: AR218) em todas as telas do sistema. Basta cadastrar aqui e o sistema converte sozinho.
+        </p>
       </div>
     </div>
   );

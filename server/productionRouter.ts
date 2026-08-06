@@ -2,6 +2,7 @@ import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries, productionLots, lotMovements, productCatalog, retroactiveLotRequests, queijoCoalhoStock, queijoCoalhoStockHistory } from "../drizzle/schema";
+import { skuCodeMappings } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 import { eq, and, or, sql, desc, gte, lte, inArray, ne } from "drizzle-orm";
 
@@ -1682,5 +1683,49 @@ export const productionRouter = router({
         .where(eq(retroactiveLotRequests.solicitanteNome, input.solicitanteNome))
         .orderBy(desc(retroactiveLotRequests.createdAt))
         .limit(20);
+    }),
+
+  // ==================== SKU CODE MAPPINGS ====================
+
+  /** Listar todos os mapeamentos código→SKU */
+  getSkuMappings: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(skuCodeMappings).orderBy(skuCodeMappings.skuDestino);
+  }),
+
+  /** Criar ou atualizar um mapeamento código→SKU */
+  upsertSkuMapping: publicProcedure
+    .input(z.object({
+      codigoOrigem: z.string().min(1),
+      skuDestino: z.string().min(1),
+      criadoPor: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Upsert: insert or update on duplicate key
+      await db.insert(skuCodeMappings).values({
+        codigoOrigem: input.codigoOrigem.trim(),
+        skuDestino: input.skuDestino.trim().toUpperCase(),
+        criadoPor: input.criadoPor,
+      }).onDuplicateKeyUpdate({
+        set: {
+          skuDestino: sql`VALUES(sku_destino)`,
+          criadoPor: sql`VALUES(criado_por)`,
+          updatedAt: sql`NOW()`,
+        },
+      });
+      return { success: true };
+    }),
+
+  /** Remover um mapeamento código→SKU */
+  deleteSkuMapping: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.delete(skuCodeMappings).where(eq(skuCodeMappings.id, input.id));
+      return { success: true };
     }),
 });
