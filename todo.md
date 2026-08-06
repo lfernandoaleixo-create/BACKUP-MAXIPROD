@@ -6935,3 +6935,4 @@
 - [x] Sistema ping-pong alertas: status dinâmicos (Aguardando Comercial / Aguardando Financeiro)
 - [x] Sistema ping-pong alertas: tabela de interações para guardar conversa completa
 - [x] Cadastro cliente: preencher automaticamente "ISENTO" quando Sintegra não retorna Inscrição Estadual
+- [x] Proposta de Venda PDF: adicionar cabeçalho profissional com dados da empresa (razão social, nome fantasia, telefone, endereço, CEP)
