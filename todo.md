@@ -6943,3 +6943,5 @@
 - [x] App de Vendas (frete): corrigir seleção múltipla de cotações - deve selecionar apenas uma cotação por vez
 - [x] App de Vendas (frete): nome da transportadora não aparece na conclusão do pedido (só o valor)
 - [x] App de Vendas (frete): exibir nome da transportadora na view de aprovação do gestor/Vitória
+- [x] Controle de Lotes: código 00541 agora converte para AR218 no SKU
+- [x] Controle de Lotes: código 00086 (VARETA AROMATIZADOR) agora aparece na aba Madeira para criação de lotes

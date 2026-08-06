@@ -1254,7 +1254,7 @@ export const productionRouter = router({
         } else {
           // Fallback: classify by description
           const d = p.descricaoItem.toUpperCase();
-          if ((d.includes("MADEIRA") || d.includes("PINUS")) && !d.includes("BAMBU")) {
+          if ((d.includes("MADEIRA") || d.includes("PINUS") || d.includes("AROMATIZADOR")) && !d.includes("BAMBU")) {
             material = "madeira";
           }
         }
