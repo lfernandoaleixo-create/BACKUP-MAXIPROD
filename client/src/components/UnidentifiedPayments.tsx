@@ -13,9 +13,10 @@ function formatCurrency(v: number) {
 function formatDateBR(dateStr: string | null): string {
   if (!dateStr) return "-";
   // Handle YYYY-MM-DD format → DD/MM/YYYY
-  if (dateStr.includes("-") && dateStr.length >= 10) {
-    const parts = dateStr.split("-");
-    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const clean = dateStr.trim().slice(0, 10); // Take only YYYY-MM-DD part
+  if (clean.includes("-") && clean.length === 10) {
+    const parts = clean.split("-");
+    if (parts.length === 3 && parts[0].length === 4) return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
   return dateStr;
 }
@@ -132,7 +133,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-purple-800">
             <DollarSign className="w-5 h-5" />

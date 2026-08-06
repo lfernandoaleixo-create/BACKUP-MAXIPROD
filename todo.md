@@ -6936,3 +6936,5 @@
 - [x] Sistema ping-pong alertas: tabela de interações para guardar conversa completa
 - [x] Cadastro cliente: preencher automaticamente "ISENTO" quando Sintegra não retorna Inscrição Estadual
 - [x] Proposta de Venda PDF: adicionar cabeçalho profissional com dados da empresa (razão social, nome fantasia, telefone, endereço, CEP)
+- [x] Pagamentos Não Identificados: data formato BR na aba Ativos (robustez do formatDateBR)
+- [x] Pagamentos Não Identificados: aumentar tamanho do card/dialog (max-w-3xl → max-w-5xl)
