@@ -6938,3 +6938,5 @@
 - [x] Proposta de Venda PDF: adicionar cabeçalho profissional com dados da empresa (razão social, nome fantasia, telefone, endereço, CEP)
 - [x] Pagamentos Não Identificados: data formato BR na aba Ativos (robustez do formatDateBR)
 - [x] Pagamentos Não Identificados: aumentar tamanho do card/dialog (max-w-3xl → max-w-5xl)
+- [x] Pagamentos Não Identificados: trocar "Vendedor" por "Identificador" e adicionar campo opcional para número do pedido
+- [x] App de Vendas (repetir pedido): corrigir precisão do preço para vir exatamente igual ao último pedido no Maxiprod

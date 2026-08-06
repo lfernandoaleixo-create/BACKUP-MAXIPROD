@@ -98,6 +98,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
   const [newPagador, setNewPagador] = useState("");
   const [identifyId, setIdentifyId] = useState<number | null>(null);
   const [clientName, setClientName] = useState("");
+  const [numeroPedido, setNumeroPedido] = useState("");
 
   const utils = trpc.useUtils();
   const { data: activePayments, isLoading } = trpc.unidentifiedPayments.getActive.useQuery();
@@ -128,7 +129,8 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
 
   const handleIdentify = (id: number) => {
     if (!clientName.trim()) { toast.error("Preencha o nome do cliente"); return; }
-    identifyMutation.mutate({ id, nomeCliente: clientName.trim(), vendedorResponsavel: operator?.name || "Desconhecido" });
+    identifyMutation.mutate({ id, nomeCliente: clientName.trim(), vendedorResponsavel: operator?.name || "Desconhecido", numeroPedido: numeroPedido.trim() || undefined });
+    setNumeroPedido("");
   };
 
   return (
@@ -202,9 +204,10 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                         <th className="text-left py-2 px-2">Data</th>
                         <th className="text-left py-2 px-2">Forma</th>
                         <th className="text-right py-2 px-2">Valor</th>
-                        <th className="text-left py-2 px-2">Pagador</th>
+                      <th className="text-left py-2 px-2">Pagador</th>
                         <th className="text-left py-2 px-2">Cliente</th>
-                        <th className="text-left py-2 px-2">Vendedor</th>
+                        <th className="text-left py-2 px-2">Identificador</th>
+                        <th className="text-left py-2 px-2">Nº Pedido</th>
                         <th className="text-center py-2 px-2">Status</th>
                         <th className="text-center py-2 px-2">Ação</th>
                       </tr>
@@ -220,10 +223,11 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                             {p.nomeCliente ? (
                               <span className="text-emerald-700 font-medium">{p.nomeCliente}</span>
                             ) : identifyId === p.id ? (
-                              <div className="flex gap-1">
-                                <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Nome do cliente" className="h-6 text-xs w-32" />
+                              <div className="flex flex-wrap gap-1">
+                                <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Nome do cliente" className="h-6 text-xs w-28" />
+                                <Input value={numeroPedido} onChange={e => setNumeroPedido(e.target.value)} placeholder="Nº Pedido (opc.)" className="h-6 text-xs w-24" />
                                 <Button size="sm" className="h-6 px-2 text-[10px]" onClick={() => handleIdentify(p.id)} disabled={identifyMutation.isPending}>OK</Button>
-                                <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => setIdentifyId(null)}><X className="w-3 h-3" /></Button>
+                                <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => { setIdentifyId(null); setNumeroPedido(""); }}><X className="w-3 h-3" /></Button>
                               </div>
                             ) : (
                               <button onClick={() => setIdentifyId(p.id)} className="text-purple-600 hover:text-purple-800 font-medium underline">
@@ -231,7 +235,8 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                               </button>
                             )}
                           </td>
-                          <td className="py-2 px-2 text-slate-600">{p.vendedorResponsavel || "-"}</td>
+                         <td className="py-2 px-2 text-slate-600">{p.vendedorResponsavel || "-"}</td>
+                          <td className="py-2 px-2 text-slate-600">{(p as any).numeroPedido || "-"}</td>
                           <td className="py-2 px-2 text-center">
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                               p.status === "pendente" ? "bg-amber-100 text-amber-700" :
@@ -270,7 +275,8 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                     <th className="text-right py-2 px-2">Valor</th>
                     <th className="text-left py-2 px-2">Pagador</th>
                     <th className="text-left py-2 px-2">Cliente</th>
-                    <th className="text-left py-2 px-2">Vendedor</th>
+                    <th className="text-left py-2 px-2">Identificador</th>
+                    <th className="text-left py-2 px-2">Nº Pedido</th>
                     <th className="text-left py-2 px-2">Resolvido por</th>
                     <th className="text-left py-2 px-2">Data Resolução</th>
                     {isGuilherme && <th className="text-center py-2 px-2">Ação</th>}
@@ -284,6 +290,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                       <td className="py-1.5 px-2 text-right font-medium text-slate-700">{formatCurrency(Number(p.valorPagamento))}</td>
                       <td className="py-1.5 px-2 text-slate-700 font-medium">{p.nomeCliente || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{p.vendedorResponsavel || "-"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{(p as any).numeroPedido || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{(p as any).nomePagador || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{p.resolvidoPor || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-500">{p.dataResolvido ? new Date(p.dataResolvido).toLocaleDateString("pt-BR") : "-"}</td>

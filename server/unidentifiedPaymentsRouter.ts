@@ -61,6 +61,7 @@ export const unidentifiedPaymentsRouter = {
       id: z.number(),
       nomeCliente: z.string(),
       vendedorResponsavel: z.string(),
+      numeroPedido: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -70,6 +71,7 @@ export const unidentifiedPaymentsRouter = {
           nomeCliente: input.nomeCliente,
           vendedorResponsavel: input.vendedorResponsavel,
           identificadoPor: input.vendedorResponsavel,
+          numeroPedido: input.numeroPedido || null,
           status: "identificado",
           dataIdentificado: new Date(),
         })

@@ -2287,7 +2287,7 @@ export const salesOrderRequestItems = mysqlTable("sales_order_request_items", {
   descricaoItem: text("descricao_item").notNull(),
   quantidade: decimal("quantidade", { precision: 18, scale: 3 }).notNull(),
   unidadeMedida: varchar("unidade_medida", { length: 10 }),
-  precoUnitario: decimal("preco_unitario", { precision: 18, scale: 2 }).notNull(),
+  precoUnitario: decimal("preco_unitario", { precision: 18, scale: 5 }).notNull(),
   precoMinimo: decimal("preco_minimo", { precision: 18, scale: 2 }), // snapshot do preço mínimo na hora do pedido
   totalItem: decimal("total_item", { precision: 18, scale: 2 }).notNull(),
   abaixoDoMinimo: boolean("abaixo_do_minimo").default(false).notNull(),
@@ -3420,6 +3420,7 @@ export const unidentifiedPayments = mysqlTable("unidentified_payments", {
   nomePagador: varchar("nomePagador", { length: 200 }),
   nomeCliente: varchar("nomeCliente", { length: 200 }),
   vendedorResponsavel: varchar("vendedorResponsavel", { length: 100 }),
+  numeroPedido: varchar("numeroPedido", { length: 50 }),
   status: varchar("status", { length: 20 }).notNull().default("pendente"),
   criadoPor: varchar("criadoPor", { length: 100 }).notNull(),
   identificadoPor: varchar("identificadoPor", { length: 100 }),
