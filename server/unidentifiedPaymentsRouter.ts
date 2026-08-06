@@ -38,6 +38,7 @@ export const unidentifiedPaymentsRouter = {
       dataPagamento: z.string(),
       formaPagamento: z.string(),
       valorPagamento: z.string(),
+      nomePagador: z.string().optional(),
       criadoPor: z.string(),
     }))
     .mutation(async ({ input }) => {
@@ -47,6 +48,7 @@ export const unidentifiedPaymentsRouter = {
         dataPagamento: input.dataPagamento,
         formaPagamento: input.formaPagamento,
         valorPagamento: input.valorPagamento,
+        nomePagador: input.nomePagador || null,
         criadoPor: input.criadoPor,
         status: "pendente",
       });

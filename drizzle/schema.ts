@@ -3417,6 +3417,7 @@ export const unidentifiedPayments = mysqlTable("unidentified_payments", {
   dataPagamento: varchar("dataPagamento", { length: 20 }).notNull(),
   formaPagamento: varchar("formaPagamento", { length: 50 }).notNull(),
   valorPagamento: decimal("valorPagamento", { precision: 18, scale: 2 }).notNull(),
+  nomePagador: varchar("nomePagador", { length: 200 }),
   nomeCliente: varchar("nomeCliente", { length: 200 }),
   vendedorResponsavel: varchar("vendedorResponsavel", { length: 100 }),
   status: varchar("status", { length: 20 }).notNull().default("pendente"),

@@ -65,6 +65,7 @@ export function UnidentifiedPaymentsAlert() {
               {pendingForCommercial.length} Pagamento{pendingForCommercial.length > 1 ? "s" : ""} Não Identificado{pendingForCommercial.length > 1 ? "s" : ""}
             </h3>
             <p className="text-xs text-purple-600">Clique para identificar o cliente</p>
+            <p className="text-[10px] text-purple-500 mt-0.5">{pendingForCommercial.map(p => `${(p as any).nomePagador || "?"} - ${p.formaPagamento} ${formatCurrency(Number(p.valorPagamento))}`).join(" | ")}</p>
           </div>
           <div className="ml-auto text-right">
             <span className="text-lg font-bold text-purple-700">
@@ -84,6 +85,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
   const [newDate, setNewDate] = useState("");
   const [newForma, setNewForma] = useState("");
   const [newValor, setNewValor] = useState("");
+  const [newPagador, setNewPagador] = useState("");
   const [identifyId, setIdentifyId] = useState<number | null>(null);
   const [clientName, setClientName] = useState("");
 
@@ -92,7 +94,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
   const { data: history } = trpc.unidentifiedPayments.getHistory.useQuery(undefined, { enabled: showHistory });
 
   const createMutation = trpc.unidentifiedPayments.create.useMutation({
-    onSuccess: () => { utils.unidentifiedPayments.invalidate(); toast.success("Pagamento registrado!"); setNewDate(""); setNewForma(""); setNewValor(""); },
+    onSuccess: () => { utils.unidentifiedPayments.invalidate(); toast.success("Pagamento registrado!"); setNewDate(""); setNewForma(""); setNewValor(""); setNewPagador(""); },
     onError: () => toast.error("Erro ao registrar"),
   });
   const identifyMutation = trpc.unidentifiedPayments.identify.useMutation({
@@ -110,8 +112,8 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
   const isGuilherme = operator?.name?.toLowerCase().includes("guilherme");
 
   const handleCreate = () => {
-    if (!newDate || !newForma || !newValor) { toast.error("Preencha todos os campos"); return; }
-    createMutation.mutate({ dataPagamento: newDate, formaPagamento: newForma, valorPagamento: newValor, criadoPor: operator?.name || "Sistema" });
+    if (!newDate || !newForma || !newValor || !newPagador.trim()) { toast.error("Preencha todos os campos"); return; }
+    createMutation.mutate({ dataPagamento: newDate, formaPagamento: newForma, valorPagamento: newValor, nomePagador: newPagador.trim(), criadoPor: operator?.name || "Sistema" });
   };
 
   const handleIdentify = (id: number) => {
@@ -146,7 +148,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
               {mode === "financial" && (
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 space-y-2">
                   <h4 className="text-xs font-bold text-purple-700 flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Novo Pagamento</h4>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div>
                       <label className="text-[10px] text-slate-500">Data *</label>
                       <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="h-8 text-xs" />
@@ -167,6 +169,10 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                       <label className="text-[10px] text-slate-500">Valor (R$) *</label>
                       <Input type="number" step="0.01" value={newValor} onChange={e => setNewValor(e.target.value)} placeholder="0,00" className="h-8 text-xs" />
                     </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500">Pagador *</label>
+                      <Input value={newPagador} onChange={e => setNewPagador(e.target.value)} placeholder="Nome de quem pagou" className="h-8 text-xs" />
+                    </div>
                   </div>
                   <Button size="sm" onClick={handleCreate} disabled={createMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                     {createMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
@@ -186,6 +192,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                         <th className="text-left py-2 px-2">Data</th>
                         <th className="text-left py-2 px-2">Forma</th>
                         <th className="text-right py-2 px-2">Valor</th>
+                        <th className="text-left py-2 px-2">Pagador</th>
                         <th className="text-left py-2 px-2">Cliente</th>
                         <th className="text-left py-2 px-2">Vendedor</th>
                         <th className="text-center py-2 px-2">Status</th>
@@ -198,6 +205,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                           <td className="py-2 px-2 text-slate-700">{p.dataPagamento}</td>
                           <td className="py-2 px-2 text-slate-700">{p.formaPagamento}</td>
                           <td className="py-2 px-2 text-right font-semibold text-slate-800">{formatCurrency(Number(p.valorPagamento))}</td>
+                          <td className="py-2 px-2 text-slate-700 font-medium">{(p as any).nomePagador || "-"}</td>
                           <td className="py-2 px-2">
                             {p.nomeCliente ? (
                               <span className="text-emerald-700 font-medium">{p.nomeCliente}</span>
@@ -250,6 +258,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                     <th className="text-left py-2 px-2">Data Pgto</th>
                     <th className="text-left py-2 px-2">Forma</th>
                     <th className="text-right py-2 px-2">Valor</th>
+                    <th className="text-left py-2 px-2">Pagador</th>
                     <th className="text-left py-2 px-2">Cliente</th>
                     <th className="text-left py-2 px-2">Vendedor</th>
                     <th className="text-left py-2 px-2">Resolvido por</th>
@@ -265,6 +274,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                       <td className="py-1.5 px-2 text-right font-medium text-slate-700">{formatCurrency(Number(p.valorPagamento))}</td>
                       <td className="py-1.5 px-2 text-slate-700 font-medium">{p.nomeCliente || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{p.vendedorResponsavel || "-"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{(p as any).nomePagador || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{p.resolvidoPor || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-500">{p.dataResolvido ? new Date(p.dataResolvido).toLocaleDateString("pt-BR") : "-"}</td>
                       {isGuilherme && (
