@@ -6946,3 +6946,4 @@
 - [x] Controle de Lotes: código 00541 agora converte para AR218 no SKU
 - [x] Controle de Lotes: código 00086 (VARETA AROMATIZADOR) agora aparece na aba Madeira para criação de lotes
 - [x] Controle de Lotes: criar interface para Maria/Érica gerenciarem mapeamentos código→SKU diretamente na aba Produção (sem precisar pedir ao dev)
+- [x] App de Vendas: pedido de gestor (sellerName === gestorName) vai direto para Vitória sem precisar de aprovação do próprio gestor

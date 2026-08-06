@@ -737,7 +737,9 @@ export const salesOrderRouter = router({
       const totalPedido = totalProdutos; // Frete NÃO é somado ao valor do pedido
 
       // Determine status - ALL real orders start as 'pendente' and require gestor approval
-      const status = input.isSimulation ? "simulacao" as const : "pendente" as const;
+      // Exception: if the seller IS the gestor (e.g. Jordão), auto-approve and go directly to Vitória
+      const isSellerGestor = seller.sellerName.toUpperCase().trim() === (seller.gestorName || "").toUpperCase().trim();
+      const status = input.isSimulation ? "simulacao" as const : (isSellerGestor ? "aprovado" as const : "pendente" as const);
       const motivoAlerta = alertMotivos.length > 0 ? alertMotivos.join("; ") : null;
 
       // Get next sequential order number atomically
