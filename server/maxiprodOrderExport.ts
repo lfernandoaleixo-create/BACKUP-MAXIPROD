@@ -20,6 +20,7 @@
  * 29 columns total. Each row = 1 item of the order.
  */
 import ExcelJS from "exceljs";
+import { normalizeVendedorName } from "./maxiprodGraphQL";
 import { getDb } from "./db";
 import { salesOrderRequests, salesOrderRequestItems, stockItems } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
@@ -400,7 +401,7 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
     cnpjCpf: cnpjLimpo,
     operacaoFiscal,
     tabelaPrecos: order.tabelaPrecos || "",
-    representante: order.sellerName || "",
+    representante: normalizeVendedorName(order.sellerName || ""),
     formaPagamento,
     condicaoPagamento: order.condicaoPagamento || "",
     dataEntrega: order.dataEntrega || "",

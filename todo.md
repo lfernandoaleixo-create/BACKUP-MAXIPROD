@@ -6902,3 +6902,7 @@
 - [x] Adicionar botão "Simular Frete" ao lado de "Concluir Pedido" na etapa de revisão
 - [x] Vendedor pode simular frete sem precisar acessar Custos de Venda
 - [x] Após simulação, vendedor pode selecionar a transportadora desejada
+
+## Bug: Nome do Cliente na Exportação Maxiprod
+- [ ] Quando vendedor seleciona cliente existente do Maxiprod, usar a Razão Social exata do cadastro (não permitir alteração)
+- [ ] Avisar vendedor se o nome digitado não corresponde ao cadastro do Maxiprod
