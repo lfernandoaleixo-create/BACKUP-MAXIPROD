@@ -113,6 +113,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     const leftMargin = 40;
 
     // ========== HEADER ==========
+    doc.fillColor("#000");
     // Logo area (text-based since we don't have the image file)
     doc.fontSize(16).font("Helvetica-Bold")
       .text("GRUPO", leftMargin, 40);
@@ -137,6 +138,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
 
     // ========== BORDER BOX ==========
     doc.rect(leftMargin - 5, y - 5, pageWidth + 10, 2).fill("#000");
+    doc.fillColor("#000");
     y += 5;
 
     // ========== REFERÊNCIA / EMISSÃO ==========
@@ -191,6 +193,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     // ========== PRODUCTS TABLE ==========
     y += 8;
     doc.rect(leftMargin - 5, y - 3, pageWidth + 10, 1).fill("#000");
+    doc.fillColor("#000");
     y += 5;
     doc.fontSize(9).font("Helvetica-Bold").text("Produtos/Serviços", leftMargin, y);
     y += 14;
@@ -207,6 +210,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     }
     y += 12;
     doc.rect(leftMargin - 5, y - 2, pageWidth + 10, 0.5).fill("#ccc");
+    doc.fillColor("#000");
     y += 3;
 
     // Table rows
@@ -278,6 +282,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     // ========== TOTALS (left side) ==========
     y += 10;
     doc.rect(leftMargin - 5, y - 3, pageWidth + 10, 1).fill("#000");
+    doc.fillColor("#000");
     y += 5;
     doc.fontSize(9).font("Helvetica-Bold").text("Totais", leftMargin, y);
     y += 14;
@@ -304,6 +309,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     if (data.enderecoEntrega) {
       y += 10;
       doc.rect(leftMargin - 5, y - 3, pageWidth + 10, 0.5).fill("#000");
+    doc.fillColor("#000");
       y += 5;
       doc.fontSize(9).font("Helvetica-Bold").text("Endereço de entrega", leftMargin, y);
       y += 14;
@@ -314,6 +320,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     // ========== PAYMENT ==========
     y += 10;
     doc.rect(leftMargin - 5, y - 3, pageWidth + 10, 0.5).fill("#000");
+    doc.fillColor("#000");
     y += 5;
     doc.fontSize(9).font("Helvetica-Bold").text("Cobrança", leftMargin, y);
     y += 14;
@@ -333,6 +340,7 @@ export async function propostaPdfExportHandler(req: Request, res: Response) {
     // ========== TRANSPORT ==========
     y += 10;
     doc.rect(leftMargin - 5, y - 3, pageWidth + 10, 0.5).fill("#000");
+    doc.fillColor("#000");
     y += 5;
     doc.fontSize(9).font("Helvetica-Bold").text("Transporte", leftMargin, y);
     y += 14;
