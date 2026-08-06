@@ -107,4 +107,15 @@ export const unidentifiedPaymentsRouter = {
         ));
       return { success: true };
     }),
+
+  /** Delete any payment record (admin only - for Guilherme) */
+  deleteAny: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      await db.delete(unidentifiedPayments)
+        .where(eq(unidentifiedPayments.id, input.id));
+      return { success: true };
+    }),
 };

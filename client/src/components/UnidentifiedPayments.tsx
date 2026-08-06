@@ -103,6 +103,11 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
     onSuccess: () => { utils.unidentifiedPayments.invalidate(); toast.success("Resolvido!"); },
     onError: () => toast.error("Erro ao resolver"),
   });
+  const deleteAnyMutation = trpc.unidentifiedPayments.deleteAny.useMutation({
+    onSuccess: () => { utils.unidentifiedPayments.invalidate(); toast.success("Registro apagado!"); },
+    onError: () => toast.error("Erro ao apagar"),
+  });
+  const isGuilherme = operator?.name?.toLowerCase().includes("guilherme");
 
   const handleCreate = () => {
     if (!newDate || !newForma || !newValor) { toast.error("Preencha todos os campos"); return; }
@@ -249,6 +254,7 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                     <th className="text-left py-2 px-2">Vendedor</th>
                     <th className="text-left py-2 px-2">Resolvido por</th>
                     <th className="text-left py-2 px-2">Data Resolução</th>
+                    {isGuilherme && <th className="text-center py-2 px-2">Ação</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -261,6 +267,13 @@ function UnidentifiedPaymentsDialog({ onClose, mode = "financial" }: { onClose: 
                       <td className="py-1.5 px-2 text-slate-600">{p.vendedorResponsavel || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{p.resolvidoPor || "-"}</td>
                       <td className="py-1.5 px-2 text-slate-500">{p.dataResolvido ? new Date(p.dataResolvido).toLocaleDateString("pt-BR") : "-"}</td>
+                      {isGuilherme && (
+                        <td className="py-1.5 px-2 text-center">
+                          <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[10px] text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => { if (confirm("Apagar este registro do histórico?")) deleteAnyMutation.mutate({ id: p.id }); }}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
