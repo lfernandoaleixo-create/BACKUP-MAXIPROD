@@ -184,13 +184,26 @@ function deriveOperacaoFiscal(operacaoFiscal: string | null | undefined, uf: str
   if (operacaoFiscal && operacaoFiscal.trim() !== "") {
     // Extrair apenas o código numérico (remover texto descritivo)
     const match = operacaoFiscal.match(/(\d{4})/);
-    if (match) return match[1];
+    if (match) {
+      const code = match[1];
+      // CORREÇÃO: Se o código extraído é 6xxx (fora do estado) mas o destino é MG (mesmo estado),
+      // converter para 5xxx (dentro do estado). E vice-versa.
+      const isSameState = uf && uf.toUpperCase() === "MG";
+      if (isSameState && code.startsWith("6")) {
+        return "5" + code.slice(1); // 6101 → 5101, 6102 → 5102, etc.
+      }
+      if (!isSameState && code.startsWith("5")) {
+        return "6" + code.slice(1); // 5101 → 6101, 5102 → 6102, etc.
+      }
+      return code;
+    }
     // Se é só número, retornar direto
     if (/^\d+$/.test(operacaoFiscal.trim())) return operacaoFiscal.trim();
   }
   
-  // Default baseado na UF
-  if (uf && uf.toUpperCase() === "PR") return "5101";
+  // Default baseado na UF (empresa é de MG)
+  // Mesmo estado (MG) = 5101, fora do estado = 6101
+  if (uf && uf.toUpperCase() === "MG") return "5101";
   return "6101";
 }
 

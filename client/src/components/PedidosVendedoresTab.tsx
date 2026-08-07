@@ -469,10 +469,10 @@ export default function PedidosVendedoresTab() {
               <div className="bg-teal-50 rounded-lg p-3 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">Produtos:</span>
-                  <span className="font-medium">{formatCurrency(detailsQuery.data.order.totalProdutos)}</span>
-                </div>
-                {detailsQuery.data.order.valorFrete > 0 && (
-                  <div className="flex justify-between text-sm">
+                <span className="font-medium">{formatCurrency(detailsQuery.data.order.totalProdutos)}</span>
+              </div>
+                {Number(detailsQuery.data.order.valorFrete || 0) > 0 && (
+                <div className="flex justify-between text-sm">
                     <span className="text-slate-600">
                       Frete{(detailsQuery.data.order as any).transportadora ? ` (${(detailsQuery.data.order as any).transportadora})` : ''}:
                     </span>

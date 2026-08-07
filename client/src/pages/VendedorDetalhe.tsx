@@ -618,8 +618,8 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                           transportadora: od.order.transportadora || "",
                           observacoes: od.order.observacoes || "",
                           valorTotal: Number(od.order.totalPedido || 0),
-                          endereco: od.order.logradouro ? {
-                            logradouro: od.order.logradouro || "",
+                          endereco: od.order.endereco ? {
+                            logradouro: od.order.endereco || "",
                             numero: od.order.numero || "",
                             complemento: od.order.complemento || "",
                             bairro: od.order.bairro || "",
