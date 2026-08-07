@@ -1,5 +1,4 @@
 /**
-import { flexMatchMultiple } from "@shared/flexSearch";
  * PropostaDeVenda - Formulário inline para criar uma Proposta de Venda (simulação para cliente)
  * 
  * Reutiliza os mesmos hooks tRPC do pedido de venda (searchClients, getProductsForSeller)
@@ -8,6 +7,7 @@ import { flexMatchMultiple } from "@shared/flexSearch";
  * Gera um PDF via POST /api/proposta/export-pdf
  */
 import { useState, useMemo } from "react";
+import { flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { parseDimensions } from "@shared/parseDimensions";

@@ -1,11 +1,11 @@
 /**
-import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
  * Controle de Lotes - Módulo de rastreabilidade de produção
  * - Lançamento de Lote (líder no tablet)
  * - Estoque de Lotes (saldo > 0)
  * - Histórico (busca por lote ou cliente)
  */
 import { useState, useMemo } from "react";
+import { flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {

@@ -1,11 +1,11 @@
 /**
-import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
  * Componente unificado de Inadimplência
  * Card único com abas internas: Evolução (gráfico) e Clientes (tabela)
  * Usado tanto na aba Financeiro quanto na aba Vendas
  */
 
 import React, { useState, useMemo, useRef, useCallback } from "react";
+import { flexMatchMultiple } from "@shared/flexSearch";
 import { useOperator } from "@/contexts/OperatorContext";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";

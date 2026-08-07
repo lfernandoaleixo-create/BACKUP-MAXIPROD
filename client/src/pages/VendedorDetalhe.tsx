@@ -799,7 +799,6 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
       flexMatchMultiple([item.codigoItem, item.descricaoItem], stockSearch)
     );
   }, [visibleProducts, stockSearch]);
-  }, [visibleProducts, stockSearch]);
 
   const madeiraProducts = useMemo(() =>
     filteredProducts.filter(item => item.grupo === "industrializacao" && item.subgrupo === "madeira"),
@@ -6009,8 +6008,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       filtered = filtered.filter((p: any) => 
         flexMatchMultiple([p.codigoItem, p.descricaoItem, p.codigoBarras || "", p.grupo || ""], productSearch)
       );
-    }
-      });
     }
     return filtered;
   }, [productsQuery.data, items, productSearch]);

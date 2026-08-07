@@ -1,5 +1,4 @@
 /**
-import { flexMatchMultiple } from "@shared/flexSearch";
  * Produção - Controle de produção industrial
  * 9 setores com lançamento diário por máquina/mesa
  * Multilamina (setor 1): status + campos fixos Benazzi/Madeira Dura (sempre visíveis)
@@ -8,6 +7,7 @@ import { flexMatchMultiple } from "@shared/flexSearch";
  */
 
 import { useState, useMemo, useCallback } from "react";
+import { flexMatchMultiple } from "@shared/flexSearch";
 import { useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -1959,9 +1959,6 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
     const filtered = search.trim()
       ? products.filter((p: any) => flexMatchMultiple([p.descricaoItem, p.codigoItem], search))
       : products;
-          p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q)
-        )
-      : products;
     // Exclude already registered products from the search list
     return filtered.filter((p: any) => !registeredMap[p.codigoItem] || registeredMap[p.codigoItem] === 0);
   }, [products, search, registeredMap]);
@@ -2393,9 +2390,7 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    const q = search.toLowerCase().trim();
     return products.filter((p: any) => flexMatchMultiple([p.descricaoItem, p.codigoItem], search));
-    );
   }, [products, search]);
 
   const handleSave = () => {

@@ -1,5 +1,4 @@
 /**
-import { flexMatchMultiple } from "@shared/flexSearch";
  * Métrica de Clientes - Análise da carteira de clientes do GRUPO
  * 
  * Foco: grupo como um todo (não por vendedor individual)
@@ -10,6 +9,7 @@ import { flexMatchMultiple } from "@shared/flexSearch";
  */
 
 import React, { useState, useMemo } from "react";
+import { flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
 import {
   Users,
