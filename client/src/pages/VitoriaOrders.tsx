@@ -13,7 +13,7 @@ import {
   CheckCircle2, Package, User, MapPin, ArrowLeft,
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
   Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2,
-  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare, TrendingUp, TrendingDown, Calendar, Eye
+  FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare, TrendingUp, TrendingDown, Calendar, Eye,
   Gift,
 } from "lucide-react";
 import { Link } from "wouter";
