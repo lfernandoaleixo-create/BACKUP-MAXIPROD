@@ -5524,7 +5524,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [trackingUrl, setTrackingUrl] = useState("");
   // Freight simulation inline (next to Concluir Pedido)
   const [showInlineFreight, setShowInlineFreight] = useState(false);
-  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ transportadora: string; totalFrete: number; prazo: string; cnpj?: string; error?: string }> | null>(null);
+  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ transportadora: string; totalFrete: number; prazo: string; cnpj?: string; error?: string; protocolo?: string }> | null>(null);
   const [inlineFreightLoading, setInlineFreightLoading] = useState(false);
   const [selectedFreightIndex, setSelectedFreightIndex] = useState<number | null>(null);
   const quoteAllCarriersMut = trpc.salesOrders.quoteAllCarriers.useMutation();
@@ -5640,6 +5640,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.transportadoraSelecionada) setTransportadoraSelecionada(draft.transportadoraSelecionada);
       if (draft.observacoesInternas) setObservacoesInternas(draft.observacoesInternas);
       if (draft.operacaoFiscal) setOperacaoFiscal(draft.operacaoFiscal);
+      if (draft.protocoloCotacao) setProtocoloCotacao(draft.protocoloCotacao);
       if (draft.temBonificacao) setTemBonificacao(draft.temBonificacao);
       if (draft.itensBonificacao && draft.itensBonificacao.length > 0) setItensBonificacao(draft.itensBonificacao);
       if (draft.situacaoCobranca) setSituacaoCobranca(draft.situacaoCobranca);
@@ -5676,6 +5677,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       transportadoraSelecionada: transportadoraSelecionada || undefined,
       observacoesInternas: observacoesInternas || undefined,
       operacaoFiscal: operacaoFiscal || undefined,
+      protocoloCotacao: protocoloCotacao || undefined,
       temBonificacao: temBonificacao || undefined,
       itensBonificacao: itensBonificacao.length > 0 ? itensBonificacao : undefined,
       situacaoCobranca: situacaoCobranca || undefined,
@@ -7915,6 +7917,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">R$ {r.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                               <span className="text-[9px] text-slate-500 ml-1">({pct}%)</span>
                               {r.prazo && <span className="text-[9px] text-slate-400 ml-2">{r.prazo}</span>}
+                              {(r as any).protocolo && <span className="text-[9px] text-blue-500 ml-2">Prot: {(r as any).protocolo}</span>}
                             </div>
                           </button>
                         );
@@ -7946,6 +7949,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               setTipoFrete("CIF");
                               setSelectedFreightIndex(null);
                               setInlineFreightResults(null);
+                              setProtocoloCotacao((sel as any).protocolo || "");
                             }}
                             className="w-full py-2 px-3 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
                           >
@@ -8120,6 +8124,12 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">Transportadora:</span>
                     <span className="text-slate-700 dark:text-slate-200">{transportadoraSelecionada}</span>
+                  </div>
+                )}
+                {protocoloCotacao && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Protocolo:</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-mono font-bold">{protocoloCotacao}</span>
                   </div>
                 )}
                 {trackingUrl && (
@@ -8622,6 +8632,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               <span className="text-[9px] text-slate-500 ml-1">({pct}%)</span>
                               {r.prazo && <span className="text-[9px] text-slate-400 ml-2">{r.prazo}</span>}
                             </div>
+                              {(r as any).protocolo && <span className="text-[9px] text-blue-500 ml-2">Prot: {(r as any).protocolo}</span>}
                           </button>
                         );
                       })}
@@ -8652,6 +8663,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               setTipoFrete("CIF");
                               setSelectedFreightIndex(null);
                               setInlineFreightResults(null);
+                              setProtocoloCotacao((sel as any).protocolo || "");
                               setShowInlineFreight(false);
                             }}
                             className="w-full py-2 px-3 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"

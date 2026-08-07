@@ -514,6 +514,12 @@ export default function PedidosVendedoresTab() {
                     <span className="font-medium">{formatCurrency(detailsQuery.data.order.valorFrete)}</span>
                   </div>
                 )}
+                {(detailsQuery.data.order as any).protocoloCotacao && (
+                <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">Protocolo Cotação:</span>
+                    <span className="font-medium text-blue-600">{(detailsQuery.data.order as any).protocoloCotacao}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm font-bold border-t border-teal-200 pt-1">
                   <span className="text-teal-700">Total:</span>
                   <span className="text-teal-700">{formatCurrency(detailsQuery.data.order.totalPedido)}</span>

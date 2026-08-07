@@ -56,6 +56,7 @@ export interface OrderDraft {
   transportadoraSelecionada?: string;
   observacoesInternas?: string;
   operacaoFiscal?: string;
+  protocoloCotacao?: string;
   naturezaOperacao?: string;
   temBonificacao?: "" | "sim" | "nao";
   itensBonificacao?: Array<{ codigoItem: string; descricaoItem: string; quantidade: number; valorUnitario: number; pesoBrutoCaixa: number; dimsStr: string }>;

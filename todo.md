@@ -6967,6 +6967,6 @@
 - [x] Pedido de venda: trocar "Data de Entrega" e "Previsão de Entrega" por "Data para Faturar"
 - [x] Pedido de venda: campos obrigatórios (meio pgto, forma pgto, condição pgto, tipo frete, data para faturar)
 - [ ] Pedido de venda: puxar endereço de entrega do cadastro do cliente automaticamente
-- [ ] Protocolo transportadora: mostrar em todos os locais de simulação de frete
+- [x] Protocolo transportadora: mostrar em todos os locais de simulação de frete
 - [ ] Protocolo transportadora: corrigir CNPJs que não retornam protocolo
-- [ ] Protocolo transportadora: mostrar no pedido concluído (valor + transportadora + protocolo)
+- [x] Protocolo transportadora: mostrar no pedido concluído (valor + transportadora + protocolo)
