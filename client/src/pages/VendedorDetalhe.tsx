@@ -597,6 +597,53 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                     ))}
                   </div>
 
+                  {/* PDF Export button - always visible */}
+                  <div className="flex gap-2 mt-3 mb-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!orderDetails) return;
+                        const od = orderDetails;
+                        generateOrderPdf({
+                          pedido: String(od.order.orderNumber || od.order.id),
+                          cliente: od.order.razaoSocial || "",
+                          clienteApelido: od.order.nomeFantasia || od.order.razaoSocial || "",
+                          uf: od.order.uf || "",
+                          dataEmissao: od.order.createdAt ? new Date(od.order.createdAt).toISOString() : "",
+                          dataEntrega: "",
+                          empresa: "PALITOS FOX",
+                          representante: od.order.sellerName || "",
+                          segmento: "",
+                          condicaoPagamento: od.order.condicaoPagamento || "",
+                          transportadora: od.order.transportadora || "",
+                          observacoes: od.order.observacoes || "",
+                          valorTotal: Number(od.order.totalPedido || 0),
+                          endereco: od.order.logradouro ? {
+                            logradouro: od.order.logradouro || "",
+                            numero: od.order.numero || "",
+                            complemento: od.order.complemento || "",
+                            bairro: od.order.bairro || "",
+                            cep: od.order.cep || "",
+                            cidade: od.order.municipio || "",
+                            uf: od.order.uf || "",
+                          } : null,
+                          itens: od.items.map((item: any) => ({
+                            descricao: item.descricaoItem || "",
+                            quantidade: Number(item.quantidade || 0),
+                            valorUnitario: Number(item.precoUnitario || 0),
+                            valorTotal: Number(item.quantidade || 0) * Number(item.precoUnitario || 0),
+                            codigoItem: item.codigoItem || null,
+                            unidadeMedida: item.unidadeMedida || "CX",
+                          })),
+                        }, true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Exportar PDF
+                    </button>
+                  </div>
+
                   {/* Action buttons for pending orders */}
                   {order.status === "pendente" && (
                     <div className="flex gap-2 mt-3">
@@ -4737,6 +4784,47 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        generateOrderPdf({
+                          pedido: String(pm.orderNumber || pm.id),
+                          cliente: pm.razaoSocial || "",
+                          clienteApelido: pm.nomeFantasia || pm.razaoSocial || "",
+                          uf: pm.uf || "",
+                          dataEmissao: pm.createdAt ? new Date(pm.createdAt).toISOString() : "",
+                          dataEntrega: "",
+                          empresa: "PALITOS FOX",
+                          representante: pm.sellerName || sellerName || "",
+                          segmento: "",
+                          condicaoPagamento: pm.condicaoPagamento || "",
+                          transportadora: pm.transportadora || "",
+                          observacoes: pm.observacoes || "",
+                          valorTotal: Number(pm.totalPedido || pm.totalProdutos || 0),
+                          endereco: pm.logradouro ? {
+                            logradouro: pm.logradouro || "",
+                            numero: pm.numero || "",
+                            complemento: pm.complemento || "",
+                            bairro: pm.bairro || "",
+                            cep: pm.cep || "",
+                            cidade: pm.municipio || "",
+                            uf: pm.uf || "",
+                          } : null,
+                          itens: (pm.items || []).map((item: any) => ({
+                            descricao: item.descricaoItem || item.descricao || "",
+                            quantidade: Number(item.quantidade || 0),
+                            valorUnitario: Number(item.precoUnitario || item.valorUnitario || 0),
+                            valorTotal: Number(item.quantidade || 0) * Number(item.precoUnitario || item.valorUnitario || 0),
+                            codigoItem: item.codigoItem || null,
+                            unidadeMedida: item.unidadeMedida || "CX",
+                          })),
+                        }, true);
+                      }}
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors cursor-pointer"
+                      title="Exportar PDF"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
                     <OrderDeleteButton orderId={pm.id} onDeleted={() => utils.salesOrders.getSellerOrders.invalidate()} />
                   </div>
                 </div>
@@ -9291,3 +9379,4 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
     </span>
   );
 }
+import { generateOrderPdf } from "@/lib/generateOrderPdf";
