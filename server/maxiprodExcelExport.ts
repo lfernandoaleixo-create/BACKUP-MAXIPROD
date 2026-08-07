@@ -163,7 +163,7 @@ function mapClientToMaxiprodRow(client: any): string[] {
   // Col 8: IE
   row[7] = (client.inscricaoEstadual && client.inscricaoEstadual.toUpperCase() !== "ISENTO")
     ? client.inscricaoEstadual
-    : "ISENTO";
+    : "";  // Maxiprod não aceita "ISENTO", deixar em branco
   // Col 9: IM
   row[8] = client.inscricaoMunicipal || "";
   // Col 10: RNTRC

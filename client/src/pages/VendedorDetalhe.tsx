@@ -80,6 +80,7 @@ import CustosDeVendaStep from "@/components/CustosDeVendaStep";
 import { ProductMarginBar, MarginParamsEditor } from "@/components/ProductMarginBar";
 import { RealCostMarginBar, MarginSimulationParams } from "@/components/RealCostMarginBar";
 import { useOperator } from "@/contexts/OperatorContext";
+import BonificacaoSection, { type BonificacaoItem } from "@/components/BonificacaoSection";
 import { SerasaConsulta } from "@/components/SerasaConsulta";
 import PropostaDeVenda from "@/components/PropostaDeVenda";
 
@@ -5507,6 +5508,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [tipoFrete, setTipoFrete] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [observacoesInternas, setObservacoesInternas] = useState("");
+  const [temBonificacao, setTemBonificacao] = useState<"" | "sim" | "nao">("");
+  const [itensBonificacao, setItensBonificacao] = useState<Array<{ codigoItem: string; descricaoItem: string; quantidade: number; pesoBrutoCaixa: number; dimsStr: string }>>([]);
   const [transportadoraSelecionada, setTransportadoraSelecionada] = useState("");
   const [protocoloCotacao, setProtocoloCotacao] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
@@ -5547,6 +5550,19 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         }
       }
       if (totalPeso === 0) totalPeso = 30;
+      // Adicionar peso/cubagem/volumes da bonificação (afeta apenas frete, não valor)
+      if (temBonificacao === "sim" && itensBonificacao.length > 0) {
+        for (const bonif of itensBonificacao) {
+          totalVolumes += bonif.quantidade;
+          totalPeso += bonif.pesoBrutoCaixa * bonif.quantidade;
+          if (bonif.dimsStr) {
+            const dims = bonif.dimsStr.split("x").map(Number);
+            if (dims.length === 3) {
+              totalCubagem += (dims[0] / 100) * (dims[1] / 100) * (dims[2] / 100) * bonif.quantidade;
+            }
+          }
+        }
+      }
       const totalValor = items.reduce((sum, i) => sum + (i.precoUnitario * i.quantidade), 0);
       const result = await quoteAllCarriersMut.mutateAsync({
         cepDestino: cep.replace(/\D/g, ''),
@@ -5611,6 +5627,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.transportadoraSelecionada) setTransportadoraSelecionada(draft.transportadoraSelecionada);
       if (draft.observacoesInternas) setObservacoesInternas(draft.observacoesInternas);
       if (draft.operacaoFiscal) setOperacaoFiscal(draft.operacaoFiscal);
+      if (draft.temBonificacao) setTemBonificacao(draft.temBonificacao);
+      if (draft.itensBonificacao && draft.itensBonificacao.length > 0) setItensBonificacao(draft.itensBonificacao);
       if (draft.step) setStep(draft.step);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -5641,6 +5659,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       transportadoraSelecionada: transportadoraSelecionada || undefined,
       observacoesInternas: observacoesInternas || undefined,
       operacaoFiscal: operacaoFiscal || undefined,
+      temBonificacao: temBonificacao || undefined,
+      itensBonificacao: itensBonificacao.length > 0 ? itensBonificacao : undefined,
     });
   }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, meioPagamento, condicaoPagamento, valorFrete, tipoFrete, transportadoraSelecionada, observacoesInternas, telefone2, emailContato]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6050,6 +6070,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     if (!isSimulation && !operacaoFiscal) {
       alert("Selecione a Operação Fiscal antes de finalizar o pedido.");
+      return;
+    }
+    if (!isSimulation && !temBonificacao) {
+      alert("Responda se o pedido vai com bonificação (Sim/Não) antes de finalizar.");
       return;
     }
     if (isEditMode && editOrderId) {
@@ -7778,6 +7802,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               </div>
               <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
             </div>
+            {/* Bonificação */}
+            <BonificacaoSection
+              temBonificacao={temBonificacao}
+              setTemBonificacao={setTemBonificacao}
+              itensBonificacao={itensBonificacao}
+              setItensBonificacao={setItensBonificacao}
+              products={productsQuery.data || []}
+            />
 
             <div className="flex justify-between items-center pt-2">
              <button onClick={() => isSimulation ? onClose() : setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
