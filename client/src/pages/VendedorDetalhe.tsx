@@ -7825,11 +7825,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <label className="text-[10px] text-slate-500 font-medium">Data para Faturar <span className="text-red-500">*</span></label>
                   <input type="date" value={dataEntregaPedido} onChange={(e) => { setDataEntregaPedido(e.target.value); setPrevisaoEntregaPedido(e.target.value); }} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
                 </div>
-                </div>
               </div>
               <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
             </div>
-            {/* Bonificação */}
+            {/* Bonificacao */}
             <BonificacaoSection
               temBonificacao={temBonificacao}
               setTemBonificacao={setTemBonificacao}
