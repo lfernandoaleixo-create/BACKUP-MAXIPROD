@@ -6976,3 +6976,4 @@
 - [x] Corrigir erros TS do checkpoint af69f45d (imports dentro de comentários JSDoc, linhas órfãs de sed)
 - [x] PDF Pedido de Venda: redesenhar layout profissional igual modelo Maxiprod (seções, dados fiscais, totais, cobrança, transporte, rodapé empresa)
 - [ ] Ajustar estoque produto 00009: e-commerce de 15 para 9 caixas (estoque físico vai subir para 102 quando Maxiprod atualizar)
+- [x] Custo Real: corrigir para usar última PO 100% concluída (data entrega mais recente), não média de todas POs

@@ -2159,11 +2159,23 @@ export const importRouter = router({
         semEstoque = true; // sem caixas de concluídas no estoque
       } else {
         // Há caixas de POs concluídas no estoque
-        custoReal = weightedCostConcluidas / boxesFromConcluidas;
-        breakdownReal = attributionBreakdown
-          .filter(b => b.source === 'concluida')
-          .map(b => ({ poNumber: b.poNumber, caixasUsadas: b.caixasUsadas, valorCaixa: b.valorCaixa }))
-          .reverse(); // natural reading order (oldest first)
+        // Regra Fernando: Custo Real = preço da ÚLTIMA PO concluída (mais recente por data de entrega).
+        // Justificativa: se a última PO concluída tinha mais caixas que o estoque atual,
+        // todas as caixas do estoque obrigatoriamente vieram dessa última PO (as anteriores já esgotaram).
+        // Só faz média ponderada se o estoque exceder a quantidade da última PO concluída.
+        const lastConcluida = arrivedHistory[arrivedHistory.length - 1];
+        if (boxesFromConcluidas <= lastConcluida.quantidade) {
+          // Todas as caixas de concluídas no estoque vieram da última PO
+          custoReal = lastConcluida.valorCaixaBrl;
+          breakdownReal = [{ poNumber: lastConcluida.poNumber, caixasUsadas: boxesFromConcluidas, valorCaixa: lastConcluida.valorCaixaBrl }];
+        } else {
+          // Estoque excede a última PO - precisa de mais de uma PO (média ponderada LIFO)
+          custoReal = weightedCostConcluidas / boxesFromConcluidas;
+          breakdownReal = attributionBreakdown
+            .filter(b => b.source === 'concluida')
+            .map(b => ({ poNumber: b.poNumber, caixasUsadas: b.caixasUsadas, valorCaixa: b.valorCaixa }))
+            .reverse(); // natural reading order (oldest first)
+        }
       }
 
       // --- ORANGE COLUMN: Custo Projetado - Todas as caixas no estoque (concluídas + pátio) ---
