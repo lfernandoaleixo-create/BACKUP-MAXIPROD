@@ -36,6 +36,8 @@ export interface DraftClientData {
   segmento: string;
   tipoContribuinte: string;
   regimeTributario: string;
+  telefone2?: string;
+  emailContato?: string;
 }
 
 export interface OrderDraft {
@@ -49,6 +51,10 @@ export interface OrderDraft {
   meioPagamento: string;
   condicaoPagamento: string;
   updatedAt: number; // timestamp
+  valorFrete?: string;
+  tipoFrete?: string;
+  transportadoraSelecionada?: string;
+  observacoesInternas?: string;
 }
 
 const STORAGE_KEY = "grupo-fox-order-draft";

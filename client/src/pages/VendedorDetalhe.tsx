@@ -5599,11 +5599,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         setSegmento(draft.client.segmento || "");
         setTipoContribuinte(draft.client.tipoContribuinte || "Contribuinte");
         setRegimeTributario(draft.client.regimeTributario || "Normal");
+        if (draft.client.telefone2) setTelefone2(draft.client.telefone2);
+        if (draft.client.emailContato) setEmailContato(draft.client.emailContato);
       }
       if (draft.observacoes) setObservacoes(draft.observacoes);
       if (draft.formaPagamento) setFormaPagamento(draft.formaPagamento);
       if (draft.meioPagamento) setMeioPagamento(draft.meioPagamento);
       if (draft.condicaoPagamento) setCondicaoPagamento(draft.condicaoPagamento);
+      if (draft.valorFrete) setValorFrete(draft.valorFrete);
+      if (draft.tipoFrete) setTipoFrete(draft.tipoFrete);
+      if (draft.transportadoraSelecionada) setTransportadoraSelecionada(draft.transportadoraSelecionada);
+      if (draft.observacoesInternas) setObservacoesInternas(draft.observacoesInternas);
       if (draft.step) setStep(draft.step);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -5615,7 +5621,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const clientData: DraftClientData | null = cnpjCpf ? {
       cnpjCpf, razaoSocial, nomeFantasia, inscricaoEstadual,
       cep, endereco, numero, complemento, bairro, municipio, uf,
-      telefone1, emailNfe, segmento, tipoContribuinte, regimeTributario
+      telefone1, emailNfe, segmento, tipoContribuinte, regimeTributario,
+      telefone2, emailContato: emailContato || undefined,
     } : null;
     saveDraft({
       sellerId,
@@ -5627,9 +5634,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       formaPagamento,
       meioPagamento,
       condicaoPagamento,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      valorFrete: valorFrete || undefined,
+      tipoFrete: tipoFrete || undefined,
+      transportadoraSelecionada: transportadoraSelecionada || undefined,
+      observacoesInternas: observacoesInternas || undefined,
     });
-  }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, meioPagamento, condicaoPagamento]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, meioPagamento, condicaoPagamento, valorFrete, tipoFrete, transportadoraSelecionada, observacoesInternas, telefone2, emailContato]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(

@@ -6952,3 +6952,4 @@
 - [x] PedidosVendedoresTab: indicar se cliente é NOVO, JÁ CADASTRADO, ou tem DADOS ATUALIZADOS no Maxiprod
 - [x] Simulação frete inline: seleção individual (não ticar múltiplas), mostrar CNPJ, botão salvar, mostrar no resumo
 - [x] Corrigir fluxo aprovação pedidos: respeitar permissões gc.aprovacoesPedidos (filtrar por vendedores ticados)
+- [x] Persistir TODAS as informações do pedido de venda (não só itens) quando vendedor sai da aba
