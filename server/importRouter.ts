@@ -2099,50 +2099,15 @@ export const importRouter = router({
       const stockUnits = Number(item.quantidade || 0);
       const boxesInStock = fator > 0 ? stockUnits / fator : 0;
 
-      // --- ATRIBUIÇÃO LIFO UNIFICADA ---
-      // Regra do Fernando: O estoque atual é SEMPRE atribuído à PO mais recente (por data de chegada).
-      // Vendas são abatidas das mais antigas primeiro. O que sobra no estoque = POs mais recentes.
-      // Juntamos TODAS as POs (concluídas + pátio), ordenamos por data, e atribuímos LIFO.
-      // Depois separamos: caixas de concluídas = custo real, todas = custo projetado.
-      const allPosForAttribution = [
-        ...(arrivedHistory || []).map((po: any) => ({ ...po, source: 'concluida' as const })),
-        ...(patioHistory || []).map((po: any) => ({ ...po, source: 'patio' as const })),
-      ];
-      // Sort by arrival date (oldest first) so LIFO traversal from end = most recent first
-      allPosForAttribution.sort((a, b) => {
-        const da = a.previsaoEntrega ? new Date(a.previsaoEntrega).getTime() : 0;
-        const db2 = b.previsaoEntrega ? new Date(b.previsaoEntrega).getTime() : 0;
-        return da - db2;
-      });
+      // === LÓGICA DEFINITIVA DOS 3 CUSTOS (Fernando, 07/08/2026) ===
+      // Cada custo é INDEPENDENTE e usa APENAS seu grupo de POs:
+      // - Custo Real (verde) = APENAS POs 100% Concluídas
+      // - Custo Projetado (laranja) = APENAS POs Chegou no Pátio
+      // - Custo Estimado (azul) = APENAS POs Navegando
+      // Dentro de cada grupo: LIFO (vendas abatidas das mais antigas, estoque = mais recentes)
+      // Se 1 PO no grupo → preço direto. Se 2+ POs → média ponderada LIFO.
 
-      // LIFO attribution: assign stock boxes to most recent POs first
-      let remainingForAttribution = boxesInStock;
-      let boxesFromConcluidas = 0;
-      let weightedCostConcluidas = 0;
-      let boxesFromPatio = 0;
-      let weightedCostPatio = 0;
-      const attributionBreakdown: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number; source: string }> = [];
-
-      for (let i = allPosForAttribution.length - 1; i >= 0 && remainingForAttribution > 0; i--) {
-        const po = allPosForAttribution[i];
-        const boxesFromThisPo = Math.min(remainingForAttribution, po.quantidade);
-        remainingForAttribution -= boxesFromThisPo;
-        attributionBreakdown.push({
-          poNumber: po.poNumber,
-          caixasUsadas: Math.round(boxesFromThisPo * 100) / 100,
-          valorCaixa: Math.round(po.valorCaixaBrl * 100) / 100,
-          source: po.source,
-        });
-        if (po.source === 'concluida') {
-          boxesFromConcluidas += boxesFromThisPo;
-          weightedCostConcluidas += boxesFromThisPo * po.valorCaixaBrl;
-        } else {
-          boxesFromPatio += boxesFromThisPo;
-          weightedCostPatio += boxesFromThisPo * po.valorCaixaBrl;
-        }
-      }
-
-      // --- GREEN COLUMN: Custo Real - Apenas caixas de POs Concluídas no estoque ---
+      // --- GREEN COLUMN: Custo Real - APENAS POs 100% Concluídas ---
       let custoReal = 0;
       let breakdownReal: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
       let semEstoque = false;
@@ -2150,70 +2115,114 @@ export const importRouter = router({
       if (!arrivedHistory || arrivedHistory.length === 0) {
         custoReal = 0;
         semEstoque = boxesInStock <= 0;
-      } else if (boxesFromConcluidas <= 0) {
-        // Todas as caixas no estoque vieram do pátio (PO mais recente que as concluídas)
-        // Custo real = preço da última PO concluída como referência (já vendeu tudo)
-        const lastConcluida = arrivedHistory[arrivedHistory.length - 1];
-        custoReal = lastConcluida.valorCaixaBrl;
-        breakdownReal = [{ poNumber: lastConcluida.poNumber, caixasUsadas: 0, valorCaixa: lastConcluida.valorCaixaBrl }];
-        semEstoque = true; // sem caixas de concluídas no estoque
       } else {
-        // Há caixas de POs concluídas no estoque
-        // Regra Fernando: Custo Real = preço da ÚLTIMA PO concluída (mais recente por data de entrega).
-        // Justificativa: se a última PO concluída tinha mais caixas que o estoque atual,
-        // todas as caixas do estoque obrigatoriamente vieram dessa última PO (as anteriores já esgotaram).
-        // Só faz média ponderada se o estoque exceder a quantidade da última PO concluída.
-        const lastConcluida = arrivedHistory[arrivedHistory.length - 1];
-        if (boxesFromConcluidas <= lastConcluida.quantidade) {
-          // Todas as caixas de concluídas no estoque vieram da última PO
+        // LIFO dentro do grupo de concluídas:
+        const totalCxConcluidas = arrivedHistory.reduce((s: number, po: any) => s + po.quantidade, 0);
+        // Total de caixas que chegaram (concluídas + pátio)
+        const totalAllArrived = totalCxConcluidas + (patioHistory || []).reduce((s: number, po: any) => s + po.quantidade, 0);
+        const totalSoldAll = Math.max(0, totalAllArrived - boxesInStock);
+        // Vendas abatidas das mais antigas primeiro: concluídas são mais antigas que pátio
+        const soldFromConcluidas = Math.min(totalSoldAll, totalCxConcluidas);
+        const boxesRemainingFromConcluidas = Math.max(0, totalCxConcluidas - soldFromConcluidas);
+
+        if (boxesRemainingFromConcluidas <= 0) {
+          // Todas as caixas de concluídas foram vendidas - usar última PO como referência
+          const lastConcluida = arrivedHistory[arrivedHistory.length - 1];
           custoReal = lastConcluida.valorCaixaBrl;
-          breakdownReal = [{ poNumber: lastConcluida.poNumber, caixasUsadas: boxesFromConcluidas, valorCaixa: lastConcluida.valorCaixaBrl }];
+          breakdownReal = [{ poNumber: lastConcluida.poNumber, caixasUsadas: 0, valorCaixa: lastConcluida.valorCaixaBrl }];
+          semEstoque = true;
         } else {
-          // Estoque excede a última PO - precisa de mais de uma PO (média ponderada LIFO)
-          custoReal = weightedCostConcluidas / boxesFromConcluidas;
-          breakdownReal = attributionBreakdown
-            .filter(b => b.source === 'concluida')
-            .map(b => ({ poNumber: b.poNumber, caixasUsadas: b.caixasUsadas, valorCaixa: b.valorCaixa }))
-            .reverse(); // natural reading order (oldest first)
+          const lastConcluida = arrivedHistory[arrivedHistory.length - 1];
+          if (boxesRemainingFromConcluidas <= lastConcluida.quantidade) {
+            // Todas as caixas restantes vieram da última PO concluída
+            custoReal = lastConcluida.valorCaixaBrl;
+            breakdownReal = [{ poNumber: lastConcluida.poNumber, caixasUsadas: Math.round(boxesRemainingFromConcluidas * 100) / 100, valorCaixa: lastConcluida.valorCaixaBrl }];
+          } else {
+            // Precisa de mais de uma PO - média ponderada LIFO
+            let remaining = boxesRemainingFromConcluidas;
+            let weightedCost = 0;
+            for (let i = arrivedHistory.length - 1; i >= 0 && remaining > 0; i--) {
+              const po = arrivedHistory[i];
+              const used = Math.min(remaining, po.quantidade);
+              remaining -= used;
+              weightedCost += used * po.valorCaixaBrl;
+              breakdownReal.push({ poNumber: po.poNumber, caixasUsadas: Math.round(used * 100) / 100, valorCaixa: po.valorCaixaBrl });
+            }
+            custoReal = weightedCost / boxesRemainingFromConcluidas;
+            breakdownReal.reverse(); // oldest first for display
+          }
         }
       }
 
-      // --- ORANGE COLUMN: Custo Projetado - Todas as caixas no estoque (concluídas + pátio) ---
-      // Regra: O estoque atual já INCLUI caixas do pátio (chegou fisicamente).
-      // NÃO soma pátio ao estoque. Usa a mesma atribuição LIFO já calculada.
-      let custoProjetado = custoReal; // default = custo real
+      // --- ORANGE COLUMN: Custo Projetado - APENAS POs Chegou no Pátio ---
+      let custoProjetado = 0;
       let breakdownProjetado: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
-      if (boxesInStock > 0 && allPosForAttribution.length > 0) {
-        const totalBoxesAttributed = boxesFromConcluidas + boxesFromPatio;
-        const totalWeightedCostAll = weightedCostConcluidas + weightedCostPatio;
-        custoProjetado = totalBoxesAttributed > 0 ? totalWeightedCostAll / totalBoxesAttributed : custoReal;
-        breakdownProjetado = attributionBreakdown
-          .map(b => ({ poNumber: b.poNumber, caixasUsadas: b.caixasUsadas, valorCaixa: b.valorCaixa }))
-          .reverse(); // natural reading order
-      } else if (patioHistory && patioHistory.length > 0) {
-        // Sem estoque mas tem POs no pátio: mostrar preço da PO pátio mais recente como referência
-        const lastPatio = patioHistory[patioHistory.length - 1];
-        custoProjetado = lastPatio.valorCaixaBrl;
-        breakdownProjetado = [{ poNumber: lastPatio.poNumber, caixasUsadas: 0, valorCaixa: lastPatio.valorCaixaBrl }];
+      if (!patioHistory || patioHistory.length === 0) {
+        // Sem POs no pátio - projetado = custo real como referência
+        custoProjetado = custoReal;
+      } else if (patioHistory.length === 1) {
+        // 1 PO no pátio - preço direto, sem média
+        custoProjetado = patioHistory[0].valorCaixaBrl;
+        breakdownProjetado = [{ poNumber: patioHistory[0].poNumber, caixasUsadas: patioHistory[0].quantidade, valorCaixa: patioHistory[0].valorCaixaBrl }];
+      } else {
+        // 2+ POs no pátio - LIFO: vendas abatidas das mais antigas, estoque = mais recentes
+        const totalCxPatio = patioHistory.reduce((s: number, po: any) => s + po.quantidade, 0);
+        const totalCxConcluidas2 = (arrivedHistory || []).reduce((s: number, po: any) => s + po.quantidade, 0);
+        const totalAllArrived2 = totalCxConcluidas2 + totalCxPatio;
+        const totalSoldAll2 = Math.max(0, totalAllArrived2 - boxesInStock);
+        // Vendas do pátio = total vendido - o que já foi vendido das concluídas
+        const soldFromPatio = Math.max(0, totalSoldAll2 - totalCxConcluidas2);
+        const boxesRemainingFromPatio = Math.max(0, totalCxPatio - soldFromPatio);
+
+        if (boxesRemainingFromPatio <= 0) {
+          // Todas vendidas - usar última PO pátio como referência
+          const lastPatio = patioHistory[patioHistory.length - 1];
+          custoProjetado = lastPatio.valorCaixaBrl;
+          breakdownProjetado = [{ poNumber: lastPatio.poNumber, caixasUsadas: 0, valorCaixa: lastPatio.valorCaixaBrl }];
+        } else {
+          const lastPatio = patioHistory[patioHistory.length - 1];
+          if (boxesRemainingFromPatio <= lastPatio.quantidade) {
+            // Todas as caixas restantes vieram da última PO pátio
+            custoProjetado = lastPatio.valorCaixaBrl;
+            breakdownProjetado = [{ poNumber: lastPatio.poNumber, caixasUsadas: Math.round(boxesRemainingFromPatio * 100) / 100, valorCaixa: lastPatio.valorCaixaBrl }];
+          } else {
+            // Média ponderada LIFO das POs pátio
+            let remaining = boxesRemainingFromPatio;
+            let weightedCost = 0;
+            for (let i = patioHistory.length - 1; i >= 0 && remaining > 0; i--) {
+              const po = patioHistory[i];
+              const used = Math.min(remaining, po.quantidade);
+              remaining -= used;
+              weightedCost += used * po.valorCaixaBrl;
+              breakdownProjetado.push({ poNumber: po.poNumber, caixasUsadas: Math.round(used * 100) / 100, valorCaixa: po.valorCaixaBrl });
+            }
+            custoProjetado = weightedCost / boxesRemainingFromPatio;
+            breakdownProjetado.reverse(); // oldest first for display
+          }
+        }
       }
 
-      // --- BLUE COLUMN: Estimativa - POs "Navegando" ---
-      // Shows the direct Valor da Caixa from the navegando PO (NOT weighted average)
-      // If multiple navegando POs, shows weighted average of just the navegando POs
+      // --- BLUE COLUMN: Estimativa - APENAS POs "Navegando" ---
       let custoEstimativa = 0;
       let breakdownEstimativa: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
 
       if (navegandoHistory && navegandoHistory.length > 0) {
-        let totalNavQty = 0;
-        let totalNavCost = 0;
-        for (const po of navegandoHistory) {
-          totalNavQty += po.quantidade;
-          totalNavCost += po.quantidade * po.valorCaixaBrl;
-          breakdownEstimativa.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
+        if (navegandoHistory.length === 1) {
+          // 1 PO navegando - preço direto
+          custoEstimativa = navegandoHistory[0].valorCaixaBrl;
+          breakdownEstimativa = [{ poNumber: navegandoHistory[0].poNumber, caixasUsadas: navegandoHistory[0].quantidade, valorCaixa: navegandoHistory[0].valorCaixaBrl }];
+        } else {
+          // 2+ POs navegando - média ponderada (quantidade × preço / total)
+          let totalNavQty = 0;
+          let totalNavCost = 0;
+          for (const po of navegandoHistory) {
+            totalNavQty += po.quantidade;
+            totalNavCost += po.quantidade * po.valorCaixaBrl;
+            breakdownEstimativa.push({ poNumber: po.poNumber, caixasUsadas: Math.round(po.quantidade * 100) / 100, valorCaixa: po.valorCaixaBrl });
+          }
+          custoEstimativa = totalNavQty > 0 ? totalNavCost / totalNavQty : 0;
         }
-        // Direct valor da caixa from navegando POs (no mixing with existing stock)
-        custoEstimativa = totalNavQty > 0 ? totalNavCost / totalNavQty : 0;
       }
 
       // Compute totalArrived/totalSold for display purposes
