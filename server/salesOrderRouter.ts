@@ -1177,7 +1177,7 @@ export const salesOrderRouter = router({
                 }
               }
             }
-            if (!matchedKey) return true; // No rule for this seller, show anyway (legacy)
+            if (!matchedKey) return false; // No rule for this seller - do NOT show (respect permissions)
             const myPosition = sellerPositionMap.get(matchedKey)!;
             const conditions = sellerConditionMap.get(matchedKey) || [];
             const isAposAprovacao = conditions.includes("apos_aprovacao_gestores");

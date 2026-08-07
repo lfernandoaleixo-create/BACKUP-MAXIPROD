@@ -413,14 +413,24 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
 
   // Always fetch ALL orders for stats accuracy - filter client-side
   const { data: allOrders, isLoading, refetch } = trpc.salesOrders.listOrders.useQuery(
-    { status: "todos", gestorName },
+    { status: "todos", recipientName: gestorName },
     { staleTime: 30 * 1000 }
   );
+  const { getVisiblePeopleForFeature } = useOperator();
+  const visibleSellersForApproval = getVisiblePeopleForFeature("gc.aprovacoesPedidos");
   const orders = useMemo(() => {
     if (!allOrders) return undefined;
-    if (filter === "todos") return allOrders;
-    return allOrders.filter((o: any) => o.status === filter);
-  }, [allOrders, filter]);
+    // First: filter by gc.aprovacoesPedidos permissions
+    let filtered = allOrders;
+    if (visibleSellersForApproval.length > 0) {
+      filtered = allOrders.filter((o: any) => {
+        const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        return visibleSellersForApproval.includes(sellerSlug);
+      });
+    }
+    if (filter === "todos") return filtered;
+    return filtered.filter((o: any) => o.status === filter);
+  }, [allOrders, filter, visibleSellersForApproval]);
 
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
     { orderId: expandedOrder! },

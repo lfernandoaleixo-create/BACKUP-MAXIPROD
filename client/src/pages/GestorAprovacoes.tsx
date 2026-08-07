@@ -113,6 +113,7 @@ export default function GestorAprovacoes(props: any = {}) {
     const gestorName = gestorNameProp || urlParams.get("gestor") || undefined;
   const { hasGranularAccess, getVisiblePeopleForFeature } = useOperator();
   const visibleSellersForReverEditar = getVisiblePeopleForFeature("gc.reverEditarPedido");
+  const visibleSellersForApproval = getVisiblePeopleForFeature("gc.aprovacoesPedidos");
   const isJuvenalInit = gestorName === "JUVENAL TEIXEIRA";
   const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado">("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
@@ -146,10 +147,19 @@ export default function GestorAprovacoes(props: any = {}) {
   // Client-side filter for display
   const orders = useMemo(() => {
     if (!allOrders) return undefined;
-    if (filter === "todos") return allOrders;
-    if (filter === "pendente") return allOrders.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
-    return allOrders.filter((o: any) => o.status === filter);
-  }, [allOrders, filter]);
+    // First: filter by gc.aprovacoesPedidos permissions (which sellers this operator can see)
+    let filtered = allOrders;
+    if (visibleSellersForApproval.length > 0) {
+      filtered = allOrders.filter((o: any) => {
+        const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        return visibleSellersForApproval.includes(sellerSlug);
+      });
+    }
+    // Then: filter by status
+    if (filter === "todos") return filtered;
+    if (filter === "pendente") return filtered.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
+    return filtered.filter((o: any) => o.status === filter);
+  }, [allOrders, filter, visibleSellersForApproval]);
 
   // Get items for expanded order
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
