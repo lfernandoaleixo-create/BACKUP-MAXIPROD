@@ -6974,3 +6974,5 @@
 - [x] Proposta de Venda: lookup Sintegra automático quando CNPJ é digitado (preenche razão social, endereço, IE, etc.)
 - [x] Proposta de Venda: botão "Cadastrar este Cliente" após lookup Sintegra (salva no banco como vendorClient)
 - [x] Corrigir erros TS do checkpoint af69f45d (imports dentro de comentários JSDoc, linhas órfãs de sed)
+- [x] PDF Pedido de Venda: redesenhar layout profissional igual modelo Maxiprod (seções, dados fiscais, totais, cobrança, transporte, rodapé empresa)
+- [ ] Ajustar estoque produto 00009: e-commerce de 15 para 9 caixas (estoque físico vai subir para 102 quando Maxiprod atualizar)
