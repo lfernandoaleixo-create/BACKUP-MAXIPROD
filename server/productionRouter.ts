@@ -1728,4 +1728,41 @@ export const productionRouter = router({
       await db.delete(skuCodeMappings).where(eq(skuCodeMappings.id, input.id));
       return { success: true };
     }),
+
+  /** Get product descriptions for any product codes (used by Embalagem to show names for registered items) */
+  getProductDescriptions: publicProcedure
+    .input(z.object({ codes: z.array(z.string()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return {};
+      if (input.codes.length === 0) return {};
+      
+      const rows = await db
+        .select({ codigoItem: stockItems.codigoItem, descricaoItem: stockItems.descricaoItem })
+        .from(stockItems)
+        .where(inArray(stockItems.codigoItem, input.codes));
+      
+      const map: Record<string, string> = {};
+      for (const row of rows) {
+        if (row.codigoItem && row.descricaoItem && !map[row.codigoItem]) {
+          map[row.codigoItem] = row.descricaoItem;
+        }
+      }
+      
+      // Fallback: check product_catalog for any missing codes
+      const missingCodes = input.codes.filter(c => !map[c]);
+      if (missingCodes.length > 0) {
+        const catalogRows = await db
+          .select({ codigoItem: productCatalog.codigoItem, descricaoItem: productCatalog.descricaoItem })
+          .from(productCatalog)
+          .where(inArray(productCatalog.codigoItem, missingCodes));
+        for (const row of catalogRows) {
+          if (row.codigoItem && row.descricaoItem && !map[row.codigoItem]) {
+            map[row.codigoItem] = row.descricaoItem;
+          }
+        }
+      }
+      
+      return map;
+    }),
 });

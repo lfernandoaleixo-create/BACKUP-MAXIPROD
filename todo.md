@@ -6950,3 +6950,4 @@
 - [x] App de Vendas: botão exportar PDF ao lado de cada pedido de venda com dados da empresa e todos os dados do pedido
 - [x] Exportação Maxiprod: coluna Representante/vendedor deve usar CPF/CNPJ (só números) em vez do nome
 - [x] PedidosVendedoresTab: indicar se cliente é NOVO, JÁ CADASTRADO, ou tem DADOS ATUALIZADOS no Maxiprod
+- [x] Simulação frete inline: seleção individual (não ticar múltiplas), mostrar CNPJ, botão salvar, mostrar no resumo

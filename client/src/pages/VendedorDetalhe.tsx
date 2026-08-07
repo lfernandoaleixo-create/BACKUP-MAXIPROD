@@ -5502,8 +5502,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [trackingUrl, setTrackingUrl] = useState("");
   // Freight simulation inline (next to Concluir Pedido)
   const [showInlineFreight, setShowInlineFreight] = useState(false);
-  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ transportadora: string; totalFrete: number; prazo: string; error?: string }> | null>(null);
+  const [inlineFreightResults, setInlineFreightResults] = useState<Array<{ transportadora: string; totalFrete: number; prazo: string; cnpj?: string; error?: string }> | null>(null);
   const [inlineFreightLoading, setInlineFreightLoading] = useState(false);
+  const [selectedFreightIndex, setSelectedFreightIndex] = useState<number | null>(null);
   const quoteAllCarriersMut = trpc.salesOrders.quoteAllCarriers.useMutation();
 
   const handleInlineFreightSimulation = async () => {
@@ -5517,7 +5518,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     setInlineFreightLoading(true);
     setShowInlineFreight(true);
-    setInlineFreightResults(null);
+    setInlineFreightResults(null); setSelectedFreightIndex(null);
     try {
       let totalPeso = 0;
       let totalCubagem = 0;
@@ -7783,14 +7784,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       .map((r, i) => {
                         const totalValor = items.reduce((sum, it) => sum + (it.precoUnitario * it.quantidade), 0);
                         const pct = totalValor > 0 ? ((r.totalFrete / totalValor) * 100).toFixed(1) : '0';
-                        const isSelected = transportadoraSelecionada === r.transportadora && valorFrete === r.totalFrete.toFixed(2);
+                        const isSelected = selectedFreightIndex === i;
                         return (
                           <button
                             key={i}
                             onClick={() => {
-                              setTransportadoraSelecionada(r.transportadora);
-                              setValorFrete(r.totalFrete.toFixed(2));
-                              setTipoFrete("CIF");
+                              setSelectedFreightIndex(isSelected ? null : i);
+                            }
                             }}
                             className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${isSelected ? 'bg-indigo-200 dark:bg-indigo-800 border-2 border-indigo-500' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-indigo-300'}`}
                           >
@@ -7798,7 +7798,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
                                 {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                               </div>
-                              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>
+                              <div><span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>{(r as any).cnpj && <span className="text-[9px] text-slate-400 block">{(r as any).cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}</span>}</div>
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">R$ {r.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -7816,13 +7816,33 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     {inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).length === 0 && !inlineFreightLoading && (
                       <p className="text-xs text-slate-500 text-center py-2">Nenhuma cotação disponível</p>
                     )}
-                    {transportadoraSelecionada && (
-                      <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-                        <p className="text-[10px] text-green-700 dark:text-green-300 font-medium">
-                          Transportadora selecionada: <strong>{transportadoraSelecionada}</strong> — R$ {valorFrete}
-                        </p>
-                      </div>
-                    )}
+                    {selectedFreightIndex !== null && (() => {
+                      const sorted = inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).sort((a, b) => a.totalFrete - b.totalFrete);
+                      const sel = sorted[selectedFreightIndex];
+                      if (!sel) return null;
+                      return (
+                        <div className="mt-2 space-y-2">
+                          <div className="p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                            <p className="text-[10px] text-green-700 dark:text-green-300 font-medium">
+                              Selecionada: <strong>{sel.transportadora}</strong> — R$ {sel.totalFrete.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              {(sel as any).cnpj && <span className="ml-1 text-slate-500">({(sel as any).cnpj})</span>}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setTransportadoraSelecionada(sel.transportadora);
+                              setValorFrete(sel.totalFrete.toFixed(2));
+                              setTipoFrete("CIF");
+                              setSelectedFreightIndex(null);
+                              setInlineFreightResults(null);
+                            }}
+                            className="w-full py-2 px-3 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
+                          >
+                            Salvar Transportadora
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -8471,21 +8491,20 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       .map((r, i) => {
                         const totalValor = items.reduce((sum, it) => sum + (it.precoUnitario * it.quantidade), 0);
                         const pct = totalValor > 0 ? ((r.totalFrete / totalValor) * 100).toFixed(1) : '0';
-                        const isSelected = transportadoraSelecionada === r.transportadora && valorFrete === r.totalFrete.toFixed(2);
+                        const isSelected = selectedFreightIndex === i;
                         return (
                           <button
                             key={i}
                             onClick={() => {
-                              setTransportadoraSelecionada(r.transportadora);
-                              setValorFrete(r.totalFrete.toFixed(2));
-                              setTipoFrete("CIF");
+                              setSelectedFreightIndex(isSelected ? null : i);
+                            }
                             }}
                             className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${isSelected ? 'bg-indigo-200 dark:bg-indigo-800 border-2 border-indigo-500' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-indigo-300'}`}
                           >
                             <div className="flex items-center gap-2">
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
                                 {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                              </div>
+                              <div><span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>{(r as any).cnpj && <span className="text-[9px] text-slate-400 block">{(r as any).cnpj}</span>}</div>
                               <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>
                             </div>
                             <div className="text-right">
@@ -8504,13 +8523,34 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     {inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).length === 0 && !inlineFreightLoading && (
                       <p className="text-xs text-slate-500 text-center py-2">Nenhuma cotação disponível</p>
                     )}
-                    {transportadoraSelecionada && (
-                      <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-                        <p className="text-[10px] text-green-700 dark:text-green-300 font-medium">
-                          Transportadora selecionada: <strong>{transportadoraSelecionada}</strong> — R$ {valorFrete}
-                        </p>
-                      </div>
-                    )}
+                    {selectedFreightIndex !== null && (() => {
+                      const sorted = inlineFreightResults!.filter(r => !r.error && r.totalFrete > 0).sort((a, b) => a.totalFrete - b.totalFrete);
+                      const sel = sorted[selectedFreightIndex];
+                      if (!sel) return null;
+                      return (
+                        <div className="mt-2 space-y-2">
+                          <div className="p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                            <p className="text-[10px] text-green-700 dark:text-green-300 font-medium">
+                              Selecionada: <strong>{sel.transportadora}</strong> — R$ {sel.totalFrete.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              {(sel as any).cnpj && <span className="ml-1 text-slate-500">({(sel as any).cnpj})</span>}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setTransportadoraSelecionada(sel.transportadora);
+                              setValorFrete(sel.totalFrete.toFixed(2));
+                              setTipoFrete("CIF");
+                              setSelectedFreightIndex(null);
+                              setInlineFreightResults(null);
+                              setShowInlineFreight(false);
+                            }}
+                            className="w-full py-2 px-3 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
+                          >
+                            Salvar Transportadora
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
