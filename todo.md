@@ -6948,3 +6948,4 @@
 - [x] Controle de Lotes: criar interface para Maria/Érica gerenciarem mapeamentos código→SKU diretamente na aba Produção (sem precisar pedir ao dev)
 - [x] App de Vendas: pedido de gestor (sellerName === gestorName) vai direto para Vitória sem precisar de aprovação do próprio gestor
 - [x] App de Vendas: botão exportar PDF ao lado de cada pedido de venda com dados da empresa e todos os dados do pedido
+- [x] Exportação Maxiprod: coluna Representante/vendedor deve usar CPF/CNPJ (só números) em vez do nome

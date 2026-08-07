@@ -2062,6 +2062,7 @@ export const sellerPermissions = mysqlTable("seller_permissions", {
   commissionPercent: decimal("commission_percent", { precision: 5, scale: 2 }), // % de comissão do vendedor
   showMarginBar: boolean("show_margin_bar").default(true).notNull(), // se mostra a barra de margem para este vendedor
   showMarginValues: boolean("show_margin_values").default(false).notNull(), // se mostra os valores numéricos (%, R$) na barra
+  cpfCnpj: varchar("cpf_cnpj", { length: 20 }), // CPF ou CNPJ do representante no Maxiprod (só números, sem pontos/traços)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

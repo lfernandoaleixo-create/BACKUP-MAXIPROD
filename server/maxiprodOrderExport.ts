@@ -22,8 +22,8 @@
 import ExcelJS from "exceljs";
 import { normalizeVendedorName } from "./maxiprodGraphQL";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, stockItems } from "../drizzle/schema";
-import { eq, inArray } from "drizzle-orm";
+import { salesOrderRequests, salesOrderRequestItems, stockItems, sellerPermissions } from "../drizzle/schema";
+import { eq, inArray, sql } from "drizzle-orm";
 
 // EXACT column headers from Maxiprod official template (MAXIPROD.xls)
 // ATENÇÃO: Espaços extras em " Representante/ vendedor " são INTENCIONAIS
@@ -395,13 +395,34 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
   // Forma de pagamento normalizada (À vista / A Prazo / Outros)
   const formaPagamento = normalizeFormaPagamento(order.formaPagamento);
 
+  // Buscar CPF/CNPJ do representante na tabela seller_permissions
+  let representanteCpfCnpj = "";
+  if (order.sellerId) {
+    const [seller] = await db.select({ cpfCnpj: sellerPermissions.cpfCnpj })
+      .from(sellerPermissions)
+      .where(eq(sellerPermissions.id, order.sellerId));
+    if (seller?.cpfCnpj) {
+      representanteCpfCnpj = seller.cpfCnpj;
+    }
+  }
+  // Fallback: se não tem CPF/CNPJ cadastrado, tenta buscar por nome
+  if (!representanteCpfCnpj && order.sellerName) {
+    const firstName = order.sellerName.split(' ')[0].toUpperCase();
+    const [sellerByName] = await db.select({ cpfCnpj: sellerPermissions.cpfCnpj })
+      .from(sellerPermissions)
+      .where(sql`UPPER(${sellerPermissions.sellerName}) LIKE ${`%${firstName}%`}`);
+    if (sellerByName?.cpfCnpj) {
+      representanteCpfCnpj = sellerByName.cpfCnpj;
+    }
+  }
+
   const orderData: OrderExportData = {
     orderId: order.id,
     orderNumber: order.orderNumber || order.id,
     cnpjCpf: cnpjLimpo,
     operacaoFiscal,
     tabelaPrecos: order.tabelaPrecos || "",
-    representante: normalizeVendedorName(order.sellerName || ""),
+    representante: representanteCpfCnpj || normalizeVendedorName(order.sellerName || ""),
     formaPagamento,
     condicaoPagamento: order.condicaoPagamento || "",
     dataEntrega: order.dataEntrega || "",
