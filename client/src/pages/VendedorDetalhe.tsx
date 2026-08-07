@@ -8502,8 +8502,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                             <div className="flex items-center gap-2">
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
                                 {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                              </div>
                               <div><span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>{(r as any).cnpj && <span className="text-[9px] text-slate-400 block">{(r as any).cnpj}</span>}</div>
-                              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{r.transportadora}</span>
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">R$ {r.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
