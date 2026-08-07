@@ -6960,3 +6960,13 @@
 - [x] Exportação Maxiprod: se IE = 'ISENTO', exportar em branco (não enviar a palavra ISENTO)
 - [x] Bonificação: adicionar campo valor unitário, somar valor ao frete, gerar 2 arquivos exportação Maxiprod
 - [x] Draft: salvar situacaoCobranca, estadoConfiguravel, dataEntregaPedido, previsaoEntregaPedido, naturezaOperacao e demais campos
+- [x] Cadastro cliente: campos obrigatórios (endereço, telefone1, email, CNPJ, razão social, cobrança, representante, condição pgto, segmento)
+- [x] Cadastro cliente: campo Representante com dropdown dos apelidos do Maxiprod
+- [x] Cadastro cliente: campo Segmento obrigatório
+- [ ] Cadastro cliente: campo Endereço de Entrega (mesmo ou diferente?)
+- [x] Pedido de venda: trocar "Data de Entrega" e "Previsão de Entrega" por "Data para Faturar"
+- [x] Pedido de venda: campos obrigatórios (meio pgto, forma pgto, condição pgto, tipo frete, data para faturar)
+- [ ] Pedido de venda: puxar endereço de entrega do cadastro do cliente automaticamente
+- [ ] Protocolo transportadora: mostrar em todos os locais de simulação de frete
+- [ ] Protocolo transportadora: corrigir CNPJs que não retornam protocolo
+- [ ] Protocolo transportadora: mostrar no pedido concluído (valor + transportadora + protocolo)

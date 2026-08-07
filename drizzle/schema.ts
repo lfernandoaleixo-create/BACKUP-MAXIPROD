@@ -2387,6 +2387,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   nomeContato: varchar("nome_contato", { length: 200 }), // pessoa de contato
   
   // Classificação
+  representante: varchar("representante", { length: 200 }), // Nome/apelido do representante (vendedor responsável)
   segmento: varchar("segmento", { length: 100 }), // DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.
   
   // Observações

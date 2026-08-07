@@ -4075,6 +4075,7 @@ export const salesRouter = router({
       email: z.string().max(300).optional(),
       nomeContato: z.string().max(200).optional(),
       segmento: z.string().max(100).optional(),
+      representante: z.string().max(200).optional(),
       observacoes: z.string().optional(),
       tipoContribuinte: z.string().max(30).optional(),
       // Dados fiscais
@@ -4201,6 +4202,7 @@ export const salesRouter = router({
         email: input.email || null,
         nomeContato: input.nomeContato || null,
         segmento: input.segmento || null,
+        representante: input.representante || null,
         observacoes: input.observacoes || null,
         possuiRedespacho: input.possuiRedespacho ? 1 : 0,
         redespachoCep: input.redespachoCep || null,
@@ -4295,6 +4297,7 @@ export const salesRouter = router({
       email: z.string().max(300).optional(),
       nomeContato: z.string().max(200).optional(),
       segmento: z.string().max(100).optional(),
+      representante: z.string().max(200).optional(),
       observacoes: z.string().optional(),
       // Redespacho
       possuiRedespacho: z.boolean().optional(),

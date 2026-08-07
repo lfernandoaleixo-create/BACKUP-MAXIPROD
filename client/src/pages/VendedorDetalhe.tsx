@@ -2801,6 +2801,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
   const [email, setEmail] = useState("");
   const [nomeContato, setNomeContato] = useState("");
   const [segmento, setSegmento] = useState("");
+  const [representanteCliente, setRepresentanteCliente] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [tipoContribuinte, setTipoContribuinte] = useState<string>("");
   // showContribuinteCard removido - contribuinte agora é auto-determinado pela IE
@@ -2914,6 +2915,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       setEmail(editClient.email || "");
       setNomeContato(editClient.nomeContato || "");
       setSegmento(editClient.segmento || "");
+      setRepresentanteCliente(editClient.representante || "");
       setObservacoes(editClient.observacoes || "");
       setRegimeTributario(editClient.regimeTributario || "");
       setInscricaoMunicipal(editClient.inscricaoMunicipal || "");
@@ -3147,6 +3149,9 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       }
       // Cobrança
       if (!situacaoCobranca || situacaoCobranca === "") strictMissing.push("Situação de Cobrança (Com/Sem Protesto)");
+      if (!representanteCliente || representanteCliente === "") strictMissing.push("Representante/Vendedor");
+      if (!condicaoPagamento || condicaoPagamento.trim() === "") strictMissing.push("Condição de Pagamento");
+      if (!segmento || segmento === "") strictMissing.push("Segmento");
       // Perguntas obrigatórias: devem ser respondidas (Sim ou Não)
       if (possuiRedespacho === null) strictMissing.push("Possui redespacho? (selecione Sim ou Não)");
       if (enderecoEntregaMesmo === null) strictMissing.push("Endereço de entrega (selecione Sim ou Não)");
@@ -3187,6 +3192,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         email: email.trim() || undefined,
         nomeContato: nomeContato.trim() || undefined,
         segmento: segmento || undefined,
+        representante: representanteCliente || undefined,
         observacoes: observacoes.trim() || undefined,
         tipoContribuinte: tipoContribuinte || undefined,
         regimeTributario: regimeTributario || undefined,
@@ -3261,6 +3267,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             setEmail(ec.email || "");
             setNomeContato(ec.nomeContato || "");
             setSegmento(ec.segmento || "");
+            setRepresentanteCliente(ec.representante || "");
             setObservacoes(ec.observacoes || "");
             setRegimeTributario(ec.regimeTributario || "");
             setInscricaoMunicipal(ec.inscricaoMunicipal || "");
@@ -3338,6 +3345,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         email: email.trim() || undefined,
         nomeContato: nomeContato.trim() || undefined,
         segmento: segmento || undefined,
+        representante: representanteCliente || undefined,
         observacoes: observacoes.trim() || undefined,
         regimeTributario: regimeTributario || undefined,
         inscricaoMunicipal: inscricaoMunicipal.trim() || undefined,
@@ -3389,6 +3397,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
   };
 
   const segmentoOptions = ["", "DISTRIBUIDORA", "SUPERMERCADO", "ATACADO", "VAREJO", "INDÚSTRIA", "RESTAURANTE", "LOJA", "OUTROS"];
+  const representanteOptions = ["", "ANA PAULA ALEIXO", "CLARINDO GONCALVES", "DANIEL TAVARES", "FRANCISCO JOSEANY ALBUQUERQUE FERREIRA", "GILSON LUIZ ALEIXO", "JESSICA APARECIDA RODRIGUES", "JORDÃO LAINE", "JUVENAL TEIXEIRA", "LÍVIA PINHEIRO", "LUIZ MATIAS", "MESA INDUSTRIA", "PATRICK LUCIO", "PEDRO AUGUSTO", "RAFAEL LEONEL PEREIRA", "RENATO ALEIXO", "ROMERA REPRESENTACOES", "WELLINGTON BRANCO"];
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-xl border-2 ${editMode ? "border-amber-400 dark:border-amber-600" : "border-teal-300 dark:border-teal-600"} shadow-lg p-5`}>
@@ -3527,7 +3536,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
           <div>
-            <label className="block text-[10px] font-medium text-slate-500 mb-1">Segmento</label>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Segmento <span className="text-red-500">*</span></label>
             <select
               value={segmento}
               onChange={(e) => setSegmento(e.target.value)}
@@ -6084,6 +6093,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       alert("Selecione a Operação Fiscal antes de finalizar o pedido.");
       return;
     }
+    if (!dataEntregaPedido) {
+      alert("Preencha a Data para Faturar antes de finalizar o pedido.");
+      return;
+    }
+    if (!meioPagamento) {
+      alert("Selecione o Meio de Pagamento (Boleto, PIX, etc.) antes de finalizar o pedido.");
+      return;
+    }
     if (!isSimulation && !temBonificacao) {
       alert("Responda se o pedido vai com bonificação (Sim/Não) antes de finalizar.");
       return;
@@ -7805,12 +7822,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Data de Entrega</label>
-                  <input type="date" value={dataEntregaPedido} onChange={(e) => setDataEntregaPedido(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                  <label className="text-[10px] text-slate-500 font-medium">Data para Faturar <span className="text-red-500">*</span></label>
+                  <input type="date" value={dataEntregaPedido} onChange={(e) => { setDataEntregaPedido(e.target.value); setPrevisaoEntregaPedido(e.target.value); }} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
                 </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Previsão de Entrega</label>
-                  <input type="date" value={previsaoEntregaPedido} onChange={(e) => setPrevisaoEntregaPedido(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
                 </div>
               </div>
               <p className="text-[8px] text-amber-500 mt-1">Estes campos serão usados na exportação do pedido para o Maxiprod.</p>
