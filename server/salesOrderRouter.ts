@@ -694,6 +694,15 @@ export const salesOrderRouter = router({
       comissaoPercentual: z.number().optional(),
       comissaoTier: z.string().optional(),
       margemPercentual: z.number().optional(),
+      // Bonificação
+      bonificacaoItems: z.array(z.object({
+        codigoItem: z.string(),
+        descricaoItem: z.string(),
+        quantidade: z.number(),
+        valorUnitario: z.number(),
+        pesoBrutoCaixa: z.number(),
+        dimsStr: z.string(),
+      })).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -801,6 +810,7 @@ export const salesOrderRouter = router({
         operacaoFiscal: input.operacaoFiscal || null,
         naturezaOperacao: input.naturezaOperacao || null,
         estadoConfiguravel: input.estadoConfiguravel || null,
+        bonificacaoItems: input.bonificacaoItems && input.bonificacaoItems.length > 0 ? JSON.stringify(input.bonificacaoItems) : null,
         formaPagamento: input.formaPagamento || null,
         meioPagamento: input.meioPagamento || null,
         dataEntrega: input.dataEntrega || null,
@@ -1998,6 +2008,14 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const { generateMaxiprodOrderExcelFromDb } = await import("./maxiprodOrderExport");
       const { buffer, filename } = await generateMaxiprodOrderExcelFromDb(input.orderId);
+      const base64 = buffer.toString("base64");
+      return { base64, filename };
+    }),
+  exportBonificacaoMaxiprod: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .mutation(async ({ input }) => {
+      const { generateMaxiprodBonificacaoExcelFromDb } = await import("./maxiprodOrderExport");
+      const { buffer, filename } = await generateMaxiprodBonificacaoExcelFromDb(input.orderId);
       const base64 = buffer.toString("base64");
       return { base64, filename };
     }),

@@ -6958,3 +6958,5 @@
 - [x] Campo obrigatório 'bonificação' no pedido: Sim/Não, se Sim abre lista de produtos para peso/cubagem no frete (não altera valor)
 - [ ] Proposta de Venda: consultar Sintegra ao digitar CNPJ + botão 'Cadastrar este cliente' que importa dados para cadastro
 - [x] Exportação Maxiprod: se IE = 'ISENTO', exportar em branco (não enviar a palavra ISENTO)
+- [x] Bonificação: adicionar campo valor unitário, somar valor ao frete, gerar 2 arquivos exportação Maxiprod
+- [x] Draft: salvar situacaoCobranca, estadoConfiguravel, dataEntregaPedido, previsaoEntregaPedido, naturezaOperacao e demais campos

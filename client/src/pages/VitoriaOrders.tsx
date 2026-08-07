@@ -14,6 +14,7 @@ import {
   RefreshCw, ClipboardCheck, Clock, ChevronDown, ChevronUp, FileText,
   Inbox, CheckCheck, AlertCircle, Building2, Phone, Mail, Tag, CreditCard, Trash2,
   FileSpreadsheet, AlertTriangle, Download, UserPlus, CheckSquare, TrendingUp, TrendingDown, Calendar, Eye
+  Gift,
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -70,6 +71,7 @@ export default function VitoriaOrders() {
   const gestorApproveMutation = trpc.salesOrders.gestorApproveSubgestorOrder.useMutation();
   const exportMaxiprodMutation = trpc.salesOrders.exportClientMaxiprod.useMutation();
   const exportOrderMutation = trpc.salesOrders.exportOrderMaxiprod.useMutation();
+  const exportBonifMutation = trpc.salesOrders.exportBonificacaoMaxiprod.useMutation();
   const utils = trpc.useUtils();
   const [approvingOrderId, setApprovingOrderId] = useState<number | null>(null);
   const [approvalObs, setApprovalObs] = useState("");
@@ -170,6 +172,34 @@ export default function VitoriaOrders() {
         },
       }
     );
+  const handleExportBonificacao = (orderId: number) => {
+    exportBonifMutation.mutate(
+      { orderId },
+      {
+        onSuccess: (data) => {
+          const byteCharacters = atob(data.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success("Planilha Bonificação exportada!");
+        },
+        onError: (err: any) => {
+          toast.error(err.message || "Erro ao exportar bonificação");
+        },
+      }
+    );
+  };
   };
 
   const handleDeleteOrder = (orderId: number) => {
@@ -1119,6 +1149,19 @@ export default function VitoriaOrders() {
                                   </span>
                                 </button>
                               </div>
+                                {/* Exportar Bonificação (se houver) */}
+                                {(order as any).bonificacaoItems && JSON.parse((order as any).bonificacaoItems || "[]").length > 0 && (
+                                <button
+                                  onClick={() => {
+                                    handleExportBonificacao(order.id);
+                                  }}
+                                  className="flex items-center gap-2 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer"
+                                >
+                                  <Gift className="w-4 h-4 text-amber-600" />
+                                  <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300">Exportar Bonificação</span>
+                                  <span className="text-[9px] text-amber-500 dark:text-amber-400">(Pedido Bonif. .xlsx)</span>
+                                </button>
+                                )}
                             </div>
                           );
                         })()}

@@ -58,7 +58,11 @@ export interface OrderDraft {
   operacaoFiscal?: string;
   naturezaOperacao?: string;
   temBonificacao?: "" | "sim" | "nao";
-  itensBonificacao?: Array<{ codigoItem: string; descricaoItem: string; quantidade: number; pesoBrutoCaixa: number; dimsStr: string }>;
+  itensBonificacao?: Array<{ codigoItem: string; descricaoItem: string; quantidade: number; valorUnitario: number; pesoBrutoCaixa: number; dimsStr: string }>;
+  situacaoCobranca?: string;
+  estadoConfiguravel?: string;
+  dataEntregaPedido?: string;
+  previsaoEntregaPedido?: string;
 }
 
 const STORAGE_KEY = "grupo-fox-order-draft";

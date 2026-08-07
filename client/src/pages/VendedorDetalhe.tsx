@@ -5564,13 +5564,17 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         }
       }
       const totalValor = items.reduce((sum, i) => sum + (i.precoUnitario * i.quantidade), 0);
+      // Somar valor da bonificação ao valor total para cálculo de frete
+      const valorBonificacao = (temBonificacao === "sim" && itensBonificacao.length > 0)
+        ? itensBonificacao.reduce((s, b) => s + (b.valorUnitario || 0) * b.quantidade, 0)
+        : 0;
       const result = await quoteAllCarriersMut.mutateAsync({
         cepDestino: cep.replace(/\D/g, ''),
         cnpjDestinatario: cnpjCpf?.replace(/\D/g, '') || undefined,
         peso: totalPeso,
         metroCubico: totalCubagem > 0 ? totalCubagem : undefined as any,
         volumes: totalVolumes,
-        valorMercadoria: totalValor,
+        valorMercadoria: totalValor + valorBonificacao,
       });
       setInlineFreightResults(result as any);
     } catch (err: any) {
@@ -5629,6 +5633,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.operacaoFiscal) setOperacaoFiscal(draft.operacaoFiscal);
       if (draft.temBonificacao) setTemBonificacao(draft.temBonificacao);
       if (draft.itensBonificacao && draft.itensBonificacao.length > 0) setItensBonificacao(draft.itensBonificacao);
+      if (draft.situacaoCobranca) setSituacaoCobranca(draft.situacaoCobranca);
+      if (draft.estadoConfiguravel) setEstadoConfiguravel(draft.estadoConfiguravel);
+      if (draft.dataEntregaPedido) setDataEntregaPedido(draft.dataEntregaPedido);
+      if (draft.previsaoEntregaPedido) setPrevisaoEntregaPedido(draft.previsaoEntregaPedido);
       if (draft.step) setStep(draft.step);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -5661,6 +5669,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       operacaoFiscal: operacaoFiscal || undefined,
       temBonificacao: temBonificacao || undefined,
       itensBonificacao: itensBonificacao.length > 0 ? itensBonificacao : undefined,
+      situacaoCobranca: situacaoCobranca || undefined,
+      estadoConfiguravel: estadoConfiguravel || undefined,
+      dataEntregaPedido: dataEntregaPedido || undefined,
+      previsaoEntregaPedido: previsaoEntregaPedido || undefined,
     });
   }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, meioPagamento, condicaoPagamento, valorFrete, tipoFrete, transportadoraSelecionada, observacoesInternas, telefone2, emailContato]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6256,6 +6268,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       comissaoPercentual: realComissaoPerc || undefined,
       comissaoTier: realComissaoTier || undefined,
       margemPercentual: realMargemPerc || undefined,
+      bonificacaoItems: temBonificacao === "sim" && itensBonificacao.length > 0 ? itensBonificacao : undefined,
       items: items.map(item => ({
         codigoItem: item.codigoItem,
         descricaoItem: item.descricaoItem,

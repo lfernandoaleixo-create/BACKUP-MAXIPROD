@@ -2273,6 +2273,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   vitoriaLancadoAt: timestamp("vitoria_lancado_at"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  bonificacaoItems: json("bonificacao_items"),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 

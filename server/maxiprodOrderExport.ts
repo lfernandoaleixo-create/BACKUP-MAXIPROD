@@ -472,3 +472,91 @@ export async function generateMaxiprodOrderExcelFromDb(orderId: number): Promise
 
   return { buffer, filename };
 }
+
+/**
+ * Generate a Maxiprod export file specifically for bonificação items.
+ * Uses the same format as a regular order but with operação fiscal "BONIFICAÇÃO"
+ * and only includes the bonificação items.
+ */
+export async function generateMaxiprodBonificacaoExcelFromDb(orderId: number): Promise<{ buffer: Buffer; filename: string }> {
+  const { getDb } = await import("./db");
+  const { salesOrderRequests, salesOrderRequestItems, sellerPermissions } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  const ExcelJS = await import("exceljs");
+
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const [order] = await db.select().from(salesOrderRequests).where(eq(salesOrderRequests.id, orderId));
+  if (!order) throw new Error("Pedido não encontrado");
+
+  const bonificacaoItems = order.bonificacaoItems ? (typeof order.bonificacaoItems === "string" ? JSON.parse(order.bonificacaoItems) : order.bonificacaoItems) : [];
+  if (!bonificacaoItems || bonificacaoItems.length === 0) {
+    throw new Error("Este pedido não possui itens de bonificação");
+  }
+
+  // Get seller CPF/CNPJ
+  let sellerCpfCnpj = "";
+  if (order.sellerId) {
+    const [seller] = await db.select({ cpfCnpj: sellerPermissions.cpfCnpj })
+      .from(sellerPermissions)
+      .where(eq(sellerPermissions.id, order.sellerId));
+    if (seller?.cpfCnpj) sellerCpfCnpj = seller.cpfCnpj;
+  }
+
+  const uf = order.uf || "";
+  // Bonificação uses a specific fiscal operation
+  const isSameState = uf.toUpperCase() === "MG";
+  const operacaoFiscal = isSameState ? "5910" : "6910"; // 5910/6910 = Remessa em bonificação
+
+  const cnpjLimpo = (order.cnpjCpf || "").replace(/\D/g, "");
+
+  // Build the Excel file
+  const workbook = new ExcelJS.default.Workbook();
+  const ws = workbook.addWorksheet("Dados");
+
+  // Header row (same as regular order)
+  const headers = [
+    "Data de emissão *", "Nº do pedido de venda *", "Tipo *", "Cliente *",
+    "Operação fiscal *", "Condição de pagamento *", "Representante/ vendedor",
+    "Moeda", "Observações", "Código do item *", "Descrição do item *",
+    "Quantidade *", "Valor unitário *", "Unidade de medida", "Desconto (%)",
+    "Desconto (R$)", "Acréscimo (%)", "Acréscimo (R$)", "Frete (R$)",
+    "Seguro (R$)", "Outras despesas (R$)", "Informações adicionais do item",
+    "Nº do pedido de compra do cliente", "Item do pedido de compra do cliente",
+    "Nº do pedido de venda (item)", "Pedido do cliente",
+    "Pedido do cliente (Item)", "Item (nº) do pedido do cliente",
+    "Depósito", "Observações do item"
+  ];
+  ws.addRow(headers);
+
+  // Data rows - one per bonificação item
+  const today = new Date();
+  const dataEmissao = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
+  const numPedido = `${order.id}B`; // "B" suffix for bonificação
+
+  for (const item of bonificacaoItems) {
+    const row = new Array(30).fill("");
+    row[0] = dataEmissao;
+    row[1] = numPedido;
+    row[2] = "Normal";
+    row[3] = cnpjLimpo;
+    row[4] = operacaoFiscal;
+    row[5] = order.condicaoPagamento || "A VISTA";
+    row[6] = sellerCpfCnpj;
+    row[7] = "Real";
+    row[8] = order.observacoes || "BONIFICAÇÃO";
+    row[9] = item.codigoItem || "";
+    row[10] = item.descricaoItem || "";
+    row[11] = item.quantidade || 1;
+    row[12] = item.valorUnitario || 0;
+    row[13] = "CX";
+    ws.addRow(row);
+  }
+
+  const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  const clientName = (order.razaoSocial || order.cnpjCpf || "")
+    .replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20);
+  const filename = `Bonificacao_${order.id}_${clientName}_Maxiprod.xlsx`;
+  return { buffer, filename };
+}
