@@ -6971,3 +6971,6 @@
 - [ ] Protocolo transportadora: corrigir CNPJs que não retornam protocolo
 - [x] Protocolo transportadora: mostrar no pedido concluído (valor + transportadora + protocolo)
 - [x] Busca flexível em todas as barras de pesquisa (normaliza acentos, pontos, espaços, busca parcial em qualquer posição)
+- [x] Proposta de Venda: lookup Sintegra automático quando CNPJ é digitado (preenche razão social, endereço, IE, etc.)
+- [x] Proposta de Venda: botão "Cadastrar este Cliente" após lookup Sintegra (salva no banco como vendorClient)
+- [x] Corrigir erros TS do checkpoint af69f45d (imports dentro de comentários JSDoc, linhas órfãs de sed)

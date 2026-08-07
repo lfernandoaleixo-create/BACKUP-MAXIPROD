@@ -6,7 +6,7 @@
  * 
  * Gera um PDF via POST /api/proposta/export-pdf
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
 import { useCepLookup } from "@/hooks/useCepLookup";
@@ -28,6 +28,7 @@ import {
   CreditCard,
   Truck,
 } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -113,6 +114,14 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
   // Save proposal mutation
   const saveMutation = trpc.proposal.create.useMutation();
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
+  const createClientMutation = trpc.sales.createVendorClient.useMutation();
+
+  // Sintegra CNPJ lookup state
+  const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
+  const [cnpjLookupDone, setCnpjLookupDone] = useState(false);
+  const lastLookedUpCnpj = useRef("");
+  const [showCadastrarCliente, setShowCadastrarCliente] = useState(false);
+  const [cadastrarClienteSuccess, setCadastrarClienteSuccess] = useState(false);
 
   // CEP lookup
   const { fetchCep: fetchMainCep } = useCepLookup();
@@ -170,6 +179,95 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
     }
     setShowClientDropdown(false);
     setClientSearch("");
+  };
+
+  // Sintegra auto-lookup when CNPJ has 14 digits
+  useEffect(() => {
+    const cleanCnpj = cnpjCpf.replace(/\D/g, "");
+    if (cleanCnpj.length === 14 && cleanCnpj !== lastLookedUpCnpj.current) {
+      lastLookedUpCnpj.current = cleanCnpj;
+      setCnpjLookupLoading(true);
+      setCnpjLookupDone(false);
+      const SINTEGRA_TOKEN = (import.meta as any).env?.VITE_SINTEGRA_API_TOKEN || "";
+      const SINTEGRA_BASE = "https://www.sintegraws.com.br/api/v1/execute-api.php";
+      const safeFetch = (url: string) => fetch(url).then(r => {
+        if (!r.ok) return null;
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json")) return null;
+        return r.json();
+      }).catch(() => null);
+      Promise.allSettled([
+        safeFetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=RF`),
+        safeFetch(`${SINTEGRA_BASE}?token=${SINTEGRA_TOKEN}&cnpj=${cleanCnpj}&plugin=ST`),
+      ]).then(([rfRes, stRes]) => {
+        const rfData = rfRes.status === "fulfilled" ? rfRes.value : null;
+        const stData = stRes.status === "fulfilled" ? stRes.value : null;
+        if (rfData && rfData.code === "0") {
+          if (rfData.nome && !razaoSocial) setRazaoSocial(rfData.nome);
+          if (rfData.fantasia && rfData.fantasia !== "********" && !nomeFantasia) setNomeFantasia(rfData.fantasia);
+          if (rfData.cep && !cep) {
+            const cleanCep = rfData.cep.replace(/[^\d]/g, "");
+            setCep(cleanCep);
+            handleCepChange(cleanCep);
+          }
+          if (rfData.logradouro && !endereco) setEndereco(rfData.logradouro);
+          if (rfData.numero && !numero) setNumero(rfData.numero);
+          if (rfData.bairro && !bairro) setBairro(rfData.bairro);
+          if (rfData.municipio && !municipio) setMunicipio(rfData.municipio);
+          if (rfData.uf && !uf) setUf(rfData.uf);
+          if (rfData.telefone && !telefone1) setTelefone1(rfData.telefone);
+          if (rfData.email && !emailContato) setEmailContato(rfData.email);
+        }
+        if (stData && stData.code === "0") {
+          if (stData.inscricao_estadual) {
+            setInscricaoEstadual(stData.inscricao_estadual);
+          } else {
+            setInscricaoEstadual("ISENTO");
+          }
+          if (stData.contribuinte_icms === true) {
+            setTipoContribuinte("Contribuinte");
+          } else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") {
+            setTipoContribuinte("Isento");
+          } else {
+            setTipoContribuinte("Não contribuinte");
+          }
+        } else {
+          if (!inscricaoEstadual.trim()) setInscricaoEstadual("ISENTO");
+          setTipoContribuinte("Não contribuinte");
+        }
+        setCnpjLookupDone(true);
+        setShowCadastrarCliente(true);
+        setTimeout(() => setCnpjLookupDone(false), 3000);
+      }).catch(() => {}).finally(() => setCnpjLookupLoading(false));
+    }
+  }, [cnpjCpf]);
+
+  // Handle cadastrar cliente from proposta
+  const handleCadastrarCliente = async () => {
+    if (!cnpjCpf.trim() || !razaoSocial.trim()) return;
+    try {
+      await createClientMutation.mutateAsync({
+        sellerId,
+        sellerName,
+        cnpjCpf: cnpjCpf.trim(),
+        razaoSocial: razaoSocial.trim(),
+        nomeFantasia: nomeFantasia || undefined,
+        inscricaoEstadual: inscricaoEstadual || undefined,
+        tipoContribuinte: tipoContribuinte || undefined,
+        cep: cep || undefined,
+        logradouro: endereco || undefined,
+        numero: numero || undefined,
+        bairro: bairro || undefined,
+        cidade: municipio || undefined,
+        uf: uf || undefined,
+        telefone1: telefone1 || undefined,
+        email: emailContato || undefined,
+      });
+      setCadastrarClienteSuccess(true);
+      setTimeout(() => setCadastrarClienteSuccess(false), 5000);
+    } catch (err) {
+      console.error("Erro ao cadastrar cliente:", err);
+    }
   };
 
   // Product filtering
@@ -616,9 +714,11 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
                     <label className="text-[10px] text-slate-500">Razão Social *</label>
                     <input value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} placeholder="Nome do cliente" className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="text-[10px] text-slate-500">CNPJ/CPF</label>
                     <input value={cnpjCpf} onChange={(e) => setCnpjCpf(e.target.value)} placeholder="00.000.000/0000-00" className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                    {cnpjLookupLoading && <span className="absolute right-2 top-5 text-[9px] text-teal-500 animate-pulse">Consultando Sintegra...</span>}
+                    {cnpjLookupDone && <span className="absolute right-2 top-5 text-[9px] text-green-600">u2713 Dados preenchidos</span>}
                   </div>
                   <div>
                     <label className="text-[10px] text-slate-500">CEP</label>
@@ -636,6 +736,33 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
               </div>
             )}
 
+            {/* Cadastrar este Cliente */}
+            {showCadastrarCliente && cnpjCpf && razaoSocial && (
+              <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700 rounded-lg p-3">
+                <p className="text-[10px] text-teal-700 dark:text-teal-300 mb-2">
+                  Dados do cliente preenchidos via Sintegra. Deseja cadastrar este cliente no sistema?
+                </p>
+                {cadastrarClienteSuccess ? (
+                  <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-300 font-medium">
+                    <Check className="w-3.5 h-3.5" />
+                    Cliente cadastrado com sucesso!
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleCadastrarCliente}
+                    disabled={createClientMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors"
+                  >
+                    {createClientMutation.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <UserPlus className="w-3.5 h-3.5" />
+                    )}
+                    Cadastrar este Cliente
+                  </button>
+                )}
+              </div>
+            )}
             {/* Next button */}
             <div className="flex justify-end pt-2">
               <button
