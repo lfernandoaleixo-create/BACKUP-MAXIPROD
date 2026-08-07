@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { flexMatch } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { ClientSearchCard } from "@/components/ClientSearchCard";
@@ -1432,7 +1433,7 @@ function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
               </div>
               <div className="divide-y divide-emerald-100 max-h-[400px] overflow-y-auto">
                 {resolvedData!.titles
-                  .filter(t => !resolvedSearch || t.cliente.toLowerCase().includes(resolvedSearch.toLowerCase()))
+                  .filter(t => !resolvedSearch || flexMatch(t.cliente, resolvedSearch))
                   .map((t) => (
                   <div key={t.id} className={`flex items-center justify-between px-4 py-3 hover:bg-emerald-50/80 transition-colors ${resolvedChecked.has(t.id) ? 'bg-emerald-100/60' : ''}`}>
                     <div className="flex items-center gap-3 min-w-0">

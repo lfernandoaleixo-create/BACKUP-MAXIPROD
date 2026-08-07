@@ -1,4 +1,5 @@
 /**
+import { flexMatchMultiple } from "@shared/flexSearch";
  * PropostaDeVenda - Formulário inline para criar uma Proposta de Venda (simulação para cliente)
  * 
  * Reutiliza os mesmos hooks tRPC do pedido de venda (searchClients, getProductsForSeller)
@@ -178,10 +179,9 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
     let filtered = (productsQuery.data as any[]).filter((p: any) => !addedCodes.has(p.codigoItem));
     if (productSearch.trim()) {
       const s = productSearch.trim().toLowerCase();
-      filtered = filtered.filter((p: any) => {
-        const searchable = [p.codigoItem, p.descricaoItem, p.codigoBarras || "", p.grupo || ""].join(" ").toLowerCase();
-        return searchable.includes(s);
-      });
+      filtered = filtered.filter((p: any) => 
+        flexMatchMultiple([p.codigoItem, p.descricaoItem, p.codigoBarras || "", p.grupo || ""], s)
+      );
     }
     return filtered;
   }, [productsQuery.data, items, productSearch]);

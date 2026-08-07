@@ -15,6 +15,7 @@ import TopNav from "@/components/TopNav";
 import SecureInput from "@/components/SecureInput";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { parseDimensions } from "@shared/parseDimensions";
+import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
 import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
 import {
@@ -792,14 +793,12 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
     const visibleCodes = new Set(productsQuery.data.map((p: { productCode: string }) => p.productCode));
     return (stockQuery.data.items as DashboardItem[]).filter(item => visibleCodes.has(item.codigoItem));
   }, [productsQuery.data, stockQuery.data]);
-
   const filteredProducts = useMemo(() => {
     if (!stockSearch.trim()) return visibleProducts;
-    const s = stockSearch.toLowerCase().trim();
-    return visibleProducts.filter(item => {
-      const searchable = `${item.codigoItem} ${item.descricaoItem}`.toLowerCase();
-      return searchable.includes(s);
-    });
+    return visibleProducts.filter(item => 
+      flexMatchMultiple([item.codigoItem, item.descricaoItem], stockSearch)
+    );
+  }, [visibleProducts, stockSearch]);
   }, [visibleProducts, stockSearch]);
 
   const madeiraProducts = useMemo(() =>
@@ -6007,15 +6006,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const addedCodes = new Set(items.map(i => i.codigoItem));
     let filtered = productsQuery.data.filter((p: any) => !addedCodes.has(p.codigoItem));
     if (productSearch.trim()) {
-      const s = productSearch.trim().toLowerCase();
-      filtered = filtered.filter((p: any) => {
-        const searchable = [
-          p.codigoItem,
-          p.descricaoItem,
-          p.codigoBarras || "",
-          p.grupo || "",
-        ].join(" ").toLowerCase();
-        return searchable.includes(s);
+      filtered = filtered.filter((p: any) => 
+        flexMatchMultiple([p.codigoItem, p.descricaoItem, p.codigoBarras || "", p.grupo || ""], productSearch)
+      );
+    }
       });
     }
     return filtered;

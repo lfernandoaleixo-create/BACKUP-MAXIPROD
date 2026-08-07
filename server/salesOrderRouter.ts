@@ -55,7 +55,7 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) return [];
       
-      const q = input.query.trim();
+      const q = input.query.trim().replace(/[.\-\/]/g, "");
 
       // 0. Search in vendor_clients (cadastro de clientes do vendedor)
       let fromVendorClients: Array<{
@@ -93,7 +93,9 @@ export const salesOrderRouter = router({
             or(
               sql`LOWER(${vendorClients.razaoSocial}) LIKE ${`%${qL}%`}`,
               sql`LOWER(${vendorClients.nomeFantasia}) LIKE ${`%${qL}%`}`,
-              like(vendorClients.cnpjCpf, `%${q}%`)
+              like(vendorClients.cnpjCpf, `%${q}%`),
+              sql`LOWER(${vendorClients.cidade}) LIKE ${`%${qL}%`}`,
+              sql`REPLACE(REPLACE(REPLACE(LOWER(${vendorClients.razaoSocial}), '.', ''), '-', ''), '/', '') LIKE ${`%${qL.replace(/[.\-\/]/g, "")}%`}`
             )
           )
           .limit(20);
@@ -263,7 +265,9 @@ export const salesOrderRouter = router({
         or(
           sql`LOWER(${salesOrders.cliente}) LIKE ${`%${qLower}%`}`,
           sql`LOWER(${salesOrders.clienteApelido}) LIKE ${`%${qLower}%`}`,
-          sql`LOWER(${salesOrders.razaoSocial}) LIKE ${`%${qLower}%`}`
+          sql`LOWER(${salesOrders.razaoSocial}) LIKE ${`%${qLower}%`}`,
+          sql`LOWER(${salesOrders.enderecoCidade}) LIKE ${`%${qLower}%`}`,
+          sql`REPLACE(REPLACE(REPLACE(LOWER(${salesOrders.cliente}), '.', ''), '-', ''), '/', '') LIKE ${`%${qLower.replace(/[.\-\/]/g, "")}%`}`
         )
       )
       .orderBy(desc(salesOrders.dataEmissao))

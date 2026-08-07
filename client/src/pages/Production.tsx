@@ -1,4 +1,5 @@
 /**
+import { flexMatchMultiple } from "@shared/flexSearch";
  * Produção - Controle de produção industrial
  * 9 setores com lançamento diário por máquina/mesa
  * Multilamina (setor 1): status + campos fixos Benazzi/Madeira Dura (sempre visíveis)
@@ -1955,9 +1956,9 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    const q = search.toLowerCase().trim();
-    const filtered = q
-      ? products.filter((p: any) =>
+    const filtered = search.trim()
+      ? products.filter((p: any) => flexMatchMultiple([p.descricaoItem, p.codigoItem], search))
+      : products;
           p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q)
         )
       : products;
@@ -2393,9 +2394,7 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     const q = search.toLowerCase().trim();
-    if (!q) return products;
-    return products.filter((p: any) =>
-      p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q)
+    return products.filter((p: any) => flexMatchMultiple([p.descricaoItem, p.codigoItem], search));
     );
   }, [products, search]);
 

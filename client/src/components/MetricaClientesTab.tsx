@@ -1,4 +1,5 @@
 /**
+import { flexMatchMultiple } from "@shared/flexSearch";
  * Métrica de Clientes - Análise da carteira de clientes do GRUPO
  * 
  * Foco: grupo como um todo (não por vendedor individual)
@@ -44,15 +45,13 @@ export default function MetricaClientesTab() {
   const filteredFrequency = useMemo(() => {
     if (!metrics?.frequencyRanking) return [];
     if (!searchTerm) return metrics.frequencyRanking;
-    const term = searchTerm.toLowerCase();
-    return metrics.frequencyRanking.filter(c => c.cliente.toLowerCase().includes(term));
+    return metrics.frequencyRanking.filter(c => flexMatchMultiple([c.cliente], searchTerm));
   }, [metrics?.frequencyRanking, searchTerm]);
 
   const filteredOverdue = useMemo(() => {
     if (!metrics?.overdueClients) return [];
     if (!searchTerm) return metrics.overdueClients;
-    const term = searchTerm.toLowerCase();
-    return metrics.overdueClients.filter(c => c.cliente.toLowerCase().includes(term));
+    return metrics.overdueClients.filter(c => flexMatchMultiple([c.cliente], searchTerm));
   }, [metrics?.overdueClients, searchTerm]);
 
   const formatCurrency = (val: number) => {

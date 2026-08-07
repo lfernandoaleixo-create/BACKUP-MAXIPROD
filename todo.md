@@ -6970,3 +6970,4 @@
 - [x] Protocolo transportadora: mostrar em todos os locais de simulação de frete
 - [ ] Protocolo transportadora: corrigir CNPJs que não retornam protocolo
 - [x] Protocolo transportadora: mostrar no pedido concluído (valor + transportadora + protocolo)
+- [x] Busca flexível em todas as barras de pesquisa (normaliza acentos, pontos, espaços, busca parcial em qualquer posição)

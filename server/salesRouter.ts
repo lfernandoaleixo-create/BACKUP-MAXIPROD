@@ -1530,20 +1530,20 @@ export const salesRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      const qPrefix = `${input.query.toUpperCase()}%`;
-      // Search ALL clients by PREFIX - typing "B" shows clients starting with "B"
-      // No LIMIT - show all matching clients, the frontend handles scroll
+      const qLike = `%${input.query.toUpperCase()}%`;
+      // Search ALL clients by CONTAINS - flexible partial matching
+      // LIMIT 100 to prevent excessive results
       const rows = await db.execute(sql`
         SELECT cliente, clienteApelido, uf, crmSegmento
         FROM (
           SELECT cliente, clienteApelido, uf, crmSegmento
           FROM sales_orders
-          WHERE (cliente LIKE ${qPrefix} OR clienteApelido LIKE ${qPrefix})
+          WHERE (cliente LIKE ${qLike} OR clienteApelido LIKE ${qLike})
             AND cliente IS NOT NULL AND cliente != ''
           UNION
           SELECT cliente, NULL as clienteApelido, NULL as uf, NULL as crmSegmento
           FROM accounts_receivable
-          WHERE cliente LIKE ${qPrefix}
+          WHERE cliente LIKE ${qLike}
             AND cliente IS NOT NULL AND cliente != ''
         ) all_clients
         GROUP BY cliente

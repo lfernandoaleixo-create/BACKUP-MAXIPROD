@@ -1,4 +1,5 @@
 /**
+import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
  * Componente unificado de Inadimplência
  * Card único com abas internas: Evolução (gráfico) e Clientes (tabela)
  * Usado tanto na aba Financeiro quanto na aba Vendas
@@ -541,10 +542,8 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
     }
 
     if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
       result = result.filter((c: any) =>
-        c.cliente.toLowerCase().includes(term) ||
-        (c.vendedor && c.vendedor.toLowerCase().includes(term))
+        flexMatchMultiple([c.cliente, c.vendedor || ""], searchTerm)
       );
     }
 

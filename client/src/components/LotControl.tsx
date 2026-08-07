@@ -1,4 +1,5 @@
 /**
+import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
  * Controle de Lotes - Módulo de rastreabilidade de produção
  * - Lançamento de Lote (líder no tablet)
  * - Estoque de Lotes (saldo > 0)
@@ -178,10 +179,8 @@ function LancamentoLote() {
   const filteredProducts = useMemo(() => {
     const source = materialFilter === "bambu" ? bambuProducts : madeiraProducts;
     if (!searchProduct) return source;
-    const q = searchProduct.toLowerCase();
     return source.filter(p =>
-      p.codigoItem.toLowerCase().includes(q) ||
-      p.descricaoItem.toLowerCase().includes(q)
+      flexMatchMultiple([p.codigoItem, p.descricaoItem], searchProduct)
     ).slice(0, 20);
   }, [bambuProducts, madeiraProducts, materialFilter, searchProduct]);
 
