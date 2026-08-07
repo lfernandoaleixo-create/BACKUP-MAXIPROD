@@ -55,6 +55,8 @@ export interface OrderDraft {
   tipoFrete?: string;
   transportadoraSelecionada?: string;
   observacoesInternas?: string;
+  operacaoFiscal?: string;
+  naturezaOperacao?: string;
 }
 
 const STORAGE_KEY = "grupo-fox-order-draft";

@@ -6954,3 +6954,5 @@
 - [x] Corrigir fluxo aprovação pedidos: respeitar permissões gc.aprovacoesPedidos (filtrar por vendedores ticados)
 - [x] Persistir TODAS as informações do pedido de venda (não só itens) quando vendedor sai da aba
 - [x] Campos obrigatórios do pedido vir em branco (sem pré-seleção) para forçar vendedor a escolher
+- [x] Atualizar lista de operações fiscais no pedido de venda com todas as opções do Maxiprod
+- [ ] Campo obrigatório 'bonificação' no pedido: Sim/Não, se Sim abre lista de produtos para peso/cubagem no frete (não altera valor)

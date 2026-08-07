@@ -183,17 +183,17 @@ function deriveOperacaoFiscal(operacaoFiscal: string | null | undefined, uf: str
   // Se já tem um código numérico válido, usar ele
   if (operacaoFiscal && operacaoFiscal.trim() !== "") {
     // Extrair apenas o código numérico (remover texto descritivo)
-    const match = operacaoFiscal.match(/(\d{4})/);
+    const match = operacaoFiscal.match(/(\d{4}(?:-\d+)?)/);
     if (match) {
       const code = match[1];
       // CORREÇÃO: Se o código extraído é 6xxx (fora do estado) mas o destino é MG (mesmo estado),
       // converter para 5xxx (dentro do estado). E vice-versa.
       const isSameState = uf && uf.toUpperCase() === "MG";
       if (isSameState && code.startsWith("6")) {
-        return "5" + code.slice(1); // 6101 → 5101, 6102 → 5102, etc.
+        return "5" + code.slice(1); // 6101 → 5101, 6102-1 → 5102-1, etc.
       }
       if (!isSameState && code.startsWith("5")) {
-        return "6" + code.slice(1); // 5101 → 6101, 5102 → 6102, etc.
+        return "6" + code.slice(1); // 5101 → 6101, 5102-1 → 6102-1, etc.
       }
       return code;
     }

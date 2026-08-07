@@ -5565,7 +5565,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   };
 
   // Campos Maxiprod
-  const [operacaoFiscal, setOperacaoFiscal] = useState("6101 - Fora do Estado - Madeira");
+  const [operacaoFiscal, setOperacaoFiscal] = useState("");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
   const [estadoConfiguravel, setEstadoConfiguravel] = useState("MADEIRA");
   const [formaPagamento, setFormaPagamento] = useState("");
@@ -5610,6 +5610,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.tipoFrete) setTipoFrete(draft.tipoFrete);
       if (draft.transportadoraSelecionada) setTransportadoraSelecionada(draft.transportadoraSelecionada);
       if (draft.observacoesInternas) setObservacoesInternas(draft.observacoesInternas);
+      if (draft.operacaoFiscal) setOperacaoFiscal(draft.operacaoFiscal);
       if (draft.step) setStep(draft.step);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -5639,6 +5640,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       tipoFrete: tipoFrete || undefined,
       transportadoraSelecionada: transportadoraSelecionada || undefined,
       observacoesInternas: observacoesInternas || undefined,
+      operacaoFiscal: operacaoFiscal || undefined,
     });
   }, [items, cnpjCpf, razaoSocial, step, observacoes, formaPagamento, meioPagamento, condicaoPagamento, valorFrete, tipoFrete, transportadoraSelecionada, observacoesInternas, telefone2, emailContato]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6044,6 +6046,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     if (!isSimulation && !tipoFrete) {
       alert("Selecione o Tipo de Frete (CIF / FOB) antes de finalizar o pedido.");
+      return;
+    }
+    if (!isSimulation && !operacaoFiscal) {
+      alert("Selecione a Operação Fiscal antes de finalizar o pedido.");
       return;
     }
     if (isEditMode && editOrderId) {
@@ -7695,15 +7701,37 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="col-span-1 sm:col-span-2">
                   <label className="text-[10px] text-slate-500 font-medium">Operação Fiscal <span className="text-red-500">*</span></label>
-                  <select value={operacaoFiscal} onChange={(e) => setOperacaoFiscal(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                    <option value="6101 - Fora do Estado - Madeira">6101 - Fora do Estado - Madeira</option>
-                    <option value="6101 - Fora do Estado - Aromas">6101 - Fora do Estado - Aromas</option>
-                    <option value="5101 - Dentro do Estado - Madeira">5101 - Dentro do Estado - Madeira</option>
-                    <option value="5101 - Dentro do Estado - Aromas">5101 - Dentro do Estado - Aromas</option>
-                    <option value="6108 - Fora do Estado - Consumidor Final">6108 - Fora do Estado - Consumidor Final</option>
-                    <option value="5102 - Dentro do Estado - Revenda">5102 - Dentro do Estado - Revenda</option>
-                    <option value="6102 - Fora do Estado - Revenda">6102 - Fora do Estado - Revenda</option>
+                  <select value={operacaoFiscal} onChange={(e) => setOperacaoFiscal(e.target.value)} className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!operacaoFiscal ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}>
+                    <option value="">Selecione...</option>
+                    <optgroup label="── DENTRO DO ESTADO (MG) ──">
+                      <option value="5101 - Dentro do Estado - Madeira">5101 - Dentro do Estado - Madeira</option>
+                      <option value="5101-1 - Dentro do Estado Romanei - Madeira">5101-1 - Dentro do Estado Romanei - Madeira</option>
+                      <option value="5101-2 - Dentro do Estado Nota - Madeira">5101-2 - Dentro do Estado Nota - Madeira</option>
+                      <option value="5101-3 - Laticínios Dourado - Madeira">5101-3 - Laticínios Dourado - Madeira</option>
+                      <option value="5101-4 - Dentro do Estado - Serragem NF">5101-4 - Dentro do Estado - Serragem NF</option>
+                      <option value="5101-5 - Dentro do Estado - Madeira Premium">5101-5 - Dentro do Estado - Madeira Premium</option>
+                      <option value="5102 - Dentro do Estado - Bambu">5102 - Dentro do Estado - Bambu</option>
+                      <option value="5102-1 - Dentro do Estado Romaneio - Bambu">5102-1 - Dentro do Estado Romaneio - Bambu</option>
+                      <option value="5102-2 - Dentro do Estado Nota - Bambu">5102-2 - Dentro do Estado Nota - Bambu</option>
+                      <option value="5102-4 - Dentro do Estado - Fibra">5102-4 - Dentro do Estado - Fibra</option>
+                      <option value="5105 - Venda de produção do estabelecimento">5105 - Venda de produção do estabelecimento</option>
+                    </optgroup>
+                    <optgroup label="── FORA DO ESTADO ──">
+                      <option value="6101 - Fora do Estado - Madeira">6101 - Fora do Estado - Madeira</option>
+                      <option value="6101-1 - Fora do Estado Romanei - Madeira">6101-1 - Fora do Estado Romanei - Madeira</option>
+                      <option value="6101-2 - Fora do Estado Nota - Madeira">6101-2 - Fora do Estado Nota - Madeira</option>
+                      <option value="6101-3 - Laticínios Dourado Fora - Madeira">6101-3 - Laticínios Dourado Fora - Madeira</option>
+                      <option value="6101-4 - Fora do Estado - Serragem NF">6101-4 - Fora do Estado - Serragem NF</option>
+                      <option value="6101-5 - Fora do Estado - Madeira Premium">6101-5 - Fora do Estado - Madeira Premium</option>
+                      <option value="6102 - Fora do Estado - Bambu">6102 - Fora do Estado - Bambu</option>
+                      <option value="6102-1 - Fora do Estado Romaneio - Bambu">6102-1 - Fora do Estado Romaneio - Bambu</option>
+                      <option value="6102-2 - Fora do Estado Nota - Bambu">6102-2 - Fora do Estado Nota - Bambu</option>
+                      <option value="6102-4 - Fora do Estado - Fibra">6102-4 - Fora do Estado - Fibra</option>
+                      <option value="6105 - Venda de produção fora do estado">6105 - Venda de produção fora do estado</option>
+                      <option value="6108 - Fora do Estado - Consumidor Final">6108 - Fora do Estado - Consumidor Final</option>
+                    </optgroup>
                   </select>
+                  {!operacaoFiscal && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório</p>}
                 </div>
                 <div className="col-span-1 sm:col-span-2">
                   <label className="text-[10px] text-slate-500 font-medium">Natureza da Operação</label>
