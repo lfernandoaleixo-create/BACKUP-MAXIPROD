@@ -6949,3 +6949,4 @@
 - [x] App de Vendas: pedido de gestor (sellerName === gestorName) vai direto para Vitória sem precisar de aprovação do próprio gestor
 - [x] App de Vendas: botão exportar PDF ao lado de cada pedido de venda com dados da empresa e todos os dados do pedido
 - [x] Exportação Maxiprod: coluna Representante/vendedor deve usar CPF/CNPJ (só números) em vez do nome
+- [x] PedidosVendedoresTab: indicar se cliente é NOVO, JÁ CADASTRADO, ou tem DADOS ATUALIZADOS no Maxiprod

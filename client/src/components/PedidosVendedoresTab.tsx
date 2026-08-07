@@ -41,6 +41,38 @@ import { SerasaConsulta } from "@/components/SerasaConsulta";
 import { LotAssignmentPanel, LotStatusIndicator } from "@/components/LotAssignmentPanel";
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
 
+/** ClientMaxiprodStatusBadge - Shows whether a client is NEW, REGISTERED, or MODIFIED in Maxiprod */
+function ClientMaxiprodStatusBadge({ cnpjCpf }: { cnpjCpf?: string | null }) {
+  const { data } = trpc.salesOrders.checkClientMaxiprodStatus.useQuery(
+    { cnpjCpf: cnpjCpf || "" },
+    { enabled: !!cnpjCpf && cnpjCpf.replace(/[^\d]/g, "").length >= 11, staleTime: 5 * 60 * 1000 }
+  );
+
+  if (!data || data.status === "desconhecido") return null;
+
+  if (data.status === "novo") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-green-100 text-green-700 border border-green-200" title="Cliente NÃO existe no Maxiprod - precisa exportar cadastro primeiro">
+        ✨ CLIENTE NOVO
+      </span>
+    );
+  }
+
+  if (data.status === "alterado") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200" title={`Cadastro alterado por ${(data as any).modifiedBy || "vendedor"} - verificar se precisa atualizar no Maxiprod`}>
+        ⚠️ DADOS ATUALIZADOS
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200" title="Cliente já cadastrado no Maxiprod - não precisa exportar cadastro">
+      ✅ JÁ CADASTRADO
+    </span>
+  );
+}
+
 type OrderStatus = "pendente" | "aprovado" | "rejeitado" | "processado" | "todos";
 type ExtraFilter = "comissao_travada" | null;
 
@@ -383,7 +415,10 @@ export default function PedidosVendedoresTab() {
 
               {/* Cliente */}
               <div className="bg-slate-50 rounded-lg p-3 space-y-2">
-                <p className="text-xs text-slate-500 font-medium">Dados do Cliente</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-500 font-medium">Dados do Cliente</p>
+                  <ClientMaxiprodStatusBadge cnpjCpf={detailsQuery.data.order.cnpjCpf} />
+                </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-[10px] text-slate-400">Razão Social</p>
