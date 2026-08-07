@@ -7790,7 +7790,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                             key={i}
                             onClick={() => {
                               setSelectedFreightIndex(isSelected ? null : i);
-                            }
                             }}
                             className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${isSelected ? 'bg-indigo-200 dark:bg-indigo-800 border-2 border-indigo-500' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-indigo-300'}`}
                           >
@@ -8497,7 +8496,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                             key={i}
                             onClick={() => {
                               setSelectedFreightIndex(isSelected ? null : i);
-                            }
                             }}
                             className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${isSelected ? 'bg-indigo-200 dark:bg-indigo-800 border-2 border-indigo-500' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-indigo-300'}`}
                           >
