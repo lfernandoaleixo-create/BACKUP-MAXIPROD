@@ -1059,6 +1059,7 @@ export default function CustosDeVendaStep({
                   onChange={(e) => setTipoFrete(e.target.value)}
                   className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
+                  <option value="">Selecione...</option>
                   <option value="CIF">CIF (Frete por conta do vendedor)</option>
                   <option value="FOB">FOB (Frete por conta do comprador)</option>
                 </select>

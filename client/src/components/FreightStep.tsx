@@ -395,11 +395,13 @@ export default function FreightStep({
             <select
               value={tipoFrete}
               onChange={(e) => setTipoFrete(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+              className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!tipoFrete ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
             >
+              <option value="">Selecione...</option>
               <option value="CIF">CIF (Frete por conta do vendedor)</option>
               <option value="FOB">FOB (Frete por conta do comprador)</option>
             </select>
+            {!tipoFrete && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório</p>}
           </div>
         </div>
         <div>

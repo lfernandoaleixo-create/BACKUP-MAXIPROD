@@ -6953,3 +6953,4 @@
 - [x] Simulação frete inline: seleção individual (não ticar múltiplas), mostrar CNPJ, botão salvar, mostrar no resumo
 - [x] Corrigir fluxo aprovação pedidos: respeitar permissões gc.aprovacoesPedidos (filtrar por vendedores ticados)
 - [x] Persistir TODAS as informações do pedido de venda (não só itens) quando vendedor sai da aba
+- [x] Campos obrigatórios do pedido vir em branco (sem pré-seleção) para forçar vendedor a escolher

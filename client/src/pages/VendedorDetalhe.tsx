@@ -5307,7 +5307,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
-  const [tipoContribuinte, setTipoContribuinte] = useState("Contribuinte");
+  const [tipoContribuinte, setTipoContribuinte] = useState("");
   const [regimeTributario, setRegimeTributario] = useState("Normal");
   const [emailNfe, setEmailNfe] = useState("");
   const [cep, setCep] = useState("");
@@ -5504,7 +5504,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   // Payment
   const [condicaoPagamento, setCondicaoPagamento] = useState("");
   const [valorFrete, setValorFrete] = useState("");
-  const [tipoFrete, setTipoFrete] = useState("CIF");
+  const [tipoFrete, setTipoFrete] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [observacoesInternas, setObservacoesInternas] = useState("");
   const [transportadoraSelecionada, setTransportadoraSelecionada] = useState("");
@@ -5597,7 +5597,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         setTelefone1(draft.client.telefone1 || "");
         setEmailNfe(draft.client.emailNfe || "");
         setSegmento(draft.client.segmento || "");
-        setTipoContribuinte(draft.client.tipoContribuinte || "Contribuinte");
+        setTipoContribuinte(draft.client.tipoContribuinte || "");
         setRegimeTributario(draft.client.regimeTributario || "Normal");
         if (draft.client.telefone2) setTelefone2(draft.client.telefone2);
         if (draft.client.emailContato) setEmailContato(draft.client.emailContato);
@@ -5837,7 +5837,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     setRazaoSocial(client.razaoSocial || "");
     setNomeFantasia(client.nomeFantasia || "");
     setInscricaoEstadual(client.inscricaoEstadual || "");
-    setTipoContribuinte(client.tipoContribuinte || "Contribuinte");
+    setTipoContribuinte(client.tipoContribuinte || "");
     setRegimeTributario(client.regimeTributario || "Normal");
     setEmailNfe(client.emailNfe || "");
     setCep(client.cep || "");
@@ -6040,6 +6040,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     if (!isSimulation && !situacaoCobranca) {
       alert("Selecione a Situação de Cobrança (Com Protesto / Sem Protesto) antes de finalizar o pedido.");
+      return;
+    }
+    if (!isSimulation && !tipoFrete) {
+      alert("Selecione o Tipo de Frete (CIF / FOB) antes de finalizar o pedido.");
       return;
     }
     if (isEditMode && editOrderId) {
@@ -6320,7 +6324,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       }
     }
     // Cobrança
-    if (!situacaoCobranca || situacaoCobranca === "") missing.push("Situação de Cobrança (Com/Sem Protesto)");
+    if (!isSimulation && !situacaoCobranca) missing.push("Situação de Cobrança (Com/Sem Protesto)");
+    if (!isSimulation && !tipoContribuinte) missing.push("Tipo de Contribuinte");
     return missing;
   };
   const clientMissingFields = getClientMissingFields();
