@@ -172,6 +172,7 @@ export default function VitoriaOrders() {
         },
       }
     );
+  };
   const handleExportBonificacao = (orderId: number) => {
     exportBonifMutation.mutate(
       { orderId },
@@ -199,7 +200,6 @@ export default function VitoriaOrders() {
         },
       }
     );
-  };
   };
 
   const handleDeleteOrder = (orderId: number) => {
