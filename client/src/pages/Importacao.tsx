@@ -3389,22 +3389,20 @@ function SupplierPoList({ supplierId, currency, exchangeRate, rmbRate = 7.25, se
 // ===== PAINEL DE CUSTOS LOGÍSTICOS POR PO =====
 function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "USD" | "BRL" | "RMB"; exchangeRate: number }) {
   const effectiveRate = exchangeRate + 0.20;
+  const [isOpen, setIsOpen] = useState(false);
+  const utils = trpc.useUtils();
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery(undefined, { refetchInterval: 5 * 60 * 1000 });
   const rmbRate = (exchangeData as any)?.rmbRate || 7.25;
-  // Helper: format BRL value in the selected currency
   const fmtBrl = (brl: number) => {
     if (currency === "USD") return `$ ${(brl / effectiveRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (currency === "RMB") return `¥ ${(brl / effectiveRate * rmbRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return `R$ ${brl.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-  // Helper: format USD value in the selected currency
   const fmtUsd = (usd: number) => {
     if (currency === "BRL") return `R$ ${(usd * effectiveRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (currency === "RMB") return `¥ ${(usd * rmbRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return `$ ${usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-  const [isOpen, setIsOpen] = useState(false);
-  const utils = trpc.useUtils();
-  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery(undefined, { refetchInterval: 5 * 60 * 1000 });
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });

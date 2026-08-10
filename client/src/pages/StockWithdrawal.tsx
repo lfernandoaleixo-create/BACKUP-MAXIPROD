@@ -319,8 +319,6 @@ function SolicitarBaixaForm() {
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Ex: 5"
-          min="0.01"
-          step="0.01"
           className="w-full max-w-xs px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
         />
       </div>
@@ -393,8 +391,6 @@ function SolicitarBaixaForm() {
               value={quantidadeDestino}
               onChange={(e) => setQuantidadeDestino(e.target.value)}
               placeholder="Ex: 10"
-              min="0.01"
-              step="0.01"
               className="w-full max-w-xs px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
@@ -568,8 +564,6 @@ function SolicitarAcrescimoForm() {
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Ex: 5"
-          min="0.01"
-          step="0.01"
           className="w-full max-w-xs px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
       </div>
