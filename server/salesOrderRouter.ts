@@ -55,7 +55,7 @@ export const salesOrderRouter = router({
               clienteNome: result?.razaoSocial || result?.nomeFantasia || null,
               inscricaoEstadual: result?.inscricaoEstadual || null,
               uf: result?.uf || null,
-              situacaoCadastral: result?.situacaoCadastral || null,
+              situacaoCadastral: null,
               contexto: input.contexto || "pedido_venda",
             });
           }
