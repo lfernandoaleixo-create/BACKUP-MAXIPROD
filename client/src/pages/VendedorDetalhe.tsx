@@ -6039,8 +6039,16 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     if (categoryFilters.length > 0) {
       filtered = filtered.filter((p: any) => {
-        const searchText = ((p.subgrupo || "") + " " + (p.grupo || "") + " " + (p.descricaoItem || "")).toLowerCase();
-        return categoryFilters.some(cat => searchText.includes(cat));
+        const desc = (p.descricaoItem || "").toUpperCase();
+        const grupo = (p.grupo || "").toUpperCase();
+        const isMadeira = desc.includes("MADEIRA") || grupo === "ESPETO" || grupo === "PALITO" || grupo === "VARETA" || desc.includes("PALITO DE DENTE") || desc.includes("VARETA DE APITO") || desc.includes("VARETA PARA VELA") || desc.includes("VARETA PARA ALGOD");
+        const isBambu = desc.includes("BAMBU") || desc.includes("HASHI") || desc.includes("ESPETO DE BAMBU") || desc.includes("PALITO DE BAMBU");
+        const isFibra = desc.includes("FIBRA");
+        return categoryFilters.some(cat => {
+          if (cat === "bambu") return isBambu;
+          if (cat === "fibra") return isFibra;
+          return false;
+        });
       });
     }
     return filtered;

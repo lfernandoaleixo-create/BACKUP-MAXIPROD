@@ -740,7 +740,7 @@ export default function GestorAprovacoes(props: any = {}) {
                               total: (item.quantidade || 0) * (item.precoUnitario || 0),
                               unidadeMedida: item.unidadeMedida || "CX",
                             })),
-                          }, true);
+                          } as any, true);
                         }}
                         className="w-7 h-7 rounded-md flex items-center justify-center text-indigo-500 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer border border-indigo-200"
                         title="Exportar PDF (Espelho da Venda)"
