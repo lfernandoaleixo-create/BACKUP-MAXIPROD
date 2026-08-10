@@ -14,9 +14,10 @@ import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
   ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2, Pencil,
-  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search, Lock
+  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search, Lock, Download
 } from "lucide-react";
 import { Link } from "wouter";
+import { generateOrderPdf } from "@/lib/generateOrderPdf";
 
 function formatCurrency(value: number | string) {
   const num = typeof value === "string" ? Number(value) : value;
@@ -710,6 +711,45 @@ export default function GestorAprovacoes(props: any = {}) {
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                       )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          generateOrderPdf({
+                            pedido: String(order.orderNumber || order.id),
+                            cliente: order.razaoSocial || "",
+                            clienteApelido: order.nomeFantasia || order.razaoSocial || "",
+                            cnpjCpf: order.cnpjCpf || "",
+                            inscricaoEstadual: order.inscricaoEstadual || "",
+                            uf: order.uf || "",
+                            endereco: order.endereco || "",
+                            cidade: order.cidade || "",
+                            cep: order.cep || "",
+                            telefone: (order as any).telefone || "",
+                            condicaoPagamento: order.condicaoPagamento || "",
+                            formaPagamento: order.formaPagamento || "",
+                            meioPagamento: order.meioPagamento || "",
+                            transportadora: order.transportadora || "",
+                            tipoFrete: order.tipoFrete || null,
+                            valorFrete: order.valorFrete ? Number(order.valorFrete) : undefined,
+                            operacaoFiscal: order.operacaoFiscal || "",
+                            protocoloCotacao: order.protocoloCotacao || "",
+                            valorTotal: Number(order.valorTotal || 0),
+                            totalProdutos: Number(order.valorTotal || 0),
+                            items: (order.items || []).map((item: any) => ({
+                              codigo: item.codigoItem || "",
+                              descricao: item.descricaoItem || "",
+                              quantidade: item.quantidade || 0,
+                              preco: item.precoUnitario || 0,
+                              total: (item.quantidade || 0) * (item.precoUnitario || 0),
+                              unidadeMedida: item.unidadeMedida || "CX",
+                            })),
+                          }, true);
+                        }}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-indigo-500 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer border border-indigo-200"
+                        title="Exportar PDF (Espelho da Venda)"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
                      <button
                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(order.id); }}
                        className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"

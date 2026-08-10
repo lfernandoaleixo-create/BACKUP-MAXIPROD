@@ -6997,3 +6997,5 @@
 - [x] Ticagens das contas do dia não se perdem ao navegar entre abas (staleTime 30s no query)
 - [x] PDF baixa automaticamente quando marca Autorização Concluída (sem precisar clicar)
 - [x] Editar pedido de venda: vendedor e gestor podem editar pedido antes de chegar na Vitória (trocar produtos, valores, etc.)
+- [x] Pedido do Jordão (gestor) vai direto para aprovado (já implementado - auto-approval)
+- [x] Espelho da venda em PDF antes da aprovação (botão PDF no GestorAprovacoes)
