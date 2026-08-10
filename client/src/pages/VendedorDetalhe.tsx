@@ -5718,8 +5718,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     { enabled: clientSearch.length >= 1 }
   );
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
-  const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
-  const updateOrderMutation = trpc.salesOrders.updateOrder.useMutation();
+  const createOrderMutation = trpc.salesOrders.createOrder.useMutation({ onError: (err) => { alert("Erro ao criar pedido: " + err.message); } });
+  const updateOrderMutation = trpc.salesOrders.updateOrder.useMutation({ onError: (err) => { alert("Erro ao atualizar pedido: " + err.message); } });
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   // Load existing order data for edit mode
   const editOrderQuery = trpc.salesOrders.getOrderDetails.useQuery(
