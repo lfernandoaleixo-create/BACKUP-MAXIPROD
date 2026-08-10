@@ -470,7 +470,7 @@ export async function freightPdfExportHandler(req: Request, res: Response) {
       if (!errorByCarrier[key]) errorByCarrier[key] = [];
       errorByCarrier[key].push(q);
     }
-    const allCarrierNames = [...new Set([...Object.keys(byCarrier), ...Object.keys(errorByCarrier)])].sort();
+    const allCarrierNames = Array.from(new Set([...Object.keys(byCarrier), ...Object.keys(errorByCarrier)])).sort();
 
     for (const carrierName of allCarrierNames) {
       if (doc.y > 620) doc.addPage();
