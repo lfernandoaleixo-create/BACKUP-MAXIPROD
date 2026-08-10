@@ -1537,10 +1537,11 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      // Validar senha: primeiro nome com inicial maiúscula
+      // Validar senha: primeiro nome com inicial maiúscula (ignora acentos)
       const primeiroNome = input.aprovadoPor.split(" ")[0];
       const senhaEsperada = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1).toLowerCase();
-      if (input.password !== senhaEsperada) {
+      const normalizeStr = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+      if (normalizeStr(input.password) !== normalizeStr(senhaEsperada)) {
         throw new Error("Senha incorreta");
       }
       // Get order details for history
@@ -1667,12 +1668,14 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      if (input.password !== "Juvenal") {
-        throw new Error("Senha incorreta");
-      }
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
-      if (!order) throw new Error("Pedido não encontrado");
+      const gestorPrimeiroNome = (order.gestorName || "").split(" ")[0];
+      const senhaGestor = gestorPrimeiroNome.charAt(0).toUpperCase() + gestorPrimeiroNome.slice(1).toLowerCase();
+      const normStr = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+      if (normStr(input.password) !== normStr(senhaGestor)) {
+        throw new Error("Senha incorreta");
+      }
       if (order.status !== "aprovado_subgestor") {
         throw new Error("Este pedido não está aguardando aprovação do gestor");
       }
@@ -1709,12 +1712,15 @@ export const salesOrderRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      if (input.password !== "Juvenal") {
-        throw new Error("Senha incorreta");
-      }
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
-      if (!order) throw new Error("Pedido n\u00e3o encontrado");
+      if (!order) throw new Error("Pedido não encontrado");
+      const gestorPrimeiroNome = (order.gestorName || "").split(" ")[0];
+      const senhaGestor = gestorPrimeiroNome.charAt(0).toUpperCase() + gestorPrimeiroNome.slice(1).toLowerCase();
+      const normStr = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+      if (normStr(input.password) !== normStr(senhaGestor)) {
+        throw new Error("Senha incorreta");
+      }
       if (order.status !== "aprovado_subgestor") {
         throw new Error("Este pedido n\u00e3o est\u00e1 aguardando aprova\u00e7\u00e3o do gestor");
       }
