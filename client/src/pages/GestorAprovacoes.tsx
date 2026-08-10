@@ -733,11 +733,11 @@ export default function GestorAprovacoes(props: any = {}) {
                             valorTotal: Number(order.valorTotal || 0),
                             totalProdutos: Number(order.valorTotal || 0),
                             itens: (order.items || []).map((item: any) => ({
-                              codigo: item.codigoItem || "",
+                              codigoItem: item.codigoItem || "",
                               descricao: item.descricaoItem || "",
-                              quantidade: item.quantidade || 0,
-                              preco: item.precoUnitario || 0,
-                              total: (item.quantidade || 0) * (item.precoUnitario || 0),
+                              quantidade: Number(item.quantidade) || 0,
+                              valorUnitario: Number(item.precoUnitario) || 0,
+                              valorTotal: (Number(item.quantidade) || 0) * (Number(item.precoUnitario) || 0),
                               unidadeMedida: item.unidadeMedida || "CX",
                             })),
                           } as any, true);

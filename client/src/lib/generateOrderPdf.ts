@@ -95,7 +95,8 @@ function formatDateBR(d: string): string {
   }
 }
 
-function formatCurrency(n: number): string {
+function formatCurrency(n: number | undefined | null): string {
+  if (n == null || isNaN(n)) return "R$ 0,00";
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 }
 
@@ -244,7 +245,7 @@ export async function generateOrderPdf(order: OrderForPdf, showValues: boolean =
       String(idx + 1),
       item.codigoItem || "—",
       item.descricao,
-      `${item.quantidade.toLocaleString("pt-BR", { minimumFractionDigits: 4 })} ${item.unidadeMedida || "CX"}`,
+      `${(Number(item.quantidade) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 4 })} ${item.unidadeMedida || "CX"}`,
     ];
     if (showValues) {
       row.push(formatCurrency(item.valorUnitario));
