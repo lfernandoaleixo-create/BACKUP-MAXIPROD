@@ -135,8 +135,9 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
   const urlTab = urlParams.get("tab") as TabType | null;
   const urlSection = urlParams.get("section") as string | null;
   const validTabs: TabType[] = ["estoque", "clientes", "tabela_precos", "catalogos", "pedidos", "vendas", "configuracoes", "aprovacoes"];
-  const defaultTab: TabType = gestorSelfMode ? "estoque" : (urlTab && validTabs.includes(urlTab) ? urlTab : "estoque");
-  const [activeTab, setActiveTab] = useState<TabType>(urlTab && validTabs.includes(urlTab) ? urlTab : defaultTab);
+  const editOrderUrlParam = new URLSearchParams(window.location.search).get("editOrder");
+  const defaultTab: TabType = editOrderUrlParam ? "pedidos" : (gestorSelfMode ? "estoque" : (urlTab && validTabs.includes(urlTab) ? urlTab : "estoque"));
+  const [activeTab, setActiveTab] = useState<TabType>(editOrderUrlParam ? "pedidos" : (urlTab && validTabs.includes(urlTab) ? urlTab : defaultTab));
   // Section filter for configuracoes tab: shows only the relevant sub-section
   const [configSection] = useState<string | null>(urlSection);
   // Seller alert count for blinking effect on "clientes" tab
