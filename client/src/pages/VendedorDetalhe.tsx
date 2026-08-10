@@ -8623,6 +8623,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   Simular Frete
                 </button>
                 <button
+                  onClick={() => { setSelectedTransportadora("Cliente Retira"); setValorFrete(0); setTipoFrete("FOB"); alert("Marcado como Sem Frete (Cliente Retira). Pode concluir o pedido."); }}
+                  className="px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 text-xs font-semibold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-1.5"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  Sem Frete
+                </button>
+                <button
                 onClick={handleSubmit}
                 disabled={createOrderMutation.isPending || (isMonthlyMarginBlockActive && monthlyMarginQuery.data?.canCloseOrder === false && !monthlyOverrideApproved)}
                 className={`px-5 py-2 ${isSimulation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5`}
