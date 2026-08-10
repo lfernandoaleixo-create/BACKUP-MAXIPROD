@@ -825,7 +825,8 @@ export const settingsRouter = router({
       if (!db) throw new Error("DB not available");
       // 1) Try operator login first
       const rows = await db.select().from(operators)
-        .where(and(eq(operators.password, input.password), eq(operators.active, true)));
+        .where(and(eq(operators.password, input.password), eq(operators.active, true)))
+        .orderBy(operators.id);
       if (rows.length > 0) {
         // Fetch all seller_permissions with this password to check authorization
         const matchingSellers = await db.select().from(sellerPermissions)
