@@ -13,7 +13,7 @@ import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
-  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2,
+  ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2, Pencil,
   Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search, Lock
 } from "lucide-react";
 import { Link } from "wouter";
@@ -700,10 +700,19 @@ export default function GestorAprovacoes(props: any = {}) {
                             {m.toFixed(1)}%
                           </span>
                         );
-                      })()}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(order.id); }}
-                        className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                     })()}
+                      {(order.status === "pendente" || order.status === "aprovado_subgestor" || order.status === "aprovado") && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); window.location.href = `/gestao-comercial?editOrder=${order.id}&seller=${order.sellerId}`; }}
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors cursor-pointer border border-blue-200"
+                          title="Editar pedido"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                     <button
+                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(order.id); }}
+                       className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
                         title="Excluir pedido"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
