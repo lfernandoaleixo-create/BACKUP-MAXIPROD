@@ -6,7 +6,7 @@ export function ConsultaMetrics() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
-  const { data, isLoading } = trpc.salesOrder.getConsultaMetrics.useQuery({ month, year });
+  const { data, isLoading } = trpc.salesOrders.getConsultaMetrics.useQuery({ month, year });
   const months = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
   const serasaByOp: Record<string, any[]> = {};
