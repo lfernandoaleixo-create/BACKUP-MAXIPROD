@@ -715,6 +715,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
   const [editingTracking, setEditingTracking] = useState(false);
   const [trackingInput, setTrackingInput] = useState("");
   const displayName = order.cliente;
+  const isLongName = (displayName?.length || 0) > 18;
 
   // Determine earliest delivery date for the order
   const earliestDelivery = useMemo(() => {
@@ -817,7 +818,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 
         {/* Client name - clean, aligned with consistent left padding */}
         <div className="flex-1 min-w-0 flex items-center pl-2 gap-2">
-          <span className={`text-slate-700 font-medium ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} truncate`} title={order.cliente}>{displayName}</span>
+          <span className={`text-slate-700 font-medium ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} break-words leading-tight`} title={order.cliente}>{displayName}</span>
           {showCondicaoFrete && order.tipoFrete && (
             <span className={`flex-shrink-0 inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
               order.tipoFrete === 'CIF' ? 'bg-blue-100 text-blue-700 border border-blue-200' :

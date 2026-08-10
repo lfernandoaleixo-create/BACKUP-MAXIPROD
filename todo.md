@@ -6993,3 +6993,4 @@
 - [x] Auto-correção de API com retry automático para todas as transportadoras (até 3 tentativas com backoff exponencial)
 - [x] Conversão RMB funcionando em todos os painéis (totais, frete, edição) + ícones corretos (R$, US$, ¥)
 - [x] Puxar nota fiscal de TODAS as empresas do grupo (PALITOS, VARETAS, ESPETO, MESA) - pedido 1636 não mostra NF pq foi faturado em outra empresa
+- [x] Nome do cliente completo na aba faturamento (sem truncar com ...)
