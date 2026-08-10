@@ -7910,8 +7910,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   Simular Frete
                 </button>
                 <button
-                  onClick={() => { setTransportadoraSelecionada("Cliente Retira"); setValorFrete("0"); setTipoFrete("FOB"); alert("Marcado como Sem Frete (Cliente Retira). Pode concluir o pedido."); }}
-                  className="px-2.5 sm:px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-1 sm:gap-1.5"
+                  onClick={() => { setTransportadoraSelecionada("Cliente Retira"); setValorFrete("0"); setTipoFrete("SEM_FRETE"); }}
+                  className={`px-2.5 sm:px-4 py-2 ${tipoFrete === "SEM_FRETE" ? "bg-orange-600 border-orange-600 text-white shadow-inner" : "bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/50"} text-[10px] sm:text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 sm:gap-1.5 border`}
                 >
                   <Package className="w-3.5 h-3.5" />
                   Sem Frete
@@ -8630,8 +8630,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   Simular Frete
                 </button>
                 <button
-                  onClick={() => { setTransportadoraSelecionada("Cliente Retira"); setValorFrete("0"); setTipoFrete("FOB"); alert("Marcado como Sem Frete (Cliente Retira). Pode concluir o pedido."); }}
-                  className="px-2.5 sm:px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-1 sm:gap-1.5"
+                  onClick={() => { setTransportadoraSelecionada("Cliente Retira"); setValorFrete("0"); setTipoFrete("SEM_FRETE"); }}
+                  className={`px-2.5 sm:px-4 py-2 ${tipoFrete === "SEM_FRETE" ? "bg-orange-600 border-orange-600 text-white shadow-inner" : "bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/50"} text-[10px] sm:text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 sm:gap-1.5 border`}
                 >
                   <Package className="w-3.5 h-3.5" />
                   Sem Frete

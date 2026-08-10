@@ -218,6 +218,7 @@ function tipoFreteToCode(tipoFrete: string | null | undefined): string {
   if (!tipoFrete) return "0"; // Default CIF
   const normalized = tipoFrete.trim().toUpperCase();
   if (normalized === "FOB") return "1";
+  if (normalized === "SEM_FRETE") return "";
   if (normalized === "RETIRA" || normalized === "SEM FRETE") return "9";
   return "0"; // CIF
 }
