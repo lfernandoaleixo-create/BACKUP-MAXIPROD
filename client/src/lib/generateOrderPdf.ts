@@ -388,7 +388,8 @@ export async function generateOrderPdf(order: OrderForPdf, showValues: boolean =
   doc.text(`Quantidade de volumes: ${totalVolumes.toLocaleString("pt-BR")}`, margin + 4, finalY);
 
   // Peso bruto (estimate from items if available)
-  const pesoText = `Peso bruto (kg): —`;
+  const pesoTotal = order.itens.reduce((s, i) => s + ((i as any).pesoBruto || 0) * (Number(i.quantidade) || 0), 0);
+  const pesoText = `Peso bruto (kg): ${pesoTotal > 0 ? pesoTotal.toFixed(2) : "—"}`;
   doc.text(pesoText, pageWidth / 2, finalY);
   finalY += 5;
 

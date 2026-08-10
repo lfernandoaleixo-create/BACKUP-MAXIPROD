@@ -721,7 +721,7 @@ export default function GestorAprovacoes(props: any = {}) {
                             cnpjCpf: order.cnpjCpf || "",
                             inscricaoEstadual: order.inscricaoEstadual || "",
                             uf: order.uf || "",
-                            endereco: order.endereco || "",
+                            endereco: [order.endereco, order.bairro, order.municipio ? order.municipio + "/" + (order.uf || "") : "", order.cep ? "CEP " + order.cep : ""].filter(Boolean).join(", ") || "",
                             condicaoPagamento: order.condicaoPagamento || "",
                             formaPagamento: order.formaPagamento || "",
                             meioPagamento: order.meioPagamento || "",
@@ -730,8 +730,8 @@ export default function GestorAprovacoes(props: any = {}) {
                             valorFrete: order.valorFrete ? Number(order.valorFrete) : undefined,
                             operacaoFiscal: order.operacaoFiscal || "",
                             protocoloCotacao: order.protocoloCotacao || "",
-                            valorTotal: Number(order.valorTotal || 0),
-                            totalProdutos: Number(order.valorTotal || 0),
+                            valorTotal: (order.items || []).reduce((s: number, i: any) => s + (Number(i.quantidade) || 0) * (Number(i.precoUnitario) || 0), 0) + (order.valorFrete ? Number(order.valorFrete) : 0),
+                            totalProdutos: (order.items || []).reduce((s: number, i: any) => s + (Number(i.quantidade) || 0) * (Number(i.precoUnitario) || 0), 0),
                             itens: (order.items || []).map((item: any) => ({
                               codigoItem: item.codigoItem || "",
                               descricao: item.descricaoItem || "",
@@ -739,6 +739,7 @@ export default function GestorAprovacoes(props: any = {}) {
                               valorUnitario: Number(item.precoUnitario) || 0,
                               valorTotal: (Number(item.quantidade) || 0) * (Number(item.precoUnitario) || 0),
                               unidadeMedida: item.unidadeMedida || "CX",
+                              pesoBruto: Number(item.pesoBruto) || 0,
                             })),
                           } as any, true);
                         }}
@@ -827,6 +828,7 @@ export default function GestorAprovacoes(props: any = {}) {
                                           descricaoItem: item.descricaoItem,
                                           quantidade: item.quantidade,
                                           unidadeMedida: item.unidadeMedida || "CX",
+                              pesoBruto: Number(item.pesoBruto) || 0,
                                           precoUnitario: item.precoUnitario,
                                         });
                                         setEditItemNewCode(item.codigoItem);
