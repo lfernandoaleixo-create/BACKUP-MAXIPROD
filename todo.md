@@ -6983,3 +6983,5 @@
 - [x] Valores preenchidos em R$ são preservados - conversão só muda a exibição
 - [x] Alerta de insuficiência: removida exclusão de produto mãe (00009 agora gera alerta)
 - [x] Alerta de insuficiência: agora verifica pedidos A aprovar E A faturar
+- [x] IE não obrigatória para CPF (pessoa física) - só para CNPJ
+- [x] Representante e Condição de Pagamento agora aparecem no cadastro de cliente

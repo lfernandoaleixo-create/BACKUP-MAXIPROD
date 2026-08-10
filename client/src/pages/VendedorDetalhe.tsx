@@ -3150,7 +3150,8 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
         strictMissing.push("E-mail (formato inválido)");
       }
       // Fiscal
-      if (!inscricaoEstadual.trim()) strictMissing.push("Inscrição Estadual");
+      // IE não é obrigatória para CPF (pessoa física)
+      if (!inscricaoEstadual.trim() && cnpjCpf.replace(/\D/g, "").length === 14) strictMissing.push("Inscrição Estadual");
       if (!emailNfe.trim()) {
         strictMissing.push("E-mail NF-e");
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNfe.trim())) {
@@ -3711,6 +3712,23 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           <option value="NEGATIVADO">NEGATIVADO</option>
           <option value="INADIMPLENTE">INADIMPLENTE</option>
         </select>
+      </div>
+      {/* Representante (obrigatório) */}
+      <div className="mb-3">
+        <label className="block text-[10px] font-medium text-slate-500 mb-1">Representante <span className="text-red-500">*</span></label>
+        <select
+          value={representanteCliente}
+          onChange={(e) => setRepresentanteCliente(e.target.value)}
+          className={`w-full px-3 py-2 border rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 ${!representanteCliente ? "border-red-300 dark:border-red-600" : "border-slate-200 dark:border-slate-600"}`}
+        >
+          {representanteOptions.map(opt => (
+            <option key={opt} value={opt}>{opt || "Selecione o representante... *"}</option>
+          ))}
+        </select>
+      </div>
+      {/* Condição de Pagamento (obrigatório) */}
+      <div className="mb-3">
+        <FormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="Ex: 30/60/90 dias" required />
       </div>
 
       {/* E-mail NF-e (obrigatório) */}
@@ -6385,7 +6403,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       missing.push("Email (formato inválido)");
     }
     // Fiscal
-    if (!inscricaoEstadual.trim()) missing.push("Inscrição Estadual");
+    if (!inscricaoEstadual.trim() && cnpjCpf.replace(/\D/g, "").length === 14) missing.push("Inscrição Estadual");
     if (!emailNfe.trim()) {
       missing.push("E-mail NF-e");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNfe.trim())) {
