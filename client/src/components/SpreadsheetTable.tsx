@@ -63,7 +63,7 @@ function formatCurrency(value: string, currency: "USD" | "BRL" | "RMB", exchange
   let converted = num;
   if (currency === "BRL") converted = num * exchangeRate;
   else if (currency === "RMB") converted = num * rmbRate;
-  if (currency === "USD") return `$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (currency === "USD") return `US$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (currency === "BRL") return `R$ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return `¥ ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

@@ -157,7 +157,7 @@ function PagamentosFornecedores() {
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
-  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
+  const currencySymbol = currency === "USD" ? "US$" : currency === "BRL" ? "R$" : "¥";
   const currencyLabel = currency === "USD" ? "USD" : currency === "BRL" ? "BRL" : "RMB";
 
   const createSupplier = trpc.import.createSupplier.useMutation({
@@ -424,7 +424,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, rmbRate,
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
-  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
+  const currencySymbol = currency === "USD" ? "US$" : currency === "BRL" ? "R$" : "¥";
   const [expanded, setExpanded] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -802,7 +802,7 @@ function SectionTable({
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
-  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
+  const currencySymbol = currency === "USD" ? "US$" : currency === "BRL" ? "R$" : "¥";
   const [showAddRow, setShowAddRow] = useState(false);
   const [spreadsheetMode, setSpreadsheetMode] = useState(false); // Default to visualização mode
   const [editingSectionTitle, setEditingSectionTitle] = useState(false);
@@ -1128,7 +1128,7 @@ function PaymentRow({ payment, supplierName, onEdit, onRefetch, onTrack, onTrack
     if (currency === "RMB") return val * rmbRate;
     return val;
   };
-  const currencySymbol = currency === "USD" ? "$" : currency === "BRL" ? "R$" : "¥";
+  const currencySymbol = currency === "USD" ? "US$" : currency === "BRL" ? "R$" : "¥";
 
   const deletePayment = trpc.import.deletePayment.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Pedido removido"); },
@@ -4641,7 +4641,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             <div className="bg-white border border-emerald-200 rounded-lg p-3">
               <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Valor Total da Ordem de Pagamento</p>
               <p className="text-lg font-bold font-mono text-emerald-800">
-                {currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(totalValorReferencia * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </p>
               <p className="text-[9px] text-slate-500">Soma dos Valores de Referência</p>
             </div>
@@ -4649,20 +4649,20 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Valor Total do Frete</p>
               {freteEditing ? (
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-sm font-mono text-orange-800">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="text-sm font-mono text-orange-800">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     autoFocus
                     type="number"
                     step="any"
                     className="w-32 text-lg font-bold font-mono text-orange-800 border border-orange-300 rounded px-2 py-0.5 focus:ring-1 focus:ring-orange-300 outline-none"
                     defaultValue={freteOverrideUsd !== null
-                      ? (currency === 'BRL' ? (Number(freteOverrideUsd) * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toString() : freteOverrideUsd)
-                      : (currency === 'BRL' ? (totalFreteAutoCalc * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toString() : totalFreteAutoCalc.toString())
+                      ? (currency === 'BRL' ? (Number(freteOverrideUsd) * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toString() : currency === 'RMB' ? (Number(freteOverrideUsd) * rmbRate).toString() : freteOverrideUsd)
+                      : (currency === 'BRL' ? (totalFreteAutoCalc * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toString() : currency === 'RMB' ? (totalFreteAutoCalc * rmbRate).toString() : totalFreteAutoCalc.toString())
                     }
                     onBlur={e => {
                       const normalized = e.target.value.replace(',', '.');
                       const rate = isLegacyPo ? poExchangeRate + 0.20 : effectiveRate;
-                      const valUsd = currency === 'BRL' ? String(Number(normalized) / rate) : normalized;
+                      const valUsd = currency === 'BRL' ? String(Number(normalized) / rate) : currency === 'RMB' ? String(Number(normalized) / rmbRate) : normalized;
                       let newOverride: string | null;
                       if (Math.abs(Number(valUsd) - totalFreteAutoCalc) < 0.001) {
                         newOverride = null; // volta ao automático se igual
@@ -4684,7 +4684,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                 </div>
               ) : (
                 <p className="text-lg font-bold font-mono text-orange-800 cursor-pointer hover:text-orange-600" onClick={() => setFreteEditing(true)}>
-                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(totalFreteCalculado * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </p>
               )}
               <div className="flex items-center gap-1 mt-0.5">
@@ -4704,7 +4704,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             <div className="bg-white border border-indigo-200 rounded-lg p-3">
               <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Total Geral (Ordem + Frete)</p>
               <p className="text-lg font-bold font-mono text-indigo-800">
-                {currency === "USD" ? `$ ${(totalValorReferencia + totalFreteCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((totalValorReferencia + totalFreteCalculado) * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {currency === "USD" ? `$ ${(totalValorReferencia + totalFreteCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${((totalValorReferencia + totalFreteCalculado) * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((totalValorReferencia + totalFreteCalculado) * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </p>
             </div>
           </div>
