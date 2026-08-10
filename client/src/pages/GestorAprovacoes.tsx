@@ -722,8 +722,6 @@ export default function GestorAprovacoes(props: any = {}) {
                             inscricaoEstadual: order.inscricaoEstadual || "",
                             uf: order.uf || "",
                             endereco: order.endereco || "",
-                            cep: order.cep || "",
-                            telefone: (order as any).telefone || "",
                             condicaoPagamento: order.condicaoPagamento || "",
                             formaPagamento: order.formaPagamento || "",
                             meioPagamento: order.meioPagamento || "",
