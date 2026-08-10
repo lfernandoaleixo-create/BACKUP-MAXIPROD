@@ -828,7 +828,6 @@ export default function GestorAprovacoes(props: any = {}) {
                                           descricaoItem: item.descricaoItem,
                                           quantidade: item.quantidade,
                                           unidadeMedida: item.unidadeMedida || "CX",
-                              pesoBruto: Number(item.pesoBruto) || 0,
                                           precoUnitario: item.precoUnitario,
                                         });
                                         setEditItemNewCode(item.codigoItem);
