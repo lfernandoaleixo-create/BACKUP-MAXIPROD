@@ -5503,6 +5503,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   }
   const [items, setItems] = useState<OrderItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [reservePO, setReservePO] = useState<{ codigoItem: string; descricaoItem: string; referencia: string; dataEntrega: string; quantidade: number } | null>(null);
   // Product pricing calculator state: { [codigoItem]: { discount%, finalValue, quantity } }
@@ -5523,25 +5524,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const startEditCartItem = (idx: number) => {
     const item = items[idx];
     if (item) {
-      // Remove item from cart and restore it to the product list with pre-filled calc
-      const precoVendedor = item.precoVendedor || 0;
-      const precoBase = precoVendedor || item.precoMinimo || 0;
-      const discountPct = precoBase > 0 && item.precoUnitario < precoBase
-        ? (((precoBase - item.precoUnitario) / precoBase) * 100).toFixed(1)
-        : '';
-      // Pre-fill the calculator with the item's current values
-      setProductCalc(prev => ({
-        ...prev,
-        [item.codigoItem]: {
-          discount: discountPct ? String(discountPct) : '',
-          finalValue: !discountPct ? String(item.precoUnitario) : '',
-          quantity: item.quantidade,
-          showQty: true,
-          locked: true,
-        }
-      }));
-      // Remove from cart
-      setItems(prev => prev.filter((_, i) => i !== idx));
+      setEditingCartIdx(idx);
+      setEditCartQty(item.quantidade);
+      setEditCartPrice(String(item.precoUnitario));
     }
   };
 
@@ -5816,6 +5801,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setTamanho(order.tamanho || "");
       setAtencao(order.atencao || "Normal");
       setSituacaoCobranca(order.situacaoCobranca || "");
+      setTemBonificacao((order as any).temBonificacao || "nao");
       // Redespacho
       setPossuiRedespacho(order.possuiRedespacho || false);
       setRedespachoCnpj(order.redespachoCnpj || "");
@@ -6051,8 +6037,20 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         flexMatchMultiple([p.codigoItem, p.descricaoItem, p.codigoBarras || "", p.grupo || ""], productSearch)
       );
     }
+    if (categoryFilters.length > 0) {
+      filtered = filtered.filter((p: any) => {
+        const g = (p.grupo || "").toLowerCase();
+        return categoryFilters.some(cat => g.includes(cat));
+      });
+    }
+    if (categoryFilters.length > 0) {
+      filtered = filtered.filter((p: any) => {
+        const g = (p.grupo || "").toLowerCase();
+        return categoryFilters.some(cat => g.includes(cat));
+      });
+    }
     return filtered;
-  }, [productsQuery.data, items, productSearch]);
+  }, [productsQuery.data, items, productSearch, categoryFilters]);
 
   const addProduct = (product: any, customPrice?: number, customQty?: number) => {
     const precoVendedor = product.precoVendedor ? Number(product.precoVendedor) : null;
@@ -7004,6 +7002,22 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
               />
             </div>
+            {/* Category filters */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {['madeira', 'bambu', 'fibra'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoryFilters(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])}
+                  className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${categoryFilters.includes(cat) ? 'bg-teal-600 text-white border-teal-600' : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-500 hover:border-teal-400'}`}
+                >
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              ))}
+              {categoryFilters.length > 0 && (
+                <button onClick={() => setCategoryFilters([])} className="text-xs text-red-400 hover:text-red-600 ml-1">Limpar</button>
+              )}
+            </div>
+
             {/* Confirmed items - STICKY at top */}
             {items.length > 0 && (
               <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 pb-2 border-b-2 border-emerald-300 dark:border-emerald-700 shadow-md rounded-lg mb-3">
@@ -7272,7 +7286,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             {/* Available products list - always visible */}
             {availableProducts.length > 0 && (
               <div className="border border-slate-200 dark:border-slate-600 rounded-lg max-h-[520px] overflow-y-auto">
-                {availableProducts.map((p: any) => {
+                {availableProducts.map((p: any, pIdx: number) => {
                   const fator = Number(p.unidadeDeVendaFator) || 1;
                   const qtdRaw = Number(p.disponivel) || 0;
                   const qtdCaixas = fator > 1 ? Math.floor(qtdRaw / fator) : qtdRaw;
