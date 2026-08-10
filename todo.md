@@ -6989,3 +6989,4 @@
 - [x] Métricas de consulta ao Serasa - cards expansíveis por vendedor
 - [x] Métricas de consulta ao Sintegra - cards expansíveis por vendedor
 - [x] Permissões nas configurações: Métricas Serasa e Métricas Sintegra
+- [x] Relatório detalhado por transportadora/CNPJ com protocolo obrigatório no PDF de frete

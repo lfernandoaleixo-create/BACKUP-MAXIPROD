@@ -443,9 +443,87 @@ export async function freightPdfExportHandler(req: Request, res: Response) {
     }
     doc.moveDown(1);
 
+    // ========== SECTION 10: RELATÓRIO INDIVIDUAL POR TRANSPORTADORA ==========
+    doc.addPage();
+    // Repeat header on new page
+    doc.fontSize(14).font("Helvetica-Bold").text("GRUPO FOX", { align: "center" });
+    doc.moveDown(0.2);
+    doc.fontSize(9).font("Helvetica").text("Relatório Individual por Transportadora", { align: "center" });
+    doc.moveDown(0.2);
+    doc.fontSize(11).font("Helvetica-Bold")
+      .text(`${pedido.includes(",") ? "PEDIDOS Nº" : "PEDIDO Nº"} ${pedido || "—"}`, { align: "center" });
+    doc.moveDown(0.8);
+    sectionHeader(doc, 10, "DETALHAMENTO POR TRANSPORTADORA E CNPJ");
+    doc.moveDown(0.5);
+
+    // Group valid quotes by transportadora
+    const byCarrier: Record<string, FreightQuote[]> = {};
+    for (const q of validQuotes) {
+      const key = q.transportadora;
+      if (!byCarrier[key]) byCarrier[key] = [];
+      byCarrier[key].push(q);
+    }
+    // Also include error quotes grouped
+    const errorByCarrier: Record<string, FreightQuote[]> = {};
+    for (const q of errorQuotes) {
+      const key = q.transportadora;
+      if (!errorByCarrier[key]) errorByCarrier[key] = [];
+      errorByCarrier[key].push(q);
+    }
+    const allCarrierNames = [...new Set([...Object.keys(byCarrier), ...Object.keys(errorByCarrier)])].sort();
+
+    for (const carrierName of allCarrierNames) {
+      if (doc.y > 620) doc.addPage();
+      // Carrier sub-header (green)
+      doc.save();
+      const cY = doc.y;
+      doc.rect(45, cY, 505, 16).fill("#2a7d5f");
+      doc.fillColor("#ffffff").fontSize(9).font("Helvetica-Bold")
+        .text(`${carrierName}`, 55, cY + 3, { width: 480 });
+      doc.restore();
+      doc.fillColor("#000000");
+      doc.y = cY + 20;
+
+      // Valid quotes for this carrier (by CNPJ)
+      const carrierQuotes = byCarrier[carrierName] || [];
+      if (carrierQuotes.length > 0) {
+        const cHeaders = ["CNPJ Remetente", "Valor Frete", "Prazo", "Protocolo", "% s/ NF"];
+        const cColWidths = [140, 90, 80, 110, 70];
+        const cRows = carrierQuotes.map(q => [
+          q.cnpj ? formatCnpj(q.cnpj) : "—",
+          formatCurrency(q.totalFrete),
+          q.prazo || "—",
+          q.protocolo || "SEM PROTOCOLO",
+          valorMercadoria > 0 ? `${((q.totalFrete / valorMercadoria) * 100).toFixed(2)}%` : "—",
+        ]);
+        drawTable(doc, cHeaders, cRows, cColWidths);
+
+        // Summary for this carrier
+        doc.moveDown(0.3);
+        const minVal = Math.min(...carrierQuotes.map(q => q.totalFrete));
+        const maxVal = Math.max(...carrierQuotes.map(q => q.totalFrete));
+        doc.fontSize(7.5).font("Helvetica-Bold");
+        doc.text(`   Menor valor: ${formatCurrency(minVal)} | Maior valor: ${formatCurrency(maxVal)} | Cotações válidas: ${carrierQuotes.length}`, 45);
+        doc.font("Helvetica");
+      }
+
+      // Error quotes for this carrier
+      const carrierErrs = errorByCarrier[carrierName] || [];
+      if (carrierErrs.length > 0) {
+        doc.moveDown(0.2);
+        doc.fontSize(7.5).fillColor("#cc0000").font("Helvetica-Oblique");
+        for (const errQ of carrierErrs) {
+          doc.text(`   ✗ CNPJ ${errQ.cnpj ? formatCnpj(errQ.cnpj) : "—"}: ${errQ.error || "Sem resposta"}`, 45);
+        }
+        doc.fillColor("#000000").font("Helvetica");
+      }
+      doc.moveDown(0.6);
+    }
+    doc.moveDown(0.5);
+
     // ========== SECTION: INFORMAÇÕES DAS TRANSPORTADORAS ==========
     if (doc.y > 550) doc.addPage();
-    sectionHeader(doc, 10, "COMO FUNCIONA CADA TRANSPORTADORA");
+    sectionHeader(doc, 11, "COMO FUNCIONA CADA TRANSPORTADORA");
     doc.moveDown(0.3);
 
     const carrierInfo = [

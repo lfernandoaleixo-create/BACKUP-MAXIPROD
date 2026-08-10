@@ -402,6 +402,27 @@ export default function CustosDeVendaStep({
       });
     }
     report += `\n═══════════════════════════════════════════════════════════════\n`;
+    // Per-carrier breakdown
+    report += `\n───────────────────────────────────────────────────────────────\n`;
+    report += `DETALHAMENTO POR TRANSPORTADORA\n`;
+    report += `───────────────────────────────────────────────────────────────\n\n`;
+    const byCarrierTxt: Record<string, any[]> = {};
+    quoteAllMutation.data.forEach((q: any) => {
+      if (!byCarrierTxt[q.transportadora]) byCarrierTxt[q.transportadora] = [];
+      byCarrierTxt[q.transportadora].push(q);
+    });
+    Object.keys(byCarrierTxt).sort().forEach(carrier => {
+      report += `▸ ${carrier}\n`;
+      byCarrierTxt[carrier].forEach((q: any) => {
+        if (!q.error && q.totalFrete > 0) {
+          report += `    CNPJ: ${q.cnpj ? formatCnpj(q.cnpj) : "—"} | Valor: ${formatCurrency(q.totalFrete)} | Prazo: ${q.prazo || "—"} | Protocolo: ${q.protocolo || "SEM PROTOCOLO"}\n`;
+        } else {
+          report += `    CNPJ: ${q.cnpj ? formatCnpj(q.cnpj) : "—"} | ERRO: ${q.error || "Sem resposta"}\n`;
+        }
+      });
+      report += `\n`;
+    });
+
     report += `Relatório gerado automaticamente pelo Grupo Fox Dashboard\n`;
     // Download
     const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
