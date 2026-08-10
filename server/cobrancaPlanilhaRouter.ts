@@ -1029,6 +1029,11 @@ export const cobrancaPlanilhaRouter = router({
           updatedBy: `Sync: ${input.updatedBy}`,
         };
         
+        // REGRA: Se o título estava ausente (foi para banco/descontado) e agora voltou,
+        // resetar status para "Pendente" (primeira cobrança) - é como se fosse novo
+        if (match.updatedBy && match.updatedBy.includes('ausente do inadimplência')) {
+          updateData.status = 'Pendente';
+        }
         // REGRA CRÍTICA: NUNCA sobrescrever campos editados manualmente.
         // O status e tipo que o Thalita marcarem ficam FIXOS até eles mudarem manualmente.
         // Apenas preencher se ainda estiver vazio/null.
@@ -1347,7 +1352,11 @@ export const cobrancaPlanilhaRouter = router({
           // PROTEÇÃO ABSOLUTA: NUNCA desativar títulos com status diferente de "Pendente"
           if (item.status && item.status !== "Pendente") {
             notInInadimplencia++;
-            continue; // NÃO desativar - título foi trabalhado pelo financeiro
+          // Marcar como ausente (foi para banco/descontado) - NÃO desativar
+          await db.update(cobrancaPlanilha)
+            .set({ updatedBy: `Sync: ${input.updatedBy} (ausente do inadimplência)` })
+            .where(eq(cobrancaPlanilha.id, item.id));
+          continue; // NÃO desativar - título foi trabalhado pelo financeiro
           }
           // Marcar como inativo — título Pendente que não está mais na inadimplência (pago ou removido)
           await db.update(cobrancaPlanilha)
