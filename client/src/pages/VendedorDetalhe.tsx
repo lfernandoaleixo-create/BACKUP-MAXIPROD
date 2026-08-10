@@ -7904,7 +7904,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 <button
                   onClick={handleInlineFreightSimulation}
                   disabled={inlineFreightLoading || items.length === 0 || !cep}
-                  className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-2.5 sm:px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1 sm:gap-1.5 disabled:opacity-50"
                 >
                   {inlineFreightLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
                   Simular Frete
@@ -8609,22 +8609,22 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               )}
             </div>
             )}
-            <div className="flex justify-between pt-2">
-              <button onClick={() => showCustosDeVenda ? setStep("pagamento") : setStep("produtos")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+            <div className="flex flex-wrap justify-between gap-2 pt-2">
+              <button onClick={() => showCustosDeVenda ? setStep("pagamento") : setStep("produtos")} className="px-3 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                 Voltar
               </button>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
                 <button
                   onClick={handleInlineFreightSimulation}
                   disabled={inlineFreightLoading}
-                  className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-2.5 sm:px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1 sm:gap-1.5 disabled:opacity-50"
                 >
                   {inlineFreightLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
                   Simular Frete
                 </button>
                 <button
                   onClick={() => { setTransportadoraSelecionada("Cliente Retira"); setValorFrete("0"); setTipoFrete("FOB"); alert("Marcado como Sem Frete (Cliente Retira). Pode concluir o pedido."); }}
-                  className="px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 text-xs font-semibold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-1.5"
+                  className="px-2.5 sm:px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-1 sm:gap-1.5"
                 >
                   <Package className="w-3.5 h-3.5" />
                   Sem Frete

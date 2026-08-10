@@ -620,7 +620,7 @@ export default function GestorAprovacoes(props: any = {}) {
                   {/* Order Header */}
                   <button
                     onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+                    className="w-full px-3 py-3 flex flex-wrap items-center gap-2 sm:gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
                   >
                     {/* Status Icon */}
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -650,7 +650,7 @@ export default function GestorAprovacoes(props: any = {}) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-bold text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                        <p className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 break-words">
                           {order.razaoSocial || order.nomeFantasia}
                         </p>
                         {/* Status Badge */}
@@ -670,7 +670,7 @@ export default function GestorAprovacoes(props: any = {}) {
                            "PROCESSADO"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-2 sm:gap-3 mt-0.5 text-[9px] sm:text-[10px] text-slate-500 flex-wrap">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
                           {order.sellerName}
@@ -688,7 +688,7 @@ export default function GestorAprovacoes(props: any = {}) {
                     </div>
 
                     {/* Total + Margin Badge + Delete */}
-                    <div className="text-right flex-shrink-0 flex items-center gap-2">
+                    <div className="text-right flex-shrink-0 flex items-center gap-1 sm:gap-2 flex-wrap">
                       <p className="text-sm font-bold text-green-700 dark:text-green-400">
                         {formatCurrency(order.totalPedido)}
                       </p>

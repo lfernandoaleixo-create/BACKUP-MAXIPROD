@@ -6999,3 +6999,6 @@
 - [x] Editar pedido de venda: vendedor e gestor podem editar pedido antes de chegar na Vitória (trocar produtos, valores, etc.)
 - [x] Pedido do Jordão (gestor) vai direto para aprovado (já implementado - auto-approval)
 - [x] Espelho da venda em PDF antes da aprovação (botão PDF no GestorAprovacoes)
+- [x] Revisão mobile: GestorAprovacoes cards responsivos (flex-wrap, font menor, gap reduzido)
+- [x] Revisão mobile: Botões Simular Frete/Sem Frete/Pedido Concluído responsivos (wrap, padding menor)
+- [ ] Revisão mobile completa: verificar todas as telas para sobreposições
