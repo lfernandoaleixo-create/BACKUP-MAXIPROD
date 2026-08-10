@@ -35,7 +35,7 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
     const data = await gql<any>(`{
       itensDosPedidosDeVendas(
         skip: 0, take: 500,
-        where: { pedidoDeVenda: { estado: { eq: AAPROVAR } } }
+        where: { pedidoDeVenda: { estado: { in: [AAPROVAR, AFATURAR] } } }
       ) {
         totalCount
         items {
@@ -128,7 +128,7 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   if (pedidoItems.length === 0) {
     // Nenhum pedido em A aprovar → expirar todos os alertas pendentes
     await cleanupOldAlerts(db);
-    return { created: 0, message: "Nenhum pedido em 'A aprovar' no Maxiprod" };
+    return { created: 0, message: "Nenhum pedido em A aprovar ou A faturar no Maxiprod" };
   }
 
   // 2. Buscar estoque agrupado para os itens
@@ -180,10 +180,10 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
 
   const insufficientItems: PedidoItem[] = [];
   for (const item of pedidoItems) {
-    // Pular produtos mãe (a granel) - NUNCA gerar alerta para eles
-    if (parentCodes.has(item.codigoItem)) {
-      continue;
-    }
+// REMOVIDO:     // Pular produtos mãe (a granel) - NUNCA gerar alerta para eles
+// REMOVIDO:     if (parentCodes.has(item.codigoItem)) {
+// REMOVIDO:       continue;
+// REMOVIDO:     }
 
     // Pular itens de Queijo Coalho - não gerar alerta
     if (isQueijoCoalho(item.descricao, item.codigoItem)) {
@@ -323,7 +323,7 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   // 6. Limpar alertas pendentes de pedidos que não estão mais insuficientes
   await cleanupOldAlerts(db, pedidosAtuais, insufficientItems);
 
-  const msg = `${created} novo(s) alerta(s). ${insufficientItems.length} item(ns) insuficiente(s) em ${pedidosAtuais.size} pedido(s) A aprovar.`;
+  const msg = `${created} novo(s) alerta(s). ${insufficientItems.length} item(ns) insuficiente(s) em ${pedidosAtuais.size} pedido(s) A aprovar/faturar.`;
   console.log(`[StockAlert] ${msg}`);
   return { created, message: msg };
 }

@@ -6981,3 +6981,5 @@
 - [x] Movimentação de estoque: quantidade só aceita valores inteiros (sem decimais)
 - [x] Conversão RMB funcionando no painel de custos logísticos (frete terrestre, pagamentos, DIFAL, etc.)
 - [x] Valores preenchidos em R$ são preservados - conversão só muda a exibição
+- [x] Alerta de insuficiência: removida exclusão de produto mãe (00009 agora gera alerta)
+- [x] Alerta de insuficiência: agora verifica pedidos A aprovar E A faturar
