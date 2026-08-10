@@ -1286,8 +1286,13 @@ export const salesOrderRouter = router({
       const orderIds = orders.map(o => o.id);
       let allItems: any[] = [];
       if (orderIds.length > 0) {
-        allItems = await db.select().from(salesOrderRequestItems)
+        const rawItems = await db.select({
+          item: salesOrderRequestItems,
+          pesoBruto: stockItems.pesoBruto,
+        }).from(salesOrderRequestItems)
+          .leftJoin(stockItems, eq(salesOrderRequestItems.codigoItem, stockItems.codigoItem))
           .where(inArray(salesOrderRequestItems.orderId, orderIds));
+        allItems = rawItems.map(r => ({ ...r.item, pesoBruto: r.pesoBruto || '0' }));
       }
       const itemsByOrder = new Map<number, typeof allItems>();
       for (const item of allItems) {
@@ -1362,8 +1367,13 @@ export const salesOrderRouter = router({
       const orderIds = orders.map(o => o.id);
       let allItems: any[] = [];
       if (orderIds.length > 0) {
-        allItems = await db.select().from(salesOrderRequestItems)
+        const rawItems = await db.select({
+          item: salesOrderRequestItems,
+          pesoBruto: stockItems.pesoBruto,
+        }).from(salesOrderRequestItems)
+          .leftJoin(stockItems, eq(salesOrderRequestItems.codigoItem, stockItems.codigoItem))
           .where(inArray(salesOrderRequestItems.orderId, orderIds));
+        allItems = rawItems.map(r => ({ ...r.item, pesoBruto: r.pesoBruto || '0' }));
       }
 
       // Group items by orderId
@@ -1431,8 +1441,13 @@ export const salesOrderRouter = router({
       const orderIds = orders.map(o => o.id);
       let allItems: any[] = [];
       if (orderIds.length > 0) {
-        allItems = await db.select().from(salesOrderRequestItems)
+        const rawItems = await db.select({
+          item: salesOrderRequestItems,
+          pesoBruto: stockItems.pesoBruto,
+        }).from(salesOrderRequestItems)
+          .leftJoin(stockItems, eq(salesOrderRequestItems.codigoItem, stockItems.codigoItem))
           .where(inArray(salesOrderRequestItems.orderId, orderIds));
+        allItems = rawItems.map(r => ({ ...r.item, pesoBruto: r.pesoBruto || '0' }));
       }
 
       const itemsByOrder = new Map<number, typeof allItems>();
@@ -1489,8 +1504,13 @@ export const salesOrderRouter = router({
       const orderIds = orders.map(o => o.id);
       let allItems: any[] = [];
       if (orderIds.length > 0) {
-        allItems = await db.select().from(salesOrderRequestItems)
+        const rawItems = await db.select({
+          item: salesOrderRequestItems,
+          pesoBruto: stockItems.pesoBruto,
+        }).from(salesOrderRequestItems)
+          .leftJoin(stockItems, eq(salesOrderRequestItems.codigoItem, stockItems.codigoItem))
           .where(inArray(salesOrderRequestItems.orderId, orderIds));
+        allItems = rawItems.map(r => ({ ...r.item, pesoBruto: r.pesoBruto || '0' }));
       }
 
       const itemsByOrder = new Map<number, typeof allItems>();
@@ -1718,8 +1738,13 @@ export const salesOrderRouter = router({
       const orderIds = orders.map(o => o.id);
       let allItems: any[] = [];
       if (orderIds.length > 0) {
-        allItems = await db.select().from(salesOrderRequestItems)
+        const rawItems = await db.select({
+          item: salesOrderRequestItems,
+          pesoBruto: stockItems.pesoBruto,
+        }).from(salesOrderRequestItems)
+          .leftJoin(stockItems, eq(salesOrderRequestItems.codigoItem, stockItems.codigoItem))
           .where(inArray(salesOrderRequestItems.orderId, orderIds));
+        allItems = rawItems.map(r => ({ ...r.item, pesoBruto: r.pesoBruto || '0' }));
       }
       const itemsByOrder = new Map<number, typeof allItems>();
       for (const item of allItems) {
