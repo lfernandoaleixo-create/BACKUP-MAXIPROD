@@ -6986,3 +6986,6 @@
 - [x] IE não obrigatória para CPF (pessoa física) - só para CNPJ
 - [x] Representante e Condição de Pagamento agora aparecem no cadastro de cliente
 - [x] Alerta insuficiência pedido 1625/1646/1662 agora aparece (parent exclusion removida)
+- [x] Métricas de consulta ao Serasa - cards expansíveis por vendedor
+- [x] Métricas de consulta ao Sintegra - cards expansíveis por vendedor
+- [x] Permissões nas configurações: Métricas Serasa e Métricas Sintegra

@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules, freightSimulations } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules, freightSimulations, sintegraConsultas, serasaConsultas } from "../drizzle/schema";
 import { parseDimensions } from "../shared/parseDimensions";
 import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
@@ -41,9 +41,50 @@ export const salesOrderRouter = router({
 
   /** Consulta CNPJ na Receita Federal + Sintegra para preencher cadastro de cliente */
   consultaCnpj: publicProcedure
-    .input(z.object({ cnpj: z.string().min(11) }))
+    .input(z.object({ cnpj: z.string().min(11), operadorName: z.string().optional(), contexto: z.string().optional() }))
     .query(async ({ input }) => {
-      return consultaCnpjCompleta(input.cnpj);
+      const result = await consultaCnpjCompleta(input.cnpj);
+      // Log the Sintegra query for metrics
+      if (input.operadorName) {
+        try {
+          const db = await getDb();
+          if (db) {
+            await db.insert(sintegraConsultas).values({
+              operadorName: input.operadorName,
+              clienteDocumento: input.cnpj.replace(/\D/g, ""),
+              clienteNome: result?.razaoSocial || result?.nomeFantasia || null,
+              inscricaoEstadual: result?.inscricaoEstadual || null,
+              uf: result?.uf || null,
+              situacaoCadastral: result?.situacaoCadastral || null,
+              contexto: input.contexto || "pedido_venda",
+            });
+          }
+        } catch (e) { /* non-blocking log */ }
+      }
+      return result;
+    }),
+
+  // ===== MÉTRICAS DE CONSULTAS (Serasa + Sintegra) =====
+
+  getConsultaMetrics: publicProcedure
+    .input(z.object({ month: z.number().optional(), year: z.number().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { serasa: [], sintegra: [] };
+      const now = new Date();
+      const month = input.month ?? (now.getMonth() + 1);
+      const year = input.year ?? now.getFullYear();
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 1);
+      // Serasa
+      const serasaRows = await db.select().from(serasaConsultas).where(
+        and(gte(serasaConsultas.createdAt, startDate), sql`${serasaConsultas.createdAt} < ${endDate}`)
+      );
+      // Sintegra
+      const sintegraRows = await db.select().from(sintegraConsultas).where(
+        and(gte(sintegraConsultas.createdAt, startDate), sql`${sintegraConsultas.createdAt} < ${endDate}`)
+      );
+      return { serasa: serasaRows, sintegra: sintegraRows };
     }),
 
   // ===== CLIENT SEARCH (AUTOCOMPLETE) =====

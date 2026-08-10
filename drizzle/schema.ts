@@ -3116,6 +3116,24 @@ export const serasaConsultas = mysqlTable("serasa_consultas", {
 export type SerasaConsulta = typeof serasaConsultas.$inferSelect;
 export type InsertSerasaConsulta = typeof serasaConsultas.$inferInsert;
 
+/**
+ * Consultas Sintegra - Histórico de consultas de CNPJ realizadas via API Sintegra.
+ * Cada registro = 1 consulta à API do Sintegra (IE, dados cadastrais).
+ */
+export const sintegraConsultas = mysqlTable("sintegra_consultas", {
+  id: int("id").autoincrement().primaryKey(),
+  operadorName: varchar("operador_name", { length: 200 }).notNull(),
+  operadorId: int("operador_id"),
+  clienteDocumento: varchar("cliente_documento", { length: 20 }).notNull(),
+  clienteNome: varchar("cliente_nome", { length: 300 }),
+  inscricaoEstadual: varchar("inscricao_estadual", { length: 50 }),
+  uf: varchar("uf", { length: 2 }),
+  situacaoCadastral: varchar("situacao_cadastral", { length: 100 }),
+  contexto: varchar("contexto", { length: 50 }).default("pedido_venda"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type SintegraConsulta = typeof sintegraConsultas.$inferSelect;
+export type InsertSintegraConsulta = typeof sintegraConsultas.$inferInsert;
 
 /**
  * Atribuição de lotes a pedidos de venda

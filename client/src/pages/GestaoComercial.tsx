@@ -17,7 +17,8 @@ import {
   Users, BarChart3, ClipboardCheck, ShieldCheck, Shield, Settings, ShoppingCart,
   ChevronDown, ChevronRight, Lock, RefreshCw, AlertCircle, Crown,
   Package, Tag, FolderOpen, Target, Eye, UserPlus, ArrowLeft, DollarSign, Calculator, FileText, Check,
-  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent, FileSpreadsheet, Truck
+  TrendingUp, Pencil, Upload, Plus, Trash2, FolderPlus, Download, X, ArrowRightLeft, Percent, FileSpreadsheet, Truck,
+  Search,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -393,6 +394,20 @@ export default function GestaoComercial() {
               </div>
             </Link>}
             {/* Cadastrar Gestores/Sub-gestores */}
+            {/* Métricas de Consultas */}
+            {(hasGranularAccess("gc.metricasSerasa") || hasGranularAccess("gc.metricasSintegra")) && <Link href="/gestao-comercial/metricas-consultas">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-sm p-6 hover:shadow-lg hover:border-purple-400 transition-all cursor-pointer group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors">
+                    <Search className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Métricas de Consultas</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Serasa e Sintegra - histórico por vendedor</p>
+                  </div>
+                </div>
+              </div>
+            </Link>}
             {hasGranularAccess("gc.gerenciarGestores") && <Link href="/gestao-comercial/gerenciar-gestores">
               <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-sm p-6 hover:shadow-lg hover:border-purple-400 transition-all cursor-pointer group">
                 <div className="flex items-center gap-3 mb-3">
