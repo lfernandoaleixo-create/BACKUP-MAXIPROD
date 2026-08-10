@@ -6979,3 +6979,5 @@
 - [x] Custo Real: corrigir para usar última PO 100% concluída (data entrega mais recente), não média de todas POs
 - [x] Lógica dos 3 custos separada: Real=só concluídas, Projetado=só pátio, Estimado=só navegando (LIFO em cada grupo)
 - [x] Movimentação de estoque: quantidade só aceita valores inteiros (sem decimais)
+- [x] Conversão RMB funcionando no painel de custos logísticos (frete terrestre, pagamentos, DIFAL, etc.)
+- [x] Valores preenchidos em R$ são preservados - conversão só muda a exibição
