@@ -6978,3 +6978,4 @@
 - [ ] Ajustar estoque produto 00009: e-commerce de 15 para 9 caixas (estoque físico vai subir para 102 quando Maxiprod atualizar)
 - [x] Custo Real: corrigir para usar última PO 100% concluída (data entrega mais recente), não média de todas POs
 - [x] Lógica dos 3 custos separada: Real=só concluídas, Projetado=só pátio, Estimado=só navegando (LIFO em cada grupo)
+- [x] Movimentação de estoque: quantidade só aceita valores inteiros (sem decimais)

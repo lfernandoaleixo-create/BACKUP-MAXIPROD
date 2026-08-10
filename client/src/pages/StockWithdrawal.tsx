@@ -315,7 +315,7 @@ function SolicitarBaixaForm() {
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Quantidade Retirada *</label>
         <input
-          type="number"
+          type="number" step="1" min="1"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Ex: 5"
@@ -389,7 +389,7 @@ function SolicitarBaixaForm() {
           <div>
             <label className="block text-xs font-medium text-blue-700 mb-1">Quantidade que entra no estoque</label>
             <input
-              type="number"
+              type="number" step="1" min="1"
               value={quantidadeDestino}
               onChange={(e) => setQuantidadeDestino(e.target.value)}
               placeholder="Ex: 10"
@@ -564,7 +564,7 @@ function SolicitarAcrescimoForm() {
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Quantidade de Caixas *</label>
         <input
-          type="number"
+          type="number" step="1" min="1"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Ex: 5"
@@ -943,11 +943,11 @@ function RequestCard({ request, actions }: { request: any; actions?: React.React
               {request.productCode} — {request.productName}
             </p>
             <p className="text-sm text-slate-600 mt-0.5">
-              Quantidade: <span className="font-medium">{request.quantity}</span> | Motivo: <span className="font-medium">{MOTIVO_LABELS[request.motivo] || request.motivo}</span>
+              Quantidade: <span className="font-medium">{Math.round(Number(request.quantity))}</span> | Motivo: <span className="font-medium">{MOTIVO_LABELS[request.motivo] || request.motivo}</span>
             </p>
             {request.motivo === "reembalagem" && request.produtoDestinoName && (
               <p className="text-xs text-blue-700 mt-1 flex items-center gap-1">
-                <ArrowRight className="w-3 h-3" /> Destino: {request.produtoDestinoCode} — {request.produtoDestinoName} (Qtd: {request.quantidadeDestino})
+                <ArrowRight className="w-3 h-3" /> Destino: {request.produtoDestinoCode} — {request.produtoDestinoName} (Qtd: {Math.round(Number(request.quantidadeDestino))})
               </p>
             )}
             {(request.motivo === "outro" || request.motivo === "avaria_perda") && request.motivoDescricao && (
