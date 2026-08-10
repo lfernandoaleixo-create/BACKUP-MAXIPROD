@@ -703,7 +703,7 @@ export default function GestorAprovacoes(props: any = {}) {
                      })()}
                       {(order.status === "pendente" || order.status === "aprovado_subgestor" || order.status === "aprovado") && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); window.location.href = `/gestao-comercial?editOrder=${order.id}&seller=${order.sellerId}`; }}
+                          onClick={(e) => { e.stopPropagation(); window.location.href = `/gestao-comercial/vendedor/${order.sellerId}?editOrder=${order.id}`; }}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors cursor-pointer border border-blue-200"
                           title="Editar pedido"
                         >

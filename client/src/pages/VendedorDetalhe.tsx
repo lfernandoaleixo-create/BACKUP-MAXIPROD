@@ -4261,9 +4261,10 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const { hasDraft } = useOrderDraft();
   const resumeDraftParam = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
   const [isResumingDraft, setIsResumingDraft] = useState(resumeDraftParam && hasDraft);
-  const [showNewOrder, setShowNewOrder] = useState(resumeDraftParam && hasDraft);
+  const [showNewOrder, setShowNewOrder] = useState((resumeDraftParam && hasDraft) || !!new URLSearchParams(window.location.search).get("editOrder"));
   const [showProposal, setShowProposal] = useState(false);
-  const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
+  const editOrderParam = new URLSearchParams(window.location.search).get("editOrder");
+  const [editingOrderId, setEditingOrderId] = useState<number | null>(editOrderParam ? Number(editOrderParam) : null);
   const [showMonthlyDetails, setShowMonthlyDetails] = useState(false);
 
   const { startDate, endDate } = useMemo(() => getOrderDateRange(period, customMonth), [period, customMonth]);
