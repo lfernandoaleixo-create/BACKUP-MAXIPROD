@@ -7317,7 +7317,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   };
 
                   return (
-                    <div key={p.codigoItem} className="border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-0.5">
+                    <div key={p.codigoItem} className={`border-b-2 border-slate-200 dark:border-slate-600 last:border-0 px-2 sm:px-3 py-0.5 ${pIdx % 2 === 0 ? "bg-gray-100 dark:bg-slate-800" : "bg-white dark:bg-slate-900"}`}>
                       {/* Row 1: Product name | code/dims/weight */}
                       <div className="flex items-center flex-wrap gap-x-2 gap-y-0">
                         <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 break-words leading-tight">{p.descricaoItem}</p>
