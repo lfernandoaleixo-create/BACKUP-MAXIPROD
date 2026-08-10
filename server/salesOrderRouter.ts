@@ -12,6 +12,32 @@ import { quoteAllRodonavesCnpjs, RODONAVES_CNPJS } from "./rodonavesApi";
 import { quoteFlordeMinas } from "./florDeminasApi";
 import { consultaCnpjCompleta } from "./sintegraApi";
 
+// ─── Retry helper for freight API calls ───
+// Retries a function up to maxRetries times with exponential backoff
+// Handles transient network/API failures automatically
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 2000): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const msg = (err?.message || "").toLowerCase();
+      // Don't retry business errors (region not served, no price table, etc.)
+      if (msg.includes("não atende") || msg.includes("nao atende") || msg.includes("sem tabela") ||
+          msg.includes("fora da área") || msg.includes("regiao nao atendida") || msg.includes("região não atendida") ||
+          msg.includes("cep não atendido") || msg.includes("localidade não atendida")) {
+        throw err;
+      }
+      if (attempt < maxRetries) {
+        console.log(`[FreightRetry] Attempt ${attempt + 1} failed (${err?.message?.substring(0, 80)}), retrying in ${delayMs * (attempt + 1)}ms...`);
+        await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 /**
  * Sales Order Requests Router
  * Handles the full lifecycle of sales orders created by field sellers:
@@ -2751,7 +2777,7 @@ export const salesOrderRouter = router({
 
       // Quote from all 5 carriers in parallel: Braspress + Alfa + Camilo (SSW) + Rodonaves + Flor de Minas
       const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
-        cotarTodosCnpjs({
+        withRetry(() => cotarTodosCnpjs({
           cnpjDestinatario: input.cnpjDestinatario || "00000000000000",
           cepOrigem: input.cepOrigem,
           cepDestino: input.cepDestino,
@@ -2761,8 +2787,8 @@ export const salesOrderRouter = router({
           altura: input.altura,
           largura: input.largura,
           comprimento: input.comprimento,
-        }),
-        quoteAllAlfaCnpjs({
+        })),
+        withRetry(() => quoteAllAlfaCnpjs({
           cepDestino: input.cepDestino,
           cepOrigem: input.cepOrigem,
           valorMercadoria: input.valorMercadoria,
@@ -2770,8 +2796,8 @@ export const salesOrderRouter = router({
           metroCubico: input.metroCubico,
           volumes: input.volumes,
           cnpjDestinatario: input.cnpjDestinatario,
-        }),
-        quoteAllSswCnpjsWithProtocol({
+        })),
+        withRetry(() => quoteAllSswCnpjsWithProtocol({
           // SSW/Camilo has freight table negotiated from Perdões/MG (37260000), not Contagem
           cepOrigem: "37260000",
           cepDestino: input.cepDestino.replace(/\D/g, ""),
@@ -2781,8 +2807,8 @@ export const salesOrderRouter = router({
           cubagem: input.metroCubico,
           cnpjDestinatario: input.cnpjDestinatario,
           destContribuinte: normalizeTipoContribuinte(input.tipoContribuinte) === "Contribuinte" ? "S" : "N",
-        }),
-        quoteAllRodonavesCnpjs({
+        })),
+        withRetry(() => quoteAllRodonavesCnpjs({
           cepOrigem: input.cepOrigem,
           cepDestino: input.cepDestino,
           valorMercadoria: input.valorMercadoria,
@@ -2790,12 +2816,12 @@ export const salesOrderRouter = router({
           volumes: input.volumes,
           cnpjDestinatario: input.cnpjDestinatario,
           customerData,
-        }),
-        quoteFlordeMinas({
+        })),
+        withRetry(() => quoteFlordeMinas({
           cepDestino: input.cepDestino,
           valorMercadoria: input.valorMercadoria,
           pesoKg: input.peso,
-        }),
+        })),
       ]);
 
       const carriers: Array<{
@@ -3264,7 +3290,7 @@ export const salesOrderRouter = router({
       };
 
       const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
-        cotarTodosCnpjs({
+        withRetry(() => cotarTodosCnpjs({
           cnpjDestinatario: cnpjDestinatario || "00000000000000",
           cepOrigem: "37264000",
           cepDestino,
@@ -3274,8 +3300,8 @@ export const salesOrderRouter = router({
           altura: maxAltura > 0 ? maxAltura : 0.5,
           largura: avgLargura > 0 ? avgLargura : 0.5,
           comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
-        }),
-        quoteAllAlfaCnpjs({
+        })),
+        withRetry(() => quoteAllAlfaCnpjs({
           cepDestino,
           cepOrigem: "37264000",
           valorMercadoria,
@@ -3283,8 +3309,8 @@ export const salesOrderRouter = router({
           metroCubico,
           volumes,
           cnpjDestinatario,
-        }),
-        quoteAllSswCnpjsWithProtocol({
+        })),
+        withRetry(() => quoteAllSswCnpjsWithProtocol({
           cepOrigem: "37260000",
           cepDestino: cepDestino.replace(/\D/g, ""),
           valorNF: valorMercadoria,
@@ -3293,8 +3319,8 @@ export const salesOrderRouter = router({
           cubagem: metroCubico,
           cnpjDestinatario,
           destContribuinte: normalizeTipoContrib(tipoContribuinte) === "Contribuinte" ? "S" : "N",
-        }),
-        quoteAllRodonavesCnpjs({
+        })),
+        withRetry(() => quoteAllRodonavesCnpjs({
           cepOrigem: "37264000",
           cepDestino,
           valorMercadoria,
@@ -3302,12 +3328,12 @@ export const salesOrderRouter = router({
           volumes,
           cnpjDestinatario,
           customerData,
-        }),
-        quoteFlordeMinas({
+        })),
+        withRetry(() => quoteFlordeMinas({
           cepDestino,
           valorMercadoria,
           pesoKg: pesoTotal,
-        }),
+        })),
       ]);
 
       const carriers: Array<{
@@ -3686,7 +3712,7 @@ export const salesOrderRouter = router({
       };
 
       const [braspressResults, alfaResults, sswResults, rodonavesResults, florDeMinasResult] = await Promise.allSettled([
-        cotarTodosCnpjs({
+        withRetry(() => cotarTodosCnpjs({
           cnpjDestinatario: cnpjDestinatario || "00000000000000",
           cepOrigem: "37264000",
           cepDestino,
@@ -3696,8 +3722,8 @@ export const salesOrderRouter = router({
           altura: maxAltura > 0 ? maxAltura : 0.5,
           largura: avgLargura > 0 ? avgLargura : 0.5,
           comprimento: maxComprimento > 0 ? maxComprimento : 0.5,
-        }),
-        quoteAllAlfaCnpjs({
+        })),
+        withRetry(() => quoteAllAlfaCnpjs({
           cepDestino,
           cepOrigem: "37264000",
           valorMercadoria,
@@ -3705,8 +3731,8 @@ export const salesOrderRouter = router({
           metroCubico,
           volumes,
           cnpjDestinatario,
-        }),
-        quoteAllSswCnpjsWithProtocol({
+        })),
+        withRetry(() => quoteAllSswCnpjsWithProtocol({
           cepOrigem: "37260000",
           cepDestino: cepDestino.replace(/\D/g, ""),
           valorNF: valorMercadoria,
@@ -3715,8 +3741,8 @@ export const salesOrderRouter = router({
           cubagem: metroCubico,
           cnpjDestinatario,
           destContribuinte: normalizeTipoContrib(tipoContribuinte) === "Contribuinte" ? "S" : "N",
-        }),
-        quoteAllRodonavesCnpjs({
+        })),
+        withRetry(() => quoteAllRodonavesCnpjs({
           cepOrigem: "37264000",
           cepDestino,
           valorMercadoria,
@@ -3724,12 +3750,12 @@ export const salesOrderRouter = router({
           volumes,
           cnpjDestinatario,
           customerData,
-        }),
-        quoteFlordeMinas({
+        })),
+        withRetry(() => quoteFlordeMinas({
           cepDestino,
           valorMercadoria,
           pesoKg: pesoTotal,
-        }),
+        })),
       ]);
 
       const carriers: Array<{

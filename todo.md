@@ -6990,3 +6990,4 @@
 - [x] Métricas de consulta ao Sintegra - cards expansíveis por vendedor
 - [x] Permissões nas configurações: Métricas Serasa e Métricas Sintegra
 - [x] Relatório detalhado por transportadora/CNPJ com protocolo obrigatório no PDF de frete
+- [x] Auto-correção de API com retry automático para todas as transportadoras (até 3 tentativas com backoff exponencial)
