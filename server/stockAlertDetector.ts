@@ -35,7 +35,7 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
     const data = await gql<any>(`{
       itensDosPedidosDeVendas(
         skip: 0, take: 500,
-        where: { or: [{ pedidoDeVenda: { estado: { eq: AAPROVAR } } }, { pedidoDeVenda: { estado: { eq: AFATURAR } } }] }
+        where: { pedidoDeVenda: { estado: { eq: AAPROVAR } } }
       ) {
         totalCount
         items {
@@ -55,7 +55,7 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
 
     if (!data?.itensDosPedidosDeVendas?.items) return [];
 
-    return allItems
+    return data.itensDosPedidosDeVendas.items
       .map((item: any) => {
         // Identificar se é madeira: superGrupo 16 (dentroDoGrupo.codigo) com grupo 18 ou 19
         const grupoCodigo = item.item?.grupo?.codigo || "";
