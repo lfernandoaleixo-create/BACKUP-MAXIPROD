@@ -732,7 +732,7 @@ export default function GestorAprovacoes(props: any = {}) {
                             protocoloCotacao: order.protocoloCotacao || "",
                             valorTotal: Number(order.valorTotal || 0),
                             totalProdutos: Number(order.valorTotal || 0),
-                            items: (order.items || []).map((item: any) => ({
+                            itens: (order.items || []).map((item: any) => ({
                               codigo: item.codigoItem || "",
                               descricao: item.descricaoItem || "",
                               quantidade: item.quantidade || 0,
