@@ -828,7 +828,7 @@ function DayCard({
 }
 
 export default function WeekReconciliationCard() {
-  const { data, isLoading } = trpc.financial.getWeekReconciliation.useQuery();
+  const { data, isLoading } = trpc.financial.getWeekReconciliation.useQuery(undefined, { staleTime: 30000 });
   const { data: bankData } = trpc.financial.getBankBalances.useQuery();
   const { data: authCompletionData } = trpc.financial.getAuthCompletionStatus.useQuery();
   const setAuthCompletionMut = trpc.financial.setAuthCompletion.useMutation();
@@ -1245,6 +1245,16 @@ export default function WeekReconciliationCard() {
                 toast.success(authCompletionData?.completed ? "Autorização desmarcada" : "Autorização marcada como concluída!");
                 setShowAuthCompletionDialog(false);
                 utils.financial.getAuthCompletionStatus.invalidate();
+                // Auto-download PDF quando marca como concluída
+                if (!authCompletionData?.completed && data?.days) {
+                  const todayBR = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+                  const allAuthorized = data.days.flatMap((d: any) => d.items.filter((i: any) => i.authorized));
+                  if (allAuthorized.length > 0) {
+                    const saldo = bankData?.saldoTotal || 0;
+                    const totalAuth = allAuthorized.reduce((s: number, i: any) => s + i.valor, 0);
+                    setTimeout(() => exportAuthPDF(allAuthorized, saldo, totalAuth, todayBR), 500);
+                  }
+                }
               } else {
                 setAuthCompletionError(true);
                 toast.error(result.error || "Senha incorreta");

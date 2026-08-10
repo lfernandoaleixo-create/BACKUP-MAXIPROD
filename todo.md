@@ -6994,3 +6994,6 @@
 - [x] Conversão RMB funcionando em todos os painéis (totais, frete, edição) + ícones corretos (R$, US$, ¥)
 - [x] Puxar nota fiscal de TODAS as empresas do grupo (PALITOS, VARETAS, ESPETO, MESA) - pedido 1636 não mostra NF pq foi faturado em outra empresa
 - [x] Nome do cliente completo na aba faturamento (sem truncar com ...)
+- [x] Ticagens das contas do dia não se perdem ao navegar entre abas (staleTime 30s no query)
+- [x] PDF baixa automaticamente quando marca Autorização Concluída (sem precisar clicar)
+- [ ] Editar pedido de venda: vendedor e gestor podem editar pedido antes de chegar na Vitória (trocar produtos, valores, etc.)
