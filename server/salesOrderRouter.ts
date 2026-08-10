@@ -4797,7 +4797,7 @@ export const salesOrderRouter = router({
       const [order] = await db.select().from(salesOrderRequests)
         .where(eq(salesOrderRequests.id, input.orderId));
       if (!order) throw new Error("Pedido não encontrado");
-      if (order.status !== "pendente" && order.status !== "rejeitado" && order.status !== "aprovado_subgestor") {
+      if (order.status !== "pendente" && order.status !== "rejeitado" && order.status !== "aprovado_subgestor" && order.status !== "aprovado") {
         throw new Error("Pedido já foi aprovado e não pode ser editado");
       }
 

@@ -6039,14 +6039,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     if (categoryFilters.length > 0) {
       filtered = filtered.filter((p: any) => {
-        const g = (p.grupo || "").toLowerCase();
-        return categoryFilters.some(cat => g.includes(cat));
-      });
-    }
-    if (categoryFilters.length > 0) {
-      filtered = filtered.filter((p: any) => {
-        const g = (p.grupo || "").toLowerCase();
-        return categoryFilters.some(cat => g.includes(cat));
+        const searchText = ((p.subgrupo || "") + " " + (p.grupo || "") + " " + (p.descricaoItem || "")).toLowerCase();
+        return categoryFilters.some(cat => searchText.includes(cat));
       });
     }
     return filtered;
