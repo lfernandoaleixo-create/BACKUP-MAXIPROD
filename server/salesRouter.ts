@@ -1717,14 +1717,14 @@ export const salesRouter = router({
         const pedidosFaturados = pedidoGroups.filter(p => p.estadoNotaPedido === "Faturado");
         // Verificar quais pedidos faturados NÃO têm títulos locais
         const localDocNums = new Set(deduplicatedReceivables.map(r => r.documentoVinculadoNumero).filter(Boolean));
-        const pedidosSemTitulos = pedidosFaturados.filter(p => !localDocNums.has(p.pedido));
+        const pedidosSemNf = pedidosFaturados.filter(p => !pedidoToNf.has(p.pedido));
         
-        if (pedidosSemTitulos.length > 0) {
+        if (pedidosSemNf.length > 0) {
           // Para cada pedido faturado sem títulos, buscar via Maxiprod GraphQL:
           // 1. Buscar itens do pedido de venda pelo número
           // 2. Encontrar NFs vinculadas
           // 3. Buscar títulos (contaAReceber) vinculados à NF
-          for (const pedido of pedidosSemTitulos) {
+          for (const pedido of pedidosSemNf) {
             try {
               // Buscar o pedido de venda pelo número para pegar o ID
               const pedidoData = await gql<any>(`{
