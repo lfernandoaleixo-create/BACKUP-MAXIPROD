@@ -595,17 +595,49 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
               {/* Expanded details */}
               {expandedOrder === order.id && orderDetails && (
                 <div className="border-t border-slate-100 p-4 bg-slate-50">
+                  {/* Progress bar */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-0">
+                      {["Pendente", "Aprovado", "Recebido", "Lançado"].map((step, idx) => {
+                        const statusMap: Record<string, number> = { pendente: 0, aprovado_subgestor: 0, aprovado: 1, lancado: 3 };
+                        const currentStep = statusMap[order.status] ?? 1;
+                        const isActive = idx <= currentStep;
+                        const colors = ["bg-red-500", "bg-orange-500", "bg-blue-500", "bg-green-500"];
+                        return (
+                          <div key={step} className="flex-1">
+                            <div className={`h-2 ${colors[idx]} ${!isActive ? "opacity-20" : ""} ${idx === 0 ? "rounded-l-full" : ""} ${idx === 3 ? "rounded-r-full" : ""}`} />
+                            <p className={`text-[9px] mt-0.5 font-medium ${isActive ? "text-slate-700" : "text-slate-300"}`}>{step}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Obs aprovação */}
+                  {(order as any).observacaoAprovacao && (
+                    <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-2">
+                      <p className="text-[10px] font-bold text-green-700">Obs. aprovação ({order.sellerName || "Gestor"}):</p>
+                      <p className="text-[10px] text-green-600 italic">"{(order as any).observacaoAprovacao}"</p>
+                    </div>
+                  )}
+
+                  {/* Items */}
                   <div className="space-y-2 mb-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                      ITENS DO PEDIDO ({orderDetails.items.length})
+                    </p>
                     {orderDetails.items.map((item: any) => (
-                      <div key={item.id} className={`flex items-center justify-between text-xs p-2 rounded-lg ${
+                      <div key={item.id} className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
                         item.abaixoDoMinimo ? "bg-red-50 border border-red-100" : "bg-white border border-slate-100"
                       }`}>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-slate-700 truncate">{item.descricaoItem}</p>
-                          <p className="text-[10px] text-slate-400">{item.quantidade} {item.unidadeMedida || "CX"}</p>
+                          <p className="font-medium text-slate-700 truncate">
+                            <span className="text-slate-400 font-mono">{item.codigoItem}</span> – {item.descricaoItem}
+                          </p>
+                          <p className="text-[10px] text-slate-400">{Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "CX"} × {Number(item.precoUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{Number(item.precoUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                          <p className="font-bold text-slate-700">{(Number(item.quantidade) * Number(item.precoUnitario)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                           {item.abaixoDoMinimo && item.precoMinimo && (
                             <p className="text-[10px] text-red-500">Mín: {Number(item.precoMinimo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                           )}
@@ -671,6 +703,109 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                       Exportar PDF
                     </button>
                   </div>
+
+                  {/* Full Client/Order Details - Same as Vitória sees */}
+                  {orderDetails.order && (
+                    <div className="mt-3 space-y-3">
+                      {/* Dados do Cliente */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">📋 DADOS DO CLIENTE</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {orderDetails.order.razaoSocial && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Razão Social</span><p className="text-slate-800 font-medium">{orderDetails.order.razaoSocial}</p></div>)}
+                          {orderDetails.order.nomeFantasia && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Nome Fantasia</span><p className="text-slate-800">{orderDetails.order.nomeFantasia}</p></div>)}
+                          {orderDetails.order.cnpjCpf && (<div><span className="text-slate-400 font-semibold">CNPJ/CPF</span><p className="text-slate-800 font-mono text-[9px]">{orderDetails.order.cnpjCpf}</p></div>)}
+                          {orderDetails.order.regimeTributario && (<div><span className="text-slate-400 font-semibold">Regime Tributário</span><p className="text-slate-800">{orderDetails.order.regimeTributario}</p></div>)}
+                          {(orderDetails.order as any).inscricaoEstadual && (<div><span className="text-slate-400 font-semibold">Inscrição Estadual</span><p className="text-slate-800 font-mono text-[9px]">{(orderDetails.order as any).inscricaoEstadual}</p></div>)}
+                          {(orderDetails.order as any).cnaeFiscal && (<div><span className="text-slate-400 font-semibold">CNAE Fiscal</span><p className="text-slate-800 font-mono text-[9px]">{(orderDetails.order as any).cnaeFiscal}</p></div>)}
+                        </div>
+                      </div>
+
+                      {/* Endereço */}
+                      {(orderDetails.order.cep || orderDetails.order.endereco || (orderDetails.order as any).municipio) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">📍 ENDEREÇO</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {orderDetails.order.cep && (<div><span className="text-slate-400 font-semibold">CEP</span><p className="text-slate-800 font-mono">{orderDetails.order.cep}</p></div>)}
+                            {(orderDetails.order.endereco || (orderDetails.order as any).numero) && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Endereço</span><p className="text-slate-800">{orderDetails.order.endereco}{(orderDetails.order as any).numero ? `, ${(orderDetails.order as any).numero}` : ""}{(orderDetails.order as any).complemento ? ` - ${(orderDetails.order as any).complemento}` : ""}</p></div>)}
+                            {(orderDetails.order as any).bairro && (<div><span className="text-slate-400 font-semibold">Bairro</span><p className="text-slate-800">{(orderDetails.order as any).bairro}</p></div>)}
+                            {((orderDetails.order as any).municipio || orderDetails.order.uf) && (<div><span className="text-slate-400 font-semibold">Município/UF</span><p className="text-slate-800">{(orderDetails.order as any).municipio}{orderDetails.order.uf ? `/${orderDetails.order.uf}` : ""}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contato */}
+                      {((orderDetails.order as any).telefone1 || (orderDetails.order as any).telefone2 || (orderDetails.order as any).emailContato) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">📞 CONTATO</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {(orderDetails.order as any).telefone1 && (<div><span className="text-slate-400 font-semibold">Telefone 1</span><p className="text-slate-800">{(orderDetails.order as any).telefone1}</p></div>)}
+                            {(orderDetails.order as any).telefone2 && (<div><span className="text-slate-400 font-semibold">Telefone 2</span><p className="text-slate-800">{(orderDetails.order as any).telefone2}</p></div>)}
+                            {(orderDetails.order as any).emailContato && (<div><span className="text-slate-400 font-semibold">Email</span><p className="text-slate-800 truncate">{(orderDetails.order as any).emailContato}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dados de Venda */}
+                      {((orderDetails.order as any).condicaoPagamento || (orderDetails.order as any).formaPagamento || (orderDetails.order as any).meioPagamento || (orderDetails.order as any).operacaoFiscal || (orderDetails.order as any).estadoConfiguravel || orderDetails.order.observacoes) && (
+                        <div className="bg-green-50/50 rounded-lg p-3 border border-green-200">
+                          <p className="text-[10px] font-bold text-green-600 uppercase flex items-center gap-1 mb-2">💰 DADOS DE VENDA</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {(orderDetails.order as any).condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).condicaoPagamento}</p></div>)}
+                            {(orderDetails.order as any).formaPagamento && (<div><span className="text-slate-400 font-semibold">Forma Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).formaPagamento}</p></div>)}
+                            {(orderDetails.order as any).meioPagamento && (<div><span className="text-slate-400 font-semibold">Meio Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).meioPagamento}</p></div>)}
+                            {(orderDetails.order as any).operacaoFiscal && (<div><span className="text-slate-400 font-semibold">Operação Fiscal</span><p className="text-slate-800">{(orderDetails.order as any).operacaoFiscal}</p></div>)}
+                            {(orderDetails.order as any).estadoConfiguravel && (<div><span className="text-slate-400 font-semibold">Estado Configurável</span><p className="text-slate-800">{(orderDetails.order as any).estadoConfiguravel}</p></div>)}
+                            {(orderDetails.order as any).situacaoCobranca && (<div><span className="text-slate-400 font-semibold">Situação Cobrança</span><p className="text-slate-800 font-bold">{(orderDetails.order as any).situacaoCobranca}</p></div>)}
+                            {orderDetails.order.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 whitespace-pre-wrap">{orderDetails.order.observacoes}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Frete / Transportadora */}
+                      {((orderDetails.order as any).transportadora || (orderDetails.order as any).protocoloCotacao || (orderDetails.order as any).valorFrete) && (
+                        <div className="bg-teal-50/50 rounded-lg p-3 border border-teal-200">
+                          <p className="text-[10px] font-bold text-teal-600 uppercase flex items-center gap-1 mb-2">🚛 FRETE / TRANSPORTADORA</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {(orderDetails.order as any).transportadora && (<div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-800 font-medium">{(orderDetails.order as any).transportadora}</p></div>)}
+                            {(orderDetails.order as any).protocoloCotacao && (<div><span className="text-slate-400 font-semibold">Protocolo</span><p className="text-teal-700 font-mono font-bold">{(orderDetails.order as any).protocoloCotacao}</p></div>)}
+                            {(orderDetails.order as any).valorFrete && (<div><span className="text-slate-400 font-semibold">Valor Frete</span><p className="text-slate-800">R$ {Number((orderDetails.order as any).valorFrete).toFixed(2)}</p></div>)}
+                            {(orderDetails.order as any).tipoFrete && (<div><span className="text-slate-400 font-semibold">Tipo</span><p className="text-slate-800">{(orderDetails.order as any).tipoFrete}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Export buttons */}
+                      {(order.status === "aprovado" || order.status === "lancado") && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Trigger client export
+                              const link = document.createElement("a");
+                              link.href = `/api/trpc/salesOrders.exportClientXlsx?input=${encodeURIComponent(JSON.stringify({ orderId: order.id }))}`;
+                              link.click();
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Exportar Cliente (Planilha Empresas .xlsx)
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const link = document.createElement("a");
+                              link.href = `/api/trpc/salesOrders.exportOrderXlsx?input=${encodeURIComponent(JSON.stringify({ orderId: order.id }))}`;
+                              link.click();
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors cursor-pointer border border-blue-200"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Exportar Pedido (Pedido de Venda .xlsx)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Action buttons for pending orders */}
                   {order.status === "pendente" && (
