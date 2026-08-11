@@ -7002,3 +7002,6 @@
 - [x] Revisão mobile: GestorAprovacoes cards responsivos (flex-wrap, font menor, gap reduzido)
 - [x] Revisão mobile: Botões Simular Frete/Sem Frete/Pedido Concluído responsivos (wrap, padding menor)
 - [ ] Revisão mobile completa: verificar todas as telas para sobreposições
+- [x] Juvenal vê seus próprios pedidos na aba Aprovados (gestor vê pedidos onde é vendedor + pedidos que precisa aprovar)
+- [x] Botão "Resetar Pedidos" removido — não pode resetar pedidos em hipótese alguma
+- [ ] Notificação pulsando apenas para pessoas relevantes (quem tem permissão/timeline rules para ver aquele pedido)

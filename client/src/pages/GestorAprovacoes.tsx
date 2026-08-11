@@ -194,13 +194,11 @@ export default function GestorAprovacoes(props: any = {}) {
   const rejectMutation = trpc.salesOrders.rejectOrder.useMutation();
   const gestorApproveMutation = trpc.salesOrders.gestorApproveSubgestorOrder.useMutation();
   const gestorRejectMutation = trpc.salesOrders.gestorRejectSubgestorOrder.useMutation();
-  const resetMutation = trpc.salesOrders.resetOrderNumbers.useMutation();
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   const updateObsMutation = trpc.salesOrders.updateObservacaoAprovacao.useMutation();
   const unrejectMutation = trpc.salesOrders.unrejectOrder.useMutation();
   const updateItemMutation = trpc.salesOrders.updateOrderItem.useMutation();
   const utils = trpc.useUtils();
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [editingObsOrderId, setEditingObsOrderId] = useState<number | null>(null);
   const [editingObsText, setEditingObsText] = useState("");
@@ -394,42 +392,6 @@ export default function GestorAprovacoes(props: any = {}) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!isInline && !showResetConfirm && (
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
-                title="Resetar número de pedidos (apaga todos os pedidos de teste)"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Resetar Pedidos
-              </button>
-            )}
-            {!isInline && showResetConfirm && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-red-600 font-medium">Apagar TODOS os pedidos?</span>
-                <button
-                  onClick={() => {
-                    resetMutation.mutate(undefined, {
-                      onSuccess: () => {
-                        utils.salesOrders.listOrders.invalidate();
-                        utils.salesOrders.getOrdersForGestor.invalidate();
-                        setShowResetConfirm(false);
-                      }
-                    });
-                  }}
-                  disabled={resetMutation.isPending}
-                  className="px-2.5 py-1.5 text-[10px] font-bold text-white bg-red-500 rounded-md hover:bg-red-600 cursor-pointer"
-                >
-                  {resetMutation.isPending ? "..." : "Sim, resetar"}
-                </button>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="px-2.5 py-1.5 text-[10px] font-medium text-slate-500 bg-slate-100 rounded-md hover:bg-slate-200 cursor-pointer"
-                >
-                  Cancelar
-                </button>
-              </div>
-            )}
             <button
               onClick={() => refetch()}
               className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-lg text-xs font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors cursor-pointer"

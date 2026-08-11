@@ -1239,8 +1239,17 @@ export const salesOrderRouter = router({
             existing.push(rule.conditionType);
             sellerConditionMap.set(nameKey, existing);
           }
-          // Filter orders: only show orders where currentApprovalPosition matches this recipient's position
-          orders = orders.filter(order => {
+         // Filter orders: only show orders where currentApprovalPosition matches this recipient's position
+         orders = orders.filter(order => {
+            // ALWAYS include the gestor's own orders (where they are the seller)
+            // This ensures a gestor can see their own orders' progress (pendente, aprovado, lançado)
+            const orderSellerUpper = (order.sellerName || '').toUpperCase().trim();
+            const recipientFirstName = recipientNameUpper.split(' ')[0];
+            const orderSellerFirst = orderSellerUpper.split(' ')[0];
+            if (orderSellerUpper === recipientNameUpper || orderSellerFirst === recipientFirstName) {
+              return true; // This is the gestor's own order - always show it
+            }
+
             // Orders with status "aprovado_subgestor" always pass through - they explicitly
             // need the parent gestor's approval regardless of position tracking
             if (order.status === "aprovado_subgestor") return true;
