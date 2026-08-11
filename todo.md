@@ -7006,3 +7006,5 @@
 - [x] Botão "Resetar Pedidos" removido — não pode resetar pedidos em hipótese alguma
 - [ ] Notificação pulsando apenas para pessoas relevantes (quem tem permissão/timeline rules para ver aquele pedido)
 - [x] Estado Configurável obrigatório no pedido de venda (começa em branco, forçando o vendedor a escolher)
+- [x] Relatório Comparativo de frete: botão em todas as abas de simulação de frete (simulação por pedido, multi-pedido, avulsa, proposta de venda, pedido de venda). Gera PDF 1 página com CNPJ/CEP origem/destino, peso, cubagem, valor do pedido, e comparação das transportadoras selecionadas (opção de ticar quais incluir). Para negociação com transportadoras.
+- [ ] Forma de pagamento no pedido de venda: prevalece a alteração do vendedor (não duplicar com cadastro do cliente). Se cliente antigo não tiver forma de pagamento, vem em branco mas obrigatório.

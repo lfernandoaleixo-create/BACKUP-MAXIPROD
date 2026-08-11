@@ -6,11 +6,12 @@
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Truck, Search, Loader2, AlertCircle, CheckCircle2, FileText, Download, Plus, X } from "lucide-react";
+import { ArrowLeft, Truck, Search, Loader2, AlertCircle, CheckCircle2, FileText, Download, Plus, X, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useOperator } from "@/contexts/OperatorContext";
+import { generateComparativeFreightPdf, type ComparativeCarrier, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
 
 interface CarrierResult {
   transportadora: string;
@@ -120,6 +121,10 @@ export default function SimulacaoFrete() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  // Relatório Comparativo state
+  const [showComparativeModal, setShowComparativeModal] = useState(false);
+  const [selectedCarriersForReport, setSelectedCarriersForReport] = useState<Set<number>>(new Set());
+
   // Manual mode fields
   const [manualCep, setManualCep] = useState("");
   const [manualCnpj, setManualCnpj] = useState("");
@@ -211,6 +216,61 @@ export default function SimulacaoFrete() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSimular();
+  };
+
+  // ===== Relatório Comparativo handlers =====
+  const handleOpenComparativeModal = () => {
+    if (!result) return;
+    const successfulIndices = new Set<number>();
+    result.carriers.forEach((c, idx) => {
+      if (!c.error && c.totalFrete > 0) successfulIndices.add(idx);
+    });
+    setSelectedCarriersForReport(successfulIndices);
+    setShowComparativeModal(true);
+  };
+
+  const handleGenerateComparativeReport = () => {
+    if (!result) return;
+    const selectedCarriers: ComparativeCarrier[] = [];
+    result.carriers.forEach((c, idx) => {
+      if (selectedCarriersForReport.has(idx) && !c.error && c.totalFrete > 0) {
+        selectedCarriers.push({
+          transportadora: c.transportadora,
+          cnpj: c.cnpj,
+          totalFrete: c.totalFrete,
+          prazo: c.prazo,
+          protocolo: c.protocolo,
+        });
+      }
+    });
+    if (selectedCarriers.length === 0) {
+      alert("Selecione pelo menos uma transportadora para o relatório.");
+      return;
+    }
+    const reportData: ComparativeReportData = {
+      numeroPedido: result.pedidos && result.pedidos.length > 1 ? result.pedidos.join(", ") : result.pedido,
+      nomeCliente: result.cliente || "N/A",
+      cnpjOrigem: "36.562.762/0001-29",
+      cepOrigem: "37264-000",
+      cnpjDestino: result.cnpjDestinatario || "N/A",
+      cepDestino: result.cepDestino || "N/A",
+      pesoTotal: result.pesoTotal || 0,
+      cubagem: result.metroCubico || (result.pesoTotal * 0.004),
+      volumes: result.volumes || 0,
+      valorMercadoria: result.valorMercadoria || 0,
+      carriers: selectedCarriers,
+    };
+    generateComparativeFreightPdf(reportData);
+    setShowComparativeModal(false);
+  };
+
+  const toggleCarrierSelection = (idx: number) => {
+    setSelectedCarriersForReport(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
   };
 
   const handleGerarPdf = async () => {
@@ -644,6 +704,58 @@ export default function SimulacaoFrete() {
                 </p>
               </div>
             )}
+
+            {/* Relatório Comparativo Button */}
+            {result.carriers.filter(c => !c.error && c.totalFrete > 0).length > 1 && (
+              <div
+                onClick={handleOpenComparativeModal}
+                className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-4 cursor-pointer hover:from-teal-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 rounded-lg p-2">
+                    <BarChart3 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Relatório Comparativo</p>
+                    <p className="text-[10px] text-white/80">Gere um PDF para negociação com transportadoras</p>
+                  </div>
+                  <Download className="w-4 h-4 text-white/70 ml-auto group-hover:text-white transition-colors" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Relatório Comparativo - Carrier Selection Modal */}
+        {showComparativeModal && result && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowComparativeModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">Relatório Comparativo</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Selecione as transportadoras que deseja incluir no relatório:</p>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {result.carriers.map((carrier, idx) => {
+                  if (carrier.error || carrier.totalFrete <= 0) return null;
+                  const isSelected = selectedCarriersForReport.has(idx);
+                  return (
+                    <label key={idx} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'border-teal-400 bg-teal-50 dark:bg-teal-900/20 dark:border-teal-600' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300'}`}>
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleCarrierSelection(idx)} className="w-4 h-4 accent-teal-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{carrier.transportadora}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">{carrier.cnpj ? carrier.cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : ""}</p>
+                      </div>
+                      <span className="text-sm font-bold text-green-600 dark:text-green-400">R$ {carrier.totalFrete.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <Button onClick={handleGenerateComparativeReport} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Gerar Relatório PDF
+                </Button>
+                <Button variant="outline" onClick={() => setShowComparativeModal(false)}>Cancelar</Button>
+              </div>
+            </div>
           </div>
         )}
       </main>

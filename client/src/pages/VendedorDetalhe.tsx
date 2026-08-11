@@ -8025,6 +8025,42 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     })()}
                   </div>
                 )}
+                {/* Relatório Comparativo button */}
+                {inlineFreightResults && inlineFreightResults.filter(r => !r.error && r.totalFrete > 0).length > 1 && (
+                  <button
+                    onClick={() => {
+                      const successfulCarriers = inlineFreightResults.filter(r => !r.error && r.totalFrete > 0);
+                      const reportData: ComparativeReportData = {
+                        numeroPedido: "Pedido em andamento",
+                        nomeCliente: razaoSocial || nomeFantasia || "N/A",
+                        cnpjOrigem: "36.562.762/0001-29",
+                        cepOrigem: "37264-000",
+                        cnpjDestino: cnpjCpf || "N/A",
+                        cepDestino: cep || "N/A",
+                        pesoTotal: items.reduce((sum, it) => sum + ((it as any).pesoBruto || 0) * it.quantidade, 0),
+                        cubagem: items.reduce((sum, it) => {
+                          const dims = (it as any).dimensoes ? parseDimensions((it as any).dimensoes) : null;
+                          if (dims) return sum + (dims.comprimento * dims.largura * dims.altura / 1000000000) * it.quantidade;
+                          return sum;
+                        }, 0),
+                        volumes: items.reduce((sum, it) => sum + it.quantidade, 0),
+                        valorMercadoria: items.reduce((sum, it) => sum + it.precoUnitario * it.quantidade, 0),
+                        carriers: successfulCarriers.map(c => ({
+                          transportadora: c.transportadora,
+                          cnpj: c.cnpj || "",
+                          totalFrete: c.totalFrete,
+                          prazo: c.prazo,
+                          protocolo: c.protocolo,
+                        })),
+                      };
+                      generateComparativeFreightPdf(reportData);
+                    }}
+                    className="w-full mt-2 py-2 px-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-xs font-bold rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    Relatório Comparativo
+                  </button>
+                )}
               </div>
             )}
             </div>
@@ -9614,3 +9650,4 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
   );
 }
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
+import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
