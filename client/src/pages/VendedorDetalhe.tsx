@@ -4435,6 +4435,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     onSuccess: () => refetchPropostas(),
   });
   const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
+  const [convertingProposalId, setConvertingProposalId] = useState<number | null>(null);
 
   const filteredPedidos = useMemo(() => {
     if (!pedidos) return [];
@@ -4879,6 +4880,43 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       >
                         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedProposal === prop.id ? 'rotate-180' : ''}`} />
                       </button>
+                      {prop.status !== 'convertida' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Pre-fill draft with proposal data and open NewOrderInline
+                            const draftData = {
+                              cnpjCpf: prop.cnpjCpf || "",
+                              razaoSocial: prop.razaoSocial || "",
+                              nomeFantasia: prop.nomeFantasia || "",
+                              inscricaoEstadual: prop.inscricaoEstadual || "",
+                              cep: prop.cep || "",
+                              endereco: prop.endereco || "",
+                              numero: prop.numero || "",
+                              bairro: prop.bairro || "",
+                              municipio: prop.municipio || "",
+                              uf: prop.uf || "",
+                              telefone1: prop.telefone || "",
+                              emailContato: prop.emailContato || "",
+                              formaPagamento: prop.formaPagamento || "",
+                              meioPagamento: prop.meioPagamento || "",
+                              condicaoPagamento: prop.condicaoPagamento || "",
+                              observacoes: prop.observacoes || "",
+                              items: prop.items || [],
+                              fromProposalId: prop.id,
+                            };
+                            // Save to localStorage as draft so NewOrderInline picks it up
+                            localStorage.setItem(`order_draft_${sellerId}`, JSON.stringify(draftData));
+                            setConvertingProposalId(prop.id);
+                            setIsResumingDraft(true);
+                            setShowNewOrder(true);
+                          }}
+                          className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded transition-colors"
+                          title="Gerar Pedido de Venda a partir desta proposta"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {prop.pdfUrl && (
                         <a
                           href={prop.pdfUrl}
