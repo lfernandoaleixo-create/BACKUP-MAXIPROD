@@ -17,6 +17,8 @@ import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { parseDimensions } from "@shared/parseDimensions";
 import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
+import { generateOrderPdf } from "@/lib/generateOrderPdf";
+import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
 import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
 import {
   ArrowLeft,
@@ -4432,6 +4434,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const deleteProposal = trpc.proposal.delete.useMutation({
     onSuccess: () => refetchPropostas(),
   });
+  const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
 
   const filteredPedidos = useMemo(() => {
     if (!pedidos) return [];
@@ -9899,6 +9902,3 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
     </span>
   );
 }
-import { generateOrderPdf } from "@/lib/generateOrderPdf";
-import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
-  const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
