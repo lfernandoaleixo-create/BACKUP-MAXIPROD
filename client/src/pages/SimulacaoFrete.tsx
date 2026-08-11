@@ -560,6 +560,17 @@ export default function SimulacaoFrete() {
                   : `Pedido #${result.pedido}`}
               </h3>
               <div className="flex items-center gap-2">
+                {result.carriers.filter(c => !c.error && c.totalFrete > 0).length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenComparativeModal}
+                    className="text-green-600 border-green-400 hover:bg-green-50 bg-green-50/50 font-semibold"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-1" />
+                    Relatório Comparativo
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -702,24 +713,6 @@ export default function SimulacaoFrete() {
               </div>
             )}
 
-            {/* Relatório Comparativo Button */}
-            {result.carriers.filter(c => !c.error && c.totalFrete > 0).length > 1 && (
-              <div
-                onClick={handleOpenComparativeModal}
-                className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-4 cursor-pointer hover:from-teal-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <BarChart3 className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">Relatório Comparativo</p>
-                    <p className="text-[10px] text-white/80">Gere um PDF para negociação com transportadoras</p>
-                  </div>
-                  <Download className="w-4 h-4 text-white/70 ml-auto group-hover:text-white transition-colors" />
-                </div>
-              </div>
-            )}
           </div>
         )}
 
