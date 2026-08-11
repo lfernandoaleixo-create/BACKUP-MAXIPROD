@@ -4846,8 +4846,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
               const statusLabel = prop.status === 'convertida' ? 'Convertida' :
                 isExpired ? 'Expirada' : 'Rascunho';
               return (
-                <div key={prop.id} className="px-4 py-3">
-                  <div className="flex items-center justify-between">
+                <div key={prop.id} className="px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setExpandedProposal(expandedProposal === prop.id ? null : prop.id)}>
+                  <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-bold text-slate-400">#{String(prop.id).padStart(3, '0')}</span>
@@ -4869,6 +4869,13 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setExpandedProposal(expandedProposal === prop.id ? null : prop.id)}
+                        className="p-1.5 text-slate-400 hover:bg-slate-100 rounded transition-colors"
+                        title="Expandir detalhes"
+                      >
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedProposal === prop.id ? 'rotate-180' : ''}`} />
+                      </button>
                       {prop.pdfUrl && (
                         <a
                           href={prop.pdfUrl}
@@ -4902,6 +4909,103 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       )}
                     </div>
                   </div>
+
+                  {/* Expanded proposal details */}
+                  {expandedProposal === prop.id && (
+                    <div className="mt-3 border-t border-slate-100 pt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+                      {/* Items */}
+                      {prop.items && Array.isArray(prop.items) && (prop.items as any[]).length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">ITENS DA PROPOSTA ({(prop.items as any[]).length})</p>
+                          <div className="space-y-1.5">
+                            {(prop.items as any[]).map((item: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-white border border-slate-100">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-slate-700 truncate">
+                                    <span className="text-slate-400 font-mono">{item.codigoItem || item.codigo || ''}</span> – {item.descricaoItem || item.descricao || item.nome || ''}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400">{Number(item.quantidade || 0).toFixed(0)} {item.unidadeMedida || "CX"} × {Number(item.precoUnitario || item.preco || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                                </div>
+                                <p className="font-bold text-slate-700 ml-2">
+                                  {(Number(item.quantidade || 0) * Number(item.precoUnitario || item.preco || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Client data */}
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📋 DADOS DO CLIENTE</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {prop.razaoSocial && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Razão Social</span><p className="text-slate-800 font-medium">{prop.razaoSocial}</p></div>)}
+                          {prop.nomeFantasia && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Nome Fantasia</span><p className="text-slate-800">{prop.nomeFantasia}</p></div>)}
+                          {prop.cnpjCpf && (<div><span className="text-slate-400 font-semibold">CNPJ/CPF</span><p className="text-slate-800 font-mono text-[9px]">{prop.cnpjCpf}</p></div>)}
+                          {prop.inscricaoEstadual && (<div><span className="text-slate-400 font-semibold">Inscrição Estadual</span><p className="text-slate-800">{prop.inscricaoEstadual}</p></div>)}
+                        </div>
+                      </div>
+
+                      {/* Address */}
+                      {(prop.cep || prop.endereco || prop.municipio) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📍 ENDEREÇO</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {prop.cep && (<div><span className="text-slate-400 font-semibold">CEP</span><p className="text-slate-800 font-mono">{prop.cep}</p></div>)}
+                            {prop.endereco && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Endereço</span><p className="text-slate-800">{prop.endereco}{prop.numero ? `, ${prop.numero}` : ""}</p></div>)}
+                            {prop.bairro && (<div><span className="text-slate-400 font-semibold">Bairro</span><p className="text-slate-800">{prop.bairro}</p></div>)}
+                            {(prop.municipio || prop.uf) && (<div><span className="text-slate-400 font-semibold">Município/UF</span><p className="text-slate-800">{prop.municipio}{prop.uf ? `/${prop.uf}` : ""}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contact */}
+                      {(prop.telefone || prop.emailContato) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📞 CONTATO</p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]">
+                            {prop.telefone && (<div><span className="text-slate-400 font-semibold">Telefone</span><p className="text-slate-800">{prop.telefone}</p></div>)}
+                            {prop.emailContato && (<div><span className="text-slate-400 font-semibold">Email</span><p className="text-slate-800 truncate">{prop.emailContato}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment & Freight */}
+                      {(prop.formaPagamento || prop.condicaoPagamento || prop.meioPagamento || prop.transportadora || prop.valorFrete) && (
+                        <div className="bg-green-50/50 rounded-lg p-3 border border-green-200">
+                          <p className="text-[10px] font-bold text-green-600 uppercase mb-2">💰 PAGAMENTO / FRETE</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {prop.formaPagamento && (<div><span className="text-slate-400 font-semibold">Forma Pagamento</span><p className="text-slate-800">{prop.formaPagamento}</p></div>)}
+                            {prop.meioPagamento && (<div><span className="text-slate-400 font-semibold">Meio Pagamento</span><p className="text-slate-800">{prop.meioPagamento}</p></div>)}
+                            {prop.condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800">{prop.condicaoPagamento}</p></div>)}
+                            {prop.transportadora && (<div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-800">{prop.transportadora}</p></div>)}
+                            {prop.valorFrete && (<div><span className="text-slate-400 font-semibold">Valor Frete</span><p className="text-slate-800">R$ {Number(prop.valorFrete).toFixed(2)}</p></div>)}
+                            {prop.tipoFrete && (<div><span className="text-slate-400 font-semibold">Tipo Frete</span><p className="text-slate-800">{prop.tipoFrete}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Observations */}
+                      {prop.observacoes && (
+                        <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-200">
+                          <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">📝 OBSERVAÇÕES</p>
+                          <p className="text-[10px] text-slate-700 whitespace-pre-wrap">{prop.observacoes}</p>
+                        </div>
+                      )}
+
+                      {/* Totals */}
+                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-blue-600 font-semibold">Total Produtos:</span>
+                          <span className="font-bold text-blue-800">{Number(prop.totalProdutos || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs mt-1">
+                          <span className="text-blue-600 font-semibold">Total Pedido:</span>
+                          <span className="font-bold text-blue-800">{Number(prop.totalPedido || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -5442,24 +5546,35 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       </div>
                     )}
                     {/* Info adicional */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 text-[10px]">
                       {pedido.transportadora && (
                         <div className="flex items-start gap-1.5">
                           <Ship className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                          <span className="text-slate-600 dark:text-slate-300 truncate">{pedido.transportadora}</span>
+                          <div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-700 dark:text-slate-300">{pedido.transportadora}</p></div>
                         </div>
                       )}
                       {pedido.dataEntrega && (
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                          <span className="text-slate-400 text-[10px]">Entrega:</span>
-                          <span className="text-slate-600 dark:text-slate-300 text-[10px]">{formatDateSales(pedido.dataEntrega)}</span>
+                          <div><span className="text-slate-400 font-semibold">Entrega</span><p className="text-slate-700 dark:text-slate-300">{formatDateSales(pedido.dataEntrega)}</p></div>
+                        </div>
+                      )}
+                      {pedido.condicaoPagamento && (
+                        <div>
+                          <span className="text-slate-400 font-semibold">Condição Pgto</span>
+                          <p className="text-slate-700 dark:text-slate-300">{pedido.condicaoPagamento}</p>
+                        </div>
+                      )}
+                      {(pedido as any).representante && (
+                        <div>
+                          <span className="text-slate-400 font-semibold">Representante</span>
+                          <p className="text-slate-700 dark:text-slate-300">{(pedido as any).representante}</p>
                         </div>
                       )}
                       {pedido.observacoes && (
-                        <div className="flex items-start gap-1.5 col-span-2 sm:col-span-3">
-                          <span className="text-slate-400 text-[10px] font-medium">Obs:</span>
-                          <span className="text-slate-600 dark:text-slate-300 text-[10px]">{pedido.observacoes}</span>
+                        <div className="col-span-2 sm:col-span-3">
+                          <span className="text-slate-400 font-semibold">Observações</span>
+                          <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{pedido.observacoes}</p>
                         </div>
                       )}
                     </div>
@@ -9786,3 +9901,4 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
 }
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
 import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
+  const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
