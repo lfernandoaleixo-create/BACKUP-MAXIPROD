@@ -1550,7 +1550,7 @@ export const salesOrderRouter = router({
       const primeiroNome = input.aprovadoPor.split(" ")[0];
       const senhaEsperada = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1).toLowerCase();
       const normalizeStr = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
-      if (normalizeStr(input.password) !== normalizeStr(senhaEsperada)) {
+      if (normalizeStr(input.password).toLowerCase() !== normalizeStr(senhaEsperada).toLowerCase()) {
         throw new Error("Senha incorreta");
       }
       // Get order details for history
@@ -1682,7 +1682,7 @@ export const salesOrderRouter = router({
       const gestorPrimeiroNome = (order.gestorName || "").split(" ")[0];
       const senhaGestor = gestorPrimeiroNome.charAt(0).toUpperCase() + gestorPrimeiroNome.slice(1).toLowerCase();
       const normStr = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
-      if (normStr(input.password) !== normStr(senhaGestor)) {
+      if (normStr(input.password).toLowerCase() !== normStr(senhaGestor).toLowerCase()) {
         throw new Error("Senha incorreta");
       }
       if (order.status !== "aprovado_subgestor") {
@@ -1727,7 +1727,7 @@ export const salesOrderRouter = router({
       const gestorPrimeiroNome = (order.gestorName || "").split(" ")[0];
       const senhaGestor = gestorPrimeiroNome.charAt(0).toUpperCase() + gestorPrimeiroNome.slice(1).toLowerCase();
       const normStr = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
-      if (normStr(input.password) !== normStr(senhaGestor)) {
+      if (normStr(input.password).toLowerCase() !== normStr(senhaGestor).toLowerCase()) {
         throw new Error("Senha incorreta");
       }
       if (order.status !== "aprovado_subgestor") {
