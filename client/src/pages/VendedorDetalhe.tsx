@@ -8416,30 +8416,26 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <button
                     onClick={() => {
                       const successfulCarriers = inlineFreightResults.filter(r => !r.error && r.totalFrete > 0);
-                      const reportData: ComparativeReportData = {
+                      setComparativeCarriers(successfulCarriers);
+                      setSelectedComparativeCarriers(new Set());
+                      setComparativeReportBase({
                         numeroPedido: "Pedido em andamento",
                         nomeCliente: razaoSocial || nomeFantasia || "N/A",
                         cnpjOrigem: "36.562.762/0001-29",
                         cepOrigem: "37264-000",
                         cnpjDestino: cnpjCpf || "N/A",
                         cepDestino: cep || "N/A",
-                        pesoTotal: items.reduce((sum, it) => sum + ((it as any).pesoBruto || 0) * it.quantidade, 0),
+                        pesoTotal: items.reduce((sum, it) => sum + ((it as any).pesoBrutoCaixa || (it as any).pesoBruto || 0) * it.quantidade, 0),
                         cubagem: items.reduce((sum, it) => {
-                          const dims = (it as any).dimensoes ? parseDimensions((it as any).dimensoes) : null;
-                          if (dims) return sum + (dims.comprimento * dims.largura * dims.altura / 1000000000) * it.quantidade;
+                          const dimsRaw = (it as any).dimsStr || (it as any).dimensoes;
+                          const dims = dimsRaw ? parseDimensions(dimsRaw) : null;
+                          if (dims) return sum + (dims.comprimento * dims.largura * dims.altura / 1000000) * it.quantidade;
                           return sum;
                         }, 0),
                         volumes: items.reduce((sum, it) => sum + it.quantidade, 0),
                         valorMercadoria: items.reduce((sum, it) => sum + it.precoUnitario * it.quantidade, 0),
-                        carriers: successfulCarriers.map(c => ({
-                          transportadora: c.transportadora,
-                          cnpj: c.cnpj || "",
-                          totalFrete: c.totalFrete,
-                          prazo: c.prazo,
-                          protocolo: c.protocolo,
-                        })),
-                      };
-                      generateComparativeFreightPdf(reportData);
+                      });
+                      setShowComparativeModal(true);
                     }}
                     className="w-full mt-2 py-2 px-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-xs font-bold rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
@@ -8449,6 +8445,32 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 )}
               </div>
             )}
+            </div>
+          </div>
+        )}
+        {/* Comparative Report Modal */}
+        {showComparativeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowComparativeModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="px-5 py-4 border-b border-slate-200">
+                <h3 className="text-sm font-bold text-slate-800">Selecione as transportadoras para comparar</h3>
+                <p className="text-[10px] text-slate-400 mt-1">Marque as que deseja incluir no relatório</p>
+              </div>
+              <div className="p-4 space-y-2">
+                {comparativeCarriers.map((c, idx) => (
+                  <label key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" checked={selectedComparativeCarriers.has(idx)} onChange={() => { const next = new Set(selectedComparativeCarriers); if (next.has(idx)) next.delete(idx); else next.add(idx); setSelectedComparativeCarriers(next); }} className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-slate-700">{c.transportadora}</p>
+                      <p className="text-[10px] text-slate-400">{c.cnpj} — R$ {Number(c.totalFrete).toFixed(2)}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t border-slate-200 flex gap-2">
+                <button onClick={() => setShowComparativeModal(false)} className="flex-1 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer">Cancelar</button>
+                <button disabled={selectedComparativeCarriers.size < 2} onClick={() => { if (!comparativeReportBase) return; const selected = comparativeCarriers.filter((_, idx) => selectedComparativeCarriers.has(idx)); const reportData: ComparativeReportData = { ...comparativeReportBase, carriers: selected.map(c => ({ transportadora: c.transportadora, cnpj: c.cnpj || "", totalFrete: c.totalFrete, prazo: c.prazo, protocolo: c.protocolo })) }; generateComparativeFreightPdf(reportData); setShowComparativeModal(false); }} className="flex-1 px-3 py-2 text-xs font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Gerar PDF ({selectedComparativeCarriers.size})</button>
+              </div>
             </div>
           </div>
         )}
@@ -10035,3 +10057,7 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
     </span>
   );
 }
+  const [showComparativeModal, setShowComparativeModal] = useState(false);
+  const [comparativeCarriers, setComparativeCarriers] = useState<any[]>([]);
+  const [selectedComparativeCarriers, setSelectedComparativeCarriers] = useState<Set<number>>(new Set());
+  const [comparativeReportBase, setComparativeReportBase] = useState<any>(null);
