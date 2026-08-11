@@ -221,11 +221,8 @@ export default function SimulacaoFrete() {
   // ===== Relatório Comparativo handlers =====
   const handleOpenComparativeModal = () => {
     if (!result) return;
-    const successfulIndices = new Set<number>();
-    result.carriers.forEach((c, idx) => {
-      if (!c.error && c.totalFrete > 0) successfulIndices.add(idx);
-    });
-    setSelectedCarriersForReport(successfulIndices);
+    // Start with all unchecked - user selects which ones to include
+    setSelectedCarriersForReport(new Set());
     setShowComparativeModal(true);
   };
 

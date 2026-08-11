@@ -165,12 +165,10 @@ export function generateComparativeFreightPdf(data: ComparativeReportData): void
 
   // Sort carriers by price (cheapest first)
   const sortedCarriers = [...data.carriers].sort((a, b) => a.totalFrete - b.totalFrete);
-  const cheapest = sortedCarriers.length > 0 ? sortedCarriers[0].totalFrete : 0;
 
   // Table with autoTable
-  const tableBody = sortedCarriers.map((carrier, idx) => {
+  const tableBody = sortedCarriers.map((carrier) => {
     const percentual = data.valorMercadoria > 0 ? ((carrier.totalFrete / data.valorMercadoria) * 100).toFixed(1) : "0.0";
-    const diffFromCheapest = idx === 0 ? "MENOR PREÇO" : `+${formatCurrency(carrier.totalFrete - cheapest)}`;
     return [
       carrier.transportadora,
       carrier.cnpj ? formatCnpj(carrier.cnpj) : "-",
@@ -178,13 +176,12 @@ export function generateComparativeFreightPdf(data: ComparativeReportData): void
       `${percentual}%`,
       carrier.prazo || "-",
       carrier.protocolo || "-",
-      diffFromCheapest,
     ];
   });
 
   autoTable(doc, {
     startY: y,
-    head: [["Transportadora", "CNPJ", "Valor Frete", "% s/ NF", "Prazo", "Protocolo", "Diferença"]],
+    head: [["Transportadora", "CNPJ", "Valor Frete", "% s/ NF", "Prazo", "Protocolo"]],
     body: tableBody,
     theme: "grid",
     headStyles: {
@@ -200,27 +197,14 @@ export function generateComparativeFreightPdf(data: ComparativeReportData): void
       halign: "center",
     },
     columnStyles: {
-      0: { halign: "left", cellWidth: 30 },
-      1: { cellWidth: 32 },
-      2: { fontStyle: "bold", cellWidth: 24 },
-      3: { cellWidth: 16 },
-      4: { cellWidth: 22 },
-      5: { cellWidth: 22 },
-      6: { halign: "center", cellWidth: 28 },
+      0: { halign: "left", cellWidth: 35 },
+      1: { cellWidth: 38 },
+      2: { fontStyle: "bold", cellWidth: 28 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 28 },
     },
     margin: { left: margin, right: margin },
-    didParseCell: (hookData: any) => {
-      // Highlight cheapest row
-      if (hookData.section === "body" && hookData.row.index === 0) {
-        hookData.cell.styles.fillColor = [220, 252, 231]; // green-100
-        hookData.cell.styles.fontStyle = "bold";
-      }
-      // Highlight "MENOR PREÇO" cell
-      if (hookData.section === "body" && hookData.column.index === 6 && hookData.row.index === 0) {
-        hookData.cell.styles.textColor = [22, 101, 52]; // green-800
-        hookData.cell.styles.fontStyle = "bold";
-      }
-    },
   });
 
   // Get final Y after table
