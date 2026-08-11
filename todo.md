@@ -7005,3 +7005,4 @@
 - [x] Juvenal vê seus próprios pedidos na aba Aprovados (gestor vê pedidos onde é vendedor + pedidos que precisa aprovar)
 - [x] Botão "Resetar Pedidos" removido — não pode resetar pedidos em hipótese alguma
 - [ ] Notificação pulsando apenas para pessoas relevantes (quem tem permissão/timeline rules para ver aquele pedido)
+- [x] Estado Configurável obrigatório no pedido de venda (começa em branco, forçando o vendedor a escolher)

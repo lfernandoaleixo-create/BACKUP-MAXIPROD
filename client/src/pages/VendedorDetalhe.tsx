@@ -5621,7 +5621,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   // Campos Maxiprod
   const [operacaoFiscal, setOperacaoFiscal] = useState("");
   const [naturezaOperacao, setNaturezaOperacao] = useState("Venda de produção do estabelecimento");
-  const [estadoConfiguravel, setEstadoConfiguravel] = useState("MADEIRA");
+  const [estadoConfiguravel, setEstadoConfiguravel] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
   const [meioPagamento, setMeioPagamento] = useState("");
   const [dataEntregaPedido, setDataEntregaPedido] = useState("");
@@ -5787,7 +5787,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setObservacoes(order.observacoes || "");
       setOperacaoFiscal(order.operacaoFiscal || "6101 - Fora do Estado - Madeira");
       setNaturezaOperacao(order.naturezaOperacao || "Venda de produção do estabelecimento");
-      setEstadoConfiguravel(order.estadoConfiguravel || "MADEIRA");
+      setEstadoConfiguravel(order.estadoConfiguravel || "");
       setFormaPagamento(order.formaPagamento || "");
       setMeioPagamento((order as any).meioPagamento || "");
       setDataEntregaPedido(order.dataEntrega || "");
@@ -6126,6 +6126,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     }
     if (!isSimulation && !operacaoFiscal) {
       alert("Selecione a Operação Fiscal antes de finalizar o pedido.");
+      return;
+    }
+    if (!isSimulation && !estadoConfiguravel) {
+      alert("Selecione o Estado Configurável antes de finalizar o pedido.");
       return;
     }
     if (!dataEntregaPedido) {
@@ -7850,9 +7854,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     <option value="Venda para entrega futura">Venda para entrega futura</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 font-medium">Estado Configurável</label>
-                  <select value={estadoConfiguravel} onChange={(e) => setEstadoConfiguravel(e.target.value)} className="w-full mt-0.5 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+               <div>
+                  <label className="text-[10px] text-slate-500 font-medium">Estado Configurável <span className="text-red-500">*</span></label>
+                  <select value={estadoConfiguravel} onChange={(e) => setEstadoConfiguravel(e.target.value)} className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ${!estadoConfiguravel ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}>
+                    <option value="">-- Selecione --</option>
                     <option value="MADEIRA">MADEIRA</option>
                     <option value="MADEIRA CONTABILIZADO">MADEIRA CONTABILIZADO</option>
                     <option value="MADEIRA IMPORTADA">MADEIRA IMPORTADA</option>
