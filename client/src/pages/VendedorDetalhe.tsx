@@ -5738,6 +5738,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
   const [submittedOrderNumber, setSubmittedOrderNumber] = useState<number | null>(null);
   const [editDataLoaded, setEditDataLoaded] = useState(false);
+  const [showComparativeModal, setShowComparativeModal] = useState(false);
+  const [comparativeCarriers, setComparativeCarriers] = useState<any[]>([]);
+  const [selectedComparativeCarriers, setSelectedComparativeCarriers] = useState<Set<number>>(new Set());
+  const [comparativeReportBase, setComparativeReportBase] = useState<any>(null);
   const [showDadosComplementares, setShowDadosComplementares] = useState(false);
   
   // Client fields
@@ -10057,7 +10061,3 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
     </span>
   );
 }
-  const [showComparativeModal, setShowComparativeModal] = useState(false);
-  const [comparativeCarriers, setComparativeCarriers] = useState<any[]>([]);
-  const [selectedComparativeCarriers, setSelectedComparativeCarriers] = useState<Set<number>>(new Set());
-  const [comparativeReportBase, setComparativeReportBase] = useState<any>(null);
