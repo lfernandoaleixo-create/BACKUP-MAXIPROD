@@ -428,12 +428,16 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
     if (visibleSellersForApproval.length > 0) {
       filtered = allOrders.filter((o: any) => {
         const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-        return visibleSellersForApproval.includes(sellerSlug);
+        // Always include the gestor's own orders (where they are the seller)
+        const gestorFirstName = gestorName.split(' ')[0].toUpperCase();
+        const orderSellerUpper = (o.sellerName || '').toUpperCase();
+        const isOwnOrder = orderSellerUpper.startsWith(gestorFirstName);
+        return isOwnOrder || visibleSellersForApproval.includes(sellerSlug);
       });
     }
     if (filter === "todos") return filtered;
     return filtered.filter((o: any) => o.status === filter);
-  }, [allOrders, filter, visibleSellersForApproval]);
+  }, [allOrders, filter, visibleSellersForApproval, gestorName]);
 
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
     { orderId: expandedOrder! },

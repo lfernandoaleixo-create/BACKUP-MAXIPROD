@@ -153,6 +153,12 @@ export default function GestorAprovacoes(props: any = {}) {
     if (visibleSellersForApproval.length > 0) {
       filtered = allOrders.filter((o: any) => {
         const sellerSlug = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        // Always include the gestor's own orders (where they are the seller)
+        if (gestorName) {
+          const gestorFirstName = gestorName.split(' ')[0].toUpperCase();
+          const orderSellerUpper = (o.sellerName || '').toUpperCase();
+          if (orderSellerUpper.startsWith(gestorFirstName)) return true;
+        }
         return visibleSellersForApproval.includes(sellerSlug);
       });
     }
@@ -160,7 +166,7 @@ export default function GestorAprovacoes(props: any = {}) {
     if (filter === "todos") return filtered;
     if (filter === "pendente") return filtered.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
     return filtered.filter((o: any) => o.status === filter);
-  }, [allOrders, filter, visibleSellersForApproval]);
+  }, [allOrders, filter, visibleSellersForApproval, gestorName]);
 
   // Get items for expanded order
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
