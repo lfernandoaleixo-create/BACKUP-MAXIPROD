@@ -7008,3 +7008,7 @@
 - [x] Estado Configurável obrigatório no pedido de venda (começa em branco, forçando o vendedor a escolher)
 - [x] Relatório Comparativo de frete: botão em todas as abas de simulação de frete (simulação por pedido, multi-pedido, avulsa, proposta de venda, pedido de venda). Gera PDF 1 página com CNPJ/CEP origem/destino, peso, cubagem, valor do pedido, e comparação das transportadoras selecionadas (opção de ticar quais incluir). Para negociação com transportadoras.
 - [ ] Forma de pagamento no pedido de venda: prevalece a alteração do vendedor (não duplicar com cadastro do cliente). Se cliente antigo não tiver forma de pagamento, vem em branco mas obrigatório.
+- [x] Vendedores verem pedidos completos: expandir pedido no painel do vendedor mostra TODAS as informações (itens com código, barra de progresso, obs aprovação, dados do cliente, endereço, contato, dados de venda, frete/transportadora, botões de exportar) — igual à Vitória
+- [ ] Reverter pedido em proposta: quando proposta vira pedido e vendedor desiste, botão para reverter pedido de volta para proposta (sem cancelar/perder a proposta original)
+- [ ] PDF do frete na proposta de venda: botão azul "Exportar PDF" após simular frete na proposta não está gerando nada — fazer funcionar
+- [ ] Relatório Comparativo na proposta de venda: adicionar botão ao lado do PDF de frete na proposta

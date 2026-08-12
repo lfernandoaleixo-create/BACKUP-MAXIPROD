@@ -17,6 +17,8 @@ import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { parseDimensions } from "@shared/parseDimensions";
 import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
 import { trpc } from "@/lib/trpc";
+import { generateOrderPdf } from "@/lib/generateOrderPdf";
+import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
 import { useOrderDraft, type DraftOrderItem, type DraftClientData } from "@/contexts/OrderDraftContext";
 import {
   ArrowLeft,
@@ -595,17 +597,49 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
               {/* Expanded details */}
               {expandedOrder === order.id && orderDetails && (
                 <div className="border-t border-slate-100 p-4 bg-slate-50">
+                  {/* Progress bar */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-0">
+                      {["Pendente", "Aprovado", "Recebido", "Lançado"].map((step, idx) => {
+                        const statusMap: Record<string, number> = { pendente: 0, aprovado_subgestor: 0, aprovado: 1, lancado: 3 };
+                        const currentStep = statusMap[order.status] ?? 1;
+                        const isActive = idx <= currentStep;
+                        const colors = ["bg-red-500", "bg-orange-500", "bg-blue-500", "bg-green-500"];
+                        return (
+                          <div key={step} className="flex-1">
+                            <div className={`h-2 ${colors[idx]} ${!isActive ? "opacity-20" : ""} ${idx === 0 ? "rounded-l-full" : ""} ${idx === 3 ? "rounded-r-full" : ""}`} />
+                            <p className={`text-[9px] mt-0.5 font-medium ${isActive ? "text-slate-700" : "text-slate-300"}`}>{step}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Obs aprovação */}
+                  {(order as any).observacaoAprovacao && (
+                    <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-2">
+                      <p className="text-[10px] font-bold text-green-700">Obs. aprovação ({order.sellerName || "Gestor"}):</p>
+                      <p className="text-[10px] text-green-600 italic">"{(order as any).observacaoAprovacao}"</p>
+                    </div>
+                  )}
+
+                  {/* Items */}
                   <div className="space-y-2 mb-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                      ITENS DO PEDIDO ({orderDetails.items.length})
+                    </p>
                     {orderDetails.items.map((item: any) => (
-                      <div key={item.id} className={`flex items-center justify-between text-xs p-2 rounded-lg ${
+                      <div key={item.id} className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
                         item.abaixoDoMinimo ? "bg-red-50 border border-red-100" : "bg-white border border-slate-100"
                       }`}>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-slate-700 truncate">{item.descricaoItem}</p>
-                          <p className="text-[10px] text-slate-400">{item.quantidade} {item.unidadeMedida || "CX"}</p>
+                          <p className="font-medium text-slate-700 truncate">
+                            <span className="text-slate-400 font-mono">{item.codigoItem}</span> – {item.descricaoItem}
+                          </p>
+                          <p className="text-[10px] text-slate-400">{Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "CX"} × {Number(item.precoUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{Number(item.precoUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                          <p className="font-bold text-slate-700">{(Number(item.quantidade) * Number(item.precoUnitario)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                           {item.abaixoDoMinimo && item.precoMinimo && (
                             <p className="text-[10px] text-red-500">Mín: {Number(item.precoMinimo).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                           )}
@@ -671,6 +705,109 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                       Exportar PDF
                     </button>
                   </div>
+
+                  {/* Full Client/Order Details - Same as Vitória sees */}
+                  {orderDetails.order && (
+                    <div className="mt-3 space-y-3">
+                      {/* Dados do Cliente */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">📋 DADOS DO CLIENTE</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {orderDetails.order.razaoSocial && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Razão Social</span><p className="text-slate-800 font-medium">{orderDetails.order.razaoSocial}</p></div>)}
+                          {orderDetails.order.nomeFantasia && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Nome Fantasia</span><p className="text-slate-800">{orderDetails.order.nomeFantasia}</p></div>)}
+                          {orderDetails.order.cnpjCpf && (<div><span className="text-slate-400 font-semibold">CNPJ/CPF</span><p className="text-slate-800 font-mono text-[9px]">{orderDetails.order.cnpjCpf}</p></div>)}
+                          {orderDetails.order.regimeTributario && (<div><span className="text-slate-400 font-semibold">Regime Tributário</span><p className="text-slate-800">{orderDetails.order.regimeTributario}</p></div>)}
+                          {(orderDetails.order as any).inscricaoEstadual && (<div><span className="text-slate-400 font-semibold">Inscrição Estadual</span><p className="text-slate-800 font-mono text-[9px]">{(orderDetails.order as any).inscricaoEstadual}</p></div>)}
+                          {(orderDetails.order as any).cnaeFiscal && (<div><span className="text-slate-400 font-semibold">CNAE Fiscal</span><p className="text-slate-800 font-mono text-[9px]">{(orderDetails.order as any).cnaeFiscal}</p></div>)}
+                        </div>
+                      </div>
+
+                      {/* Endereço */}
+                      {(orderDetails.order.cep || orderDetails.order.endereco || (orderDetails.order as any).municipio) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">📍 ENDEREÇO</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {orderDetails.order.cep && (<div><span className="text-slate-400 font-semibold">CEP</span><p className="text-slate-800 font-mono">{orderDetails.order.cep}</p></div>)}
+                            {(orderDetails.order.endereco || (orderDetails.order as any).numero) && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Endereço</span><p className="text-slate-800">{orderDetails.order.endereco}{(orderDetails.order as any).numero ? `, ${(orderDetails.order as any).numero}` : ""}{(orderDetails.order as any).complemento ? ` - ${(orderDetails.order as any).complemento}` : ""}</p></div>)}
+                            {(orderDetails.order as any).bairro && (<div><span className="text-slate-400 font-semibold">Bairro</span><p className="text-slate-800">{(orderDetails.order as any).bairro}</p></div>)}
+                            {((orderDetails.order as any).municipio || orderDetails.order.uf) && (<div><span className="text-slate-400 font-semibold">Município/UF</span><p className="text-slate-800">{(orderDetails.order as any).municipio}{orderDetails.order.uf ? `/${orderDetails.order.uf}` : ""}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contato */}
+                      {((orderDetails.order as any).telefone1 || (orderDetails.order as any).telefone2 || (orderDetails.order as any).emailContato) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 mb-2">📞 CONTATO</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {(orderDetails.order as any).telefone1 && (<div><span className="text-slate-400 font-semibold">Telefone 1</span><p className="text-slate-800">{(orderDetails.order as any).telefone1}</p></div>)}
+                            {(orderDetails.order as any).telefone2 && (<div><span className="text-slate-400 font-semibold">Telefone 2</span><p className="text-slate-800">{(orderDetails.order as any).telefone2}</p></div>)}
+                            {(orderDetails.order as any).emailContato && (<div><span className="text-slate-400 font-semibold">Email</span><p className="text-slate-800 truncate">{(orderDetails.order as any).emailContato}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dados de Venda */}
+                      {((orderDetails.order as any).condicaoPagamento || (orderDetails.order as any).formaPagamento || (orderDetails.order as any).meioPagamento || (orderDetails.order as any).operacaoFiscal || (orderDetails.order as any).estadoConfiguravel || orderDetails.order.observacoes) && (
+                        <div className="bg-green-50/50 rounded-lg p-3 border border-green-200">
+                          <p className="text-[10px] font-bold text-green-600 uppercase flex items-center gap-1 mb-2">💰 DADOS DE VENDA</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {(orderDetails.order as any).condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).condicaoPagamento}</p></div>)}
+                            {(orderDetails.order as any).formaPagamento && (<div><span className="text-slate-400 font-semibold">Forma Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).formaPagamento}</p></div>)}
+                            {(orderDetails.order as any).meioPagamento && (<div><span className="text-slate-400 font-semibold">Meio Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).meioPagamento}</p></div>)}
+                            {(orderDetails.order as any).operacaoFiscal && (<div><span className="text-slate-400 font-semibold">Operação Fiscal</span><p className="text-slate-800">{(orderDetails.order as any).operacaoFiscal}</p></div>)}
+                            {(orderDetails.order as any).estadoConfiguravel && (<div><span className="text-slate-400 font-semibold">Estado Configurável</span><p className="text-slate-800">{(orderDetails.order as any).estadoConfiguravel}</p></div>)}
+                            {(orderDetails.order as any).situacaoCobranca && (<div><span className="text-slate-400 font-semibold">Situação Cobrança</span><p className="text-slate-800 font-bold">{(orderDetails.order as any).situacaoCobranca}</p></div>)}
+                            {orderDetails.order.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 whitespace-pre-wrap">{orderDetails.order.observacoes}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Frete / Transportadora */}
+                      {((orderDetails.order as any).transportadora || (orderDetails.order as any).protocoloCotacao || (orderDetails.order as any).valorFrete) && (
+                        <div className="bg-teal-50/50 rounded-lg p-3 border border-teal-200">
+                          <p className="text-[10px] font-bold text-teal-600 uppercase flex items-center gap-1 mb-2">🚛 FRETE / TRANSPORTADORA</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {(orderDetails.order as any).transportadora && (<div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-800 font-medium">{(orderDetails.order as any).transportadora}</p></div>)}
+                            {(orderDetails.order as any).protocoloCotacao && (<div><span className="text-slate-400 font-semibold">Protocolo</span><p className="text-teal-700 font-mono font-bold">{(orderDetails.order as any).protocoloCotacao}</p></div>)}
+                            {(orderDetails.order as any).valorFrete && (<div><span className="text-slate-400 font-semibold">Valor Frete</span><p className="text-slate-800">R$ {Number((orderDetails.order as any).valorFrete).toFixed(2)}</p></div>)}
+                            {(orderDetails.order as any).tipoFrete && (<div><span className="text-slate-400 font-semibold">Tipo</span><p className="text-slate-800">{(orderDetails.order as any).tipoFrete}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Export buttons */}
+                      {(order.status === "aprovado" || order.status === "lancado") && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Trigger client export
+                              const link = document.createElement("a");
+                              link.href = `/api/trpc/salesOrders.exportClientXlsx?input=${encodeURIComponent(JSON.stringify({ orderId: order.id }))}`;
+                              link.click();
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Exportar Cliente (Planilha Empresas .xlsx)
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const link = document.createElement("a");
+                              link.href = `/api/trpc/salesOrders.exportOrderXlsx?input=${encodeURIComponent(JSON.stringify({ orderId: order.id }))}`;
+                              link.click();
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors cursor-pointer border border-blue-200"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Exportar Pedido (Pedido de Venda .xlsx)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Action buttons for pending orders */}
                   {order.status === "pendente" && (
@@ -4258,9 +4395,6 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
   const [period, setPeriod] = useState("current");
-  const [convertingProposalId, setConvertingProposalId] = useState<number | null>(null);
-  const [expandedPedidoApp, setExpandedPedidoApp] = useState<number | null>(null);
-  const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
   const [customMonth, setCustomMonth] = useState<{ year: number; month: number }>(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -4300,6 +4434,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const deleteProposal = trpc.proposal.delete.useMutation({
     onSuccess: () => refetchPropostas(),
   });
+  const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
+  const [convertingProposalId, setConvertingProposalId] = useState<number | null>(null);
+  const [expandedPedidoApp, setExpandedPedidoApp] = useState<number | null>(null);
 
   const filteredPedidos = useMemo(() => {
     if (!pedidos) return [];
@@ -4688,8 +4825,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       )}
 
       {/* Novo Pedido de Venda Form */}
-           {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} proposalData={convertingProposalId ? propostas?.find((p: any) => p.id === convertingProposalId) : null} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); setConvertingProposalId(null); }} />
+            {showNewOrder && (
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
       )}
       {/* Nova Proposta de Venda */}
       {showProposal && (
@@ -4714,8 +4851,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
               const statusLabel = prop.status === 'convertida' ? 'Convertida' :
                 isExpired ? 'Expirada' : 'Rascunho';
               return (
-                <div key={prop.id} className="px-4 py-3">
-                  <div className="flex items-center justify-between">
+                <div key={prop.id} className="px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setExpandedProposal(expandedProposal === prop.id ? null : prop.id)}>
+                  <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-bold text-slate-400">#{String(prop.id).padStart(3, '0')}</span>
@@ -4736,24 +4873,52 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                         )}
                       </div>
                     </div>
-                   <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => setExpandedProposal(expandedProposal === prop.id ? null : prop.id)}
-                        className="p-1.5 text-slate-400 hover:text-teal-500 hover:bg-teal-50 rounded transition-colors"
-                        title="Ver detalhes"
+                        className="p-1.5 text-slate-400 hover:bg-slate-100 rounded transition-colors"
+                        title="Expandir detalhes"
                       >
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedProposal === prop.id ? "rotate-180" : ""}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedProposal === prop.id ? 'rotate-180' : ''}`} />
                       </button>
                       {prop.status !== 'convertida' && (
-                       <button
-                          onClick={() => { setConvertingProposalId(prop.id); setShowNewOrder(true); setIsResumingDraft(false); setEditingOrderId(null); }}
-                         className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
-                         title="Gerar Pedido de Venda"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Pre-fill draft with proposal data and open NewOrderInline
+                            const draftData = {
+                              cnpjCpf: prop.cnpjCpf || "",
+                              razaoSocial: prop.razaoSocial || "",
+                              nomeFantasia: prop.nomeFantasia || "",
+                              inscricaoEstadual: prop.inscricaoEstadual || "",
+                              cep: prop.cep || "",
+                              endereco: prop.endereco || "",
+                              numero: prop.numero || "",
+                              bairro: prop.bairro || "",
+                              municipio: prop.municipio || "",
+                              uf: prop.uf || "",
+                              telefone1: prop.telefone || "",
+                              emailContato: prop.emailContato || "",
+                              formaPagamento: prop.formaPagamento || "",
+                              meioPagamento: prop.meioPagamento || "",
+                              condicaoPagamento: prop.condicaoPagamento || "",
+                              observacoes: prop.observacoes || "",
+                              items: prop.items || [],
+                              fromProposalId: prop.id,
+                            };
+                            // Save to localStorage as draft so NewOrderInline picks it up
+                            localStorage.setItem(`order_draft_${sellerId}`, JSON.stringify(draftData));
+                            setConvertingProposalId(prop.id);
+                            setIsResumingDraft(true);
+                            setShowNewOrder(true);
+                          }}
+                          className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded transition-colors"
+                          title="Gerar Pedido de Venda a partir desta proposta"
                         >
                           <ShoppingCart className="w-3.5 h-3.5" />
                         </button>
                       )}
-                     {prop.pdfUrl && (
+                      {prop.pdfUrl && (
                         <a
                           href={prop.pdfUrl}
                           target="_blank"
@@ -4786,6 +4951,103 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       )}
                     </div>
                   </div>
+
+                  {/* Expanded proposal details */}
+                  {expandedProposal === prop.id && (
+                    <div className="mt-3 border-t border-slate-100 pt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+                      {/* Items */}
+                      {prop.items && Array.isArray(prop.items) && (prop.items as any[]).length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">ITENS DA PROPOSTA ({(prop.items as any[]).length})</p>
+                          <div className="space-y-1.5">
+                            {(prop.items as any[]).map((item: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-white border border-slate-100">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-slate-700 truncate">
+                                    <span className="text-slate-400 font-mono">{item.codigoItem || item.codigo || ''}</span> – {item.descricaoItem || item.descricao || item.nome || ''}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400">{Number(item.quantidade || 0).toFixed(0)} {item.unidadeMedida || "CX"} × {Number(item.precoUnitario || item.preco || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                                </div>
+                                <p className="font-bold text-slate-700 ml-2">
+                                  {(Number(item.quantidade || 0) * Number(item.precoUnitario || item.preco || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Client data */}
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📋 DADOS DO CLIENTE</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {prop.razaoSocial && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Razão Social</span><p className="text-slate-800 font-medium">{prop.razaoSocial}</p></div>)}
+                          {prop.nomeFantasia && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Nome Fantasia</span><p className="text-slate-800">{prop.nomeFantasia}</p></div>)}
+                          {prop.cnpjCpf && (<div><span className="text-slate-400 font-semibold">CNPJ/CPF</span><p className="text-slate-800 font-mono text-[9px]">{prop.cnpjCpf}</p></div>)}
+                          {prop.inscricaoEstadual && (<div><span className="text-slate-400 font-semibold">Inscrição Estadual</span><p className="text-slate-800">{prop.inscricaoEstadual}</p></div>)}
+                        </div>
+                      </div>
+
+                      {/* Address */}
+                      {(prop.cep || prop.endereco || prop.municipio) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📍 ENDEREÇO</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {prop.cep && (<div><span className="text-slate-400 font-semibold">CEP</span><p className="text-slate-800 font-mono">{prop.cep}</p></div>)}
+                            {prop.endereco && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Endereço</span><p className="text-slate-800">{prop.endereco}{prop.numero ? `, ${prop.numero}` : ""}</p></div>)}
+                            {prop.bairro && (<div><span className="text-slate-400 font-semibold">Bairro</span><p className="text-slate-800">{prop.bairro}</p></div>)}
+                            {(prop.municipio || prop.uf) && (<div><span className="text-slate-400 font-semibold">Município/UF</span><p className="text-slate-800">{prop.municipio}{prop.uf ? `/${prop.uf}` : ""}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contact */}
+                      {(prop.telefone || prop.emailContato) && (
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📞 CONTATO</p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]">
+                            {prop.telefone && (<div><span className="text-slate-400 font-semibold">Telefone</span><p className="text-slate-800">{prop.telefone}</p></div>)}
+                            {prop.emailContato && (<div><span className="text-slate-400 font-semibold">Email</span><p className="text-slate-800 truncate">{prop.emailContato}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment & Freight */}
+                      {(prop.formaPagamento || prop.condicaoPagamento || prop.meioPagamento || prop.transportadora || prop.valorFrete) && (
+                        <div className="bg-green-50/50 rounded-lg p-3 border border-green-200">
+                          <p className="text-[10px] font-bold text-green-600 uppercase mb-2">💰 PAGAMENTO / FRETE</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                            {prop.formaPagamento && (<div><span className="text-slate-400 font-semibold">Forma Pagamento</span><p className="text-slate-800">{prop.formaPagamento}</p></div>)}
+                            {prop.meioPagamento && (<div><span className="text-slate-400 font-semibold">Meio Pagamento</span><p className="text-slate-800">{prop.meioPagamento}</p></div>)}
+                            {prop.condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800">{prop.condicaoPagamento}</p></div>)}
+                            {prop.transportadora && (<div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-800">{prop.transportadora}</p></div>)}
+                            {prop.valorFrete && (<div><span className="text-slate-400 font-semibold">Valor Frete</span><p className="text-slate-800">R$ {Number(prop.valorFrete).toFixed(2)}</p></div>)}
+                            {prop.tipoFrete && (<div><span className="text-slate-400 font-semibold">Tipo Frete</span><p className="text-slate-800">{prop.tipoFrete}</p></div>)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Observations */}
+                      {prop.observacoes && (
+                        <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-200">
+                          <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">📝 OBSERVAÇÕES</p>
+                          <p className="text-[10px] text-slate-700 whitespace-pre-wrap">{prop.observacoes}</p>
+                        </div>
+                      )}
+
+                      {/* Totals */}
+                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-blue-600 font-semibold">Total Produtos:</span>
+                          <span className="font-bold text-blue-800">{Number(prop.totalProdutos || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs mt-1">
+                          <span className="text-blue-600 font-semibold">Total Pedido:</span>
+                          <span className="font-bold text-blue-800">{Number(prop.totalPedido || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -4909,6 +5171,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       <Download className="w-3.5 h-3.5" />
                     </button>
                     <OrderDeleteButton orderId={pm.id} onDeleted={() => utils.salesOrders.getSellerOrders.invalidate()} />
+                    <button onClick={() => setExpandedPedidoApp(expandedPedidoApp === pm.id ? null : pm.id)} className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-teal-500 hover:bg-teal-50 transition-colors cursor-pointer" title="Ver detalhes completos"><ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedPedidoApp === pm.id ? "rotate-180" : ""}`} /></button>
                   </div>
                 </div>
                 {/* Approval notification */}
@@ -4956,6 +5219,99 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                         </span>
                       </div>
                     ))}
+                  </div>
+                )}
+                {/* Expanded full details */}
+                {expandedPedidoApp === pm.id && (
+                  <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
+                    <div className="flex items-center gap-0.5 h-2 rounded-full overflow-hidden">
+                      <div className={`flex-1 h-full rounded-l-full ${pm.status === "rejeitado" ? "bg-red-400" : "bg-green-400"}`}></div>
+                      <div className={`flex-1 h-full ${pm.status === "aprovado" || pm.status === "processado" || pm.status === "lancado" ? "bg-green-400" : "bg-slate-200"}`}></div>
+                      <div className={`flex-1 h-full ${pm.status === "processado" || pm.status === "lancado" ? "bg-blue-400" : "bg-slate-200"}`}></div>
+                      <div className={`flex-1 h-full rounded-r-full ${pm.status === "lancado" ? "bg-green-500" : "bg-slate-200"}`}></div>
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-400 -mt-1">
+                      <span className={pm.status === "rejeitado" ? "text-red-500 font-bold" : "text-green-600"}>Pendente</span>
+                      <span className={pm.status === "aprovado" || pm.status === "processado" || pm.status === "lancado" ? "text-green-600" : ""}>Aprovado</span>
+                      <span className={pm.status === "processado" || pm.status === "lancado" ? "text-blue-600" : ""}>Recebido</span>
+                      <span className={pm.status === "lancado" ? "text-green-600 font-bold" : ""}>Lançado</span>
+                    </div>
+                    {pm.items?.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">ITENS DO PEDIDO ({pm.items.length})</p>
+                        {pm.items.map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between bg-white border border-slate-100 rounded-lg px-3 py-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-slate-700 truncate"><span className="text-slate-400 font-mono">{item.codigoItem}</span> – {item.descricaoItem || item.descricao}</p>
+                              <p className="text-[10px] text-slate-400">{Number(item.quantidade).toFixed(0)} {item.unidadeMedida || "CX"} × R$ {Number(item.precoUnitario || item.valorUnitario || 0).toFixed(2)}</p>
+                            </div>
+                            <p className="font-bold text-slate-700 text-xs ml-2">{(Number(item.quantidade) * Number(item.precoUnitario || item.valorUnitario || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📋 DADOS DO CLIENTE</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                        {pm.razaoSocial && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Razão Social</span><p className="text-slate-800 font-medium">{pm.razaoSocial}</p></div>)}
+                        {pm.nomeFantasia && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Nome Fantasia</span><p className="text-slate-800">{pm.nomeFantasia}</p></div>)}
+                        {pm.cnpjCpf && (<div><span className="text-slate-400 font-semibold">CNPJ/CPF</span><p className="text-slate-800 font-mono text-[9px]">{pm.cnpjCpf}</p></div>)}
+                        {pm.regimeTributario && (<div><span className="text-slate-400 font-semibold">Regime Tributário</span><p className="text-slate-800">{pm.regimeTributario}</p></div>)}
+                        {pm.inscricaoEstadual && (<div><span className="text-slate-400 font-semibold">Inscrição Estadual</span><p className="text-slate-800 font-mono text-[9px]">{pm.inscricaoEstadual}</p></div>)}
+                      </div>
+                    </div>
+                    {(pm.cep || pm.endereco || pm.logradouro || pm.municipio) && (
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📍 ENDEREÇO</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {pm.cep && (<div><span className="text-slate-400 font-semibold">CEP</span><p className="text-slate-800 font-mono">{pm.cep}</p></div>)}
+                          {(pm.endereco || pm.logradouro || pm.numero) && (<div className="col-span-2"><span className="text-slate-400 font-semibold">Endereço</span><p className="text-slate-800">{pm.endereco || pm.logradouro}{pm.numero ? `, ${pm.numero}` : ""}{pm.complemento ? ` - ${pm.complemento}` : ""}</p></div>)}
+                          {pm.bairro && (<div><span className="text-slate-400 font-semibold">Bairro</span><p className="text-slate-800">{pm.bairro}</p></div>)}
+                          {(pm.municipio || pm.uf) && (<div><span className="text-slate-400 font-semibold">Município/UF</span><p className="text-slate-800">{pm.municipio}{pm.uf ? `/${pm.uf}` : ""}</p></div>)}
+                        </div>
+                      </div>
+                    )}
+                    {(pm.telefone1 || pm.telefone2 || pm.emailContato) && (
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">📞 CONTATO</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {pm.telefone1 && (<div><span className="text-slate-400 font-semibold">Telefone 1</span><p className="text-slate-800">{pm.telefone1}</p></div>)}
+                          {pm.telefone2 && (<div><span className="text-slate-400 font-semibold">Telefone 2</span><p className="text-slate-800">{pm.telefone2}</p></div>)}
+                          {pm.emailContato && (<div><span className="text-slate-400 font-semibold">Email</span><p className="text-slate-800 truncate">{pm.emailContato}</p></div>)}
+                        </div>
+                      </div>
+                    )}
+                    {(pm.condicaoPagamento || pm.formaPagamento || pm.meioPagamento || pm.operacaoFiscal || pm.estadoConfiguravel || pm.observacoes) && (
+                      <div className="bg-green-50/50 rounded-lg p-3 border border-green-200">
+                        <p className="text-[10px] font-bold text-green-600 uppercase mb-2">💰 DADOS DE VENDA</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {pm.condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800">{pm.condicaoPagamento}</p></div>)}
+                          {pm.formaPagamento && (<div><span className="text-slate-400 font-semibold">Forma Pagamento</span><p className="text-slate-800">{pm.formaPagamento}</p></div>)}
+                          {pm.meioPagamento && (<div><span className="text-slate-400 font-semibold">Meio Pagamento</span><p className="text-slate-800">{pm.meioPagamento}</p></div>)}
+                          {pm.operacaoFiscal && (<div><span className="text-slate-400 font-semibold">Operação Fiscal</span><p className="text-slate-800">{pm.operacaoFiscal}</p></div>)}
+                          {pm.estadoConfiguravel && (<div><span className="text-slate-400 font-semibold">Estado Configurável</span><p className="text-slate-800">{pm.estadoConfiguravel}</p></div>)}
+                          {pm.situacaoCobranca && (<div><span className="text-slate-400 font-semibold">Situação Cobrança</span><p className="text-slate-800 font-bold">{pm.situacaoCobranca}</p></div>)}
+                          {pm.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 whitespace-pre-wrap">{pm.observacoes}</p></div>)}
+                        </div>
+                      </div>
+                    )}
+                    {(pm.transportadora || pm.protocoloCotacao || pm.valorFrete) && (
+                      <div className="bg-teal-50/50 rounded-lg p-3 border border-teal-200">
+                        <p className="text-[10px] font-bold text-teal-600 uppercase mb-2">🚛 FRETE / TRANSPORTADORA</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
+                          {pm.transportadora && (<div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-800 font-medium">{pm.transportadora}</p></div>)}
+                          {pm.protocoloCotacao && (<div><span className="text-slate-400 font-semibold">Protocolo</span><p className="text-teal-700 font-mono font-bold">{pm.protocoloCotacao}</p></div>)}
+                          {pm.valorFrete && (<div><span className="text-slate-400 font-semibold">Valor Frete</span><p className="text-slate-800">R$ {Number(pm.valorFrete).toFixed(2)}</p></div>)}
+                          {pm.tipoFrete && (<div><span className="text-slate-400 font-semibold">Tipo</span><p className="text-slate-800">{pm.tipoFrete}</p></div>)}
+                        </div>
+                      </div>
+                    )}
+                    {(pm.status === "aprovado" || pm.status === "processado" || pm.status === "lancado") && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button onClick={(e) => { e.stopPropagation(); const link = document.createElement("a"); link.href = `/api/trpc/salesOrders.exportClientXlsx?input=${encodeURIComponent(JSON.stringify({ orderId: pm.id }))}`; link.click(); }} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200"><Download className="w-3.5 h-3.5" />Exportar Cliente (.xlsx)</button>
+                        <button onClick={(e) => { e.stopPropagation(); const link = document.createElement("a"); link.href = `/api/trpc/salesOrders.exportOrderXlsx?input=${encodeURIComponent(JSON.stringify({ orderId: pm.id }))}`; link.click(); }} className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors cursor-pointer border border-blue-200"><Download className="w-3.5 h-3.5" />Exportar Pedido (.xlsx)</button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -5326,24 +5682,35 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       </div>
                     )}
                     {/* Info adicional */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 text-[10px]">
                       {pedido.transportadora && (
                         <div className="flex items-start gap-1.5">
                           <Ship className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                          <span className="text-slate-600 dark:text-slate-300 truncate">{pedido.transportadora}</span>
+                          <div><span className="text-slate-400 font-semibold">Transportadora</span><p className="text-slate-700 dark:text-slate-300">{pedido.transportadora}</p></div>
                         </div>
                       )}
                       {pedido.dataEntrega && (
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                          <span className="text-slate-400 text-[10px]">Entrega:</span>
-                          <span className="text-slate-600 dark:text-slate-300 text-[10px]">{formatDateSales(pedido.dataEntrega)}</span>
+                          <div><span className="text-slate-400 font-semibold">Entrega</span><p className="text-slate-700 dark:text-slate-300">{formatDateSales(pedido.dataEntrega)}</p></div>
+                        </div>
+                      )}
+                      {pedido.condicaoPagamento && (
+                        <div>
+                          <span className="text-slate-400 font-semibold">Condição Pgto</span>
+                          <p className="text-slate-700 dark:text-slate-300">{pedido.condicaoPagamento}</p>
+                        </div>
+                      )}
+                      {(pedido as any).representante && (
+                        <div>
+                          <span className="text-slate-400 font-semibold">Representante</span>
+                          <p className="text-slate-700 dark:text-slate-300">{(pedido as any).representante}</p>
                         </div>
                       )}
                       {pedido.observacoes && (
-                        <div className="flex items-start gap-1.5 col-span-2 sm:col-span-3">
-                          <span className="text-slate-400 text-[10px] font-medium">Obs:</span>
-                          <span className="text-slate-600 dark:text-slate-300 text-[10px]">{pedido.observacoes}</span>
+                        <div className="col-span-2 sm:col-span-3">
+                          <span className="text-slate-400 font-semibold">Observações</span>
+                          <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{pedido.observacoes}</p>
                         </div>
                       )}
                     </div>
@@ -5363,7 +5730,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
  * NewOrderInline - Formulário inline para criar novo pedido de venda
  * Puxa produtos do estoque visível do vendedor com especificações
  */
-function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, resumeDraft: shouldResumeDraft = false, proposalData = null, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; resumeDraft?: boolean; proposalData?: any; onClose: () => void }) {
+function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, resumeDraft: shouldResumeDraft = false, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; resumeDraft?: boolean; onClose: () => void }) {
   const isEditMode = editOrderId !== null;
   const [isSimulation, setIsSimulation] = useState(false);
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
@@ -5371,6 +5738,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
   const [submittedOrderNumber, setSubmittedOrderNumber] = useState<number | null>(null);
   const [editDataLoaded, setEditDataLoaded] = useState(false);
+  const [showComparativeModal, setShowComparativeModal] = useState(false);
+  const [comparativeCarriers, setComparativeCarriers] = useState<any[]>([]);
+  const [selectedComparativeCarriers, setSelectedComparativeCarriers] = useState<Set<number>>(new Set());
+  const [comparativeReportBase, setComparativeReportBase] = useState<any>(null);
   const [showDadosComplementares, setShowDadosComplementares] = useState(false);
   
   // Client fields
@@ -5864,47 +6235,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setEditDataLoaded(true);
     }
   }, [isEditMode, editOrderQuery.data, editDataLoaded]);
-
-  // Pre-fill from proposal when converting proposal to order
-  useEffect(() => {
-    if (proposalData && !isEditMode && !editDataLoaded) {
-      if (proposalData.cnpjCpf) setCnpjCpf(proposalData.cnpjCpf);
-      if (proposalData.razaoSocial) setRazaoSocial(proposalData.razaoSocial);
-      if (proposalData.nomeFantasia) setNomeFantasia(proposalData.nomeFantasia);
-      if (proposalData.inscricaoEstadual) setInscricaoEstadual(proposalData.inscricaoEstadual);
-      if (proposalData.emailContato || proposalData.email) setEmailNfe(proposalData.emailContato || proposalData.email);
-      if (proposalData.telefone || proposalData.telefone1) setTelefone1(proposalData.telefone || proposalData.telefone1);
-      if (proposalData.telefone2) setTelefone2(proposalData.telefone2);
-      if (proposalData.cep) setCep(proposalData.cep);
-      if (proposalData.endereco) setEndereco(proposalData.endereco);
-      if (proposalData.bairro) setBairro(proposalData.bairro);
-      if (proposalData.municipio) setMunicipio(proposalData.municipio);
-      if (proposalData.uf) setUf(proposalData.uf);
-      if (proposalData.condicaoPagamento) setCondicaoPagamento(proposalData.condicaoPagamento);
-      if (proposalData.formaPagamento) setFormaPagamento(proposalData.formaPagamento);
-      if (proposalData.meioPagamento) setMeioPagamento(proposalData.meioPagamento);
-      if (proposalData.observacoes) setObservacoes(proposalData.observacoes);
-      if (proposalData.observacoesInternas) setObservacoesInternas(proposalData.observacoesInternas);
-      if (proposalData.estadoConfiguravel) setEstadoConfiguravel(proposalData.estadoConfiguravel);
-      if (proposalData.situacaoCobranca) setSituacaoCobranca(proposalData.situacaoCobranca);
-      if (proposalData.items && proposalData.items.length > 0) {
-        const cartItems = proposalData.items.map((it: any) => ({
-          codigoItem: it.codigoItem || it.codigo || "",
-          descricaoItem: it.descricaoItem || it.descricao || "",
-          quantidade: it.quantidade || 1,
-          valorUnitario: it.valorUnitario || it.preco || 0,
-          pesoBrutoCaixa: it.pesoBrutoCaixa || 0,
-          dimsStr: it.dimsStr || it.dimensoes || "",
-          subgrupo: it.subgrupo || "",
-          grupo: it.grupo || "",
-          unidade: it.unidade || "CX",
-        }));
-        setItems(cartItems);
-      }
-      if (proposalData.razaoSocial) setStep("produtos");
-      setEditDataLoaded(true);
-    }
-  }, [proposalData]);
 
   // Margin bar state - controlled per seller via seller_permissions table
   const { operator: marginOperator, hasAccess: marginHasAccess, hasGranularAccess } = useOperator();
@@ -8090,30 +8420,26 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   <button
                     onClick={() => {
                       const successfulCarriers = inlineFreightResults.filter(r => !r.error && r.totalFrete > 0);
-                      const reportData: ComparativeReportData = {
+                      setComparativeCarriers(successfulCarriers);
+                      setSelectedComparativeCarriers(new Set());
+                      setComparativeReportBase({
                         numeroPedido: "Pedido em andamento",
                         nomeCliente: razaoSocial || nomeFantasia || "N/A",
                         cnpjOrigem: "36.562.762/0001-29",
                         cepOrigem: "37264-000",
                         cnpjDestino: cnpjCpf || "N/A",
                         cepDestino: cep || "N/A",
-                        pesoTotal: items.reduce((sum, it) => sum + ((it as any).pesoBruto || 0) * it.quantidade, 0),
+                        pesoTotal: items.reduce((sum, it) => sum + ((it as any).pesoBrutoCaixa || (it as any).pesoBruto || 0) * it.quantidade, 0),
                         cubagem: items.reduce((sum, it) => {
-                          const dims = (it as any).dimensoes ? parseDimensions((it as any).dimensoes) : null;
-                          if (dims) return sum + (dims.comprimento * dims.largura * dims.altura / 1000000000) * it.quantidade;
+                          const dimsRaw = (it as any).dimsStr || (it as any).dimensoes;
+                          const dims = dimsRaw ? parseDimensions(dimsRaw) : null;
+                          if (dims) return sum + (dims.comprimento * dims.largura * dims.altura / 1000000) * it.quantidade;
                           return sum;
                         }, 0),
                         volumes: items.reduce((sum, it) => sum + it.quantidade, 0),
                         valorMercadoria: items.reduce((sum, it) => sum + it.precoUnitario * it.quantidade, 0),
-                        carriers: successfulCarriers.map(c => ({
-                          transportadora: c.transportadora,
-                          cnpj: c.cnpj || "",
-                          totalFrete: c.totalFrete,
-                          prazo: c.prazo,
-                          protocolo: c.protocolo,
-                        })),
-                      };
-                      generateComparativeFreightPdf(reportData);
+                      });
+                      setShowComparativeModal(true);
                     }}
                     className="w-full mt-2 py-2 px-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-xs font-bold rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
@@ -8123,6 +8449,32 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 )}
               </div>
             )}
+            </div>
+          </div>
+        )}
+        {/* Comparative Report Modal */}
+        {showComparativeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowComparativeModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="px-5 py-4 border-b border-slate-200">
+                <h3 className="text-sm font-bold text-slate-800">Selecione as transportadoras para comparar</h3>
+                <p className="text-[10px] text-slate-400 mt-1">Marque as que deseja incluir no relatório</p>
+              </div>
+              <div className="p-4 space-y-2">
+                {comparativeCarriers.map((c, idx) => (
+                  <label key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" checked={selectedComparativeCarriers.has(idx)} onChange={() => { const next = new Set(selectedComparativeCarriers); if (next.has(idx)) next.delete(idx); else next.add(idx); setSelectedComparativeCarriers(next); }} className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-slate-700">{c.transportadora}</p>
+                      <p className="text-[10px] text-slate-400">{c.cnpj} — R$ {Number(c.totalFrete).toFixed(2)}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t border-slate-200 flex gap-2">
+                <button onClick={() => setShowComparativeModal(false)} className="flex-1 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer">Cancelar</button>
+                <button disabled={selectedComparativeCarriers.size < 2} onClick={() => { if (!comparativeReportBase) return; const selected = comparativeCarriers.filter((_, idx) => selectedComparativeCarriers.has(idx)); const reportData: ComparativeReportData = { ...comparativeReportBase, carriers: selected.map(c => ({ transportadora: c.transportadora, cnpj: c.cnpj || "", totalFrete: c.totalFrete, prazo: c.prazo, protocolo: c.protocolo })) }; generateComparativeFreightPdf(reportData); setShowComparativeModal(false); }} className="flex-1 px-3 py-2 text-xs font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Gerar PDF ({selectedComparativeCarriers.size})</button>
+              </div>
             </div>
           </div>
         )}
@@ -9709,5 +10061,3 @@ function ClientMaxiprodBadge({ cnpjCpf }: { cnpjCpf?: string }) {
     </span>
   );
 }
-import { generateOrderPdf } from "@/lib/generateOrderPdf";
-import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
