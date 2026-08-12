@@ -371,7 +371,7 @@ function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
       // Filtro por vendedor/empresa
       if (historyFilterVendedor) {
         const q = historyFilterVendedor.toLowerCase();
-        if (!alert.vendedor.toLowerCase().includes(q) && !alert.empresa.toLowerCase().includes(q)) return false;
+        if (!(alert.vendedor || '').toLowerCase().includes(q) && !(alert.empresa || '').toLowerCase().includes(q)) return false;
       }
       // Filtro por status
       if (historyFilterStatus !== "todos" && alert.status !== historyFilterStatus) return false;
@@ -425,7 +425,7 @@ function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
     }
     // Acionados filter: show only clients that have seller alerts
     if (acionadosFilter && allSellerAlerts && allSellerAlerts.length > 0) {
-      const acionadosEmpresas = new Set(allSellerAlerts.map(a => a.empresa.toUpperCase().trim()));
+      const acionadosEmpresas = new Set(allSellerAlerts.map(a => (a.empresa || '').toUpperCase().trim()));
       result = result.filter(item => acionadosEmpresas.has((item.empresa || "").toUpperCase().trim()));
     }
     // Sort
@@ -2078,7 +2078,7 @@ function CobrancaPlanilhaViewInner({ onClose }: CobrancaPlanilhaViewProps) {
                             <Stamp className="w-3.5 h-3.5" />
                           </button>
                           {canEdit && (() => {
-                            const activeAlert = allSellerAlerts?.find(a => a.empresa.toUpperCase().trim() === (item.empresa || "").toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
+                            const activeAlert = allSellerAlerts?.find(a => (a.empresa || '').toUpperCase().trim() === (item.empresa || "").toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
                             return (
                               <>
                                 {activeAlert ? (

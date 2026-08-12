@@ -330,7 +330,7 @@ export default function GestorAprovacoes(props: any = {}) {
   // Permission-based check: can this gestor rever/editar orders for a given seller?
   const canReverEditarOrder = (sellerName: string): boolean => {
     if (!hasGranularAccess("gc.reverEditarPedido")) return false;
-    const sellerSlug = sellerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    const sellerSlug = (sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     return visibleSellersForReverEditar.includes(sellerSlug);
   };
 

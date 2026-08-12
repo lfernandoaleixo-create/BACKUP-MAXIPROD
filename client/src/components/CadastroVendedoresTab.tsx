@@ -105,8 +105,8 @@ export default function CadastroVendedoresTab() {
     if (!permissionsQuery.data) return undefined;
     return permissionsQuery.data.find(
       (p: SellerPermission) =>
-        p.sellerName.toUpperCase() === sellerName.toUpperCase() &&
-        p.gestorName.toUpperCase() === gestorName.toUpperCase()
+        (p.sellerName || '').toUpperCase() === sellerName.toUpperCase() &&
+        (p.gestorName || '').toUpperCase() === gestorName.toUpperCase()
     );
   };
 
@@ -118,7 +118,7 @@ export default function CadastroVendedoresTab() {
     if (!gestorFilter) return rawData; // Fernando/Guilherme see all
     // Filter to only show the gestor's own group
     const filtered = rawData.gestores.filter((g: GestorGroup) => 
-      g.gestor.toUpperCase() === gestorFilter.toUpperCase()
+      g.gestor.toUpperCase() === (gestorFilter || '').toUpperCase()
     );
     return { ...rawData, gestores: filtered };
   }, [rawData, operator]);

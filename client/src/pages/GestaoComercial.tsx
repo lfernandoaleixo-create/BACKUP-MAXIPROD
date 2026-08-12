@@ -181,13 +181,13 @@ export default function GestaoComercial() {
   const { dynamicGestorCards, dynamicNameMap } = useMemo(() => {
     if (!managersQuery.data || managersQuery.data.length === 0) return { dynamicGestorCards: GESTOR_CARDS, dynamicNameMap: GESTOR_NAME_MAP };
     const cards: GestorCard[] = managersQuery.data.filter((m: any) => m.active !== false).map((m: any) => ({
-      name: m.name.toUpperCase(),
+      name: (m.name || "").toUpperCase(),
       role: m.role === "sub-gestor" ? "Sub-gestor" as const : "Gestor" as const,
       parentGestor: m.parentManagerId ? managersQuery.data.find((p: any) => p.id === m.parentManagerId)?.name?.toUpperCase() : undefined,
     }));
     const nameMap: Record<string, string> = {};
     managersQuery.data.filter((m: any) => m.active !== false).forEach((m: any) => {
-      nameMap[m.name.toUpperCase()] = (m.maxiprodName || m.name).toUpperCase();
+      nameMap[(m.name || "").toUpperCase()] = (m.maxiprodName || m.name || "").toUpperCase();
     });
     return { dynamicGestorCards: cards.length > 0 ? cards : GESTOR_CARDS, dynamicNameMap: Object.keys(nameMap).length > 0 ? nameMap : GESTOR_NAME_MAP };
   }, [managersQuery.data]);
@@ -520,14 +520,14 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
 
   const getPermission = (sellerName: string, gestorName: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() &&
-             p.gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+      (p) => (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() &&
+             (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
   };
 
   const getPermissionByName = (sellerName: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+      (p) => (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
   };
 
@@ -559,7 +559,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     if (card.role === "Sub-gestor") {
       // Sub-gestor gets vendedores from seller_permissions (manually added via "Adicionar Vendedor")
       const permsForGestor = permissions.filter(
-        p => p.gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+        p => (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
       );
       return permsForGestor.map(p => p.sellerName);
     }
@@ -573,11 +573,11 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     // Merge sellers from seller_permissions that aren't in the Maxiprod list
     // (e.g. manually added sellers like LÍVIA)
     const permsForGestor = permissions.filter(
-      p => p.gestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+      p => (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
     const existingUpper = new Set(filteredMaxiprod.map(v => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()));
     for (const p of permsForGestor) {
-      const normName = p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+      const normName = (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
       if (!existingUpper.has(normName) && !gestorOnlyNames.includes(normName)) {
         filteredMaxiprod.push(p.sellerName);
         existingUpper.add(normName);
@@ -1134,7 +1134,7 @@ function AcessoAppView({ gestorName, vendedores, permissions, onToggleAuth }: Ac
 
   const getPermForVendedor = (vendedor: string): SellerPermission | undefined => {
     return permissions.find(
-      (p) => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === vendedor.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+      (p) => (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === vendedor.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
   };
 
@@ -1250,7 +1250,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorC
     // Add gestores as vendedores (they sell too)
     for (const gc of activeGestorCards) {
       const perm = permissions.find(
-        p => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gc.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+        p => (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === gc.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
       );
       result.push({ 
         name: gc.name, 
@@ -1268,7 +1268,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorC
         // Skip if already added as gestor
         if (activeGestorCards.some(g => g.name.toUpperCase() === v.toUpperCase())) continue;
         const perm = permissions.find(
-          p => p.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+          p => (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
         );
         result.push({ name: v, gestor: gc.name, permission: perm, isGestor: false });
       }
@@ -3137,13 +3137,13 @@ export function GestaoComercialFullInline({ autoExpandName }: { autoExpandName?:
   const { dynamicGestorCards, dynamicNameMap } = useMemo(() => {
     if (!managersQuery.data || managersQuery.data.length === 0) return { dynamicGestorCards: GESTOR_CARDS, dynamicNameMap: GESTOR_NAME_MAP };
     const cards: GestorCard[] = managersQuery.data.filter((m: any) => m.active !== false).map((m: any) => ({
-      name: m.name.toUpperCase(),
+      name: (m.name || "").toUpperCase(),
       role: m.role === "sub-gestor" ? "Sub-gestor" as const : "Gestor" as const,
       parentGestor: m.parentManagerId ? managersQuery.data.find((p: any) => p.id === m.parentManagerId)?.name?.toUpperCase() : undefined,
     }));
     const nameMap: Record<string, string> = {};
     managersQuery.data.filter((m: any) => m.active !== false).forEach((m: any) => {
-      nameMap[m.name.toUpperCase()] = (m.maxiprodName || m.name).toUpperCase();
+      nameMap[(m.name || "").toUpperCase()] = (m.maxiprodName || m.name || "").toUpperCase();
     });
     return { dynamicGestorCards: cards.length > 0 ? cards : GESTOR_CARDS, dynamicNameMap: Object.keys(nameMap).length > 0 ? nameMap : GESTOR_NAME_MAP };
   }, [managersQuery.data]);
@@ -3197,13 +3197,13 @@ export function GestaoComercialFull() {
   const { dynamicGestorCards, dynamicNameMap } = useMemo(() => {
     if (!managersQuery.data || managersQuery.data.length === 0) return { dynamicGestorCards: GESTOR_CARDS, dynamicNameMap: GESTOR_NAME_MAP };
     const cards: GestorCard[] = managersQuery.data.filter((m: any) => m.active !== false).map((m: any) => ({
-      name: m.name.toUpperCase(),
+      name: (m.name || "").toUpperCase(),
       role: m.role === "sub-gestor" ? "Sub-gestor" as const : "Gestor" as const,
       parentGestor: m.parentManagerId ? managersQuery.data.find((p: any) => p.id === m.parentManagerId)?.name?.toUpperCase() : undefined,
     }));
     const nameMap: Record<string, string> = {};
     managersQuery.data.filter((m: any) => m.active !== false).forEach((m: any) => {
-      nameMap[m.name.toUpperCase()] = (m.maxiprodName || m.name).toUpperCase();
+      nameMap[(m.name || "").toUpperCase()] = (m.maxiprodName || m.name || "").toUpperCase();
     });
     return { dynamicGestorCards: cards.length > 0 ? cards : GESTOR_CARDS, dynamicNameMap: Object.keys(nameMap).length > 0 ? nameMap : GESTOR_NAME_MAP };
   }, [managersQuery.data]);
