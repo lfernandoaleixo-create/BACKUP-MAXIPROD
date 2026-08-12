@@ -116,7 +116,7 @@ export default function GestorAprovacoes(props: any = {}) {
   const visibleSellersForReverEditar = getVisiblePeopleForFeature("gc.reverEditarPedido");
   const visibleSellersForApproval = getVisiblePeopleForFeature("gc.aprovacoesPedidos");
   const isJuvenalInit = gestorName === "JUVENAL TEIXEIRA";
-  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado">("pendente");
+  const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado" | "lancado">("pendente");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -165,6 +165,7 @@ export default function GestorAprovacoes(props: any = {}) {
     // Then: filter by status
     if (filter === "todos") return filtered;
     if (filter === "pendente") return filtered.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
+    if (filter === "lancado") return filtered.filter((o: any) => o.status === "lancado" || o.status === "processado_vitoria");
     return filtered.filter((o: any) => o.status === filter);
   }, [allOrders, filter, visibleSellersForApproval, gestorName]);
 
@@ -335,11 +336,12 @@ export default function GestorAprovacoes(props: any = {}) {
   };
 
   const stats = useMemo(() => {
-    if (!allOrders) return { pendentes: 0, aprovados: 0, rejeitados: 0, total: 0 };
+    if (!allOrders) return { pendentes: 0, aprovados: 0, rejeitados: 0, lancados: 0, total: 0 };
     return {
       pendentes: allOrders.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor").length,
       aprovados: allOrders.filter((o: any) => o.status === "aprovado" || o.status === "processado").length,
       rejeitados: allOrders.filter((o: any) => o.status === "rejeitado").length,
+      lancados: allOrders.filter((o: any) => o.status === "lancado" || o.status === "processado_vitoria").length,
       total: allOrders.length,
     };
   }, [allOrders]);
@@ -438,12 +440,19 @@ export default function GestorAprovacoes(props: any = {}) {
             </div>
             <p className="text-xl font-bold text-slate-600 dark:text-slate-300">{stats.rejeitados}</p>
           </div>
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-4 h-4 text-blue-500" />
+              <span className="text-[10px] text-blue-600 uppercase font-bold">Lançados</span>
+            </div>
+            <p className="text-xl font-bold text-blue-600">{stats.lancados}</p>
+          </div>
         </div>
 
         {/* Filter Tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
           <Filter className="w-4 h-4 text-slate-400 ml-2" />
-          {(["todos", "pendente", "aprovado", "rejeitado"] as const).map((f) => (
+          {(["todos", "pendente", "aprovado", "rejeitado", "lancado"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
@@ -453,7 +462,7 @@ export default function GestorAprovacoes(props: any = {}) {
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              {f === "todos" ? `Todos (${stats.total})` : f === "pendente" ? `Pendentes (${stats.pendentes})` : f === "aprovado" ? `Aprovados (${stats.aprovados})` : `Recusados (${stats.rejeitados})`}
+              {f === "todos" ? `Todos (${stats.total})` : f === "pendente" ? `Pendentes (${stats.pendentes})` : f === "aprovado" ? `Aprovados (${stats.aprovados})` : f === "lancado" ? `Lançados (${stats.lancados})` : `Recusados (${stats.rejeitados})`}
             </button>
           ))}
         </div>
