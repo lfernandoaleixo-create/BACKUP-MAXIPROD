@@ -4927,9 +4927,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                               step: "produtos",
                              fromProposalId: prop.id,
                            };
-                            // Save to localStorage as draft so NewOrderInline picks it up
-                            localStorage.setItem(`order_draft_${sellerId}`, JSON.stringify(draftData));
-                            setConvertingProposalId(prop.id);
+                           // Save to localStorage as draft so NewOrderInline picks it up
+                            localStorage.setItem("grupo-fox-order-draft", JSON.stringify({ ...draftData, updatedAt: Date.now() }));
+                           setConvertingProposalId(prop.id);
                             setIsResumingDraft(true);
                             setShowNewOrder(true);
                           }}
@@ -7287,9 +7287,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                                   {d.documento || `Parcela ${d.parcela || '-'}/${d.totalParcelas || '-'}`}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-slate-400">{d.vencimento ? new Date(d.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</span>
-                                <span className={`font-semibold ${d.vencido ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'}`}>
+                             <div className="flex items-center gap-3">
+                                <span className="text-slate-400">{d.vencimento ? new Date(d.vencimento).toLocaleDateString('pt-BR') : '-'}</span>
+                               <span className={`font-semibold ${d.vencido ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'}`}>
                                   {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(d.valor)}
                                 </span>
                                 {d.vencido && d.diasAtraso > 0 && (
