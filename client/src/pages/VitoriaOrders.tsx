@@ -832,6 +832,70 @@ export default function VitoriaOrders() {
                                   </div>
 
                                   {/* Approve button for pending */}
+                                  {/* Full details section - same as Vitória sees */}
+                                  <div className="mt-3 space-y-2">
+                                    {/* Dados do Cliente */}
+                                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">📋 Dados do Cliente</p>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1 text-[10px]">
+                                        {order.razaoSocial && (<div className="col-span-2"><span className="text-slate-400">Razão Social</span><p className="text-slate-800 dark:text-slate-100 font-semibold text-xs">{order.razaoSocial}</p></div>)}
+                                        {order.nomeFantasia && (<div><span className="text-slate-400">Nome Fantasia</span><p className="text-slate-800 dark:text-slate-100">{order.nomeFantasia}</p></div>)}
+                                        {order.cnpjCpf && (<div><span className="text-slate-400">CNPJ/CPF</span><p className="text-slate-800 dark:text-slate-100 font-mono">{order.cnpjCpf}</p></div>)}
+                                        {order.inscricaoEstadual && (<div><span className="text-slate-400">IE</span><p className="text-slate-800 dark:text-slate-100">{order.inscricaoEstadual}</p></div>)}
+                                        {order.regimeTributario && (<div><span className="text-slate-400">Regime</span><p className="text-slate-800 dark:text-slate-100">{order.regimeTributario}</p></div>)}
+                                      </div>
+                                    </div>
+                                    {/* Endereço */}
+                                    {(order.cep || order.endereco || order.municipio) && (
+                                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">📍 Endereço</p>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1 text-[10px]">
+                                          {order.cep && (<div><span className="text-slate-400">CEP</span><p className="text-slate-800 dark:text-slate-100 font-mono">{order.cep}</p></div>)}
+                                          {(order.endereco || order.numero) && (<div className="col-span-2"><span className="text-slate-400">Endereço</span><p className="text-slate-800 dark:text-slate-100">{order.endereco}{order.numero ? `, ${order.numero}` : ""}{order.complemento ? ` - ${order.complemento}` : ""}</p></div>)}
+                                          {order.bairro && (<div><span className="text-slate-400">Bairro</span><p className="text-slate-800 dark:text-slate-100">{order.bairro}</p></div>)}
+                                          {(order.municipio || order.uf) && (<div><span className="text-slate-400">Município/UF</span><p className="text-slate-800 dark:text-slate-100">{order.municipio}{order.uf ? `/${order.uf}` : ""}</p></div>)}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* Contato */}
+                                    {(order.telefone1 || order.emailContato) && (
+                                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">📞 Contato</p>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1 text-[10px]">
+                                          {order.telefone1 && (<div><span className="text-slate-400">Telefone 1</span><p className="text-slate-800 dark:text-slate-100">{order.telefone1}</p></div>)}
+                                          {order.telefone2 && (<div><span className="text-slate-400">Telefone 2</span><p className="text-slate-800 dark:text-slate-100">{order.telefone2}</p></div>)}
+                                          {order.emailContato && (<div><span className="text-slate-400">Email</span><p className="text-slate-800 dark:text-slate-100 truncate">{order.emailContato}</p></div>)}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* Dados de Venda */}
+                                    {(order.condicaoPagamento || order.formaPagamento || order.transportadora || order.valorFrete || (order as any).operacaoFiscal || (order as any).estadoConfiguravel) && (
+                                      <div className="bg-green-50/50 dark:bg-green-900/10 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                                        <p className="text-[10px] font-bold text-green-600 uppercase mb-1.5">💰 Dados de Venda</p>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1 text-[10px]">
+                                          {order.condicaoPagamento && (<div><span className="text-slate-400">Condição Pgto</span><p className="text-slate-800 dark:text-slate-100">{order.condicaoPagamento}</p></div>)}
+                                          {order.formaPagamento && (<div><span className="text-slate-400">Forma Pgto</span><p className="text-slate-800 dark:text-slate-100 font-bold">{order.formaPagamento}</p></div>)}
+                                          {(order as any).meioPagamento && (<div><span className="text-slate-400">Meio Pgto</span><p className="text-amber-700 font-bold">{(order as any).meioPagamento}</p></div>)}
+                                          {(order as any).operacaoFiscal && (<div><span className="text-slate-400">Op. Fiscal</span><p className="text-slate-800 dark:text-slate-100">{(order as any).operacaoFiscal}</p></div>)}
+                                          {(order as any).estadoConfiguravel && (<div><span className="text-slate-400">Estado Config.</span><p className="text-slate-800 dark:text-slate-100">{(order as any).estadoConfiguravel}</p></div>)}
+                                          {order.formaCobranca && (<div><span className="text-slate-400">Cobrança</span><p className="text-slate-800 dark:text-slate-100">{order.formaCobranca}</p></div>)}
+                                          {order.transportadora && (<div><span className="text-slate-400">Transportadora</span><p className="text-blue-700 font-bold">{order.transportadora}</p></div>)}
+                                          {order.valorFrete && Number(order.valorFrete) > 0 && (<div><span className="text-slate-400">Frete</span><p className="text-emerald-700 font-bold">R$ {Number(order.valorFrete).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></div>)}
+                                          {order.tipoFrete && (<div><span className="text-slate-400">Tipo Frete</span><p className="text-slate-800 dark:text-slate-100">{order.tipoFrete}</p></div>)}
+                                          {(order as any).protocoloFrete && (<div><span className="text-slate-400">Protocolo</span><p className="text-slate-800 dark:text-slate-100 font-mono">{(order as any).protocoloFrete}</p></div>)}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* Observações */}
+                                    {(order.observacoes || (order as any).observacoesInternas) && (
+                                      <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+                                        <p className="text-[10px] font-bold text-amber-600 uppercase mb-1.5">📝 Observações</p>
+                                        {order.observacoes && (<p className="text-[10px] text-slate-700 dark:text-slate-300">{order.observacoes}</p>)}
+                                        {(order as any).observacoesInternas && (<p className="text-[10px] text-slate-500 mt-1 italic">Interna: {(order as any).observacoesInternas}</p>)}
+                                      </div>
+                                    )}
+                                  </div>
+
                                   {isPendente && (
                                     <div className="mt-4">
                                       {approvingOrderId === order.id ? (
