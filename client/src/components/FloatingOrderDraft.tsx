@@ -9,7 +9,7 @@ import { ShoppingCart, X } from "lucide-react";
 import { useLocation } from "wouter";
 
 function getSellerSlug(name: string): string {
-  return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  return (name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 }
 
 export default function FloatingOrderDraft() {
@@ -20,7 +20,7 @@ export default function FloatingOrderDraft() {
   if (!hasDraft || !draft) return null;
 
   // Check permission: gc.continuacaoPedido must be enabled AND gc.continuacaoPedido.<seller_slug> must be enabled
-  const sellerSlug = getSellerSlug(draft.sellerName);
+  const sellerSlug = getSellerSlug(draft.sellerName || "");
   const hasFeatureAccess = hasGranularAccess("gc.continuacaoPedido");
   const hasSellerAccess = hasGranularAccess(`gc.continuacaoPedido.${sellerSlug}`);
   

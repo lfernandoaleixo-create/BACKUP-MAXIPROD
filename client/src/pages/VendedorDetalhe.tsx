@@ -4888,6 +4888,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                             // Pre-fill draft with proposal data and open NewOrderInline
                            const draftData = {
                               sellerId: sellerId,
+                              sellerName: sellerName || "",
                               client: {
                                 cnpjCpf: prop.cnpjCpf || "",
                                 razaoSocial: prop.razaoSocial || "",
