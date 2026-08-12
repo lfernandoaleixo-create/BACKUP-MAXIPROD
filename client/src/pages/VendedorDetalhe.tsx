@@ -4436,6 +4436,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   });
   const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
   const [convertingProposalId, setConvertingProposalId] = useState<number | null>(null);
+  const [editingProposalId, setEditingProposalId] = useState<number | null>(null);
   const [expandedPedidoApp, setExpandedPedidoApp] = useState<number | null>(null);
 
   const filteredPedidos = useMemo(() => {
@@ -4832,6 +4833,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       {showProposal && (
         <PropostaDeVenda sellerId={sellerId} sellerName={sellerName} onClose={() => setShowProposal(false)} />
       )}
+      {editingProposalId && (
+        <PropostaDeVenda sellerId={sellerId} sellerName={sellerName} onClose={() => setEditingProposalId(null)} editProposalId={editingProposalId} />
+      )}
 
       {/* Histórico de Propostas */}
       {propostas && propostas.length > 0 && (
@@ -4951,6 +4955,64 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                           <Download className="w-3.5 h-3.5" />
                         </a>
                       )}
+                      {/* Download PDF from proposal data */}
+                      {!prop.pdfUrl && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            generateOrderPdf({
+                              pedido: `P-${String(prop.id).padStart(3, '0')}`,
+                              cliente: prop.razaoSocial || "",
+                              clienteApelido: prop.nomeFantasia || prop.razaoSocial || "",
+                              cnpjCpf: prop.cnpjCpf || "",
+                              inscricaoEstadual: prop.inscricaoEstadual || "",
+                              uf: prop.uf || "",
+                              dataEmissao: prop.createdAt ? new Date(prop.createdAt).toISOString() : "",
+                              dataEntrega: "",
+                              empresa: "PALITOS FOX",
+                              representante: sellerName || "",
+                              segmento: "",
+                              condicaoPagamento: prop.condicaoPagamento || "",
+                              formaPagamento: prop.formaPagamento || "",
+                              meioPagamento: "",
+                              transportadora: "",
+                              tipoFrete: "",
+                              valorFrete: 0,
+                              operacaoFiscal: "",
+                              estadoConfiguravel: "",
+                              protocoloCotacao: "",
+                              observacoes: prop.observacoes || "",
+                              valorTotal: Number(prop.totalProdutos || 0),
+                              totalProdutos: Number(prop.totalProdutos || 0),
+                              telefone: prop.telefone || "",
+                              endereco: prop.endereco ? { logradouro: prop.endereco || "", numero: prop.numero || "", complemento: "", bairro: prop.bairro || "", cep: prop.cep || "", cidade: prop.municipio || "", uf: prop.uf || "" } : null,
+                              itens: ((prop as any).items || []).map((item: any) => ({
+                                descricao: item.descricaoItem || item.descricao || "",
+                                quantidade: Number(item.quantidade || 0),
+                                valorUnitario: Number(item.precoUnitario || item.valorUnitario || 0),
+                                valorTotal: Number(item.quantidade || 0) * Number(item.precoUnitario || item.valorUnitario || 0),
+                                codigoItem: item.codigoItem || null,
+                                unidadeMedida: item.unidadeMedida || "CX",
+                              })),
+                            }, true);
+                          }}
+                          className="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-colors"
+                          title="Baixar PDF da Proposta"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {/* Edit proposal button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingProposalId(prop.id);
+                        }}
+                        className="p-1.5 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded transition-colors"
+                        title="Editar proposta"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => duplicateProposal.mutate({ id: prop.id })}
                         className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"

@@ -52,11 +52,10 @@ interface PropostaDeVendaProps {
   sellerId: number;
   sellerName: string;
   onClose: () => void;
+  editProposalId?: number | null;
 }
-
 type Step = "cliente" | "produtos" | "pagamento" | "revisao";
-
-export default function PropostaDeVenda({ sellerId, sellerName, onClose }: PropostaDeVendaProps) {
+export default function PropostaDeVenda({ sellerId, sellerName, onClose, editProposalId }: PropostaDeVendaProps) {
   const [step, setStep] = useState<Step>("cliente");
   
   // Client fields
@@ -110,6 +109,47 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose }: Propo
   const [isSaving, setIsSaving] = useState(false);
   const [savedId, setSavedId] = useState<number | null>(null);
   const [isConverting, setIsConverting] = useState(false);
+
+
+  // Edit proposal - load existing data
+  const editProposalQuery = trpc.proposal.getById.useQuery(
+    { id: editProposalId! },
+    { enabled: !!editProposalId }
+  );
+  useEffect(() => {
+    if (editProposalQuery.data && editProposalId) {
+      const p = editProposalQuery.data as any;
+      setCnpjCpf(p.cnpjCpf || "");
+      setRazaoSocial(p.razaoSocial || "");
+      setNomeFantasia(p.nomeFantasia || "");
+      setInscricaoEstadual(p.inscricaoEstadual || "");
+      setCep(p.cep || "");
+      setEndereco(p.endereco || "");
+      setNumero(p.numero || "");
+      setBairro(p.bairro || "");
+      setMunicipio(p.municipio || "");
+      setUf(p.uf || "");
+      setTelefone1(p.telefone || "");
+      setEmailContato(p.emailContato || "");
+      setFormaPagamento(p.formaPagamento || "");
+      setCondicaoPagamento(p.condicaoPagamento || "");
+      setObservacoes(p.observacoes || "");
+      if (p.items && Array.isArray(p.items)) {
+        setItems(p.items.map((i: any) => ({
+          codigoItem: i.codigoItem || "",
+          descricaoItem: i.descricaoItem || i.descricao || "",
+          quantidade: Number(i.quantidade || 1),
+          unidadeMedida: i.unidadeMedida || "CX",
+          precoUnitario: Number(i.precoUnitario || i.valorUnitario || 0),
+          precoMinimo: null,
+          precoVendedor: null,
+          grupo: "",
+          disponivel: "0",
+        })));
+      }
+      setSavedId(editProposalId);
+    }
+  }, [editProposalQuery.data, editProposalId]);
 
   // Save proposal mutation
   const saveMutation = trpc.proposal.create.useMutation();
