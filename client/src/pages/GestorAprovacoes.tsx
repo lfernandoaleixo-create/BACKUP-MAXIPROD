@@ -165,7 +165,7 @@ export default function GestorAprovacoes(props: any = {}) {
     // Then: filter by status
     if (filter === "todos") return filtered;
     if (filter === "pendente") return filtered.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
-    if (filter === "lancado") return filtered.filter((o: any) => o.status === "lancado" || o.status === "processado_vitoria");
+    if (filter === "lancado") return filtered.filter((o: any) => o.status === "processado" || o.status === "lancado");
     return filtered.filter((o: any) => o.status === filter);
   }, [allOrders, filter, visibleSellersForApproval, gestorName]);
 
@@ -339,9 +339,9 @@ export default function GestorAprovacoes(props: any = {}) {
     if (!allOrders) return { pendentes: 0, aprovados: 0, rejeitados: 0, lancados: 0, total: 0 };
     return {
       pendentes: allOrders.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor").length,
-      aprovados: allOrders.filter((o: any) => o.status === "aprovado" || o.status === "processado").length,
+      aprovados: allOrders.filter((o: any) => o.status === "aprovado").length,
       rejeitados: allOrders.filter((o: any) => o.status === "rejeitado").length,
-      lancados: allOrders.filter((o: any) => o.status === "lancado" || o.status === "processado_vitoria").length,
+      lancados: allOrders.filter((o: any) => o.status === "processado" || o.status === "lancado").length,
       total: allOrders.length,
     };
   }, [allOrders]);
