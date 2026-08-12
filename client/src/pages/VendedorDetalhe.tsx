@@ -6456,7 +6456,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     setRedespachoUf(client.redespachoUf || "");
     setRedespachoTelefone(client.redespachoTelefone || "");
     // Endereço de entrega
-    setEnderecoEntregaMesmo(client.enderecoEntregaMesmo !== false);
+    setEnderecoEntregaMesmo(client.enderecoEntregaMesmo !== false && client.enderecoEntregaMesmo !== 0);
     setEntregaCep(client.entregaCep || "");
     setEntregaLogradouro(client.entregaLogradouro || "");
     setEntregaNumero(client.entregaNumero || "");
