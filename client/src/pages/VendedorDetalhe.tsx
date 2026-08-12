@@ -4400,7 +4400,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const { hasDraft } = useOrderDraft();
+  const { hasDraft, saveDraft } = useOrderDraft();
   const resumeDraftParam = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
   const [isResumingDraft, setIsResumingDraft] = useState(resumeDraftParam && hasDraft);
   const [showNewOrder, setShowNewOrder] = useState((resumeDraftParam && hasDraft) || !!new URLSearchParams(window.location.search).get("editOrder"));
@@ -4928,7 +4928,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                              fromProposalId: prop.id,
                            };
                            // Save to localStorage as draft so NewOrderInline picks it up
-                            localStorage.setItem("grupo-fox-order-draft", JSON.stringify({ ...draftData, updatedAt: Date.now() }));
+                            saveDraft(draftData as any);
                            setConvertingProposalId(prop.id);
                             setIsResumingDraft(true);
                             setShowNewOrder(true);
@@ -6089,7 +6089,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.previsaoEntregaPedido) setPrevisaoEntregaPedido(draft.previsaoEntregaPedido);
       if (draft.step) setStep(draft.step);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save draft whenever items or client data changes
   useEffect(() => {
@@ -6268,7 +6268,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [marginRecalculated, setMarginRecalculated] = useState(false);
   const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
   const currentSellerPerm = sellerPermsQuery.data?.find(
-    (p: any) => p.sellerName.toLowerCase() === sellerName.toLowerCase()
+    (p: any) => (p.sellerName || '').toLowerCase() === (sellerName || '').toLowerCase()
   );
   // Margin bar visible for everyone (sellers and gestores)
   const isGestorMode = !!marginOperator;
