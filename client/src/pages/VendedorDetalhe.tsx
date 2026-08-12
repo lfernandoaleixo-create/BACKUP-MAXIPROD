@@ -7356,6 +7356,14 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
 
         {step === "produtos" && (
           <div className="space-y-3">
+            {/* Sticky client info banner */}
+            {razaoSocial && (
+              <div className="sticky top-0 z-10 bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 rounded-lg px-4 py-2 flex items-center gap-3 shadow-sm">
+                <span className="text-xs font-bold text-teal-700 dark:text-teal-300">Cliente:</span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{razaoSocial}</span>
+                {cnpjCpf && <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto whitespace-nowrap">{cnpjCpf}</span>}
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-slate-500 uppercase">2. Produtos do Estoque</p>
               <div className="flex items-center gap-2">
@@ -7448,7 +7456,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     <ShoppingCart className="w-4 h-4" /> Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'}) — {items.reduce((sum, i) => sum + i.quantidade, 0)} caixas
                   </p>
                   <p className="text-sm font-bold text-white">
-                    {formatCurrencySales(items.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0))}
+                    {formatCurrencySales(items.reduce((sum, i) => sum + (Number(i.quantidade) || 0) * (Number(i.precoUnitario) || 0), 0))}
                   </p>
                 </div>
                 {/* Cumulative Debit/Credit Summary */}
