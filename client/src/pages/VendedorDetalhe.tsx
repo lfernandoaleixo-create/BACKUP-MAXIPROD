@@ -4258,6 +4258,9 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
   const [period, setPeriod] = useState("current");
+  const [convertingProposalId, setConvertingProposalId] = useState<number | null>(null);
+  const [expandedPedidoApp, setExpandedPedidoApp] = useState<number | null>(null);
+  const [expandedProposal, setExpandedProposal] = useState<number | null>(null);
   const [customMonth, setCustomMonth] = useState<{ year: number; month: number }>(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -4685,8 +4688,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       )}
 
       {/* Novo Pedido de Venda Form */}
-            {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
+           {showNewOrder && (
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} proposalData={convertingProposalId ? propostas?.find((p: any) => p.id === convertingProposalId) : null} onClose={() => { setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); setConvertingProposalId(null); }} />
       )}
       {/* Nova Proposta de Venda */}
       {showProposal && (
@@ -4733,8 +4736,24 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {prop.pdfUrl && (
+                   <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setExpandedProposal(expandedProposal === prop.id ? null : prop.id)}
+                        className="p-1.5 text-slate-400 hover:text-teal-500 hover:bg-teal-50 rounded transition-colors"
+                        title="Ver detalhes"
+                      >
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedProposal === prop.id ? "rotate-180" : ""}`} />
+                      </button>
+                      {prop.status !== 'convertida' && (
+                       <button
+                          onClick={() => { setConvertingProposalId(prop.id); setShowNewOrder(true); setIsResumingDraft(false); setEditingOrderId(null); }}
+                         className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                         title="Gerar Pedido de Venda"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                     {prop.pdfUrl && (
                         <a
                           href={prop.pdfUrl}
                           target="_blank"
@@ -5344,7 +5363,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
  * NewOrderInline - Formulário inline para criar novo pedido de venda
  * Puxa produtos do estoque visível do vendedor com especificações
  */
-function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, resumeDraft: shouldResumeDraft = false, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; resumeDraft?: boolean; onClose: () => void }) {
+function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, resumeDraft: shouldResumeDraft = false, proposalData = null, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; resumeDraft?: boolean; proposalData?: any; onClose: () => void }) {
   const isEditMode = editOrderId !== null;
   const [isSimulation, setIsSimulation] = useState(false);
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
@@ -5845,6 +5864,47 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setEditDataLoaded(true);
     }
   }, [isEditMode, editOrderQuery.data, editDataLoaded]);
+
+  // Pre-fill from proposal when converting proposal to order
+  useEffect(() => {
+    if (proposalData && !isEditMode && !editDataLoaded) {
+      if (proposalData.cnpjCpf) setCnpjCpf(proposalData.cnpjCpf);
+      if (proposalData.razaoSocial) setRazaoSocial(proposalData.razaoSocial);
+      if (proposalData.nomeFantasia) setNomeFantasia(proposalData.nomeFantasia);
+      if (proposalData.inscricaoEstadual) setInscricaoEstadual(proposalData.inscricaoEstadual);
+      if (proposalData.emailContato || proposalData.email) setEmailNfe(proposalData.emailContato || proposalData.email);
+      if (proposalData.telefone || proposalData.telefone1) setTelefone1(proposalData.telefone || proposalData.telefone1);
+      if (proposalData.telefone2) setTelefone2(proposalData.telefone2);
+      if (proposalData.cep) setCep(proposalData.cep);
+      if (proposalData.endereco) setEndereco(proposalData.endereco);
+      if (proposalData.bairro) setBairro(proposalData.bairro);
+      if (proposalData.municipio) setMunicipio(proposalData.municipio);
+      if (proposalData.uf) setUf(proposalData.uf);
+      if (proposalData.condicaoPagamento) setCondicaoPagamento(proposalData.condicaoPagamento);
+      if (proposalData.formaPagamento) setFormaPagamento(proposalData.formaPagamento);
+      if (proposalData.meioPagamento) setMeioPagamento(proposalData.meioPagamento);
+      if (proposalData.observacoes) setObservacoes(proposalData.observacoes);
+      if (proposalData.observacoesInternas) setObservacoesInternas(proposalData.observacoesInternas);
+      if (proposalData.estadoConfiguravel) setEstadoConfiguravel(proposalData.estadoConfiguravel);
+      if (proposalData.situacaoCobranca) setSituacaoCobranca(proposalData.situacaoCobranca);
+      if (proposalData.items && proposalData.items.length > 0) {
+        const cartItems = proposalData.items.map((it: any) => ({
+          codigoItem: it.codigoItem || it.codigo || "",
+          descricaoItem: it.descricaoItem || it.descricao || "",
+          quantidade: it.quantidade || 1,
+          valorUnitario: it.valorUnitario || it.preco || 0,
+          pesoBrutoCaixa: it.pesoBrutoCaixa || 0,
+          dimsStr: it.dimsStr || it.dimensoes || "",
+          subgrupo: it.subgrupo || "",
+          grupo: it.grupo || "",
+          unidade: it.unidade || "CX",
+        }));
+        setItems(cartItems);
+      }
+      if (proposalData.razaoSocial) setStep("produtos");
+      setEditDataLoaded(true);
+    }
+  }, [proposalData]);
 
   // Margin bar state - controlled per seller via seller_permissions table
   const { operator: marginOperator, hasAccess: marginHasAccess, hasGranularAccess } = useOperator();
