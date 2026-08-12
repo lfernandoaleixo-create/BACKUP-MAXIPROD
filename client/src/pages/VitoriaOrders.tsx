@@ -514,6 +514,7 @@ export default function VitoriaOrders() {
             { key: "pendente", label: "Pendentes", icon: Clock, color: "amber" },
             { key: "aprovado", label: "Aprovados", icon: CheckCircle2, color: "teal" },
             { key: "recusado", label: "Recusados", icon: AlertTriangle, color: "red" },
+            { key: "recebido", label: "Recebidos", icon: Package, color: "blue" },
             { key: "lancado", label: "Lançados", icon: CheckCheck, color: "green" },
             { key: "todos", label: "Todos", icon: Package, color: "slate" },
           ] as const).map((f) => (
