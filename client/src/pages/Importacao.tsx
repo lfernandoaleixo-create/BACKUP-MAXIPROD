@@ -638,7 +638,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, rmbRate,
               exchangeRate={exchangeRate}
               rmbRate={rmbRate}
               totalSections={sections.length}
-              isWinnie={supplier.name.toUpperCase().includes("WINNIE")}
+              isWinnie={(supplier.name || "").toUpperCase().includes("WINNIE")}
               onRemoveSection={(title) => {
                 // If it's an empty local section, just remove from state
                 if (emptySections.includes(title)) {

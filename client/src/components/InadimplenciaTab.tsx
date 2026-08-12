@@ -1536,7 +1536,7 @@ export default function InadimplenciaTab() {
             // Only pulse client card if there's an unacknowledged alert WITHOUT planilhaId (legacy alerts pulse the whole client)
             // Alerts WITH planilhaId pulse only at the specific title level
             const unackAlert = unacknowledgedAlerts?.find(a => 
-              !a.planilhaId && a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim()
+              !a.planilhaId && (a.empresa || "").toUpperCase().trim() === (group.cliente || "").toUpperCase().trim()
             );
             return (
               <div key={group.cliente} className={`rounded-xl border overflow-hidden transition-all ${getAgingBg(group.maxDias)} ${unackAlert ? 'ring-2 ring-green-500 animate-pulse' : ''}`}>
@@ -1593,7 +1593,7 @@ export default function InadimplenciaTab() {
                       </div>
                     )}
                     {(() => {
-                      const activeAlert = inadimSellerAlerts?.find(a => a.empresa.toUpperCase().trim() === group.cliente.toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
+                      const activeAlert = inadimSellerAlerts?.find(a => (a.empresa || "").toUpperCase().trim() === (group.cliente || "").toUpperCase().trim() && a.status !== 'resolvido' && a.status !== 'cancelado');
                       return activeAlert ? (
                         <div className="flex items-center gap-1">
                           <span className={`px-2 py-1 text-[9px] font-bold rounded ${
@@ -1747,7 +1747,7 @@ export default function InadimplenciaTab() {
               // Match by planilhaId first (specific title), then fallback to empresa name
               const titleUnackAlert = unacknowledgedAlerts?.find(a => 
                 (a.planilhaId && a.planilhaId === title.id) ||
-                (!a.planilhaId && a.empresa.toUpperCase().trim() === title.cliente.toUpperCase().trim())
+                (!a.planilhaId && (a.empresa || "").toUpperCase().trim() === (title.cliente || "").toUpperCase().trim())
               );
               return (
               <div key={title.id} className={titleUnackAlert ? 'ring-2 ring-green-500 animate-pulse rounded-lg' : ''}>

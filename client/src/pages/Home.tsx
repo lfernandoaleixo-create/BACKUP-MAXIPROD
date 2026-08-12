@@ -1978,11 +1978,11 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
           ? poSummaries.filter(po => {
               const q = poSearch.trim().toLowerCase();
               // Search in PO reference name
-              if (po.referenciaPO.toLowerCase().includes(q)) return true;
+              if ((po.referenciaPO || "").toLowerCase().includes(q)) return true;
               // Search in supplier name
-              if (po.fornecedor.toLowerCase().includes(q)) return true;
+              if ((po.fornecedor || "").toLowerCase().includes(q)) return true;
               // Search in product names and codes within this PO
-              return po.produtos.some(p => p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q));
+              return po.produtos.some(p => (p.descricaoItem || "").toLowerCase().includes(q) || (p.codigoItem || "").toLowerCase().includes(q));
             })
           : poSummaries
         ).map((po) => {
@@ -2033,7 +2033,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                     <div className="flex items-center gap-2 md:gap-3 mt-0.5 flex-wrap">
                       <span className="text-[10px] md:text-xs text-slate-500 flex items-center gap-0.5 md:gap-1">
                         <MapPin className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                        <span className="truncate max-w-[100px] md:max-w-none">{po.fornecedor || (trackingQuery.data?.trackingByPO?.[po.referenciaPO.toUpperCase()]?.supplierName) || "Fornecedor"}</span>
+                        <span className="truncate max-w-[100px] md:max-w-none">{po.fornecedor || (trackingQuery.data?.trackingByPO?.[(po.referenciaPO || "").toUpperCase()]?.supplierName) || "Fornecedor"}</span>
                       </span>
                       <span className="text-[10px] md:text-xs text-slate-500 flex items-center gap-0.5 md:gap-1">
                         <CalendarDays className="w-2.5 h-2.5 md:w-3 md:h-3" />
@@ -2052,7 +2052,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                     )}
                     {/* Cached tracking info from Logcomex */}
                     {(() => {
-                      const t = trackingQuery.data?.trackingByPO?.[po.referenciaPO.toUpperCase()];
+                      const t = trackingQuery.data?.trackingByPO?.[(po.referenciaPO || "").toUpperCase()];
                       if (!t || (!t.cachedVessel && !t.cachedEta && !t.cachedStatus)) return null;
                       return (
                         <div className="flex items-center gap-2 md:gap-3 mt-1 flex-wrap">
@@ -2087,7 +2087,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                   <div className="w-[80px] md:w-[90px] flex justify-end">
                     {(() => {
                       const trackingMap = trackingQuery.data?.trackingByPO || {};
-                      const poKey = po.referenciaPO.toUpperCase();
+                      const poKey = (po.referenciaPO || "").toUpperCase();
                       const tracking = trackingMap[poKey];
                       if (!tracking) return null;
                       return (
@@ -3145,7 +3145,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
     let result = parentItems;
     if (search.trim()) {
       const s = search.toLowerCase();
-      result = result.filter(i => i.descricaoItem.toLowerCase().includes(s) || i.codigoItem.toLowerCase().includes(s) || (i.descricaoGrupo || "").toLowerCase().includes(s));
+      result = result.filter(i => (i.descricaoItem || "").toLowerCase().includes(s) || (i.codigoItem || "").toLowerCase().includes(s) || (i.descricaoGrupo || "").toLowerCase().includes(s));
     }
     return [...result].sort((a, b) => {
       let aV: number | string = 0; let bV: number | string = 0;
@@ -3967,8 +3967,8 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx, 
     if (!search.trim()) return parentItems;
     const s = search.toLowerCase();
     return parentItems.filter(i =>
-      i.descricaoItem.toLowerCase().includes(s) ||
-      i.codigoItem.toLowerCase().includes(s)
+      (i.descricaoItem || "").toLowerCase().includes(s) ||
+      (i.codigoItem || "").toLowerCase().includes(s)
     );
   }, [parentItems, search]);
 
@@ -4247,8 +4247,8 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
     if (!search.trim()) return parentItems;
     const s = search.toLowerCase();
     return parentItems.filter(i =>
-      i.descricaoItem.toLowerCase().includes(s) ||
-      i.codigoItem.toLowerCase().includes(s)
+      (i.descricaoItem || "").toLowerCase().includes(s) ||
+      (i.codigoItem || "").toLowerCase().includes(s)
     );
   }, [parentItems, search]);
 

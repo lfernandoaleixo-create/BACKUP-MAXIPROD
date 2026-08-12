@@ -394,8 +394,8 @@ function GestorSellerPicker({ onLogout }: { onLogout: () => void }) {
     if (!searchTerm.trim()) return sellers;
     const term = searchTerm.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     return sellers.filter(s => 
-      s.sellerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(term) ||
-      s.gestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(term)
+      (s.sellerName || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(term) ||
+      (s.gestorName || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(term)
     );
   }, [sellers, searchTerm]);
 

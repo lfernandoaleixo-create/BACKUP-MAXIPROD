@@ -1643,7 +1643,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
       const s = searchTerm.toLowerCase();
       result = result.filter(o =>
         o.pedido.toLowerCase().includes(s) ||
-        o.cliente.toLowerCase().includes(s) ||
+        (o.cliente || "").toLowerCase().includes(s) ||
         (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
         o.uf.toLowerCase().includes(s) ||
         o.representante?.toLowerCase().includes(s) ||

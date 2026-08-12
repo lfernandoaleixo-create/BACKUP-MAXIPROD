@@ -767,8 +767,8 @@ function OperatorManagementPanel() {
     if (sellerPermsList) {
       const uniqueSellers = new Map<string, string>();
       for (const sp of sellerPermsList as any[]) {
-        if (!uniqueSellers.has(sp.sellerName.toUpperCase())) {
-          uniqueSellers.set(sp.sellerName.toUpperCase(), sp.sellerName);
+        if (!uniqueSellers.has((sp.sellerName || "").toUpperCase())) {
+          uniqueSellers.set((sp.sellerName || "").toUpperCase(), sp.sellerName);
         }
       }
       Array.from(uniqueSellers.values()).forEach(sellerName => {
@@ -1718,7 +1718,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(p => 
-        p.descricao.toLowerCase().includes(s) ||
+        (p.descricao || "").toLowerCase().includes(s) ||
         (p.codigoItem && p.codigoItem.toLowerCase().includes(s)) ||
         (p.palavraChave && p.palavraChave.toLowerCase().includes(s)) ||
         (p.descricaoOriginal && p.descricaoOriginal.toLowerCase().includes(s)) ||

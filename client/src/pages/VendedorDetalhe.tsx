@@ -2590,7 +2590,7 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
       const q = searchQuery.trim().toUpperCase();
       result = result.filter(
         (c) =>
-          c.cliente.toUpperCase().includes(q) ||
+          (c.cliente || "").toUpperCase().includes(q) ||
           (c.razaoSocial || "").toUpperCase().includes(q) ||
           (c.cidade || "").toUpperCase().includes(q) ||
           (c.uf || "").toUpperCase().includes(q) ||
@@ -4452,7 +4452,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       result = result.filter(
         (p) =>
           p.pedido.toUpperCase().includes(q) ||
-          p.cliente.toUpperCase().includes(q) ||
+          (p.cliente || "").toUpperCase().includes(q) ||
           (p.estadoNota || "").toUpperCase().includes(q)
       );
     }

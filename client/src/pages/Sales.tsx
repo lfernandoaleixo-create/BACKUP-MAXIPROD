@@ -1679,7 +1679,7 @@ function ClientRanking({ data }: { data: Array<{ name: string; value: number; or
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(c =>
-        c.name.toLowerCase().includes(s) ||
+        (c.name || "").toLowerCase().includes(s) ||
         c.uf.toLowerCase().includes(s) ||
         c.segmento.toLowerCase().includes(s)
       );
@@ -1830,7 +1830,7 @@ function ProductRanking({ data }: { data: Array<{ name: string; value: number; q
 
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(s));
+      result = result.filter(p => (p.name || "").toLowerCase().includes(s));
     }
 
     result.sort((a, b) => {
@@ -2326,7 +2326,7 @@ function OrdersCard({ orders, title = "Pedidos", variant = "all" }: { orders: Or
       const s = searchTerm.toLowerCase();
       result = result.filter(o =>
         o.pedido.toLowerCase().includes(s) ||
-        o.cliente.toLowerCase().includes(s) ||
+        (o.cliente || "").toLowerCase().includes(s) ||
         (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
         o.uf.toLowerCase().includes(s)
       );
@@ -2522,7 +2522,7 @@ function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: Pr
       const s = searchTerm.toLowerCase();
       result = result.filter(o =>
         o.pedido.toLowerCase().includes(s) ||
-        o.cliente.toLowerCase().includes(s) ||
+        (o.cliente || "").toLowerCase().includes(s) ||
         (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
         o.uf.toLowerCase().includes(s)
       );
@@ -2728,12 +2728,12 @@ function UnifiedUnbilledCard({ months, orders, totalValue }: { months: string[];
       const s = searchTerm.toLowerCase();
       result = result.filter(o =>
         o.pedido.toLowerCase().includes(s) ||
-        o.cliente.toLowerCase().includes(s) ||
+        (o.cliente || "").toLowerCase().includes(s) ||
         (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
         o.uf.toLowerCase().includes(s) ||
         (o.razaoSocial && o.razaoSocial.toLowerCase().includes(s)) ||
         (o.representante && o.representante.toLowerCase().includes(s)) ||
-        (o.empresa && o.empresa.toLowerCase().includes(s))
+        (o.empresa && (o.empresa || "").toLowerCase().includes(s))
       );
     }
 
@@ -3267,8 +3267,8 @@ function DraftOrdersCard({ orders }: { orders: DraftOrderData[] }) {
     const s = searchTerm.toLowerCase();
     return orders.filter(o =>
       o.pedido.toLowerCase().includes(s) ||
-      o.cliente.toLowerCase().includes(s) ||
-      o.itens.some(i => i.descricao.toLowerCase().includes(s) || i.codigoItem.toLowerCase().includes(s))
+      (o.cliente || "").toLowerCase().includes(s) ||
+      o.itens.some(i => (i.descricao || "").toLowerCase().includes(s) || (i.codigoItem || "").toLowerCase().includes(s))
     );
   }, [orders, searchTerm]);
 

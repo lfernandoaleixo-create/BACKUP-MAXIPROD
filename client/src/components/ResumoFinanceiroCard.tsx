@@ -1891,8 +1891,8 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
     if (searchFilter.trim()) {
       const q = searchFilter.toLowerCase();
       items = items.filter(i =>
-        i.fornecedor.toLowerCase().includes(q) ||
-        i.descricao.toLowerCase().includes(q) ||
+        (i.fornecedor || "").toLowerCase().includes(q) ||
+        (i.descricao || "").toLowerCase().includes(q) ||
         i.observacoes?.toLowerCase().includes(q) ||
         i.documento?.toLowerCase().includes(q)
       );

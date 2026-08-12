@@ -2100,7 +2100,7 @@ export default function ReceivablesTab() {
         const contas = mes.contas.map(conta => {
           const tipos = conta.tipos.map(tipo => {
             const items = tipo.items.filter(i => {
-              return i.cliente.toUpperCase().includes(s) ||
+              return (i.cliente || "").toUpperCase().includes(s) ||
                 i.referenteA.toUpperCase().includes(s) ||
                 i.documento.toUpperCase().includes(s) ||
                 (i.formaCobranca || "").toUpperCase().includes(s) ||

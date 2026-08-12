@@ -559,7 +559,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     if (card.role === "Sub-gestor") {
       // Sub-gestor gets vendedores from seller_permissions (manually added via "Adicionar Vendedor")
       const permsForGestor = permissions.filter(
-        p => (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+        p => (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === (card.name || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
       );
       return permsForGestor.map(p => p.sellerName);
     }
@@ -568,12 +568,12 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
     // Sub-gestores like Renato should NOT be filtered — they count as vendedores under their parent gestor
     const gestorOnlyNames = activeGestorCards
       .filter(g => g.role === "Gestor" || g.role === "Gestora")
-      .map(g => g.name.toUpperCase());
+      .map(g => (g.name || "").toUpperCase());
     const filteredMaxiprod = vendedores.filter(v => !gestorOnlyNames.includes(v.toUpperCase()));
     // Merge sellers from seller_permissions that aren't in the Maxiprod list
     // (e.g. manually added sellers like LÍVIA)
     const permsForGestor = permissions.filter(
-      p => (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+      p => (p.gestorName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === (card.name || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
     );
     const existingUpper = new Set(filteredMaxiprod.map(v => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()));
     for (const p of permsForGestor) {
@@ -615,12 +615,12 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
 
         {/* Single gestor card, already expanded */}
         {!isLoading && activeGestorCards.filter(card => {
-          return card.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+          return (card.name || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
         }).map((card) => {
           const vendedoresBase = getVendedoresForCard(card);
           const vendedores = card.role === "Sub-gestor" 
             ? vendedoresBase 
-            : [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== card.name.toUpperCase())];
+            : [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== (card.name || "").toUpperCase())];
           const vendedorCount = vendedores.length;
           const isSubGestor = card.role === "Sub-gestor";
 
@@ -827,7 +827,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
             {!isLoading && activeGestorCards.filter(card => {
               // Filter by specific gestor name if provided
               if (filterGestorName) {
-                return card.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return (card.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() === filterGestorName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
               }
               // Check visibility permission for this gestor card (dynamic slug)
               const visKey = getGestorVisibilityKey(card.name);
@@ -839,7 +839,7 @@ function GestoresTab({ getVendedoresForGestor, permissions, isLoading, isError, 
         // Include the gestor themselves as a vendedor in their own card (except sub-gestores)
         const vendedores = card.role === "Sub-gestor" 
           ? vendedoresBase 
-          : [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== card.name.toUpperCase())];
+          : [card.name, ...vendedoresBase.filter(v => v.toUpperCase() !== (card.name || "").toUpperCase())];
         const vendedorCount = vendedores.length;
         const isSubGestor = card.role === "Sub-gestor";
 
@@ -1266,7 +1266,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorC
       const vendedores = getVendedoresForGestor(gc.name);
       for (const v of vendedores) {
         // Skip if already added as gestor
-        if (activeGestorCards.some(g => g.name.toUpperCase() === v.toUpperCase())) continue;
+        if (activeGestorCards.some(g => (g.name || "").toUpperCase() === v.toUpperCase())) continue;
         const perm = permissions.find(
           p => (p.sellerName || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === v.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
         );
@@ -1281,7 +1281,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorC
       const normName = perm.sellerName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
       if (addedNames.has(normName)) continue;
       // Skip gestores that are already in the list
-      if (activeGestorCards.some(g => g.name.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normName)) continue;
+      if (activeGestorCards.some(g => (g.name || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() === normName)) continue;
       result.push({ name: perm.sellerName, gestor: perm.gestorName, permission: perm, isGestor: false });
       addedNames.add(normName);
     }
@@ -1357,7 +1357,7 @@ function VendedoresTab({ getVendedoresForGestor, permissions, isLoading, gestorC
                         <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
                         {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                          {v.isGestor ? (GESTOR_CARDS.find((g: GestorCard) => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
+                          {v.isGestor ? (GESTOR_CARDS.find((g: GestorCard) => (g.name || "").toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -1468,7 +1468,7 @@ function VendedoresCollapsible({ allVendedores, isLoading, navigate }: { allVend
                       <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{v.name}</p>
                       {v.isGestor && <Crown className="w-3 h-3 text-teal-500 shrink-0" />}
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                        {v.isGestor ? (GESTOR_CARDS.find((g: GestorCard) => g.name.toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
+                        {v.isGestor ? (GESTOR_CARDS.find((g: GestorCard) => (g.name || "").toUpperCase() === v.name.toUpperCase())?.role === "Gestora" ? "Vendedora" : "Vendedor") : `Vendedor · Gestor: ${v.gestor}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

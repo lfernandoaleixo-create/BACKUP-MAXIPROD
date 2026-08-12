@@ -344,7 +344,7 @@ export default function FutureBillsSection() {
 
   const filteredBills = useMemo(() => {
     return bills.filter((bill: any) => {
-      if (filterDescricao && !bill.descricao.toLowerCase().includes(filterDescricao.toLowerCase())) return false;
+      if (filterDescricao && !(bill.descricao || "").toLowerCase().includes(filterDescricao.toLowerCase())) return false;
       if (filterFormaPagamento && bill.formaPagamento !== filterFormaPagamento) return false;
       if (filterDataInicio && bill.dataVencimento < filterDataInicio) return false;
       if (filterDataFim && bill.dataVencimento > filterDataFim) return false;

@@ -493,10 +493,10 @@ export default function ProductionAcceptanceCard({
       const s = search.toLowerCase();
       base = base.filter(o =>
         o.pedido.includes(s) ||
-        o.cliente.toLowerCase().includes(s) ||
+        (o.cliente || "").toLowerCase().includes(s) ||
         o.clienteApelido.toLowerCase().includes(s) ||
         o.uf.toLowerCase().includes(s) ||
-        o.itens.some(i => i.descricao.toLowerCase().includes(s))
+        o.itens.some(i => (i.descricao || "").toLowerCase().includes(s))
       );
     }
 
