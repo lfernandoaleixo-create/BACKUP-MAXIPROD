@@ -18,6 +18,7 @@ import {
   Download,
   Plus,
   Trash2,
+  Pencil,
   ShoppingCart,
   ChevronDown,
   ChevronRight,
@@ -353,6 +354,29 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose, editPro
 
   const removeProduct = (index: number) => {
     setItems(prev => prev.filter((_, i) => i !== index));
+  };
+  const [editingItemIdx, setEditingItemIdx] = useState<number | null>(null);
+  const [editItemQty, setEditItemQty] = useState("");
+  const [editItemPrice, setEditItemPrice] = useState("");
+
+  const startEditItem = (idx: number) => {
+    setEditingItemIdx(idx);
+    setEditItemQty(String(items[idx].quantidade));
+    setEditItemPrice(String(items[idx].precoUnitario));
+  };
+
+  const saveEditItem = () => {
+    if (editingItemIdx === null) return;
+    const qty = Number(editItemQty) || 1;
+    const price = Number(editItemPrice) || 0;
+    setItems(prev => prev.map((item, i) =>
+      i === editingItemIdx ? { ...item, quantidade: qty, precoUnitario: price } : item
+    ));
+    setEditingItemIdx(null);
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemIdx(null);
   };
 
   const totalProdutos = items.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0);
@@ -850,17 +874,48 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose, editPro
                 <div className="max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
                   {items.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between px-3 py-1.5 hover:bg-blue-50/50 dark:hover:bg-slate-700/50">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate">
-                          <span className="font-mono text-blue-600">{item.codigoItem}</span> — {item.descricaoItem}
-                        </p>
-                        <p className="text-[10px] text-slate-500">
-                          {item.quantidade} {item.unidadeMedida} × {formatCurrency(item.precoUnitario)} = {formatCurrency(item.quantidade * item.precoUnitario)}
-                        </p>
-                      </div>
-                      <button onClick={() => removeProduct(idx)} className="p-1 hover:bg-red-100 rounded">
-                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                      </button>
+                      {editingItemIdx === idx ? (
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate mb-1">
+                            <span className="font-mono text-blue-600">{item.codigoItem}</span> — {item.descricaoItem}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-slate-500">Qtd:</span>
+                              <input type="number" min="1" value={editItemQty} onChange={(e) => setEditItemQty(e.target.value)} className="w-16 text-xs border border-blue-300 rounded px-1 py-0.5 text-center" autoFocus />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-slate-500">Preço:</span>
+                              <input type="number" step="0.01" min="0" value={editItemPrice} onChange={(e) => setEditItemPrice(e.target.value)} className="w-20 text-xs border border-blue-300 rounded px-1 py-0.5 text-center" />
+                            </div>
+                            <button onClick={saveEditItem} className="p-1 hover:bg-green-100 rounded" title="Salvar">
+                              <Check className="w-3.5 h-3.5 text-green-600" />
+                            </button>
+                            <button onClick={cancelEditItem} className="p-1 hover:bg-slate-100 rounded" title="Cancelar">
+                              <X className="w-3.5 h-3.5 text-slate-500" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate">
+                              <span className="font-mono text-blue-600">{item.codigoItem}</span> — {item.descricaoItem}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              {item.quantidade} {item.unidadeMedida} × {formatCurrency(item.precoUnitario)} = {formatCurrency(item.quantidade * item.precoUnitario)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => startEditItem(idx)} className="p-1 hover:bg-amber-100 rounded" title="Editar">
+                              <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                            </button>
+                            <button onClick={() => removeProduct(idx)} className="p-1 hover:bg-red-100 rounded" title="Excluir">
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
