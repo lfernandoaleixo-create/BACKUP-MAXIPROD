@@ -4438,6 +4438,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const [convertingProposalId, setConvertingProposalId] = useState<number | null>(null);
   const [editingProposalId, setEditingProposalId] = useState<number | null>(null);
   const [expandedPedidoApp, setExpandedPedidoApp] = useState<number | null>(null);
+  const [proposalSearchQuery, setProposalSearchQuery] = useState("");
 
   const filteredPedidos = useMemo(() => {
     if (!pedidos) return [];
@@ -4838,16 +4839,31 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       )}
 
       {/* Histórico de Propostas */}
-      {propostas && propostas.length > 0 && (
+    {propostas && propostas.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-700 shadow-sm overflow-hidden">
           <div className="px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Propostas Salvas ({propostas.length})</span>
             </div>
+            <input
+              type="text"
+              placeholder="Buscar proposta por cliente, código..."
+              value={proposalSearchQuery}
+              onChange={(e) => setProposalSearchQuery(e.target.value)}
+              className="mt-2 w-full px-3 py-1.5 text-xs border border-blue-200 dark:border-blue-700 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
+            />
           </div>
           <div className="divide-y divide-slate-100 dark:divide-slate-700">
-            {propostas.map((prop: any) => {
+            {propostas.filter((prop: any) => {
+              if (!proposalSearchQuery.trim()) return true;
+              const q = proposalSearchQuery.trim().toUpperCase();
+              const razao = (prop.razaoSocial || "").toUpperCase();
+              const fantasia = (prop.nomeFantasia || "").toUpperCase();
+              const cnpj = (prop.cnpjCpf || "").replace(/\D/g, "");
+              const id = String(prop.id);
+              return razao.includes(q) || fantasia.includes(q) || cnpj.includes(q.replace(/\D/g, "")) || id.includes(q);
+            }).map((prop: any) => {
               const isExpired = prop.dataValidade && new Date(prop.dataValidade.split('/').reverse().join('-')) < new Date();
               const statusColor = prop.status === 'convertida' ? 'bg-green-50 text-green-600' :
                 prop.status === 'rascunho' && isExpired ? 'bg-red-50 text-red-600' :
@@ -6033,8 +6049,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const quoteAllCarriersMut = trpc.salesOrders.quoteAllCarriers.useMutation();
 
   const handleInlineFreightSimulation = async () => {
-    if (!cep || cep.replace(/\D/g, '').length < 8) {
-      alert('CEP do cliente não preenchido');
+    // Use delivery CEP if delivery address is different
+    const freightCep = (enderecoEntregaMesmo === false && entregaCep.trim()) ? entregaCep.trim() : cep;
+    if (!freightCep || freightCep.replace(/\D/g, '').length < 8) {
+      alert('CEP de destino não preenchido (verifique endereço de entrega)');
       return;
     }
     if (items.length === 0) {
@@ -6081,7 +6099,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         ? itensBonificacao.reduce((s, b) => s + (b.valorUnitario || 0) * b.quantidade, 0)
         : 0;
       const result = await quoteAllCarriersMut.mutateAsync({
-        cepDestino: cep.replace(/\D/g, ''),
+        cepDestino: freightCep.replace(/\D/g, ''),
         cnpjDestinatario: cnpjCpf?.replace(/\D/g, '') || undefined,
         peso: totalPeso,
         metroCubico: totalCubagem > 0 ? totalCubagem : undefined as any,

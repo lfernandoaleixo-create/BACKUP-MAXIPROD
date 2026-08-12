@@ -3130,11 +3130,18 @@ export const salesOrderRouter = router({
           }
         }
 
-        if (foundClient) {
-          cnpjDestinatario = (foundClient.cnpjCpf || "").replace(/\D/g, "");
-          if (foundClient.cep) cepDestino = foundClient.cep.replace(/\D/g, "");
-          tipoContribuinte = foundClient.tipoContribuinte || "Contribuinte";
-          console.log(`[QuoteByPedido] Found client in vendor_clients: ${foundClient.razaoSocial}, CNPJ: ${cnpjDestinatario}`);
+      if (foundClient) {
+        cnpjDestinatario = (foundClient.cnpjCpf || "").replace(/\D/g, "");
+        // Use delivery address CEP if different from client address
+        if (foundClient.enderecoEntregaMesmo === 0 && foundClient.entregaCep) {
+          cepDestino = foundClient.entregaCep.replace(/\D/g, "");
+          console.log(`[QuoteByPedido] Using DELIVERY address CEP: ${cepDestino} (different from client)`);
+        } else if (foundClient.cep) {
+          cepDestino = foundClient.cep.replace(/\D/g, "");
+          console.log(`[QuoteByPedido] Using CLIENT address CEP: ${cepDestino}`);
+        }
+        tipoContribuinte = foundClient.tipoContribuinte || "Contribuinte";
+        console.log(`[QuoteByPedido] Found client in vendor_clients: ${foundClient.razaoSocial}, CNPJ: ${cnpjDestinatario}, CEP: ${cepDestino}`);
         } else {
           console.log(`[QuoteByPedido] Client not in vendor_clients, trying sales_order_requests...`);
           // Strategy 5: Search in sales_order_requests (manual orders) for the CNPJ
