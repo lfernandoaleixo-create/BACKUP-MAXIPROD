@@ -2410,12 +2410,11 @@ export const salesOrderRouter = router({
         const venc = d.vencimentoData || "";
         let diasAtraso = 0;
         let vencido = false;
+        // Only mark as vencido if past due date (for display purposes)
+        // But the INADIMPLENTE status will come from cobranca_planilha below
         if (venc && venc <= todayStr) {
-          vencido = true;
-          titulosVencidos++;
           const vencDate = new Date(venc);
           diasAtraso = Math.floor((today.getTime() - vencDate.getTime()) / (1000 * 60 * 60 * 24));
-          if (diasAtraso > diasAtrasoMax) diasAtrasoMax = diasAtraso;
         }
         return {
           id: d.id,
@@ -2429,6 +2428,38 @@ export const salesOrderRouter = router({
           diasAtraso,
         };
       });
+
+      // Use cobranca_planilha as source of truth for inadimplência (same as ClientSearchCard)
+      try {
+        const cobrancaRows = await db.select().from(cobrancaPlanilha)
+          .where(and(
+            eq(cobrancaPlanilha.ativo, true),
+            sql`LOWER(${cobrancaPlanilha.empresa}) LIKE ${`%${clientNameLower}%`}`
+          ));
+        if (cobrancaRows.length > 0) {
+          titulosVencidos = cobrancaRows.length;
+          diasAtrasoMax = Math.max(...cobrancaRows.map(r => r.diasVencidos || 0));
+          // Mark corresponding debt items as vencido
+          for (const item of debtItems) {
+            if (item.diasAtraso > 0) {
+              // Only mark as vencido if it's in the cobranca_planilha
+              const inCobranca = cobrancaRows.some(r => 
+                r.documento === item.documento || 
+                (r.valor && Math.abs(parseFloat(String(r.valor)) - item.valor) < 1)
+              );
+              if (inCobranca) item.vencido = true;
+            }
+          }
+        } else {
+          // Client NOT in cobranca_planilha = not inadimplente
+          titulosVencidos = 0;
+          diasAtrasoMax = 0;
+        }
+      } catch (err: any) {
+        // Fallback: if cobranca_planilha query fails, don't mark as inadimplente
+        titulosVencidos = 0;
+        diasAtrasoMax = 0;
+      }
 
       const totalCompras = uniquePurchases.reduce((sum, p) => sum + p.valor, 0);
       const ultimaCompra = uniquePurchases.length > 0 ? uniquePurchases[0].dataEmissao : null;
