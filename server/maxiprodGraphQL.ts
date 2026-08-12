@@ -971,7 +971,31 @@ async function saveAllData(
   for (let dbAttempt = 1; dbAttempt <= DB_MAX_RETRIES; dbAttempt++) {
   try {
   await db.transaction(async (tx) => {
-    // Save stock items - delete ALL items and re-insert (sync provides complete dataset including madeira/manual items)
+    // Save stock items - preserve manually-set pesoBruto and descricaoComplementar
+    // First, save existing values that were manually set (GraphQL returns NULL for some products)
+    const existingSpecs = await tx.select({
+      codigoItem: stockItems.codigoItem,
+      pesoBruto: stockItems.pesoBruto,
+      descricaoComplementar: stockItems.descricaoComplementar,
+    }).from(stockItems);
+    const specsMap = new Map<string, { pesoBruto: string | null; descricaoComplementar: string | null }>();
+    for (const spec of existingSpecs) {
+      if (spec.pesoBruto || spec.descricaoComplementar) {
+        specsMap.set(spec.codigoItem, { pesoBruto: spec.pesoBruto, descricaoComplementar: spec.descricaoComplementar });
+      }
+    }
+    // Apply preserved specs: if GraphQL returned NULL but we had a value, keep it
+    for (const item of stockData) {
+      const existing = specsMap.get((item as any).codigoItem);
+      if (existing) {
+        if (!(item as any).pesoBruto && existing.pesoBruto) {
+          (item as any).pesoBruto = existing.pesoBruto;
+        }
+        if (!(item as any).descricaoComplementar && existing.descricaoComplementar) {
+          (item as any).descricaoComplementar = existing.descricaoComplementar;
+        }
+      }
+    }
     await tx.delete(stockItems);
     if (stockData.length > 0) {
       for (let i = 0; i < stockData.length; i += 200) {
