@@ -453,7 +453,7 @@ export default function GestorAprovacoes(props: any = {}) {
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              {f === "todos" ? "Todos" : f === "pendente" ? `Pendentes (${stats.pendentes})` : f === "aprovado" ? "Aprovados" : "Recusados"}
+              {f === "todos" ? `Todos (${stats.total})` : f === "pendente" ? `Pendentes (${stats.pendentes})` : f === "aprovado" ? `Aprovados (${stats.aprovados})` : `Recusados (${stats.rejeitados})`}
             </button>
           ))}
         </div>

@@ -5,18 +5,25 @@
  * Opções: Continuar, Ocultar ou Excluir (com dupla confirmação).
  */
 import { useState } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
 import { useOrderDraft } from "@/contexts/OrderDraftContext";
 import { ShoppingCart, Trash2, X, ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function FloatingOrderDraft() {
   const { draft, hasDraft, clearDraft } = useOrderDraft();
+  const { operator } = useOperator();
   const [, setLocation] = useLocation();
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSecondConfirm, setShowSecondConfirm] = useState(false);
   const [minimized, setMinimized] = useState(false);
-
   if (!hasDraft || !draft) return null;
+  // Only show for the operator who owns this draft
+  const operatorName = (operator?.name || "").toUpperCase().trim();
+  const draftSellerName = (draft.sellerName || "").toUpperCase().trim();
+  if (operatorName && draftSellerName && !draftSellerName.includes(operatorName.split(" ")[0]) && !operatorName.includes(draftSellerName.split(" ")[0])) {
+    return null;
+  }
 
   const itemCount = draft.items?.length || 0;
   const totalValue = (draft.items || []).reduce((sum, i) => sum + (Number(i.precoUnitario) || 0) * (Number(i.quantidade) || 0), 0);
