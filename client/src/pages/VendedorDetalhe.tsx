@@ -4886,26 +4886,47 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                           onClick={(e) => {
                             e.stopPropagation();
                             // Pre-fill draft with proposal data and open NewOrderInline
-                            const draftData = {
-                              cnpjCpf: prop.cnpjCpf || "",
-                              razaoSocial: prop.razaoSocial || "",
-                              nomeFantasia: prop.nomeFantasia || "",
-                              inscricaoEstadual: prop.inscricaoEstadual || "",
-                              cep: prop.cep || "",
-                              endereco: prop.endereco || "",
-                              numero: prop.numero || "",
-                              bairro: prop.bairro || "",
-                              municipio: prop.municipio || "",
-                              uf: prop.uf || "",
-                              telefone1: prop.telefone || "",
-                              emailContato: prop.emailContato || "",
+                           const draftData = {
+                              sellerId: sellerId,
+                              client: {
+                                cnpjCpf: prop.cnpjCpf || "",
+                                razaoSocial: prop.razaoSocial || "",
+                                nomeFantasia: prop.nomeFantasia || "",
+                                inscricaoEstadual: prop.inscricaoEstadual || "",
+                                cep: prop.cep || "",
+                                endereco: prop.endereco || "",
+                                numero: prop.numero || "",
+                                complemento: "",
+                                bairro: prop.bairro || "",
+                                municipio: prop.municipio || "",
+                                uf: prop.uf || "",
+                                telefone1: prop.telefone || "",
+                                emailNfe: prop.emailContato || "",
+                                emailContato: prop.emailContato || "",
+                                segmento: "",
+                                tipoContribuinte: "",
+                                regimeTributario: "Normal",
+                              },
+                              items: (prop.items || []).map((it: any) => ({
+                                codigoItem: it.codigoItem || it.codigo || "",
+                                descricaoItem: it.descricaoItem || it.descricao || "",
+                                quantidade: it.quantidade || 1,
+                                valorUnitario: it.valorUnitario || it.preco || 0,
+                                pesoBrutoCaixa: it.pesoBrutoCaixa || 0,
+                                dimsStr: it.dimsStr || it.dimensoes || "",
+                                subgrupo: it.subgrupo || "",
+                                grupo: it.grupo || "",
+                                unidade: it.unidade || "CX",
+                              })),
                               formaPagamento: prop.formaPagamento || "",
                               meioPagamento: prop.meioPagamento || "",
                               condicaoPagamento: prop.condicaoPagamento || "",
                               observacoes: prop.observacoes || "",
-                              items: prop.items || [],
-                              fromProposalId: prop.id,
-                            };
+                              situacaoCobranca: "",
+                              estadoConfiguravel: "",
+                              step: "produtos",
+                             fromProposalId: prop.id,
+                           };
                             // Save to localStorage as draft so NewOrderInline picks it up
                             localStorage.setItem(`order_draft_${sellerId}`, JSON.stringify(draftData));
                             setConvertingProposalId(prop.id);
