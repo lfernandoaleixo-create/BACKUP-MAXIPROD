@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha, vendorClients, accountsReceivable, priceTables, priceTableItems, appSettings, systemNotifications, notificationReads, importPos, importPoProducts, commissionMatrix, operators, orderApprovalHistory, productVariants, orderTimelineRules, freightSimulations, sintegraConsultas, serasaConsultas } from "../drizzle/schema";
 import { parseDimensions } from "../shared/parseDimensions";
-import { sql, and, eq, desc, like, or, inArray, isNull, gte } from "drizzle-orm";
+import { sql, and, eq, desc, like, or, inArray, isNull, isNotNull, gte, lt } from "drizzle-orm";
 import { calcularImpostos, calcularMargem, type TipoProduto, type TipoContribuinte } from "./taxCalculation";
 import { cotarBraspress, cotarTodosCnpjs, BRASPRESS_CNPJS } from "./braspressApi";
 import { quoteAlfaFreight, quoteAllAlfaCnpjs } from "./alfaApi";
@@ -420,21 +420,68 @@ export const salesOrderRouter = router({
       }
 
       // Enrich Maxiprod clients with CNPJ from cobranca_planilha
-      for (const row of maxiprodUnique) {
-        if (!row.cnpjCpf) {
-          const key = row.razaoSocial.toUpperCase().trim();
-          // Try exact match first
-          if (cnpjMap.has(key)) {
-            row.cnpjCpf = cnpjMap.get(key)!;
-          } else {
-            // Try partial match
-            for (const [empresa, cnpj] of Array.from(cnpjMap.entries())) {
-              if (empresa.includes(key) || key.includes(empresa)) {
-                row.cnpjCpf = cnpj;
-                break;
+     for (const row of maxiprodUnique) {
+       if (!row.cnpjCpf) {
+         const key = row.razaoSocial.toUpperCase().trim();
+         // Try exact match first
+         if (cnpjMap.has(key)) {
+           row.cnpjCpf = cnpjMap.get(key)!;
+         } else {
+           // Try partial match
+           for (const [empresa, cnpj] of Array.from(cnpjMap.entries())) {
+             if (empresa.includes(key) || key.includes(empresa)) {
+               row.cnpjCpf = cnpj;
+               break;
+             }
+           }
+         }
+       }
+     }
+
+      // 3b. For Maxiprod clients still missing CNPJ, try vendor_clients by razaoSocial
+      const stillMissingCnpj = maxiprodUnique.filter(c => !c.cnpjCpf);
+      if (stillMissingCnpj.length > 0) {
+        try {
+          const vcLookup = await db.select({
+            razaoSocial: vendorClients.razaoSocial,
+            cnpjCpf: vendorClients.cnpjCpf,
+            nomeFantasia: vendorClients.nomeFantasia,
+          })
+          .from(vendorClients)
+          .where(
+            or(
+              ...stillMissingCnpj.map(c => sql`LOWER(${vendorClients.razaoSocial}) LIKE ${`%${c.razaoSocial.toLowerCase().substring(0, 25)}%`}`)
+            )
+          )
+          .limit(50);
+          
+          const vcCnpjMap = new Map<string, { cnpj: string; fantasia: string }>();
+          for (const vc of vcLookup) {
+            if (vc.cnpjCpf && vc.razaoSocial) {
+              vcCnpjMap.set(vc.razaoSocial.toUpperCase().trim(), { cnpj: vc.cnpjCpf, fantasia: vc.nomeFantasia || "" });
+            }
+          }
+          
+          for (const row of stillMissingCnpj) {
+            const key = row.razaoSocial.toUpperCase().trim();
+            if (vcCnpjMap.has(key)) {
+              row.cnpjCpf = vcCnpjMap.get(key)!.cnpj;
+              if (!row.nomeFantasia && vcCnpjMap.get(key)!.fantasia) {
+                row.nomeFantasia = vcCnpjMap.get(key)!.fantasia;
+              }
+            } else {
+              // Partial match
+              for (const [empresa, data] of Array.from(vcCnpjMap.entries())) {
+                if (empresa.includes(key) || key.includes(empresa)) {
+                  row.cnpjCpf = data.cnpj;
+                  if (!row.nomeFantasia && data.fantasia) row.nomeFantasia = data.fantasia;
+                  break;
+                }
               }
             }
           }
+        } catch (e) {
+          // Silently continue
         }
       }
 
@@ -4801,6 +4848,8 @@ export const salesOrderRouter = router({
   startEditing: publicProcedure
     .input(z.object({ orderId: z.number(), editorName: z.string() }))
     .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
       // Auto-unlock stale edits (older than 30 minutes)
       const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
       await db.update(salesOrderRequests)
