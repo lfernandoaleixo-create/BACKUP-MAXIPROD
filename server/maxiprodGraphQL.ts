@@ -2256,6 +2256,44 @@ export async function runGraphQLSync(): Promise<{
 
     console.log(`[GraphQL Sync] Fetched: ${stockData.length}est ${orderData.length}ped ${salesData.length}vnd ${poData.length}po ${payableData.length}pg ${receivableData.length}rc`);
 
+    // ─── Enrich items missing pesoBruto/descricaoComplementar from Maxiprod 'itens' catalog ───
+    const itemsMissingSpecs = stockData.filter((s: any) => !s.pesoBruto || !s.descricaoComplementar);
+    if (itemsMissingSpecs.length > 0) {
+      console.log(`[GraphQL Sync] Enriching ${itemsMissingSpecs.length} items missing pesoBruto/dimensions from 'itens' catalog...`);
+      try {
+        const catalogItems = await fetchAllPages("itens", (skip, take) => `{
+          itens(skip: ${skip}, take: ${take}, where: { estado: { eq: ATIVO } }) {
+            totalCount
+            items {
+              codigo
+              pesoBruto
+              descricaoComplementar
+            }
+          }
+        }`);
+        const catalogMap = new Map<string, { pesoBruto: number | null; descricaoComplementar: string | null }>();
+        for (const ci of catalogItems as any[]) {
+          catalogMap.set(ci.codigo, { pesoBruto: ci.pesoBruto, descricaoComplementar: ci.descricaoComplementar });
+        }
+        let enriched = 0;
+        for (const item of stockData) {
+          const catalog = catalogMap.get((item as any).codigoItem);
+          if (catalog) {
+            if (!(item as any).pesoBruto && catalog.pesoBruto != null) {
+              (item as any).pesoBruto = String(catalog.pesoBruto);
+              enriched++;
+            }
+            if (!(item as any).descricaoComplementar && catalog.descricaoComplementar) {
+              (item as any).descricaoComplementar = catalog.descricaoComplementar;
+            }
+          }
+        }
+        console.log(`[GraphQL Sync] Enriched ${enriched} items with pesoBruto from catalog (${catalogItems.length} catalog items fetched)`);
+      } catch (e: any) {
+        console.warn(`[GraphQL Sync] Failed to enrich from catalog: ${e.message}`);
+      }
+    }
+
     // Save data sequentially to avoid database deadlocks
     // Retry up to 2 times on transient DB errors
     const saveWithRetry = async (fn: () => Promise<void>, label: string, retries = 2) => {
