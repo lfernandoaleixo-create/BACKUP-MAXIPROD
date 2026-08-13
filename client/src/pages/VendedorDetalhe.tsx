@@ -7544,7 +7544,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   {zapPassword.toLowerCase() !== "zap" ? (
                     <>
                       <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-amber-500" /> % Nota Fiscal
+                        <Lock className="w-4 h-4 text-amber-500" /> Tipo de Faturamento
                       </h3>
                       <input
                         type="password"
@@ -7565,13 +7565,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     </>
                   ) : (
                     <>
-                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">% Nota Fiscal</h3>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">Tipo de Faturamento</h3>
                       <div className="space-y-2">
                         {[
                           { label: "Zap 0 — Sem nota fiscal", value: 0 },
                           { label: "Zap 1 — Nota cheia (100%)", value: 100 },
                           { label: "Zap 2 — 50% de nota", value: 50 },
-                          { label: "Zap 3 — 30% de nota", value: 30 },
+                          { label: "Zap 3 — 1/3 de nota (33%)", value: 33 },
                           { label: "Zap 4 — 25% de nota", value: 25 },
                           { label: "Zap 5 — 20% de nota", value: 20 },
                         ].map(opt => (
