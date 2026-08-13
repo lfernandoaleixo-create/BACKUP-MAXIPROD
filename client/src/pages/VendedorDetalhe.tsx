@@ -7575,7 +7575,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 onCustosAdicionaisChange={setMarginCustosAdicionais}
                 onUfDestinoChange={setMarginUfSimulacao}
                 nfPercent={nfPercent}
-                onNfPercentClick={() => setShowZapModal(true)}
               />
             )}
             {/* Zap NF Percentage Modal */}
@@ -7609,11 +7608,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">Tipo de Faturamento</h3>
                       <div className="space-y-2">
                         {[
+                          { label: "Normal — Nota cheia (100%)", value: 100 },
                           { label: "Zap 0 — Sem nota fiscal", value: 0 },
-                          { label: "Zap 1 — Nota cheia (100%)", value: 100 },
                           { label: "Zap 2 — 50% de nota", value: 50 },
                           { label: "Zap 3 — 1/3 de nota (33%)", value: 33 },
-                          { label: "Zap 4 — 25% de nota", value: 25 },
                           { label: "Zap 5 — 20% de nota", value: 20 },
                         ].map(opt => (
                           <button
@@ -8567,6 +8565,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                {isSimulation ? 'Cancelar' : 'Voltar'}
              </button>
               <div className="flex gap-2 items-center flex-wrap justify-end">
+                <button
+                  onClick={() => setShowZapModal(true)}
+                  className={`px-2.5 sm:px-4 py-2 ${nfPercent !== null ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400" : "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-700"} border text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1 sm:gap-1.5 text-amber-800 dark:text-amber-300`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  {nfPercent !== null ? `T.F: ${nfPercent === 100 ? "Normal" : nfPercent === 0 ? "Zap0" : nfPercent === 50 ? "Zap2" : nfPercent === 33 ? "Zap3" : "Zap5"}` : "Tipo de Faturamento"}
+                </button>
                 {showCustosDeVenda && (
                 <button
                   onClick={() => setStep("pagamento")}

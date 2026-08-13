@@ -315,20 +315,7 @@ export function MarginSimulationParams({
         />
         <span className="text-[9px] text-indigo-600">%</span>
       </div>
-      {onNfPercentClick && (
-        <button
-          onClick={onNfPercentClick}
-          className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 border border-amber-300 hover:bg-amber-200 transition-colors"
-          title="Tipo de Faturamento"
-        >
-          <span className="text-[9px] text-amber-700 font-bold">Tipo de Faturamento</span>
-          {nfPercent !== undefined && nfPercent !== null && (
-            <span className="text-[10px] font-bold text-amber-800 ml-0.5">
-              — {nfPercent === 0 ? "Zap0" : nfPercent === 100 ? "Zap1" : nfPercent === 50 ? "Zap2" : nfPercent === 33 ? "Zap3" : nfPercent === 25 ? "Zap4" : "Zap5"}
-            </span>
-          )}
-        </button>
-      )}
+
     </div>
   );
 }
