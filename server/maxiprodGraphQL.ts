@@ -2261,16 +2261,16 @@ export async function runGraphQLSync(): Promise<{
     if (itemsMissingSpecs.length > 0) {
       console.log(`[GraphQL Sync] Enriching ${itemsMissingSpecs.length} items missing pesoBruto/dimensions from 'itens' catalog...`);
       try {
-        const catalogItems = await fetchAllPages("itens", (skip, take) => `{
-          itens(skip: ${skip}, take: ${take}, where: { estado: { eq: ATIVO } }) {
-            totalCount
-            items {
-              codigo
-              pesoBruto
-              descricaoComplementar
-            }
-          }
-        }`);
+       const catalogItems = await fetchAllPages("itens", (skip, take) => `{
+         itens(skip: ${skip}, take: ${take}) {
+           totalCount
+           items {
+             codigo
+             pesoBruto
+             descricaoComplementar
+           }
+         }
+       }`);
         const catalogMap = new Map<string, { pesoBruto: number | null; descricaoComplementar: string | null }>();
         for (const ci of catalogItems as any[]) {
           catalogMap.set(ci.codigo, { pesoBruto: ci.pesoBruto, descricaoComplementar: ci.descricaoComplementar });
