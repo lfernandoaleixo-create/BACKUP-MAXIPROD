@@ -6407,7 +6407,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       nosPagamos: true,
       motivo: inscricaoEstadual?.toUpperCase() === "ISENTO" || !inscricaoEstadual ? "Cliente sem IE" : "Cliente é CPF"
     };
-  }, [items, uf, entregaUf, enderecoEntregaMesmo, inscricaoEstadual, cnpjCpf]);
+  }, [items, uf, entregaUf, enderecoEntregaMesmo, inscricaoEstadual, cnpjCpf, nfPercent]);
   const [showZapModal, setShowZapModal] = useState(false);
   const [zapPassword, setZapPassword] = useState("");
   const [zapPasswordError, setZapPasswordError] = useState(false);
