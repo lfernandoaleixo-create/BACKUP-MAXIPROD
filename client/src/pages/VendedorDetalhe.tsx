@@ -8771,6 +8771,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             items={items}
             sellerId={sellerId}
             skipMarginBlock={!isMonthlyMarginBlockActive && isGestorMode}
+            nfPercent={nfPercent}
             condicaoPagamento={condicaoPagamento}
             setCondicaoPagamento={setCondicaoPagamento}
             valorFrete={valorFrete}
