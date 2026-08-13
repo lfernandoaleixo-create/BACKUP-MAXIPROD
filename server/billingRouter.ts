@@ -912,9 +912,13 @@ export const billingRouter = router({
                 // NÃO remover billingAuthorizations - se o pedido já foi autorizado a faturar,
                 // ele deve PERMANECER autorizado. A autorização de faturamento só deve ser
                 // removida quando o pedido é efetivamente faturado (parcial ou total).
-                await db.delete(productionAcceptance).where(eq(productionAcceptance.pedido, pedido));
-                // REMOVIDO: await db.delete(billingAuthorizations).where(eq(billingAuthorizations.pedido, pedido));
-                console.log(`[ObsComercial] Pedido #${pedido} voltou para Aceite de Produção - observação comercial alterada no Maxiprod (autorização de faturamento mantida)`);
+                // PROTEÇÃO: Em vez de DELETAR o aceite (que perde o histórico), apenas marcar como modificado.
+                // Isso faz o pedido aparecer no Aceite com sinalização visual vermelha,
+                // mas se o usuário já aceitou, o registro não é perdido permanentemente.
+                await db.update(productionAcceptance)
+                  .set({ wasModified: true, modifiedAt: new Date() })
+                  .where(eq(productionAcceptance.pedido, pedido));
+                console.log(`[ObsComercial] Pedido #${pedido} marcado como modificado - observação comercial alterada no Maxiprod`);
 
                 if (existingObs.length === 0) {
                   const obsPreview = newObs.length > 80 ? newObs.substring(0, 80) + "..." : newObs;
