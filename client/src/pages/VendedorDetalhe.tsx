@@ -6369,7 +6369,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
   const [marginUfSimulacao, setMarginUfSimulacao] = useState(uf || "MG");
   // NF Percentage (Zap system) - affects tax deduction in margin calculation
-  const [nfPercent, setNfPercent] = useState<number | null>(null); // null = not selected yet, 100 = Zap1, 0 = Zap0
+  const [nfPercent, setNfPercent] = useState<number>(100); // 100 = Normal (nota cheia), 0 = Zap0, 50 = Zap2, 33 = Zap3, 20 = Zap5
 
   // DIFAL calculation - auto-detect if Grupo Fox pays based on client IE/CPF
   const difalInfo = useMemo(() => {
@@ -8567,10 +8567,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <div className="flex gap-2 items-center flex-wrap justify-end">
                 <button
                   onClick={() => setShowZapModal(true)}
-                  className={`px-2.5 sm:px-4 py-2 ${nfPercent !== null ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400" : "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-700"} border text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1 sm:gap-1.5 text-amber-800 dark:text-amber-300`}
+                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-slate-700 to-slate-800 dark:from-slate-600 dark:to-slate-700 border border-slate-600 text-[10px] sm:text-xs font-semibold rounded-lg hover:from-slate-600 hover:to-slate-700 transition-all shadow-sm flex items-center gap-1.5 text-white"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  {nfPercent !== null ? `T.F: ${nfPercent === 100 ? "Normal" : nfPercent === 0 ? "Zap0" : nfPercent === 50 ? "Zap2" : nfPercent === 33 ? "Zap3" : "Zap5"}` : "Tipo de Faturamento"}
+                  <Lock className="w-3 h-3 text-amber-400" />
+                  <span>T.F:</span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold text-[10px]">
+                    {nfPercent === 100 ? "Normal" : nfPercent === 0 ? "Zap 0" : nfPercent === 50 ? "Zap 2" : nfPercent === 33 ? "Zap 3" : "Zap 5"}
+                  </span>
                 </button>
                 {showCustosDeVenda && (
                 <button
