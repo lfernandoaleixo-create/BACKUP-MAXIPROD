@@ -2939,6 +2939,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     <div className="space-y-4">
       {/* Simple commission % for order form */}
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+        <button onClick={() => setShowCommSection(!showCommSection)} className="w-full flex items-center justify-between">
           <h4 className="text-sm font-bold text-amber-800 dark:text-amber-200">% Comissão no Pedido de Venda</h4>
           <span className="text-amber-600">{showCommSection ? "▲" : "▼"}</span>
         </button>
