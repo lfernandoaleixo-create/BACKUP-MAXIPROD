@@ -7012,3 +7012,4 @@
 - [ ] Reverter pedido em proposta: quando proposta vira pedido e vendedor desiste, botão para reverter pedido de volta para proposta (sem cancelar/perder a proposta original)
 - [ ] PDF do frete na proposta de venda: botão azul "Exportar PDF" após simular frete na proposta não está gerando nada — fazer funcionar
 - [ ] Relatório Comparativo na proposta de venda: adicionar botão ao lado do PDF de frete na proposta
+- [x] Fix filtros de categoria (Madeira/Bambu/Fibra) no pedido de venda: madeira não aparecia (faltava case no categoryFilters.some), agora usa grupoCodigo (18=madeira, 20=bambu, 21=fibra) como fonte primária com fallback por descrição

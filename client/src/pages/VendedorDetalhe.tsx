@@ -6533,20 +6533,42 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         flexMatchMultiple([p.codigoItem, p.descricaoItem, p.codigoBarras || "", p.grupo || ""], productSearch)
       );
     }
-    if (categoryFilters.length > 0) {
-      filtered = filtered.filter((p: any) => {
-        const desc = (p.descricaoItem || "").toUpperCase();
-        const grupo = (p.grupo || "").toUpperCase();
-        const isMadeira = desc.includes("MADEIRA") || grupo === "ESPETO" || grupo === "PALITO" || grupo === "VARETA" || desc.includes("PALITO DE DENTE") || desc.includes("VARETA DE APITO") || desc.includes("VARETA PARA VELA") || desc.includes("VARETA PARA ALGOD");
-        const isBambu = desc.includes("BAMBU") || desc.includes("HASHI") || desc.includes("ESPETO DE BAMBU") || desc.includes("PALITO DE BAMBU");
-        const isFibra = desc.includes("FIBRA");
-        return categoryFilters.some(cat => {
-          if (cat === "bambu") return isBambu;
-          if (cat === "fibra") return isFibra;
-          return false;
-        });
+  if (categoryFilters.length > 0) {
+    filtered = filtered.filter((p: any) => {
+      const desc = (p.descricaoItem || "").toUpperCase();
+      const grupo = (p.grupo || "").toUpperCase();
+      const gc = (p.grupoCodigo || "").trim();
+      // Classification uses grupoCodigo as primary source of truth:
+      // MADEIRA = grupoCodigo "18" (superGrupo 16 = INDUSTRIALIZAÇÃO)
+      // BAMBU = grupoCodigo "20" (superGrupo 12 = IMPORTAÇÃO - REVENDA, subgrupo BAMBU)
+      // FIBRA = grupoCodigo "21" (superGrupo 12 = IMPORTAÇÃO - REVENDA, subgrupo FIBRA)
+      let isMadeira = false;
+      let isBambu = false;
+      let isFibra = false;
+      if (gc === "18") {
+        isMadeira = true;
+      } else if (gc === "20") {
+        isBambu = true;
+      } else if (gc === "21") {
+        isFibra = true;
+      } else {
+        // Fallback for items without grupoCodigo: use description/grupo name
+        if (desc.includes("FIBRA")) {
+          isFibra = true;
+        } else if (desc.includes("BAMBU") || desc.includes("HASHI")) {
+          isBambu = true;
+        } else if (grupo === "ESPETO" || grupo === "PALITO" || grupo === "VARETA" || desc.includes("MADEIRA") || desc.includes("PALITO DE DENTE") || desc.includes("VARETA DE APITO") || desc.includes("VARETA PARA VELA") || desc.includes("VARETA PARA ALGOD")) {
+          isMadeira = true;
+        }
+      }
+      return categoryFilters.some(cat => {
+        if (cat === "madeira") return isMadeira;
+        if (cat === "bambu") return isBambu;
+        if (cat === "fibra") return isFibra;
+        return false;
       });
-    }
+    });
+  }
     return filtered;
   }, [productsQuery.data, items, productSearch, categoryFilters]);
 
