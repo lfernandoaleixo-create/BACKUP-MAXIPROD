@@ -429,20 +429,6 @@ export async function generateOrderPdf(order: OrderForPdf, showValues: boolean =
     doc.text(order.emailContato, margin + 4, finalY);
   }
 
-  // ===== BOTTOM FOOTER (Company data) =====
-  const footerY = pageHeight - 12;
-  doc.setDrawColor(...LIGHT_GRAY);
-  doc.setLineWidth(0.2);
-  doc.line(margin, footerY - 2, pageWidth - margin, footerY - 2);
-
-  doc.setFontSize(6.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...DARK_GRAY);
-  doc.text("PALITOS INDUSTRIA E COMERCIO LTDA (35.562.762/0001-29)", pageWidth / 2, footerY, { align: "center" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.text("RODOVIA RODOVIA AMG 1650, 1070, bairro ZONA RURAL - Ribeirão Vermelho/MG CEP 37.264-000", pageWidth / 2, footerY + 3, { align: "center" });
-  doc.text("3536647008  administrativo@grupo-fox.com", pageWidth / 2, footerY + 6, { align: "center" });
 
   // ===== DOWNLOAD =====
   doc.save(`Pedido_${order.pedido}_GrupoFox.pdf`);
