@@ -6105,7 +6105,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         peso: totalPeso,
         metroCubico: totalCubagem > 0 ? totalCubagem : undefined as any,
         volumes: totalVolumes,
-        valorMercadoria: totalValor + valorBonificacao,
+        // Zap (Tipo de Faturamento) afeta o valor declarado na nota para cálculo de frete
+        // Peso e cubagem NÃO mudam, apenas o valor
+        valorMercadoria: ((totalValor + valorBonificacao) * ((nfPercent ?? 100) / 100)),
       });
       setInlineFreightResults(result as any);
     } catch (err: any) {

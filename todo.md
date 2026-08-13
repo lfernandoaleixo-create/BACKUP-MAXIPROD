@@ -7028,3 +7028,4 @@
 - [x] Tabela DIFAL por estado (importado vs industrializado) - saídas de MG 2026
 - [x] Mostrar valor DIFAL no pedido quando nós pagamos + integrar na margem
 - [ ] Simplificar Custos de Venda: resumo simples (valor vendido vs custo, impostos, frete, gastos adicionais)
+- [x] Zap (Tipo de Faturamento) afeta valor declarado na simulação de frete (peso/cubagem não muda)

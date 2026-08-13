@@ -271,7 +271,7 @@ export default function CustosDeVendaStep({
       saveSimulationMutation.mutate({
         cepDestino: cep.replace(/\D/g, ""),
         cnpjDestinatario: cnpjCpf.replace(/\D/g, "") || undefined,
-        valorMercadoria: totalProdutos,
+        valorMercadoria: totalProdutos * (notaFiscalPercentual / 100),
         pesoTotal: totalPeso,
         volumes: totalVolumes,
         cubagemTotal: totalMetroCubico > 0 ? totalMetroCubico : 0.05,
@@ -301,7 +301,7 @@ export default function CustosDeVendaStep({
     quoteAllMutation.mutate({
       cnpjDestinatario: cnpjCpf.replace(/\D/g, "") || undefined,
       cepDestino: cep.replace(/\D/g, ""),
-      valorMercadoria: totalProdutos,
+      valorMercadoria: totalProdutos * (notaFiscalPercentual / 100),
       peso: totalPeso,
       volumes: totalVolumes,
       metroCubico: totalMetroCubico > 0 ? totalMetroCubico : 0.05,
