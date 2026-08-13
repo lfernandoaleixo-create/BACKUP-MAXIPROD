@@ -965,12 +965,13 @@ async function saveAllData(
     console.warn(`[Sales Notification] Erro ao capturar snapshot anterior:`, e);
   }
 
-  // Usar transação atômica para evitar dados inconsistentes durante a sincronização
-  // Retry up to 3 times for lock timeout / deadlock errors
+  // Save data without a single large transaction to avoid deadlocks on TiDB
+  // Each table is updated independently (delete + insert) 
   const DB_MAX_RETRIES = 3;
   for (let dbAttempt = 1; dbAttempt <= DB_MAX_RETRIES; dbAttempt++) {
   try {
-  await db.transaction(async (tx) => {
+  const tx = db; // Use direct db instead of transaction to avoid deadlocks
+  await (async () => {
     // Save stock items - preserve manually-set pesoBruto and descricaoComplementar
     // First, save existing values that were manually set (GraphQL returns NULL for some products)
     const existingSpecs = await tx.select({
@@ -1122,7 +1123,7 @@ async function saveAllData(
     } catch (e) {
       console.error('[Cancellation Tracker] Erro ao registrar cancelamentos:', e);
     }
-  });
+  })();
   // Transaction succeeded, break out of retry loop
   break;
   } catch (txErr: any) {

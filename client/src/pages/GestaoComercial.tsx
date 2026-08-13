@@ -2839,6 +2839,13 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   const [editingSellerId, setEditingSellerId] = useState<number | null>(null);
   const [editingCells, setEditingCells] = useState<Record<string, number>>({});
   const [tooltip, setTooltip] = useState<{ x: number; y: number; content: { percent: number; metaPercent: number; metaValue: number; result: number } } | null>(null);
+  // Simple commission % per seller (for the order form Simulação Custo Real bar)
+  const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
+  const updateCommMutation = trpc.sales.updateCommission.useMutation({
+    onSuccess: () => sellerPermsQuery.refetch(),
+  });
+  const [editingCommId, setEditingCommId] = useState<number | null>(null);
+  const [editingCommValue, setEditingCommValue] = useState("");
 
   // Default commission matrix values
   const DEFAULT_MATRIX = [
@@ -2920,19 +2927,13 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     setEditingGoalId(null);
   };
 
-  // Simple commission % per seller (for the order form Simulação Custo Real bar)
-  const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
-  const updateCommMutation = trpc.sales.updateCommission.useMutation({
-    onSuccess: () => sellerPermsQuery.refetch(),
-  });
+
+
   const gestorNameNorm = (gestorName || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
   const gestorSellers = (sellerPermsQuery.data || []).filter((p: any) => {
     const pGestorNorm = (p.gestorName || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
     return pGestorNorm === gestorNameNorm || pGestorNorm.includes(gestorNameNorm.split(" ")[0]) || gestorNameNorm.includes(pGestorNorm.split(" ")[0]);
   });
-  const [editingCommId, setEditingCommId] = useState<number | null>(null);
-  const [editingCommValue, setEditingCommValue] = useState("");
-
   return (
     <div className="space-y-4">
       {/* Simple commission % for order form */}
