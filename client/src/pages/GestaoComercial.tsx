@@ -2845,6 +2845,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     onSuccess: () => sellerPermsQuery.refetch(),
   });
   const [editingCommId, setEditingCommId] = useState<number | null>(null);
+  const [showCommSection, setShowCommSection] = useState(false);
   const [editingCommValue, setEditingCommValue] = useState("");
 
   // Default commission matrix values
@@ -2938,8 +2939,11 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     <div className="space-y-4">
       {/* Simple commission % for order form */}
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
-        <h4 className="text-sm font-bold text-amber-800 dark:text-amber-200 mb-3">% Comissão no Pedido de Venda</h4>
-        <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">Define a comissão que aparece na barra "Simulação Custo Real" quando o vendedor faz um pedido.</p>
+          <h4 className="text-sm font-bold text-amber-800 dark:text-amber-200">% Comissão no Pedido de Venda</h4>
+          <span className="text-amber-600">{showCommSection ? "▲" : "▼"}</span>
+        </button>
+        {showCommSection && (<>
+        <p className="text-xs text-amber-600 dark:text-amber-400 mb-3 mt-2">Define a comissão que aparece na barra "Simulação Custo Real" quando o vendedor faz um pedido.</p>
         <div className="space-y-2">
           {gestorSellers.map((seller: any) => (
             <div key={seller.id} className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600">
@@ -2985,6 +2989,7 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
             <p className="text-xs text-slate-400 italic">Nenhum vendedor encontrado para este gestor.</p>
           )}
         </div>
+        </>)}
       </div>
       {/* Period selector */}
       <div className="flex items-center gap-3">

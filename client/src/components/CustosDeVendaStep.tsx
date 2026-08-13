@@ -86,11 +86,7 @@ export default function CustosDeVendaStep(props: CustosDeVendaStepProps) {
   const [gastosAdicionais, setGastosAdicionais] = useState("");
 
   // Get real-time costs
-  const codes = useMemo(() => items.map(i => i.codigoItem), [items]);
-  const { data: costData } = trpc.salesOrder.getRealTimeCosts.useQuery(
-    { codigosItem: codes },
-    { enabled: codes.length > 0 }
-  );
+  const { data: costData } = trpc.import.getRealTimeCosts.useQuery();
 
   // Get seller commission from permissions
   const { data: permData } = trpc.sales.listSellerPermissions.useQuery();
