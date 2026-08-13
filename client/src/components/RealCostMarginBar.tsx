@@ -33,6 +33,7 @@ interface RealCostMarginBarProps {
   custosAdicionaisPerc: number; // custos adicionais % (editable)
   quantidade?: number;      // quantity of boxes (for dynamic total calculation)
   nfPercentFator?: number | null; // Tipo de Faturamento: null/100=nota cheia, 0=sem NF, 50=50%, 33=1/3, 25=25%, 20=20%
+  difalPerc?: number; // DIFAL percentage when Grupo Fox pays
 }
 
 export function RealCostMarginBar({
@@ -46,13 +47,14 @@ export function RealCostMarginBar({
   custosAdicionaisPerc,
   quantidade = 1,
   nfPercentFator,
+  difalPerc = 0,
 }: RealCostMarginBarProps) {
   const [expanded, setExpanded] = useState(false);
 
   // Calculate real margin
   const custoPerc = precoVenda > 0 ? (custoBox / precoVenda) * 100 : 0;
   const effectiveNfFactor = (nfPercentFator ?? 100) / 100;
-  const totalDeducoes = custoPerc + (taxBreakdown.total * effectiveNfFactor) + fretePerc + comissaoPerc + custosAdicionaisPerc;
+  const totalDeducoes = custoPerc + (taxBreakdown.total * effectiveNfFactor) + fretePerc + comissaoPerc + custosAdicionaisPerc + difalPerc;
   const margin = 100 - totalDeducoes;
 
   // Values in R$ per unit

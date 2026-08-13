@@ -7024,3 +7024,7 @@
 - [x] Card "Porcentagem da Nota Fiscal" protegido com senha "Zap" — 6 opções: Zap0 (sem NF), Zap1 (100%), Zap2 (50%), Zap3 (30%), Zap4 (25%), Zap5 (20%)
 - [x] Auto-preencher endereço de entrega do cliente no pedido de venda quando enderecoEntregaMesmo=0
 - [x] Sync Maxiprod importa endereço de entrega (enderecoDeEntrega) para vendor_clients
+- [x] DIFAL automático no pedido de venda: detectar se cliente paga (tem IE) ou nós pagamos (sem IE/CPF)
+- [x] Tabela DIFAL por estado (importado vs industrializado) - saídas de MG 2026
+- [x] Mostrar valor DIFAL no pedido quando nós pagamos + integrar na margem
+- [ ] Simplificar Custos de Venda: resumo simples (valor vendido vs custo, impostos, frete, gastos adicionais)

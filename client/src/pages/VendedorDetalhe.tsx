@@ -16,6 +16,7 @@ import SecureInput from "@/components/SecureInput";
 import SellerCobrancaView from "@/components/SellerCobrancaView";
 import { parseDimensions } from "@shared/parseDimensions";
 import { flexMatch, flexMatchMultiple } from "@shared/flexSearch";
+import { grupoFoxPagaDifal, calcularDifal, DIFAL_RATES } from "@shared/difalRates";
 import { trpc } from "@/lib/trpc";
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
 import { generateComparativeFreightPdf, type ComparativeReportData } from "@/lib/generateComparativeFreightPdf";
@@ -6367,6 +6368,44 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [marginUfSimulacao, setMarginUfSimulacao] = useState(uf || "MG");
   // NF Percentage (Zap system) - affects tax deduction in margin calculation
   const [nfPercent, setNfPercent] = useState<number | null>(null); // null = not selected yet, 100 = Zap1, 0 = Zap0
+
+  // DIFAL calculation - auto-detect if Grupo Fox pays based on client IE/CPF
+  const difalInfo = useMemo(() => {
+    // Determine UF destino (delivery address if different, else client address)
+    const ufDestino = !enderecoEntregaMesmo && entregaUf ? entregaUf : uf;
+    if (!ufDestino || ufDestino.toUpperCase() === "MG") return null;
+    
+    // Check if we pay DIFAL (no IE or CPF)
+    const nosPagamos = grupoFoxPagaDifal(inscricaoEstadual, cnpjCpf);
+    if (!nosPagamos) return null; // Client pays, not us
+    
+    // Determine if products are importado (bambu/fibra) or industrializado (madeira)
+    // Check cart items - if mixed, use the higher rate (importado)
+    let hasImportado = false;
+    let hasIndustrializado = false;
+    for (const item of items) {
+      const gc = (item as any).grupoCodigo || "";
+      if (gc === "20" || gc === "21") hasImportado = true;
+      else if (gc === "18") hasIndustrializado = true;
+      else hasImportado = true; // default to importado (higher rate = safer)
+    }
+    const isImportado = hasImportado || !hasIndustrializado;
+    
+    // Calculate total order value
+    const totalPedido = items.reduce((sum, it) => sum + (it.qty * it.price), 0);
+    if (totalPedido <= 0) return null;
+    
+    const result = calcularDifal(ufDestino, totalPedido, isImportado);
+    if (!result) return null;
+    
+    return {
+      ...result,
+      ufDestino,
+      isImportado,
+      nosPagamos: true,
+      motivo: inscricaoEstadual?.toUpperCase() === "ISENTO" || !inscricaoEstadual ? "Cliente sem IE" : "Cliente é CPF"
+    };
+  }, [items, uf, entregaUf, enderecoEntregaMesmo, inscricaoEstadual, cnpjCpf]);
   const [showZapModal, setShowZapModal] = useState(false);
   const [zapPassword, setZapPassword] = useState("");
   const [zapPasswordError, setZapPasswordError] = useState(false);
@@ -7599,6 +7638,28 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 </div>
               </div>
             )}
+            {/* DIFAL Alert - when Grupo Fox pays */}
+            {difalInfo && items.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg p-3 mb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 text-lg">⚠️</span>
+                    <div>
+                      <p className="text-xs font-bold text-amber-800 dark:text-amber-300">DIFAL — Nós pagamos ({difalInfo.motivo})</p>
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                        Destino: {difalInfo.ufDestino} | {difalInfo.isImportado ? "Importado" : "Industrializado"} | Alíquota: {difalInfo.percentual}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                      R$ {difalInfo.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-[9px] text-amber-600 dark:text-amber-400">Impacto na margem</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Product search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -7677,7 +7738,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     const taxBd = costData.tipoProduto === "industrializado"
                       ? productMarginsQuery.data?.taxBreakdownIndustrializado
                       : productMarginsQuery.data?.taxBreakdownImportado;
-                    const totalDeducoes = custoPerc + ((taxBd?.total || 0) * (nfPercent ?? 100) / 100) + marginFrete + marginComissao + marginCustosAdicionais;
+                    const difalPerc = difalInfo ? difalInfo.percentual : 0;
+                    const totalDeducoes = custoPerc + ((taxBd?.total || 0) * (nfPercent ?? 100) / 100) + marginFrete + marginComissao + marginCustosAdicionais + difalPerc;
                     const itemMargin = 100 - totalDeducoes;
                     const totalPV = pv * item.quantidade;
                     sumPVxMargin += totalPV * itemMargin;
@@ -8144,6 +8206,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                                       custosAdicionaisPerc={marginCustosAdicionais}
                                       quantidade={calc.quantity}
                                       nfPercentFator={nfPercent}
+                                      difalPerc={difalInfo ? difalInfo.percentual : 0}
                                     />
                                   )}
                                 </div>
@@ -9460,6 +9523,19 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   {entregaCep && <div><span className="text-slate-400">CEP:</span> <span className="text-slate-700 dark:text-slate-200">{entregaCep}</span></div>}
                   {entregaLogradouro && <div className="col-span-2"><span className="text-slate-400">End:</span> <span className="text-slate-700 dark:text-slate-200">{entregaLogradouro}{entregaNumero ? `, ${entregaNumero}` : ''} - {entregaBairro} - {entregaCidade}/{entregaUf}</span></div>}
                   {entregaTelefone && <div><span className="text-slate-400">Tel:</span> <span className="text-slate-700 dark:text-slate-200">{entregaTelefone}</span></div>}
+                </div>
+              </div>
+            )}
+            {/* DIFAL info in summary */}
+            {difalInfo && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-2 mt-2">
+                <p className="text-[10px] font-bold text-amber-600 uppercase">DIFAL — Grupo Fox paga</p>
+                <div className="grid grid-cols-2 gap-1 text-xs mt-1">
+                  <div><span className="text-slate-400">Motivo:</span> <span className="text-amber-700 dark:text-amber-300 font-semibold">{difalInfo.motivo}</span></div>
+                  <div><span className="text-slate-400">UF Destino:</span> <span className="text-slate-700 dark:text-slate-200">{difalInfo.ufDestino}</span></div>
+                  <div><span className="text-slate-400">Tipo:</span> <span className="text-slate-700 dark:text-slate-200">{difalInfo.isImportado ? "Importado" : "Industrializado"}</span></div>
+                  <div><span className="text-slate-400">Alíquota:</span> <span className="text-amber-700 dark:text-amber-300 font-bold">{difalInfo.percentual}%</span></div>
+                  <div className="col-span-2"><span className="text-slate-400">Valor DIFAL:</span> <span className="text-amber-700 dark:text-amber-300 font-bold text-sm">R$ {difalInfo.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                 </div>
               </div>
             )}
