@@ -6392,7 +6392,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const isImportado = hasImportado || !hasIndustrializado;
     
     // Calculate total order value
-    const totalPedido = items.reduce((sum, it) => sum + (it.qty * it.price), 0);
+    const totalPedido = items.reduce((sum, it) => sum + ((Number(it.quantidade) || 0) * (Number(it.precoUnitario) || 0)), 0);
     if (totalPedido <= 0) return null;
     
     const result = calcularDifal(ufDestino, totalPedido, isImportado);
