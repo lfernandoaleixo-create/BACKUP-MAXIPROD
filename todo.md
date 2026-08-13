@@ -7019,3 +7019,6 @@
 - [x] Fix Rodonaves registration: use delivery address (not client address) when enderecoEntregaMesmo=0
 - [x] Add CNPJ da Flor de Minas (01.527.825/0001-21) no relatório comparativo e cotações
 - [x] Remover cabeçalho/rodapé da BASE do PDF do pedido de venda (manter só no topo)
+- [x] Card "Porcentagem de Comissão" no painel do gestor — gestor define % comissão de cada vendedor dele
+- [x] Comissão definida pelo gestor aparece automaticamente no pedido de venda (somente leitura pro vendedor)
+- [x] Card "Porcentagem da Nota Fiscal" protegido com senha "Zap" — 6 opções: Zap0 (sem NF), Zap1 (100%), Zap2 (50%), Zap3 (30%), Zap4 (25%), Zap5 (20%)

@@ -6365,6 +6365,18 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [marginFrete, setMarginFrete] = useState(13);
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
   const [marginUfSimulacao, setMarginUfSimulacao] = useState(uf || "MG");
+  // NF Percentage (Zap system) - affects tax deduction in margin calculation
+  const [nfPercent, setNfPercent] = useState(100); // 100 = Zap1 (nota cheia), 0 = Zap0 (sem NF)
+  const [showZapModal, setShowZapModal] = useState(false);
+  const [zapPassword, setZapPassword] = useState("");
+  const [zapPasswordError, setZapPasswordError] = useState(false);
+  // Auto-load commission from seller permissions (set by gestor)
+  useEffect(() => {
+    if (currentSellerPerm?.commissionPercent) {
+      const dbComm = Number(currentSellerPerm.commissionPercent);
+      if (dbComm > 0) setMarginComissao(dbComm);
+    }
+  }, [currentSellerPerm?.commissionPercent]);
   // Auto-sync: whenever the client UF changes (from selection, draft restore, edit, or manual input),
   // update the margin simulation UF to match
   useEffect(() => {
@@ -7521,7 +7533,71 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 onFreteChange={setMarginFrete}
                 onCustosAdicionaisChange={setMarginCustosAdicionais}
                 onUfDestinoChange={setMarginUfSimulacao}
+                nfPercent={nfPercent}
+                onNfPercentClick={() => setShowZapModal(true)}
               />
+            )}
+            {/* Zap NF Percentage Modal */}
+            {showZapModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { setShowZapModal(false); setZapPassword(""); setZapPasswordError(false); }}>
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-80 max-w-[90vw]" onClick={e => e.stopPropagation()}>
+                  {zapPassword.toLowerCase() !== "zap" ? (
+                    <>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-amber-500" /> % Nota Fiscal
+                      </h3>
+                      <input
+                        type="password"
+                        placeholder="Digite a senha..."
+                        value={zapPassword}
+                        onChange={e => { setZapPassword(e.target.value); setZapPasswordError(false); }}
+                        onKeyDown={e => { if (e.key === "Enter") { if (zapPassword.toLowerCase() !== "zap") setZapPasswordError(true); } }}
+                        className={`w-full px-3 py-2 border rounded-lg text-sm ${zapPasswordError ? "border-red-400 bg-red-50" : "border-slate-300"} focus:outline-none focus:ring-2 focus:ring-amber-400`}
+                        autoFocus
+                      />
+                      {zapPasswordError && <p className="text-xs text-red-500 mt-1">Senha incorreta</p>}
+                      <button
+                        onClick={() => { if (zapPassword.toLowerCase() === "zap") { setZapPasswordError(false); } else { setZapPasswordError(true); } }}
+                        className="mt-3 w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition-colors"
+                      >
+                        Acessar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">% Nota Fiscal</h3>
+                      <div className="space-y-2">
+                        {[
+                          { label: "Zap 0 — Sem nota fiscal", value: 0 },
+                          { label: "Zap 1 — Nota cheia (100%)", value: 100 },
+                          { label: "Zap 2 — 50% de nota", value: 50 },
+                          { label: "Zap 3 — 30% de nota", value: 30 },
+                          { label: "Zap 4 — 25% de nota", value: 25 },
+                          { label: "Zap 5 — 20% de nota", value: 20 },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setNfPercent(opt.value); setShowZapModal(false); setZapPassword(""); }}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              nfPercent === opt.value
+                                ? "bg-amber-100 border-2 border-amber-500 text-amber-800"
+                                : "bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-amber-50 hover:border-amber-300"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => { setShowZapModal(false); setZapPassword(""); }}
+                        className="mt-3 w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-sm rounded-lg transition-colors"
+                      >
+                        Fechar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             )}
             {/* Product search */}
             <div className="relative">
@@ -7601,7 +7677,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     const taxBd = costData.tipoProduto === "industrializado"
                       ? productMarginsQuery.data?.taxBreakdownIndustrializado
                       : productMarginsQuery.data?.taxBreakdownImportado;
-                    const totalDeducoes = custoPerc + (taxBd?.total || 0) + marginFrete + marginComissao + marginCustosAdicionais;
+                    const totalDeducoes = custoPerc + ((taxBd?.total || 0) * nfPercent / 100) + marginFrete + marginComissao + marginCustosAdicionais;
                     const itemMargin = 100 - totalDeducoes;
                     const totalPV = pv * item.quantidade;
                     sumPVxMargin += totalPV * itemMargin;

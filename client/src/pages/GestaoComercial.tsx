@@ -2920,8 +2920,69 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
     setEditingGoalId(null);
   };
 
+  // Simple commission % per seller (for the order form Simulação Custo Real bar)
+  const sellerPermsQuery = trpc.sales.listSellerPermissions.useQuery();
+  const updateCommMutation = trpc.sales.updateCommission.useMutation({
+    onSuccess: () => sellerPermsQuery.refetch(),
+  });
+  const gestorSellers = (sellerPermsQuery.data || []).filter((p: any) => 
+    (p.gestorName || "").toLowerCase().includes(gestorName.toLowerCase().split(" ")[0])
+  );
+  const [editingCommId, setEditingCommId] = useState<number | null>(null);
+  const [editingCommValue, setEditingCommValue] = useState("");
+
   return (
     <div className="space-y-4">
+      {/* Simple commission % for order form */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+        <h4 className="text-sm font-bold text-amber-800 dark:text-amber-200 mb-3">% Comissão no Pedido de Venda</h4>
+        <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">Define a comissão que aparece na barra "Simulação Custo Real" quando o vendedor faz um pedido.</p>
+        <div className="space-y-2">
+          {gestorSellers.map((seller: any) => (
+            <div key={seller.id} className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-600">
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200 flex-1">{seller.sellerName}</span>
+              {editingCommId === seller.id ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={editingCommValue}
+                    onChange={e => setEditingCommValue(e.target.value)}
+                    className="w-16 px-2 py-1 text-xs border border-amber-300 rounded bg-white text-center font-bold"
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        const v = parseFloat(editingCommValue.replace(",", "."));
+                        if (!isNaN(v)) updateCommMutation.mutate({ sellerId: seller.id, commissionPercent: v });
+                        setEditingCommId(null);
+                      }
+                      if (e.key === "Escape") setEditingCommId(null);
+                    }}
+                  />
+                  <span className="text-xs text-amber-600">%</span>
+                  <button onClick={() => {
+                    const v = parseFloat(editingCommValue.replace(",", "."));
+                    if (!isNaN(v)) updateCommMutation.mutate({ sellerId: seller.id, commissionPercent: v });
+                    setEditingCommId(null);
+                  }} className="text-emerald-600 hover:text-emerald-700"><Check className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setEditingCommId(null)} className="text-red-500 hover:text-red-600"><X className="w-3.5 h-3.5" /></button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setEditingCommId(seller.id); setEditingCommValue(String(seller.commissionPercent || "5.85")); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors"
+                >
+                  <span className="text-xs font-bold text-amber-800">{seller.commissionPercent || "5.85"}%</span>
+                  <Pencil className="w-3 h-3 text-amber-600" />
+                </button>
+              )}
+            </div>
+          ))}
+          {gestorSellers.length === 0 && (
+            <p className="text-xs text-slate-400 italic">Nenhum vendedor encontrado para este gestor.</p>
+          )}
+        </div>
+      </div>
       {/* Period selector */}
       <div className="flex items-center gap-3">
         <select
