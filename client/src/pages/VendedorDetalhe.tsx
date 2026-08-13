@@ -6086,9 +6086,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
           totalVolumes += bonif.quantidade;
           totalPeso += bonif.pesoBrutoCaixa * bonif.quantidade;
           if (bonif.dimsStr) {
-            const dims = bonif.dimsStr.split("x").map(Number);
-            if (dims.length === 3) {
-              totalCubagem += (dims[0] / 100) * (dims[1] / 100) * (dims[2] / 100) * bonif.quantidade;
+            const dimsB = parseDimensions(bonif.dimsStr);
+            if (dimsB) {
+              totalCubagem += (dimsB.comprimento / 100) * (dimsB.largura / 100) * (dimsB.altura / 100) * bonif.quantidade;
             }
           }
         }
@@ -7781,8 +7781,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                                   </span>
                                 )}
                                 {item.dimsStr && (() => {
-                                  const d = item.dimsStr!.split('x').map(v => parseFloat(v.replace(',', '.')));
-                                  const vol = d.length === 3 ? (d[0] * d[1] * d[2] / 1000000) * item.quantidade : 0;
+                                  const dimsParsedCart = parseDimensions(item.dimsStr!);
+                                  const vol = dimsParsedCart ? (dimsParsedCart.comprimento / 100) * (dimsParsedCart.largura / 100) * (dimsParsedCart.altura / 100) * item.quantidade : 0;
                                   return vol > 0 ? (
                                     <span className="text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-lg">
                                       📦 Cubagem: {vol.toFixed(3)} m³
@@ -7824,8 +7824,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   const qtdCaixas = fator > 1 ? Math.floor(qtdRaw / fator) : qtdRaw;
                   const unidadeVenda = p.unidadeDeVendaCodigo || (fator >= 1000 ? "CX" : p.unidadeMedida || "CX");
                   const dims = p.descricaoComplementar ? (p.descricaoComplementar.match(/([\d,.]+)[xX×]([\d,.]+)[xX×]([\d,.]+)/) || (() => { const c = p.descricaoComplementar.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i); return c ? [c[0], c[1].replace(',','.'), c[2].replace(',','.'), c[3].replace(',','.')] : null; })()) : null;
-                  const isExpanded = expandedProduct === p.codigoItem;
-                  const hasPOs = p.pendingPOs && p.pendingPOs.length > 0;
+                 const isExpanded = expandedProduct === p.codigoItem;
+                 const dimsParsed = p.descricaoComplementar ? parseDimensions(p.descricaoComplementar) : null;
+                 const hasPOs = p.pendingPOs && p.pendingPOs.length > 0;
                   const precoVendedor = p.precoVendedor ? Number(p.precoVendedor) : null;
                   const precoMinimo = p.precoMinimo ? Number(p.precoMinimo) : null;
                   const precoBase = precoVendedor || precoMinimo || 0;
@@ -7859,9 +7860,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                             <span className="text-[7px] text-slate-400 dark:text-slate-500 font-medium tracking-wide">Código do Produto</span>
                             <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{p.codigoItem}</span>
                           </div>
-                          {dims && (
+                          {dimsParsed && (
                             <span className="text-[9px] sm:text-[10px] bg-orange-50 dark:bg-orange-900/20 px-1 py-0.5 rounded text-orange-700 dark:text-orange-400 font-bold">
-                              📐 {dims[1]}×{dims[2]}×{dims[3]} cm
+                              📐 {dimsParsed.comprimento.toFixed(1)}×{dimsParsed.largura.toFixed(1)}×{dimsParsed.altura.toFixed(1)} cm
                             </span>
                           )}
                           {p.pesoBruto && Number(p.pesoBruto) > 0 && (
@@ -8006,9 +8007,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                                             ⚖️ {(Number(p.pesoBruto) * fator * calc.quantity).toFixed(1)} kg
                                           </span>
                                         )}
-                                        {dims && (
+                                        {dimsParsed && (
                                           <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                            📦 {((parseFloat(dims[1].replace(',', '.')) * parseFloat(dims[2].replace(',', '.')) * parseFloat(dims[3].replace(',', '.')) / 1000000) * calc.quantity).toFixed(3)} m³
+                                            📦 {((dimsParsed.comprimento / 100) * (dimsParsed.largura / 100) * (dimsParsed.altura / 100) * calc.quantity).toFixed(3)} m³
                                           </span>
                                         )}
                                       </div>
@@ -8081,9 +8082,9 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                                     ⚖️ Peso: {(Number(p.pesoBruto) * fator * calc.quantity).toFixed(1)} kg
                                   </span>
                                 )}
-                                {dims && (
+                                {dimsParsed && (
                                   <span className="text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-lg">
-                                    📦 Cubagem: {((parseFloat(dims[1].replace(',', '.')) * parseFloat(dims[2].replace(',', '.')) * parseFloat(dims[3].replace(',', '.')) / 1000000) * calc.quantity).toFixed(3)} m³
+                                    📦 Cubagem: {((dimsParsed.comprimento / 100) * (dimsParsed.largura / 100) * (dimsParsed.altura / 100) * calc.quantity).toFixed(3)} m³
                                   </span>
                                 )}
                               </div>
@@ -9391,8 +9392,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               <div className="space-y-2">
                 {items.map((item, idx) => {
                   const pesoTotal = item.pesoBrutoCaixa ? item.pesoBrutoCaixa * item.quantidade : 0;
-                  const dimsArr = item.dimsStr ? item.dimsStr.split('x').map(v => parseFloat(v.replace(',', '.'))) : [];
-                  const volumeTotal = dimsArr.length === 3 ? (dimsArr[0] * dimsArr[1] * dimsArr[2] / 1000000) * item.quantidade : 0;
+                  const dimsParsedItem = item.dimsStr ? parseDimensions(item.dimsStr) : null;
+                  const volumeTotal = dimsParsedItem ? (dimsParsedItem.comprimento / 100) * (dimsParsedItem.largura / 100) * (dimsParsedItem.altura / 100) * item.quantidade : 0;
                   return (
                     <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-3">
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{item.descricaoItem}</p>
@@ -9417,8 +9418,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               {(() => {
                 const pesoGeral = items.reduce((sum, i) => sum + (i.pesoBrutoCaixa ? i.pesoBrutoCaixa * i.quantidade : 0), 0);
                 const volumeGeral = items.reduce((sum, i) => {
-                  const d = i.dimsStr ? i.dimsStr.split('x').map(v => parseFloat(v.replace(',', '.'))) : [];
-                  return sum + (d.length === 3 ? (d[0] * d[1] * d[2] / 1000000) * i.quantidade : 0);
+                  const dp = i.dimsStr ? parseDimensions(i.dimsStr) : null;
+                  return sum + (dp ? (dp.comprimento / 100) * (dp.largura / 100) * (dp.altura / 100) * i.quantidade : 0);
                 }, 0);
                 const totalCaixas = items.reduce((sum, i) => sum + i.quantidade, 0);
                 return (

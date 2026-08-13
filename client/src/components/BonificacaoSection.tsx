@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import { Trash2, Gift, Search } from "lucide-react";
+import { parseDimensions } from "@shared/parseDimensions";
 
 export interface BonificacaoItem {
   codigoItem: string;
@@ -50,8 +51,8 @@ export default function BonificacaoSection({
   const totalCaixas = itensBonificacao.reduce((s, b) => s + b.quantidade, 0);
   const totalPeso = itensBonificacao.reduce((s, b) => s + b.pesoBrutoCaixa * b.quantidade, 0);
   const totalCubagem = itensBonificacao.reduce((s, b) => {
-    const d = b.dimsStr.split("x").map(Number);
-    return s + (d.length === 3 ? (d[0] * d[1] * d[2] / 1000000) * b.quantidade : 0.03 * b.quantidade);
+    const dP = parseDimensions(b.dimsStr);
+    return s + (dP ? (dP.comprimento / 100) * (dP.largura / 100) * (dP.altura / 100) * b.quantidade : 0.03 * b.quantidade);
   }, 0);
   const totalValor = itensBonificacao.reduce((s, b) => s + b.valorUnitario * b.quantidade, 0);
 
@@ -129,8 +130,8 @@ export default function BonificacaoSection({
           {itensBonificacao.length > 0 && (
             <div className="space-y-1.5">
               {itensBonificacao.map((item, idx) => {
-                const dims = item.dimsStr.split("x").map(Number);
-                const cubagem = dims.length === 3 ? (dims[0] * dims[1] * dims[2] / 1000000) * item.quantidade : 0.03 * item.quantidade;
+                const dParsed = parseDimensions(item.dimsStr);
+                const cubagem = dParsed ? (dParsed.comprimento / 100) * (dParsed.largura / 100) * (dParsed.altura / 100) * item.quantidade : 0.03 * item.quantidade;
                 const subtotal = item.valorUnitario * item.quantidade;
                 return (
                   <div key={item.codigoItem} className="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-600 rounded-lg p-2 space-y-1">

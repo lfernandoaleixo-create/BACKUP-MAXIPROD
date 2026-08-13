@@ -7,6 +7,7 @@
  * 4. Transportadora / Frete (simulação com 3 APIs)
  * 5. Gastos Adicionais (campo manual)
  */
+import { parseDimensions } from "@shared/parseDimensions";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import {
@@ -195,9 +196,9 @@ export default function CustosDeVendaStep({
   const totalPeso = items.reduce((sum, item) => sum + (item.pesoBrutoCaixa || 5) * item.quantidade, 0);
   const totalMetroCubico = items.reduce((sum, item) => {
     if (item.dimsStr) {
-      const parts = item.dimsStr.split("x").map(Number);
-      if (parts.length === 3) {
-        return sum + (parts[0] * parts[1] * parts[2] / 1000000) * item.quantidade;
+      const dP = parseDimensions(item.dimsStr);
+      if (dP) {
+        return sum + (dP.comprimento / 100) * (dP.largura / 100) * (dP.altura / 100) * item.quantidade;
       }
     }
     return sum + 0.03 * item.quantidade;
@@ -376,8 +377,8 @@ export default function CustosDeVendaStep({
       const pesoItem = (item.pesoBrutoCaixa || 5) * item.quantidade;
       let cubagemItem = 0.03 * item.quantidade;
       if (item.dimsStr) {
-        const parts = item.dimsStr.split('x').map(Number);
-        if (parts.length === 3) cubagemItem = (parts[0] * parts[1] * parts[2] / 1000000) * item.quantidade;
+        const dP2 = parseDimensions(item.dimsStr);
+        if (dP2) cubagemItem = (dP2.comprimento / 100) * (dP2.largura / 100) * (dP2.altura / 100) * item.quantidade;
       }
       report += `${idx + 1}. ${item.descricaoItem} (${item.codigoItem})\n`;
       report += `   Qtd: ${item.quantidade} ${item.unidadeMedida} | Peso: ${pesoItem.toFixed(2)} kg | Cubagem: ${cubagemItem.toFixed(4)} m³\n`;

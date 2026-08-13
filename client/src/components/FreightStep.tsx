@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { parseDimensions } from "@shared/parseDimensions";
 import { Truck, Loader2, AlertCircle, CheckCircle2, Package } from "lucide-react";
 import { toast } from "sonner";
 
@@ -151,9 +152,9 @@ export default function FreightStep({
   const totalPeso = items.reduce((sum, item) => sum + (item.pesoBrutoCaixa || 5) * item.quantidade, 0);
   const totalMetroCubico = items.reduce((sum, item) => {
     if (item.dimsStr) {
-      const parts = item.dimsStr.split("x").map(Number);
-      if (parts.length === 3) {
-        return sum + (parts[0] * parts[1] * parts[2] / 1000000) * item.quantidade;
+      const dP = parseDimensions(item.dimsStr);
+      if (dP) {
+        return sum + (dP.comprimento / 100) * (dP.largura / 100) * (dP.altura / 100) * item.quantidade;
       }
     }
     return sum + 0.03 * item.quantidade;

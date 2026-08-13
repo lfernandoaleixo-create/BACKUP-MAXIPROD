@@ -235,33 +235,65 @@ export async function syncClientsFromMaxiprod(): Promise<{ synced: number; error
           .limit(1);
 
         if (existing) {
-          // Update existing
-          await db.update(vendorClients)
-            .set({
-              ...clientData,
-              updatedAt: new Date(),
-            })
-            .where(eq(vendorClients.id, existing.id));
+          // Update existing - check if manually edited by a vendedor
+          const [fullExisting] = await db.select().from(vendorClients)
+            .where(eq(vendorClients.id, existing.id)).limit(1);
+          if (fullExisting && fullExisting.lastModifiedBy && fullExisting.lastModifiedBy !== "SYNC_MAXIPROD") {
+            // Client was manually edited - only fill NULL/empty fields, don't overwrite
+            const fillGaps: Record<string, any> = { updatedAt: new Date() };
+            for (const [key, value] of Object.entries(clientData)) {
+              if (key === 'source' || key === 'lastModifiedBy') continue;
+              const existingValue = (fullExisting as any)[key];
+              if ((existingValue === null || existingValue === undefined || existingValue === '') && value != null && value !== '') {
+                fillGaps[key] = value;
+              }
+            }
+            if (clientData.maxiprodId) fillGaps.maxiprodId = clientData.maxiprodId;
+            await db.update(vendorClients).set(fillGaps).where(eq(vendorClients.id, existing.id));
+          } else {
+            // Not manually edited - safe to overwrite with Maxiprod data
+            await db.update(vendorClients)
+              .set({ ...clientData, updatedAt: new Date() })
+              .where(eq(vendorClients.id, existing.id));
+          }
         } else {
           // Also check by CNPJ to avoid duplicates from manual entries
           if (emp.cnpjOuCpf) {
             const cnpjLimpo = emp.cnpjOuCpf.replace(/[^\d]/g, "");
             if (cnpjLimpo.length >= 11) {
-              const [existingByCnpj] = await db.select({ id: vendorClients.id, source: vendorClients.source })
+              const [existingByCnpj] = await db.select({ id: vendorClients.id, source: vendorClients.source, lastModifiedBy: vendorClients.lastModifiedBy })
                 .from(vendorClients)
                 .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '-', ''), '/', '') = ${cnpjLimpo}`)
                 .limit(1);
 
               if (existingByCnpj) {
-                // Update existing (add maxiprodId)
-                await db.update(vendorClients)
-                  .set({
-                    ...clientData,
-                    // Don't overwrite source if it was manual (preserve user edits)
-                    source: existingByCnpj.source === "manual" ? "manual" : "maxiprod",
-                    updatedAt: new Date(),
-                  })
-                  .where(eq(vendorClients.id, existingByCnpj.id));
+                if (existingByCnpj.lastModifiedBy && existingByCnpj.lastModifiedBy !== "SYNC_MAXIPROD") {
+                  // Client was manually edited - only fill gaps
+                  const [fullExistingCnpj] = await db.select().from(vendorClients)
+                    .where(eq(vendorClients.id, existingByCnpj.id)).limit(1);
+                  const fillGaps: Record<string, any> = { updatedAt: new Date() };
+                  if (fullExistingCnpj) {
+                    for (const [key, value] of Object.entries(clientData)) {
+                      if (key === 'source' || key === 'lastModifiedBy') continue;
+                      const existingValue = (fullExistingCnpj as any)[key];
+                      if ((existingValue === null || existingValue === undefined || existingValue === '') && value != null && value !== '') {
+                        fillGaps[key] = value;
+                      }
+                    }
+                  }
+                  if (clientData.maxiprodId) fillGaps.maxiprodId = clientData.maxiprodId;
+                  if (existingByCnpj.source === "manual") fillGaps.source = "manual";
+                  await db.update(vendorClients).set(fillGaps).where(eq(vendorClients.id, existingByCnpj.id));
+                } else {
+                  // Not manually edited - safe to overwrite
+                  await db.update(vendorClients)
+                    .set({
+                      ...clientData,
+                      source: existingByCnpj.source === "manual" ? "manual" : "maxiprod",
+                      updatedAt: new Date(),
+                    })
+                    .where(eq(vendorClients.id, existingByCnpj.id));
+                }
                 synced++;
                 continue;
               }
