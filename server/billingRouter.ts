@@ -662,11 +662,12 @@ export const billingRouter = router({
           }
           console.log(`[Auto-Revoke] ${changedOrders.length} hashes atualizados silenciosamente. Pedidos: ${changedOrders.map(o => o.pedido).join(', ')}`);
         } else if (changedOrders.length > 0) {
-          // Poucos pedidos mudaram - provavelmente mudança real no Maxiprod
+          // Poucos pedidos mudaram - atualizar hash silenciosamente (NUNCA marcar como modificado)
+          // Pedido aceito PERMANECE aceito independente de mudanças no Maxiprod.
           for (const { pedido, currentHash, cliente, grupoKey } of changedOrders) {
-            console.log(`[Auto-Revoke] Pedido #${pedido} foi modificado no Maxiprod`);
+            console.log(`[Auto-Revoke] Pedido #${pedido} hash atualizado silenciosamente (aceite mantido)`);
             await db.update(productionAcceptance)
-              .set({ wasModified: true, modifiedAt: new Date(), orderHash: currentHash })
+              .set({ orderHash: currentHash })
               .where(eq(productionAcceptance.pedido, pedido));
             // Gerar notificação de pedido modificado
             try {
@@ -907,18 +908,9 @@ export const billingRouter = router({
                   ))
                   .limit(1);
 
-                // Observação COMERCIAL (do Maxiprod) mudou → voltar pedido para Aceite de Produção
-                // Remover APENAS productionAcceptance para forçar re-aceite de produção.
-                // NÃO remover billingAuthorizations - se o pedido já foi autorizado a faturar,
-                // ele deve PERMANECER autorizado. A autorização de faturamento só deve ser
-                // removida quando o pedido é efetivamente faturado (parcial ou total).
-                // PROTEÇÃO: Em vez de DELETAR o aceite (que perde o histórico), apenas marcar como modificado.
-                // Isso faz o pedido aparecer no Aceite com sinalização visual vermelha,
-                // mas se o usuário já aceitou, o registro não é perdido permanentemente.
-                await db.update(productionAcceptance)
-                  .set({ wasModified: true, modifiedAt: new Date() })
-                  .where(eq(productionAcceptance.pedido, pedido));
-                console.log(`[ObsComercial] Pedido #${pedido} marcado como modificado - observação comercial alterada no Maxiprod`);
+                // Observação COMERCIAL mudou no Maxiprod - apenas registrar notificação.
+                // NUNCA mais mexer em productionAcceptance aqui - pedido aceito PERMANECE aceito.
+                console.log(`[ObsComercial] Pedido #${pedido} - observação comercial alterada no Maxiprod (aceite mantido)`);
 
                 if (existingObs.length === 0) {
                   const obsPreview = newObs.length > 80 ? newObs.substring(0, 80) + "..." : newObs;
@@ -1164,7 +1156,7 @@ export const billingRouter = router({
         if (r.wasModified) modifiedPedidos.push(r.pedido);
       }
       return {
-        acceptedPedidos: rows.filter(r => !r.wasModified).map(r => r.pedido),
+        acceptedPedidos: rows.map(r => r.pedido),
         acceptedHashes: hashMap,
         modifiedPedidos,
       };
