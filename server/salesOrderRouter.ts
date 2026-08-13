@@ -2829,17 +2829,19 @@ export const salesOrderRouter = router({
           .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cleanCnpj}`)
           .limit(1);
         if (client) {
+          // Use delivery address for Rodonaves registration when different from client address
+          const useDeliveryAddr = client.enderecoEntregaMesmo === 0 && client.entregaCep;
           customerData = {
             nome: client.razaoSocial || client.nomeFantasia || "Cliente",
             email: client.emailNfe || client.email || "nfe@grupofox.com.br",
             telefone: client.telefone1 || client.telefone2 || "31999999999",
-            cep: client.cep || input.cepDestino,
-            logradouro: client.logradouro || "Rua",
-            numero: client.numero || "S/N",
-            complemento: client.complemento || undefined,
-            bairro: client.bairro || "Centro",
-            cidade: client.cidade || "",
-            uf: client.uf || "",
+            cep: useDeliveryAddr ? client.entregaCep! : (client.cep || input.cepDestino),
+            logradouro: useDeliveryAddr ? (client.entregaLogradouro || "Rua") : (client.logradouro || "Rua"),
+            numero: useDeliveryAddr ? (client.entregaNumero || "S/N") : (client.numero || "S/N"),
+            complemento: useDeliveryAddr ? (client.entregaComplemento || undefined) : (client.complemento || undefined),
+            bairro: useDeliveryAddr ? (client.entregaBairro || "Centro") : (client.bairro || "Centro"),
+            cidade: useDeliveryAddr ? (client.entregaCidade || "") : (client.cidade || ""),
+            uf: useDeliveryAddr ? (client.entregaUf || "") : (client.uf || ""),
             inscricaoEstadual: client.inscricaoEstadual || undefined,
           };
           console.log(`[FreightQuote] Customer data found for ${cleanCnpj}: ${customerData.nome}`);
@@ -3346,17 +3348,19 @@ export const salesOrderRouter = router({
           .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cnpjDestinatario}`)
           .limit(1);
         if (client) {
+          // Use delivery address for Rodonaves registration when different from client address
+          const useDeliveryAddr = client.enderecoEntregaMesmo === 0 && client.entregaCep;
           customerData = {
             nome: client.razaoSocial || client.nomeFantasia || "Cliente",
             email: client.emailNfe || client.email || "nfe@grupofox.com.br",
             telefone: client.telefone1 || client.telefone2 || "31999999999",
-            cep: client.cep || cepDestino,
-            logradouro: client.logradouro || "Rua",
-            numero: client.numero || "S/N",
-            complemento: client.complemento || undefined,
-            bairro: client.bairro || "Centro",
-            cidade: client.cidade || "",
-            uf: client.uf || "",
+            cep: useDeliveryAddr ? client.entregaCep! : (client.cep || cepDestino),
+            logradouro: useDeliveryAddr ? (client.entregaLogradouro || "Rua") : (client.logradouro || "Rua"),
+            numero: useDeliveryAddr ? (client.entregaNumero || "S/N") : (client.numero || "S/N"),
+            complemento: useDeliveryAddr ? (client.entregaComplemento || undefined) : (client.complemento || undefined),
+            bairro: useDeliveryAddr ? (client.entregaBairro || "Centro") : (client.bairro || "Centro"),
+            cidade: useDeliveryAddr ? (client.entregaCidade || "") : (client.cidade || ""),
+            uf: useDeliveryAddr ? (client.entregaUf || "") : (client.uf || ""),
             inscricaoEstadual: client.inscricaoEstadual || undefined,
           };
         }
@@ -3768,17 +3772,19 @@ export const salesOrderRouter = router({
           .where(sql`REPLACE(REPLACE(REPLACE(${vendorClients.cnpjCpf}, '.', ''), '/', ''), '-', '') = ${cnpjDestinatario}`)
           .limit(1);
         if (client) {
+          // Use delivery address for Rodonaves registration when different from client address
+          const useDeliveryAddr = client.enderecoEntregaMesmo === 0 && client.entregaCep;
           customerData = {
             nome: client.razaoSocial || client.nomeFantasia || "Cliente",
             email: client.emailNfe || client.email || "nfe@grupofox.com.br",
             telefone: client.telefone1 || client.telefone2 || "31999999999",
-            cep: client.cep || cepDestino,
-            logradouro: client.logradouro || "Rua",
-            numero: client.numero || "S/N",
-            complemento: client.complemento || undefined,
-            bairro: client.bairro || "Centro",
-            cidade: client.cidade || "",
-            uf: client.uf || "",
+            cep: useDeliveryAddr ? client.entregaCep! : (client.cep || cepDestino),
+            logradouro: useDeliveryAddr ? (client.entregaLogradouro || "Rua") : (client.logradouro || "Rua"),
+            numero: useDeliveryAddr ? (client.entregaNumero || "S/N") : (client.numero || "S/N"),
+            complemento: useDeliveryAddr ? (client.entregaComplemento || undefined) : (client.complemento || undefined),
+            bairro: useDeliveryAddr ? (client.entregaBairro || "Centro") : (client.bairro || "Centro"),
+            cidade: useDeliveryAddr ? (client.entregaCidade || "") : (client.cidade || ""),
+            uf: useDeliveryAddr ? (client.entregaUf || "") : (client.uf || ""),
             inscricaoEstadual: client.inscricaoEstadual || undefined,
           };
         }

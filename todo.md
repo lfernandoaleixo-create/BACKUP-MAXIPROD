@@ -7016,3 +7016,4 @@
 - [x] Fix dimensions display: convert mm to cm using parseDimensions (415mm → 41.5cm)
 - [x] Fix cubagem calculation in all components to use parseDimensions (correct mm→cm conversion)
 - [x] Fix client sync: manually-edited clients not overwritten by Maxiprod sync (new data prevails over old)
+- [x] Fix Rodonaves registration: use delivery address (not client address) when enderecoEntregaMesmo=0
