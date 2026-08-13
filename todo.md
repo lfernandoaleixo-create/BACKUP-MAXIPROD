@@ -7022,3 +7022,5 @@
 - [x] Card "Porcentagem de Comissão" no painel do gestor — gestor define % comissão de cada vendedor dele
 - [x] Comissão definida pelo gestor aparece automaticamente no pedido de venda (somente leitura pro vendedor)
 - [x] Card "Porcentagem da Nota Fiscal" protegido com senha "Zap" — 6 opções: Zap0 (sem NF), Zap1 (100%), Zap2 (50%), Zap3 (30%), Zap4 (25%), Zap5 (20%)
+- [x] Auto-preencher endereço de entrega do cliente no pedido de venda quando enderecoEntregaMesmo=0
+- [x] Sync Maxiprod importa endereço de entrega (enderecoDeEntrega) para vendor_clients

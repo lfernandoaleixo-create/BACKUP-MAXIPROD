@@ -88,6 +88,18 @@ const EMPRESAS_QUERY = (skip: number) => `{
           uf { sigla }
         }
       }
+      enderecoDeEntrega {
+        logradouro
+        numero
+        complemento
+        bairro
+        cep
+        telefone1
+        municipio {
+          descricao
+          uf { sigla }
+        }
+      }
       representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
       representanteOuVendedor2Preferencial { nomeFantasia razaoSocial }
     }
@@ -211,6 +223,16 @@ export async function syncClientsFromMaxiprod(): Promise<{ synced: number; error
           telefone1: emp.endereco?.telefone1 || null,
           telefone2: emp.endereco?.telefone2 || null,
           email: emp.endereco?.email || null,
+          // Endereço de entrega (se diferente do principal)
+          enderecoEntregaMesmo: emp.enderecoDeEntrega?.cep ? 0 : 1,
+          entregaCep: emp.enderecoDeEntrega?.cep || null,
+          entregaLogradouro: emp.enderecoDeEntrega?.logradouro || null,
+          entregaNumero: emp.enderecoDeEntrega?.numero || null,
+          entregaComplemento: emp.enderecoDeEntrega?.complemento || null,
+          entregaBairro: emp.enderecoDeEntrega?.bairro || null,
+          entregaCidade: emp.enderecoDeEntrega?.municipio?.descricao || null,
+          entregaUf: emp.enderecoDeEntrega?.municipio?.uf?.sigla || null,
+          entregaTelefone: emp.enderecoDeEntrega?.telefone1 || null,
           segmento: emp.crmSegmento?.descricao || null,
           // Cobrança - mapear boletoProtestarOuNegativar para situacaoCobranca
           situacaoCobranca: emp.formaDeCobrancaPreferencial?.boletoProtestarOuNegativar
