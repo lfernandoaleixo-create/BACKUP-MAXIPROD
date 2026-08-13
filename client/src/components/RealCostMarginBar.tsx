@@ -32,6 +32,7 @@ interface RealCostMarginBarProps {
   comissaoPerc: number;     // comissão % (editable)
   custosAdicionaisPerc: number; // custos adicionais % (editable)
   quantidade?: number;      // quantity of boxes (for dynamic total calculation)
+  nfPercentFator?: number | null; // Tipo de Faturamento: null/100=nota cheia, 0=sem NF, 50=50%, 33=1/3, 25=25%, 20=20%
 }
 
 export function RealCostMarginBar({
@@ -44,16 +45,18 @@ export function RealCostMarginBar({
   comissaoPerc,
   custosAdicionaisPerc,
   quantidade = 1,
+  nfPercentFator,
 }: RealCostMarginBarProps) {
   const [expanded, setExpanded] = useState(false);
 
   // Calculate real margin
   const custoPerc = precoVenda > 0 ? (custoBox / precoVenda) * 100 : 0;
-  const totalDeducoes = custoPerc + taxBreakdown.total + fretePerc + comissaoPerc + custosAdicionaisPerc;
+  const effectiveNfFactor = (nfPercentFator ?? 100) / 100;
+  const totalDeducoes = custoPerc + (taxBreakdown.total * effectiveNfFactor) + fretePerc + comissaoPerc + custosAdicionaisPerc;
   const margin = 100 - totalDeducoes;
 
   // Values in R$ per unit
-  const impostosValor = precoVenda * (taxBreakdown.total / 100);
+  const impostosValor = precoVenda * (taxBreakdown.total / 100) * effectiveNfFactor;
   const freteValor = precoVenda * (fretePerc / 100);
   const comissaoValor = precoVenda * (comissaoPerc / 100);
   const custosAdValor = precoVenda * (custosAdicionaisPerc / 100);
@@ -167,28 +170,28 @@ export function RealCostMarginBar({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600 dark:text-slate-400">ICMS ({taxBreakdown.icms.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.icms / 100).toFixed(2)}</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.icms / 100 * effectiveNfFactor).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600 dark:text-slate-400">PIS ({taxBreakdown.pis.toFixed(3)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.pis / 100).toFixed(2)}</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.pis / 100 * effectiveNfFactor).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600 dark:text-slate-400">COFINS ({taxBreakdown.cofins.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.cofins / 100).toFixed(2)}</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.cofins / 100 * effectiveNfFactor).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600 dark:text-slate-400">IRPJ ({taxBreakdown.irpj.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.irpj / 100).toFixed(2)}</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.irpj / 100 * effectiveNfFactor).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600 dark:text-slate-400">CSLL ({taxBreakdown.csll.toFixed(2)}%):</span>
-              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.csll / 100).toFixed(2)}</span>
+              <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.csll / 100 * effectiveNfFactor).toFixed(2)}</span>
             </div>
             {taxBreakdown.difal > 0 && (
               <div className="flex justify-between">
                 <span className="text-slate-600 dark:text-slate-400">DIFAL ({taxBreakdown.difal.toFixed(2)}%):</span>
-                <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.difal / 100).toFixed(2)}</span>
+                <span className="font-bold text-red-600">-R$ {(totalVenda * taxBreakdown.difal / 100 * effectiveNfFactor).toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between">

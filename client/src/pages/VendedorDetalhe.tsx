@@ -8143,6 +8143,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                                       comissaoPerc={marginComissao}
                                       custosAdicionaisPerc={marginCustosAdicionais}
                                       quantidade={calc.quantity}
+                                      nfPercentFator={nfPercent}
                                     />
                                   )}
                                 </div>
