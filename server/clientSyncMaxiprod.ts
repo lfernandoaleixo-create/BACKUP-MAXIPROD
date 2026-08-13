@@ -48,6 +48,18 @@ interface MaxiprodEmpresa {
     nomeFantasia: string | null;
     razaoSocial: string | null;
   } | null;
+  enderecoDeEntrega: {
+    logradouro: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cep: string | null;
+    telefone1: string | null;
+    municipio: {
+      descricao: string | null;
+      uf: { sigla: string } | null;
+    } | null;
+  } | null;
   representanteOuVendedor2Preferencial: {
     nomeFantasia: string | null;
     razaoSocial: string | null;
