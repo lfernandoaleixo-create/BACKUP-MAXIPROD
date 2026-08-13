@@ -1282,11 +1282,13 @@ export const productionRouter = router({
       const dataProducao = today.toISOString().slice(0, 10);
       const codigo = `${input.codigoItem}-${dd}${mm}${aa}-${input.notaCarga}`;
 
-      // Check if a lot with same codigoItem + notaCarga already exists (any date)
+      // Check if a lot with same codigoItem + notaCarga + SAME DATE already exists
+      // Different days MUST create separate lots even for same product/nota
       const existing = await db.select().from(productionLots)
         .where(and(
           eq(productionLots.codigoItem, input.codigoItem),
-          eq(productionLots.notaCarga, input.notaCarga)
+          eq(productionLots.notaCarga, input.notaCarga),
+          eq(productionLots.dataProducao, dataProducao)
         ))
         .orderBy(desc(productionLots.createdAt))
         .limit(1);
