@@ -8412,7 +8412,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 )}
                 <button
                   onClick={handleInlineFreightSimulation}
-                  disabled={inlineFreightLoading || items.length === 0 || !cep}
+                  disabled={inlineFreightLoading || items.length === 0 || (!cep && !entregaCep)}
                   className="px-2.5 sm:px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1 sm:gap-1.5 disabled:opacity-50"
                 >
                   {inlineFreightLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
@@ -8538,7 +8538,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                         cnpjOrigem: "36.562.762/0001-29",
                         cepOrigem: "37264-000",
                         cnpjDestino: cnpjCpf || "N/A",
-                        cepDestino: cep || "N/A",
+                        cepDestino: (enderecoEntregaMesmo === false && entregaCep.trim()) ? entregaCep.trim() : (cep || "N/A"),
                         pesoTotal: items.reduce((sum, it) => sum + ((it as any).pesoBrutoCaixa || (it as any).pesoBruto || 0) * it.quantidade, 0),
                         cubagem: items.reduce((sum, it) => {
                           const dimsRaw = (it as any).dimsStr || (it as any).dimensoes;
