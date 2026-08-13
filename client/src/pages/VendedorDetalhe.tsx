@@ -6366,7 +6366,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [marginCustosAdicionais, setMarginCustosAdicionais] = useState(0);
   const [marginUfSimulacao, setMarginUfSimulacao] = useState(uf || "MG");
   // NF Percentage (Zap system) - affects tax deduction in margin calculation
-  const [nfPercent, setNfPercent] = useState(100); // 100 = Zap1 (nota cheia), 0 = Zap0 (sem NF)
+  const [nfPercent, setNfPercent] = useState<number | null>(null); // null = not selected yet, 100 = Zap1, 0 = Zap0
   const [showZapModal, setShowZapModal] = useState(false);
   const [zapPassword, setZapPassword] = useState("");
   const [zapPasswordError, setZapPasswordError] = useState(false);
@@ -7677,7 +7677,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     const taxBd = costData.tipoProduto === "industrializado"
                       ? productMarginsQuery.data?.taxBreakdownIndustrializado
                       : productMarginsQuery.data?.taxBreakdownImportado;
-                    const totalDeducoes = custoPerc + ((taxBd?.total || 0) * nfPercent / 100) + marginFrete + marginComissao + marginCustosAdicionais;
+                    const totalDeducoes = custoPerc + ((taxBd?.total || 0) * (nfPercent ?? 100) / 100) + marginFrete + marginComissao + marginCustosAdicionais;
                     const itemMargin = 100 - totalDeducoes;
                     const totalPV = pv * item.quantidade;
                     sumPVxMargin += totalPV * itemMargin;

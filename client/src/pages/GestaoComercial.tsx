@@ -2925,9 +2925,11 @@ function ComissaoView({ gestorName }: { gestorName: string }) {
   const updateCommMutation = trpc.sales.updateCommission.useMutation({
     onSuccess: () => sellerPermsQuery.refetch(),
   });
-  const gestorSellers = (sellerPermsQuery.data || []).filter((p: any) => 
-    (p.gestorName || "").toLowerCase().includes(gestorName.toLowerCase().split(" ")[0])
-  );
+  const gestorNameNorm = (gestorName || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const gestorSellers = (sellerPermsQuery.data || []).filter((p: any) => {
+    const pGestorNorm = (p.gestorName || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    return pGestorNorm === gestorNameNorm || pGestorNorm.includes(gestorNameNorm.split(" ")[0]) || gestorNameNorm.includes(pGestorNorm.split(" ")[0]);
+  });
   const [editingCommId, setEditingCommId] = useState<number | null>(null);
   const [editingCommValue, setEditingCommValue] = useState("");
 
