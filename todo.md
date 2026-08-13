@@ -7030,3 +7030,4 @@
 - [ ] Simplificar Custos de Venda: resumo simples (valor vendido vs custo, impostos, frete, gastos adicionais)
 - [x] Zap (Tipo de Faturamento) afeta valor declarado na simulação de frete (peso/cubagem não muda)
 - [x] Card comissão no pedido de venda: começar encolhido, expandir para ver vendedores
+- [x] Pedido em edição sai da lista de aprovados até ser salvo

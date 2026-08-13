@@ -2275,6 +2275,8 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   bonificacaoItems: json("bonificacao_items"),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  editingBy: varchar("editing_by", { length: 200 }),
+  editingAt: bigint("editing_at", { mode: "number" }),
 });
 
 export type SalesOrderRequest = typeof salesOrderRequests.$inferSelect;

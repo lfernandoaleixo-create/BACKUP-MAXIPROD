@@ -319,7 +319,7 @@ export default function VitoriaOrders() {
   // For Vitória: only 'aprovado' not yet received
   // NOTE: For top gestores (Fernando/Guilherme/Bruno/Juvenal), apply gc.pedidosVenda sub-permission filter.
   const isTopGestorFilter = canSeeAguardandoAprovacao || isJuvenalViewer;
-  const filteredOrders = (orders || []).filter((o: any) => {
+  const filteredOrders = (orders || []).filter((o: any) => !o.editingBy).filter((o: any) => {
     // Sub-permission filter: only for top gestores (who see ALL statuses and need filtering)
     if (isTopGestorFilter) {
       if (visibleSellersForOrders.length === 0) return false;

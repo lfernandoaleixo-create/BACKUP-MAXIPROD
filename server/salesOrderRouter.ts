@@ -4797,6 +4797,34 @@ export const salesOrderRouter = router({
     }),
 
   /** Update a pending order (seller can edit while awaiting gestor approval) */
+
+  startEditing: publicProcedure
+    .input(z.object({ orderId: z.number(), editorName: z.string() }))
+    .mutation(async ({ input }) => {
+      // Auto-unlock stale edits (older than 30 minutes)
+      const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+      await db.update(salesOrderRequests)
+        .set({ editingBy: null, editingAt: null })
+        .where(and(
+          isNotNull(salesOrderRequests.editingAt),
+          lt(salesOrderRequests.editingAt, thirtyMinAgo)
+        ));
+      // Lock this order
+      await db.update(salesOrderRequests)
+        .set({ editingBy: input.editorName, editingAt: Date.now() })
+        .where(eq(salesOrderRequests.id, input.orderId));
+      return { success: true };
+    }),
+
+  stopEditing: publicProcedure
+    .input(z.object({ orderId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.update(salesOrderRequests)
+        .set({ editingBy: null, editingAt: null })
+        .where(eq(salesOrderRequests.id, input.orderId));
+      return { success: true };
+    }),
+
   updateOrder: publicProcedure
     .input(z.object({
       orderId: z.number(),
