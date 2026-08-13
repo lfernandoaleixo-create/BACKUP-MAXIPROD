@@ -7017,3 +7017,4 @@
 - [x] Fix cubagem calculation in all components to use parseDimensions (correct mm→cm conversion)
 - [x] Fix client sync: manually-edited clients not overwritten by Maxiprod sync (new data prevails over old)
 - [x] Fix Rodonaves registration: use delivery address (not client address) when enderecoEntregaMesmo=0
+- [x] Add CNPJ da Flor de Minas (01.527.825/0001-21) no relatório comparativo e cotações

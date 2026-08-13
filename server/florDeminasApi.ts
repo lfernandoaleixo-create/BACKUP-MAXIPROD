@@ -335,7 +335,7 @@ export async function quoteFlordeMinas(params: {
   if (!cidadeInfo) {
     return {
       transportadora: "Flor de Minas",
-      cnpj: "",
+      cnpj: "01.527.825/0001-21",
       totalFrete: 0,
       prazo: "N/A",
       error: `Não foi possível identificar a cidade pelo CEP ${cepDestino} (todas as APIs de CEP falharam)`,
@@ -347,7 +347,7 @@ export async function quoteFlordeMinas(params: {
   if (estadoUpper !== "MG" && estadoUpper !== "SP") {
     return {
       transportadora: "Flor de Minas",
-      cnpj: "",
+      cnpj: "01.527.825/0001-21",
       totalFrete: 0,
       prazo: "N/A",
       error: `Não atende ${cidadeInfo.estado} (apenas MG e SP)`,
@@ -360,7 +360,7 @@ export async function quoteFlordeMinas(params: {
   if (!cidadeAtendida) {
     return {
       transportadora: "Flor de Minas",
-      cnpj: "",
+      cnpj: "01.527.825/0001-21",
       totalFrete: 0,
       prazo: "N/A",
       error: `Cidade não atendida: ${cidadeInfo.cidade} - ${cidadeInfo.estado} (fora da área de cobertura)`,
@@ -381,7 +381,7 @@ export async function quoteFlordeMinas(params: {
   
   return {
     transportadora: "Flor de Minas",
-    cnpj: "",
+    cnpj: "01.527.825/0001-21",
     totalFrete: Math.round(totalFrete * 100) / 100,
     prazo: cidadeAtendida.prazo,
     detalhes: {

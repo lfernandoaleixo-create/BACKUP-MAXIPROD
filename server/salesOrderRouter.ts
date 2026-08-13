@@ -3470,7 +3470,7 @@ export const salesOrderRouter = router({
         const r = florDeMinasResult.value;
         carriers.push({ transportadora: r.transportadora, cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo, error: r.error });
       } else {
-        carriers.push({ transportadora: "Flor de Minas", cnpj: "", totalFrete: 0, prazo: "N/A", error: florDeMinasResult.reason?.message || "Erro" });
+        carriers.push({ transportadora: "Flor de Minas", cnpj: "01.527.825/0001-21", totalFrete: 0, prazo: "N/A", error: florDeMinasResult.reason?.message || "Erro" });
       }
 
       // Sort by lowest freight (errors at the end)
@@ -3894,7 +3894,7 @@ export const salesOrderRouter = router({
         const r = florDeMinasResult.value;
         carriers.push({ transportadora: r.transportadora, cnpj: r.cnpj, totalFrete: r.totalFrete, prazo: r.prazo, error: r.error });
       } else {
-        carriers.push({ transportadora: "Flor de Minas", cnpj: "", totalFrete: 0, prazo: "N/A", error: florDeMinasResult.reason?.message || "Erro" });
+        carriers.push({ transportadora: "Flor de Minas", cnpj: "01.527.825/0001-21", totalFrete: 0, prazo: "N/A", error: florDeMinasResult.reason?.message || "Erro" });
       }
 
       // Sort by lowest freight (errors at the end)
