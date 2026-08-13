@@ -3452,7 +3452,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
             setRedespachoTelefone(ec.redespachoTelefone || "");
             setRedespachoCnpj(ec.redespachoCnpj || "");
             setRedespachoRazaoSocial(ec.redespachoRazaoSocial || "");
-            setEnderecoEntregaMesmo(ec.enderecoEntregaMesmo !== 0);
+            setEnderecoEntregaMesmo(ec.enderecoEntregaMesmo !== 0 && ec.enderecoEntregaMesmo !== false);
             setEntregaCep(ec.entregaCep || "");
             setEntregaLogradouro(ec.entregaLogradouro || "");
             setEntregaNumero(ec.entregaNumero || "");
