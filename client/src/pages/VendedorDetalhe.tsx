@@ -8795,6 +8795,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             onTransportadoraSelect={setTransportadoraSelecionada}
             onProtocoloSet={setProtocoloCotacao}
             onTrackingUrlSet={setTrackingUrl}
+            transportadoraNome={transportadoraSelecionada}
+            protocoloCotacao={protocoloCotacao}
             onBack={() => setStep("produtos")}
             onNext={() => setStep("revisao")}
             onRealCostsCalculated={(data) => {
