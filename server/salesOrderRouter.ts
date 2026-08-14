@@ -1394,11 +1394,11 @@ export const salesOrderRouter = router({
         itemsByOrder.get(item.orderId)!.push(item);
       }
       // Enrich orders missing observacoesCliente from vendor_clients
-      const ordersNeedingObs = orders.filter(o => !o.observacoesCliente && o.cnpj);
+      const ordersNeedingObs = orders.filter(o => !o.observacoesCliente && o.cnpjCpf);
       let obsMap = new Map<string, string>();
       if (ordersNeedingObs.length > 0) {
         try {
-          const cnpjs = [...new Set(ordersNeedingObs.map(o => o.cnpj!).filter(Boolean))];
+          const cnpjs = Array.from(new Set(ordersNeedingObs.map(o => o.cnpjCpf!).filter(Boolean)));
           if (cnpjs.length > 0) {
             const vcRows = await db.select({
               cnpjCpf: vendorClients.cnpjCpf,
