@@ -6176,7 +6176,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.client?.cnpjCpf && !draft.client.tipoContribuinte) {
         const enrichFromVendorClients = async () => {
           try {
-            const res = await fetch(\`/api/trpc/sales.searchClients?input=\${encodeURIComponent(JSON.stringify({ query: draft.client.cnpjCpf, sellerId }))}\`);
+            const res = await fetch(`/api/trpc/sales.searchClients?input=${encodeURIComponent(JSON.stringify({ query: draft.client.cnpjCpf, sellerId }))}`);
             const json = await res.json();
             const clients = json?.result?.data || [];
             const match = clients.find((c: any) => c.cnpjCpf === draft.client.cnpjCpf);
