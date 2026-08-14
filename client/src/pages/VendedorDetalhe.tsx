@@ -4403,7 +4403,8 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const { hasDraft, saveDraft } = useOrderDraft();
-  const resumeDraftParam = new URLSearchParams(window.location.search).get("resumeDraft") === "1";
+  const resumeDraftParamRaw = new URLSearchParams(window.location.search).get("resumeDraft");
+  const resumeDraftParam = resumeDraftParamRaw === "1" || (resumeDraftParamRaw && resumeDraftParamRaw.startsWith("draft_"));
   const [isResumingDraft, setIsResumingDraft] = useState(resumeDraftParam && hasDraft);
   const [showNewOrder, setShowNewOrder] = useState((resumeDraftParam && hasDraft) || !!new URLSearchParams(window.location.search).get("editOrder"));
   const [showProposal, setShowProposal] = useState(false);
@@ -5839,6 +5840,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrderId = null, resumeDraft: shouldResumeDraft = false, onClose }: { sellerId: number; sellerName: string; canSkipClient?: boolean; editOrderId?: number | null; resumeDraft?: boolean; onClose: () => void }) {
   const isEditMode = editOrderId !== null;
   const [isSimulation, setIsSimulation] = useState(false);
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
@@ -6211,6 +6213,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       telefone2, emailContato: emailContato || undefined,
     } : null;
     saveDraft({
+      id: activeDraftId || `draft_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
       sellerId,
       sellerName,
       step,
@@ -7098,7 +7101,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                 {isSimulation ? 'Pedido Real' : 'Simular'}
               </button>
             )}
-            <button onClick={onClose} className="p-1 hover:bg-teal-100 dark:hover:bg-teal-800 rounded-lg">
+            <button onClick={() => items.length > 0 ? setShowExitPrompt(true) : onClose()} className="p-1 hover:bg-teal-100 dark:hover:bg-teal-800 rounded-lg">
               <X className="w-4 h-4 text-slate-500" />
             </button>
           </div>
@@ -8588,6 +8591,30 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             />
 
             <div className="flex justify-between items-center pt-2">
+
+      {/* Exit Prompt - Em Digitação / Concluir / Cancelar */}
+      {showExitPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">O que deseja fazer?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Você tem um pedido em andamento com {items.length} {items.length === 1 ? "item" : "itens"}.</p>
+            <div className="space-y-2">
+              <button onClick={() => { setShowExitPrompt(false); onClose(); }} className="w-full px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all text-sm">
+                📋 Deixar em Digitação
+              </button>
+              <button onClick={() => { setShowExitPrompt(false); handleSubmit(); }} className="w-full px-4 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all text-sm">
+                ✅ Concluir Pedido
+              </button>
+              <button onClick={() => { if (window.confirm("Tem certeza que deseja cancelar? O pedido será excluído permanentemente.")) { clearDraft(); setShowExitPrompt(false); onClose(); } }} className="w-full px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all text-sm border border-red-200 dark:border-red-700">
+                🗑️ Cancelar Pedido
+              </button>
+              <button onClick={() => setShowExitPrompt(false)} className="w-full px-4 py-2 text-slate-500 text-xs hover:text-slate-700 transition-colors">
+                ← Voltar ao pedido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
              <button onClick={() => isSimulation ? onClose() : setStep("cliente")} className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
                {isSimulation ? 'Cancelar' : 'Voltar'}
              </button>
