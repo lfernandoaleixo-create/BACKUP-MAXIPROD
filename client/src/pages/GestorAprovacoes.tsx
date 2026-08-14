@@ -681,7 +681,7 @@ export default function GestorAprovacoes(props: any = {}) {
                      })()}
                       {(order.status === "pendente" || order.status === "aprovado_subgestor" || order.status === "aprovado") && (
                         <button
-                          onClick={async (e) => { e.stopPropagation(); try { await fetch("/api/trpc/salesOrder.startEditing", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({json:{orderId: order.id, editorName: operatorName || "Gestor"}}) }); } catch(err) {} window.location.href = `/gestao-comercial/vendedor/${order.sellerId}?editOrder=${order.id}`; }}
+                          onClick={async (e) => { e.stopPropagation(); try { await fetch("/api/trpc/salesOrder.startEditing", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({json:{orderId: order.id, editorName: gestorName || "Gestor"}}) }); } catch(err) {} window.location.href = `/gestao-comercial/vendedor/${order.sellerId}?editOrder=${order.id}`; }}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors cursor-pointer border border-blue-200"
                           title="Editar pedido"
                         >

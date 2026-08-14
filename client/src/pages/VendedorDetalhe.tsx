@@ -4829,7 +4829,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 
       {/* Novo Pedido de Venda Form */}
             {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { if (editingOrderId) { stopEditingMutation.mutate({ orderId: editingOrderId }); } setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { if (editingOrderId) { fetch("/api/trpc/salesOrders.stopEditing", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({json:{orderId: editingOrderId}}) }).catch(() => {}); } setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
       )}
       {/* Nova Proposta de Venda */}
       {showProposal && (
