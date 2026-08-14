@@ -888,9 +888,10 @@ export default function VitoriaOrders() {
                                       </div>
                                     )}
                                     {/* Observações */}
-                                    {(order.observacoes || (order as any).observacoesInternas) && (
+                                    {(order.observacoes || (order as any).observacoesInternas || (order as any).observacoesCliente) && (
                                       <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
                                         <p className="text-[10px] font-bold text-amber-600 uppercase mb-1.5">📝 Observações</p>
+                                        {(order as any).observacoesCliente && (<p className="text-[10px] text-amber-700 dark:text-amber-300 font-semibold mb-1">📋 Cliente: {(order as any).observacoesCliente}</p>)}
                                         {order.observacoes && (<p className="text-[10px] text-slate-700 dark:text-slate-300">{order.observacoes}</p>)}
                                         {(order as any).observacoesInternas && (<p className="text-[10px] text-slate-500 mt-1 italic">Interna: {(order as any).observacoesInternas}</p>)}
                                       </div>
@@ -1366,7 +1367,7 @@ export default function VitoriaOrders() {
                         )}
 
                         {/* Dados Comerciais / Venda */}
-                        {(order.segmento || order.condicaoPagamento || order.formaCobranca || order.limiteCredito || order.tabelaPrecos || order.observacoes || order.formaPagamento || order.transportadora || order.valorFrete) && (
+                        {(order.segmento || order.condicaoPagamento || order.formaCobranca || order.limiteCredito || order.tabelaPrecos || order.observacoes || order.formaPagamento || order.transportadora || order.valorFrete || (order as any).observacoesCliente || (order as any).observacoesInternas) && (
                           <div className="bg-green-50/50 dark:bg-green-900/10 rounded-lg p-3 border border-green-200 dark:border-green-700">
                             <p className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase flex items-center gap-1 mb-2">
                               <CreditCard className="w-3 h-3" />

@@ -1393,6 +1393,25 @@ export const salesOrderRouter = router({
         if (!itemsByOrder.has(item.orderId)) itemsByOrder.set(item.orderId, []);
         itemsByOrder.get(item.orderId)!.push(item);
       }
+      // Enrich orders missing observacoesCliente from vendor_clients
+      const ordersNeedingObs = orders.filter(o => !o.observacoesCliente && o.cnpj);
+      let obsMap = new Map<string, string>();
+      if (ordersNeedingObs.length > 0) {
+        try {
+          const cnpjs = [...new Set(ordersNeedingObs.map(o => o.cnpj!).filter(Boolean))];
+          if (cnpjs.length > 0) {
+            const vcRows = await db.select({
+              cnpjCpf: vendorClients.cnpjCpf,
+              observacoes: vendorClients.observacoes,
+            }).from(vendorClients)
+              .where(inArray(vendorClients.cnpjCpf, cnpjs));
+            for (const vc of vcRows) {
+              if (vc.cnpjCpf && vc.observacoes) obsMap.set(vc.cnpjCpf, vc.observacoes);
+            }
+          }
+        } catch (e) { /* ignore enrichment errors */ }
+      }
+
 
       return orders.map(order => ({
         ...order,
