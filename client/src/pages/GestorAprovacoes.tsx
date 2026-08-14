@@ -987,6 +987,7 @@ export default function GestorAprovacoes(props: any = {}) {
                               {order.tabelaPrecos && (<div><span className="text-slate-400 font-semibold">Tabela Preços</span><p className="text-slate-800 dark:text-slate-100">{order.tabelaPrecos}</p></div>)}
                               {order.condicaoPagamento && (<div><span className="text-slate-400 font-semibold">Condição Pagamento</span><p className="text-slate-800 dark:text-slate-100">{order.condicaoPagamento}</p></div>)}
                               {order.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 dark:text-slate-100 whitespace-pre-wrap">{order.observacoes}</p></div>)}
+                              {(order as any).observacoesCliente && (<div className="col-span-2 md:col-span-3 bg-amber-50 dark:bg-amber-900/20 p-2 rounded"><span className="text-amber-600 font-semibold text-xs">📋 Obs. do Cadastro do Cliente</span><p className="text-slate-800 dark:text-slate-100 whitespace-pre-wrap text-sm mt-1">{(order as any).observacoesCliente}</p></div>)}
                             </div>
                           </div>
                         )}

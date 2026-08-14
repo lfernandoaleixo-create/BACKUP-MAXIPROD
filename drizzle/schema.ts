@@ -2256,6 +2256,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   aprovadoPor: varchar("aprovado_por", { length: 100 }),
   dataAprovacao: timestamp("data_aprovacao"),
   observacaoAprovacao: text("observacao_aprovacao"), // Justificativa do gestor ao aprovar (preço, motivo, etc.)
+  observacoesCliente: text("observacoes_cliente"), // Observações do cadastro do cliente (vindas do Maxiprod ou editadas na Manus)
   motivoRejeicao: text("motivo_rejeicao"),
   // Posição atual na cadeia de aprovação sequencial (1=aguardando pos 1, 2=aguardando pos 2, etc.)
   // Quando todos da posição N aprovam, avança para N+1. Quando não há mais posições, status vira 'aprovado'.

@@ -4829,7 +4829,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 
       {/* Novo Pedido de Venda Form */}
             {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { if (editingOrderId) { stopEditingMutation.mutate({ orderId: editingOrderId }); } setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { if (editOrderId) { stopEditingMutation.mutate({ orderId: editOrderId }); } setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
       )}
       {/* Nova Proposta de Venda */}
       {showProposal && (
@@ -6200,6 +6200,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       tipoFrete: tipoFrete || undefined,
       transportadoraSelecionada: transportadoraSelecionada || undefined,
       observacoesInternas: observacoesInternas || undefined,
+      observacoesCliente: observacoesCliente || undefined,
       operacaoFiscal: operacaoFiscal || undefined,
       protocoloCotacao: protocoloCotacao || undefined,
       temBonificacao: temBonificacao || undefined,
@@ -6219,7 +6220,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation({ onError: (err) => { alert("Erro ao criar pedido: " + err.message); } });
   const stopEditingMutation = trpc.salesOrders.stopEditing.useMutation();
-  const updateOrderMutation = trpc.salesOrders.updateOrder.useMutation({ onSuccess: () => { if (editingOrderId) { stopEditingMutation.mutate({ orderId: editingOrderId }); } }, onError: (err) => { alert("Erro ao atualizar pedido: " + err.message); } });
+  const updateOrderMutation = trpc.salesOrders.updateOrder.useMutation({ onSuccess: () => { if (editOrderId) { stopEditingMutation.mutate({ orderId: editOrderId }); } }, onError: (err) => { alert("Erro ao atualizar pedido: " + err.message); } });
   const deleteOrderMutation = trpc.salesOrders.deleteOrder.useMutation();
   // Load existing order data for edit mode
   const editOrderQuery = trpc.salesOrders.getOrderDetails.useQuery(
@@ -6847,6 +6848,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       tipoFrete: tipoFrete || undefined,
       observacoes: observacoes || undefined,
       observacoesInternas: observacoesInternas || undefined,
+      observacoesCliente: observacoesCliente || undefined,
       transportadora: transportadoraSelecionada || undefined,
       protocoloCotacao: protocoloCotacao || undefined,
       trackingUrl: trackingUrl || undefined,

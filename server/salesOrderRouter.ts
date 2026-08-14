@@ -786,6 +786,7 @@ export const salesOrderRouter = router({
       tipoFrete: z.string().optional(),
       observacoes: z.string().optional(),
       observacoesInternas: z.string().optional(),
+      observacoesCliente: z.string().optional(),
       transportadora: z.string().optional(),
       protocoloCotacao: z.string().optional(),
       trackingUrl: z.string().optional(),
@@ -924,6 +925,7 @@ export const salesOrderRouter = router({
         tipoFrete: input.tipoFrete || null,
         observacoes: input.observacoes || null,
         observacoesInternas: input.observacoesInternas || null,
+        observacoesCliente: input.observacoesCliente || null,
         transportadora: input.transportadora || null,
         protocoloCotacao: input.protocoloCotacao || null,
         trackingUrl: input.trackingUrl || null,
@@ -4868,7 +4870,7 @@ export const salesOrderRouter = router({
   stopEditing: publicProcedure
     .input(z.object({ orderId: z.number() }))
     .mutation(async ({ input }) => {
-      await db.update(salesOrderRequests)
+      const db = await getDb(); if (!db) return { success: false }; await db.update(salesOrderRequests)
         .set({ editingBy: null, editingAt: null })
         .where(eq(salesOrderRequests.id, input.orderId));
       return { success: true };
