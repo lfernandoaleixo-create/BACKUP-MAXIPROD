@@ -1722,7 +1722,7 @@ export const billingRouter = router({
         const requestedSet = new Set(pedidos);
         const invoicesByPedido: Record<string, NfInfo[]> = {};
         for (const [nfId, pedidoNums] of Array.from(nfToPedidos.entries())) {
-          for (const pedidoNum of pedidoNums) {
+          for (const pedidoNum of Array.from(pedidoNums)) {
             if (!requestedSet.has(pedidoNum)) continue;
             const nf = nfMap.get(nfId);
             if (!nf) continue;
