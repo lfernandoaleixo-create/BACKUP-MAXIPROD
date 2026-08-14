@@ -7046,3 +7046,8 @@
 - [x] Nome do cliente cortado: removido truncate em VendedorDetalhe (pedidos, header sticky, busca) e VitoriaOrders - agora usa break-words com font reduzida para nomes longos
 - [x] NF sync melhorado: fallback duplo (sem filtro EMITIDA + reverse lookup via notasFiscais recentes). Pedidos sem link em itensDasNotasFiscais não podem ser resolvidos - limitação API Maxiprod
 - [x] Ticagens financeiras: adicionado staleTime + refetchOnWindowFocus:false + optimistic updates para evitar flicker ao navegar entre abas
+- [x] Produtos novos (00652-00702) adicionados ao product_catalog: sync completo de 802 itens do Maxiprod via API 'itens'
+- [x] Sync automático atualizado: agora busca TODOS os itens do Maxiprod (todos os grupos) para o catálogo, não apenas grupo 12
+- [x] Grupo 28 (Itens Decorativos) reconhecido: produtos 00693-00698 atualizados para grupo 28
+- [x] Filtros de categoria atualizados: adicionados 'Barraca' (grupo 27) e 'Decorativos' (grupo 28) nos filtros do pedido de venda
+- [x] DIFAL atualizado: grupos 27 e 28 classificados como importado (dentro do supergrupo 12 = IMPORTAÇÃO - REVENDA)

@@ -6416,7 +6416,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     let hasIndustrializado = false;
     for (const item of items) {
       const gc = (item as any).grupoCodigo || "";
-      if (gc === "20" || gc === "21") hasImportado = true;
+      if (gc === "20" || gc === "21" || gc === "27" || gc === "28") hasImportado = true;
       else if (gc === "18") hasIndustrializado = true;
       else hasImportado = true; // default to importado (higher rate = safer)
     }
@@ -6624,15 +6624,23 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       // MADEIRA = grupoCodigo "18" (superGrupo 16 = INDUSTRIALIZAÇÃO)
       // BAMBU = grupoCodigo "20" (superGrupo 12 = IMPORTAÇÃO - REVENDA, subgrupo BAMBU)
       // FIBRA = grupoCodigo "21" (superGrupo 12 = IMPORTAÇÃO - REVENDA, subgrupo FIBRA)
+      // BARRACA = grupoCodigo "27" (superGrupo 12 = IMPORTAÇÃO - REVENDA, subgrupo BARRACA)
+      // ITENS DECORATIVOS = grupoCodigo "28" (superGrupo 12 = IMPORTAÇÃO - REVENDA, subgrupo ITENS DECORATIVOS)
       let isMadeira = false;
       let isBambu = false;
       let isFibra = false;
+      let isBarraca = false;
+      let isDecorativos = false;
       if (gc === "18") {
         isMadeira = true;
       } else if (gc === "20") {
         isBambu = true;
       } else if (gc === "21") {
         isFibra = true;
+      } else if (gc === "27") {
+        isBarraca = true;
+      } else if (gc === "28") {
+        isDecorativos = true;
       } else {
         // Fallback for items without grupoCodigo: use description/grupo name
         if (desc.includes("FIBRA")) {
@@ -6647,6 +6655,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
         if (cat === "madeira") return isMadeira;
         if (cat === "bambu") return isBambu;
         if (cat === "fibra") return isFibra;
+        if (cat === "barraca") return isBarraca;
+        if (cat === "decorativos") return isDecorativos;
         return false;
       });
     });
@@ -7703,7 +7713,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             </div>
             {/* Category filters */}
             <div className="flex items-center gap-2 flex-wrap">
-              {['madeira', 'bambu', 'fibra'].map(cat => (
+              {['madeira', 'bambu', 'fibra', 'barraca', 'decorativos'].map(cat => (
                 <button
                   key={cat}
                   onClick={() => setCategoryFilters(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])}

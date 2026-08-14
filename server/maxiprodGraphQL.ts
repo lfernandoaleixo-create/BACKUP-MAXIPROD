@@ -1027,8 +1027,36 @@ async function saveAllData(
     // ═══ CATÁLOGO PERSISTENTE: Acumula todos os produtos (NUNCA deleta) ═══
     // Insere novos produtos e atualiza lastSeenAt dos existentes
     const catalogEntries: Array<{ codigoItem: string; descricaoItem: string; grupoCodigo: string | null; unidadeMedida: string | null; source: string }> = [];
-    
-    // From stock
+
+    // From Maxiprod 'itens' API (ALL groups - ensures new products appear in PO/import search)
+    try {
+      const allMaxiprodItems = await fetchAllPages("itens", (skip, take) => `{
+        itens(skip: ${skip}, take: ${take}) {
+          totalCount
+          items {
+            codigo
+            descricao
+            grupo { codigo }
+          }
+        }
+      }`);
+      for (const item of allMaxiprodItems as any[]) {
+        if (item.codigo) {
+          catalogEntries.push({
+            codigoItem: item.codigo,
+            descricaoItem: item.descricao || item.codigo,
+            grupoCodigo: item.grupo?.codigo || null,
+            unidadeMedida: null,
+            source: "maxiprod_itens",
+          });
+        }
+      }
+      console.log(`[GraphQL Sync] Catálogo: ${allMaxiprodItems.length} itens do Maxiprod adicionados`);
+    } catch (err: any) {
+      console.log(`[GraphQL Sync] Catálogo: falha ao buscar itens: ${err.message}`);
+    }
+
+    // From stock (overrides maxiprod_itens source with more specific data)
     for (const item of stockData) {
       if (item.codigoItem) {
         catalogEntries.push({
