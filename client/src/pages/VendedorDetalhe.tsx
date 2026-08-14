@@ -4829,7 +4829,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
 
       {/* Novo Pedido de Venda Form */}
             {showNewOrder && (
-        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { if (editOrderId) { stopEditingMutation.mutate({ orderId: editOrderId }); } setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
+        <NewOrderInline sellerId={sellerId} sellerName={sellerName} canSkipClient={canSkipClient} editOrderId={editingOrderId} resumeDraft={isResumingDraft} onClose={() => { if (editingOrderId) { stopEditingMutation.mutate({ orderId: editingOrderId }); } setShowNewOrder(false); setEditingOrderId(null); setIsResumingDraft(false); }} />
       )}
       {/* Nova Proposta de Venda */}
       {showProposal && (
@@ -6173,13 +6173,13 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.previsaoEntregaPedido) setPrevisaoEntregaPedido(draft.previsaoEntregaPedido);
       if (draft.step) setStep(draft.step);
       // If coming from proposal conversion, enrich missing client fields from vendor_clients
-      if (draft.client?.cnpjCpf && !draft.client.tipoContribuinte) {
+      if (draft.client && draft.client.cnpjCpf && !draft.client.tipoContribuinte) {
         const enrichFromVendorClients = async () => {
           try {
-            const res = await fetch(`/api/trpc/sales.searchClients?input=${encodeURIComponent(JSON.stringify({ query: draft.client.cnpjCpf, sellerId }))}`);
+            const res = await fetch(`/api/trpc/sales.searchClients?input=${encodeURIComponent(JSON.stringify({ query: draft.client!.cnpjCpf, sellerId }))}`);
             const json = await res.json();
             const clients = json?.result?.data || [];
-            const match = clients.find((c: any) => c.cnpjCpf === draft.client.cnpjCpf);
+            const match = clients.find((c: any) => c.cnpjCpf === draft.client!.cnpjCpf);
             if (match) {
               if (match.tipoContribuinte && !tipoContribuinte) setTipoContribuinte(match.tipoContribuinte);
               if (match.regimeTributario && regimeTributario === "Normal") setRegimeTributario(match.regimeTributario);
@@ -6220,7 +6220,6 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       tipoFrete: tipoFrete || undefined,
       transportadoraSelecionada: transportadoraSelecionada || undefined,
       observacoesInternas: observacoesInternas || undefined,
-      observacoesCliente: observacoesCliente || undefined,
       operacaoFiscal: operacaoFiscal || undefined,
       protocoloCotacao: protocoloCotacao || undefined,
       temBonificacao: temBonificacao || undefined,
