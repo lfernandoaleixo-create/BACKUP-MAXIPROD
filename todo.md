@@ -7042,3 +7042,4 @@
 - [ ] Sistema Em Digitação: múltiplos pedidos em standby, carrinho mostra todos, pergunta ao sair
 
 - [x] Situação de Cobrança e Segmento sempre visíveis no resumo do pedido (todos os views)
+- [x] Backend + frontend validation: operacaoFiscal e estadoConfiguravel obrigatórios para concluir pedido

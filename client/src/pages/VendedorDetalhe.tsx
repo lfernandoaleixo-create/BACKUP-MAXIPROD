@@ -6721,11 +6721,11 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       alert("Selecione o Tipo de Frete (CIF / FOB) antes de finalizar o pedido.");
       return;
     }
-    if (!isSimulation && !operacaoFiscal) {
+    if (!operacaoFiscal) {
       alert("Selecione a Operação Fiscal antes de finalizar o pedido.");
       return;
     }
-    if (!isSimulation && !estadoConfiguravel) {
+    if (!estadoConfiguravel) {
       alert("Selecione o Estado Configurável antes de finalizar o pedido.");
       return;
     }

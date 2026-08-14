@@ -893,6 +893,15 @@ export const salesOrderRouter = router({
       // Determine status - ALL real orders start as 'pendente' and require gestor approval
       // Exception: if the seller IS the gestor (e.g. Jordão), auto-approve and go directly to Vitória
       const isSellerGestor = seller.sellerName.toUpperCase().trim() === (seller.gestorName || "").toUpperCase().trim();
+      // Backend validation: operacaoFiscal and estadoConfiguravel are mandatory for real orders
+      if (!input.isSimulation) {
+        if (!input.operacaoFiscal) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Operação Fiscal é obrigatória. Selecione antes de concluir o pedido." });
+        }
+        if (!input.estadoConfiguravel) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Estado Configurável é obrigatório. Selecione antes de concluir o pedido." });
+        }
+      }
       const status = input.isSimulation ? "simulacao" as const : (isSellerGestor ? "aprovado" as const : "pendente" as const);
       const motivoAlerta = alertMotivos.length > 0 ? alertMotivos.join("; ") : null;
 
