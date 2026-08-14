@@ -981,7 +981,8 @@ export default function GestorAprovacoes(props: any = {}) {
                               Dados de Venda
                             </p>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[10px]">
-                              {order.segmento && (<div><span className="text-slate-400 font-semibold">Segmento</span><p className="text-slate-800 dark:text-slate-100">{order.segmento}</p></div>)}
+                              <div><span className="text-slate-400 font-semibold">Segmento</span><p className="text-slate-800 dark:text-slate-100 font-medium">{order.segmento || "—"}</p></div>
+                              <div><span className="text-slate-400 font-semibold">Sit. Cobrança</span><p className={`font-bold ${order.situacaoCobranca?.toUpperCase().includes("COM PROTESTO") ? "text-red-600" : "text-green-600"}`}>{order.situacaoCobranca || "—"}</p></div>
                               {order.limiteCredito && (<div><span className="text-slate-400 font-semibold">Limite Crédito</span><p className="text-slate-800 dark:text-slate-100">R$ {order.limiteCredito}</p></div>)}
                               {order.formaCobranca && (<div><span className="text-slate-400 font-semibold">Forma Cobrança</span><p className="text-slate-800 dark:text-slate-100">{order.formaCobranca}</p></div>)}
                               {order.tabelaPrecos && (<div><span className="text-slate-400 font-semibold">Tabela Preços</span><p className="text-slate-800 dark:text-slate-100">{order.tabelaPrecos}</p></div>)}
@@ -1012,7 +1013,7 @@ export default function GestorAprovacoes(props: any = {}) {
                         )}
 
                         {/* Cobrança */}
-                        {order.situacaoCobranca && order.situacaoCobranca !== "SEM PROTESTO" && (
+                        {order.situacaoCobranca && (
                           <div className="bg-red-50/50 dark:bg-red-900/10 rounded-lg p-3 border border-red-200 dark:border-red-700">
                             <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase flex items-center gap-1 mb-2">
                               ⚠️ Cobrança

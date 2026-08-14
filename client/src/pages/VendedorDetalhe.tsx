@@ -758,7 +758,8 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                             {(orderDetails.order as any).meioPagamento && (<div><span className="text-slate-400 font-semibold">Meio Pagamento</span><p className="text-slate-800">{(orderDetails.order as any).meioPagamento}</p></div>)}
                             {(orderDetails.order as any).operacaoFiscal && (<div><span className="text-slate-400 font-semibold">Operação Fiscal</span><p className="text-slate-800">{(orderDetails.order as any).operacaoFiscal}</p></div>)}
                             {(orderDetails.order as any).estadoConfiguravel && (<div><span className="text-slate-400 font-semibold">Estado Configurável</span><p className="text-slate-800">{(orderDetails.order as any).estadoConfiguravel}</p></div>)}
-                            {(orderDetails.order as any).situacaoCobranca && (<div><span className="text-slate-400 font-semibold">Situação Cobrança</span><p className="text-slate-800 font-bold">{(orderDetails.order as any).situacaoCobranca}</p></div>)}
+                            <div><span className="text-slate-400 font-semibold">Segmento</span><p className="text-slate-800 font-medium">{(orderDetails.order as any).segmento || "—"}</p></div>
+                            <div><span className="text-slate-400 font-semibold">Situação Cobrança</span><p className={`font-bold ${(orderDetails.order as any).situacaoCobranca?.toUpperCase().includes("COM PROTESTO") ? "text-red-600" : "text-green-600"}`}>{(orderDetails.order as any).situacaoCobranca || "—"}</p></div>
                             {orderDetails.order.observacoes && (<div className="col-span-2 md:col-span-3"><span className="text-slate-400 font-semibold">Observações</span><p className="text-slate-800 whitespace-pre-wrap">{orderDetails.order.observacoes}</p></div>)}
                           </div>
                         </div>

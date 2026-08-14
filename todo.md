@@ -7040,3 +7040,5 @@
 - [ ] Verificar todos pedidos faturados últimos 30 dias - NF faltando (ex: #1703 João Marcos tem NF no Maxiprod mas não na Manus)
 - [x] Fix CNPJ não puxando para BAROLIVEIRA e outros clientes (fallback Maxiprod GraphQL)
 - [ ] Sistema Em Digitação: múltiplos pedidos em standby, carrinho mostra todos, pergunta ao sair
+
+- [x] Situação de Cobrança e Segmento sempre visíveis no resumo do pedido (todos os views)
