@@ -4079,7 +4079,7 @@ export const salesRouter = router({
       observacoes: z.string().optional(),
       tipoContribuinte: z.string().max(30).optional(),
       // Dados fiscais
-      regimeTributario: z.string().max(50).optional(),
+      regimeTributario: z.string().max(200).optional(),
       inscricaoMunicipal: z.string().max(30).optional(),
       inscricaoSuframa: z.string().max(30).optional(),
       situacaoFiscalEspecial: z.string().max(100).optional(),
@@ -4260,7 +4260,7 @@ export const salesRouter = router({
       inscricaoEstadual: z.string().max(30).optional(),
       tipoContribuinte: z.string().max(30).optional(),
       // Dados fiscais
-      regimeTributario: z.string().max(50).optional(),
+      regimeTributario: z.string().max(200).optional(),
       inscricaoMunicipal: z.string().max(30).optional(),
       inscricaoSuframa: z.string().max(30).optional(),
       situacaoFiscalEspecial: z.string().max(100).optional(),

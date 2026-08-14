@@ -2160,7 +2160,7 @@ export const salesOrderRequests = mysqlTable("sales_order_requests", {
   nomeFantasia: varchar("nome_fantasia", { length: 300 }),
   inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
   tipoContribuinte: varchar("tipo_contribuinte", { length: 30 }), // Contribuinte, Isento, Não contribuinte
-  regimeTributario: varchar("regime_tributario", { length: 30 }), // Normal, Simples Nacional
+  regimeTributario: varchar("regime_tributario", { length: 200 }), // Normal, Simples Nacional
   emailNfe: varchar("email_nfe", { length: 300 }),
   cnaeFiscal: varchar("cnae_fiscal", { length: 20 }),
   
@@ -2347,7 +2347,7 @@ export const vendorClients = mysqlTable("vendor_clients", {
   nomeFantasia: varchar("nome_fantasia", { length: 300 }),
   inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
   tipoContribuinte: varchar("tipo_contribuinte", { length: 30 }), // "Contribuinte" | "Não Contribuinte"
-  regimeTributario: varchar("regime_tributario", { length: 50 }), // Normal, Simples Nacional, etc.
+  regimeTributario: varchar("regime_tributario", { length: 200 }), // Normal, Simples Nacional, etc.
   inscricaoMunicipal: varchar("inscricao_municipal", { length: 30 }),
   inscricaoSuframa: varchar("inscricao_suframa", { length: 30 }),
   situacaoFiscalEspecial: varchar("situacao_fiscal_especial", { length: 100 }),
