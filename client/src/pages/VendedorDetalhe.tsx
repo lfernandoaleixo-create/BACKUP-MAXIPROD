@@ -4946,6 +4946,10 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                               observacoes: prop.observacoes || "",
                               situacaoCobranca: "",
                               estadoConfiguravel: "",
+                              transportadoraSelecionada: prop.transportadora || prop.selectedTransportadora || "",
+                              valorFrete: prop.valorFrete ? parseFloat(prop.valorFrete) : 0,
+                              tipoFrete: prop.tipoFrete || "",
+                              protocoloCotacao: prop.selectedProtocolo || "",
                               step: "produtos",
                              fromProposalId: prop.id,
                            };
@@ -6652,7 +6656,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
     const qty = customQty || 1;
     const fatorProd = Number(product.unidadeDeVendaFator) || 1;
     const pesoBrutoCaixa = product.pesoBruto && Number(product.pesoBruto) > 0 ? Number(product.pesoBruto) * fatorProd : undefined;
-    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\d,.]+)[xX×]([\d,.]+)[xX×]([\d,.]+)/) : null;
+    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)/) : null;
     const claMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i) : null;
     const dimsStr = dimsMatch ? `${dimsMatch[1]}x${dimsMatch[2]}x${dimsMatch[3]}` : claMatch ? `${claMatch[1].replace(',','.')}x${claMatch[2].replace(',','.')}x${claMatch[3].replace(',','.')}` : undefined;
     setItems(prev => [...prev, {
@@ -7568,7 +7572,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                           grupo: prod?.grupo || "",
                           disponivel: prod?.disponivel || "0",
                           pesoBrutoCaixa: prod?.pesoBruto && Number(prod.pesoBruto) > 0 ? Number(prod.pesoBruto) * (Number(prod.unidadeDeVendaFator) || 1) : undefined,
-                                                    dimsStr: (() => { const m = prod?.descricaoComplementar?.match(/([\d,.]+)[xX×]([\d,.]+)[xX×]([\d,.]+)/); if (m) return m[0]; const c = prod?.descricaoComplementar?.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i); return c ? `${c[1].replace(',','.')}x${c[2].replace(',','.')}x${c[3].replace(',','.')}` : undefined; })(),
+                                                    dimsStr: (() => { const m = prod?.descricaoComplementar?.match(/([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)/); if (m) return m[0]; const c = prod?.descricaoComplementar?.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i); return c ? `${c[1].replace(',','.')}x${c[2].replace(',','.')}x${c[3].replace(',','.')}` : undefined; })(),
                         });
                       }
                       setItems(newItems);
@@ -7983,7 +7987,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   const qtdRaw = Number(p.disponivel) || 0;
                   const qtdCaixas = fator > 1 ? Math.floor(qtdRaw / fator) : qtdRaw;
                   const unidadeVenda = p.unidadeDeVendaCodigo || (fator >= 1000 ? "CX" : p.unidadeMedida || "CX");
-                  const dims = p.descricaoComplementar ? (p.descricaoComplementar.match(/([\d,.]+)[xX×]([\d,.]+)[xX×]([\d,.]+)/) || (() => { const c = p.descricaoComplementar.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i); return c ? [c[0], c[1].replace(',','.'), c[2].replace(',','.'), c[3].replace(',','.')] : null; })()) : null;
+                  const dims = p.descricaoComplementar ? (p.descricaoComplementar.match(/([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)/) || (() => { const c = p.descricaoComplementar.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i); return c ? [c[0], c[1].replace(',','.'), c[2].replace(',','.'), c[3].replace(',','.')] : null; })()) : null;
                  const isExpanded = expandedProduct === p.codigoItem;
                  const dimsParsed = p.descricaoComplementar ? parseDimensions(p.descricaoComplementar) : null;
                  const hasPOs = p.pendingPOs && p.pendingPOs.length > 0;

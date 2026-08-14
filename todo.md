@@ -7034,3 +7034,7 @@
 - [x] Fix CNPJ auto-fill for Maxiprod clients (Conquista etc.) - enriched from vendor_clients when cobranca_planilha fails
 - [x] Observações do cliente do Maxiprod sincronizadas e exibidas no pedido de venda
 - [x] Fix proposta→pedido edição: CNPJ, IE, tipo contribuinte sendo apagados na edição
+- [x] Fix produto 00655 dimensões (regex não aceitava espaços ao redor do x)
+- [x] Frete da proposta deve passar para o pedido na conversão
+- [ ] Cotação completa de frete na proposta (igual pedido de venda, não só avulsa)
+- [ ] Verificar todos pedidos faturados últimos 30 dias - NF faltando (ex: #1703 João Marcos tem NF no Maxiprod mas não na Manus)

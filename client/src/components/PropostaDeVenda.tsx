@@ -332,7 +332,7 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose, editPro
     const qty = customQty || 1;
     const fatorProd = Number(product.unidadeDeVendaFator) || 1;
     const pesoBrutoCaixa = product.pesoBruto && Number(product.pesoBruto) > 0 ? Number(product.pesoBruto) * fatorProd : undefined;
-    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\d,.]+)[xX×]([\d,.]+)[xX×]([\d,.]+)/) : null;
+    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)/) : null;
     const claMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i) : null;
     const dimsStr = dimsMatch ? `${dimsMatch[1]}x${dimsMatch[2]}x${dimsMatch[3]}` : claMatch ? `${claMatch[1].replace(',','.')}x${claMatch[2].replace(',','.')}x${claMatch[3].replace(',','.')}` : undefined;
     setItems(prev => [...prev, {
