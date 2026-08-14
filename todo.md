@@ -7037,9 +7037,12 @@
 - [x] Fix produto 00655 dimensões (regex não aceitava espaços ao redor do x)
 - [x] Frete da proposta deve passar para o pedido na conversão
 - [ ] Cotação completa de frete na proposta (igual pedido de venda, não só avulsa)
-- [ ] Verificar todos pedidos faturados últimos 30 dias - NF faltando (ex: #1703 João Marcos tem NF no Maxiprod mas não na Manus)
+- [x] Verificar todos pedidos faturados últimos 30 dias - NF faltando: implementado fallback duplo (sem filtro EMITIDA + reverse lookup via notasFiscais). Pedidos sem link em itensDasNotasFiscais do Maxiprod não podem ser resolvidos do nosso lado - é limitação da API Maxiprod
 - [x] Fix CNPJ não puxando para BAROLIVEIRA e outros clientes (fallback Maxiprod GraphQL)
 - [x] Sistema Em Digitação: múltiplos pedidos em standby, carrinho mostra todos, pergunta ao sair
 
 - [x] Situação de Cobrança e Segmento sempre visíveis no resumo do pedido (todos os views)
 - [x] Backend + frontend validation: operacaoFiscal e estadoConfiguravel obrigatórios para concluir pedido
+- [x] Nome do cliente cortado: removido truncate em VendedorDetalhe (pedidos, header sticky, busca) e VitoriaOrders - agora usa break-words com font reduzida para nomes longos
+- [x] NF sync melhorado: fallback duplo (sem filtro EMITIDA + reverse lookup via notasFiscais recentes). Pedidos sem link em itensDasNotasFiscais não podem ser resolvidos - limitação API Maxiprod
+- [x] Ticagens financeiras: adicionado staleTime + refetchOnWindowFocus:false + optimistic updates para evitar flicker ao navegar entre abas

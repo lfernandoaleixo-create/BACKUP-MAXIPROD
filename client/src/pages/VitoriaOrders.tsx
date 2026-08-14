@@ -741,7 +741,7 @@ export default function VitoriaOrders() {
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-[10px] font-bold text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
-                                      <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{order.razaoSocial || order.nomeFantasia}</p>
+                                      <p className="text-xs font-bold text-slate-800 dark:text-slate-100 break-words leading-tight">{order.razaoSocial || order.nomeFantasia}</p>
                                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                                         isLancado ? "bg-green-50 text-green-600" :
                                         isRecusado ? "bg-red-50 text-red-600" :
@@ -2009,7 +2009,7 @@ function NewClientExpandableRow({ client, exportingClientId, setExportingClientI
       >
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{client.razaoSocial}</p>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 break-words leading-tight">{client.razaoSocial}</p>
             <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-500 flex-wrap">
               <span>{client.cnpjCpf}</span>
               <span className="flex items-center gap-1"><User className="w-3 h-3" />{client.sellerName}</span>

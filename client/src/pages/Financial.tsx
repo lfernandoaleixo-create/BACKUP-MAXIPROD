@@ -591,6 +591,8 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
   const utils = trpc.useUtils();
   const { data: ticksData } = trpc.financial.getPaymentCalendarTicks.useQuery(undefined, {
     enabled: !!isPagar,
+    staleTime: 30000, // Keep ticks fresh for 30s to prevent flicker on tab switch
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
   const tickedIds = useMemo(() => {
     const s = new Set<number>();
@@ -600,7 +602,28 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
     return s;
   }, [ticksData]);
   const toggleTickMut = trpc.financial.togglePaymentCalendarTick.useMutation({
-    onSuccess: () => {
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await utils.financial.getPaymentCalendarTicks.cancel();
+      // Snapshot previous value
+      const prev = utils.financial.getPaymentCalendarTicks.getData();
+      // Optimistically update
+      utils.financial.getPaymentCalendarTicks.setData(undefined, (old) => {
+        if (!old) return old;
+        const exists = old.ticks.some(t => t.maxiprodId === variables.maxiprodId);
+        if (exists) {
+          return { ticks: old.ticks.filter(t => t.maxiprodId !== variables.maxiprodId) };
+        } else {
+          return { ticks: [...old.ticks, { id: Date.now(), maxiprodId: variables.maxiprodId, tickedBy: variables.operatorName, tickedAt: new Date() } as any] };
+        }
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      if (context?.prev) utils.financial.getPaymentCalendarTicks.setData(undefined, context.prev);
+    },
+    onSettled: () => {
       utils.financial.getPaymentCalendarTicks.invalidate();
     },
   });

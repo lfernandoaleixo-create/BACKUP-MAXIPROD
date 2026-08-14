@@ -1559,6 +1559,61 @@ export const billingRouter = router({
           allNfItems = allNfItems.concat(nfItems);
         }
 
+        // Step 2b: FALLBACK - For pedidos that didn't get NF with EMITIDA filter,
+        // try again WITHOUT the estado filter (some NFs may have estado AUTORIZADA or similar)
+        const pedidosWithNf = new Set<string>();
+        for (const nfItem of allNfItems) {
+          const pedidoNum = itemToPedido.get(nfItem.itemDoPedidoDeVendaId);
+          if (pedidoNum) pedidosWithNf.add(pedidoNum);
+        }
+        const pedidosMissingNf = pedidos.filter(p => !pedidosWithNf.has(p));
+        
+        if (pedidosMissingNf.length > 0 && pedidosMissingNf.length <= 200) {
+          // Get item IDs for missing pedidos only
+          const missingItemIds = Array.from(itemToPedido.entries())
+            .filter(([_, pedNum]) => pedidosMissingNf.includes(pedNum))
+            .map(([id]) => id);
+          
+          if (missingItemIds.length > 0) {
+            const missingBatches: number[][] = [];
+            for (let i = 0; i < missingItemIds.length; i += batchSize) {
+              missingBatches.push(missingItemIds.slice(i, i + batchSize));
+            }
+            for (const batch of missingBatches) {
+              const idsStr = batch.join(",");
+              try {
+                const nfItems = await fetchAllPages<NfItemResult>(
+                  "itensDasNotasFiscais",
+                  (skip, take) => `{
+                    itensDasNotasFiscais(
+                      skip: ${skip}, take: ${take},
+                      where: {
+                        itemDoPedidoDeVendaId: { in: [${idsStr}] },
+                        notaFiscal: { entradaOuSaida: { eq: SAIDA } }
+                      }
+                    ) {
+                      totalCount
+                      items {
+                        itemDoPedidoDeVendaId
+                        notaFiscal {
+                          numero
+                          serie
+                          chaveDeAcesso
+                          emissaoData
+                          valorTotal
+                        }
+                      }
+                    }
+                  }`
+                );
+                allNfItems = allNfItems.concat(nfItems);
+              } catch (e) {
+                // Fallback failed, continue with what we have
+              }
+            }
+          }
+        }
+
         // Step 3: Group NFs by pedido number (deduplicate by NF number)
         const invoicesByPedido: Record<string, NfInfo[]> = {};
 
@@ -1592,6 +1647,99 @@ export const billingRouter = router({
         return { invoicesByPedido: {} };
       }
     }),
+
+  /**
+   * Reverse NF lookup: query recent notasFiscais and link back to pedidos
+   * Used as fallback when the standard approach (pedido items -> NF items) fails
+   */
+  getInvoicesReverse: publicProcedure
+    .input(z.object({
+      pedidos: z.array(z.string()).max(100),
+      daysBack: z.number().min(1).max(60).default(7),
+    }))
+    .query(async ({ input }) => {
+      const { pedidos, daysBack } = input;
+      if (pedidos.length === 0) return { invoicesByPedido: {} };
+      try {
+        const now = new Date();
+        const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
+        const startISO = startDate.toISOString().split("T")[0] + "T00:00:00.000-03:00";
+        const endISO = now.toISOString().split("T")[0] + "T23:59:59.999-03:00";
+        type NfResult = { id: number; numero: string; serie: string; valorTotal: number; emissaoData: string; chaveDeAcesso: string | null; entradaOuSaida: string };
+        const recentNfs = await fetchAllPages<NfResult>(
+          "notasFiscais",
+          (skip: number, take: number) => `{
+            notasFiscais(skip: ${skip}, take: ${take}, where: {
+              emissaoData: { gte: "${startISO}", lte: "${endISO}" },
+              entradaOuSaida: { eq: SAIDA }
+            }) { totalCount items { id numero serie valorTotal emissaoData chaveDeAcesso entradaOuSaida } }
+          }`
+        );
+        if (recentNfs.length === 0) return { invoicesByPedido: {} };
+        const nfIds = recentNfs.map(nf => nf.id);
+        const nfMap = new Map(recentNfs.map(nf => [nf.id, nf]));
+        type NfItemLink = { notaFiscalId: number; itemDoPedidoDeVendaId: number | null };
+        let allLinks: NfItemLink[] = [];
+        for (let i = 0; i < nfIds.length; i += 200) {
+          const batch = nfIds.slice(i, i + 200);
+          const idsStr = batch.join(",");
+          const links = await fetchAllPages<NfItemLink>(
+            "itensDasNotasFiscais",
+            (skip: number, take: number) => `{
+              itensDasNotasFiscais(skip: ${skip}, take: ${take}, where: { notaFiscalId: { in: [${idsStr}] } }) {
+                totalCount items { notaFiscalId itemDoPedidoDeVendaId }
+              }
+            }`
+          );
+          allLinks = allLinks.concat(links);
+        }
+        const itemIds = Array.from(new Set(allLinks.filter(l => l.itemDoPedidoDeVendaId).map(l => l.itemDoPedidoDeVendaId!)));
+        const itemToPedido = new Map<number, string>();
+        if (itemIds.length > 0) {
+          for (let i = 0; i < itemIds.length; i += 500) {
+            const batch = itemIds.slice(i, i + 500);
+            const idsStr = batch.join(",");
+            type PedidoItemResult = { id: number; pedidoDeVenda: { numero: string } };
+            const pedidoItems = await fetchAllPages<PedidoItemResult>(
+              "itensDosPedidosDeVendas",
+              (skip: number, take: number) => `{
+                itensDosPedidosDeVendas(skip: ${skip}, take: ${take}, where: { id: { in: [${idsStr}] } }) {
+                  totalCount items { id pedidoDeVenda { numero } }
+                }
+              }`
+            );
+            for (const pi of pedidoItems) { itemToPedido.set(pi.id, pi.pedidoDeVenda.numero); }
+          }
+        }
+        const nfToPedidos = new Map<number, Set<string>>();
+        for (const link of allLinks) {
+          if (!link.itemDoPedidoDeVendaId) continue;
+          const pedidoNum = itemToPedido.get(link.itemDoPedidoDeVendaId);
+          if (!pedidoNum) continue;
+          if (!nfToPedidos.has(link.notaFiscalId)) nfToPedidos.set(link.notaFiscalId, new Set());
+          nfToPedidos.get(link.notaFiscalId)!.add(pedidoNum);
+        }
+        const requestedSet = new Set(pedidos);
+        const invoicesByPedido: Record<string, NfInfo[]> = {};
+        for (const [nfId, pedidoNums] of Array.from(nfToPedidos.entries())) {
+          for (const pedidoNum of pedidoNums) {
+            if (!requestedSet.has(pedidoNum)) continue;
+            const nf = nfMap.get(nfId);
+            if (!nf) continue;
+            if (!invoicesByPedido[pedidoNum]) invoicesByPedido[pedidoNum] = [];
+            const existing = invoicesByPedido[pedidoNum].find(n => n.numero === nf.numero && n.serie === nf.serie);
+            if (!existing) {
+              invoicesByPedido[pedidoNum].push({ numero: nf.numero, serie: nf.serie, chaveDeAcesso: nf.chaveDeAcesso || null, emissaoData: nf.emissaoData || "", valorTotal: nf.valorTotal || 0 });
+            }
+          }
+        }
+        return { invoicesByPedido };
+      } catch (err: any) {
+        console.error("[Billing] Error in reverse NF lookup:", err.message);
+        return { invoicesByPedido: {} };
+      }
+    }),
+
 
   /**
    * Get production statuses for a list of pedidos

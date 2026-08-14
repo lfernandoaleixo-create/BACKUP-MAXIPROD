@@ -572,7 +572,7 @@ function GestorAprovacoesMini({ gestorName }: { gestorName: string }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-slate-400">#{String(order.orderNumber || order.id).padStart(2, '0')}</span>
-                      <span className="text-sm font-bold text-slate-800 truncate">{order.razaoSocial}</span>
+                      <span className="text-sm font-bold text-slate-800 break-words leading-tight" title={order.razaoSocial}>{order.razaoSocial}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] text-slate-500">{order.sellerName}</span>
@@ -4405,7 +4405,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
   const { hasDraft, saveDraft } = useOrderDraft();
   const resumeDraftParamRaw = new URLSearchParams(window.location.search).get("resumeDraft");
   const resumeDraftParam = resumeDraftParamRaw === "1" || (resumeDraftParamRaw && resumeDraftParamRaw.startsWith("draft_"));
-  const [isResumingDraft, setIsResumingDraft] = useState(resumeDraftParam && hasDraft);
+  const [isResumingDraft, setIsResumingDraft] = useState(!!(resumeDraftParam && hasDraft));
   const [showNewOrder, setShowNewOrder] = useState((resumeDraftParam && hasDraft) || !!new URLSearchParams(window.location.search).get("editOrder"));
   const [showProposal, setShowProposal] = useState(false);
   const editOrderParam = new URLSearchParams(window.location.search).get("editOrder");
@@ -6134,7 +6134,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const [previsaoEntregaPedido, setPrevisaoEntregaPedido] = useState("");
 
   // === ORDER DRAFT PERSISTENCE ===
-  const { draft, saveDraft, clearDraft } = useOrderDraft();
+  const { draft, saveDraft, clearDraft, activeDraftId } = useOrderDraft();
 
   // Load draft on mount (only when resuming draft, not for "Novo Pedido")
   useEffect(() => {
@@ -7384,7 +7384,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                   {/* Main info */}
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-white truncate">{selectedClientName}</h4>
+                      <h4 className="text-sm font-bold text-white break-words leading-tight" style={{fontSize: selectedClientName && selectedClientName.length > 30 ? "11px" : undefined}}>{selectedClientName}</h4>
                       {clientHistoryQuery.data?.summary?.titulosVencidos ? (
                         <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full animate-pulse">
                           INADIMPLENTE
@@ -7545,7 +7545,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
             {razaoSocial && (
               <div className="sticky top-0 z-10 bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 rounded-lg px-4 py-2 flex items-center gap-3 shadow-sm">
                 <span className="text-xs font-bold text-teal-700 dark:text-teal-300">Cliente:</span>
-                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{razaoSocial}</span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 break-words leading-tight">{razaoSocial}</span>
                 {cnpjCpf && <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto whitespace-nowrap">{cnpjCpf}</span>}
               </div>
             )}
