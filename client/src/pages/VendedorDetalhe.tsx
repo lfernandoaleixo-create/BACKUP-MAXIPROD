@@ -4918,16 +4918,16 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                                 cep: prop.cep || "",
                                 endereco: prop.endereco || "",
                                 numero: prop.numero || "",
-                                complemento: "",
+                                complemento: prop.complemento || "",
                                 bairro: prop.bairro || "",
                                 municipio: prop.municipio || "",
                                 uf: prop.uf || "",
                                 telefone1: prop.telefone || "",
                                 emailNfe: prop.emailContato || "",
                                 emailContato: prop.emailContato || "",
-                                segmento: "",
-                                tipoContribuinte: "",
-                                regimeTributario: "Normal",
+                                segmento: prop.segmento || "",
+                                tipoContribuinte: prop.tipoContribuinte || "",
+                                regimeTributario: prop.regimeTributario || "Normal",
                               },
                               items: (prop.items || []).map((it: any) => ({
                                 codigoItem: it.codigoItem || it.codigo || "",
@@ -6172,6 +6172,26 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       if (draft.dataEntregaPedido) setDataEntregaPedido(draft.dataEntregaPedido);
       if (draft.previsaoEntregaPedido) setPrevisaoEntregaPedido(draft.previsaoEntregaPedido);
       if (draft.step) setStep(draft.step);
+      // If coming from proposal conversion, enrich missing client fields from vendor_clients
+      if (draft.client?.cnpjCpf && !draft.client.tipoContribuinte) {
+        const enrichFromVendorClients = async () => {
+          try {
+            const res = await fetch(\`/api/trpc/sales.searchClients?input=\${encodeURIComponent(JSON.stringify({ query: draft.client.cnpjCpf, sellerId }))}\`);
+            const json = await res.json();
+            const clients = json?.result?.data || [];
+            const match = clients.find((c: any) => c.cnpjCpf === draft.client.cnpjCpf);
+            if (match) {
+              if (match.tipoContribuinte && !tipoContribuinte) setTipoContribuinte(match.tipoContribuinte);
+              if (match.regimeTributario && regimeTributario === "Normal") setRegimeTributario(match.regimeTributario);
+              if (match.inscricaoMunicipal) setInscricaoMunicipal(match.inscricaoMunicipal);
+              if (match.inscricaoSuframa) setInscricaoSuframa(match.inscricaoSuframa);
+              if (match.website) setWebsiteCliente(match.website);
+              if (match.observacoes) setObservacoesCliente(match.observacoes);
+            }
+          } catch (e) { /* silent */ }
+        };
+        enrichFromVendorClients();
+      }
     }
   }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
 

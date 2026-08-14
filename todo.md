@@ -7033,3 +7033,4 @@
 - [x] Pedido em edição sai da lista de aprovados até ser salvo
 - [x] Fix CNPJ auto-fill for Maxiprod clients (Conquista etc.) - enriched from vendor_clients when cobranca_planilha fails
 - [x] Observações do cliente do Maxiprod sincronizadas e exibidas no pedido de venda
+- [x] Fix proposta→pedido edição: CNPJ, IE, tipo contribuinte sendo apagados na edição
