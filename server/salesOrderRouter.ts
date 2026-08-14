@@ -485,6 +485,30 @@ export const salesOrderRouter = router({
         }
       }
 
+      // 3c. Last resort: query Maxiprod GraphQL for clients still missing CNPJ
+      const stillMissing2 = maxiprodUnique.filter(c => !c.cnpjCpf);
+      if (stillMissing2.length > 0) {
+        try {
+          const { gql } = await import("./maxiprodGraphQL");
+          for (const row of stillMissing2.slice(0, 5)) { // Limit to 5 to avoid rate limiting
+            const searchName = row.razaoSocial.substring(0, 30).replace(/"/g, '');
+            const query = `{ empresas(take: 3, where: { razaoSocial: { contains: "${searchName}" }, cliente: { eq: true } }) { items { cnpjOuCpf razaoSocial nomeFantasia } } }`;
+            try {
+              const data = await gql<{ empresas: { items: Array<{ cnpjOuCpf: string | null; razaoSocial: string; nomeFantasia: string | null }> } }>(query);
+              if (data?.empresas?.items?.length) {
+                const match = data.empresas.items.find(e =>
+                  e.razaoSocial?.toUpperCase().trim() === row.razaoSocial.toUpperCase().trim()
+                ) || data.empresas.items[0];
+                if (match?.cnpjOuCpf) {
+                  row.cnpjCpf = match.cnpjOuCpf.replace(/[^\d]/g, "");
+                  if (!row.nomeFantasia && match.nomeFantasia) row.nomeFantasia = match.nomeFantasia;
+                }
+              }
+            } catch {}
+          }
+        } catch {}
+      }
+
       // 4. Merge: vendor_clients first (most complete local data), then manual orders, then Maxiprod
       const seen = new Set<string>();
       const results: Array<typeof fromManualOrders[number] & { vendorClientId?: number }> = [];
