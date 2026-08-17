@@ -3872,7 +3872,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
       </div>
       {/* Condição de Pagamento (obrigatório) */}
       <div className="mb-3">
-        <FormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="Ex: 30/60/90 dias" required />
+        <FormInput label="Condição de Pagamento" value={condicaoPagamento} onChange={(v) => setCondicaoPagamento(v.replace(/[^0-9/,]/g, ""))} placeholder="Ex: 30/60/90" required />
       </div>
 
       {/* E-mail NF-e (obrigatório) */}
@@ -8424,8 +8424,8 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                       <input
                         type="text"
                         value={condicaoPagamento}
-                        onChange={(e) => setCondicaoPagamento(e.target.value)}
-                        placeholder="Ex: 30/60/90 dias"
+                        onChange={(e) => setCondicaoPagamento(e.target.value.replace(/[^0-9/,]/g, ""))}
+                        placeholder="Ex: 30/60/90"
                         className={`w-full mt-0.5 px-2 py-1.5 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 ${formaPagamento === 'A prazo' && !condicaoPagamento ? 'border-red-300 dark:border-red-600' : 'border-slate-200 dark:border-slate-600'}`}
                       />
                       {formaPagamento === 'A prazo' && !condicaoPagamento && <p className="text-[8px] text-red-500 mt-0.5">Obrigatório para pagamento a prazo</p>}
@@ -9355,7 +9355,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                       <OrderFormInput label="Tabela de Precos" value={tabelaPrecos} onChange={setTabelaPrecos} placeholder="Nome da tabela" />
-                      <OrderFormInput label="Condicao de Pagamento" value={condicaoPagamento} onChange={setCondicaoPagamento} placeholder="30/60/90 dias" />
+                      <OrderFormInput label="Condicao de Pagamento" value={condicaoPagamento} onChange={(v) => setCondicaoPagamento(v.replace(/[^0-9/,]/g, ""))} placeholder="30/60/90" />
                     </div>
                   </div>
 

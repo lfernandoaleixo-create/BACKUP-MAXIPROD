@@ -100,14 +100,15 @@ function deriveTipoIE(ie: string | null | undefined, tipoContribuinte: string | 
 
 /**
  * Derive Regime Tributário - REQUIRED field
- * Valid values in Maxiprod: "Normal", "Simples Nacional", "Simples Nacional - Excesso", "MEI"
+ * Valid values in Maxiprod: "Normal", "Simples Nacional", "Simples Nacional - Excesso" (MEI maps to Simples Nacional)
  */
 function deriveRegimeTributario(regime: string | null | undefined): string {
   if (!regime || regime.trim() === "") return "Normal";
   const lower = regime.toLowerCase();
   if (lower.includes("simples") && lower.includes("excesso")) return "Simples Nacional - Excesso";
   if (lower.includes("simples")) return "Simples Nacional";
-  if (lower.includes("mei")) return "MEI";
+  // Maxiprod only accepts "Normal" and "Simples Nacional" - MEI maps to Simples Nacional
+  if (lower.includes("mei")) return "Simples Nacional";
   return "Normal";
 }
 
