@@ -4445,7 +4445,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   <td className="px-2 py-2 text-center whitespace-nowrap">
                     {editingId === prod.id ? (
                       <div className="relative inline-flex items-center">
-                        <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                         <input
                           className="w-20 text-center border border-blue-300 rounded pl-5 pr-1 py-0.5 text-[10px] font-mono"
                           value={editValues.valorUsd || ''}
@@ -4455,7 +4455,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       </div>
                     ) : (
                       <div className="relative inline-flex items-center">
-                        <span className="absolute left-1.5 text-[9px] text-blue-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <span className="absolute left-1.5 text-[9px] text-blue-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                         <input
                           key={`val-${prod.id}-${prod.valorUsd}-${currency}`}
                           className="w-20 text-center border border-slate-200 rounded pl-5 pr-1 py-1 text-[10px] font-mono text-blue-700 font-semibold bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
@@ -4463,7 +4463,16 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                           placeholder="0,00"
                           onBlur={e => {
                             const normalized = e.target.value.replace(',', '.');
-                            const rate = isLegacyPo ? poExchangeRate + 0.20 : effectiveRate;
+                            const brlRate = isLegacyPo ? poExchangeRate + 0.20 : effectiveRate;
+    const rate = currency === "RMB" ? rmbRate : brlRate;
+    const sym = currency === "USD" ? "$" : currency === "RMB" ? "¥" : "R$";
+
+    // Helper: format USD value in the selected currency
+    const fmtPo = (usdVal: number, decimals = 2) => {
+      if (currency === "RMB") return `¥ ${(usdVal * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+      if (currency === "BRL") return `R$ ${(usdVal * rate).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+      return `$ ${usdVal.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+    };
                             const valueInUsd = currency === 'BRL' ? String(Number(normalized) / rate) : normalized;
                             if (valueInUsd !== String(prod.valorUsd || '')) {
                               updateProduct.mutate({ id: prod.id, valorUsd: valueInUsd });
@@ -4478,7 +4487,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   <td className="px-2 py-2 text-center bg-blue-50/30 whitespace-nowrap">
                     {editingId === prod.id ? (
                       <div className="relative inline-flex items-center">
-                        <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                         <input
                           className="w-20 text-center border border-blue-300 rounded pl-5 pr-1 py-0.5 text-[10px] font-mono"
                           value={editValues.valorPoCheia || ''}
@@ -4488,7 +4497,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       </div>
                     ) : (
                       <div className="relative inline-flex items-center">
-                        <span className="absolute left-1.5 text-[9px] text-blue-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <span className="absolute left-1.5 text-[9px] text-blue-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                         <input
                           key={`ordem-${prod.id}-${prod.valorPoCheia}-${currency}`}
                           className="w-20 text-center border border-slate-200 rounded pl-5 pr-1 py-1 text-[10px] font-mono text-blue-700 bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
@@ -4510,7 +4519,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   {/* Col 3: Diferença (automático) */}
                   <td className="px-2 py-2 text-center bg-orange-50/30 whitespace-nowrap">
                     <span className={`font-mono font-medium ${diferenca > 0 ? 'text-orange-600' : diferenca < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(diferenca * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate) * 100) / 100).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(diferenca * rate * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 4: Quantidade de Caixas (sempre editável) */}
@@ -4543,19 +4552,19 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   {/* Col 5: Frete Calculado pelo Fornecedor */}
                   <td className="px-2 py-2 text-center bg-orange-50/30 whitespace-nowrap">
                     <span className="font-mono text-orange-700 font-semibold">
-                      {(valorForn > 0 && valorOrdem > 0 && qty > 0) ? (currency === "USD" ? `$ ${(Math.round(freteCalcFornecedor * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Math.round(freteCalcFornecedor * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate) * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
+                      {(valorForn > 0 && valorOrdem > 0 && qty > 0) ? (currency === "USD" ? `$ ${(Math.round(freteCalcFornecedor * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(Math.round(freteCalcFornecedor * rate * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
                   </td>
                   {/* Col 6: Frete com Rateio Correto (% na ordem × frete total) */}
                   <td className="px-2 py-2 text-center bg-purple-50/30 whitespace-nowrap">
                     <span className="font-mono text-purple-700 font-medium">
-                      {(valorForn > 0 && qty > 0 && totalValorReferencia > 0 && totalFreteCalculado > 0) ? (currency === "USD" ? `$ ${(Math.round(freteRateioCorreto * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Math.round(freteRateioCorreto * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate) * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
+                      {(valorForn > 0 && qty > 0 && totalValorReferencia > 0 && totalFreteCalculado > 0) ? (currency === "USD" ? `$ ${(Math.round(freteRateioCorreto * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(Math.round(freteRateioCorreto * rate * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
                   </td>
                   {/* Col 7: Valor de Referência (Valor Pago ao Fornecedor × Quantidade de Caixas) */}
                   <td className="px-2 py-2 text-center bg-emerald-50/30 whitespace-nowrap">
                     <span className="font-mono text-emerald-700 font-semibold">
-                      {(valorForn > 0 && qty > 0) ? (currency === "USD" ? `$ ${(Math.round(valorRef * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Math.round(valorRef * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate) * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
+                      {(valorForn > 0 && qty > 0) ? (currency === "USD" ? `$ ${(Math.round(valorRef * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(Math.round(valorRef * rate * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
                   </td>
                   {/* Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento */}
@@ -4571,7 +4580,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         ? (currency === "USD"
                             ? `$ ${(Number(prod.valorCaixaBrl) / (poExchangeRate + 0.20)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             : `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(valorDaCaixa * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
+                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(valorDaCaixa * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
                     {isLegacyPo && prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0 && (
                       <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha - travado)</span>
@@ -4641,7 +4650,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             <div className="bg-white border border-emerald-200 rounded-lg p-3">
               <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Valor Total da Ordem de Pagamento</p>
               <p className="text-lg font-bold font-mono text-emerald-800">
-                {currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(totalValorReferencia * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(totalValorReferencia * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </p>
               <p className="text-[9px] text-slate-500">Soma dos Valores de Referência</p>
             </div>
@@ -4684,7 +4693,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                 </div>
               ) : (
                 <p className="text-lg font-bold font-mono text-orange-800 cursor-pointer hover:text-orange-600" onClick={() => setFreteEditing(true)}>
-                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(totalFreteCalculado * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(totalFreteCalculado * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </p>
               )}
               <div className="flex items-center gap-1 mt-0.5">
@@ -4704,7 +4713,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             <div className="bg-white border border-indigo-200 rounded-lg p-3">
               <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Total Geral (Ordem + Frete)</p>
               <p className="text-lg font-bold font-mono text-indigo-800">
-                {currency === "USD" ? `$ ${(totalValorReferencia + totalFreteCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${((totalValorReferencia + totalFreteCalculado) * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((totalValorReferencia + totalFreteCalculado) * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {currency === "USD" ? `$ ${(totalValorReferencia + totalFreteCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${((totalValorReferencia + totalFreteCalculado) * rmbRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((totalValorReferencia + totalFreteCalculado) * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </p>
             </div>
           </div>
@@ -4719,13 +4728,13 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">1ª Remessa (valor total menos 2ª e 3ª)</label>
                 <div className="w-full border border-emerald-200 bg-emerald-50 rounded px-3 py-2 text-sm font-mono font-bold text-emerald-800">
-                  {currency === "USD" ? `$ ${(remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento) * (isLegacyPo ? poExchangeRate + 0.20 : effectiveRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  {currency === "USD" ? `$ ${(remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${((remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento) * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">2ª Remessa</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     key={`pag2-${currency}`}
                     className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
@@ -4740,7 +4749,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">3ª Remessa</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     key={`pag3-${currency}`}
                     className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
@@ -4764,7 +4773,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Valor da CI (Commercial Invoice)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     key={`ci-${currency}`}
                     className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
@@ -4781,7 +4790,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   <>
                     <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação (valor fixo da planilha)</label>
                     <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
-                      {currency === "USD" ? `$ ${(Number(po.despesasLiberacaoRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      {currency === "USD" ? `$ ${(Number(po.despesasLiberacaoRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(Number(po.despesasLiberacaoRemessa || 0) * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </div>
                   </>
                 ) : (
@@ -4808,7 +4817,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         % da CI)
                       </label>
                       <div className={`w-full border rounded px-3 py-2 text-sm font-mono font-bold ${vilelaReal ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
-                        {currency === "USD" ? `$ ${vilelaEstimativa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(vilelaEstimativa * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        {currency === "USD" ? `$ ${vilelaEstimativa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(vilelaEstimativa * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </div>
                     </div>
                     {/* Campo Verde - Valor Real Vilela */}
@@ -4817,7 +4826,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         Valor Real Vilela ({currency})
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-green-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-green-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                         <input
                           key={`vilela-real-${currency}`}
                           className="w-full border-2 border-green-300 bg-green-50 rounded px-3 py-2 pl-7 text-sm font-mono font-bold text-green-800 focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-green-300"
@@ -4840,7 +4849,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Frete Terrestre SP/MG</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     key={`frete-sp-${currency}`}
                     className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
@@ -4855,7 +4864,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">DIFAL</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     key={`difal-${currency}`}
                     className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
@@ -4870,7 +4879,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Comissão Silvério</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : currency === 'RMB' ? '¥' : 'R$'}</span>
                   <input
                     key={`com-silverio-${currency}`}
                     className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
@@ -4894,47 +4903,47 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               </div>
               <p className="text-3xl sm:text-4xl font-bold font-mono">
                 {isLegacyPo
-                  ? (currency === "USD" ? `$ ${(custosTotais / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                  : (currency === "USD" ? `$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(custosTotais * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}
+                  ? (currency === "USD" ? `$ ${(custosTotais / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(custosTotais * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                  : (currency === "USD" ? `$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(custosTotais * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}
               </p>
             </div>
             <div className={`mt-4 grid grid-cols-2 ${isLegacyPo ? 'sm:grid-cols-5' : 'sm:grid-cols-6'} gap-2 sm:gap-3`}>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Ordem Pgto</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? (currency === "USD" ? `$ ${(Number(po.pagamento1Remessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.pagamento1Remessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                  : (currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
+                  ? (currency === "USD" ? `$ ${(Number(po.pagamento1Remessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(Number(po.pagamento1Remessa || 0) * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.pagamento1Remessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                  : (currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(totalValorReferencia * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               {!isLegacyPo && (
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Frete</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">
-                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
+                  {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(totalFreteCalculado * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
               )}
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Desp. Lib.</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? (currency === "USD" ? `$ ${(Number(po.despesasLiberacaoRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                  : (currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
+                  ? (currency === "USD" ? `$ ${(Number(po.despesasLiberacaoRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(Number(po.despesasLiberacaoRemessa || 0) * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                  : (currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(despesasLiberacao * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Frete SP/MG</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? (currency === "USD" ? `$ ${(Number(po.freteTermestreRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.freteTermestreRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                  : (currency === "USD" ? `$ ${Number(freteTerrestreSP || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(freteTerrestreSP || 0) * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
+                  ? (currency === "USD" ? `$ ${(Number(po.freteTermestreRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(Number(po.freteTermestreRemessa || 0) * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.freteTermestreRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                  : (currency === "USD" ? `$ ${Number(freteTerrestreSP || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(Number(freteTerrestreSP || 0) * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">DIFAL</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? (currency === "USD" ? `$ ${(Number(po.difalValor || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.difalValor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                  : (currency === "USD" ? `$ ${Number(difalVal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(difalVal || 0) * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
+                  ? (currency === "USD" ? `$ ${(Number(po.difalValor || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(Number(po.difalValor || 0) * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.difalValor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                  : (currency === "USD" ? `$ ${Number(difalVal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(Number(difalVal || 0) * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Com. Silvério</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? (currency === "USD" ? `$ ${(Number(po.comissaoSilverio || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.comissaoSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-                  : (currency === "USD" ? `$ ${Number(comSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(comSilverio || 0) * effectiveRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
+                  ? (currency === "USD" ? `$ ${(Number(po.comissaoSilverio || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : currency === "RMB" ? `¥ ${(Number(po.comissaoSilverio || 0) * rmbRate / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.comissaoSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                  : (currency === "USD" ? `$ ${Number(comSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(Number(comSilverio || 0) * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
             </div>
           </div>

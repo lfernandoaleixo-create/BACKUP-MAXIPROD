@@ -7052,7 +7052,7 @@
 - [x] Filtros de categoria atualizados: adicionados 'Barraca' (grupo 27) e 'Decorativos' (grupo 28) nos filtros do pedido de venda
 - [x] DIFAL atualizado: grupos 27 e 28 classificados como importado (dentro do supergrupo 12 = IMPORTAÇÃO - REVENDA)
 - [x] Campos observações Maxiprod no pedido de venda (produção + fiscal/financeiro)
-- [ ] Conversão Real-Renminbi-Dólar na aba Importação (filtro moeda não altera valores)
+- [x] Conversão Real-Renminbi-Dólar na aba Importação (filtro moeda não altera valores)
 - [x] Tipo de Faturamento (Zap) visível no resumo do pedido para Vitória e gestor
 - [x] Gestor recusa pedido: 2 opções (Devolver p/ Vendedor + Recusar e Editar)
 - [x] Vendedor pode editar pedidos rejeitados (lápis aparece para status rejeitado)
