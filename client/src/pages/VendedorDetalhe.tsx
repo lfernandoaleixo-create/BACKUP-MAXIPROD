@@ -3157,18 +3157,24 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           if (rfData.email && !email) setEmail(rfData.email);
           if (rfData.atividade_principal?.[0]?.code && !cnaeFiscal) setCnaeFiscal(rfData.atividade_principal[0].code);
         }
-      if (stData && stData.code === "0") {
-          if (stData.inscricao_estadual) {
-            setInscricaoEstadual(stData.inscricao_estadual);
-          } else {
-            // Cliente sem IE na API do Sintegra - preencher automaticamente
+      if (stData && (stData.code === "0" || stData.code === 0)) {
+          console.log("[Sintegra ST] Response:", { code: stData.code, ie: stData.inscricao_estadual, situacao_ie: stData.situacao_ie, contribuinte: stData.contribuinte_icms, outras_ies: stData.outras_ies?.length || 0 });
+          // Check main IE first, then fallback to outras_ies array
+          const mainIE = stData.inscricao_estadual;
+          const outrasIE = stData.outras_ies?.find((ie: any) => ie.situacao_ie === "Ativo" || ie.situacao_ie === "HABILITADO");
+          const ieValue = mainIE || outrasIE?.inscricao_estadual || "";
+          if (ieValue && ieValue.toUpperCase() !== "ISENTO") {
+            setInscricaoEstadual(ieValue);
+          } else if (!ieValue) {
             setInscricaoEstadual("ISENTO");
+          } else {
+            setInscricaoEstadual(ieValue);
           }
           if (stData.contribuinte_icms === true) {
             setTipoContribuinte("Contribuinte");
-          } else if (stData.inscricao_estadual?.toUpperCase() === "ISENTO") {
+          } else if (ieValue?.toUpperCase() === "ISENTO") {
             setTipoContribuinte("Isento");
-          } else if (stData.inscricao_estadual && stData.situacao_ie === "Ativo") {
+          } else if (ieValue && (stData.situacao_ie === "Ativo" || outrasIE)) {
             setTipoContribuinte("Contribuinte");
           } else {
             setTipoContribuinte("Não contribuinte");
@@ -3176,6 +3182,7 @@ function NewClientForm({ sellerId, sellerName, onClose, onSuccess, editClient }:
           if (stData.regime_tributacao && !regimeTributario) setRegimeTributario(stData.regime_tributacao);
         } else {
           // Sintegra não retornou dados (code != 0) - preencher IE como ISENTO
+          console.warn("[Sintegra ST] Failed or not found:", { code: stData?.code, message: stData?.message, status: stData?.status });
           if (!inscricaoEstadual.trim()) setInscricaoEstadual("ISENTO");
           setTipoContribuinte("Não contribuinte");
         }
