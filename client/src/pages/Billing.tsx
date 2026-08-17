@@ -2310,7 +2310,27 @@ export default function Billing() {
     { enabled: billedPedidos.length > 0 }
   );
 
-  const invoicesByPedido = invoiceData?.invoicesByPedido || {};
+  // Reverse NF lookup for pedidos missing NF (handles multi-empresa NFs)
+  const pedidosMissingNf = useMemo(() => {
+    if (!invoiceData?.invoicesByPedido) return [];
+    return billedPedidos.filter(p => !(invoiceData.invoicesByPedido[p]?.length > 0)).slice(0, 100);
+  }, [billedPedidos, invoiceData]);
+  const { data: reverseInvoiceData } = trpc.billing.getInvoicesReverse.useQuery(
+    { pedidos: pedidosMissingNf, daysBack: 30 },
+    { enabled: pedidosMissingNf.length > 0 && !isLoadingNfs }
+  );
+  const invoicesByPedido = useMemo(() => {
+    const primary = invoiceData?.invoicesByPedido || {};
+    const reverse = reverseInvoiceData?.invoicesByPedido || {};
+    // Merge: reverse fills gaps where primary has no data
+    const merged = { ...primary };
+    for (const [pedido, nfs] of Object.entries(reverse)) {
+      if (!merged[pedido] || merged[pedido].length === 0) {
+        merged[pedido] = nfs;
+      }
+    }
+    return merged;
+  }, [invoiceData, reverseInvoiceData]);
 
   // Mutations
   const authorizeMutation = trpc.billing.authorizeOrders.useMutation({
