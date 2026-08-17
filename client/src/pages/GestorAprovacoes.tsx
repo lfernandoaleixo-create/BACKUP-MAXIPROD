@@ -1579,7 +1579,7 @@ export default function GestorAprovacoes(props: any = {}) {
                     {editProducts
                       .filter((p: any) => {
                         const search = editItemSearch.toUpperCase();
-                        return p.codigoItem.includes(search) || p.descricaoItem.toUpperCase().includes(search);
+                        return (p.codigoItem || "").includes(search) || (p.descricaoItem || "").toUpperCase().includes(search);
                       })
                       .slice(0, 20)
                       .map((p: any) => (

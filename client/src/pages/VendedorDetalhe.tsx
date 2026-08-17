@@ -2776,12 +2776,12 @@ function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerN
                 if (!searchQuery.trim()) return true;
                 const q = searchQuery.trim().toUpperCase();
                 return (
-                  mc.razaoSocial.toUpperCase().includes(q) ||
+                  (mc.razaoSocial || "").toUpperCase().includes(q) ||
                   (mc.nomeFantasia || "").toUpperCase().includes(q) ||
                   (mc.cidade || "").toUpperCase().includes(q) ||
                   (mc.uf || "").toUpperCase().includes(q) ||
                   (mc.segmento || "").toUpperCase().includes(q) ||
-                  mc.cnpjCpf.includes(q)
+                  (mc.cnpjCpf || "").includes(q)
                 );
               })
               .map((mc) => (
@@ -4456,7 +4456,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
       const q = searchQuery.trim().toUpperCase();
       result = result.filter(
         (p) =>
-          p.pedido.toUpperCase().includes(q) ||
+          (p.pedido || "").toUpperCase().includes(q) ||
           (p.cliente || "").toUpperCase().includes(q) ||
           (p.estadoNota || "").toUpperCase().includes(q)
       );
@@ -10237,8 +10237,8 @@ function TabelaPrecosView({ sellerId, sellerName, gestorName }: { sellerId: numb
     if (!searchTerm) return sorted;
     const term = searchTerm.toLowerCase();
     return sorted.filter((item: any) =>
-      item.itemCodigo.toLowerCase().includes(term) ||
-      item.itemDescricao.toLowerCase().includes(term)
+      (item.itemCodigo || "").toLowerCase().includes(term) ||
+      (item.itemDescricao || "").toLowerCase().includes(term)
     );
   }, [data?.items, searchTerm]);
 

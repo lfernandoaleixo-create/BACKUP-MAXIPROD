@@ -1642,12 +1642,12 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       result = result.filter(o =>
-        o.pedido.toLowerCase().includes(s) ||
+        (o.pedido || "").toLowerCase().includes(s) ||
         (o.cliente || "").toLowerCase().includes(s) ||
         (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
-        o.uf.toLowerCase().includes(s) ||
+        (o.uf || "").toLowerCase().includes(s) ||
         o.representante?.toLowerCase().includes(s) ||
-        (invoicesByPedido?.[o.pedido]?.some(nf => nf.numero.includes(s)) ?? false)
+        (invoicesByPedido?.[o.pedido]?.some(nf => (nf.numero || "").includes(s)) ?? false)
       );
     }
 
@@ -1659,8 +1659,8 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
           cmp = Number(a.pedido) - Number(b.pedido);
           break;
         case "cliente": {
-          const nameA = a.cliente.toLowerCase();
-          const nameB = b.cliente.toLowerCase();
+          const nameA = (a.cliente || "").toLowerCase();
+          const nameB = (b.cliente || "").toLowerCase();
           cmp = nameA.localeCompare(nameB);
           break;
         }
