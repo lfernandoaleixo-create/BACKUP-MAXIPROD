@@ -7054,3 +7054,5 @@
 - [x] Campos observações Maxiprod no pedido de venda (produção + fiscal/financeiro)
 - [ ] Conversão Real-Renminbi-Dólar na aba Importação (filtro moeda não altera valores)
 - [x] Tipo de Faturamento (Zap) visível no resumo do pedido para Vitória e gestor
+- [x] Gestor recusa pedido: 2 opções (Devolver p/ Vendedor + Recusar e Editar)
+- [x] Vendedor pode editar pedidos rejeitados (lápis aparece para status rejeitado)

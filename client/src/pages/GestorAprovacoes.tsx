@@ -1173,9 +1173,34 @@ export default function GestorAprovacoes(props: any = {}) {
                                 <button
                                   onClick={() => handleReject(order.id)}
                                   disabled={!rejectReason.trim() || rejectMutation.isPending}
-                                  className="px-4 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
                                 >
-                                  {rejectMutation.isPending ? "Enviando..." : "Confirmar Recusa"}
+                                  {rejectMutation.isPending ? "Enviando..." : "Devolver p/ Vendedor"}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    // Reject and immediately open edit mode
+                                    rejectMutation.mutate(
+                                      { orderId: order.id, aprovadoPor: gestorName || "Gestor", motivoRejeicao: rejectReason.trim() },
+                                      {
+                                        onSuccess: () => {
+                                          utils.salesOrders.listOrders.invalidate();
+                                          utils.salesOrders.getOrdersForGestor.invalidate();
+                                          setRejectingOrder(null);
+                                          setRejectReason("");
+                                          // Navigate to edit the order
+                                          const sellerId = order.sellerId || order.sellerPermissionId;
+                                          if (sellerId) {
+                                            window.location.href = `/gestao-comercial/vendedor/${sellerId}?tab=pedidos&editOrder=${order.id}`;
+                                          }
+                                        },
+                                      }
+                                    );
+                                  }}
+                                  disabled={!rejectReason.trim() || rejectMutation.isPending}
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  Recusar e Editar
                                 </button>
                               </div>
                             </div>
