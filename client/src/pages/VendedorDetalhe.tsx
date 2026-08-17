@@ -5827,6 +5827,12 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                           <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{pedido.observacoes}</p>
                         </div>
                       )}
+                      {(pedido as any).tipoFaturamento && (pedido as any).tipoFaturamento !== "Normal" && (
+                        <div className="col-span-2 sm:col-span-3">
+                          <span className="text-red-600 font-semibold">Tipo de Faturamento</span>
+                          <p className="text-red-600 dark:text-red-400 font-bold">{(pedido as any).tipoFaturamento}</p>
+                        </div>
+                      )}
                       {(pedido as any).observacoesInternas && (
                         <div className="col-span-2 sm:col-span-3 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                           <span className="text-blue-600 font-semibold text-xs">Obs. Internas (Fiscal/Financeiro)</span>
@@ -6241,6 +6247,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       tipoFrete: tipoFrete || undefined,
       transportadoraSelecionada: transportadoraSelecionada || undefined,
       observacoesInternas: observacoesInternas || undefined,
+      tipoFaturamento: nfPercent === 100 ? "Normal" : nfPercent === 0 ? "Zap 0" : nfPercent === 50 ? "Zap 2" : nfPercent === 33 ? "Zap 3" : "Zap 5",
       operacaoFiscal: operacaoFiscal || undefined,
       protocoloCotacao: protocoloCotacao || undefined,
       temBonificacao: temBonificacao || undefined,

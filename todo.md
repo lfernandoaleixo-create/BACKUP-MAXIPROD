@@ -7053,3 +7053,4 @@
 - [x] DIFAL atualizado: grupos 27 e 28 classificados como importado (dentro do supergrupo 12 = IMPORTAÇÃO - REVENDA)
 - [x] Campos observações Maxiprod no pedido de venda (produção + fiscal/financeiro)
 - [ ] Conversão Real-Renminbi-Dólar na aba Importação (filtro moeda não altera valores)
+- [x] Tipo de Faturamento (Zap) visível no resumo do pedido para Vitória e gestor
