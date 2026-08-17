@@ -32,7 +32,8 @@ interface PedidoItem {
  */
 async function fetchAaprovarItems(): Promise<PedidoItem[]> {
   try {
-    const data = await gql<any>(`{
+    // Buscar itens de pedidos em AAPROVAR
+    const dataAaprovar = await gql<any>(`{
       itensDosPedidosDeVendas(
         skip: 0, take: 500,
         where: { pedidoDeVenda: { estado: { eq: AAPROVAR } } }
@@ -53,9 +54,9 @@ async function fetchAaprovarItems(): Promise<PedidoItem[]> {
       }
     }`);
 
-    if (!data?.itensDosPedidosDeVendas?.items) return [];
+    if (!dataAaprovar?.itensDosPedidosDeVendas?.items) return [];
 
-    return data.itensDosPedidosDeVendas.items
+    return dataAaprovar.itensDosPedidosDeVendas.items
       .map((item: any) => {
         // Identificar se é madeira: superGrupo 16 (dentroDoGrupo.codigo) com grupo 18 ou 19
         const grupoCodigo = item.item?.grupo?.codigo || "";
@@ -91,7 +92,7 @@ async function fetchStockForItems(itemIds: number[]): Promise<Map<number, { tota
   try {
     const data = await gql<any>(`{
       estoquesAgrupados(
-        skip: 0, take: 1000,
+        skip: 0, take: 500,
         where: { itemId: { in: [${itemIds.join(",")}] } }
       ) {
         totalCount
@@ -126,9 +127,10 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   const pedidoItems = await fetchAaprovarItems();
   
   if (pedidoItems.length === 0) {
-    // Nenhum pedido em A aprovar → expirar todos os alertas pendentes
-    await cleanupOldAlerts(db);
-    return { created: 0, message: "Nenhum pedido em A aprovar ou A faturar no Maxiprod" };
+    // Nenhum pedido em A aprovar - pode ser API temporariamente indisponível
+    // NÃO expirar alertas pendentes para evitar perda de dados em caso de falha de API
+    console.log("[StockAlert] Nenhum pedido A aprovar. Pendentes do sistema mantidos (possível falha de API).");
+    return { created: 0, message: "Nenhum pedido em A aprovar no Maxiprod (alertas mantidos)" };
   }
 
   // 2. Buscar estoque agrupado para os itens
@@ -323,7 +325,7 @@ export async function detectStockInsufficientAlerts(): Promise<{ created: number
   // 6. Limpar alertas pendentes de pedidos que não estão mais insuficientes
   await cleanupOldAlerts(db, pedidosAtuais, insufficientItems);
 
-  const msg = `${created} novo(s) alerta(s). ${insufficientItems.length} item(ns) insuficiente(s) em ${pedidosAtuais.size} pedido(s) A aprovar/faturar.`;
+  const msg = `${created} novo(s) alerta(s). ${insufficientItems.length} item(ns) insuficiente(s) em ${pedidosAtuais.size} pedido(s) A aprovar ou A faturar.`;
   console.log(`[StockAlert] ${msg}`);
   return { created, message: msg };
 }
