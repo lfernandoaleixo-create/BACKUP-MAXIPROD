@@ -5218,7 +5218,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                     </p>
                     {(pm.status === "pendente" || pm.status === "aprovado_subgestor" || pm.status === "aprovado") && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setEditingOrderId(pm.id); setShowNewOrder(true); }}
+                        onClick={(e) => { e.stopPropagation(); fetch("/api/trpc/salesOrders.startEditing", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({json:{orderId: pm.id, editorName: sellerName || "Vendedor"}}) }).catch(() => {}); setEditingOrderId(pm.id); setShowNewOrder(true); }}
                         className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
                         title="Editar pedido"
                       >

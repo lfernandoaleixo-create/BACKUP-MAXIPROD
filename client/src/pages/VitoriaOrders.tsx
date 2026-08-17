@@ -319,7 +319,14 @@ export default function VitoriaOrders() {
   // For Vitória: only 'aprovado' not yet received
   // NOTE: For top gestores (Fernando/Guilherme/Bruno/Juvenal), apply gc.pedidosVenda sub-permission filter.
   const isTopGestorFilter = canSeeAguardandoAprovacao || isJuvenalViewer;
-  const filteredOrders = (orders || []).filter((o: any) => !o.editingBy).filter((o: any) => {
+  const filteredOrders = (orders || []).filter((o: any) => {
+    // Edit lock: hide orders being edited (auto-unlock after 30min)
+    if (o.editingBy) {
+      if (o.editingAt && Date.now() - o.editingAt > 30 * 60 * 1000) return true; // auto-unlocked
+      return false; // still being edited
+    }
+    return true;
+  }).filter((o: any) => {
     // Sub-permission filter: only for top gestores (who see ALL statuses and need filtering)
     if (isTopGestorFilter) {
       if (visibleSellersForOrders.length === 0) return false;
