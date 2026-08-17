@@ -7051,3 +7051,5 @@
 - [x] Grupo 28 (Itens Decorativos) reconhecido: produtos 00693-00698 atualizados para grupo 28
 - [x] Filtros de categoria atualizados: adicionados 'Barraca' (grupo 27) e 'Decorativos' (grupo 28) nos filtros do pedido de venda
 - [x] DIFAL atualizado: grupos 27 e 28 classificados como importado (dentro do supergrupo 12 = IMPORTAÇÃO - REVENDA)
+- [x] Campos observações Maxiprod no pedido de venda (produção + fiscal/financeiro)
+- [ ] Conversão Real-Renminbi-Dólar na aba Importação (filtro moeda não altera valores)

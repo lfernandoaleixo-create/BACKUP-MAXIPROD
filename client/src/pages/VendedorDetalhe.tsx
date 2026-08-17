@@ -5823,8 +5823,14 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                       )}
                       {pedido.observacoes && (
                         <div className="col-span-2 sm:col-span-3">
-                          <span className="text-slate-400 font-semibold">Observações</span>
+                          <span className="text-amber-600 font-semibold">Observações (Produção)</span>
                           <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{pedido.observacoes}</p>
+                        </div>
+                      )}
+                      {(pedido as any).observacoesInternas && (
+                        <div className="col-span-2 sm:col-span-3 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                          <span className="text-blue-600 font-semibold text-xs">Obs. Internas (Fiscal/Financeiro)</span>
+                          <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap text-sm mt-1">{(pedido as any).observacoesInternas}</p>
                         </div>
                       )}
                     </div>
@@ -8442,15 +8448,30 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
               </div>
             )}
             {/* Observações - visível na tela de produtos */}
-            <div className="pt-2">
-              <label className="text-[10px] text-slate-500 font-medium">Observações (opcional)</label>
-              <textarea
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Observações adicionais para o gestor/operação..."
-                rows={2}
-                className="w-full mt-0.5 px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 resize-none"
-              />
+            <div className="pt-3 mt-2 border-t border-amber-200 dark:border-amber-700">
+              <h4 className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">Observações que vão para o Maxiprod</h4>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] text-slate-500 font-medium">Observações (vai para a produção)</label>
+                  <textarea
+                    value={observacoes}
+                    onChange={(e) => setObservacoes(e.target.value)}
+                    placeholder="Informações para a equipe de produção..."
+                    rows={2}
+                    className="w-full mt-0.5 px-3 py-2 text-xs border border-amber-200 dark:border-amber-600 rounded-lg bg-amber-50/50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 font-medium">Observações internas (vai para o fiscal/financeiro)</label>
+                  <textarea
+                    value={observacoesInternas}
+                    onChange={(e) => setObservacoesInternas(e.target.value)}
+                    placeholder="Informações para o setor fiscal ou financeiro..."
+                    rows={2}
+                    className="w-full mt-0.5 px-3 py-2 text-xs border border-blue-200 dark:border-blue-600 rounded-lg bg-blue-50/50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* ===== DADOS DO CADASTRO DO CLIENTE (read-only, vindos do cadastro) ===== */}
