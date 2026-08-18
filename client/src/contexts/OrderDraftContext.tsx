@@ -67,6 +67,7 @@ export interface OrderDraft {
   estadoConfiguravel?: string;
   dataEntregaPedido?: string;
   previsaoEntregaPedido?: string;
+  tipoFaturamento?: string;
 }
 
 const STORAGE_KEY = "grupo-fox-order-draft";
