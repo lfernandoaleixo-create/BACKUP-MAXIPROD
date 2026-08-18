@@ -4732,7 +4732,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">1ª Remessa (valor total menos 2ª e 3ª)</label>
                 <div className="w-full border border-emerald-200 bg-emerald-50 rounded px-3 py-2 text-sm font-mono font-bold text-emerald-800">
-                  {currency === "USD" ? `$ ${(remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${((remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento) * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  {currency === "USD" ? `$ ${(remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${currency === "RMB" ? "¥" : "R$"} ${((remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento) * (currency === "RMB" ? rmbRate : exchangeRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </div>
               </div>
               <div>
@@ -4821,7 +4821,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         % da CI)
                       </label>
                       <div className={`w-full border rounded px-3 py-2 text-sm font-mono font-bold ${vilelaReal ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
-                        {currency === "USD" ? `$ ${vilelaEstimativa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${sym} ${(vilelaEstimativa * rate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        {currency === "USD" ? `$ ${vilelaEstimativa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${currency === "RMB" ? "¥" : "R$"} ${(vilelaEstimativa * (currency === "RMB" ? rmbRate : exchangeRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </div>
                     </div>
                     {/* Campo Verde - Valor Real Vilela */}
