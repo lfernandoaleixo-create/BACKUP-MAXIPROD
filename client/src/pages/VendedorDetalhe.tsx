@@ -5225,7 +5225,7 @@ function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerNa
                     </p>
                     {(pm.status === "pendente" || pm.status === "aprovado_subgestor" || pm.status === "aprovado" || pm.status === "rejeitado") && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); fetch("/api/trpc/salesOrders.startEditing", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({json:{orderId: pm.id, editorName: sellerName || "Vendedor"}}) }).catch(() => {}); setEditingOrderId(pm.id); setShowNewOrder(true); }}
+                        onClick={(e) => { e.stopPropagation(); fetch("/api/trpc/salesOrders.startEditing", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({json:{orderId: pm.id, editorName: sellerName || "Vendedor"}}) }).catch(() => {}); setEditingOrderId(pm.id); setShowNewOrder(true); window.scrollTo({top: 0, behavior: "smooth"}); }}
                         className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
                         title="Editar pedido"
                       >
@@ -5860,7 +5860,7 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
   const isEditMode = editOrderId !== null;
   const [isSimulation, setIsSimulation] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
-  const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">("cliente");
+  const [step, setStep] = useState<"cliente" | "produtos" | "pagamento" | "revisao" | "resumo_final">(isEditMode ? "produtos" : "cliente");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<number | null>(null);
   const [submittedOrderNumber, setSubmittedOrderNumber] = useState<number | null>(null);
@@ -6332,6 +6332,10 @@ function NewOrderInline({ sellerId, sellerName, canSkipClient = false, editOrder
       setCondicaoPagamento(order.condicaoPagamento || "");
       setValorFrete(order.valorFrete || "");
       setTipoFrete(order.tipoFrete || "CIF");
+      setTransportadoraSelecionada(order.transportadora || "");
+      setProtocoloCotacao(order.protocoloCotacao || "");
+      setObservacoesInternas((order as any).observacoesInternas || "");
+      if ((order as any).tipoFaturamento) setTipoFaturamento((order as any).tipoFaturamento);
       setObservacoes(order.observacoes || "");
       setOperacaoFiscal(order.operacaoFiscal || "6101 - Fora do Estado - Madeira");
       setNaturezaOperacao(order.naturezaOperacao || "Venda de produção do estabelecimento");
