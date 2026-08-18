@@ -332,7 +332,7 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose, editPro
     const qty = customQty || 1;
     const fatorProd = Number(product.unidadeDeVendaFator) || 1;
     const pesoBrutoCaixa = product.pesoBruto && Number(product.pesoBruto) > 0 ? Number(product.pesoBruto) * fatorProd : undefined;
-    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)\\s*[xX×]\\s*([\\d,.]+)/) : null;
+    const dimsMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/([\d,.]+)\s*[xX×]\s*([\d,.]+)\s*[xX×]\s*([\d,.]+)/) : null;
     const claMatch = product.descricaoComplementar ? product.descricaoComplementar.match(/C\s*=\s*([\d,.]+).*?L\s*=\s*([\d,.]+).*?A\s*=\s*([\d,.]+)/i) : null;
     const dimsStr = dimsMatch ? `${dimsMatch[1]}x${dimsMatch[2]}x${dimsMatch[3]}` : claMatch ? `${claMatch[1].replace(',','.')}x${claMatch[2].replace(',','.')}x${claMatch[3].replace(',','.')}` : undefined;
     setItems(prev => [...prev, {
@@ -1337,7 +1337,7 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose, editPro
                   <button onClick={() => setShowFreightModal(false)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
                 </div>
                 <div className="text-[10px] text-slate-500 space-x-3">
-                  <span>CEP: {cep}</span>
+                  <span>CEP: {(!enderecoEntregaMesmo && entregaCep) ? entregaCep : cep}</span>
                   <span>Peso: {totalPeso.toFixed(1)}kg</span>
                   <span>Cubagem: {totalCubagem.toFixed(4)}m³</span>
                 </div>
@@ -1368,7 +1368,7 @@ export default function PropostaDeVenda({ sellerId, sellerName, onClose, editPro
                 <button
                   onClick={async () => {
                     setFreightResult(null);
-                    const cepClean = cep.replace(/\D/g, "");
+                    const cepClean = (!enderecoEntregaMesmo && entregaCep) ? entregaCep.replace(/\D/g, "") : cep.replace(/\D/g, "");
                     if (cepClean.length !== 8) { setFreightResult({ error: "CEP inválido" }); return; }
                     const valorNf = parseFloat(freightManualValorNf.replace(/[^\d.,]/g, "").replace(",", "."));
                     const volumes = parseInt(freightManualVolumes) || 1;
