@@ -14,7 +14,7 @@ import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2, XCircle, AlertTriangle, Clock, Eye, ChevronDown, ChevronUp,
   ShoppingCart, User, MapPin, DollarSign, Package, ArrowLeft, Filter, RefreshCw, RotateCcw, Trash2, Pencil,
-  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search, Lock, Download
+  Building2, Phone, CreditCard, TrendingUp, Calendar, Edit3, Search, Lock, Download, X
 } from "lucide-react";
 import { Link } from "wouter";
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
@@ -117,6 +117,7 @@ export default function GestorAprovacoes(props: any = {}) {
   const visibleSellersForApproval = getVisiblePeopleForFeature("gc.aprovacoesPedidos");
   const isJuvenalInit = gestorName === "JUVENAL TEIXEIRA";
   const [filter, setFilter] = useState<"todos" | "pendente" | "aprovado" | "rejeitado" | "lancado">("pendente");
+  const [orderSearch, setOrderSearch] = useState("");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [rejectingOrder, setRejectingOrder] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -172,11 +173,21 @@ export default function GestorAprovacoes(props: any = {}) {
       return false; // hide from others
     });
     // Then: filter by status
+    // Search filter
+    if (orderSearch.trim()) {
+      const s = orderSearch.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      filtered = filtered.filter((o: any) => {
+        const num = String(o.orderNumber || o.id || "");
+        const cliente = (o.razaoSocial || o.nomeFantasia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const vendedor = (o.sellerName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return num.includes(s) || cliente.includes(s) || vendedor.includes(s);
+      });
+    }
     if (filter === "todos") return filtered;
     if (filter === "pendente") return filtered.filter((o: any) => o.status === "pendente" || o.status === "aprovado_subgestor");
     if (filter === "lancado") return filtered.filter((o: any) => o.status === "processado" || o.status === "lancado");
     return filtered.filter((o: any) => o.status === filter);
-  }, [allOrders, filter, visibleSellersForApproval, gestorName]);
+  }, [allOrders, filter, visibleSellersForApproval, gestorName, orderSearch]);
 
   // Get items for expanded order
   const { data: orderDetails } = trpc.salesOrders.getOrderDetails.useQuery(
@@ -458,6 +469,12 @@ export default function GestorAprovacoes(props: any = {}) {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input type="text" placeholder="Pesquisar por cliente, vendedor ou nº do pedido..." value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" />
+          {orderSearch && <button onClick={() => setOrderSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
+        </div>
         {/* Filter Tabs */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
           <Filter className="w-4 h-4 text-slate-400 ml-2" />

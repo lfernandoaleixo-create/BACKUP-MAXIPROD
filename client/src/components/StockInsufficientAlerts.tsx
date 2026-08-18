@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Check, X, Package, ChevronDown, ChevronUp, History } from "lucide-react";
+import { AlertTriangle, Check, X, Package, ChevronDown, ChevronUp, History, Search } from "lucide-react";
 import { toast } from "sonner";
 
 interface StockInsufficientAlertsProps {
@@ -16,6 +16,7 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
   const [showHistory, setShowHistory] = useState(false);
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [observacao, setObservacao] = useState("");
+  const [alertSearch, setAlertSearch] = useState("");
 
   const { data: alerts = [], refetch } = trpc.stockAlert.getAlerts.useQuery({});
   const { data: historyAlerts = [], refetch: refetchHistory } = trpc.stockAlert.getAlerts.useQuery(
@@ -44,6 +45,10 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
   const historyResolved = historyAlerts.filter(
     (a: any) => a.status === "aceito" || a.status === "recusado" || a.status === "expirado"
   );
+  const filteredHistory = alertSearch.trim() ? historyResolved.filter((a: any) => {
+    const s = alertSearch.trim().toLowerCase();
+    return String(a.pedidoNumero || "").includes(s) || (a.codigoItem || "").toLowerCase().includes(s) || (a.descricaoItem || "").toLowerCase().includes(s) || (a.status || "").toLowerCase().includes(s) || (a.respondidoPor || "").toLowerCase().includes(s);
+  }) : historyResolved;
 
   const handleRespond = (alertId: number, status: "aceito" | "recusado") => {
     if (!operatorName) {
@@ -304,6 +309,14 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
               </Badge>
             </div>
           </div>
+          {/* Search Bar for History */}
+          <div className="px-4 pt-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input type="text" placeholder="Pesquisar por pedido, código, produto ou status..." value={alertSearch} onChange={(e) => setAlertSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" />
+              {alertSearch && <button onClick={() => setAlertSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
+            </div>
+          </div>
           <div className="p-4">
             {historyResolved.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">
@@ -326,7 +339,7 @@ export default function StockInsufficientAlerts({ operatorName, canRespond = fal
                     </tr>
                   </thead>
                   <tbody>
-                    {historyResolved.map((alert: any) => (
+                    {filteredHistory.map((alert: any) => (
                       <tr key={alert.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-2 pr-3">
                           <span className="font-medium text-orange-700">#{alert.pedidoNumero}</span>
