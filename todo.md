@@ -1779,6 +1779,7 @@
 - [x] Telefone para de piscar no dia quando vendedor registra ação, volta a piscar no dia seguinte
 - [x] Alerta visível apenas para o vendedor responsável pelo título
 - [x] No dia 7+, se protesto automático: mudar status automaticamente para "Protestado" e registrar no histórico
+- [x] URGENTE: Diagnosticar e corrigir falha de verificação/sincronização do GitHub sem perder alterações locais ou remotas
 - [x] No dia 7+, se não protestar: vendedor obrigado a preencher plano de ação e pode mudar status manualmente
 - [x] Corrigir cálculo "Disponível p/ Venda" na tabela Madeira PA: deve ser Estoque Manual - Pedidos de Venda
 - [ ] Auditar Consulta de Cliente: cruzar dados do dashboard com Maxiprod para todos os clientes (pedidos, faturado, em aberto, inadimplência)
